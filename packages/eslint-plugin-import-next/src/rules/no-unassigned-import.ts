@@ -26,6 +26,7 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unassigned-import.md',
       description: 'Prevents unassigned imports',
     },
     hasSuggestions: false,

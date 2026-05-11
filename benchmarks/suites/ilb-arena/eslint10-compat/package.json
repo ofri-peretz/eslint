@@ -1,0 +1,16 @@
+{
+    "name": "fn-fp-benchmark-eslint10",
+    "version": "1.0.0",
+    "description": "ESLint 10 compatibility environment for fair plugin comparison",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "benchmark": "node run-eslint10.js"
+    },
+    "devDependencies": {
+        "eslint": "^10.0.0",
+        "eslint-plugin-security": "^4.0.0",
+        "eslint-plugin-no-unsanitized": "^4.1.5"
+    }
+}
+

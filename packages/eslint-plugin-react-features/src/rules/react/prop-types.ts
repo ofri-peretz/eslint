@@ -25,6 +25,7 @@ export const propTypes = createRule<[Options], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prop-types.md',
       description: 'Enforce prop types usage',
     },
     schema: [
@@ -105,6 +106,7 @@ export const propTypes = createRule<[Options], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 

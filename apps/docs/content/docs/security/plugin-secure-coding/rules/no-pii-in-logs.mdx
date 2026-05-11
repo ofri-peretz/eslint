@@ -1,0 +1,96 @@
+---
+title: no-pii-in-logs
+description: Prevent personally identifiable information (PII) — emails, SSNs, credit cards, phone numbers — from reaching console / logger output.
+tags: ['security', 'secure-coding', 'pii', 'logging', 'gdpr']
+category: security
+cwe: CWE-359
+autofix: suggestions
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** no-pii-in-logs, PII, GDPR, HIPAA, CCPA, console.log, logger, email, SSN, credit card, phone number, CWE-359, ESLint rule
+> **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)
+
+Prevent personally identifiable information (PII) — emails, SSNs, credit cards, phone numbers — from reaching `console.*` or logger output. Logs are routinely shipped to third-party platforms (Datadog, Sentry, CloudWatch) and indexed by people who never had access authorization for that data.
+
+This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+## Quick Summary
+
+| Aspect         | Details                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| **Severity**   | High (Security / Compliance — GDPR Art. 32, HIPAA §164.312)              |
+| **Auto-Fix**   | 💡 Suggestions (redact, hash, or replace with stable user id)            |
+| **Category**   | Secure Coding                                                            |
+| **CWE**        | [CWE-359](https://cwe.mitre.org/data/definitions/359.html)               |
+| **Best For**   | Any service that handles user data and ships logs off-host               |
+
+## Why this matters
+
+Application logs are the highest-volume, lowest-trust egress channel in most production services. By default they are:
+
+- Shipped to vendors (Datadog, Sentry, Splunk, Loki, ELK) — broadening the trust boundary.
+- Retained for weeks to months — long enough that a breach years from now still discloses today's data.
+- Read by anyone with engineering oncall — not the access-controlled subset that touches the user record itself.
+
+GDPR Article 32 (security of processing) and HIPAA §164.312 (technical safeguards) both treat log-leaked PII as a reportable incident. Most breach disclosures in 2024–2025 traced the data exposure to a logger, not a database.
+
+## What the rule detects
+
+The rule flags PII patterns whether they enter the log call as a literal, a templated string, or a member access on an `user`/`person`/`account` identifier:
+
+| Pattern                          | Detected as                          |
+| :------------------------------- | :----------------------------------- |
+| Hard-coded email regex match     | `email`                              |
+| `user.email`, `account.ssn`      | inferred via identifier shape        |
+| 16-digit number passing Luhn     | `credit-card`                        |
+| ITU-formatted phone number       | `phone`                              |
+| US SSN (`\d{3}-\d{2}-\d{4}`)     | `ssn`                                |
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+console.log('user signed in', user.email, user.phone);
+logger.info(`payment from ${customer.creditCard}`);
+console.error('lookup failed for SSN', record.ssn);
+
+// PII concealed in JSON.stringify still gets logged
+logger.debug(JSON.stringify(user));
+```
+
+### ✅ Correct
+
+```js
+import { redactPii, hashStable } from '@/lib/pii';
+
+console.log('user signed in', { userId: user.id });
+logger.info('payment authorised', { customerId: hashStable(customer.id) });
+console.error('lookup failed', { ssnHash: hashStable(record.ssn) });
+
+// Or use a structured logger that redacts known PII fields by allowlist
+logger.debug({ user: redactPii(user) });
+```
+
+## Error Message Format
+
+```text
+🔒 SECURE-CODING CWE-359 | PII detected in log argument | HIGH
+   Fix: Replace the PII payload with a stable opaque id (UUID, hash) or pass through a redacting logger before emission.
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+- Custom logger wrappers (`logEvent`, `audit`, `track`) are detected via the `loggers` rule option allowlist; loggers not on the allowlist are skipped.
+- PII reached via aliasing (`const e = user.email; log(e);`) is tracked one assignment hop; deeper chains require type-aware enabling.
+- PII embedded inside an HTTP request body that incidentally surfaces in an error message (e.g. `JSON.stringify(req.body)` in a `catch` block) is not always reached without type info.

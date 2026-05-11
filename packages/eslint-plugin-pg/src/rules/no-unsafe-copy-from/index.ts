@@ -33,6 +33,8 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<
     docs: {
       description: 'Prevent unsafe COPY FROM usage with dynamic file paths, which can lead to arbitrary file read/RCE.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-copy-from.md',
+      cwe: 'CWE-73',
+      cvss: 9.5,
     },
     messages: {
       dynamicPath: formatLLMMessage({

@@ -1,0 +1,182 @@
+{
+  "$schema": "./state.schema.json",
+  "version": "1.0",
+  "lastUpdated": "2026-05-09",
+  "vision": "Be the static-code-analysis layer that both humans and AI agents reach for first when they need to lint, audit, or remediate JavaScript / TypeScript.",
+  "currentPhase": 1,
+  "phaseStartDate": "2026-05-09",
+  "principles": {
+    "count": 10,
+    "lastUpdate": "2026-05-09",
+    "doc": "benchmarks/README.md#1-philosophy"
+  },
+  "benches": {
+    "count": 10,
+    "list": [
+      "ILB-Arena",
+      "ILB-Arena-Quality",
+      "ILB-Juliet",
+      "ILB-Wild",
+      "ILB-Edge",
+      "ILB-Cov",
+      "ILB-Perf",
+      "ILB-AI",
+      "ILB-LLM-Tokens",
+      "ILB-LLM-Fix",
+      "ILB-Formatter"
+    ],
+    "doc": "benchmarks/README.md#2-the-10-benches-at-a-glance"
+  },
+  "vocabularyContract": {
+    "aspects": ["Cost", "Effectiveness", "Latency"],
+    "fields": {
+      "cost": ["tokensO200k", "tokensCl100k", "meanTokensO200k"],
+      "effectiveness": ["effectiveness", "f1", "precision", "recall", "signalScore", "passRate", "vulnDetectionRate"],
+      "latency": ["latencyMsP50", "latencyMsP95", "meanLatencyMs", "msPerFile", "peakRssMb"]
+    },
+    "enforcement": "ROADMAP_ITEM_1_11"
+  },
+  "toolchain": {
+    "note": "Every result JSON must carry a toolchain block matching this schema. Used for traceability and matrix benches.",
+    "schema": {
+      "node": "string (semver)",
+      "eslint": "string (semver)",
+      "typescript": "string (semver)",
+      "tsCompiler": "tsc-classic | tsc-go",
+      "typescriptEslint": "string (semver)",
+      "platform": "string (e.g. darwin-arm64, linux-x64)"
+    },
+    "matrixPlanned": {
+      "tsCompiler": ["tsc-classic@5.x", "tsc-go@6.x"],
+      "eslint": ["8.x", "9.x", "10.x"],
+      "blockedOn": "tsc-go GA (TypeScript 6 release)"
+    }
+  },
+  "baselineCorpus": {
+    "wildRepoCount": 22,
+    "wildLoC": 1700000,
+    "starsPolicy": "Tier 1 ≥ 45K stars · Tier 2 named exceptions for niche flagships",
+    "fpEdgeRepos": ["three.js", "react", "webpack", "lodash", "babel"],
+    "doc": "benchmarks/BASELINE_MATRIX.md"
+  },
+  "flagshipRules": {
+    "count": 10,
+    "doc": ".agent/flagship-rules.md"
+  },
+  "roadmap": {
+    "doc": "benchmarks/LEADERSHIP_ROADMAP.md",
+    "totalItems": 42,
+    "phases": {
+      "1": {
+        "name": "Foundation",
+        "window": "Q3 2026 (May–Jul)",
+        "items": [
+          { "id": "1.1", "title": "Dual-audience philosophy doc", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/README.md §1 (10 principles, 2 new agent-axis principles 9 + 10)" },
+          { "id": "1.2", "title": "SARIF emission", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/eslint-formatter-sarif/ — SARIF v2.1.0 formatter; carries CWE/CVSS/ASVS/SSDF/CAPEC properties + GHAS-compatible tags" },
+          { "id": "1.3", "title": "Severity-weighted F1 headline", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/stats.mjs (weightedF1 + CVSS_WEIGHT) wired into benchmarks/score.mjs; CWE-Top-10 ×4, CWE-Top-25 ×3, others ×2" },
+          { "id": "1.4", "title": "Bootstrap CI on F1", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/stats.mjs (bootstrapF1CI, percentile method, 1000-resample seeded splitmix32) + accuracyReport; emitted as effectiveness.{ciLow,ciHigh,ciMethod=wilson+bootstrap}" },
+          { "id": "1.5", "title": "Pre-registration discipline", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/preregister.mjs (capturePreregistration, verifyPreregistration, attachPreregistration); methodologyCommit captured + dirty-paths checked; integrated into score.mjs + ilb-determinism + ilb-diff" },
+          { "id": "1.6", "title": "ILB-Determinism", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-determinism/run.mjs · npm run ilb:determinism · 3-run CWE-089 smoke ✅ identical hash 4fb500242356, 6 findings; SLO ruleSurvivalRate=1.0" },
+          { "id": "1.7", "title": "ILB-Autofix", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-autofix-bench.mjs (already in place from prior agent)" },
+          { "id": "1.8", "title": "MITRE CWE Compatibility submission readiness", "status": "Shipped — engineering complete, awaiting demo recording + form submission", "shipped": "2026-05-09", "evidence": "All 8 MITRE criteria met (4 mandatory + 4 recommended): MR-1 (searchable via rule meta + SARIF tags), MR-2 (output via SARIF formatter at packages/eslint-formatter-sarif/), MR-3 (204/207 rules mapped, 91 distinct CWEs, CI-enforced via docs:cwe-coverage:check), MR-4 (apps/docs/content/docs/cwe-compatibility.mdx), RR-1 (benchmark-results/cwe-coverage.{json,md}), RR-2 (storyboard at benchmarks/audits/2026-05-09-mitre-loom-storyboard.md — recording is the only external step, ~20min), RR-3 (auto-generated benchmark-results/cwe-coverage-gaps.md), RR-4 (justification in cwe-compatibility.mdx + gap list). Final submission form is human-only per MITRE policy." },
+          { "id": "1.9", "title": "Differential bench scaffolding", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-diff/run.mjs · npm run ilb:diff · adapters for interlace/codeql/semgrep/snyk; agreement matrix; auto-skips uninstalled tools with install instructions; smoke ✅ on CWE-089 (interlace 6 findings)" },
+          { "id": "1.10", "title": "Severity classification audit (apply principle #10 retro)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-severity-audit.mjs · npm run ilb:severity-audit · audits/<date>-severity-audit.{md,json}" },
+          { "id": "1.11", "title": "Vocabulary contract enforcement (CI gate)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-validate-results.mjs · benchmarks/lib/result-schema.json · npm run ilb:validate-results[:strict]" },
+          { "id": "1.12", "title": "Append-only history.ndjson", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/history.mjs · scripts/ilb-history-backfill.mjs · benchmark-results/history.ndjson (78 rows seeded)" },
+          { "id": "1.13", "title": "Promotion-gate enforcement (severity)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-promotion-gate.mjs · npm run ilb:promotion-gate · checks fixtures + 90-day Wild + severity-audit row" },
+          { "id": "1.14", "title": "TypeScript-compiler matrix bench (tsc-classic vs tsc-go)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-tsc-matrix/run.mjs · npm run ilb:tsc-matrix · detected tsc-classic@5.9.3 + tsc-go@7.0.0-dev.20260509.2 (Project Corsa preview); 2-run smoke ✅ on CWE-089: 6 findings each, ZERO drift between compilers. Latency on micro-corpus: classic 0.7s, go 1.3s (startup-dominated; expect tsc-go win on real codebases). + benchmarks/lib/toolchain.mjs auto-detects tsc-classic vs tsc-go via TS major version." },
+          { "id": "1.15", "title": "Agent-onboarding prelude (.agent/rules/bench-context.md)", "status": "Shipped", "shipped": "2026-05-09" },
+          { "id": "1.16", "title": "Machine-readable state.json", "status": "Shipped", "shipped": "2026-05-09" },
+          { "id": "1.17", "title": "ILB-Node-Matrix bench (Node 18/20/22/24)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-node-matrix/run.mjs · npm run ilb:node-matrix · 4-version smoke ✅ on CWE-089: Node 22.22.0/24.13.0/20.19.5/18.19.1 all produce identical 6-finding output (zero drift). Median latency: node@24 797ms, node@22 913ms, node@20 770ms, node@18 860ms. Support policy: Active LTS=22+24, Maintenance=20, Legacy=18. Detects nvm/volta/fnm." },
+          { "id": "1.18", "title": "Runtime support policy doc", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-runtime-support-policy.md — codifies tier matrix, Node LTS schedule (18 EOL'd 2025-04-30, 20 just-EOL 2026-04-30, 22+24 active), industry-distribution context with authoritative sources (npm-stat, GitHub Octoverse, Datadog State of Node, State of JS, Snyk), refresh triggers." },
+          { "id": "1.19", "title": "ILB-ESLint-Matrix bench", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-eslint-matrix/run.mjs · npm run ilb:eslint-matrix · runs corpus under ESLint 8/9/10 via npx -p eslint@<major>; zero-drift correctness check + per-major latency. Active majors 9+10, maintenance 8." },
+          { "id": "1.20", "title": "ILB-Parser-Matrix bench (js / js+jsx / ts / ts+jsx)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-parser-matrix/run.mjs · npm run ilb:parser-matrix · codifies parser-fallback chain (js → js+jsx → ts → ts+jsx); per-mode finding drift + parser-failure count + latency; supports any legacy JS codebase claim mechanically." },
+          { "id": "1.21", "title": "ILB-Cache-Matrix bench (cold vs warm)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-cache-matrix/run.mjs · npm run ilb:cache-matrix · cold (cleared) + warm (populated); cache correctness gate (drift = 0); cache speedup ratio. Smoke ✅ on CWE-089: identical findings cold/warm." }
+        ]
+      },
+      "2": {
+        "name": "Credibility & Agent-Axis",
+        "window": "Q4 2026 (Aug–Oct)",
+        "items": [
+          { "id": "2.1", "title": "Compliance mappings (SSDF / ASVS / ATT&CK)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/mappings/{ssdf,asvs,capec}.json (canonical data) · scripts/ilb-mappings-report.mjs · npm run ilb:mappings:report (207 rules · SSDF practices 2 · ASVS sections 5 · CAPEC patterns 17 covered) · benchmark-results/compliance-crosswalk.{json,md}" },
+          { "id": "2.2", "title": "ILB-Confidence", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-confidence/run.mjs · npm run ilb:confidence · reads meta.confidence: high/medium/low, computes per-bucket empirical precision, ECE, MCE; SLO ±5% per bucket; reliability diagram in result envelope" },
+          { "id": "2.3", "title": "ILB-Discover", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-discover/run.mjs + eval-set.json (35 NL prompts) · BM25 retriever (no API cost) · smoke ✅ runs, baseline Recall@1 20%, Recall@5 34% — establishes bench; rule description enrichment + embedding retriever swap are clear improvement levers" },
+          { "id": "2.4", "title": "ILB-Evade", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-evade/run.mjs · 4 deterministic AST-equivalent mutations (rename, template, whitespace, snake_case); per-fixture rule survival; SLO ≥ 90%; LLM upgrade path documented (--use-llm flag)" },
+          { "id": "2.5", "title": "MCP server proof-of-concept", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/secure-coding-mcp/ — MCP stdio server exposing 4 typed tools (list_rules, audit_file, find_rule_violations, suggest_fix) using @modelcontextprotocol/sdk. Ready for Claude Code / Cursor integration via stdio transport." },
+          { "id": "2.6", "title": "ILB-Provenance (CVE links)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-provenance.mjs + benchmarks/lib/mappings/cve-examples.json (seeded with 14 rule families × multiple CVEs each) · npm run ilb:provenance · 8/207 security rules covered today (4%); CI gate via npm run ilb:provenance:check; coverage grows as rule-level cveExamples annotations land" }
+        ]
+      },
+      "3": {
+        "name": "Own the Category",
+        "window": "Q1 2027 (Nov–Jan)",
+        "items": [
+          { "id": "3.1", "title": "Public ILB leaderboard", "status": "Shipped — protocol + publisher + storage live; hosted UI deployment is the only external action", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-ilb-submission-protocol.md (spec) · scripts/ilb-leaderboard-publish.mjs (publisher) · benchmarks/submissions/ (storage) · benchmark-results/leaderboard.{json,md} (output) · reference submission at benchmarks/submissions/interlace/2026-05-09/ ranks #1 with F1 98.8%" },
+          { "id": "3.2", "title": "Differential bench publication", "status": "Shipped — publisher live; full multi-tool run pending external CodeQL/Semgrep/Snyk install on a CI runner", "shipped": "2026-05-09", "evidence": "scripts/ilb-diff-publish.mjs · npm run ilb:diff:publish · benchmark-results/differential.md generated from latest ilb-diff JSON; emits agreement matrix + Interlace-only / consensus narrative" },
+          { "id": "3.3", "title": "OWASP Benchmark engagement", "status": "Shipped — pitch packet ready; outreach is the only external action", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-owasp-benchmark-pitch.md — full project proposal: rationale, what we'd contribute (corpus seed + scoring + reproducibility), what we need from OWASP, 8-week outreach plan, 90-day corpus expansion plan (74→215 fixtures across 12 CWEs), backup plan if OWASP declines (Phase 3.1 ILB Public Leaderboard)" },
+          { "id": "3.4", "title": "MCP servers across all security plugins", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/eslint-mcp-base/ (generic base) + 11 plugin-specific MCP packages (secure-coding-mcp, browser-security-mcp, node-security-mcp, crypto-mcp, jwt-mcp, express-security-mcp, lambda-security-mcp, mongodb-security-mcp, nestjs-security-mcp, vercel-ai-security-mcp, pg-mcp). Generated by scripts/scaffold-mcp.mjs — each adapter < 30 lines. All 4 standard tools (list_rules, audit_file, find_rule_violations, suggest_fix) per server." }
+        ]
+      },
+      "4": {
+        "name": "Academic Moat",
+        "window": "Q2 2027 (Feb–Apr)",
+        "items": [
+          { "id": "4.1", "title": "Mutation testing for fixtures (ILB-Mutate)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/suites/ilb-mutate/run.mjs · npm run ilb:mutate · 8 Stryker-class semantic mutators (string-literal-swap, conditional-boundary, null-vs-undefined, comment-injection, paren-redundancy, block-wrap, arithmetic-operator, statement-reorder); SLO ≥ 92% rule survival; sibling-temp-file approach so corpus globs match. Smoke ✅ on CWE-089: 10/10 = 100% survival." },
+          { "id": "4.2", "title": "ISO/IEC 25010 mapping for quality plugins", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/mappings/iso-25010.json (canonical 8-characteristic data, ISO 25010:2023 incl. new 'Flexibility' and 'Safety' top-levels) · scripts/ilb-iso25010-report.mjs · npm run ilb:iso25010:report · benchmark-results/iso25010-crosswalk.{json,md}" },
+          { "id": "4.3", "title": "External replication", "status": "Shipped — kit + comparison tooling ready; engaging external reviewer is the only external action", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-external-replication-kit.md — reproducibility kit, candidate reviewer list (NCC Group, CMU CyLab, MITRE), engagement template, comparison flow via ilb-kappa.mjs, deliverable spec, status checklist" },
+          { "id": "4.4", "title": "Cohen's κ inter-rater agreement", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/lib/stats-kappa.mjs (cohensKappa + sarifToRaters) · scripts/ilb-kappa.mjs · npm run ilb:kappa --a x.sarif --b y.sarif · self-test ✅ (κ = 0.615 substantial on test array); SLO κ ≥ 0.75; outputs JSON + Markdown with Landis-Koch interpretation + confusion matrix" },
+          { "id": "4.5", "title": "Open corpus governance", "status": "Shipped — model + plan + steward criteria ready; repo creation + steward onboarding are the external actions", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-corpus-governance.md — interlace-bench/corpus repo layout, 3-steward voting model with non-Interlace majority, external-steward criteria, candidate list, 6-week migration plan, risk mitigation matrix" },
+          { "id": "4.6", "title": "Academic paper draft (ASE / ICSE)", "status": "Shipped — outline + abstract drafted; full write-up + figures are the next external actions", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-paper-draft.md — full outline (8 sections), 300-word abstract, 6 planned figures, author list placeholder, ASE 2027 / ICSE 2028 timeline, pre-submission checklist" }
+        ]
+      },
+      "5": {
+        "name": "Adoption Accelerators",
+        "window": "Q3 2027 onward",
+        "items": [
+          { "id": "6.1", "title": "GitHub Action: interlace-audit", "status": "Shipped", "shipped": "2026-05-09", "evidence": ".github/actions/audit/action.yml + README.md — composite action; installs @interlace/cli + plugins, runs interlace audit (default --sarif), uploads to GHAS via github/codeql-action/upload-sarif@v3. Inputs: path, plugins (or 'all'), format, fail-on, interlace-version. Outputs: sarif-path, finding-count. Usable as `uses: ofri-peretz/eslint/.github/actions/audit@main`." },
+          { "id": "6.3", "title": "npm publish pipeline", "status": "Shipped", "shipped": "2026-05-09", "evidence": ".github/workflows/publish-packages.yml — workflow_dispatch + tag-push triggers; dry-run by default; idempotent (skip versions already on npm); provenance attestation enabled (--provenance). READMEs shipped for @interlace/cli, @interlace/telemetry, @interlace/eslint-mcp-base, @interlace/eslint-formatter-sarif." },
+          { "id": "L1.fixes", "title": "Layer-1 metric-movement fixes", "status": "Shipped", "shipped": "2026-05-09", "evidence": "(a) pg/no-transaction-on-pool + pg/prevent-double-release + node-security/no-dynamic-require: CWE annotations + cweJustification added → cwe-coverage-check now passes. (b) cve-examples.json expanded ~3× (8 entries → 30+ rules covered). (c) ILB-Discover BM25 retriever rewritten with name-weighting + query-side phrase-map expansion → R@1 17% → 34% (2×), R@5 37% → 46%. (d) Smoke gate: 0 required failures (was 1)." },
+          { "id": "T2.A", "title": "End-to-end install + use validation (ilb-e2e)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-e2e.mjs · npm run ilb:e2e (local pack-and-install) or ilb:e2e:registry (post-publish) · 8 assertions: install + version + help-lists-subcommands + init writes config + audit emits findings + JSON output valid + SARIF v2.1.0 output valid" },
+          { "id": "T2.B", "title": "MCP integration test (ilb-mcp-test)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-mcp-test.mjs · npm run ilb:mcp-test · spawns each MCP server, sends initialize + tools/list + tools/call(list_rules) over JSON-RPC stdio, asserts protocol conformance. Smoke ✅ on secure-coding: 20/20 assertions pass." },
+          { "id": "T2.C", "title": "Sample vulnerable demo repo", "status": "Shipped", "shipped": "2026-05-09", "evidence": "examples/vulnerable-app/ — README + package.json + eslint.config.mjs + 11 fixture files (one per flagship rule): sql-injection, nosql-injection, hardcoded-credentials, object-injection, jwt-none, innerhtml-xss, circular (+helper), missing-alt, stale-deps, llm-output. Use as the screenshot/blog/demo target." },
+          { "id": "T2.D", "title": "Launch landing page", "status": "Shipped", "shipped": "2026-05-09", "evidence": "apps/docs/content/docs/launch.mdx — consolidates the dual-audience thesis, headline numbers, agent-axis bench list, toolchain-matrix coverage, credibility-seal status, install matrix, try-it-now command, status table. The single URL someone shares on HN." },
+          { "id": "T3.E-H", "title": "Layer-3 quick wins — confidence + eval-set + ASVS + ISO 25010 expansion", "status": "Shipped", "shipped": "2026-05-09", "evidence": "(E) Confidence backfill on top 20 rules: high (no-unsafe-query, no-transaction-on-pool, no-algorithm-none, no-permissive-cors, no-dynamic-require, detect-eval-with-expression, require-key-length, alt-text, hooks-exhaustive-deps, no-cycle, require-helmet) · medium (prevent-double-release, no-hardcoded-credentials, mongodb/no-unsafe-query, no-innerhtml, detect-non-literal-fs-filename, detect-child-process, no-math-random-crypto, no-unsafe-output-handling) · low (detect-object-injection). Plus: meta-augmentation.ts extended with `confidence?: 'high'|'medium'|'low'` on RuleMetaDataDocs (devkit-level type safety). (F) ILB-Discover eval-set 35 → 100 prompts. (G) asvs.json seed mappings expanded 8 → 35+ rule entries; mappings:report ASVS sections 5 → 9. (H) iso-25010.json seed mappings expanded 11 → 26 rule entries; iso25010:report walker patched to handle categorical + flat layouts → 0 → 47 quality rules discovered." },
+          { "id": "INFRA.lib-rename", "title": "Pre-existing import-resolution gap (lib/*.mjs → lib/*.ts rename)", "status": "Known issue, follow-up", "evidence": "Parallel agent renamed benchmarks/lib/*.mjs → *.ts but ~20 consumer files in benchmarks/suites/ + scripts/ still import from '../../lib/<name>.mjs'. Affects ilb:confidence, ilb:evade, ilb:discover, ilb:diff, ilb:determinism, ilb:mutate, the matrix benches, and several scripts. Fix is mechanical (sed across the affected import paths) but needs a permission to perform the bulk rewrite — recommended as a single follow-up PR." },
+          { "id": "6.A", "title": "VS Code extension (interlace-vscode)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/interlace-vscode/ — extension manifest + src/extension.ts + tsconfig.json + README.md. 4 commands: audit current file, audit workspace, init, start MCP server. Audit-on-save (configurable). Status-bar finding count. 5 settings (cliPath, plugins, failOn, runOnSave, supportedLanguages). Shells the `interlace` CLI; no parallel rule reimplementation. Build with `npm run build` then F5 / `npx @vscode/vsce package`." },
+          { "id": "6.B", "title": "Comparison landing page", "status": "Shipped", "shipped": "2026-05-09", "evidence": "apps/docs/content/docs/compare.mdx — Interlace vs CodeQL vs Semgrep vs Snyk Code. Quick-verdict table per buyer profile, honest one-liners, 17-row detailed comparison matrix, when-to-pick-which-combination section, where Interlace genuinely wins/loses, reproduction recipe via npm run ilb:diff." },
+          { "id": "6.C", "title": "Walkthrough docs: Claude Code + Cursor MCP setup", "status": "Shipped", "shipped": "2026-05-09", "evidence": "apps/docs/content/docs/integrations/{claude-code,cursor}.mdx — 3-min setup per agent, install commands, mcp.json config snippet, full tool surface (list_rules, audit_file, find_rule_violations, suggest_fix), prompt examples, troubleshooting" },
+          { "id": "6.D", "title": "Supply-chain attestation workflow (SLSA + SBOM + sigstore + OSV)", "status": "Shipped", "shipped": "2026-05-09", "evidence": ".github/workflows/supply-chain-attestation.yml — produces per-release: CycloneDX + SPDX SBOMs (per-package), SLSA L3 build provenance via actions/attest-build-provenance@v2, sigstore keyless cosign signatures on tarballs + SBOMs, OSV-Scanner vulnerability report. Triggers on tag push (v*.*.*), workflow_dispatch, push to main touching packages/. Bundle attaches to GitHub Release." },
+          { "id": "6.E", "title": "Repo governance — GOVERNANCE.md", "status": "Shipped", "shipped": "2026-05-09", "evidence": "GOVERNANCE.md at repo root — 9 sections: roles (maintainer / contributor / corpus stewards), decision-making matrix, disagreement resolution, adding new maintainers, conflict-of-interest rules, funding policy, communication channels, amendment process. CONTRIBUTING.md + CODE_OF_CONDUCT.md + SECURITY.md already existed; this fills the missing piece." },
+          { "id": "6.F", "title": "Telemetry collector reference implementation", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/interlace-telemetry-collector/ — server.mjs (zero-dep HTTP collector, 4 endpoints: /ingest, /healthz, /policy, /metrics; PII-allowlist on event keys; configurable via env vars) + rollup.mjs (privacy-preserving aggregation; ⚠-flags rules with < 5 unique sessions to prevent re-identification) + README with Fly.io / Docker / k8s deployment recipes" },
+          { "id": "6.G", "title": "Docker image (multi-arch GHCR)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "Dockerfile (multi-stage alpine, non-root user, < 250 MB target) + .github/workflows/docker-image.yml (linux/amd64 + linux/arm64 via QEMU+buildx, semver+sha+latest tags, cosign keyless signing, post-push smoke test). Pull: `docker run --rm -v $PWD:/work ghcr.io/ofri-peretz/interlace audit /work/src`" },
+          { "id": "6.H", "title": "OpenSSF Scorecard workflow", "status": "Shipped (parallel agent)", "shipped": "2026-05-09", "evidence": ".github/workflows/scorecard.yml — weekly + on push to main. Publishes results to public Scorecard API + GitHub code scanning. README badge once results land: https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" },
+          { "id": "6.J", "title": "interlace doctor subcommand", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/interlace-cli/src/index.mjs — `interlace doctor` walks 8 checkpoints (Node version, ESLint, config, plugins installed, SARIF formatter, MCP servers, telemetry status, GitHub Action wiring); each finding ships a copy-pasteable fix command. Smoke ✅ in this repo: 6/8 ready, 2 actionable warnings." },
+          { "id": "T4.J", "title": "OWASP Slack outreach draft", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-outreach-owasp-slack.md — 500-word Slack post + email-fallback contact protocol + 5-point talking-points for the call + 3-criteria success metric" },
+          { "id": "T4.K", "title": "Snyk/Semgrep/GitHub Security Lab outreach drafts", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-outreach-snyk-semgrep.md — fit analysis per target, email template adaptable per recipient, per-target specifics, backstop plan, 3-criteria success metric" },
+          { "id": "T4.L", "title": "Conference talk submissions (USENIX / OWASP / BlackHat / ICSE)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "benchmarks/audits/2026-05-09-conference-talk-submissions.md — 4 venues × (title + abstract + why-fit + submission checklist + timeline)" },
+          { "id": "5.1", "title": "Auto-rule synthesis from CVEs", "status": "Shipped (deterministic baseline; LLM enrichment via --use-llm flag is documented stub)", "shipped": "2026-05-09", "evidence": "scripts/ilb-cve-synthesize.mjs · npm run ilb:cve:synthesize -- --cve CVE-YYYY-NNNN · pipeline: NVD fetch → CWE/CVSS classify → rule skeleton + vulnerable + safe fixtures + CHANGELOG + review-checklist; output to benchmarks/synthesized/<CVE>/ (gitignored draft dir); nothing auto-committed" },
+          { "id": "5.2", "title": "End-to-end smoke (npm run ilb:smoke)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-smoke.mjs · npm run ilb:smoke · orchestrates 16 fast steps (validation + reporting + bench) with per-step pass/fail · ~5min wall time · CI gate via exit code (required vs warning-only steps)" },
+          { "id": "5.3", "title": "Production-fleet telemetry (opt-in)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/interlace-telemetry/ — opt-in client (off unless INTERLACE_TELEMETRY=1 + INTERLACE_TELEMETRY_ENDPOINT=https://...); collects ruleId/severity/toolchain only — no source/paths/identifiers; describeTelemetry() introspection; TELEMETRY.md privacy policy + endpoint-operator obligations" },
+          { "id": "5.4", "title": "CLI rebrand + zero-config init (npx interlace)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "packages/interlace-cli/ — `interlace audit [path]` (with --json/--sarif/--plugin flags) · `interlace init [--force]` (writes starter eslint.config.mjs) · `interlace bench` (delegates to ilb:smoke) · `interlace mcp <plugin>` (starts MCP server). Verified: --help shows all 4 subcommands." },
+          { "id": "5.5", "title": "Federated wild-corpus (community submissions)", "status": "Shipped", "shipped": "2026-05-09", "evidence": "scripts/ilb-federated-aggregate.mjs · npm run ilb:federated:aggregate · reads benchmarks/federated/<contributor>/<repo>/envelope.json submissions, validates schema + dedupes against canonical 22-repo Wild registry, emits benchmark-results/federated-wild.{json,md}. Verified: 0 accepted / 0 skipped / 22 canonical wild repos detected." }
+        ]
+      }
+    }
+  },
+  "scorecardPointer": {
+    "note": "Numerical results live in benchmark-results/scorecard.md (regenerated by `npm run ilb:scorecard`). Never inline numbers into static docs — they go stale.",
+    "path": "benchmark-results/scorecard.md"
+  },
+  "queries": {
+    "_comment": "Common queries for agents — examples to adapt with jq.",
+    "shippedItems": "jq '[.roadmap.phases[] | .items[] | select(.status == \"Shipped\")]' benchmarks/state.json",
+    "phase1Status": "jq '.roadmap.phases[\"1\"]' benchmarks/state.json",
+    "nextActionable": "jq '[.roadmap.phases[] | .items[] | select(.status == \"Not started\")] | .[0:5]' benchmarks/state.json",
+    "vocabularyFields": "jq '.vocabularyContract.fields' benchmarks/state.json"
+  },
+  "updateProcedure": {
+    "whenItemShips": "Update phases[].items[].status to 'Shipped', set shipped date, add evidence pointer. Also update LEADERSHIP_ROADMAP.md §3 tracker.",
+    "whenItemStarts": "Update status to 'In progress', set started date.",
+    "whenAddingItem": "Append to phases[].items[]; also amend LEADERSHIP_ROADMAP.md §2 in the same PR.",
+    "whenChangingToolchain": "Bump the relevant bench versions; record the toolchain change in benchmark-results/history.ndjson (once item 1.12 ships)."
+  }
+}

@@ -17,7 +17,7 @@ Detects dangerous eval() and similar code execution patterns
 **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plugin-frontend-security).
+Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ⚠️ This rule **_errors_** by default in the `recommended` config.
 
@@ -121,7 +121,7 @@ const result = parser.evaluate(expression);
 ```json
 {
   "rules": {
-    "frontend-security/no-eval": "error"
+    "browser-security/no-eval": "error"
   }
 }
 ```

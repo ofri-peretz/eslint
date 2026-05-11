@@ -19,6 +19,7 @@ export const reactInJsxScope = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-in-jsx-scope.md',
       description: 'Ensure React is in scope',
     },
     schema: [],

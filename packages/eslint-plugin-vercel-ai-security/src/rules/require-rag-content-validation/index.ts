@@ -28,7 +28,10 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-rag-content-validation.md',
       description: 'Require validation of RAG content before including in AI prompts',
+      cwe: 'CWE-74',
+      cvss: 6,
     },
     messages: {
       unsanitizedRagContent: formatLLMMessage({
@@ -85,7 +88,7 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
       'validate', 'sanitize', 'filter', 'clean',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vercel AI SDK functions
     const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];

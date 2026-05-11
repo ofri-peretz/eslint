@@ -30,13 +30,13 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Lambda context parameter names
-const CONTEXT_PARAM_NAMES = ['context', 'ctx', 'lambdaContext'];
+const CONTEXT_PARAM_NAMES = new Set(['context', 'ctx', 'lambdaContext']);
 
 // Event parameter names (to identify Lambda handlers)
-const EVENT_PARAM_NAMES = ['event', 'evt', 'e', 'request', 'req'];
+const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 // External call patterns that could timeout
-const EXTERNAL_CALL_PATTERNS = [
+const EXTERNAL_CALL_PATTERNS = new Set([
   // HTTP clients
   'fetch',
   'axios',
@@ -52,15 +52,18 @@ const EXTERNAL_CALL_PATTERNS = [
   // Other
   'promise',
   'wait',
-];
+]);
 
 export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
   name: 'require-timeout-handling',
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/require-timeout-handling.md',
       description:
         'Warns when Lambda handlers with external calls lack timeout handling',
+      cwe: 'CWE-400',
+      cvss: 6,
     },
     hasSuggestions: true,
     messages: {
@@ -106,7 +109,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -134,12 +137,12 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
       const hasEvent = params.some(
         (p) =>
           p.type === AST_NODE_TYPES.Identifier &&
-          EVENT_PARAM_NAMES.includes(p.name),
+          EVENT_PARAM_NAMES.has(p.name),
       );
       const hasContext = params.some(
         (p) =>
           p.type === AST_NODE_TYPES.Identifier &&
-          CONTEXT_PARAM_NAMES.includes(p.name),
+          CONTEXT_PARAM_NAMES.has(p.name),
       );
 
       if (hasEvent) {
@@ -225,7 +228,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
 
         // Check for external call patterns
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
-          if (EXTERNAL_CALL_PATTERNS.includes(node.callee.name)) {
+          if (EXTERNAL_CALL_PATTERNS.has(node.callee.name)) {
             hasExternalCalls = true;
           }
         }
@@ -234,7 +237,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
           const property = node.callee.property;
           if (
             property.type === AST_NODE_TYPES.Identifier &&
-            EXTERNAL_CALL_PATTERNS.includes(property.name)
+            EXTERNAL_CALL_PATTERNS.has(property.name)
           ) {
             hasExternalCalls = true;
           }

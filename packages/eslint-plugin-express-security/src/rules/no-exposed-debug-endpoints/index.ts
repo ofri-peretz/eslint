@@ -27,7 +27,10 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-exposed-debug-endpoints.md',
       description: 'Detect debug endpoints without auth in Express applications',
+      cwe: 'CWE-489',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -75,6 +78,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
       context.report({ node, messageId: 'violationDetected' });
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     const isExpressRouteCall = (node: TSESTree.CallExpression) => {
       return (
         node.callee.type === 'MemberExpression' &&

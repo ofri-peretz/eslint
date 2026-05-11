@@ -203,7 +203,7 @@ async function main(): Promise<void> {
         log(colors.green, '✅ Workflow triggered!');
         await new Promise((resolve) => setTimeout(resolve, 2000));
         runs = getRunsJson();
-      } catch (error) {
+      } catch {
         log(colors.red, '❌ Failed to trigger workflow');
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }

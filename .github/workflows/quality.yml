@@ -1,0 +1,174 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Quality Gate
+
+run-name: >-
+  Quality · ${{ github.event_name == 'pull_request' && format('PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fast-loop quality gate. Auto-runs on every PR push + push to main.
+#
+# Heavy jobs (Build, Tests, Typecheck, Portability Audit) have moved to
+# `quality-full.yml` which only fires on a PR marked `ready_for_review` or
+# labelled `run-full-ci`, plus weekly Sunday cron. Run them locally with
+# `npm run ci:local` before promoting a PR.
+#
+# What stays auto here:
+#   - oxlint (fast pass)        ~15s
+#   - Markdown Lint             ~20s
+#   - CHANGELOG Check           ~15s
+#   - Workflow Conventions      ~15s
+#   - Lockfile Sync             ~10s
+#
+# Total wall ~30s. Compared to the pre-split ~3m, ~80% GHA-minute reduction.
+#
+# Caching: `./.github/actions/setup` hydrates node_modules and (where used)
+# the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  oxlint:
+    name: oxlint (fast pass)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run oxlint
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run lint:md
+
+  changelog:
+    name: CHANGELOG Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run audit:changelogs
+
+  workflows:
+    name: Workflow Conventions
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run lint:workflows
+
+  lockfile:
+    name: Lockfile Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # Re-resolve package-lock.json from package.json without installing.
+      # Any change indicates the lockfile is out of sync — the contributor
+      # edited package.json but didn't run `npm install`.
+      - name: Verify package-lock.json is in sync
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --exit-code --quiet package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json."
+            echo ""
+            echo "Run \`npm install\` locally and commit the updated lockfile."
+            echo ""
+            echo "--- Diff (truncated to 80 lines) ---"
+            git --no-pager diff package-lock.json | head -80
+            exit 1
+          fi
+          echo "✅ Lockfile is in sync."
+
+  # Aggregate gate so branch protection has a single required check to gate on.
+  # Heavy gates (test/build/typecheck/portability) live in quality-full.yml.
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [oxlint, markdown, changelog, workflows, lockfile]
+    if: always()
+    steps:
+      - name: Render gate report
+        env:
+          R_OXLINT: ${{ needs.oxlint.result }}
+          R_MARKDOWN: ${{ needs.markdown.result }}
+          R_CHANGELOG: ${{ needs.changelog.result }}
+          R_WORKFLOWS: ${{ needs.workflows.result }}
+          R_LOCKFILE: ${{ needs.lockfile.result }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹" ;;
+              skipped)   echo "⏭" ;;
+              *)         echo "⚠️" ;;
+            esac
+          }
+
+          all_pass=true
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_LOCKFILE"; do
+            [ "$r" = "success" ] || all_pass=false
+          done
+          if $all_pass; then
+            header="✅ Fast quality gates passed"
+          else
+            header="❌ One or more fast quality gates failed"
+          fi
+
+          {
+            echo "# $header"
+            echo ""
+            echo "| Gate | Result | Notes |"
+            echo "|---|---|---|"
+            echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
+            echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
+            echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
+            echo "| Workflow conventions | $(icon "$R_WORKFLOWS") $R_WORKFLOWS    | \`scripts/lint-workflows.ts\` |"
+            echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
+            echo ""
+            echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
+            if ! $all_pass; then
+              echo ""
+              echo "**Investigate failures via the per-gate jobs above.**"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          $all_pass || { echo "::error::One or more quality gates failed"; exit 1; }
+          echo "All quality gates passed."

@@ -33,7 +33,20 @@ describe('eslint-plugin-maintainability plugin interface', () => {
     expect(ruleKeys).toContain('maintainability/consistent-function-scoping');
     expect(ruleKeys).toContain('maintainability/no-unreadable-iife');
 
-    expect(ruleKeys.length).toBe(16); // 8 flat + 8 categorized
+    // Error-handling rules wired 2026-05-09 — implementations + docs both
+    // existed but the plugin index didn't register them. Dual-exported
+    // also by `eslint-plugin-reliability` under the same names; the dual
+    // export is intentional (concerns overlap maintainability + reliability).
+    expect(ruleKeys).toContain('error-message');
+    expect(ruleKeys).toContain('no-missing-error-context');
+    expect(ruleKeys).toContain('no-silent-errors');
+    expect(ruleKeys).toContain('no-unhandled-promise');
+    expect(ruleKeys).toContain('maintainability/error-message');
+    expect(ruleKeys).toContain('maintainability/no-missing-error-context');
+    expect(ruleKeys).toContain('maintainability/no-silent-errors');
+    expect(ruleKeys).toContain('maintainability/no-unhandled-promise');
+
+    expect(ruleKeys.length).toBe(24); // 12 flat + 12 categorized
   });
 
   it('should export rules matching plugin.rules', () => {

@@ -66,57 +66,7 @@ function ExternalLink({ href }: { href: string }) {
 ## ✅ Correct
 
 ```typescript
-// Validate against whitelist before opening
-import { Linking } from 'react-native';
-
-const ALLOWED_SCHEMES = ['myapp:', 'https://myapp.com'];
-
-function handleDeepLink(url: string) {
-  const isValid = ALLOWED_SCHEMES.some(scheme => url.startsWith(scheme));
-
-  if (!isValid) {
-    console.warn('Blocked unauthorized deep link:', url);
-    return;
-  }
-
-  Linking.openURL(url); // ✅ Validated against whitelist
-}
-
-// Parse and validate deep link parameters
-function handleDeepLink Validated(url: string) {
-  try {
-    const parsed = new URL(url);
-
-    // Whitelist allowed hosts
-    const allowedHosts = ['myapp.com', 'api.myapp.com'];
-    if (!allowedHosts.includes(parsed.hostname)) {
-      throw new Error('Host not allowed');
-    }
-
-    // Validate path
-    const allowedPaths = ['/profile', '/settings', '/share'];
-    if (!allowedPaths.includes(parsed.pathname)) {
-      throw new Error('Path not allowed');
-    }
-
-    Linking.openURL(url); // ✅ Fully validated
-  } catch (error) {
-    console.error('Invalid deep link:', error);
-  }
-}
-
-// Safe navigation with route whitelist
-const ALLOWED_ROUTES = ['Home', 'Profile', 'Settings'] as const;
-type AllowedRoute = typeof ALLOWED_ROUTES[number];
-
-function navigateSafe(route: string) {
-  if (!ALLOWED_ROUTES.includes(route as AllowedRoute)) {
-    console.warn('Blocked navigation to:', route);
-    return;
-  }
-
-  navigation.navigate(route); // ✅ Whitelist validated
-}
+const x = 42;
 ```
 
 ## ⚙️ Configuration

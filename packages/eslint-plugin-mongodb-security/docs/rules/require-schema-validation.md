@@ -59,12 +59,7 @@ Mongoose schemas without validation allow arbitrary data, potentially leading to
 ### ❌ Incorrect
 
 ```typescript
-// No validation - accepts any value
-const userSchema = new Schema({
-  email: String,
-  role: String,
-  age: Number,
-});
+const schema = new Schema({ name: { type: String } });
 ```
 
 ### ✅ Correct

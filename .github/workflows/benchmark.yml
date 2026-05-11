@@ -1,0 +1,271 @@
+name: ILB Benchmark Regression Gate
+
+# Runs ILB-Wild on a small, fast subset of the corpus and compares the
+# resulting scorecard against benchmark-results/baseline.json. PR fails on
+# regression beyond thresholds defined in scripts/ilb-regression-check.ts.
+#
+# Full 17-repo corpus runs are intentionally NOT in CI (~30 min, network-
+# heavy). Run those locally before bumping the baseline:
+#   npm run ilb:wild
+#   tsx scripts/ilb-regression-check.ts --update-baseline
+#   git commit benchmark-results/baseline.json
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+    paths:
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
+      - 'packages/eslint-formatter/**'
+      - 'benchmarks/suites/ilb-formatter/**'
+      - 'benchmarks/results/ilb-formatter/baseline.json'
+      - 'scripts/ilb-*.ts'
+      - 'scripts/audit-rule-meta-completeness.ts'
+      - 'scripts/audit-cwe-rendering.ts'
+      - 'scripts/codemod-lift-cwe-to-meta-docs.ts'
+      - 'scripts/tsconfig.json'
+      - 'benchmarks/tsconfig.scripts.json'
+      - 'benchmark-results/baseline.json'
+      - '.github/workflows/benchmark.yml'
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: 'Repos to bench (comma-sep, default: smoke subset)'
+        required: false
+        default: 'sst,vercel-ai,lodash'
+      update_baseline:
+        description: 'Commit current results as new baseline'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: "20 4 * * 0"
+
+concurrency:
+  group: ilb-bench-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping benchmark gate."
+          fi
+
+  # Synthetic, deterministic, ~10 s wall-clock — runs on every matching PR
+  # with three hard gates: signal-preservation contract (4/4 on every
+  # structured-format cell), latency contract (per-scale ms ceilings on
+  # interlace-* cells), and per-cell regression check vs baseline.json
+  # (+5 % tokens / max(+50 %, +0.5 ms) latency / signal floor). Failure
+  # at any of the three exits the runner non-zero and fails the job.
+  ilb-formatter:
+    name: ILB-Formatter (signal + latency + regression gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build @interlace/eslint-formatter
+        run: npx tsc -p packages/eslint-formatter/tsconfig.lib.json
+      - name: Unit + snapshot + ESLint integration tests
+        run: npx vitest run --root packages/eslint-formatter --reporter=default
+      - name: Run ILB-Formatter (270 cells, 3 contracts)
+        run: npm run ilb:formatter
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Fleet CWE-rendering smoke (every plugin's first CWE-bearing rule renders end-to-end)
+        run: npm run audit:cwe-rendering
+      - name: Upload formatter result artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ilb-formatter-${{ github.run_number }}
+          path: |
+            benchmarks/results/ilb-formatter/latest.json
+            benchmarks/results/ilb-formatter/baseline.json
+          retention-days: 30
+
+  # Static-source audit: every plugin's rule meta is scanned for the
+  # fields the whole-run formatter renders. Holes here translate directly
+  # into less-actionable LLM output. As of 2026-05-09 this is a HARD
+  # GATE: --strict enforces per-plugin completeness floors (description
+  # ≥ 75%, score ≥ 50%, security-plugin CWE ≥ 85%). The floors are set
+  # at the current passing minimum so the gate is a "don't get worse"
+  # ratchet — bump them in scripts/audit-rule-meta-completeness.ts as
+  # plugins improve.
+  audit-meta:
+    name: Plugin rule-meta hygiene audit (strict)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Run audit:meta:strict (gates the build)
+        run: npm run audit:meta:strict
+      - name: Upload meta-hygiene report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meta-hygiene-${{ github.run_number }}
+          path: docs/META_HYGIENE.md
+          retention-days: 30
+
+  # Typecheck the build/dev scripts and benchmark runners under their
+  # looser tsconfigs. The strict per-package typecheck is in
+  # `npm run typecheck` (turbo) — this gate covers `scripts/*.ts` and
+  # `benchmarks/{score,lib/**,suites/*/run,scorecard,harvest-fixtures}.ts`
+  # which are excluded from the root tsconfig because they're JS-flavored
+  # TS converted from .mjs in the 2026-05-09 batch.
+  typecheck-scripts:
+    name: Typecheck scripts + benchmark runners
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: typecheck:scripts (scripts/tsconfig.json)
+        run: npm run typecheck:scripts
+      - name: typecheck:benchmarks (benchmarks/tsconfig.scripts.json)
+        run: npm run typecheck:benchmarks
+
+  ilb-wild:
+    name: ILB-Wild smoke + regression gate
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Cache cloned target repos between CI runs to keep things fast.
+      - name: Restore .bench-repos cache
+        uses: actions/cache@v5
+        with:
+          path: .bench-repos
+          key: ilb-bench-repos-${{ hashFiles('scripts/ilb-wild.ts') }}
+          restore-keys: |
+            ilb-bench-repos-
+
+      - name: Run ILB-Wild on smoke subset
+        env:
+          ILB_REPOS: ${{ github.event.inputs.repos || 'sst,vercel-ai,lodash' }}
+        run: |
+          set -e
+          IFS=',' read -ra REPOS <<< "$ILB_REPOS"
+          for r in "${REPOS[@]}"; do
+            echo "::group::ilb:wild --repo $r"
+            tsx scripts/ilb-wild.ts --repo "$r" --runs 1 || echo "::warning::repo $r failed"
+            echo "::endgroup::"
+          done
+
+      - name: Generate unified scorecard
+        run: npx tsx scripts/ilb-scorecard.ts
+
+      - name: Run regression check
+        # The PR job runs ILB-Wild on a 3-repo smoke subset, while the
+        # baseline tracks the full 22-repo corpus. Apples-to-oranges, so
+        # we publish the scorecard as a comment but don't fail the gate
+        # here. Real regression detection happens locally / via
+        # workflow_dispatch with the full corpus before bumping the
+        # baseline.
+        if: github.event.inputs.update_baseline != 'true'
+        continue-on-error: true
+        run: npx tsx scripts/ilb-regression-check.ts
+
+      - name: Update baseline (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_baseline == 'true'
+        run: npx tsx scripts/ilb-regression-check.ts --update-baseline
+
+      - name: Upload scorecard + summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ilb-scorecard-${{ github.run_number }}
+          path: |
+            benchmark-results/scorecard.md
+            benchmark-results/scorecard.json
+            benchmark-results/*/summary.md
+            benchmark-results/*/summary.json
+            benchmark-results/*/per-repo/*/report.md
+          retention-days: 30
+
+      - name: Comment scorecard on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const scorecardPath = 'benchmark-results/scorecard.md';
+            if (!fs.existsSync(scorecardPath)) return;
+            const md = fs.readFileSync(scorecardPath, 'utf-8');
+            const body = `## ILB Benchmark Scorecard\n\n${md}\n\n_Generated by \`.github/workflows/benchmark.yml\` (smoke subset only — run \`npm run ilb:wild\` locally for full corpus)._`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.startsWith('## ILB Benchmark Scorecard'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

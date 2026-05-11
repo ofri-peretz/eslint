@@ -26,7 +26,10 @@ export const noTrainingDataExposure = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-training-data-exposure.md',
       description: 'Prevent user data from being sent to LLM training endpoints',
+      cwe: 'CWE-359',
+      cvss: 7,
     },
     messages: {
       trainingDataExposure: formatLLMMessage({

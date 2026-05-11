@@ -39,7 +39,10 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/enforce-naming.md',
       description: 'Enforce domain-specific naming conventions with business context',
+      cwe: 'CWE-216',
+      cvss: 5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -143,6 +146,7 @@ domain = 'general', terms = []
      * Preserve case when replacing term
      * e.g., User -> Customer, user -> customer, USER -> CUSTOMER
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const preserveCase = (original: string, replacement: string): string => {
       if (original === original.toUpperCase()) {
         return replacement.toUpperCase();

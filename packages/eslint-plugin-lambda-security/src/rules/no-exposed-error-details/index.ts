@@ -30,7 +30,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Properties that expose internal details
-const SENSITIVE_ERROR_PROPERTIES = [
+const SENSITIVE_ERROR_PROPERTIES = new Set([
   'stack',
   'stackTrace',
   'trace',
@@ -41,15 +41,18 @@ const SENSITIVE_ERROR_PROPERTIES = [
   'hostname',
   'config',
   'env',
-];
+]);
 
 export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-error-details',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-exposed-error-details.md',
       description:
         'Detects Lambda handlers exposing internal error details in responses',
+      cwe: 'CWE-209',
+      cvss: 4.3,
     },
     hasSuggestions: true,
     messages: {
@@ -93,7 +96,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -122,7 +125,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
       node: TSESTree.MemberExpression,
     ): string | null {
       if (node.property.type === AST_NODE_TYPES.Identifier) {
-        if (SENSITIVE_ERROR_PROPERTIES.includes(node.property.name)) {
+        if (SENSITIVE_ERROR_PROPERTIES.has(node.property.name)) {
           return node.property.name;
         }
       }

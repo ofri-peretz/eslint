@@ -15,9 +15,9 @@ import { getMDXComponents } from '@/mdx-components';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import { visit } from 'unist-util-visit';
 import type { Root, Link } from 'mdast';
+import type { PluggableList } from 'unified';
 
-// Create a reusable compiler instance
-const compiler = createCompiler();
+// The compiler is instantiated per-request so remarkPlugins can be provided in mdxOptions
 
 export interface CompiledContent {
   /** The compiled MDX component (render as <Body />) */
@@ -53,15 +53,18 @@ export interface CompileOptions {
 function remarkRelativeLinks(options: CompileOptions) {
   const { baseUrl, pluginName } = options;
   
-  // Map of external repos to rewrite to our monorepo
+  // Map of external repos to rewrite to our monorepo. Anchored with `^` so a
+  // crafted URL like `https://evil.com/?next=https://github.com/import-js/...`
+  // can never match — CodeQL flagged the unanchored form as
+  // "Missing regular expression anchor".
   const rewritePatterns: [RegExp, string][] = [
     // eslint-plugin-import → our import-next package
     [
-      /https?:\/\/github\.com\/import-js\/eslint-plugin-import\/(blob|tree)\/main\/(.+)/,
+      /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/(blob|tree)\/main\/(.+)$/,
       'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/$2'
     ],
     [
-      /https?:\/\/github\.com\/import-js\/eslint-plugin-import\/?$/,
+      /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/?$/,
       'https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next'
     ],
   ];
@@ -126,59 +129,10 @@ function remarkRelativeLinks(options: CompileOptions) {
   };
 }
 
-/**
- * Pre-process markdown source to transform mermaid code blocks
- * into Mermaid component calls before MDX compilation.
- * 
- * Transforms:
- * ```mermaid
- * graph TD; A-->B;
- * ```
- * 
- * Into:
- * <Mermaid chart="graph TD; A-->B;" />
- */
-function transformMermaidBlocks(source: string): string {
-  // Match mermaid code blocks with the full content
-  const mermaidBlockRegex = /```mermaid\n([\s\S]*?)```/g;
-  
-  return source.replace(mermaidBlockRegex, (match, chart) => {
-    // Escape for JSX attribute: double quotes, backslashes, and newlines
-    const escapedChart = chart
-      .trim()
-      .replace(/\\/g, '\\\\')     // Escape backslashes first
-      .replace(/"/g, '\\"')      // Escape double quotes
-      .replace(/\n/g, '\\n');    // Convert newlines to \n strings
-    return `<Mermaid chart="${escapedChart}" />`;
-  });
-}
-
-/**
- * Creates a remark plugin to transform mermaid code blocks
- * into Mermaid component calls (fallback for non-preprocessed content).
- */
-function remarkMermaid() {
-  return () => (tree: Root) => {
-    visit(tree, 'code', (node: any, index: number | undefined, parent: any) => {
-      if (node.lang === 'mermaid' && parent && index !== undefined) {
-        // Transform to MDX JSX element
-        const chart = node.value.replace(/"/g, '\\"').replace(/\n/g, '\\n');
-        parent.children[index] = {
-          type: 'mdxJsxFlowElement',
-          name: 'Mermaid',
-          attributes: [
-            {
-              type: 'mdxJsxAttribute',
-              name: 'chart',
-              value: chart,
-            },
-          ],
-          children: [],
-        };
-      }
-    });
-  };
-}
+// The ```mermaid → `<Mermaid />` JSX transform is shared with the static-MDX
+// pipeline (apps/docs/source.config.ts) — it lives at ./remark-mermaid.ts and
+// emits the chart as an MDX expression value so multi-line + `%%{init}%%`
+// directives survive compilation.
 
 /**
  * Compile remote MDX content with link resolution
@@ -187,21 +141,25 @@ export async function compileRemoteMDX(
   source: string,
   options: CompileOptions = {}
 ): Promise<CompiledContent> {
-  // Pre-process mermaid blocks before MDX compilation
-  const processedSource = transformMermaidBlocks(source);
-  
-  const remarkPlugins: any[] = [];
+  // ```mermaid blocks are dispatched on the React side by the `pre`
+  // override in `src/mdx-components.tsx` — no remark transform needed.
+  const processedSource = source;
+
+  const remarkPlugins: PluggableList = [];
   
   // Add relative link transformer if we have context
   if (options.baseUrl || options.pluginName) {
     remarkPlugins.push(remarkRelativeLinks(options));
   }
   
-  const result = await compiler.compile({
+  // Create compiler instance with our dynamic remark plugins
+  const localCompiler = createCompiler({
+    remarkPlugins,
+  });
+
+  const result = await localCompiler.compile({
     source: processedSource,
     components: getMDXComponents(),
-    // @ts-expect-error - remarkPlugins type mismatch with mdx-remote
-    remarkPlugins,
   });
 
   return {
@@ -218,21 +176,25 @@ export async function compileRemoteMarkdown(
   source: string,
   options: CompileOptions = {}
 ): Promise<CompiledContent> {
-  // Pre-process mermaid blocks before MDX compilation
-  const processedSource = transformMermaidBlocks(source);
-  
-  const remarkPlugins: any[] = [];
+  // ```mermaid blocks are dispatched on the React side by the `pre`
+  // override in `src/mdx-components.tsx` — no remark transform needed.
+  const processedSource = source;
+
+  const remarkPlugins: PluggableList = [];
   
   // Add relative link transformer if we have context
   if (options.baseUrl || options.pluginName) {
     remarkPlugins.push(remarkRelativeLinks(options));
   }
   
-  const result = await compiler.compile({
+  // Create compiler instance with our dynamic remark plugins
+  const localCompiler = createCompiler({
+    remarkPlugins,
+  });
+
+  const result = await localCompiler.compile({
     source: processedSource,
     components: getMDXComponents(),
-    // @ts-expect-error - remarkPlugins type mismatch with mdx-remote
-    remarkPlugins,
   });
 
   return {

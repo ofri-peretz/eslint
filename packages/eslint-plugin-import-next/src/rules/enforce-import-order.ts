@@ -53,6 +53,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-import-order.md',
       description: 'Enforces a specific order for import statements',
     },
     fixable: 'code',
@@ -153,7 +154,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       },
     };
 
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const imports: TSESTree.ImportDeclaration[] = [];
 
     function getImportType(node: TSESTree.ImportDeclaration): string {
@@ -295,7 +296,8 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
         }
 
         const originalImports = [...imports];
-        const sortedImports = [...imports].sort((a, b) => {
+        // oxlint-disable-next-line unicorn/no-array-sort
+        const sortedImports = Array.from(imports).sort((a: typeof imports[0], b: typeof imports[0]) => {
           const typeA = getImportType(a);
           const typeB = getImportType(b);
           const rankA = getGroupRank(typeA);

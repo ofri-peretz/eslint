@@ -1,5 +1,19 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "cognitive-complexity",
+    "consistent-function-scoping",
+    "error-message",
+    "identical-functions",
+    "max-parameters",
+    "nested-complexity-hotspots",
+    "no-lonely-if",
+    "no-missing-error-context",
+    "no-nested-ternary",
+    "no-silent-errors",
+    "no-unhandled-promise",
+    "no-unreadable-iife"
+  ]
 }

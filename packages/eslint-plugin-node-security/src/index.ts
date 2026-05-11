@@ -9,10 +9,12 @@ import { detectEvalWithExpression } from './rules/detect-eval-with-expression';
 import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filename';
 import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
 import { noBufferOverread } from './rules/no-buffer-overread';
+import { noDeprecatedBuffer } from './rules/no-deprecated-buffer';
 import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
+import { noPiiInLogs } from './rules/no-pii-in-logs';
 import { noSsrf } from './rules/no-ssrf';
 
 // Migrated rules from secure-coding
@@ -48,10 +50,12 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'no-buffer-overread': noBufferOverread,
+  'no-deprecated-buffer': noDeprecatedBuffer,
   'no-toctou-vulnerability': noToctouVulnerability,
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
+  'no-pii-in-logs': noPiiInLogs,
   'no-ssrf': noSsrf,
 
   // Migrated rules
@@ -83,7 +87,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '1.0.0',
+    version: '4.1.0',
   },
   rules,
 };
@@ -93,7 +97,17 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/detect-eval-with-expression': 'error',
   'node-security/detect-non-literal-fs-filename': 'error',
   'node-security/no-unsafe-dynamic-require': 'error',
-  'node-security/no-buffer-overread': 'error',
+  // no-buffer-overread demoted 2026-05-09 — 95% of Wild hits on adversarial
+  // Edge corpus + insufficient fixture coverage for the README §1 promotion
+  // gate. Per `npm run ilb:severity-audit` it's both edge-error AND
+  // volume-error risk. Promote back to 'error' once Edge ratio drops to
+  // ≤ 50% (see `benchmarks/AUDIT_PATTERNS.md` §3.6 — needs typed-array
+  // detection like `detect-object-injection` got in audit iter-1).
+  'node-security/no-buffer-overread': 'warn',
+  // Added in 4.1.0. Set to 'warn' in `recommended` to avoid breaking
+  // adopters who already use the preset and have legacy `Buffer()` calls.
+  // Promote to 'error' on the next major bump.
+  'node-security/no-deprecated-buffer': 'warn',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',

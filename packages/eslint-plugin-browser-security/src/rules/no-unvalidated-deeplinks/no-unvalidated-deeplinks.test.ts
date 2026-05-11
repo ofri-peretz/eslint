@@ -14,6 +14,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     // Static URLs are safe
     { code: "Linking.openURL('https://example.com')" },
     { code: "navigation.navigate('Home')" },

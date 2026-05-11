@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-05-09T22:36:43.943Z",
+  "juliet": {
+    "totalFixtures": 26,
+    "tools": [
+      "interlace",
+      "eslint-plugin-security",
+      "security-node",
+      "sonarjs",
+      "microsoft-sdl",
+      "no-unsanitized"
+    ],
+    "fixtures3PlusAgree": 15,
+    "fixturesAllAgree": 9,
+    "pctFixtures3PlusAgree": 57.7,
+    "pctFixturesAllAgree": 34.6,
+    "kappas": {
+      "eslint-plugin-security": 0,
+      "security-node": 0,
+      "sonarjs": 0.077,
+      "microsoft-sdl": 0.077,
+      "no-unsanitized": 0.154
+    },
+    "onlyInterlace": [
+      {
+        "cwe": "CWE-022",
+        "file": "path-join-user.js"
+      },
+      {
+        "cwe": "CWE-022",
+        "file": "readfile-concat.js"
+      },
+      {
+        "cwe": "CWE-089",
+        "file": "dynamic-column.js"
+      },
+      {
+        "cwe": "CWE-089",
+        "file": "string-concat.js"
+      },
+      {
+        "cwe": "CWE-089",
+        "file": "template-literal.js"
+      },
+      {
+        "cwe": "CWE-918",
+        "file": "axios-user-url.js"
+      },
+      {
+        "cwe": "CWE-918",
+        "file": "fetch-user-url.js"
+      }
+    ]
+  },
+  "arena": {
+    "totalFixtures": 77,
+    "tools": [
+      "eslint-plugin-security",
+      "security-node",
+      "sonarjs",
+      "microsoft-sdl",
+      "no-secrets",
+      "unicorn",
+      "react",
+      "jsx-a11y",
+      "eslint-plugin-n",
+      "import",
+      "promise",
+      "regexp",
+      "no-unsanitized",
+      "jsdoc",
+      "jest",
+      "vue",
+      "angular",
+      "interlace"
+    ],
+    "fixtures3PlusAgree": 67,
+    "fixturesAllAgree": 0,
+    "pctFixtures3PlusAgree": 87,
+    "pctFixturesAllAgree": 0,
+    "kappas": {
+      "eslint-plugin-security": 0,
+      "security-node": 0.065,
+      "sonarjs": 0.21,
+      "microsoft-sdl": 0.07,
+      "no-secrets": 0.048,
+      "unicorn": -0.072,
+      "react": 0,
+      "jsx-a11y": 0,
+      "eslint-plugin-n": -0.03,
+      "import": 0,
+      "promise": 0,
+      "regexp": -0.028,
+      "no-unsanitized": 0.022,
+      "jsdoc": -0.052,
+      "jest": 0,
+      "vue": 0,
+      "angular": 0
+    },
+    "onlyInterlace": []
+  },
+  "coverageBreadth": {
+    "cwes": [
+      {
+        "cwe": "CWE-022",
+        "vulnerable": 2,
+        "safe": 2
+      },
+      {
+        "cwe": "CWE-078",
+        "vulnerable": 2,
+        "safe": 2
+      },
+      {
+        "cwe": "CWE-079",
+        "vulnerable": 2,
+        "safe": 2
+      },
+      {
+        "cwe": "CWE-089",
+        "vulnerable": 3,
+        "safe": 3
+      },
+      {
+        "cwe": "CWE-798",
+        "vulnerable": 2,
+        "safe": 2
+      },
+      {
+        "cwe": "CWE-918",
+        "vulnerable": 2,
+        "safe": 2
+      }
+    ],
+    "gaps": []
+  }
+}

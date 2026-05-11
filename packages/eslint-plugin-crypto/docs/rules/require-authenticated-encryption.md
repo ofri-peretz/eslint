@@ -30,6 +30,20 @@ ESLint Rule: require-authenticated-encryption. This rule is part of [`eslint-plu
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration          |
 | **Best For**   | All applications performing symmetric encryption |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) — Use of a Broken or Risky Cryptographic Algorithm |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech (PCI-DSS), healthtech (HIPAA encryption-at-rest requirements), cybersecurity · **High:** B2B SaaS · **Medium:** B2C, marketplaces |
+| **Investor-frame impact** | Unauthenticated encryption (CBC-without-MAC, CTR-without-MAC) → bit-flipping and padding-oracle attacks. **PCI-DSS and HIPAA audits flag this as a finding**; this rule prevents the audit finding upstream. Direct compliance posture impact. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Use of unauthenticated encryption modes like `AES-CBC` or `AES-CTR` without a separate Message Authentication Code (MAC). These modes provide _confidentiality_ (hiding the data) but not _integrity_ (ensuring the data hasn't been changed).

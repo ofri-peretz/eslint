@@ -79,83 +79,121 @@ const CREDENTIAL_PATTERNS = {
   secretKey: /^(?:[A-Za-z0-9+/]{32,}={0,2}|[A-Fa-f0-9]{32,})$/,
 };
 
-// Note: CREDENTIAL_VARIABLE_NAMES is reserved for future use when we want to
-// check variable names in addition to values
-// @coverage-note: Not currently used, reserved for future enhancement
+/**
+ * Identifier names that imply the surrounding string is a credential.
+ * Used to require a *credential-typed* context for ambiguous regex matches
+ * (generic 32+-char alphanumeric, common passwords) — without this gate the
+ * rule fires on TS union-type literals, error class names, and test prompts
+ * (verified on vercel/ai: 807 ours-only findings, top samples are
+ * `'experimental_onToolExecutionStart'`, `'AI_ToolCallNotFoundForApprovalError'`,
+ * `'test'`).
+ */
+const CREDENTIAL_VARIABLE_NAMES = new Set<string>([
+  'apikey', 'api_key', 'apiKey',
+  'secret', 'secretkey', 'secret_key', 'secretKey', 'clientsecret', 'client_secret', 'clientSecret',
+  'token', 'authtoken', 'auth_token', 'authToken', 'accesstoken', 'access_token', 'accessToken',
+  'refreshtoken', 'refresh_token', 'refreshToken', 'idtoken', 'id_token', 'idToken',
+  'password', 'passwd', 'pass', 'pwd',
+  'privatekey', 'private_key', 'privateKey',
+  'credentials', 'creds',
+  'authorization', 'auth',
+  'connectionstring', 'connection_string', 'connectionString', 'connectionuri', 'connectionURI',
+  'dburl', 'db_url', 'dbUrl', 'databaseurl', 'database_url', 'databaseUrl',
+]);
 
 /**
- * Check if a string literal looks like a hardcoded credential
+ * Result of credential pattern matching.
+ * - `structural` matches (JWT, OAuth, AWS-key, DB connection string) are
+ *   unambiguous — the string's shape only fits one purpose; report immediately.
+ * - `ambiguous` matches (32+-char alphanumeric, common-password keywords) need
+ *   a credential-named context to avoid firing on identifier-shaped literals.
+ */
+type CredentialConfidence = 'structural' | 'ambiguous';
+
+/**
+ * Check if a string literal looks like a hardcoded credential.
+ * Returns `confidence: 'ambiguous'` when only a permissive pattern matched —
+ * the caller MUST verify the surrounding identifier is credential-named.
  */
 function looksLikeCredential(
   value: string,
   options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings' | 'customPatterns'>>,
   ignorePatterns: RegExp[]
-): { isCredential: boolean; type: string } {
-  // Check ignore patterns first
-  if (ignorePatterns.some(pattern => pattern.test(value))) {
-    return { isCredential: false, type: '' };
-  }
+): { isCredential: boolean; type: string; confidence: CredentialConfidence } {
+  const NONE = { isCredential: false, type: '', confidence: 'ambiguous' as const };
 
-  // Check custom patterns first (highest priority)
+  // Check ignore patterns first
+  if (ignorePatterns.some(pattern => pattern.test(value))) return NONE;
+
+  // Custom patterns are user-defined → trust them, treat as structural
   for (const customPattern of options.customPatterns) {
     try {
       const regex = new RegExp(customPattern.pattern);
       if (regex.test(value)) {
-        return { isCredential: true, type: customPattern.type };
+        return { isCredential: true, type: customPattern.type, confidence: 'structural' };
       }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      // Invalid regex pattern, skip it
       continue;
     }
   }
 
-  // Check passwords (common weak passwords) - no length requirement, check first
-  if (options.detectPasswords) {
-    if (CREDENTIAL_PATTERNS.commonPassword.test(value)) {
-      return { isCredential: true, type: 'Common password' };
-    }
+  // Common-password keyword match — AMBIGUOUS. Strings like "test", "admin",
+  // "guest" appear in test fixtures, error messages, and identifiers all the
+  // time. The caller must verify a credential-named context.
+  if (options.detectPasswords && CREDENTIAL_PATTERNS.commonPassword.test(value)) {
+    return { isCredential: true, type: 'Common password', confidence: 'ambiguous' };
   }
 
-  // Check database connection strings - no length requirement
-  if (options.detectDatabaseStrings) {
-    if (CREDENTIAL_PATTERNS.databaseString.test(value)) {
-      return { isCredential: true, type: 'Database connection string' };
-    }
+  // Structural: DB connection strings have unambiguous shape
+  // `protocol://user:pass@host` — no FP risk.
+  if (options.detectDatabaseStrings && CREDENTIAL_PATTERNS.databaseString.test(value)) {
+    return { isCredential: true, type: 'Database connection string', confidence: 'structural' };
   }
 
-  // Check minimum length for other patterns
-  if (value.length < options.minLength) {
-    return { isCredential: false, type: '' };
+  if (value.length < options.minLength) return NONE;
+
+  // Structural: JWT format (3 base64 parts dot-separated)
+  if (options.detectTokens && CREDENTIAL_PATTERNS.jwtToken.test(value)) {
+    return { isCredential: true, type: 'JWT token', confidence: 'structural' };
+  }
+  // Structural: OAuth tokens have provider prefixes (ghp_, gho_, ...)
+  if (options.detectTokens && CREDENTIAL_PATTERNS.oauthToken.test(value)) {
+    return { isCredential: true, type: 'OAuth token', confidence: 'structural' };
   }
 
-  // Check tokens first (more specific patterns)
-  if (options.detectTokens) {
-    if (CREDENTIAL_PATTERNS.jwtToken.test(value)) {
-      return { isCredential: true, type: 'JWT token' };
-    }
-    if (CREDENTIAL_PATTERNS.oauthToken.test(value)) {
-      return { isCredential: true, type: 'OAuth token' };
-    }
-  }
-
-  // Check secret keys first (before generic API key patterns)
+  // Secret keys (base64/hex 32+) — context-required. Long base64 / hex
+  // strings appear in source maps, generated IDs, hash digests; without
+  // a credential-named context they're FPs.
   if (value.length >= 32 && CREDENTIAL_PATTERNS.secretKey.test(value)) {
-    return { isCredential: true, type: 'Secret key' };
+    return { isCredential: true, type: 'Secret key', confidence: 'ambiguous' };
   }
 
-  // Check API keys
-  if (options.detectApiKeys) {
-    if (CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
-      return { isCredential: true, type: 'AWS access key' };
-    }
-    // Generic API key pattern (long alphanumeric strings)
-    if (/^[A-Za-z0-9_-]{32,}$/.test(value)) {
-      return { isCredential: true, type: 'API key' };
-    }
+  // Structural: AWS access key has a fixed prefix
+  if (options.detectApiKeys && CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
+    return { isCredential: true, type: 'AWS access key', confidence: 'structural' };
   }
 
-  return { isCredential: false, type: '' };
+  // Structural: Stripe-style keys (sk_live_, sk_test_, pk_live_, pk_test_,
+  // rk_live_, rk_test_) are unambiguous — the prefix is registered to
+  // Stripe and never appears in unrelated contexts. Type label is kept
+  // as the generic 'API key' to match existing test expectations and
+  // ensure the suggestion templates remain stable for callers.
+  if (
+    options.detectApiKeys &&
+    /^(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9_-]{16,}$/.test(value)
+  ) {
+    return { isCredential: true, type: 'API key', confidence: 'structural' };
+  }
+
+  // Generic 32+-char alphanumeric — AMBIGUOUS. This is the FP source on
+  // vercel/ai's TS union types and error class names. Caller must verify
+  // a credential-named context.
+  if (options.detectApiKeys && /^[A-Za-z0-9_-]{32,}$/.test(value)) {
+    return { isCredential: true, type: 'API key', confidence: 'ambiguous' };
+  }
+
+  return NONE;
 }
 
 // Note: isCredentialVariableName is reserved for future use when we want to
@@ -167,7 +205,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-credentials.md',
       description: 'Detects hardcoded passwords, API keys, tokens, and other sensitive credentials',
+      cwe: 'CWE-798',
+      cvss: 9.5,
+      confidence: 'medium',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -321,7 +363,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       customPatterns = [],
     }: Options = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && (
       filename.includes('.test.') ||
       filename.includes('.spec.') ||
@@ -343,6 +385,223 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
 
     /**
+     * Variable / property names that hold UI labels and HTML attribute
+     * values, not secrets. When a literal containing the word "password"
+     * (or other credential-like text) lives in one of these contexts, it's
+     * a label or form-field metadata, not a hardcoded credential.
+     */
+    const LABEL_CONTEXT_NAMES = new Set<string>([
+      // HTML form attributes
+      'type', 'name', 'id', 'placeholder', 'label', 'title', 'role',
+      'autocomplete', 'autoFocus', 'autocapitalize', 'inputmode',
+      // ARIA
+      'aria-label', 'aria-labelledby', 'aria-describedby',
+      // Common semantic UI fields
+      'fieldName', 'fieldType', 'fieldLabel', 'inputType', 'inputName',
+      'displayName', 'columnName', 'paramName',
+      // i18n keys / translation lookup. NOTE: bare `'key'` is intentionally
+      // omitted — `const key = '...'` is the canonical name for actual API
+      // keys (e.g. AWS, Stripe), so exempting it would mask real secrets.
+      // The specific i18n names below cover translation lookups without
+      // that false-negative.
+      'i18nKey', 'translationKey', 'messageKey',
+    ]);
+
+    /**
+     * Returns true if the literal is being used as a UI label or HTML
+     * attribute value rather than as a secret. Examples:
+     *   const label = 'password';                        // variable named `label`
+     *   input.type = 'password';                          // assigning to .type
+     *   input.name = 'userPassword';                      // assigning to .name
+     *   <input type="password" />                         // JSX attribute
+     *   { type: 'password', name: 'pw' }                  // object literal property
+     *   setAttribute('placeholder', 'Enter password')     // setAttribute call
+     */
+    function isLabelContext(node: TSESTree.Literal | TSESTree.TemplateLiteral, parent?: TSESTree.Node): boolean {
+      if (!parent) return false;
+
+      // Object-literal entries: walk up through the ObjectExpression →
+      // its Property → its enclosing VariableDeclarator. Closes the
+      // regression where `const labels = { password: 'Enter password' }`
+      // was firing because the property key 'password' is in
+      // CREDENTIAL_VARIABLE_NAMES even though the surrounding `labels`
+      // var indicates the whole object is UI text.
+      if (parent.type === 'ObjectExpression') {
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (grand) return isLabelContext(node, grand);
+        return false;
+      }
+
+      // Array elements: walk up so `const labels = ['Enter password']`
+      // is treated as label context if `labels` is label-named.
+      if (parent.type === 'ArrayExpression') {
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (grand) return isLabelContext(node, grand);
+        return false;
+      }
+
+      // const label = 'password' / let label = 'password' / `labels` /
+      // any var ending in `label`/`name`/`placeholder`.
+      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+        const n = (parent.id as TSESTree.Identifier).name.toLowerCase();
+        if (LABEL_CONTEXT_NAMES.has(n) || n === 'labels' || n.endsWith('label') || n.endsWith('labels') || n.endsWith('name') || n.endsWith('placeholder')) return true;
+      }
+
+      // input.type = 'password' / input.name = 'userPassword'
+      if (parent.type === 'AssignmentExpression' && (parent as TSESTree.AssignmentExpression).right === node) {
+        const left = (parent as TSESTree.AssignmentExpression).left;
+        if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
+          if (LABEL_CONTEXT_NAMES.has((left.property as TSESTree.Identifier).name)) return true;
+        }
+      }
+
+      // { type: 'password', name: 'foo' } — direct property key is label-typed
+      if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
+        const key = (parent as TSESTree.Property).key;
+        if (key.type === 'Identifier' && LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)) return true;
+        if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
+          if (LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)) return true;
+        }
+        // Otherwise, walk up: the property may not have a label-typed
+        // key but the enclosing variable might be `labels` /
+        // `i18nStrings` / `messages` / etc., signalling that the
+        // whole object is UI text. Closes the FP regression where
+        // `const labels = { password: 'Enter password' }` fired
+        // because `password` is in CREDENTIAL_VARIABLE_NAMES.
+        const obj = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (obj?.type === 'ObjectExpression') {
+          const grand = (obj as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+          if (grand) return isLabelContext(node, grand);
+        }
+      }
+
+      // setAttribute('type', 'password') — second arg is the value
+      if (
+        parent.type === 'CallExpression' &&
+        (parent as TSESTree.CallExpression).callee.type === 'MemberExpression' &&
+        ((parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression).property.type === 'Identifier'
+      ) {
+        const callee = (parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression;
+        const methodName = (callee.property as TSESTree.Identifier).name;
+        if (methodName === 'setAttribute' || methodName === 'getAttribute') {
+          const args = (parent as TSESTree.CallExpression).arguments;
+          if (args[1] === node) return true;
+        }
+      }
+
+      // JSX: <input type="password" />
+      if (parent.type === 'JSXAttribute' as unknown as string) return true;
+
+      return false;
+    }
+
+    /**
+     * Map a credential-context to its category so the detection-disable
+     * options can gate the context-positive code path. `password` covers
+     * password-like names, `token` covers JWT / OAuth / session tokens,
+     * `database` covers DB connection strings, `apikey` covers API key /
+     * secret-key style names. Anything else falls back to `other`, which
+     * the options never gate (e.g. `credentials`, `auth`).
+     */
+    function inferCredentialTypeFromContext(
+      parent: TSESTree.Node | undefined,
+    ): 'password' | 'token' | 'database' | 'apikey' | 'other' {
+      const name = (() => {
+        if (!parent) return '';
+        if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+          return (parent.id as TSESTree.Identifier).name.toLowerCase();
+        }
+        if (parent.type === 'Property') {
+          const key = (parent as TSESTree.Property).key;
+          if (key.type === 'Identifier') return (key as TSESTree.Identifier).name.toLowerCase();
+          if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
+            return ((key as TSESTree.Literal).value as string).toLowerCase();
+          }
+        }
+        if (parent.type === 'AssignmentExpression') {
+          const left = (parent as TSESTree.AssignmentExpression).left;
+          if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
+            return (left.property as TSESTree.Identifier).name.toLowerCase();
+          }
+        }
+        return '';
+      })();
+      if (/(?:^|[_-])(password|passwd|pass|pwd)$/.test(name)) return 'password';
+      if (/(?:^|[_-])(token|authtoken|auth_token|accesstoken|access_token|refreshtoken|refresh_token|idtoken|id_token)$/.test(name)) return 'token';
+      if (/(?:^|[_-])(dburl|db_url|databaseurl|database_url|connectionstring|connection_string|connectionuri)$/.test(name)) return 'database';
+      if (/(?:^|[_-])(apikey|api_key|secretkey|secret_key|privatekey|private_key|secret|key|clientsecret|client_secret)$/.test(name)) return 'apikey';
+      return 'other';
+    }
+
+    /**
+     * Returns true when the string is in a context that names credentials —
+     * assigned to a credential-typed variable, property, parameter, or used
+     * as the second argument to common credential APIs. Required for
+     * ambiguous matches (generic 32+-char alphanumeric, common-password
+     * keywords) which would otherwise fire on identifier-shaped literals
+     * (TS union types, error class names, test prompts).
+     */
+    function isCredentialContext(node: TSESTree.Literal | TSESTree.TemplateLiteral, parent?: TSESTree.Node): boolean {
+      if (!parent) return false;
+
+      const matches = (name: string): boolean => {
+        const lower = name.toLowerCase();
+        // Try the literal name AND its singular form (drop trailing 's')
+        // so collections like `tokens`, `apiKeys`, `secrets`, `passwords`
+        // are recognised. Closes the audit FN where
+        // `const tokens = ['Bearer sk_live_...']` bypassed credential
+        // detection because `tokens` (plural) wasn't in the allowlist.
+        const singular = lower.endsWith('s') ? lower.slice(0, -1) : lower;
+        if (CREDENTIAL_VARIABLE_NAMES.has(lower) || CREDENTIAL_VARIABLE_NAMES.has(singular)) return true;
+        return lower.endsWith('apikey') || lower.endsWith('apikeys') ||
+               lower.endsWith('secret') || lower.endsWith('secrets') ||
+               lower.endsWith('token') || lower.endsWith('tokens') ||
+               lower.endsWith('password') || lower.endsWith('passwords') ||
+               lower.endsWith('passwd') || lower.endsWith('credential') ||
+               lower.endsWith('credentials');
+      };
+
+      // Array elements: walk up through the ArrayExpression to its
+      // enclosing variable / property. Closes the audit FN where
+      // `const tokens = ['Bearer sk_live_...']` was bypassing the
+      // credential-name check because the literal's immediate parent is
+      // the ArrayExpression rather than the VariableDeclarator.
+      if (parent.type === 'ArrayExpression') {
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (grand) return isCredentialContext(node, grand);
+        return false;
+      }
+
+      // const apiKey = '...' / let secret = '...'
+      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+        if (matches((parent.id as TSESTree.Identifier).name)) return true;
+      }
+
+      // obj.apiKey = '...' / this.password = '...'
+      if (parent.type === 'AssignmentExpression' &&
+          (parent as TSESTree.AssignmentExpression).right === node) {
+        const left = (parent as TSESTree.AssignmentExpression).left;
+        if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
+          if (matches((left.property as TSESTree.Identifier).name)) return true;
+        }
+        if (left.type === 'Identifier') {
+          if (matches((left as TSESTree.Identifier).name)) return true;
+        }
+      }
+
+      // { apiKey: '...', secret: '...' }
+      if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
+        const key = (parent as TSESTree.Property).key;
+        if (key.type === 'Identifier' && matches((key as TSESTree.Identifier).name)) return true;
+        if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
+          if (matches((key as TSESTree.Literal).value as string)) return true;
+        }
+      }
+
+      return false;
+    }
+
+    /**
      * Check a string literal node
      */
     function checkStringLiteral(node: TSESTree.Literal, parent?: TSESTree.Node): void {
@@ -357,14 +616,57 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Skip if used as a UI label / HTML attribute value (form-field name,
+      // type tag, ARIA label, i18n key) — these aren't credentials.
+      if (isLabelContext(node, parent)) {
+        return;
+      }
+
       // Check if it looks like a credential
-      const { isCredential, type } = looksLikeCredential(
+      const { isCredential, type, confidence } = looksLikeCredential(
         value,
         detectionOptions,
         compiledIgnorePatterns
       );
 
-      if (!isCredential) {
+      // Ambiguous matches require a credential-named context to fire.
+      // Without this gate the rule reports type literals, error class
+      // names, and test prompts as credentials (vercel/ai had 807 such
+      // FPs before the gate landed).
+      let finalIsCredential = isCredential;
+      let finalType = type;
+      if (isCredential && confidence === 'ambiguous' && !isCredentialContext(node, parent)) {
+        finalIsCredential = false;
+      }
+
+      // Context-positive: any non-trivial string assigned to a
+      // credential-named variable/property is a credential, even when no
+      // regex pattern matches. Catches passwords like 'SuperSecret123!'
+      // that don't fit any structural pattern but are clearly secrets
+      // by virtue of where they're stored.
+      //
+      // The detection-disable options (detectApiKeys / detectPasswords /
+      // detectTokens / detectDatabaseStrings) MUST gate this path too —
+      // otherwise `{ detectPasswords: false }` silently fires on
+      // `const password = "..."` because the var-name match alone
+      // bypasses the option. Map the var name back to its category and
+      // honour the option.
+      if (!finalIsCredential && value.length >= detectionOptions.minLength &&
+          isCredentialContext(node, parent)) {
+        const ctxType = inferCredentialTypeFromContext(parent);
+        const optionAllows =
+          (ctxType === 'password' && detectionOptions.detectPasswords) ||
+          (ctxType === 'token' && detectionOptions.detectTokens) ||
+          (ctxType === 'database' && detectionOptions.detectDatabaseStrings) ||
+          (ctxType === 'apikey' && detectionOptions.detectApiKeys) ||
+          ctxType === 'other'; // "other" credential names always honoured
+        if (optionAllows) {
+          finalIsCredential = true;
+          finalType = type || 'Credential value';
+        }
+      }
+
+      if (!finalIsCredential) {
         return;
       }
 
@@ -388,7 +690,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'useEnvironmentVariable',
         data: {
-          credentialType: type,
+          credentialType: finalType,
           envVarName,
         },
         suggest: [
@@ -420,13 +722,17 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // Only check if there are no interpolations (static template literal)
         if (node.expressions.length === 0) {
           const fullText = node.quasis.map((q: TSESTree.TemplateElement) => q.value.raw).join('');
-          const { isCredential, type } = looksLikeCredential(
+          const { isCredential, type, confidence } = looksLikeCredential(
             fullText,
             detectionOptions,
             compiledIgnorePatterns
           );
 
-          if (isCredential && !isTestFile) {
+          // For template literals we don't have a Literal node to pass to
+          // `isCredentialContext`. Skip ambiguous matches entirely — if the
+          // user really has a credential in a template literal they should
+          // use a regular string anyway.
+          if (isCredential && !isTestFile && confidence === 'structural') {
             context.report({
               node,
               messageId: 'useEnvironmentVariable',
@@ -456,13 +762,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           // For template literals with interpolations, check each quasi part
           for (const quasi of node.quasis) {
             if (quasi.value.raw) {
-              const { isCredential, type } = looksLikeCredential(
+              const { isCredential, type, confidence } = looksLikeCredential(
                 quasi.value.raw,
                 detectionOptions,
                 compiledIgnorePatterns
               );
 
-              if (isCredential && !isTestFile) {
+              if (isCredential && !isTestFile && confidence === 'structural') {
                 // Note: Template literals with interpolations are complex to fix automatically
                 // So we report the error without suggestions
                 context.report({

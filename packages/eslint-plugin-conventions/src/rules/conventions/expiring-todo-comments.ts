@@ -45,6 +45,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/expiring-todo-comments.md',
       description:
         'Add expiration conditions to TODO comments to prevent forgotten tasks',
     },
@@ -117,6 +118,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
       return packageJson;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function parseSemver(
       version: string,
     ): { major: number; minor: number; patch: number } | null {
@@ -141,6 +143,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
       return v1.patch - v2.patch;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function checkDateCondition(dateStr: string): boolean {
       try {
         const conditionDate = new Date(dateStr + 'T00:00:00Z'); // UTC
@@ -224,6 +227,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
       return present ? hasPackage : hasPackage;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function parseTodoCondition(
       commentValue: string,
       term: string,
@@ -248,6 +252,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
       return { conditions, rest };
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function validateCondition(
       condition: string,
     ): { type: string; value: string; operator?: string } | null {

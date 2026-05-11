@@ -26,7 +26,10 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-sensitive-in-prompt.md',
       description: 'Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts',
+      cwe: 'CWE-200',
+      cvss: 8,
     },
     messages: {
       sensitiveInPrompt: formatLLMMessage({
@@ -74,7 +77,7 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
       'ssn', 'creditCard', 'privateKey', 'accessToken',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vercel AI SDK functions
     const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
@@ -129,13 +132,13 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
         if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
 
         // Check prompt, system, and messages properties
-        const propsToCheck = ['prompt', 'system', 'messages'];
+        const propsToCheck = new Set(['prompt', 'system', 'messages']);
         
         for (const prop of optionsArg.properties) {
           if (prop.type !== 'Property') continue;
           
           const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          if (!keyName || !propsToCheck.includes(keyName)) continue;
+          if (!keyName || !propsToCheck.has(keyName)) continue;
 
           const sensitiveVar = findSensitiveData(prop.value);
           if (sensitiveVar) {

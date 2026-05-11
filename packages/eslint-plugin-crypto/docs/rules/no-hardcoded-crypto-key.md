@@ -30,6 +30,20 @@ ESLint Rule: no-hardcoded-crypto-key. This rule is part of [`eslint-plugin-crypt
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration   |
 | **Best For**   | All applications handling encryption keys |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) — Use of Hard-coded Cryptographic Key |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — cryptographic key leaks are retroactive: every prior message encrypted with the key is exposed ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech (PCI-DSS), healthtech (HIPAA), cybersecurity · **High:** B2B SaaS, infra/devtools · **Medium:** B2C, marketplaces · **Low:** gaming |
+| **Investor-frame impact** | Hardcoded crypto key in version-controlled code = encryption permanently broken; rotation requires every prior message to be re-encrypted (often impossible). One catch at lint-time avoids the entire long-tailed disclosure exposure. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Embedding raw cryptographic keys directly in the source code as string literals or static buffers.

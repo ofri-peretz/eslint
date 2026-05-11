@@ -18,6 +18,10 @@ const ruleTester = new RuleTester({
 describe('no-web-crypto-export', () => {
   ruleTester.run('no-web-crypto-export', noWebCryptoExport, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
       { code: 'await crypto.subtle.generateKey(algorithm, false, usages);' },
       { code: 'await crypto.subtle.encrypt(algorithm, key, data);' },
     ],

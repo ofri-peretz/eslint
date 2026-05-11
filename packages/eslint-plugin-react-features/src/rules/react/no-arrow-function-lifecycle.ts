@@ -35,6 +35,7 @@ export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-arrow-function-lifecycle.md',
       description: 'Prevent arrow functions in lifecycle methods',
     },
     messages: {

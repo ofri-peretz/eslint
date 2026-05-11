@@ -23,19 +23,19 @@ Multi-step orchestration for releasing npm packages.
 // turbo
 
 ```bash
-nx run <package>:lint
+npx turbo run lint --filter=<package>
 ```
 
 // turbo
 
 ```bash
-nx run <package>:test
+npx turbo run test --filter=<package>
 ```
 
 ### Step 2: Version Bump
 
 ```bash
-nx release version <package>
+gh workflow run release.yml --ref main -f dry-run=true
 ```
 
 **Expected**: User selects semantic version (patch/minor/major)
@@ -51,10 +51,10 @@ After version bump:
 ### Step 4: Publish to npm
 
 ```bash
-nx release publish <package>
+gh workflow run release.yml --ref main
 ```
 
-**Expected**: User provides 2FA OTP when prompted
+**Expected**: GitHub Actions runs the release; for unscoped packages the `NPM_TOKEN` secret is used, for `@interlace/*` Trusted Publishing handles auth (no token / no 2FA prompt)
 
 ### Step 5: Push to GitHub
 

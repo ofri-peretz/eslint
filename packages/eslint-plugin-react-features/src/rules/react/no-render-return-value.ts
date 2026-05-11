@@ -19,6 +19,7 @@ export const noRenderReturnValue = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-render-return-value.md',
       description: 'Prevent using render return value',
     },
     messages: {

@@ -51,13 +51,7 @@ console.log(' Debug: ', data);  // Leading space unnecessary
 ### ✅ Correct
 
 ```typescript
-// Console adds spaces automatically
-console.log('Value:', value);
-console.log(value, 'items');
-console.log('Debug:', data);
-
-// Or use template literals for exact control
-console.log(`Value: ${value}`);
+console.log("hello", "world");
 ```
 
 ## Configuration Examples

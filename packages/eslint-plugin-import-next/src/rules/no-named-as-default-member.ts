@@ -27,7 +27,10 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-as-default-member.md',
       description: 'Forbid use of exported name as property of default export',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     messages: {
       namedAsDefaultMember: formatLLMMessage({

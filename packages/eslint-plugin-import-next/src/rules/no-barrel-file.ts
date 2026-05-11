@@ -143,6 +143,7 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-barrel-file.md',
       description:
         'Disallow barrel files that harm build performance and tree-shaking efficiency',
     },
@@ -236,7 +237,7 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       reexportRatio = 0.8,
     }: NoBarrelFileOptions = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Check if file matches barrel patterns
     if (!matchesPattern(filename, barrelPatterns)) {

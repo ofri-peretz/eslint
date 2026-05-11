@@ -1,9 +1,128 @@
 ---
 title: no-operator-injection
-description: ESLint rule documentation for no-operator-injection
-icon: FileCode
+description: Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to...
+tags: ['security', 'mongodb']
+category: security
+severity: critical
+cwe: CWE-943
+owasp: "A03:2021"
+autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="mongodb-security" rule="no-operator-injection" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
+
+Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` to bypass authentication or exfiltrate data.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                   |
+| ----------------- | ----------------------------------------- |
+| **CWE Reference** | CWE-943 (NoSQL Injection)                 |
+| **OWASP**         | A03:2021 - Injection                      |
+| **Severity**      | Critical (CVSS: 9.1)                      |
+| **Category**   | Security |
+| **ESLint MCP**    | ✅ Optimized for AI assistant integration |
+
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization of Special Elements in Data Query Logic (NoSQL injection, CVSS 9.1) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, healthtech, B2B SaaS (any MongoDB-backed multi-tenant app) · **High:** marketplaces, infra/devtools · **Medium:** B2C |
+| **Investor-frame impact** | NoSQL operator injection (`$ne`, `$gt`, `$or` injection) → authentication bypass + data exfiltration. The MongoDB-specific equivalent of SQL injection; same class of disclosure event. Catch at lint-time prevents the entire attack family. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
+## Rule Details
+
+This rule specifically targets operator injection - a subset of NoSQL injection where attackers submit objects with MongoDB operators instead of expected primitive values.
+
+### Attack Scenario
+
+```javascript
+// Expected: { username: "john", password: "secret123" }
+// Attacker sends: { username: "admin", password: { "$ne": "" } }
+
+// This query:
+db.users.findOne({ username: req.body.username, password: req.body.password });
+
+// Becomes:
+db.users.findOne({ username: 'admin', password: { $ne: '' } });
+// Matches admin user with ANY non-empty password - authentication bypass!
+```
+
+### ❌ Incorrect
+
+```typescript
+const filter = { $ne: req.body.value };
+```
+
+### ✅ Correct
+
+```typescript
+// Force value comparison with $eq
+User.findOne({ email: { $eq: req.body.email } });
+
+// Cast to primitive type
+User.findOne({ email: String(req.body.email) });
+
+// Validate input is not an object
+if (typeof req.body.email !== 'string') throw new Error('Invalid input');
+User.findOne({ email: req.body.email });
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+### Object Spread
+
+```typescript
+// ❌ NOT DETECTED - spreads entire body into query
+User.findOne({ ...req.body });
+```
+
+### Dynamic Property Access
+
+```typescript
+// ❌ NOT DETECTED - dynamic key assignment
+const query = {};
+query[field] = value;
+```
+
+### Aggregation Pipelines
+
+```typescript
+// ❌ NOT DETECTED - complex pipeline structure
+User.aggregate([{ $match: req.body.filter }]);
+```
+
+## When Not To Use It
+
+- When using Mongoose schema with strict validation that rejects object values
+- When all input is validated through a strict JSON schema (e.g., Zod, Joi)
+- In test files with intentionally vulnerable patterns
+
+## Related Rules
+
+- [no-unsafe-query](./no-unsafe-query.md) - General unsafe query detection
+- [no-unsafe-where](./no-unsafe-where.md) - $where operator detection
+
+## References
+
+- [OWASP NoSQL Injection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)
+- [CWE-943: Improper Neutralization of Special Elements in Data Query Logic](https://cwe.mitre.org/data/definitions/943.html)

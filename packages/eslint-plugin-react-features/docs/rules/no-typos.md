@@ -59,13 +59,7 @@ class MyComponent extends React.Component {
 ### ✅ Correct
 
 ```tsx
-class MyComponent extends React.Component {
-  componentDidUpdate() {}
-  componentWillUnmount() {}
-  
-  static propTypes = {};
-  static defaultProps = {};
-}
+this.someProperty
 ```
 
 ## Configuration Examples

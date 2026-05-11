@@ -27,7 +27,7 @@ const checkedFiles = new Set<string>();
 function getMarkdownFiles(rootDir = '.'): string[] {
   try {
     const result = execSync(
-      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.nx/cache/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*"`,
+      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*"`,
       { encoding: 'utf-8' }
     );
     return result
@@ -164,7 +164,12 @@ function validateLink(
 
   // External links (http/https)
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    if (url.includes('github.com')) {
+    // Parse the URL and compare the hostname exactly, not via substring match.
+    // The previous `url.includes('github.com')` matched `evil-github.com`
+    // and `github.com.attacker.com` (CodeQL: `js/incomplete-url-substring-sanitization`).
+    let host = '';
+    try { host = new URL(url).hostname.toLowerCase(); } catch { /* malformed URL */ }
+    if (host === 'github.com' || host.endsWith('.github.com')) {
       const result = validateGitHubLink(url);
       if (!result.valid) {
         issues.push({
@@ -246,7 +251,7 @@ function validateLink(
           message: `Anchor #${anchor} not found in ${relative('.', targetFile)}`,
         });
       }
-    } catch (error) {
+    } catch {
       // File exists but couldn't read - that's okay, just skip anchor check
     }
   }

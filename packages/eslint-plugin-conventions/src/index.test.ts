@@ -23,8 +23,9 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('filename-case');
     expect(ruleKeys).toContain('consistent-existence-index-check');
     expect(ruleKeys).toContain('no-json-schema-tags');
+    expect(ruleKeys).toContain('require-data-testid');
 
-    expect(ruleKeys.length).toBe(10);
+    expect(ruleKeys.length).toBe(11);
   });
 
   it('should export rules matching plugin.rules', () => {

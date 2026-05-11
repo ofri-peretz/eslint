@@ -27,7 +27,10 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-tool-schema.md',
       description: 'Require inputSchema (Zod schema) for all AI SDK tools',
+      cwe: 'CWE-20',
+      cvss: 7.5,
     },
     messages: {
       missingInputSchema: formatLLMMessage({
@@ -75,8 +78,8 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const allowInTests = options.allowInTests ?? false;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Skip test files if allowed
     if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {

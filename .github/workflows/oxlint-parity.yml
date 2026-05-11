@@ -1,0 +1,121 @@
+name: Oxlint Parity Gate
+
+# Verifies that every Interlace plugin works correctly when loaded via
+# oxlint's JS-plugin runtime. Three checks:
+#   1. Static portability audit (unguarded type-aware/TS-bridge usage = fail).
+#   2. Shim drift check (generator output matches on-disk).
+#   3. Runtime smoke test — actually require()s every shim, asserts the
+#      rule-name set matches the snapshot baked into the manifest.
+#   4. Finding-level parity bench — same fixtures through ESLint and
+#      oxlint+shims, diff. Fails on unexplained divergence.
+#
+# The runtime smoke test catches the class of bug we hit during the
+# Turborepo migration: shims pointing at a stale dist path that loads
+# half the rules silently. Ratchet locks any future drift.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+    paths:
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
+      - 'tools/oxlint-plugins/**'
+      - 'scripts/audit-rule-portability.ts'
+      - 'scripts/generate-oxlint-shims.ts'
+      - 'scripts/verify-oxlint-shims.ts'
+      - '.agent/oxlint-portability-baseline.json'
+      - '.agent/oxlint-jsplugins-manifest.json'
+      - 'benchmarks/suites/ilb-oxlint-parity/**'
+      - '.oxlintrc*.json'
+      - '.github/workflows/oxlint-parity.yml'
+      - 'package.json'
+  workflow_dispatch:
+  schedule:
+    - cron: "35 4 * * 0"
+
+concurrency:
+  group: oxlint-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping oxlint parity gate."
+          fi
+
+  static-audit:
+    name: Audit + shim drift (no build required)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Runtime probe — every API surface our rules use
+        # Empirical functional verification: loads probe-oxlint-runtime.cjs
+        # into the actually-installed oxlint and asserts every probe fires.
+        # If oxlint changes the JS-plugin API, this names the broken surface
+        # specifically, no manual source-reading required.
+        run: npm run oxlint:verify-runtime
+      - name: Portability audit (blocker count, version pin, runtime hashes)
+        run: npm run audit:portability:ci
+      - name: Shim/manifest file-drift check
+        run: npm run oxlint:shims:check
+
+  runtime-and-parity:
+    name: Runtime smoke + parity (requires dist build)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build all plugins
+        run: npx turbo run build
+      - name: Runtime smoke — load every shim, compare rule names to manifest
+        run: npm run oxlint:shims:verify
+      - name: Finding-level parity bench (CWE corpus)
+        run: npm run ilb:oxlint-parity:ci
+      - name: Finding-level parity bench (harvested RuleTester corpus, ~1500 fixtures)
+        run: npm run ilb:oxlint-parity:full
+      - name: Upload parity result artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: oxlint-parity-${{ github.run_number }}
+          path: benchmarks/results/ilb-oxlint-parity/
+          retention-days: 30

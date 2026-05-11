@@ -1,505 +1,364 @@
 'use client';
-// HMR-REFRESH: 2026-02-01T19:20 - Remove featured article overlay effect
-// SSR-CACHE-BUST: 2026-02-01T19:20 - Force Turbopack rebuild
 
-import { useState, useMemo, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Button } from '@interlace/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { DevToArticle, SortField, SortDirection } from '@/lib/articles.types';
-import { 
-  Search, 
-  X, 
-  Calendar, 
-  Heart, 
-  MessageCircle, 
-  Clock,
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from '@interlace/ui/pagination';
+import { ArticleCard as ArticleCardBlock } from '@interlace/ui/blocks/article-card';
+import type { DevToArticle } from '@/lib/articles.types';
+import {
+  ARTICLES_PER_PAGE,
+  type ArticleParams,
+  serializeArticleParams,
+  toggleTagInParams,
+} from '@/lib/articles.filter';
+import { track } from '@/lib/analytics';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@interlace/ui/dropdown-menu';
+import {
+  Search,
+  X,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  ExternalLink,
-  Sparkles,
-  ArrowUpDown,
   BookOpen,
   Filter,
   SlidersHorizontal,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@interlace/ui/cn';
 import { motion, AnimatePresence } from 'motion/react';
-import { BackgroundBeamsWithCollision } from '@/components/ui/background-beams-with-collision';
+import { BackgroundBeamsWithCollision } from '@interlace/ui/aceternity/background-beams-with-collision';
 
-const ARTICLES_PER_PAGE = 9;
-
-interface SortOption {
-  value: SortField;
-  label: string;
-  icon: React.ReactNode;
-}
-
-const SORT_OPTIONS: SortOption[] = [
-  { value: 'date', label: 'Latest', icon: <Calendar className="size-4" /> },
-  { value: 'reactions', label: 'Popular', icon: <Heart className="size-4" /> },
-  { value: 'comments', label: 'Discussed', icon: <MessageCircle className="size-4" /> },
-  { value: 'reading_time', label: 'Long Reads', icon: <Clock className="size-4" /> },
-];
+const SEARCH_DEBOUNCE_MS = 250;
 
 interface ArticlesClientProps {
-  articles: DevToArticle[];
+  totalArticles: number;
+  params: ArticleParams;
+  items: DevToArticle[];
+  featured: DevToArticle | null;
+  tagCounts: Array<[string, number]>;
+  totalPages: number;
+  totalFiltered: number;
+  hasFilters: boolean;
   lastUpdated: string;
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+// Single source of truth for both the featured slot and the grid: the
+// centralized `@interlace/ui` ArticleCard block. The only difference between
+// the two on this page is the `variant` (overlay = hero, stack = grid card)
+// and the analytics payload. The block itself owns all visual decisions and
+// is regression-locked by Storybook stories + axe + interaction tests.
+function ArticleCard({
+  article,
+  position,
+  isFeatured = false,
+  sourceParams,
+}: {
+  article: DevToArticle;
+  position: number;
+  isFeatured?: boolean;
+  sourceParams: string;
+}) {
+  const image = article.cover_image?.trim() || article.social_image?.trim() || undefined;
 
-function formatViews(count: number): string {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}k`;
-  }
-  return count.toString();
-}
-
-// Featured Article Card - Large hero style (Performance optimized with CSS animations)
-// WCAG-COMPLIANT: Uses dark gradient overlay with white text for 4.5:1+ contrast ratio
-function FeaturedArticle({ article }: { article: DevToArticle }) {
-  const image = article.cover_image?.trim() || article.social_image?.trim() || null;
-  
   return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-testid="featured-article"
-      className="group relative block rounded-2xl overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-4 focus-visible:ring-offset-fd-background transition-all duration-500 animate-fade-in-up"
-      aria-label={`Featured Article: ${article.title}`}
-      role="article"
+    <div
+      data-testid={isFeatured ? 'featured-article' : 'article-card'}
+      className="motion-safe:animate-fade-in-up"
+      onClickCapture={() =>
+        track('articles_card_clicked', {
+          articleId: article.id,
+          position,
+          isFeatured,
+          sourceParams,
+        })
+      }
     >
-      {/* Background Image - shown as-is without whitening effect */}
-      {image && (
-        <img
-          src={image}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      )}
-      
-      {/* No overlay - image shown as-is. Text uses shadows for WCAG compliance */}
-      
-      {/* Featured Badge - CSS animation */}
-      <div 
-        className="absolute top-4 left-4 flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-slide-in-left"
-        aria-label="Must read featured article"
-      >
-        <Sparkles className="size-3 animate-pulse" aria-hidden="true" />
-        FEATURED
-      </div>
-      
-      {/* Content - Heavy text shadow for WCAG compliance without overlay */}
-      <div 
-        className="absolute inset-x-0 bottom-0 p-6 md:p-8"
-        style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.7)' }}
-      >
-        {/* Tags - White text with semi-transparent background for contrast */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {article.tag_list.slice(0, 4).map((tag) => (
-            <span 
-              key={tag} 
-              className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/30 transition-colors"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-        
-        {/* Title - White text for WCAG AA compliance */}
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight group-hover:text-purple-200 transition-colors line-clamp-2 drop-shadow-lg">
-          {article.title}
-        </h2>
-        
-        {/* Description - Light text for readability */}
-        {article.description && (
-          <p className="text-white/90 text-base mb-4 line-clamp-2 max-w-3xl drop-shadow">
-            {article.description}
-          </p>
-        )}
-        
-        {/* Meta Row - Light text for contrast */}
-        <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm">
-          {/* Author */}
-          <div className="flex items-center gap-2">
-            <img 
-              src={article.user.profile_image} 
-              alt={article.user.name}
-              loading="lazy"
-              className="size-8 rounded-full border-2 border-white/50"
-              suppressHydrationWarning
-            />
-            <span className="font-medium text-white">{article.user.name}</span>
-          </div>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">{formatDate(article.published_at)}</span>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:flex items-center gap-1" aria-label={`Reading time: ${article.reading_time_minutes} minutes`}>
-            <Clock className="size-3.5" aria-hidden="true" /> {article.reading_time_minutes} min
-          </span>
-          {article.page_views_count && (
-            <>
-              <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:flex items-center gap-1 text-amber-300" aria-label={`${formatViews(article.page_views_count)} views`}>
-                <Eye className="size-3.5" aria-hidden="true" /> {formatViews(article.page_views_count)} views
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      
-      {/* Hover Arrow */}
-      <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 border border-white/20">
-        <ExternalLink className="size-5 text-white" />
-      </div>
-    </a>
-  );
-}
-// Premium Article Card - Performance optimized with CSS animations
-function ArticleCard({ article, index }: { article: DevToArticle; index: number }) {
-  const image = article.cover_image?.trim() || article.social_image?.trim() || null;
-  
-  return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-testid="article-card"
-      className="group relative flex flex-col rounded-xl overflow-hidden bg-fd-card border border-fd-border/30 hover:border-fd-primary/50 hover:shadow-xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-2 focus-visible:ring-offset-fd-background transition-all duration-300 hover:-translate-y-1 animate-fade-in-up shadow-sm"
-      style={{ animationDelay: `${index * 50}ms` }}
-      aria-label={`Read article: ${article.title}`}
-      role="article"
-    >
-      {/* Cover Image - suppressHydrationWarning handles SSR cache staleness */}
-      <div 
-        className="relative h-44 overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900"
-        suppressHydrationWarning
-      >
-        {image && image.length > 0 ? (
-          <img
-            src={image}
-            alt=""
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-            <div className="w-full h-full flex items-center justify-center p-4">
-              <span className="relative text-base font-semibold text-white/90 text-center line-clamp-3 leading-snug px-4 drop-shadow-sm">
-                {article.title}
-              </span>
-            </div>
-          </>
-        )}
-        
-        {/* Reading Time Badge - Optimized for WCAG Accessibility */}
-        <div 
-          className="absolute top-3 right-3 bg-zinc-900/80 backdrop-blur-md text-zinc-50 text-[11px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-white/10 shadow-lg z-20"
-          aria-label={`Reading time: ${article.reading_time_minutes} minutes`}
-        >
-          <Clock className="size-3 text-zinc-300" aria-hidden="true" />
-          {article.reading_time_minutes} min
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className="flex flex-col flex-grow p-4">
-        {/* Author & Date */}
-        <div className="flex items-center justify-between text-xs text-fd-muted-foreground/90 font-medium mb-3">
-          <div className="flex items-center gap-2">
-            <img 
-              src={article.user.profile_image} 
-              alt={article.user.name}
-              loading="lazy"
-              className="size-7 rounded-full border border-fd-border shadow-sm"
-              suppressHydrationWarning
-            />
-            <span className="text-fd-foreground/90">{article.user.name}</span>
-          </div>
-          <span className="opacity-90">{formatDate(article.published_at)}</span>
-        </div>
-        
-        {/* Title */}
-        <h3 className="font-bold text-fd-foreground mb-2 line-clamp-2 group-hover:text-fd-primary transition-colors leading-snug text-[15px]">
-          {article.title}
-        </h3>
-        
-        {/* Description */}
-        {article.description && (
-          <p className="text-sm text-fd-foreground/75 dark:text-fd-muted-foreground line-clamp-2 mb-4 flex-grow leading-relaxed">
-            {article.description}
-          </p>
-        )}
-        
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {article.tag_list.slice(0, 3).map((tag) => (
-            <Badge 
-              key={tag} 
-              variant="secondary"
-              className="text-[10px] uppercase tracking-wide bg-fd-secondary-foreground/5 dark:bg-white/10 text-fd-foreground dark:text-zinc-100 border-none font-bold px-2.5 py-0.5"
-            >
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-        
-        {/* Stats Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-fd-border text-xs text-fd-muted-foreground">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 hover:text-red-500 transition-colors" title="Reactions">
-              <Heart className="size-3.5" />
-              {article.positive_reactions_count}
-            </span>
-            <span className="flex items-center gap-1 hover:text-blue-500 transition-colors" title="Comments">
-              <MessageCircle className="size-3.5" />
-              {article.comments_count}
-            </span>
-          </div>
-          
-          {article.page_views_count && (
-            <span className="flex items-center gap-1 text-fd-primary font-medium" title="Views">
-              <Eye className="size-3.5" />
-              {formatViews(article.page_views_count)}
-            </span>
-          )}
-        </div>
-      </div>
-      
-      {/* Hover glow effect */}
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-t from-purple-500/5 via-transparent to-transparent" />
-    </a>
+      <ArticleCardBlock
+        variant={isFeatured ? 'overlay' : 'stack'}
+        title={article.title}
+        description={article.description}
+        href={article.url}
+        imageUrl={image}
+        tags={article.tag_list}
+        author={{
+          name: article.user.name,
+          imageUrl: article.user.profile_image,
+        }}
+        publishedAt={article.published_at}
+        meta={{
+          reactions: article.positive_reactions_count,
+          comments: article.comments_count,
+          readingTimeMinutes: article.reading_time_minutes,
+          views: article.page_views_count,
+        }}
+        sourceLabel="Dev.to"
+        // The featured overlay card sits above the fold and is the LCP
+        // element on `/articles` page 1 — eager-load its cover and hint
+        // high fetch priority so it lands inside the 2.5s budget. Grid
+        // tiles below the fold keep the default lazy behaviour.
+        priority={isFeatured}
+      />
+    </div>
   );
 }
 
-export function ArticlesClient({ articles, lastUpdated }: ArticlesClientProps) {
-  // Hydration-safe mount state for cosmic background
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const [search, setSearch] = useState('');
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+export function ArticlesClient({
+  totalArticles,
+  params,
+  items,
+  featured,
+  tagCounts,
+  totalPages,
+  totalFiltered,
+  hasFilters,
+  lastUpdated,
+}: ArticlesClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [, startTransition] = useTransition();
+
+  // UI-only state (not data; not URL-bound).
   const [showFilters, setShowFilters] = useState(false);
 
-  // Get all unique tags with counts
-  const tagCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    articles.forEach(a => a.tag_list.forEach(tag => {
-      counts[tag] = (counts[tag] || 0) + 1;
-    }));
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 15); // Top 15 tags
-  }, [articles]);
+  // Local mirror of the search box for snappy typing — debounced into URL.
+  const [searchDraft, setSearchDraft] = useState(params.q);
+  const [search, setSearch] = useState(params.q);
+  useEffect(() => {
+    setSearchDraft(params.q);
+    setSearch(params.q);
+  }, [params.q]);
 
-  // Toggle tag selection
-  const toggleTag = (tag: string) => {
-    const newTags = new Set(selectedTags);
-    if (newTags.has(tag)) {
-      newTags.delete(tag);
-    } else {
-      newTags.add(tag);
-    }
-    setSelectedTags(newTags);
-    setCurrentPage(1);
-  };
+  // Push a new param-set to the URL. `mode === 'replace'` for debounced
+  // search keystrokes (no history pollution); `'push'` for tag/sort/page
+  // changes (back-button steps through them) — see PAGINATION_PHILOSOPHY.md.
+  const navigate = useCallback(
+    (next: ArticleParams, mode: 'push' | 'replace' = 'push') => {
+      const qs = serializeArticleParams(next);
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      startTransition(() => {
+        if (mode === 'replace') router.replace(href, { scroll: false });
+        else router.push(href, { scroll: false });
+      });
+    },
+    [pathname, router],
+  );
 
-  // Clear all filters
-  const clearFilters = () => {
-    setSelectedTags(new Set());
-    setSearch('');
-    setCurrentPage(1);
-  };
-
-  // Filter and sort articles
-  const filteredArticles = useMemo(() => {
-    let result = articles.filter((article) => {
-      const matchesSearch = 
-        search === '' ||
-        article.title.toLowerCase().includes(search.toLowerCase()) ||
-        article.description.toLowerCase().includes(search.toLowerCase());
-      const matchesTags = selectedTags.size === 0 || 
-        Array.from(selectedTags).every(tag => article.tag_list.includes(tag));
-      return matchesSearch && matchesTags;
-    });
-
-    // Sort articles
-    result = [...result].sort((a, b) => {
-      let comparison = 0;
-      switch (sortField) {
-        case 'date':
-          comparison = new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
-          break;
-        case 'reactions':
-          comparison = b.positive_reactions_count - a.positive_reactions_count;
-          break;
-        case 'comments':
-          comparison = b.comments_count - a.comments_count;
-          break;
-        case 'reading_time':
-          comparison = b.reading_time_minutes - a.reading_time_minutes;
-          break;
-      }
-      return sortDirection === 'desc' ? comparison : -comparison;
-    });
-
-    return result;
-  }, [articles, search, selectedTags, sortField, sortDirection]);
-
-  // Get featured article (top by reactions if not filtered)
-  const featuredArticle = selectedTags.size === 0 && search === '' && currentPage === 1
-    ? [...articles].sort((a, b) => b.positive_reactions_count - a.positive_reactions_count)[0]
-    : null;
-
-  // Articles for grid (excluding featured)
-  const gridArticles = featuredArticle 
-    ? filteredArticles.filter(a => a.id !== featuredArticle.id)
-    : filteredArticles;
-
-  // Pagination
-  const totalPages = Math.ceil(gridArticles.length / ARTICLES_PER_PAGE);
-  const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
-  const paginatedArticles = gridArticles.slice(startIndex, startIndex + ARTICLES_PER_PAGE);
-
+  // Debounced search input → URL.
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setCurrentPage(1);
+    setSearchDraft(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearch(value);
+      navigate({ ...params, q: value, page: 1 }, 'replace');
+      track('articles_search_submitted', { q: value, resultCount: totalFiltered });
+    }, SEARCH_DEBOUNCE_MS);
   };
 
-  const hasActiveFilters = selectedTags.size > 0 || search !== '';
+  const clearSearch = () => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    setSearchDraft('');
+    setSearch('');
+    navigate({ ...params, q: '', page: 1 });
+  };
+
+  const toggleTag = (tag: string) => {
+    const next = toggleTagInParams(params, tag);
+    navigate(next);
+    const wasActive = params.tags.includes(tag);
+    track('articles_filter_applied', {
+      tagsAdded: wasActive ? [] : [tag],
+      tagsRemoved: wasActive ? [tag] : [],
+      activeTags: next.tags,
+      resultCount: totalFiltered,
+    });
+  };
+
+  const setCurrentPage = (page: number) => {
+    navigate({ ...params, page });
+    track('articles_pagination', { from: params.page, to: page, totalPages });
+  };
+
+  const clearFilters = () => {
+    navigate({ ...params, q: '', tags: [], page: 1 });
+  };
+
+  const placeholderCount = Math.max(0, ARTICLES_PER_PAGE - items.length);
+  const currentPage = params.page;
+
+  // Fire articles_empty_state_seen exactly once per render where the empty
+  // state is shown, so we can spot filter combos that yield zero results.
+  useEffect(() => {
+    if (items.length === 0 && hasFilters) {
+      track('articles_empty_state_seen', {
+        activeParams: serializeArticleParams(params),
+      });
+    }
+    // We intentionally fire only when the rendered combination changes.
+  }, [items.length, hasFilters, params]);
 
   return (
     <div className="relative min-h-screen">
-      {/* Background Beams with Collision - Full page background */}
-      <div className="fixed inset-0 -z-10 pointer-events-none" style={{ height: '100vh', width: '100vw' }}>
+      <div className="fixed inset-0 -z-10 h-screen w-screen pointer-events-none">
         <BackgroundBeamsWithCollision
           className="pointer-events-none"
-          containerClassName="!h-screen !min-h-screen !max-h-none !bg-gradient-to-b !from-white !to-neutral-100 dark:!from-purple-950 dark:!via-slate-950 dark:!to-black"
+          containerClassName="!h-screen !min-h-screen !max-h-none !bg-linear-to-b !from-white !to-neutral-100 dark:!from-purple-950 dark:!via-slate-950 dark:!to-black"
           hideCollisionSurface
         >
-          {/* Empty children - using as pure background */}
           <div className="sr-only">Background Effect</div>
         </BackgroundBeamsWithCollision>
       </div>
-      
-      {/* Content */}
+
       <div className="relative z-10 space-y-8 py-8">
-        {/* Hero Header - Performance: Using CSS animations, suppressHydrationWarning for SSR compatibility */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 animate-fade-in-up" suppressHydrationWarning>
-          <div 
-            className="inline-flex items-center gap-2 bg-fd-primary/10 dark:bg-purple-500/20 text-fd-primary dark:text-purple-300 text-sm font-medium px-4 py-1.5 rounded-full border border-fd-primary/20 dark:border-purple-500/30 backdrop-blur-sm animate-scale-in"
+        {/* Hero — single fade on the wrapper (MOTION_PHILOSOPHY.md). */}
+        <div className="text-center max-w-3xl mx-auto space-y-4 motion-safe:animate-fade-in-up" suppressHydrationWarning>
+          <div
+            className="inline-flex items-center gap-2 bg-fd-primary/10 dark:bg-purple-500/20 text-fd-primary dark:text-purple-300 text-sm font-medium px-4 py-1.5 rounded-full border border-fd-primary/20 dark:border-purple-500/30 backdrop-blur-sm"
             suppressHydrationWarning
           >
             <BookOpen className="size-4" />
-            <span data-testid="article-count">{articles.length} Articles Published</span>
+            <span data-testid="article-count">{totalArticles} Articles Published</span>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-fd-foreground dark:text-white dark:drop-shadow-lg animate-fade-in-up" style={{ animationDelay: '0.1s' }} suppressHydrationWarning>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-fd-foreground dark:text-white dark:drop-shadow-lg" suppressHydrationWarning>
             Technical Insights
           </h1>
-          <p className="text-lg text-fd-muted-foreground dark:text-purple-100/80 leading-relaxed dark:drop-shadow animate-fade-in-up" style={{ animationDelay: '0.2s' }} suppressHydrationWarning>
+          <p className="text-lg text-fd-muted-foreground dark:text-purple-100/80 leading-relaxed dark:drop-shadow" suppressHydrationWarning>
             Deep dives into ESLint security, JavaScript performance, and modern development practices.
           </p>
+          <div className="flex justify-center pt-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                data-testid="subscribe-trigger"
+                className="inline-flex items-center gap-2 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm font-medium text-fd-foreground transition-colors hover:bg-fd-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-2"
+              >
+                Follow new articles
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Subscribe</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-rss"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-rss-link"
+                        href="https://dev.to/feed/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        RSS feed
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'rss' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-devto"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-devto-link"
+                        href="https://dev.to/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Follow on Dev.to
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'devto' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-x"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-x-link"
+                        href="https://x.com/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Follow on X
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'x' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-github"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-github-link"
+                        href="https://github.com/ofri-peretz/eslint"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Star on GitHub
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'github' })}
+                  />
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        {/* Search & Filters Bar - CSS animation for hydration safety */}
-        <div 
-          className="relative bg-fd-card border border-fd-border rounded-xl p-4 shadow-lg animate-fade-in-up"
-          style={{ animationDelay: '0.3s' }}
+        {/* Search & Filters Bar */}
+        <div
+          className="relative bg-fd-card border border-fd-border rounded-xl p-4 shadow-lg motion-safe:animate-fade-in-up"
           suppressHydrationWarning
         >
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px] max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fd-muted-foreground" />
-              <input 
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fd-muted-foreground" aria-hidden />
+              <input
                 type="text"
                 placeholder="Search articles..."
-                value={search}
+                aria-label="Search articles"
+                value={searchDraft}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 data-testid="search-input"
-                className="w-full pl-10 pr-10 py-2.5 bg-fd-background border border-fd-border rounded-lg text-fd-foreground placeholder:text-fd-muted-foreground focus:outline-none focus:border-fd-primary focus:ring-2 focus:ring-fd-primary/30 transition-all duration-300"
+                className="w-full pl-10 pr-10 py-2.5 bg-fd-background border border-fd-border rounded-lg text-fd-foreground placeholder:text-fd-muted-foreground focus:outline-none focus:border-fd-primary focus:ring-2 focus:ring-fd-primary/30 transition-colors duration-200"
               />
-              {search && (
+              {searchDraft && (
                 <button
+                  type="button"
+                  aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-fd-muted-foreground hover:text-fd-foreground transition-colors"
-                  onClick={() => handleSearchChange('')}
+                  onClick={clearSearch}
                   data-testid="clear-search"
                 >
-                  <X className="size-4" />
+                  <X className="size-4" aria-hidden />
                 </button>
               )}
             </div>
 
-            {/* Sort */}
-            <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
-              <SelectTrigger className="w-[150px]" data-testid="sort-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" sideOffset={8}>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <span className="flex items-center gap-2">
-                      {option.icon}
-                      {option.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Direction Toggle */}
             <Button
               variant="outline"
-              size="icon"
-              onClick={() => setSortDirection(d => d === 'desc' ? 'asc' : 'desc')}
-              data-testid="sort-direction"
-              title={sortDirection === 'desc' ? 'Descending' : 'Ascending'}
-            >
-              <ArrowUpDown className={cn("size-4 transition-transform duration-300", sortDirection === 'asc' && "rotate-180")} />
-            </Button>
-
-            {/* Filter Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                showFilters && "border-fd-primary bg-fd-primary/10"
-              )}
+              onClick={() => setShowFilters(s => !s)}
+              className={cn(showFilters && "border-fd-primary bg-fd-primary/10")}
               data-testid="filter-toggle"
+              aria-expanded={showFilters}
             >
-              <Filter className="size-4 mr-2" />
+              <Filter className="size-4 mr-2" aria-hidden />
               Filters
-              {selectedTags.size > 0 && (
+              {params.tags.length > 0 && (
                 <span className="ml-2 bg-fd-primary text-fd-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
-                  {selectedTags.size}
+                  {params.tags.length}
                 </span>
               )}
             </Button>
 
-            {/* Clear Filters */}
             <AnimatePresence>
-              {hasActiveFilters && (
+              {hasFilters && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -512,175 +371,205 @@ export function ArticlesClient({ articles, lastUpdated }: ArticlesClientProps) {
                     className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                     data-testid="clear-filters"
                   >
-                    <X className="size-4 mr-1" />
+                    <X className="size-4 mr-1" aria-hidden />
                     Clear
                   </Button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Results Count */}
-            <motion.div 
-              key={filteredArticles.length}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-sm text-fd-muted-foreground ml-auto" 
+            <div
+              className="text-sm text-fd-muted-foreground ml-auto tabular-nums"
               data-testid="results-count"
+              aria-live="polite"
             >
-              {filteredArticles.length} result{filteredArticles.length !== 1 ? 's' : ''}
-            </motion.div>
+              {totalFiltered} result{totalFiltered !== 1 ? 's' : ''}
+            </div>
           </div>
 
-          {/* Tag Filters - Collapsible */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4 pt-4 border-t border-fd-border">
-                  <div className="flex items-center gap-2 mb-3 text-xs text-fd-muted-foreground uppercase tracking-wide">
-                    <SlidersHorizontal className="size-3" />
-                    Filter by Topic
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {tagCounts.map(([tag, count], i) => (
-                      <motion.button
-                        key={tag}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        onClick={() => toggleTag(tag)}
-                        data-testid={`tag-${tag}`}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
-                          selectedTags.has(tag)
-                            ? "bg-fd-primary text-fd-primary-foreground shadow-lg shadow-purple-500/20 scale-105"
-                            : "bg-fd-muted text-fd-muted-foreground hover:bg-fd-accent hover:text-fd-accent-foreground border border-fd-border"
-                        )}
-                      >
-                        #{tag}
-                        <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded-full transition-colors",
-                          selectedTags.has(tag) ? "bg-white/20" : "bg-fd-background"
-                        )}>
-                          {count}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
+          {/* Tag Filters — grid-rows fr-unit collapsible (MOTION_PHILOSOPHY.md).
+              Inner content stays in the DOM so the transition is smooth. The
+              parent's `inert` attribute removes the collapsed content from
+              tab order + screen readers without snapping the height. */}
+          <div
+            data-state={showFilters ? 'open' : 'closed'}
+            className="grid grid-rows-[0fr] data-[state=open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-200 ease-out"
+            // `inert` alone handles both AT-hiding and tab-order removal.
+            // We deliberately do NOT also set `aria-hidden` because axe's
+            // `aria-hidden-focus` rule flags any aria-hidden subtree that
+            // still contains focusable children (axe doesn't credit `inert`
+            // as sufficient mitigation, even though browsers do).
+            // React 19: boolean attrs need `true` / `undefined` — empty string
+            // throws a dev-mode warning ("Received an empty string for a
+            // boolean attribute `inert`").
+            inert={!showFilters || undefined}
+          >
+            <div className="overflow-hidden">
+              <div className="mt-4 pt-4 border-t border-fd-border">
+                <div className="flex items-center gap-2 mb-3 text-xs text-fd-muted-foreground uppercase tracking-wide">
+                  <SlidersHorizontal className="size-3" aria-hidden />
+                  Filter by Topic
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="flex flex-wrap gap-2">
+                  {tagCounts.map(([tag, count]) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      data-testid={`tag-${tag}`}
+                      aria-pressed={params.tags.includes(tag)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+                        params.tags.includes(tag)
+                          ? "bg-fd-primary text-fd-primary-foreground shadow-lg shadow-purple-500/20"
+                          : "bg-fd-muted text-fd-muted-foreground hover:bg-fd-accent hover:text-fd-accent-foreground border border-fd-border",
+                      )}
+                    >
+                      #{tag}
+                      <span className={cn(
+                        "text-xs px-1.5 py-0.5 rounded-full",
+                        params.tags.includes(tag) ? "bg-white/20" : "bg-fd-background",
+                      )}>
+                        {count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Featured Article */}
-        {featuredArticle && (
-          <FeaturedArticle article={featuredArticle} />
+        {/* Featured Article — always rendered on page 1 (PAGINATION_PHILOSOPHY.md).
+            Uses the same `ArticleCard` wrapper as the grid; the only difference
+            is `isFeatured` (which sets the block's `variant="overlay"`). */}
+        {featured && (
+          <ArticleCard
+            article={featured}
+            position={0}
+            isFeatured
+            sourceParams={serializeArticleParams(params)}
+          />
         )}
 
-        {/* Articles Grid */}
-        {paginatedArticles.length > 0 ? (
+        {/* Articles Grid — keyed by page so pagination crossfades the whole
+            grid as one (MOTION_PHILOSOPHY.md). Padded with placeholders
+            so partial pages preserve grid height (PAGINATION_PHILOSOPHY.md). */}
+        {items.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="articles-grid">
-              <AnimatePresence mode="popLayout">
-                {paginatedArticles.map((article, index) => (
-                  <ArticleCard key={article.id} article={article} index={index} />
-                ))}
-              </AnimatePresence>
+            <div
+              key={`page-${currentPage}`}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 motion-safe:animate-fade-in"
+              data-testid="articles-grid"
+            >
+              {items.map((article, idx) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  position={idx}
+                  sourceParams={serializeArticleParams(params)}
+                />
+              ))}
+              {Array.from({ length: placeholderCount }).map((_, i) => (
+                <div
+                  key={`placeholder-${i}`}
+                  aria-hidden="true"
+                  className="invisible min-h-[420px]"
+                />
+              ))}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div 
-                className="flex items-center justify-center gap-4 pt-8 animate-fade-in-up"
-                style={{ animationDelay: '0.2s' }}
-                suppressHydrationWarning
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  data-testid="prev-page"
-                >
-                  <ChevronLeft className="size-4 mr-1" />
-                  Previous
-                </Button>
+            {/* Pagination — always rendered when results exist
+                (PAGINATION_PHILOSOPHY.md: footer never disappears). */}
+            <Pagination
+              className="pt-8 motion-safe:animate-fade-in-up"
+              suppressHydrationWarning
+            >
+              <PaginationContent className="gap-2">
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    data-testid="prev-page"
+                  >
+                    <ChevronLeft className="size-4 mr-1" aria-hidden />
+                    Previous
+                  </Button>
+                </PaginationItem>
 
-                <div className="flex items-center gap-2" data-testid="page-numbers">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
+                {Array.from({ length: Math.min(5, Math.max(1, totalPages)) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <PaginationItem key={pageNum}>
                       <Button
-                        key={pageNum}
                         variant={currentPage === pageNum ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
+                        disabled={totalPages <= 1}
                         className={cn(
-                          "w-10 h-10 transition-all duration-300",
-                          currentPage === pageNum && "shadow-lg shadow-purple-500/20"
+                          "w-10 h-10 transition-colors duration-200",
+                          currentPage === pageNum && "shadow-lg shadow-purple-500/20",
                         )}
                         data-testid={`page-${pageNum}`}
+                        aria-current={currentPage === pageNum ? 'page' : undefined}
                       >
                         {pageNum}
                       </Button>
-                    );
-                  })}
-                </div>
+                    </PaginationItem>
+                  );
+                })}
 
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  data-testid="next-page"
-                >
-                  Next
-                  <ChevronRight className="size-4 ml-1" />
-                </Button>
-              </div>
-            )}
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage >= totalPages}
+                    data-testid="next-page"
+                  >
+                    Next
+                    <ChevronRight className="size-4 ml-1" aria-hidden />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </>
         ) : (
-          <div 
-            className="flex flex-col items-center justify-center py-16 bg-fd-card/50 rounded-2xl border border-dashed border-fd-border animate-scale-in"
+          <div
+            className="flex flex-col items-center justify-center min-h-[600px] py-16 bg-fd-card/50 rounded-2xl border border-dashed border-fd-border motion-safe:animate-scale-in"
             data-testid="no-results"
           >
-            <Search className="size-12 text-fd-muted-foreground/50 mb-4" />
-            <h3 className="text-xl font-semibold text-fd-foreground mb-2">No articles found</h3>
+            <Search className="size-12 text-fd-muted-foreground/50 mb-4" aria-hidden />
+            <h2 className="text-xl font-semibold text-fd-foreground mb-2">No articles found</h2>
             <p className="text-fd-muted-foreground mb-4">Try adjusting your search or filters</p>
-            <Button onClick={clearFilters}>
-              Clear all filters
-            </Button>
+            <Button data-testid="clear-all-filters" onClick={clearFilters}>Clear all filters</Button>
           </div>
         )}
 
-        {/* Footer - Performance: CSS animation with hydration safety */}
-        <div 
-          className="text-center pt-8 text-sm text-fd-muted-foreground animate-fade-in-up" 
-          style={{ animationDelay: '0.3s' }}
+        <div
+          className="text-center pt-8 text-sm text-fd-muted-foreground motion-safe:animate-fade-in-up"
           data-testid="last-synced"
           suppressHydrationWarning
         >
-          Last synced: {new Date(lastUpdated).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
+          Last synced: {new Date(lastUpdated).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
             year: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
           })}
+          {/* `search` is referenced so React keeps it as state for the
+              draft mirror — it is the most recent committed search value. */}
+          <span className="sr-only" data-testid="committed-search">{search}</span>
         </div>
       </div>
     </div>

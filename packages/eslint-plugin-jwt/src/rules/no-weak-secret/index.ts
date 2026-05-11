@@ -47,8 +47,11 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-weak-secret.md',
       description:
         'Require strong secrets (256+ bits) for HMAC-based JWT signing',
+      cwe: 'CWE-326',
+      cvss: 7.5,
     },
     fixable: undefined,
     hasSuggestions: false,

@@ -88,12 +88,15 @@ function isEscaped(
     }
   }
 
-  // Also check if it's wrapped in a trusted function call (for complex cases)
-  let current: TSESTree.Node | null = node;
+  // Also check if it's wrapped in a trusted function call (for complex cases).
+  // `current` is only assigned from `node` (truthy on entry) or `parent` after
+  // an explicit `if (!parent) break;`, so it's never null at the loop check
+  // (CodeQL: `js/useless-conditional` on the `current &&` test).
+  let current: TSESTree.Node = node;
   let depth = 0;
   const maxDepth = 5; // Prevent infinite loops
-  
-  while (current && depth < maxDepth) {
+
+  while (depth < maxDepth) {
     const parent = sourceCode.getNodeByRangeIndex?.(current.range[0] - 1) || 
                    (current as TSESTree.Node).parent;
     
@@ -165,7 +168,10 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-regex-construction.md',
       description: 'Detects unsafe regex construction patterns (user input without escaping, dynamic flags)',
+      cwe: 'CWE-400',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -183,6 +189,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         issueName: 'Escape User Input',
         description: 'Escape user input for regex',
         severity: 'LOW',
+        // oxlint-disable-next-line no-template-curly-in-string
         fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),
@@ -251,7 +258,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       trustedEscapingFunctions = ['escapeRegex', 'escape', 'sanitize'],
     }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check RegExp constructor calls

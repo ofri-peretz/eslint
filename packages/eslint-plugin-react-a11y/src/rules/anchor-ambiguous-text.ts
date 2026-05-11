@@ -151,6 +151,7 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-ambiguous-text.md',
       description: 'Enforce that anchor text is not ambiguous',
     },
     messages: {
@@ -179,7 +180,7 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { words = DEFAULT_AMBIGUOUS_WORDS } = options ?? {};
-    const ambiguousWords = words.map((word: string) => normalizeText(word));
+    const ambiguousWords = new Set(words.map((word: string) => normalizeText(word)));
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
@@ -192,7 +193,7 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
         const comparisonText = normalizedText.replace(/[,.?¿!‽¡;:]/g, ''); // Remove punctuation for comparison
 
         // Check for exact matches (after punctuation removal)
-        const hasAmbiguousText = ambiguousWords.includes(comparisonText);
+        const hasAmbiguousText = ambiguousWords.has(comparisonText);
 
 
         if (hasAmbiguousText) {

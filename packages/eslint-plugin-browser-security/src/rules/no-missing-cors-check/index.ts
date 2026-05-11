@@ -52,7 +52,10 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-cors-check.md',
       description: 'Detects missing CORS validation (wildcard CORS, missing origin check)',
+      cwe: 'CWE-346',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -127,9 +130,9 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     
     const trustedLibraries = corsTrustedLibraries;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {

@@ -3,21 +3,20 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin.
+  Project conventions: naming, file structure, and code style consistency.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-conventions" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-conventions.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-conventions" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-conventions.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-conventions" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-conventions" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=conventions" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=conventions" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
-This plugin provides Security-focused ESLint plugin.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
+This plugin provides Project conventions: naming, file structure, and code style consistency.
 
 ## Philosophy
 
@@ -53,6 +52,14 @@ export default [conventions.configs.recommended];
 
 ---
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -60,17 +67,29 @@ export default [conventions.configs.recommended];
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [conventions](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/conventions) |  |  |  | Enforce conventions |  |  |  |  |  |
-| [deprecation](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/deprecation) |  |  |  | Enforce deprecation |  |  |  |  |  |
-| [development](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/development) |  |  |  | Enforce development |  |  |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [consistent-existence-index-check](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/consistent-existence-index-check) |  |  |  | Enforce consistent style for checking if an element exists in an array | 🟢 |  |  |  | 💡 |  |
+| [expiring-todo-comments](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/expiring-todo-comments) |  |  |  | Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-c… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [filename-case](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/filename-case) |  |  |  | Enforce filename case conventions for consistency across your codebase | 🟢 |  |  |  | 💡 |  |
+| [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code) |  |  |  | ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [no-deprecated-api](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-deprecated-api) | CWE-1078 |  |  | Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-co… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-json-schema-tags](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-json-schema-tags) |  |  |  | Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags. | 🟢 |  |  |  | 💡 |  |
+| [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [prefer-dependency-version-strategy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dependency-version-strategy) |  |  |  | Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies.… | 🟢 |  |  |  | 💡 |  |
+| [prefer-dom-node-text-content](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dom-node-text-content) |  |  |  | Prefer textContent over innerText. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [require-data-testid](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/require-data-testid) |  |  |  | Require stable data-testid attributes on interactive elements for end-to-end test reliability | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -79,7 +98,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |

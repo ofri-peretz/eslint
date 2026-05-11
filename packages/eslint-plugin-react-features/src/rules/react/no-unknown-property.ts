@@ -103,6 +103,7 @@ export const noUnknownProperty = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unknown-property.md',
       description: 'Disallow unknown DOM properties',
     },
     schema: [],

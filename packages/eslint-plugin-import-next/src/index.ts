@@ -173,7 +173,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-import-next',
-    version: '2.0.0',
+    version: '2.3.6',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -182,6 +182,19 @@ export const plugin = {
  * Preset configurations for common use cases
  */
 export const configs = {
+  /**
+   * Flagship preset — exactly the rule from this plugin that appears in the
+   * ecosystem-wide flagship list (`.agent/flagship-rules.md`). Use this when
+   * you want the highest-signal subset shippable in CI gates without the
+   * noise of `recommended`.
+   */
+  flagship: {
+    plugins: { 'import-next': plugin },
+    rules: {
+      'import-next/no-cycle': 'error',
+    },
+  },
+
   /**
    * Recommended configuration for most projects
    *

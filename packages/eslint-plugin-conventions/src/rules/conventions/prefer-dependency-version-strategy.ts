@@ -7,11 +7,11 @@
 /**
  * prefer-dependency-version-strategy
  *
- * Enforces a consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies.
- * Works alongside @nx/dependency-checks to ensure both version alignment and strategy consistency.
- *
- * This rule is designed to complement @nx/dependency-checks, which validates that dependencies
- * match the lockfile. This rule ensures the version specifier format is consistent.
+ * Enforces a consistent version-specifier strategy (caret, tilde, exact, etc.)
+ * for package.json dependencies. Pairs with a lockfile-alignment check
+ * (e.g. `npm ci`, or this monorepo's `scripts/check-version-alignment.ts`)
+ * so both format consistency and lockfile parity are enforced; this rule
+ * handles the "format" half at edit/PR time inside ESLint.
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -39,6 +39,7 @@ export const preferDependencyVersionStrategy = createRule<
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-dependency-version-strategy.md',
       description:
         'Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies',
     },

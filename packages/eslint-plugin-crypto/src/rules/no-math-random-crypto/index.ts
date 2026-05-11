@@ -48,7 +48,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-math-random-crypto.md',
       description: 'Disallow Math.random() for cryptographic purposes',
+      cwe: 'CWE-338',
+      cvss: 9.5,
+      confidence: 'medium',
     },
     hasSuggestions: true,
     messages: {

@@ -28,7 +28,10 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-output-validation.md',
       description: 'Require validation of AI output before displaying to users',
+      cwe: 'CWE-707',
+      cvss: 5,
     },
     messages: {
       unvalidatedOutput: formatLLMMessage({
@@ -84,7 +87,7 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
       'validate', 'verify', 'check', 'sanitize',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // AI output property patterns
     const aiOutputPatterns = ['.text', '.content', '.message', '.response', '.output'];

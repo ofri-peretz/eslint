@@ -1,0 +1,170 @@
+/*
+ * @interlace/ui — animations and motion tokens used by primitives + decorative components.
+ * Import once in the consuming app's global stylesheet:
+ *   @import "@interlace/ui/styles/tokens.css";
+ *
+ * Design-system colors are intentionally not defined here — fumadocs sites
+ * inherit them from `fumadocs-ui/css/<theme>.css` and overlay brand overrides
+ * in their own global.css.
+ */
+
+@theme inline {
+  /* MagicUI: shimmer-button */
+  --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite
+    alternate;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+
+  /* MagicUI: animated-gradient-text */
+  --animate-gradient: gradient 8s linear infinite;
+
+  /* MagicUI: marquee */
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+
+  /* Aceternity: background-gradient-animation */
+  --animate-first: moveVertical 30s ease infinite;
+  --animate-second: moveInCircle 20s reverse infinite;
+  --animate-third: moveInCircle 40s linear infinite;
+  --animate-fourth: moveHorizontal 40s ease infinite;
+  --animate-fifth: moveInCircle 20s ease infinite;
+
+  /* Primitives: accordion */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes shimmer-slide {
+    to {
+      transform: translate(calc(100cqw - 100%), 0);
+    }
+  }
+  @keyframes spin-around {
+    0% {
+      transform: translateZ(0) rotate(0);
+    }
+    15%,
+    35% {
+      transform: translateZ(0) rotate(90deg);
+    }
+    65%,
+    85% {
+      transform: translateZ(0) rotate(270deg);
+    }
+    100% {
+      transform: translateZ(0) rotate(360deg);
+    }
+  }
+  @keyframes gradient {
+    to {
+      background-position: var(--bg-size, 300%) 0;
+    }
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes moveHorizontal {
+    0% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+    50% {
+      transform: translateX(50%) translateY(10%);
+    }
+    100% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+  }
+  @keyframes moveInCircle {
+    0% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(180deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes moveVertical {
+    0% {
+      transform: translateY(-50%);
+    }
+    50% {
+      transform: translateY(50%);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
+  }
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/* Border Beam — pure CSS animation, used by @interlace/ui/magicui/border-beam */
+@keyframes border-beam {
+  0% {
+    offset-distance: var(--border-beam-initial, 0%);
+  }
+  100% {
+    offset-distance: calc(100% + var(--border-beam-initial, 0%));
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam var(--border-beam-duration, 6s) linear infinite;
+  animation-direction: var(--border-beam-direction, normal);
+}
+
+/*
+ * Accessibility — respect prefers-reduced-motion.
+ * Industry-canon practice (MUI, Vercel, Linear, Stripe, GitHub all do this).
+ * Disables every CSS-driven animation registered above when the user has
+ * motion-sensitivity preferences. JS-driven motion (motion/react, canvas)
+ * is gated per-component via the useReducedMotion hook.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-slide,
+  .animate-spin-around,
+  .animate-gradient,
+  .animate-marquee,
+  .animate-marquee-vertical,
+  .animate-first,
+  .animate-second,
+  .animate-third,
+  .animate-fourth,
+  .animate-fifth,
+  .animate-border-beam,
+  .animate-accordion-down,
+  .animate-accordion-up,
+  .animate-fade-in-up,
+  .animate-slide-in-left,
+  .animate-scale-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}

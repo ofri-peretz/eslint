@@ -109,6 +109,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-silent-errors.md',
       description: 'Detects empty catch blocks',
     },
     hasSuggestions: true,
@@ -182,7 +183,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
     const { allowWithComment = false, ignoreInTests = true }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -190,7 +191,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check catch clauses

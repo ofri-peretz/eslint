@@ -14,6 +14,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-pii-in-logs', noPiiInLogs, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
     { code: "console.log('Status:', status)" },
     { code: "console.info('Count:', count)" }
   ],

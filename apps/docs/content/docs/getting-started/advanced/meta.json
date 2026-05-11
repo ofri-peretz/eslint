@@ -4,7 +4,7 @@
     "pages": [
         "ci-cd",
         "changelog",
-        "roadmap",
-        "contributing"
+        "contributing",
+        "launch"
     ]
 }

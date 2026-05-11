@@ -14,6 +14,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-abort-signal', requireAbortSignal, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     // Has abortSignal
     {
       code: `

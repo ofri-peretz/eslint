@@ -23,7 +23,10 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-props.md',
       description: 'Enforce that ARIA attributes are valid',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       invalidAriaProp: formatLLMMessage({

@@ -6,17 +6,17 @@ import { Rocket, Shield, Layers } from 'lucide-react';
 // Define colored icons for each pillar - sized to fit sidebar tabs
 const pillarIcons: Record<string, React.ReactNode> = {
   'getting-started': (
-    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-gradient-to-t from-blue-600 to-blue-500 text-white">
+    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-linear-to-t from-blue-600 to-blue-500 text-white">
       <Rocket className="size-3.5" />
     </div>
   ),
   security: (
-    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-gradient-to-t from-red-600 to-red-500 text-white">
+    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-linear-to-t from-red-600 to-red-500 text-white">
       <Shield className="size-3.5" />
     </div>
   ),
   quality: (
-    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-gradient-to-t from-emerald-600 to-emerald-500 text-white">
+    <div className="flex size-5 shrink-0 items-center justify-center rounded bg-linear-to-t from-emerald-600 to-emerald-500 text-white">
       <Layers className="size-3.5" />
     </div>
   ),
@@ -49,7 +49,12 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
         defaultOpenLevel: 1,
       }}
     >
-      {children}
+      {/* fumadocs DocsLayout / DocsPage render `<article>` for the page body
+          but no `<main>` landmark — wrap children so axe `landmark-one-main`
+          and `region` checks pass. */}
+      <main id="main-content" className="contents">
+        {children}
+      </main>
     </DocsLayout>
   );
 }

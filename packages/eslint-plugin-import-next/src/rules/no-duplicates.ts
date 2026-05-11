@@ -21,6 +21,7 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-duplicates.md',
       description: 'Reports duplicate imports',
     },
     fixable: 'code',

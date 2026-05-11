@@ -38,7 +38,10 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-static-iv.md',
       description: 'Disallow static or hardcoded initialization vectors (IVs)',
+      cwe: 'CWE-329',
+      cvss: 7.5,
     },
     hasSuggestions: false,
     messages: {

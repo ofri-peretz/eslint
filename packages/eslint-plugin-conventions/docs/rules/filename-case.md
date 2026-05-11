@@ -108,14 +108,7 @@ src/
 
 ### ✅ Correct (with `kebabCase`)
 
-```
-src/
-  user-service.ts       ✅
-  my-component.tsx      ✅
-  api-handler.ts        ✅
-  README.md             ✅ (allowed uppercase)
-  LICENSE               ✅ (allowed uppercase)
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ## Configuration Examples
 

@@ -25,18 +25,25 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   check-npm-token:
     name: 🔍 NPM Token Health Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write   # creates / comments on the failure issue
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org/"
           cache: "npm"
 
@@ -103,7 +110,7 @@ jobs:
         if: |
           (steps.token-check.outputs.status == 'invalid' || steps.token-check.outputs.status == 'missing') &&
           (inputs.create-issue != false)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const status = '${{ steps.token-check.outputs.status }}';

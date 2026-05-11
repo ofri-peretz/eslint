@@ -61,7 +61,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-xpath-injection.md',
       description: 'Detects XPath injection vulnerabilities',
+      cwe: 'CWE-643',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -213,8 +215,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -251,6 +253,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if XPath expression contains dangerous patterns
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const containsDangerousXpath = (xpathText: string): boolean => {
       // Dangerous XPath patterns that allow traversal or injection
       const dangerousPatterns = [
@@ -269,6 +272,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if string contains XPath interpolation
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const containsXpathInterpolation = (text: string): boolean => {
       return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
     };

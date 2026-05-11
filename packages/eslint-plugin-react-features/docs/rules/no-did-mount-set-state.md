@@ -62,36 +62,7 @@ class UserProfile extends React.Component {
 ### ✅ Correct
 
 ```tsx
-class UserProfile extends React.Component {
-  constructor(props) {
-    super(props);
-    // Initialize state in constructor
-    this.state = {
-      loading: true,
-      windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0
-    };
-  }
-  
-  componentDidMount() {
-    // Only setState for async operations is acceptable
-    fetchUser().then(user => {
-      this.setState({ user, loading: false });
-    });
-  }
-}
-
-// Better: Use functional components with hooks
-function UserProfile() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    fetchUser().then(user => {
-      setUser(user);
-      setLoading(false);
-    });
-  }, []);
-}
+mounted
 ```
 
 ## Configuration Examples

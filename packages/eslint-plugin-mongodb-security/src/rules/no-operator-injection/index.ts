@@ -18,14 +18,17 @@ type MessageIds = 'operatorInjection';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const DANGEROUS_OPERATORS = ['$ne', '$gt', '$gte', '$lt', '$lte', '$nin', '$not', '$nor', '$exists'];
+const DANGEROUS_OPERATORS = new Set(['$ne', '$gt', '$gte', '$lt', '$lte', '$nin', '$not', '$nor', '$exists']);
 
 export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-operator-injection',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-operator-injection.md',
       description: 'Prevent MongoDB operator injection attacks via user input',
+      cwe: 'CWE-943',
+      cvss: 9.1,
     },
     hasSuggestions: true,
     messages: {
@@ -47,7 +50,7 @@ export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -64,8 +67,8 @@ export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
 
         if (!keyName) return;
 
-        if (DANGEROUS_OPERATORS.includes(keyName)) {
-          const sourceCode = context.sourceCode || context.getSourceCode();
+        if (DANGEROUS_OPERATORS.has(keyName)) {
+          const sourceCode = context.sourceCode;
           const valueText = sourceCode.getText(node.value);
           const userInputPatterns = ['req.body', 'req.query', 'req.params', 'request.body', 'ctx.request'];
 

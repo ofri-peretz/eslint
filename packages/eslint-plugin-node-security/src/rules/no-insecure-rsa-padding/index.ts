@@ -38,7 +38,10 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-rsa-padding.md',
       description: 'Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)',
+      cwe: 'CWE-327',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

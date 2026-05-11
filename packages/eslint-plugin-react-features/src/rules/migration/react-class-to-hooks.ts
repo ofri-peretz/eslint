@@ -29,7 +29,10 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-class-to-hooks.md',
       description: 'Suggest migrating React class components to hooks with detailed migration path',
+      cwe: 'CWE-1078',
+      cvss: 5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -90,11 +93,12 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
 allowComplexLifecycle = false 
 }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if class extends React.Component
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isReactComponent = (node: TSESTree.ClassDeclaration): boolean => {
       if (!node.superClass) return false;
       
@@ -126,6 +130,7 @@ allowComplexLifecycle = false
     /**
      * Analyze lifecycle methods used
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const analyzeLifecycleMethods = (node: TSESTree.ClassDeclaration): {
       methods: string[];
       suggestedHooks: string[];

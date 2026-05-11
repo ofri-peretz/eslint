@@ -98,7 +98,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-non-literal-fs-filename.md',
       description: 'Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system',
+      cwe: 'CWE-22',
+      confidence: 'medium',
     },
     messages: {
       // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
@@ -195,7 +198,7 @@ allowLiterals = false,
     /**
      * File system methods that can be dangerous with user input
      */
-    const dangerousMethods = [
+    const dangerousMethods = new Set([
       'readFile', 'readFileSync',
       'writeFile', 'writeFileSync',
       'appendFile', 'appendFileSync',
@@ -208,11 +211,12 @@ allowLiterals = false,
       'access', 'accessSync',
       'createReadStream', 'createWriteStream',
       ...additionalMethods
-    ];
+    ]);
 
     /**
      * Check if a node is a literal string (safe)
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
       return node.type === 'Literal' && typeof node.value === 'string';
     };
@@ -220,6 +224,7 @@ allowLiterals = false,
     /**
      * Check if path has dangerous patterns like ../ or ..\
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const hasTraversalPatterns = (pathStr: string): boolean => {
       return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
     };
@@ -242,7 +247,7 @@ allowLiterals = false,
 
       // First argument is usually the path
       const pathNode = node.arguments.length > 0 ? node.arguments[0] : null;
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
       const path = pathNode ? sourceCode.getText(pathNode) : '';
 
       return { path, pathNode, method, operation };
@@ -366,13 +371,14 @@ allowLiterals = false,
       
       // AST-based validation detection (faster than getText + regex)
       const isValidationCall = (testNode: TSESTree.Node): boolean => {
-        // Handle negation: !path.startsWith(...)
-        let _isNegated = false;
-        if (testNode.type === AST_NODE_TYPES.UnaryExpression && 
+        // Handle negation: !path.startsWith(...). The negation flag was
+        // tracked here but never read afterwards (CodeQL:
+        // `js/useless-assignment-to-local`); current callers only need to
+        // know whether the call matches a validation idiom.
+        if (testNode.type === AST_NODE_TYPES.UnaryExpression &&
             testNode.operator === '!' &&
             testNode.argument.type === AST_NODE_TYPES.CallExpression) {
           testNode = testNode.argument;
-          _isNegated = true;
         }
         
         if (testNode.type !== AST_NODE_TYPES.CallExpression) {
@@ -476,6 +482,7 @@ allowLiterals = false,
     /**
      * Generate refactoring steps based on the operation
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const generateRefactoringSteps = (operation: FSOperation): string => {
       switch (operation.method) {
         case 'readFile':
@@ -547,7 +554,7 @@ allowLiterals = false,
       const methodName = node.callee.property.name;
 
       // Skip if not a dangerous method
-      if (!dangerousMethods.includes(methodName)) {
+      if (!dangerousMethods.has(methodName)) {
         return;
       }
 

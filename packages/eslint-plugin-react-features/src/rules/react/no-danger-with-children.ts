@@ -24,6 +24,7 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-danger-with-children.md',
       description: 'Prevent using both children and dangerouslySetInnerHTML',
     },
     messages: {
@@ -58,6 +59,7 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasJSXChildren(node: TSESTree.JSXElement): boolean {
       // Check if there are any meaningful children
       return node.children.some(child => {

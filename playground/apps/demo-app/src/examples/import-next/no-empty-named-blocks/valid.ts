@@ -1,1 +1,0 @@
-// Valid example for no-empty-named-blocks\nexport const valid = true;\n

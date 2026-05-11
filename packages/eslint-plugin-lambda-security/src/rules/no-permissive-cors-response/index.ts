@@ -31,7 +31,10 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-permissive-cors-response.md',
       description: 'Detects permissive CORS (Access-Control-Allow-Origin: *) in Lambda response headers',
+      cwe: 'CWE-942',
+      cvss: 7.5,
     },
     fixable: 'code',
     messages: {
@@ -81,7 +84,7 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -93,6 +96,7 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
      * { statusCode, headers, body }
      */
     function isLambdaResponse(obj: TSESTree.ObjectExpression): boolean {
+      // oxlint-disable-next-line prefer-set-has
       const propNames = obj.properties
         .filter((p): p is TSESTree.Property => p.type === AST_NODE_TYPES.Property)
         .map(p => (p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : ''));

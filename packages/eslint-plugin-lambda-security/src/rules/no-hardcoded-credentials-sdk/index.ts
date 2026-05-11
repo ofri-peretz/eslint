@@ -41,7 +41,7 @@ const CREDENTIAL_PROPERTY_NAMES = [
 ];
 
 // AWS SDK v3 client names
-const AWS_SDK_V3_CLIENTS = [
+const AWS_SDK_V3_CLIENTS = new Set([
   'S3Client',
   'DynamoDBClient',
   'LambdaClient',
@@ -62,14 +62,17 @@ const AWS_SDK_V3_CLIENTS = [
   'StepFunctionsClient',
   'RDSClient',
   'ElastiCacheClient',
-];
+]);
 
 export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials-sdk',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-hardcoded-credentials-sdk.md',
       description: 'Detects hardcoded AWS credentials in SDK client configurations',
+      cwe: 'CWE-798',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {
@@ -112,7 +115,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -143,7 +146,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
       if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const name = node.callee.name;
         // Known AWS SDK v3 clients
-        if (AWS_SDK_V3_CLIENTS.includes(name)) {
+        if (AWS_SDK_V3_CLIENTS.has(name)) {
           return name;
         }
         // Only match *Client if it looks like AWS (contains common AWS service prefixes)

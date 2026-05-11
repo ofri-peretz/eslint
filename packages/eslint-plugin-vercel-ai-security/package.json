@@ -13,6 +13,10 @@
     "./types": {
       "types": "./src/types/index.d.ts",
       "default": "./src/types/index.js"
+    },
+    "./oxlint": {
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -64,7 +68,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+  },
   "peerDependenciesMeta": {
     "ai": {
       "optional": true
@@ -75,9 +81,15 @@
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^2.0.86",
+    "@ai-sdk/openai": "^3.0.58",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "ai": "^5.0.113"
+    "ai": "^6.0.174"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   }
 }

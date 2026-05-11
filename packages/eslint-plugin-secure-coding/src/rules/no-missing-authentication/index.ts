@@ -149,7 +149,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-missing-authentication.md',
       description: 'Detects missing authentication checks in route handlers',
+      cwe: 'CWE-287',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {
@@ -229,10 +232,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const testFileRegex = new RegExp(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Find variable declaration for an identifier

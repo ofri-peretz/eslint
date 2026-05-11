@@ -16,16 +16,20 @@ type MessageIds = 'requireSchemaValidation';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const VALIDATION_PROPERTIES = [
+const VALIDATION_PROPERTIES = new Set([
   'required', 'validate', 'enum', 'min', 'max',
   'minlength', 'maxlength', 'match', 'minLength', 'maxLength',
-];
+]);
 
 export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
   name: 'require-schema-validation',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Require validation on Mongoose schema fields' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-schema-validation.md', description: 'Require validation on Mongoose schema fields',
+      cwe: 'CWE-20',
+      cvss: 6.1,
+    },
     hasSuggestions: true,
     messages: {
       requireSchemaValidation: formatLLMMessage({
@@ -46,7 +50,7 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -86,7 +90,7 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
           const hasValidation = fieldProps.some((p) => {
             if (p.type !== AST_NODE_TYPES.Property) return false;
             const keyName = p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : null;
-            return keyName !== null && VALIDATION_PROPERTIES.includes(keyName);
+            return keyName !== null && VALIDATION_PROPERTIES.has(keyName);
           });
 
           if (!hasValidation) {

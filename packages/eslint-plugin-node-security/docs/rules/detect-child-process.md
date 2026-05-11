@@ -127,34 +127,7 @@ spawn(userCommand, [userArg1, userArg2]); // Argument injection
 ### ✅ Correct
 
 ```typescript
-// Safe execFile usage
-const { execFile } = require('child_process');
-execFile('git', ['clone', validatedRepo], { shell: false }, callback);
-
-// Safe spawn usage
-const { spawn } = require('child_process');
-const git = spawn('git', ['clone', validatedRepo], { shell: false });
-
-// With execa library (recommended)
-import execa from 'execa';
-await execa('git', ['clone', validatedRepo]);
-
-// Input validation helper
-function validateGitUrl(url: string): boolean {
-  return /^https:\/\/github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(url);
-}
-
-// Safe implementation
-async function safeClone(repoUrl: string) {
-  if (!validateGitUrl(repoUrl)) {
-    throw new Error('Invalid repository URL');
-  }
-
-  return execa('git', ['clone', repoUrl], {
-    shell: false,
-    stripFinalNewline: true,
-  });
-}
+const exec = myFunction; exec(command);
 ```
 
 ## Method Comparison

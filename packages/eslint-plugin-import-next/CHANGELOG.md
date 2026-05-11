@@ -1,3 +1,9 @@
+## [2.3.6] - 2026-05-03
+
+### Changed
+
+- `no-cycle` rewritten to per-import targeted DFS (replaces upfront full-graph BFS+Tarjan SCC). The `nonCyclicFiles` cache provides O(1) rejection after first visit; only files along the actual DFS path are read. Detection parity with the previous algorithm is preserved.
+
 ## 2.3.5 (2026-02-09)
 
 This was a version bump only for eslint-plugin-import-next to align it with other projects, there were no code changes.

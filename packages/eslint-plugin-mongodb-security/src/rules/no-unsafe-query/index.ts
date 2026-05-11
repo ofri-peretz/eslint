@@ -64,11 +64,35 @@ const USER_INPUT_PATTERNS = [
 ];
 
 /**
- * Check if an expression contains potential user input
+ * Check if an expression contains potential user input.
+ *
+ * Recurses into composite expressions (TemplateLiteral, BinaryExpression,
+ * CallExpression) — without this, `$where: \`this.name == '${req.query.x}'\``
+ * was being missed because TemplateLiteral was stringified to '[expression]'
+ * before pattern matching (real FN found by the CWE-943 corpus).
  */
 function containsUserInput(node: TSESTree.Node): boolean {
-  const code = getNodeSource(node);
-  return USER_INPUT_PATTERNS.some((pattern) => code.includes(pattern));
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.expressions.some((e) => containsUserInput(e));
+  }
+  if (node.type === AST_NODE_TYPES.BinaryExpression) {
+    return containsUserInput(node.left) || containsUserInput(node.right);
+  }
+  if (node.type === AST_NODE_TYPES.CallExpression) {
+    return containsUserInput(node.callee) ||
+           node.arguments.some((a) => a.type !== 'SpreadElement' && containsUserInput(a as TSESTree.Node));
+  }
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    const code = getNodeSource(node);
+    return USER_INPUT_PATTERNS.some((pattern) => code.includes(pattern));
+  }
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    // Identifiers are unknown without scope analysis; treat as untainted
+    // here — the caller already treats bare Identifiers as unsafe at a
+    // higher gate. Don't double-count.
+    return false;
+  }
+  return false;
 }
 
 /**
@@ -124,8 +148,12 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-query.md',
       description:
         'Prevent NoSQL injection via direct use of user input in MongoDB queries',
+      cwe: 'CWE-943',
+      cvss: 9.8,
+      confidence: 'medium',
     },
     hasSuggestions: true,
     messages: {
@@ -173,14 +201,14 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
     [options = {}]
   ) {
     const { allowInTests = true, additionalMethods = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
       return {};
     }
 
-    const allMethods = [...QUERY_METHODS, ...additionalMethods];
+    const allMethods = new Set([...QUERY_METHODS, ...additionalMethods]);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -194,7 +222,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
             ? node.callee.property.name
             : null;
 
-        if (!methodName || !allMethods.includes(methodName)) {
+        if (!methodName || !allMethods.has(methodName)) {
           return;
         }
 
@@ -228,7 +256,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
                   {
                     messageId: 'suggestionUseEq',
                     fix(fixer: TSESLint.RuleFixer) {
-                      const sourceCode = context.sourceCode || context.getSourceCode();
+                      const sourceCode = context.sourceCode;
                       const valueText = sourceCode.getText(value);
                       return fixer.replaceText(value, `{ $eq: ${valueText} }`);
                     },

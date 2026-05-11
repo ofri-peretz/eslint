@@ -64,7 +64,10 @@ export const requirePostmessageOriginCheck = createRule<
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-postmessage-origin-check.md',
       description: 'Require origin validation in postMessage event listeners',
+      cwe: 'CWE-346',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

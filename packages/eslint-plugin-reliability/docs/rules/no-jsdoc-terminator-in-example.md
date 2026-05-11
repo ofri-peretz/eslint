@@ -1,0 +1,112 @@
+---
+title: no-jsdoc-terminator-in-example
+description: Detect `*/` sequences inside JSDoc `@example` blocks that prematurely close the JSDoc comment.
+tags: ['reliability', 'jsdoc', 'documentation']
+category: quality
+autofix: suggestions
+---
+
+> **Keywords:** no-jsdoc-terminator-in-example, JSDoc, @example, comment termination, compilation error, ESLint rule
+
+<!-- @rule-summary -->
+Detect `*/` sequences inside JSDoc `@example` blocks that prematurely close the JSDoc comment. The terminator inside an example is silently fatal — every parser (TypeScript, dtslint, fumadocs, MDX) sees the comment ending early and then chokes on the surrounding code.
+<!-- @/rule-summary -->
+
+This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability).
+
+## Quick Summary
+
+| Aspect         | Details                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| **Severity**   | High (Reliability — silent breakage)                                                       |
+| **Auto-Fix**   | 💡 Suggestions (wrap `*/` in single quotes, swap order, or escape with backslash)          |
+| **Category**   | Reliability                                                                                |
+| **Best For**   | Library codebases that ship JSDoc-annotated public APIs and use `@example` for usage notes |
+
+## Why this surface is fragile
+
+JSDoc terminates at the first `*/` regardless of nesting. So a perfectly innocent looking `@example` block:
+
+```ts
+/**
+ * Append a query parameter without re-encoding.
+ *
+ * @example
+ *   // Pattern: match comment-terminator inside string
+ *   const re = /foo\\*\\//;  // ← `*/` here ends the JSDoc early
+ *   doSomething(re);
+ */
+```
+
+…parses as:
+
+```ts
+/**
+ * Append a query parameter without re-encoding.
+ *
+ * @example
+ *   // Pattern: match comment-terminator inside string
+ *   const re = /foo\\*\\
+ */              // ← JSDoc ends here
+;
+const re = ... ; // ← stray code, parse error
+```
+
+The breakage cascades:
+
+1. TypeScript fails to compile.
+2. TSDoc / dtslint reports the block as malformed.
+3. MDX-based docs site (fumadocs) chokes on the published `.md`.
+4. The published type definitions miss the `@example` entirely.
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+/**
+ * @example
+ *   const re = /foo*\\/g;          // `*/` closes the comment
+ *   apply(re);
+ */
+
+/**
+ * @example
+ *   const tail = '*/';             // `*/` closes the comment even inside a string
+ */
+```
+
+### ✅ Correct
+
+```js
+/**
+ * @example
+ *   const re = '/foo*' + '/g';     // split the terminator across strings
+ *   apply(new RegExp(re));
+ */
+
+/**
+ * @example
+ *   const tail = '*' + '/';        // same split, on a plain literal
+ */
+
+/**
+ * @example
+ *   ```js
+ *   const re = /foo*\\/g;          // inside a fenced block — the fence is enough for MDX
+ *   ```
+ */
+```
+
+## Error Message Format
+
+```text
+⚠️ RELIABILITY | `*/` inside @example will prematurely close the JSDoc comment | HIGH
+   Fix: Split the terminator across string concatenation (`'*' + '/'`) or move the example into a fenced code block.
+```
+
+## Known False Negatives
+
+- Multi-character escape sequences that emit `*/` only via template-literal evaluation (e.g. `\`${'*/'}\``) are not detected — the literal terminator never appears in the source.
+- `@example` blocks that source from an imported snippet (`@example {@link ../examples/foo.ts}`) are not inspected; check the linked file directly.
+- Block comments outside of JSDoc (`/* … */`) are not in scope.

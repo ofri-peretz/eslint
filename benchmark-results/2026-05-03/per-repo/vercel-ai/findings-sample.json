@@ -1,0 +1,42 @@
+[
+  {
+    "ruleId": "vercel-ai-security/require-request-timeout",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/replace-roundtrips-with-maxsteps.ts",
+    "line": 6,
+    "column": 3,
+    "message": "⚠️ CWE-400 OWASP:A05-Security CVSS:5 | generateText call lacks timeout configuration. This can lead to denial of service. | MEDIUM [SOC2]\n   Fix: Add timeout configuration or use AbortController with setTimeout | https://owasp.org/www-proje"
+  },
+  {
+    "ruleId": "vercel-ai-security/require-request-timeout",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/replace-roundtrips-with-maxsteps.ts",
+    "line": 11,
+    "column": 9,
+    "message": "⚠️ CWE-400 OWASP:A05-Security CVSS:5 | generateText call lacks timeout configuration. This can lead to denial of service. | MEDIUM [SOC2]\n   Fix: Add timeout configuration or use AbortController with setTimeout | https://owasp.org/www-proje"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+    "line": 16,
+    "column": 27,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+    "line": 19,
+    "column": 28,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+    "line": 79,
+    "column": 39,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  }
+]

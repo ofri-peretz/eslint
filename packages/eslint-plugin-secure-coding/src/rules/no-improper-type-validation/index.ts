@@ -60,7 +60,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-type-validation.md',
       description: 'Detects improper type validation in user input handling',
+      cwe: 'CWE-1287',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -238,8 +240,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -280,7 +282,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         }
 
         if (varName) {
-            let current = node.parent;
+            let current: TSESTree.Node | undefined = node.parent;
             let child: TSESTree.Node = node;
 
             while (current) {
@@ -300,7 +302,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
                 }
                 
                 child = current;
-                current = current.parent;
+                current = current.parent as TSESTree.Node | undefined;
             }
         }
 
@@ -346,6 +348,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     /**
      * Check for unreliable constructor checks
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isUnreliableConstructorCheck = (node: TSESTree.MemberExpression): boolean => {
       return node.property.type === 'Identifier' &&
              node.property.name === 'name' &&
@@ -444,11 +447,11 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (isUnreliableConstructorCheck(node)) {
           // Check if this involves user input
-          let current: TSESTree.Node = node;
+          let current: TSESTree.Node | undefined = node;
           let involvesUserInput = false;
 
           // Walk up to find if this is used with user input
-          while (current.parent) {
+          while (current?.parent) {
             current = current.parent;
             if (current.type === 'VariableDeclarator' &&
                 current.init === node) {

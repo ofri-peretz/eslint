@@ -19,6 +19,7 @@ export const noNamespace = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-namespace.md',
       description: 'Prevent namespace imports',
     },
     messages: {

@@ -1,0 +1,83 @@
+{
+  "date": "2026-05-03",
+  "results": [
+    {
+      "name": "shadcn-ui",
+      "success": true,
+      "duration": 3219,
+      "fileCount": 203,
+      "filesWithFindings": 167,
+      "findingsCount": 167,
+      "errorCount": 167,
+      "warningCount": 0,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "0.8",
+      "msPerFile": "15.9"
+    },
+    {
+      "name": "three.js",
+      "success": true,
+      "duration": 3747,
+      "fileCount": 727,
+      "filesWithFindings": 4,
+      "findingsCount": 6,
+      "errorCount": 1,
+      "warningCount": 5,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "0.0",
+      "msPerFile": "5.2"
+    },
+    {
+      "name": "nestjs",
+      "success": true,
+      "duration": 2838,
+      "fileCount": 600,
+      "filesWithFindings": 484,
+      "findingsCount": 484,
+      "errorCount": 484,
+      "warningCount": 0,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "0.8",
+      "msPerFile": "4.7"
+    },
+    {
+      "name": "vercel-ai",
+      "success": true,
+      "duration": 3270,
+      "fileCount": 1600,
+      "filesWithFindings": 1415,
+      "findingsCount": 1415,
+      "errorCount": 1415,
+      "warningCount": 0,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "0.9",
+      "msPerFile": "2.0"
+    },
+    {
+      "name": "medusa",
+      "success": true,
+      "duration": 2967,
+      "fileCount": 722,
+      "filesWithFindings": 622,
+      "findingsCount": 622,
+      "errorCount": 622,
+      "warningCount": 0,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "0.9",
+      "msPerFile": "4.1"
+    },
+    {
+      "name": "sst",
+      "success": true,
+      "duration": 2778,
+      "fileCount": 194,
+      "filesWithFindings": 187,
+      "findingsCount": 187,
+      "errorCount": 187,
+      "warningCount": 0,
+      "peakMemoryMB": 5,
+      "findingsPerFile": "1.0",
+      "msPerFile": "14.3"
+    }
+  ]
+}

@@ -27,7 +27,10 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-activedescendant-has-tabindex.md',
       description: 'Enforce that elements with aria-activedescendant have proper tabindex',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingTabIndex: formatLLMMessage({

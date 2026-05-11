@@ -66,7 +66,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-weak-password-recovery.md',
       description: 'Detects weak password recovery mechanisms',
+      cwe: 'CWE-640',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -275,8 +277,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -293,6 +295,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * 1. Have password/forgot in the name
      * 2. AND have reset/recovery/forgot in the name
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isRecoveryRelated = (text: string): boolean => {
       const lowerText = text.toLowerCase();
       

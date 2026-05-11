@@ -30,6 +30,20 @@ Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of 
 | **Auto-Fix**      | 💡 Suggestions available                                                                                                                         |
 | **Category**   | Security |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization in Data Query Logic + [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (DoS) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** B2B SaaS (GraphQL-heavy modern API surface), fintech · **High:** marketplaces, infra/devtools, healthtech · **Medium:** B2C |
+| **Investor-frame impact** | GraphQL injection → unauthorized data access across multiple tenants in a B2B SaaS = single-incident multi-customer disclosure cycle. Catch at lint-time prevents the breach class entirely. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** GraphQL injection arises when backend queries are constructed dynamically using user inputs via string concatenation or interpolation, instead of using standard GraphQL variables.

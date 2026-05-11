@@ -49,7 +49,6 @@ Articles are organized into **3 phases** for maximum impact:
 | 17  | Dec 31, 2025 | Getting Started with eslint-plugin-vercel-ai-security       | vercel-ai     |
 | 18  | Jan 2, 2026  | Getting Started with eslint-plugin-import-next              | import-next   |
 | 19  | Jan 2, 2026  | eslint-plugin-import vs import-next: Up to 100x Faster      | benchmarks    |
-| 20  | Jan 2, 2026  | Getting Started with eslint-plugin-crypto                   | crypto        |
 | 21  | Jan 2, 2026  | Getting Started with eslint-plugin-jwt                      | jwt           |
 | 22  | Jan 2, 2026  | Getting Started with eslint-plugin-browser-security         | browser       |
 | 23  | Jan 2, 2026  | Getting Started with eslint-plugin-express-security         | express       |
@@ -68,7 +67,6 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 | 3       | `vercel-ai-security/00-getting-started.md` | Getting Started with eslint-plugin-vercel-ai-security  | vercel-ai         | ✅     |
 | 4       | `import-next/00-getting-started.md`        | Getting Started with eslint-plugin-import-next         | import-next       | ✅     |
 | 5       | `import-next/02-benchmark-showdown.md`     | eslint-plugin-import vs import-next: Up to 100x Faster | ESLint Benchmarks | ✅     |
-| 6       | `crypto/00-getting-started.md`             | Getting Started with eslint-plugin-crypto              | crypto            | ✅     |
 | 7       | `jwt/00-getting-started.md`                | Getting Started with eslint-plugin-jwt                 | jwt               | ✅     |
 | 8       | `browser-security/00-getting-started.md`   | Getting Started with eslint-plugin-browser-security    | browser           | ✅     |
 | 9       | `express-security/00-getting-started.md`   | Getting Started with eslint-plugin-express-security    | express           | ✅     |

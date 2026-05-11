@@ -1,0 +1,37 @@
+{
+  "repo": "langchain-js",
+  "meta": {
+    "stars": 15000,
+    "commit": "main",
+    "category": "AI Framework",
+    "plugins": [
+      "vercel-ai-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "libs/langchain-core/src/**/*.ts"
+  },
+  "fileCount": 243,
+  "loc": 47922,
+  "timing": {
+    "runsMs": [
+      1341
+    ],
+    "medianMs": 1341,
+    "meanMs": 1341,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 5.52
+  },
+  "peakRssMb": 224,
+  "findings": {
+    "total": 2,
+    "errors": 2,
+    "warnings": 0,
+    "filesWithFindings": 2,
+    "densityPerKloc": 0.04,
+    "externalDirectives": 0,
+    "parseErrors": 223
+  }
+}

@@ -36,7 +36,10 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-key-derivation.md',
       description: 'Disallow PBKDF2 with insufficient iterations (< 100,000)',
+      cwe: 'CWE-916',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

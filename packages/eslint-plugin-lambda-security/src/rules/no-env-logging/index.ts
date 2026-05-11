@@ -24,14 +24,17 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Logging function names
-const LOGGING_FUNCTIONS = ['log', 'info', 'warn', 'error', 'debug', 'trace'];
+const LOGGING_FUNCTIONS = new Set(['log', 'info', 'warn', 'error', 'debug', 'trace']);
 
 export const noEnvLogging = createRule<RuleOptions, MessageIds>({
   name: 'no-env-logging',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-env-logging.md',
       description: 'Detects logging of process.env which may expose secrets',
+      cwe: 'CWE-532',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -66,7 +69,7 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -111,7 +114,7 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
         if (prop.type !== AST_NODE_TYPES.Identifier) return false;
         const methodName = prop.name;
         
-        if (!LOGGING_FUNCTIONS.includes(methodName)) return false;
+        if (!LOGGING_FUNCTIONS.has(methodName)) return false;
 
         // console.log, console.info, etc.
         if (obj.type === AST_NODE_TYPES.Identifier && obj.name === 'console') {

@@ -23,6 +23,9 @@ const ruleTester = new RuleTester({
 describe('no-numeric-only-tokens', () => {
   ruleTester.run('no-numeric-only-tokens', noNumericOnlyTokens, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
       // Valid: Not imported from crypto-random-string
       { code: 'someLib({ type: "numeric" });' },
       // Valid: Alphanumeric type

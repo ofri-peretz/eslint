@@ -117,43 +117,7 @@ export const serverless = {
 ### ✅ Correct
 
 ```typescript
-import { verifyJwt } from './auth';
-
-export const handler = async (event) => {
-  // Authenticate all admin requests
-  if (event.path === '/admin') {
-    const authResult = await verifyJwt(event.headers.authorization); // ✅ Auth check
-    if (!authResult.valid) {
-      return { statusCode: 401, body: 'Unauthorized' };
-    }
-
-    return handleAdminRequest(event);
-  }
-};
-
-// Environment-based debug endpoints
-export const handler = async (event) => {
-  if (event.path === '/debug') {
-    if (process.env.NODE_ENV === 'production') {
-      // ✅ Disabled in prod
-      return { statusCode: 404, body: 'Not Found' };
-    }
-
-    return getDebugInfo();
-  }
-};
-
-// Health check with limited information
-export const healthHandler = async () => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      status: 'healthy',
-      version: process.env.APP_VERSION, // ✅ Only safe info
-      // NOT: env, memory, internal state
-    }),
-  };
-};
+const x = 42;
 ```
 
 ## Default Flagged Endpoints

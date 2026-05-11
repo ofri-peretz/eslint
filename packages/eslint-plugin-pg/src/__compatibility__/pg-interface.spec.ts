@@ -90,7 +90,7 @@ describe('pg Interface Compatibility', () => {
         expect(() => {
           // Just verify the class exists and is instantiable
           // We don't check the instance because it would try to connect
-          new pg.Client({ host: 'localhost', port: 5432 });
+          void new pg.Client({ host: 'localhost', port: 5432 });
         }).toBeDefined();
       });
     });
@@ -160,7 +160,7 @@ describe('pg Interface Compatibility', () => {
 
       it('Pool can be instantiated without throwing', () => {
         expect(() => {
-          new pg.Pool({ host: 'localhost', port: 5432 });
+          void new pg.Pool({ host: 'localhost', port: 5432 });
         }).toBeDefined();
       });
     });

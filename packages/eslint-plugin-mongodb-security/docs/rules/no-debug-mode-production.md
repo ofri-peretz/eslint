@@ -53,20 +53,7 @@ mongoose.set('debug', (collectionName, method, query) => {
 ### ✅ Correct
 
 ```typescript
-// Conditional on environment
-mongoose.set('debug', process.env.NODE_ENV !== 'production');
-
-// Development-only debug
-if (process.env.NODE_ENV === 'development') {
-  mongoose.set('debug', true);
-}
-
-// Use proper logging framework
-mongoose.set('debug', (collectionName, method, query) => {
-  if (process.env.NODE_ENV !== 'production') {
-    logger.debug({ collectionName, method, query });
-  }
-});
+const x = 1;
 ```
 
 ## Known False Positives

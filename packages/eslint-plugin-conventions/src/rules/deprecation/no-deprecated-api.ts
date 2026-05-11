@@ -38,7 +38,10 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-deprecated-api.md',
       description: 'Prevent usage of deprecated APIs with migration context',
+      cwe: 'CWE-1078',
+      cvss: 7.5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -110,6 +113,7 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     /**
      * Calculate days until removal
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const calculateDaysRemaining = (removalDate?: string): number | null => {
       if (!removalDate) return null;
 

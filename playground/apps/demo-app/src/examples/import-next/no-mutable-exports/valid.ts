@@ -1,1 +1,0 @@
-// Valid example for no-mutable-exports\nexport const valid = true;\n

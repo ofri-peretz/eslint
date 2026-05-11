@@ -1,0 +1,116 @@
+---
+title: 'Use Interlace with Claude Code'
+description: 'Wire Interlace rules into Claude Code via the official ESLint MCP server. Local install, no remote server. ~2 minutes from zero to "Claude can lint your code".'
+icon: Sparkles
+---
+
+# Use Interlace with Claude Code
+
+> **Time to set up:** ~2 minutes.
+> **Result:** Claude Code can call ESLint MCP tools against your project — Interlace plugin rules included — and apply fixes deterministically.
+
+We **do not ship our own MCP server**. The ESLint team maintains [`@eslint/mcp`](https://www.npmjs.com/package/@eslint/mcp) — the official, local-only stdio MCP server. It auto-discovers every ESLint plugin (including ours) from your project's `eslint.config.*` and exposes them through the standard ESLint diagnostic surface. Less code we maintain, more coverage for you.
+
+## What you'll have at the end
+
+A Claude Code session where you can say:
+
+> *"Audit src/api/auth.ts for security issues. Apply the auto-fixes for any high-confidence findings; for medium / low, summarize them so I can decide."*
+
+…and Claude calls the ESLint MCP `lint-files` tool → reads the diagnostic list → reads our CWE-mapped rule metadata in each message → applies any auto-fixes via its Edit tool → re-lints to verify. Fully autonomous static-analysis loop.
+
+## Step 1 — install ESLint + the Interlace plugins you want
+
+```bash
+npm install --save-dev eslint
+# Then add any of our plugins:
+npm install --save-dev eslint-plugin-secure-coding eslint-plugin-browser-security eslint-plugin-node-security
+# …or any of the other plugins from the security / quality pillars.
+```
+
+See [Installation](/docs/getting-started/installation) for the full plugin list.
+
+Wire them into your `eslint.config.mjs`:
+
+```js
+import secureCoding from 'eslint-plugin-secure-coding';
+import browserSecurity from 'eslint-plugin-browser-security';
+import nodeSecurity from 'eslint-plugin-node-security';
+
+export default [
+  secureCoding.configs.recommended,
+  browserSecurity.configs.recommended,
+  nodeSecurity.configs.recommended,
+];
+```
+
+## Step 2 — register `@eslint/mcp` with Claude Code
+
+Open `~/.claude/mcp.json` (user-scoped) or `<project>/.mcp.json` (project-scoped). Add a single entry:
+
+```json
+{
+  "mcpServers": {
+    "eslint": {
+      "command": "npx",
+      "args": ["--yes", "@eslint/mcp"]
+    }
+  }
+}
+```
+
+That one entry exposes every plugin you've installed. No per-plugin server, no separate process per rule pillar.
+
+## Step 3 — restart Claude Code and verify
+
+In a new session:
+
+```
+> /mcp
+```
+
+You should see one server (`eslint`) with the tools ESLint MCP exposes — typically `lint-files`, `lint-code`, and friends.
+
+Quick smoke test:
+
+```
+> Lint src/index.ts and tell me which Interlace rules fire.
+```
+
+Claude calls the tool; the response includes every diagnostic from every plugin you've configured.
+
+## Step 4 — use it
+
+Prompts that work well:
+
+| Prompt | What Claude does |
+| :--- | :--- |
+| *"Lint src/auth.ts for security issues."* | Calls `lint-files`, summarizes findings by severity |
+| *"Show me every hardcoded credential in src/."* | Lints + filters by rule id `secure-coding/no-hardcoded-credentials` |
+| *"Apply the auto-fix for the finding on line 42."* | Reads the fix range in the diagnostic, uses the Edit tool to apply |
+| *"Lint the whole repo and propose a 3-priority remediation plan."* | Lints every file, ranks findings by CWE + severity from rule metadata |
+
+Our rule messages are LLM-optimized: every diagnostic carries the CWE id, OWASP category, CVSS, and a compact remediation hint inline — Claude has everything it needs without extra context lookups. See [AI Leverage](/docs/getting-started/concepts/ai-integration) for the format.
+
+## Why this is more useful than just running ESLint via Bash
+
+1. **Typed schema** — Claude knows the diagnostic shape and how to call the tool without parsing CLI output.
+2. **One install for everything** — `@eslint/mcp` auto-discovers every plugin in your config. No per-plugin server.
+3. **Local-only** — `@eslint/mcp` is a local stdio process. Your code never leaves your machine.
+4. **Standard surface** — same tool works for any ESLint plugin you ever install, not just ours.
+
+## Troubleshooting
+
+**Claude can't see the server.** Restart Claude Code after editing `mcp.json`. Run `/mcp` again to verify.
+
+**`npx` is slow first time.** First invocation downloads `@eslint/mcp` + dependencies. Subsequent runs hit the cache. To pre-warm: `npx -y @eslint/mcp --version`.
+
+**Tools appear but lint runs return nothing.** The server uses your project's `eslint.config.*` — check that the config exists and that the plugin you expected is enabled there. `npx eslint --print-config src/foo.ts | jq .rules` should show the rule.
+
+**The ESLint MCP doesn't expose enough for your workflow.** [Open an issue upstream](https://github.com/eslint/mcp/issues) — that's where the work belongs. We previously shipped 11 per-plugin MCP packages but retired them in favor of the upstream MCP. The maintenance cost of a separate per-plugin MCP surface didn't pay for itself.
+
+## See also
+
+- **Cursor**: [Use Interlace with Cursor](./cursor) — same MCP, Cursor's slightly different config syntax
+- **VS Code**: [Interlace VS Code extension](https://github.com/ofri-peretz/eslint/tree/main/packages/interlace-vscode) — bundles the CLI + an ESLint MCP launcher
+- **The MCP itself**: [`@eslint/mcp`](https://github.com/eslint/mcp) — upstream source, license, contributing

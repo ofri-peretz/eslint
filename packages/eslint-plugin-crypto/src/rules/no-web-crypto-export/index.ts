@@ -33,7 +33,10 @@ export const noWebCryptoExport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-web-crypto-export.md',
       description: 'Warn on crypto.subtle.exportKey() usage',
+      cwe: 'CWE-321',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

@@ -47,8 +47,11 @@ export const noEval = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-eval.md',
       description:
         'Disallow eval(), Function(), and other code execution patterns',
+      cwe: 'CWE-95',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {
@@ -155,23 +158,40 @@ export const noEval = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check for window.eval, global.eval
-        if (
-          callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          DANGEROUS_FUNCTIONS.has(callee.property.name)
-        ) {
-          context.report({
-            node,
-            messageId: 'dangerousEval',
-            data: { function: callee.property.name },
-            suggest: [
-              {
-                messageId: 'useSafeAlternative',
-                fix: () => null,
-              },
-            ],
-          });
+        // Check for `window.eval`, `global.eval`, `globalThis.eval`, `self.eval`
+        // (member access — non-computed) AND `window['eval']`, `globalThis['Function']`
+        // (computed — Literal property). The second form was an audit FN
+        // surfaced by `npm run ilb:stress-test` (see benchmarks/AUDIT_PATTERNS.md
+        // §3.3 — "indirect access via bracket notation").
+        if (callee.type === 'MemberExpression') {
+          let propertyName: string | null = null;
+          if (
+            !callee.computed &&
+            callee.property.type === 'Identifier' &&
+            DANGEROUS_FUNCTIONS.has(callee.property.name)
+          ) {
+            propertyName = callee.property.name;
+          } else if (
+            callee.computed &&
+            callee.property.type === 'Literal' &&
+            typeof callee.property.value === 'string' &&
+            DANGEROUS_FUNCTIONS.has(callee.property.value)
+          ) {
+            propertyName = callee.property.value;
+          }
+          if (propertyName) {
+            context.report({
+              node,
+              messageId: 'dangerousEval',
+              data: { function: propertyName },
+              suggest: [
+                {
+                  messageId: 'useSafeAlternative',
+                  fix: () => null,
+                },
+              ],
+            });
+          }
         }
       },
 

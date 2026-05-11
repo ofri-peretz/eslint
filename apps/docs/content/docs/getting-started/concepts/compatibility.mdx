@@ -1,0 +1,112 @@
+---
+title: Compatibility
+description: Which ESLint and Node.js versions Interlace supports — and the policy that decides what stays in the matrix.
+icon: GitFork
+---
+
+import { GitFork, Package, Activity, Shield, ExternalLink } from 'lucide-react';
+
+## What you can install Interlace on
+
+Interlace is published as ~37 npm packages (20 ESLint plugins + 11 MCP servers + 6 supporting tools). Every published package declares the same compatibility surface so a viewer can answer "will this work in my repo?" in one read.
+
+<Callout type="info" title="Last data refresh">
+  **2026-05-09** — npm download share refreshed weekly via `npm run stats:eslint-versions`. The numbers below come from a live npm-registry pull, not a marketing claim.
+</Callout>
+
+---
+
+## ESLint version matrix
+
+| ESLint major | Weekly downloads | Share | Status |
+| :--- | ---: | ---: | :--- |
+| **v10** | 11.8M | 9.24% | ✅ Supported (forward-looking) |
+| **v9** | 76.9M | 60.4% | ✅ Supported (current default) |
+| **v8** | 30.9M | 24.3% | ✅ Supported (legacy active) |
+| v7 and older | 7.7M | 6.1% | ❌ Unsupported (EOL) |
+
+**All published packages declare** `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` **as a peer dependency.** No exceptions, no per-plugin variance.
+
+<Callout type="success" title="Together: ~94% of weekly ESLint downloads">
+  v8 + v9 + v10 cover **94% of every `npm install eslint` happening today**. If you're on a supported version, every Interlace plugin works.
+</Callout>
+
+---
+
+## Node.js compatibility
+
+| Node.js | Status | Notes |
+| :--- | :--- | :--- |
+| **24.x** | ✅ Active development | What this repo's CI runs against |
+| **22.x LTS** | ✅ Supported | Recommended for production users |
+| **20.x LTS** | ✅ Supported | Long-term-stable baseline |
+| **18.x** | ✅ Supported (minimum) | Lowest declared `engines.node` across all packages |
+| ≤ 17 | ❌ Unsupported | EOL upstream |
+
+The 18.x floor is set by every package's `engines.node: ">=18.0.0"`. Bumping the floor uses the same gate logic as ESLint majors — a deliberate decision, not silent drift.
+
+---
+
+## The two-rule policy
+
+A major version is **supported** when either of these holds:
+
+<Cards>
+  <Card
+    title="The 20% gate"
+    icon={<Activity />}
+  >
+    The version has **≥20% of weekly downloads** on npm. v8 (24%) and v9 (60%) earn their place this way. Versions that drop below 20% on two consecutive refreshes become deprecation candidates.
+  </Card>
+  <Card
+    title="Forward-looking exception"
+    icon={<GitFork />}
+  >
+    The version is **the next major after a currently-supported one**. v10 qualifies today (the future of v9). We ship support pre-emptively so users can upgrade ahead of the curve, not behind it.
+  </Card>
+</Cards>
+
+A supported major is in our `peerDependencies`, our benchmark matrix, and our CI matrix. Removal requires both a sustained share drop AND a successor that itself meets the criteria above — never one without the other.
+
+---
+
+## How the matrix stays honest
+
+| Surface | What it does |
+| :--- | :--- |
+| **Per-package `peerDependencies`** | All 37 packages declare the same range. A package that violates the policy fails [`scripts/check-version-alignment.ts`](https://github.com/ofri-peretz/eslint/blob/main/scripts/check-version-alignment.ts) (`npm run check-versions`). |
+| **Benchmark fixtures** | [`benchmarks/suites/ilb-arena/eslint{8,9,10}-compat/`](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/suites/ilb-arena) — one full ILB-Arena fixture per supported major. Drift on any version surfaces as a benchmark regression, not a runtime surprise. |
+| **CI matrix** | [`eslint-version-matrix.yml`](https://github.com/ofri-peretz/eslint/blob/main/.github/workflows/eslint-version-matrix.yml) runs ILB-Arena + ILB-Juliet across `node × eslint` cells `[22, 24] × [8.x, 9.x, 10.x]` on every PR. |
+| **Stats refresh** | [`npm run stats:eslint-versions`](https://github.com/ofri-peretz/eslint/blob/main/scripts/fetch-eslint-version-stats.ts) re-fetches the npm download share so the gate decision uses fresh data. |
+| **Policy doc** | The full deprecation pipeline lives in [`docs/ESLINT_VERSION_SUPPORT.md`](https://github.com/ofri-peretz/eslint/blob/main/docs/ESLINT_VERSION_SUPPORT.md). |
+
+---
+
+## Related compatibility surfaces
+
+Interlace is compatible with more than just ESLint majors. Each layer below gets its own matrix:
+
+<Cards>
+  <Card
+    title="MITRE CWE Compatibility"
+    href="/docs/getting-started/concepts/cwe-compatibility"
+    icon={<Shield />}
+  >
+    Every security rule maps to one or more CWE identifiers, surfaced in machine-readable form for SARIF / GHAS / GitLab consumers.
+  </Card>
+  <Card
+    title="SDK Compatibility"
+    href="https://github.com/ofri-peretz/eslint/blob/main/docs/SDK_COMPATIBILITY_OVERVIEW.md"
+    icon={<Package />}
+  >
+    Per-SDK weekly tests (pg / mongodb / express / jwt / nestjs / vercel-ai / lambda) catch upstream breaking changes before users do.
+  </Card>
+</Cards>
+
+---
+
+## Why this matters
+
+A docs site can claim "supports the latest ESLint." That's not enough — every plugin in your `package.json` peer-dep range has to actually publish that range, and every benchmark you trust has to actually run on every version you claim to support. **The matrix above is the contract; the CI gates are the enforcement.**
+
+Bringing this onto the docs site means an evaluating engineer can answer all three questions in one read: which ESLint major can I use, which Node version do I need, and how confident can I be that this won't drift?

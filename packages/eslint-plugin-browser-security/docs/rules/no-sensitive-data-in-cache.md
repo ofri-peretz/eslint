@@ -97,14 +97,7 @@ This rule has no configuration options in the current version.
 ### ❌ Incorrect
 
 ```javascript
-// Storing an authentication token in localStorage
-localStorage.setItem('user_auth_token', token);
-
-// Storing a password directly
-sessionStorage.setItem('temp_password', '123456');
-
-// Using the Cache API to store sensitive data
-cache.put('user_profile_data', new Response(JSON.stringify({ ssn: '...' })));
+cache.put('token', authToken)
 ```
 
 ### ✅ Correct

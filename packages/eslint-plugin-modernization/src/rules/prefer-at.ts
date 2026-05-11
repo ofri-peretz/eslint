@@ -26,6 +26,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-at.md',
       description:
         'Prefer .at() method over bracket notation for accessing elements from the end',
     },

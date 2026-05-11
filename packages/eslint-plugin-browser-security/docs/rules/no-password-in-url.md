@@ -36,21 +36,7 @@ URLs with passwords are fundamentally insecure:
 ## ❌ Incorrect
 
 ```typescript
-// Password in query parameter
-window.location.href = 'https://example.com/login?password=secret123'; // ❌ Logged everywhere
-
-// Password in URLSearchParams
-const params = new URLSearchParams({
-  username: 'user',
-  password: userPassword, // ❌ Will appear in URL
-});
-fetch(`https://api.example.com/auth?${params}`);
-
-// Password in hash fragment
-window.location.hash = `#password=${pwd}`; // ❌ Visible in browser history
-
-// Mailto with password
-window.open(`mailto:support@example.com?subject=Reset&body=password:${pwd}`); // ❌ Email leak
+const url = 'https://user:password@example.com'
 ```
 
 ## ✅ Correct

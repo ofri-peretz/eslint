@@ -36,11 +36,14 @@ type RuleOptions = [Options?];
  * Check if a node is in a React component render context
  */
 function isInReactRenderContext(node: TSESTree.Node): boolean {
-  let current: TSESTree.Node | null = node;
+  // `current` is `node` on entry and only ever reassigned from `parent` after
+  // an explicit `if (!parent) break;`, so it's never null at the loop check
+  // (CodeQL: `js/useless-conditional` on the `current &&` test).
+  let current: TSESTree.Node = node;
   let depth = 0;
   const maxDepth = 15;
 
-  while (current && depth < maxDepth) {
+  while (depth < maxDepth) {
     const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
     if (!parent) break;
 
@@ -119,6 +122,7 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unnecessary-rerenders.md',
       description: 'Detects prevented re-renders in React',
     },
     hasSuggestions: true,
@@ -185,7 +189,7 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
 ignoreInTests = true, minSize = 5 
 }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     // Only skip if ignoreInTests is true AND filename matches test pattern
     // If ignoreInTests is explicitly false, always run the rule
     const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
@@ -194,7 +198,7 @@ ignoreInTests = true, minSize = 5
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check JSX attributes for unnecessary re-renders

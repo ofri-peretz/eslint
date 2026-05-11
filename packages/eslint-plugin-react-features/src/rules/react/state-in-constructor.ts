@@ -19,6 +19,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/state-in-constructor.md',
       description: 'Enforce state initialization in constructor',
     },
     schema: [],
@@ -43,6 +44,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -105,6 +107,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
       }
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasStateInitializationInConstructor(constructor: TSESTree.MethodDefinition): boolean {
       if (constructor.value.type === 'FunctionExpression') {
         const body = constructor.value.body;

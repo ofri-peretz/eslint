@@ -1,12 +1,12 @@
-# 🔐 Revamped Crypto Series: Node Security Edition
+# 🔐 Node.js Crypto Series — Powered by eslint-plugin-node-security
 
-> **Strategy Shift:** Moving from the deprecated `eslint-plugin-crypto` and generalized `secure-coding` rules to the active, high-performance `eslint-plugin-node-security`.
+> **Canonical home for cryptography rules:** `eslint-plugin-node-security`. All cryptography-related cross-cutting articles route here, replacing earlier dedicated cryptography-plugin content (now consolidated).
 > **Target Audience:** Node.js Backend Engineers
 > **Focus:** Native Node.js `crypto` module best practices.
 
-## 📚 The New "Node.js Crypto" Series
+## 📚 The "Node.js Crypto" Series
 
-This series replaces the previous "Cryptography" section. It focuses entirely on `eslint-plugin-node-security` and the `crypto` module.
+This series focuses entirely on `eslint-plugin-node-security` and the `crypto` module.
 
 | # | Title | Target Rule | Angle |
 |---|---|---|---|
@@ -26,9 +26,9 @@ Refactor the existing `distribution/articles/crypto/*.md` files to:
 - Update the CTA to point to `eslint-plugin-node-security`.
 
 ### 2. Implementation Steps
-1.  **Rename & Refactor `01-stop-using-md5.md`**: Update rule ref from `no-weak-hash-algorithm` (generic) to `node-security/no-weak-hash-algorithm`.
-2.  **Rename & Refactor `03-timing-attacks.md`**: Update usage to `node-security/no-timing-unsafe-compare`.
-3.  **Create New Drafts**: Generate skeletons for `no-static-iv.md`, `no-ecb-mode.md`, etc. based on the plugin's documentation.
+1. **Rename & Refactor `01-stop-using-md5.md`**: Update rule ref from `no-weak-hash-algorithm` (generic) to `node-security/no-weak-hash-algorithm`.
+2. **Rename & Refactor `03-timing-attacks.md`**: Update usage to `node-security/no-timing-unsafe-compare`.
+3. **Create New Drafts**: Generate skeletons for `no-static-iv.md`, `no-ecb-mode.md`, etc. based on the plugin's documentation.
 
 ## 🖼️ Visual Strategy (OG Image)
 

@@ -46,7 +46,11 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-populate',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent user-controlled populate() paths (CVE-2025-23061)' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-populate.md', description: 'Prevent user-controlled populate() paths (CVE-2025-23061)',
+      cwe: 'CWE-943',
+      cvss: 6.5,
+    },
     hasSuggestions: true,
     messages: {
       unsafePopulate: formatLLMMessage({
@@ -67,7 +71,7 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

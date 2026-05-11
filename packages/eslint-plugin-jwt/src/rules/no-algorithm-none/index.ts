@@ -29,7 +29,8 @@ type MessageIds =
   | 'algorithmNone'
   | 'algorithmNoneInArray'
   | 'emptyAlgorithms'
-  | 'useSecureAlgorithm';
+  | 'useSecureAlgorithm'
+  | 'decodeWithoutVerify';
 
 type RuleOptions = [NoAlgorithmNoneOptions?];
 
@@ -38,8 +39,12 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-algorithm-none.md',
       description:
         'Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)',
+      cwe: 'CWE-347',
+      cvss: 9.5,
+      confidence: 'high',
     },
     fixable: undefined,
     hasSuggestions: false,
@@ -82,6 +87,16 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
         fix: 'Use algorithms: ["RS256"] or algorithms: ["ES256"]',
         documentationLink: 'https://tools.ietf.org/html/rfc8725',
       }),
+      decodeWithoutVerify: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'JWT Decode Without Verify',
+        cwe: 'CWE-347',
+        description:
+          'jwt.decode() does NOT verify the signature — using its result as if it were authenticated is functionally equivalent to algorithm:"none". Any token, including forged ones, will decode.',
+        severity: 'CRITICAL',
+        fix: 'Use jwt.verify(token, secret, { algorithms: ["RS256"] }) instead. Reserve jwt.decode() for non-security inspection only (e.g. logging the issuer).',
+        documentationLink: 'https://github.com/auth0/node-jsonwebtoken#jwtdecodetoken--options',
+      }),
     },
     schema: [
       {
@@ -122,7 +137,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
     const { allowInTests = false } = options;
-    const filename = context.filename ?? context.getFilename();
+    const filename = context.filename;
 
     // Skip test files if configured
     if (allowInTests && isTestFile(filename)) {
@@ -132,6 +147,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
     /**
      * Check if an algorithm value is 'none' (case insensitive)
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isNoneAlgorithm = (value: string): boolean => {
       return value.toLowerCase() === 'none';
     };
@@ -198,8 +214,44 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
       }
     };
 
+    /**
+     * Detect `jwt.decode()` calls — closes the audit FN where
+     * `jwt.decode(token)` followed by trusting the decoded payload was
+     * silent, despite being functionally equivalent to algorithm:"none".
+     * See benchmarks/AUDIT_PATTERNS.md §3.8 ("verify-then-trust mismatch").
+     *
+     * The check is conservative: we flag every `jwt.decode()` call. In
+     * the rare case where `decode` is used legitimately (e.g. logging
+     * the issuer of an inbound token without authentication semantics),
+     * the user can disable the rule on that line. The default-on
+     * behaviour is correct — most production uses of `jwt.decode` are
+     * authentication mistakes.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function isDecodeCall(node: TSESTree.CallExpression): boolean {
+      const callee = node.callee;
+      if (callee.type !== 'MemberExpression') return false;
+      if (callee.property.type !== 'Identifier') return false;
+      if (callee.property.name !== 'decode') return false;
+      // Object should be `jwt` (or imported as such). Check both
+      // `jwt.decode` and `JWT.decode` patterns.
+      if (callee.object.type === 'Identifier') {
+        const name = callee.object.name.toLowerCase();
+        return name === 'jwt' || name === 'jsonwebtoken';
+      }
+      return false;
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        // Detect `jwt.decode(...)` — equivalent to algorithm:"none" if
+        // its result is trusted. We always flag (with critical severity)
+        // because the FN risk far outweighs the FP risk on real code.
+        if (isDecodeCall(node)) {
+          context.report({ node, messageId: 'decodeWithoutVerify' });
+          return;
+        }
+
         // Check both verify and sign operations
         if (!isVerifyOperation(node) && !isSignOperation(node)) {
           return;

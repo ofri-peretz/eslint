@@ -25,7 +25,10 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-data-in-analytics.md',
       description: 'Prevent PII being sent to analytics services',
+      cwe: 'CWE-359',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

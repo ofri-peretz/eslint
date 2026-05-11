@@ -62,7 +62,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-deserialization.md',
       description: 'Detects unsafe deserialization of untrusted data',
+      cwe: 'CWE-502',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -222,8 +224,8 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -350,6 +352,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is a safe deserialization library
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isSafeLibrary = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
       const callee = node.callee;
 
@@ -387,7 +390,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                node,
                messageId: 'dangerousFunctionConstructor',
                data: {
-                  filePath: context.getFilename(),
+                  filePath: context.filename,
                   line: String(node.loc?.start.line ?? 0),
                   severity: 'HIGH',
                   safeAlternative: 'Avoid dynamic function creation',
@@ -404,7 +407,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
          // Check if explicit validation is present
          const isSafe = isSafeLibrary(node);
-         const filename = context.getFilename();
          
          if (!isSafe && hasUntrustedInput) {
             // Basic safety check
@@ -471,7 +473,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'untrustedDeserializationInput',
               data: {
-                filePath: context.getFilename(),
+                filePath: context.filename,
                 line: String(node.loc?.start.line ?? 0),
               },
               suggest: [

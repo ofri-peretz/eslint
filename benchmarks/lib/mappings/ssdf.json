@@ -1,0 +1,39 @@
+{
+  "$id": "https://benchmarks.interlace.dev/mappings/ssdf-1.1.json",
+  "title": "NIST SP 800-218 — Secure Software Development Framework (SSDF v1.1)",
+  "description": "Canonical practice list. Used by ilb-mappings-report to crosswalk Interlace rules against US Executive Order 14028 / FedRAMP procurement requirements. Source: https://csrc.nist.gov/Projects/ssdf",
+  "version": "1.1",
+  "lastReviewed": "2026-05-09",
+  "groups": {
+    "PO": "Prepare the Organization",
+    "PS": "Protect the Software",
+    "PW": "Produce Well-Secured Software",
+    "RV": "Respond to Vulnerabilities"
+  },
+  "practices": {
+    "PO.1": { "name": "Define Security Requirements for Software Development", "lintApplicability": "low" },
+    "PO.2": { "name": "Implement Roles and Responsibilities", "lintApplicability": "none" },
+    "PO.3": { "name": "Implement Supporting Toolchains", "lintApplicability": "high", "note": "Static analysis tooling itself" },
+    "PO.4": { "name": "Define and Use Criteria for Software Security Checks", "lintApplicability": "high" },
+    "PO.5": { "name": "Implement and Maintain Secure Environments for Software Development", "lintApplicability": "low" },
+    "PS.1": { "name": "Protect All Forms of Code from Unauthorized Access and Tampering", "lintApplicability": "low" },
+    "PS.2": { "name": "Provide a Mechanism for Verifying Software Release Integrity", "lintApplicability": "none" },
+    "PS.3": { "name": "Archive and Protect Each Software Release", "lintApplicability": "none" },
+    "PW.1": { "name": "Design Software to Meet Security Requirements and Mitigate Security Risks", "lintApplicability": "medium" },
+    "PW.2": { "name": "Review the Software Design to Verify Compliance", "lintApplicability": "low" },
+    "PW.3": { "name": "Reuse Existing, Well-Secured Software when Feasible", "lintApplicability": "low" },
+    "PW.4": { "name": "Create Source Code by Adhering to Secure Coding Practices", "lintApplicability": "high", "note": "Primary applicability — most security rules map here" },
+    "PW.5": { "name": "Configure the Compilation, Interpreter, and Build Processes to Improve Executable Security", "lintApplicability": "medium" },
+    "PW.6": { "name": "Review and/or Analyze Human-Readable Code to Identify Vulnerabilities", "lintApplicability": "high", "note": "Static analysis core. Auto-applicable to every Interlace security rule" },
+    "PW.7": { "name": "Test Executable Code to Identify Vulnerabilities", "lintApplicability": "low" },
+    "PW.8": { "name": "Configure Software to Have Secure Settings by Default", "lintApplicability": "medium" },
+    "PW.9": { "name": "Protect Sensitive Data and Critical Functions", "lintApplicability": "high" },
+    "RV.1": { "name": "Identify and Confirm Vulnerabilities on an Ongoing Basis", "lintApplicability": "high", "note": "Continuous lint-gated CI = ongoing identification" },
+    "RV.2": { "name": "Assess, Prioritize, and Remediate Vulnerabilities", "lintApplicability": "medium" },
+    "RV.3": { "name": "Analyze Vulnerabilities to Identify Their Root Causes", "lintApplicability": "low" }
+  },
+  "defaultRulePracticeMapping": {
+    "_comment": "Practices most security rules trivially map to. Used as a default when a rule's meta.ssdf is unset.",
+    "all": ["PW.4", "PW.6"]
+  }
+}

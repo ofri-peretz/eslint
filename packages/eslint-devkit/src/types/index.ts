@@ -6,3 +6,8 @@
 
 // Type utilities for ESLint rules
 export * from './type-utils';
+
+// Module augmentation — adds meta.docs.cwe + cvss to RuleMetaDataDocs.
+// Side-effect-only import; activates the declaration project-wide so
+// every plugin's rule meta gains the Interlace fields.
+import './meta-augmentation';

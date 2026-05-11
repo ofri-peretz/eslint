@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { parseRulesTable, extractRulesSection } from './sync-readme-rules.mjs';
+import { parseRulesTable, extractRulesSection } from './sync-readme-rules.ts';
 
 describe('sync-readme-rules', () => {
   describe('parseRulesTable', () => {

@@ -29,7 +29,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-modularity',
-    version: '1.0.0',
+    version: '2.0.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

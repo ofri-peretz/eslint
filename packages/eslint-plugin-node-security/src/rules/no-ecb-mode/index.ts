@@ -31,7 +31,10 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ecb-mode.md',
       description: 'Disallow ECB encryption mode (use GCM or CBC instead)',
+      cwe: 'CWE-327',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

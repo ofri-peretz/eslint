@@ -1,0 +1,54 @@
+{
+  "//": "Looser tsconfig for benchmark runners + library helpers (converted from .mjs in 2026-05-09). Same ratchet philosophy as scripts/tsconfig.json — typecheck via this file, run via tsx. Excludes the eslint-config fixtures (eslint.config.*.mjs) which have their own framework-specific format.",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2023",
+    "lib": [
+      "ES2023"
+    ],
+    "types": [
+      "node"
+    ],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "score.ts",
+    "lib/**/*.ts",
+    "suites/*/run.ts",
+    "suites/*/scorecard.ts",
+    "suites/*/harvest-fixtures.ts",
+    "suites/ilb-formatter/runner.ts",
+    "suites/ilb-formatter/fixtures.ts",
+    "suites/ilb-llm-tokens/runner.ts",
+    "suites/ilb-llm-fix/runner.ts"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../tmp",
+    "../dist",
+    "../coverage"
+  ]
+}

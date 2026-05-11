@@ -14,6 +14,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
     // Secure configuration
     { code: "const config = { allowArbitraryLoads: false }" },
     { code: "const settings = { secureMode: true }" },

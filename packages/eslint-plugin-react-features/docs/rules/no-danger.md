@@ -112,37 +112,7 @@ function Article({ content }) {
 ### ✅ Correct
 
 ```tsx
-// Use React elements instead
-function Comment({ text }) {
-  return <div>{text}</div>;
-}
-
-// Parse and render structured content
-function Article({ paragraphs }) {
-  return (
-    <article>
-      {paragraphs.map((p, i) => (
-        <p key={i}>{p}</p>
-      ))}
-    </article>
-  );
-}
-
-// Use markdown parser that returns React elements
-import ReactMarkdown from 'react-markdown';
-
-function Documentation({ markdown }) {
-  return <ReactMarkdown>{markdown}</ReactMarkdown>;
-}
-
-// If HTML is truly necessary, sanitize first
-import DOMPurify from 'dompurify';
-
-function SanitizedContent({ html }) {
-  const clean = DOMPurify.sanitize(html);
-  return <div dangerouslySetInnerHTML={{ __html: clean }} />;
-  // Note: Still triggers warning - consider eslint-disable with justification
-}
+<div>Hello World</div>
 ```
 
 ## Configuration Examples

@@ -192,7 +192,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-unhandled-promise.md',
       description: 'Detects unhandled Promise rejections',
+      cwe: 'CWE-1024',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -266,7 +269,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, ignoreVoidExpressions = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -274,7 +277,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check call expressions for unhandled promises

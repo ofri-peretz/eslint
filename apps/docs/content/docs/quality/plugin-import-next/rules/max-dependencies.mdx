@@ -1,17 +1,64 @@
 ---
-title: 'max-dependencies'
-description: ESLint rule documentation for max-dependencies
+title: "max-dependencies"
+description: "Enforce the maximum number of dependencies a module can have"
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="max-dependencies" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/max-dependencies.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+## Rule Details
+
+This rule aims to prevent issues related to max-dependencies.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "max": {
+        "type": "number",
+        "minimum": 1,
+        "default": 10,
+        "description": "Maximum number of dependencies allowed."
+      },
+      "ignoreTypeImports": {
+        "type": "boolean",
+        "default": true,
+        "description": "Ignore type-only imports."
+      },
+      "ignoreImports": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Import sources to ignore."
+      },
+      "ignoreFiles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "File patterns to ignore."
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/max-dependencies.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/max-dependencies.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

@@ -19,6 +19,7 @@ export const noThisInSfc = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-this-in-sfc.md',
       description: 'Disallow this from being used in stateless functional components',
     },
     schema: [],

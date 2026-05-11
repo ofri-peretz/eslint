@@ -37,7 +37,23 @@ const config = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    minimumCacheTTL: 31536000, 
+    minimumCacheTTL: 31536000,
+    // External hosts we render via next/image: badges in plugin READMEs,
+    // dev.to article covers + author avatars, GitHub raw README assets.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'img.shields.io' },
+      { protocol: 'https', hostname: 'shields.io' },
+      { protocol: 'https', hostname: 'badgen.net' },
+      { protocol: 'https', hostname: 'media.dev.to' },
+      { protocol: 'https', hostname: 'media2.dev.to' },
+      { protocol: 'https', hostname: 'dev-to-uploads.s3.amazonaws.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+      { protocol: 'https', hostname: 'github.com' },
+      { protocol: 'https', hostname: 'user-images.githubusercontent.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
   },
 
   experimental: {
@@ -46,7 +62,7 @@ const config = {
   },
 
   // Webpack optimizations for production builds (fallback)
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer: _isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       react: path.resolve(monorepoRoot, 'node_modules/react'),
@@ -104,6 +120,23 @@ const config = {
     {
       source: '/docs',
       destination: '/docs/getting-started',
+      permanent: true,
+    },
+    // 2026-05-10: top-level pages moved into Concepts / Advanced.
+    // URL contract (UX_PHILOSOPHY §2): redirect, never delete.
+    {
+      source: '/docs/compare',
+      destination: '/docs/getting-started/concepts/compare',
+      permanent: true,
+    },
+    {
+      source: '/docs/cwe-compatibility',
+      destination: '/docs/getting-started/concepts/cwe-compatibility',
+      permanent: true,
+    },
+    {
+      source: '/docs/launch',
+      destination: '/docs/getting-started/advanced/launch',
       permanent: true,
     },
   ],

@@ -54,7 +54,7 @@ React uses camelCase for DOM attributes and has some renamed attributes (e.g., `
 <div class="container">Content</div>
 <label for="input">Label</label>
 <input tabindex="1" readonly />
-<table cellpadding="5" cellspacing="0">
+<table cellpadding="5" cellspacing="0"></table>
 ```
 
 ### ✅ Correct
@@ -63,7 +63,7 @@ React uses camelCase for DOM attributes and has some renamed attributes (e.g., `
 <div className="container">Content</div>
 <label htmlFor="input">Label</label>
 <input tabIndex={1} readOnly />
-<table cellPadding={5} cellSpacing={0}>
+<table cellPadding={5} cellSpacing={0}></table>
 ```
 
 ## Configuration Examples

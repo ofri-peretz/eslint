@@ -186,6 +186,7 @@ with untrusted identifiers.
 
 ## Try It Yourself
 
+<!-- markdownlint-disable-next-line MD033 -->
 <ASTExplorer />
 
 Paste any JavaScript and watch how ESLint "sees" your code.

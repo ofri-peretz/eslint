@@ -1,0 +1,18 @@
+[
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/shadcn-ui/packages/shadcn/src/mcp/index.ts",
+    "line": 321,
+    "column": 12,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/shadcn-ui/packages/shadcn/src/mcp/index.ts",
+    "line": 419,
+    "column": 25,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables"
+  }
+]

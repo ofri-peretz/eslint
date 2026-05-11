@@ -19,6 +19,7 @@ export const noSetState = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-set-state.md',
       description: 'Disallow usage of setState to encourage functional components with hooks',
     },
     messages: {

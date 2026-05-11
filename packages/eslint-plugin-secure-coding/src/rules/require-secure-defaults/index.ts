@@ -25,7 +25,10 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/require-secure-defaults.md',
       description: 'Ensure secure default configurations',
+      cwe: 'CWE-1188',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

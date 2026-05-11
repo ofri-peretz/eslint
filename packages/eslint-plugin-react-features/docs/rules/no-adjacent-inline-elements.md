@@ -80,36 +80,7 @@ flowchart TD
 ### ❌ Incorrect
 
 ```jsx
-// Adjacent spans without separation
-function Tags() {
-  return (
-    <div>
-      <span>Tag1</span>
-      <span>Tag2</span>
-      <span>Tag3</span>
-    </div>
-  );
-}
-
-// Adjacent links
-function Links() {
-  return (
-    <nav>
-      <a href="/home">Home</a>
-      <a href="/about">About</a>
-    </nav>
-  );
-}
-
-// Mixed inline elements
-function Text() {
-  return (
-    <p>
-      <strong>Bold</strong>
-      <em>Italic</em>
-    </p>
-  );
-}
+<div><em>Hello</em><b>World</b></div>
 ```
 
 ### ✅ Correct

@@ -22,8 +22,11 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-as-default.md',
       description:
         'Forbid use of exported name as identifier of default export',
+      cwe: 'CWE-1078',
+      cvss: 5,
     },
     messages: {
       namedAsDefault: formatLLMMessage({

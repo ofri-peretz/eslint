@@ -8,9 +8,9 @@ description: Standards for framework-specific security rules in the Interlace ec
 
 The Interlace ESLint ecosystem supports three primary backend frameworks for specialized security rule implementation:
 
-1.  **Express** (`eslint-plugin-express-security`): Rules targeting Express.js, middleware, and standard Node.js server patterns.
-2.  **NestJS** (`eslint-plugin-nestjs-security`): Rules targeting NestJS decorators, controllers, services, and modular architecture.
-3.  **Lambda** (`eslint-plugin-lambda-security`): Rules targeting AWS Lambda handlers, event parsing, and serverless-specific security risks.
+1. **Express** (`eslint-plugin-express-security`): Rules targeting Express.js, middleware, and standard Node.js server patterns.
+2. **NestJS** (`eslint-plugin-nestjs-security`): Rules targeting NestJS decorators, controllers, services, and modular architecture.
+3. **Lambda** (`eslint-plugin-lambda-security`): Rules targeting AWS Lambda handlers, event parsing, and serverless-specific security risks.
 
 ## Rule Distribution Pattern
 

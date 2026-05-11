@@ -33,7 +33,10 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-dynamic-service-worker-url.md',
       description: 'Disallow dynamic URLs in service worker registration',
+      cwe: 'CWE-829',
+      cvss: 8.1,
     },
     hasSuggestions: true,
     messages: {
@@ -74,7 +77,7 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

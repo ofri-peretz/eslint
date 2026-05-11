@@ -30,6 +30,20 @@ Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-
 | **Auto-Fix**      | 💡 Suggestions available                                                            |
 | **Category**   | Security |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) — Deserialization of Untrusted Data (CVSS 9.8 — Critical) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — RCE-class vulnerability sits at the highest tier of the cost-ratio table ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, cybersecurity, infra/devtools (downstream RCE blast radius) · **High:** B2B SaaS, healthtech · **Medium:** B2C, marketplaces |
+| **Investor-frame impact** | Insecure deserialization → Remote Code Execution (CVSS 9.8). One incident = full system compromise → mandatory disclosure → audit cycle restart → customer trust event. The single highest-leverage rule by counterfactual-value math: the catch costs ~$0; the unprevented bug costs the company. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Unsafe deserialization happens when an application accepts serialized objects from untrusted sources and deserializes them without validation.
@@ -58,19 +72,7 @@ Unsafe deserialization occurs when untrusted data is deserialized in a way that 
 ### ❌ Incorrect
 
 ```typescript
-// eval() for deserialization
-const data = eval('(' + userInput + ')');
-
-// Function constructor with user input
-const fn = new Function('return ' + userInput);
-const data = fn();
-
-// YAML.load() without safe mode
-import yaml from 'js-yaml';
-const config = yaml.load(userYaml); // Can execute code!
-
-// Unsafe serialization libraries
-const obj = serialize.unserialize(userInput);
+const func = new Function(req.body.input);
 ```
 
 ### ✅ Correct

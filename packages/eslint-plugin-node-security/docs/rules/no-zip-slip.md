@@ -75,26 +75,7 @@ tar.extract({ file: uploadedTar, cwd: targetDir });
 ### ✅ Correct
 
 ```typescript
-// Validate path before extraction
-for (const entry of archive.entries()) {
-  const targetPath = path.join(targetDir, entry.name);
-  const realTarget = path.normalize(targetPath);
-
-  // Ensure path stays within target directory
-  if (!realTarget.startsWith(path.resolve(targetDir) + path.sep)) {
-    throw new Error('Path traversal detected');
-  }
-
-  fs.writeFileSync(realTarget, entry.getData());
-}
-
-// Use safe extraction libraries
-import { extractSafe } from 'safe-archive';
-await extractSafe(uploadedFile, targetDir);
-
-// Or use library with built-in protection
-const zip = new AdmZip(uploadedFile);
-zip.extractAllTo(targetDir, true, true); // With overwrite protection
+const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
 ```
 
 ## Configuration

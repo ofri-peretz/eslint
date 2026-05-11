@@ -11,11 +11,14 @@
     "importHelpers": true,
     "target": "ES2022",
     "lib": [
-      "ES2022",
+      "ESNext",
       "dom"
     ],
+    "downlevelIteration": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
+    "stripInternal": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@interlace/eslint-devkit": [

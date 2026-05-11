@@ -204,7 +204,7 @@ document.cookie = 'theme=dark; Secure; SameSite=Strict';
 
 **Detection Patterns:**
 
-- `document.cookie = ` assignments with sensitive names (session, token, jwt, auth)
+- `document.cookie =` assignments with sensitive names (session, token, jwt, auth)
 - Cookie assignments missing `Secure` or `SameSite`
 - Reading `document.cookie` to extract auth tokens
 

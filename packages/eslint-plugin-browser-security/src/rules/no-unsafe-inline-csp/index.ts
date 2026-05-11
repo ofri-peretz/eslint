@@ -33,7 +33,10 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-inline-csp.md',
       description: "Disallow 'unsafe-inline' in Content Security Policy",
+      cwe: 'CWE-79',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -74,7 +77,7 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

@@ -115,6 +115,7 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-json-schema-tags.md',
       description:
         'Disallow JSON Schema keywords used as JSDoc tags (e.g. @minimum, @maximum)',
     },
@@ -167,7 +168,7 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
       forbiddenTags.add(tag);
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     return {
       Program() {

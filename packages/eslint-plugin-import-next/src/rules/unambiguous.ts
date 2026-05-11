@@ -27,8 +27,11 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/unambiguous.md',
       description:
         'Forbid potentially ambiguous parse goal (script vs. module)',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     messages: {
       ambiguous: formatLLMMessage({

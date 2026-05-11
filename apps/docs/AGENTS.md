@@ -1,6 +1,8 @@
 # AGENTS.md
 
-> Context for AI coding agents working on the Interlace ESLint Docs
+> Context for AI coding agents working on the Interlace ESLint Docs.
+>
+> **Before any non-trivial change to this app, read `DOCS_PHILOSOPHY.md` at repo root.** It defines our 5 cross-cutting principles and the per-topic decision (use-as-is / extend / build-our-own) for all 15 modern-docs concepts (page conventions, markdown, math, mermaid, twoslash, navigation, i18n, feedback, OG, content sourcing, OpenAPI, Storybook, TypeScript, validate-links, llms.txt). New work must align with the rubric or update it explicitly.
 
 ## Project Overview
 
@@ -20,13 +22,13 @@ This is a **Next.js 15** documentation site built with **Fumadocs**, serving as 
 npm install
 
 # Run development server
-npx nx dev docs
+npx turbo run dev --filter=docs
 
 # Build for production
-npx nx build docs
+npx turbo run build --filter=docs
 
 # Run linter
-npx nx lint docs
+npx turbo run lint --filter=docs
 ```
 
 ## Code Style

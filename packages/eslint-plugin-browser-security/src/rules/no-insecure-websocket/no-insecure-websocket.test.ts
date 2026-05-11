@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Secure WebSocket connections
     { code: "new WebSocket('wss://example.com')" },
     { code: "const ws = new WebSocket('wss://secure.example.com/socket')" },

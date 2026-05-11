@@ -64,7 +64,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-directive-injection.md',
       description: 'Detects directive injection vulnerabilities in templates',
+      cwe: 'CWE-96',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -255,8 +257,8 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -501,7 +503,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
 
-        while (current && !isInDangerousContext) {
+        // Every assignment of `isInDangerousContext = true` is followed by `break`,
+        // so the negation is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'JSXExpressionContainer') {
             // Check if we are inside dangerouslySetInnerHTML attribute
             if (current.parent?.type === 'JSXAttribute' &&

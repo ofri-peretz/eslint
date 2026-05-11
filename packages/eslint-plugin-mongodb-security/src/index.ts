@@ -81,7 +81,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mongodb-security',
-    version: '1.0.0',
+    version: '8.2.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -119,6 +119,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  * Preset configurations
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Use this when you want the
+   * highest-signal subset shippable in CI gates.
+   */
+  flagship: {
+    plugins: {
+      'mongodb-security': plugin,
+    },
+    rules: {
+      'mongodb-security/no-unsafe-query': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
   /**
    * Recommended configuration
    * Critical rules as errors, high as warnings

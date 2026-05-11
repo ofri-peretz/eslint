@@ -89,13 +89,33 @@ function processArticles(articles: DevToArticle[]): DevToArticle[] {
   return articles
     // Filter to only published articles
     .filter(article => article.published_at)
-    // Remove 'eslint' from tag_list as it's redundant for this site
+    // Explicit field whitelist instead of `...article` spread — restricts
+    // what flows from the network into the cache file to the known schema
+    // (CodeQL: `js/file-from-untrusted-data`). Any extra fields the API
+    // adds upstream are dropped at the boundary.
     .map(article => ({
-      ...article,
-      tag_list: article.tag_list.filter(tag => tag.toLowerCase() !== 'eslint'),
+      id: Number(article.id),
+      title: String(article.title ?? ''),
+      description: String(article.description ?? ''),
+      url: String(article.url ?? ''),
+      cover_image: article.cover_image ? String(article.cover_image) : null,
+      social_image: String(article.social_image ?? ''),
+      published_at: String(article.published_at ?? ''),
+      reading_time_minutes: Number(article.reading_time_minutes ?? 0),
+      positive_reactions_count: Number(article.positive_reactions_count ?? 0),
+      comments_count: Number(article.comments_count ?? 0),
+      page_views_count: article.page_views_count != null ? Number(article.page_views_count) : undefined,
+      tag_list: (article.tag_list ?? [])
+        .filter((tag): tag is string => typeof tag === 'string')
+        .filter(tag => tag.toLowerCase() !== 'eslint'),
+      user: {
+        name: String(article.user?.name ?? ''),
+        username: String(article.user?.username ?? ''),
+        profile_image: String(article.user?.profile_image ?? ''),
+      },
     }))
     // Sort by published date (newest first)
-    .sort((a, b) => 
+    .sort((a, b) =>
       new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
     );
 }
@@ -126,7 +146,9 @@ async function main() {
     // Print tag summary
     const allTags = new Set(processedArticles.flatMap(a => a.tag_list));
     console.log(`🏷️  Unique tags: ${allTags.size}`);
-    console.log(`   ${Array.from(allTags).sort().join(', ')}`);
+    const allTagsList: string[] = [];
+    allTags.forEach(tag => allTagsList.push(tag));
+    console.log(`   ${allTagsList.sort().join(', ')}`);
     
   } catch (error) {
     console.error('❌ Error fetching articles:', error);

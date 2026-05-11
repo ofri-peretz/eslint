@@ -36,8 +36,11 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-websocket-wss.md',
       description:
         'Require secure WebSocket connections (wss://) instead of unencrypted (ws://)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -88,7 +91,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, allowLocalhost = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -98,6 +101,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     /**
      * Check if URL is localhost
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function isLocalhostUrl(url: string): boolean {
       return (
         url.includes('://localhost') ||
@@ -151,7 +155,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          const sourceCode = context.sourceCode || context.getSourceCode();
+          const sourceCode = context.sourceCode;
           const originalText = sourceCode.getText(urlArg);
           const fixedText = originalText.replace('ws://', 'wss://');
 

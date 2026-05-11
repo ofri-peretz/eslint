@@ -1,0 +1,17 @@
+{
+  "cwe": "CWE-327",
+  "name": "Use of a Broken or Risky Cryptographic Algorithm (JWT alg=none)",
+  "owasp": "A02:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": ["eslint-plugin-jwt"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "sign-alg-none.js", "description": "jwt.sign with algorithm: 'none'" },
+      { "file": "verify-allows-none.js", "description": "jwt.verify with algorithms array including 'none'" }
+    ],
+    "safe": [
+      { "file": "sign-rs256.js", "description": "jwt.sign with explicit RS256 algorithm" },
+      { "file": "verify-allowlist.js", "description": "jwt.verify with explicit allowlist excluding none" }
+    ]
+  }
+}

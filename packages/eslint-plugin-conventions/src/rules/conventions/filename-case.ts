@@ -57,6 +57,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/filename-case.md',
       description: 'Enforce filename case conventions for consistency',
     },
     hasSuggestions: true,
@@ -146,10 +147,12 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     } = options || {};
 
     // Convert to different case formats
+    // oxlint-disable-next-line consistent-function-scoping
     function toCamelCase(str: string): string {
       return str.replace(/[-_](.)/g, (_, letter) => letter.toUpperCase());
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function toKebabCase(str: string): string {
       return str
         .replace(/([a-z])([A-Z])/g, '$1-$2')
@@ -162,6 +165,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
       return camel.charAt(0).toUpperCase() + camel.slice(1);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function toSnakeCase(str: string): string {
       return str
         .replace(/([a-z])([A-Z])/g, '$1_$2')
@@ -170,21 +174,25 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     }
 
     // Check if filename matches the expected case pattern
+    // oxlint-disable-next-line consistent-function-scoping
     function isCamelCase(str: string): boolean {
       // camelCase: starts with lowercase, no separators, can have uppercase after first char
       return /^[a-z][a-zA-Z0-9]*$/.test(str);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isKebabCase(str: string): boolean {
       // kebab-case: all lowercase with hyphens as separators
       return /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(str);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isPascalCase(str: string): boolean {
       // PascalCase: starts with uppercase, no separators
       return /^[A-Z][a-zA-Z0-9]*$/.test(str);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isSnakeCase(str: string): boolean {
       // snake_case: all lowercase with underscores as separators
       return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(str);
@@ -233,7 +241,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     return {
       Program(node: TSESTree.Program) {
         // Get filename from context
-        const filename = context.getFilename();
+        const filename = context.filename;
         if (!filename) {
           return;
         }

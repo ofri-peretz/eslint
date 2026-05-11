@@ -1,17 +1,86 @@
 ---
-title: 'enforce-team-boundaries'
-description: ESLint rule documentation for enforce-team-boundaries
+title: "enforce-team-boundaries"
+description: "Prevent unauthorized cross-team imports in large codebases"
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="enforce-team-boundaries" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-team-boundaries.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+## Rule Details
+
+This rule aims to prevent issues related to enforce-team-boundaries.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "teams": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "team": {
+              "type": "string"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowedDependencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "publicPackages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "team",
+            "paths"
+          ]
+        }
+      },
+      "sharedPaths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      },
+      "allowExternalPackages": {
+        "type": "boolean",
+        "default": true
+      }
+    },
+    "required": [
+      "teams"
+    ],
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/enforce-team-boundaries.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/enforce-team-boundaries.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

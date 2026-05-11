@@ -29,22 +29,114 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Check if a node is a Promise-like expression
- * For now, we check all CallExpressions since we can't statically determine
- * which functions return promises. The isPromiseHandled function will filter out
- * non-promise calls that are inside handled promise chains.
+ * Built-in / library calls that are KNOWN to NOT return a promise. Firing
+ * on these produces FPs (e.g., `setTimeout(...)`, `console.log(...)`,
+ * `Math.floor(...)` are not unhandled promises).
  */
-function isPromiseExpression(node: TSESTree.Node): boolean {
-  // Function calls that might return promises
-  if (node.type === 'CallExpression') {
+const NEVER_RETURNS_PROMISE_FUNCTIONS = new Set<string>([
+  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+  'setImmediate', 'clearImmediate',
+  'requestAnimationFrame', 'cancelAnimationFrame',
+  'queueMicrotask',
+  'String', 'Number', 'Boolean', 'Symbol', 'BigInt',
+  'parseInt', 'parseFloat', 'isNaN', 'isFinite',
+  'Array', 'Object',
+]);
+
+const NEVER_RETURNS_PROMISE_METHODS = new Set<string>([
+  // console / logger
+  'log', 'error', 'warn', 'info', 'debug', 'trace', 'group', 'groupEnd',
+  'time', 'timeEnd', 'assert',
+  // Math
+  'floor', 'ceil', 'round', 'abs', 'min', 'max', 'pow', 'sqrt', 'random',
+  'sin', 'cos', 'tan', 'log2', 'log10',
+  // String / Array helpers
+  'slice', 'split', 'join', 'concat', 'includes', 'indexOf', 'lastIndexOf',
+  'startsWith', 'endsWith', 'replace', 'replaceAll', 'trim', 'toLowerCase', 'toUpperCase',
+  'repeat', 'padStart', 'padEnd', 'charAt', 'charCodeAt', 'codePointAt',
+  'push', 'pop', 'shift', 'unshift', 'splice', 'reverse', 'sort',
+  'map', 'filter', 'reduce', 'reduceRight', 'forEach', 'every', 'some', 'find', 'findIndex',
+  'flat', 'flatMap', 'fill', 'copyWithin', 'entries', 'keys', 'values',
+  // JSON
+  'parse', 'stringify',
+  // AbortController/AbortSignal
+  'abort', 'addEventListener', 'removeEventListener', 'dispatchEvent',
+  // Date / Buffer / Number / Array static helpers (sync)
+  'now', 'parse', 'UTC', 'from', 'of', 'isArray', 'isBuffer',
+  'isInteger', 'isFinite', 'isNaN', 'isSafeInteger',
+  'fromCharCode', 'fromCodePoint', 'raw',
+  // Object helpers (sync)
+  'assign', 'freeze', 'isFrozen', 'create', 'defineProperty', 'defineProperties',
+  'getOwnPropertyDescriptor', 'getOwnPropertyNames', 'getPrototypeOf', 'setPrototypeOf',
+  'preventExtensions', 'isExtensible', 'seal', 'isSealed', 'fromEntries',
+  // Promise constructors that are themselves a promise but the callee is OK
+]);
+
+/**
+ * Globals whose methods are conventionally synchronous (no method on these
+ * namespaces returns a Promise in the standard library). Used in addition
+ * to `NEVER_RETURNS_PROMISE_METHODS` because matching by method name alone
+ * is too coarse: `from` is sync on `Array`/`Buffer`/`Date` but could be
+ * async on a user-defined object.
+ */
+const SYNC_NAMESPACE_OBJECTS = new Set<string>([
+  'Math', 'JSON', 'Date', 'Buffer', 'Array', 'Object', 'Number', 'String',
+  'Boolean', 'Symbol', 'BigInt', 'Reflect', 'console', 'process',
+]);
+
+/**
+ * Returns true if the call MIGHT return a Promise (default — we want to
+ * preserve detection for unknown calls). Returns false only when the
+ * callee is a known synchronous built-in (`setTimeout`, `console.log`,
+ * `Math.floor`, etc.) — those structurally never return promises and
+ * firing on them produces FPs. Keeping the default as "could be a
+ * promise" preserves recall on user-defined async functions.
+ */
+function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
+  if (node.type !== 'CallExpression') return false;
+  const callee = (node as TSESTree.CallExpression).callee;
+
+  // Direct calls — skip known synchronous built-ins
+  if (callee.type === 'Identifier') {
+    const name = (callee as TSESTree.Identifier).name;
+    if (NEVER_RETURNS_PROMISE_FUNCTIONS.has(name)) return false;
     return true;
   }
 
-  // Await expressions (already handled)
-  if (node.type === 'AwaitExpression') {
-    return false; // Already handled
+  // Method calls — skip known synchronous methods (Math.*, Array.*,
+  // String.*, console.*, JSON.*)
+  if (callee.type === 'MemberExpression') {
+    const prop = (callee as TSESTree.MemberExpression).property;
+    if (prop.type === 'Identifier') {
+      if (NEVER_RETURNS_PROMISE_METHODS.has((prop as TSESTree.Identifier).name)) return false;
+    }
+    // Static helpers on known sync namespaces — `Buffer.from`, `Date.now`,
+    // `Array.isArray`, `Object.keys`, etc. The standard library never
+    // returns a Promise from any method on these globals.
+    const obj = (callee as TSESTree.MemberExpression).object;
+    if (obj.type === 'Identifier' && SYNC_NAMESPACE_OBJECTS.has((obj as TSESTree.Identifier).name)) {
+      return false;
+    }
+    return true;
   }
 
+  return true;
+}
+
+/**
+ * Returns true when the call's parent indicates the promise is delegated
+ * to a caller and therefore not "unhandled" at this site. This covers:
+ *   - `return fn()` — the enclosing function returns the promise; its
+ *     caller takes responsibility.
+ *   - `() => fn()` — concise-body arrow returns the promise.
+ *   - `.then(() => fn())` — already inside a promise chain (handled by
+ *     `isInsidePromiseCallback`, but the arrow-body case is the same).
+ */
+function isPromiseDelegatedToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  if (!parent) return false;
+  if (parent.type === 'ReturnStatement') return true;
+  if (parent.type === 'ArrowFunctionExpression' && (parent as TSESTree.ArrowFunctionExpression).body === node) return true;
   return false;
 }
 
@@ -192,7 +284,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-unhandled-promise.md',
       description: 'Detects unhandled Promise rejections',
+      cwe: 'CWE-1024',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -266,7 +361,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, ignoreVoidExpressions = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -274,7 +369,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check call expressions for unhandled promises
@@ -282,6 +377,13 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       // Skip CallExpressions that are inside promise chain callbacks
       if (isInsidePromiseCallback(node)) {
+        return;
+      }
+
+      // `return fn()` / `() => fn()` — the promise is delegated to the
+      // caller. Flagging here would force `await` everywhere a promise
+      // is forwarded, which is wrong: forwarding IS handling.
+      if (isPromiseDelegatedToCaller(node)) {
         return;
       }
 
@@ -318,7 +420,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if it's a promise-returning function
-      if (!isPromiseExpression(node)) {
+      if (!isLikelyPromiseExpression(node)) {
         return;
       }
 
@@ -397,7 +499,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if it's a promise-like identifier
-      if (!isPromiseExpression(node)) {
+      if (!isLikelyPromiseExpression(node)) {
         return;
       }
 

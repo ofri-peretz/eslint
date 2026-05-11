@@ -19,6 +19,7 @@ export const noStringRefs = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-string-refs.md',
       description: 'Disallow string refs',
     },
     messages: {

@@ -61,12 +61,12 @@ async function goodExample() {
 cd ~/repos/ofriperetz.dev/eslint
 
 # Run all quality gates for the plugin
-nx run eslint-plugin-X:build
-nx run eslint-plugin-X:test --coverage
-nx run eslint-plugin-X:lint
+npx turbo run build --filter=eslint-plugin-X
+npx turbo run test --filter=eslint-plugin-X -- --coverage
+npx turbo run lint --filter=eslint-plugin-X
 
 # Verify coverage meets threshold (90%+ lines)
-nx run eslint-plugin-X:test --coverage 2>&1 | grep -E 'Lines|Branches|Functions'
+npx turbo run test --filter=eslint-plugin-X -- --coverage 2>&1 | grep -E 'Lines|Branches|Functions'
 ```
 
 See [CICD.md](./CICD.md) for pipeline details and [QUALITY_STANDARDS.md](./QUALITY_STANDARDS.md) for thresholds.
@@ -98,10 +98,10 @@ npm view eslint-plugin-X version
 cd ~/repos/ofriperetz.dev/eslint
 
 # Build the plugin (replace with target plugin)
-nx build eslint-plugin-X
+npx turbo run build --filter=eslint-plugin-X
 
 # Build all plugins at once
-nx run-many -t build --projects='eslint-plugin-*'
+npx turbo run build --filter='eslint-plugin-*'
 ```
 
 ### Step 2: Link/Install in Playground Demo App

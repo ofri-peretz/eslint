@@ -10,8 +10,37 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { execSync } from 'child_process';
+
+/**
+ * Read the docs app's `global.css` together with every CSS file it imports
+ * from `@interlace/ui/styles`. We moved most fumadocs/TOC overrides into
+ * the shared package's `theme.css`; the contract asserted by these tests
+ * still holds — it just spans two files now. Reading both keeps the
+ * lock-tests stable across that refactor.
+ */
+function readGlobalCSS(): string {
+  const docsGlobal = readFileSync(
+    join(process.cwd(), 'src/app/global.css'),
+    'utf-8',
+  );
+  const uiStylesDir = resolve(
+    process.cwd(),
+    '..',
+    '..',
+    'packages',
+    'ui',
+    'styles',
+  );
+  const imported = (docsGlobal.match(/@import\s+['"]@interlace\/ui\/styles\/([^'"]+)['"]/g) ?? [])
+    .map((stmt) => stmt.match(/styles\/([^'"]+)['"]/)?.[1])
+    .filter((f): f is string => Boolean(f))
+    .map((f) => join(uiStylesDir, f))
+    .filter(existsSync)
+    .map((p) => readFileSync(p, 'utf-8'));
+  return [docsGlobal, ...imported].join('\n');
+}
 
 // =========================================
 // CRITICAL TAILWIND CLASSES
@@ -121,7 +150,7 @@ describe('Tailwind CSS Compilation', () => {
           stdio: 'pipe',
           timeout: 120000 
         });
-      } catch (error) {
+      } catch {
         console.warn('Build failed or skipped - checking dev mode output');
       }
     }
@@ -162,10 +191,7 @@ describe('Tailwind CSS Compilation', () => {
 
 describe('Source File Configuration', () => {
   it('should have correct @source directive in global.css', () => {
-    const globalCSS = readFileSync(
-      join(process.cwd(), 'src/app/global.css'),
-      'utf-8'
-    );
+    const globalCSS = readGlobalCSS();
     
     expect(globalCSS).toContain('@source');
     expect(globalCSS).toContain('fumadocs-ui');
@@ -184,12 +210,9 @@ describe('Source File Configuration', () => {
 
   describe('Required Manual CSS Rules', () => {
     REQUIRED_MANUAL_CSS.forEach(({ pattern, description }) => {
-      it(`should define "${description}" in global.css`, () => {
-        const globalCSS = readFileSync(
-          join(process.cwd(), 'src/app/global.css'),
-          'utf-8'
-        );
-        
+      it(`should define "${description}" in the effective app CSS (global.css + imported theme/tokens)`, () => {
+        const globalCSS = readGlobalCSS();
+
         expect(globalCSS, `Missing: ${description} (${pattern})`).toContain(pattern);
       });
     });
@@ -228,22 +251,16 @@ describe('Source File Configuration', () => {
 
   describe('TOC Line Styling (Anti-Duplicate)', () => {
     it('should hide gray rail segments (prevent staircase effect)', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       // Must have rule to hide bg-fd-foreground/10 in TOC
       expect(globalCSS).toContain('#nd-toc .bg-fd-foreground\\/10');
       expect(globalCSS).toContain('display: none');
     });
 
     it('should hide SVG diagonal connectors', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       // Must have rule to hide stroke-fd-foreground/10 in TOC
       expect(globalCSS).toContain('#nd-toc .stroke-fd-foreground\\/10');
     });
@@ -252,10 +269,7 @@ describe('Source File Configuration', () => {
   describe('Forbidden CSS Patterns (Regression Prevention)', () => {
     FORBIDDEN_CSS_PATTERNS.forEach(({ pattern, description }) => {
       it(`should NOT have "${description}"`, () => {
-        const globalCSS = readFileSync(
-          join(process.cwd(), 'src/app/global.css'),
-          'utf-8'
-        );
+        const globalCSS = readGlobalCSS();
         
         const matches = globalCSS.match(pattern);
         expect(
@@ -268,22 +282,16 @@ describe('Source File Configuration', () => {
 
   describe('TOC Transition Animation', () => {
     it('should have transition utility for TOC indicator', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       expect(globalCSS).toContain('.transition-\\[top\\,height\\]');
       expect(globalCSS).toContain('transition-property');
       expect(globalCSS).toContain('top, height');
     });
 
     it('should have direct transition on TOC indicator element', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       expect(globalCSS).toContain('#nd-toc .bg-fd-primary');
       expect(globalCSS).toContain('150ms');
     });
@@ -291,21 +299,15 @@ describe('Source File Configuration', () => {
 
   describe('Responsive TOC Visibility', () => {
     it('should have media query to hide side TOC on small screens', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       expect(globalCSS).toContain('@media (max-width: 1279px)');
       expect(globalCSS).toContain('#nd-toc');
     });
 
     it('should have media query to hide popover TOC on large screens', () => {
-      const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
-        'utf-8'
-      );
-      
+      const globalCSS = readGlobalCSS();
+
       expect(globalCSS).toContain('@media (min-width: 1280px)');
       expect(globalCSS).toContain('data-toc-popover');
     });
@@ -338,7 +340,7 @@ function findCompiledCSS(buildDir: string): string {
   cssFiles.forEach(file => {
     try {
       allCSS += readFileSync(file, 'utf-8');
-    } catch (e) {
+    } catch {
       // Ignore read errors
     }
   });

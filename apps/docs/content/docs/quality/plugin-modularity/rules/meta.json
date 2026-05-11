@@ -1,5 +1,12 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "ddd-anemic-domain-model",
+    "ddd-value-object-immutability",
+    "enforce-naming",
+    "enforce-rest-conventions",
+    "no-external-api-calls-in-utils"
+  ]
 }

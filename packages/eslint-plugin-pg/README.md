@@ -10,14 +10,13 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-pg.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-pg.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-pg" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
 This plugin provides Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -35,23 +34,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 ```bash
 npm install eslint-plugin-pg --save-dev
 ```
-
-## 💡 What You Get
-- **PostgreSQL-specific rules:** Catches pg driver anti-patterns that generic linters miss
-- **LLM-optimized messages:** Structured 2-line errors with CWE + fixes that AI assistants can apply
-- **Connection safety:** Prevents leaks, double releases, and transaction race conditions
-- **SQL security:** SQL injection, search_path hijacking, file access via COPY
-- **Performance patterns:** N+1 queries, SELECT \*, bulk operation suggestions
-
-Every rule produces a **structured error message**:
-
-```bash
-src/db.ts
-  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe query detected | CRITICAL
-                    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
-```
-
----
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                              |
@@ -80,7 +62,28 @@ export default [
 ];
 ```
 
----
+## 💡 What You Get
+- **PostgreSQL-specific rules:** Catches pg driver anti-patterns that generic linters miss
+- **LLM-optimized messages:** Structured 2-line errors with CWE + fixes that AI assistants can apply
+- **Connection safety:** Prevents leaks, double releases, and transaction race conditions
+- **SQL security:** SQL injection, search_path hijacking, file access via COPY
+- **Performance patterns:** N+1 queries, SELECT \*, bulk operation suggestions
+
+Every rule produces a **structured error message**:
+
+```bash
+src/db.ts
+  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe query detected | CRITICAL
+                    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
+```
+
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## Rules
 
@@ -89,27 +92,31 @@ export default [
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-20 | A06:2025 |  | ESLint rule documentation for check-query-params | 💼 | ⚠️ |  | 💡 |  |
-| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-batch-insert-loop | 💼 | ⚠️ |  | 💡 |  |
-| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 | A06:2025 |  | ESLint rule documentation for no-floating-query | 💼 |  |  | 💡 |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 | A05:2025 |  | ESLint rule documentation for no-hardcoded-credentials | 💼 |  |  | 💡 |  |
-| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 | A05:2025 |  | ESLint rule documentation for no-insecure-ssl | 💼 |  |  | 💡 |  |
-| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 | A09:2025 |  | ESLint rule documentation for no-missing-client-release | 💼 |  |  | 💡 |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-select-all | 💼 | ⚠️ |  | 💡 |  |
-| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 | A04:2025 |  | ESLint rule documentation for no-transaction-on-pool | 💼 |  |  | 💡 |  |
-| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-22 | A03:2025 |  | ESLint rule documentation for no-unsafe-copy-from | 💼 |  |  | 💡 |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 | A03:2025 |  | ESLint rule documentation for no-unsafe-query | 💼 |  |  | 💡 |  |
-| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 | A01:2025 |  | ESLint rule documentation for no-unsafe-search-path | 💼 |  |  | 💡 |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-404 | A04:2025 |  | ESLint rule documentation for prefer-pool-query | 💼 | ⚠️ |  | 💡 |  |
-| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 | A04:2025 |  | ESLint rule documentation for prevent-double-release | 💼 |  |  | 💡 |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -118,7 +125,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |

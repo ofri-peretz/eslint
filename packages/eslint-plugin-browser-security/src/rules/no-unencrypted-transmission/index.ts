@@ -112,7 +112,10 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unencrypted-transmission.md',
       description: 'Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -194,9 +197,9 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
       : SECURE_ALTERNATIVES;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (typeof node.value !== 'string') {

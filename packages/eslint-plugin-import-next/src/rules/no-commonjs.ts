@@ -38,6 +38,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-commonjs.md',
       description: 'Prevents CommonJS require/module.exports',
     },
     hasSuggestions: true,
@@ -135,7 +136,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
       suggestES6 = true,
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(): boolean {
       if (!filename) {

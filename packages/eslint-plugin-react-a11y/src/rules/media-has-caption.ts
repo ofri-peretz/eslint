@@ -29,7 +29,10 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/media-has-caption.md',
       description: 'Enforce that media elements have captions',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingCaption: formatLLMMessage({
@@ -57,9 +60,9 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { audio = [], video = [], track = [] } = options ?? {} as Options;
-    const audioElements = ['audio', ...audio];
-    const videoElements = ['video', ...video];
-    const trackElements = ['track', ...track];
+    const audioElements = new Set(['audio', ...audio]);
+    const videoElements = new Set(['video', ...video]);
+    const trackElements = new Set(['track', ...track]);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
@@ -67,7 +70,7 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         if (openingElement.name.type !== 'JSXIdentifier') return;
 
         const name = openingElement.name.name;
-        if (!audioElements.includes(name) && !videoElements.includes(name)) return;
+        if (!audioElements.has(name) && !videoElements.has(name)) return;
         
         // Check if muted is true for video (no captions needed if muted?) - arguably still needed for accessibility standards but often skipped in simplified rules.
         // W3C says captions needed for audio content.
@@ -76,7 +79,7 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         const hasCaption = node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
             const childName = child.openingElement.name;
-            if (childName.type !== 'JSXIdentifier' || !trackElements.includes(childName.name)) return false;
+            if (childName.type !== 'JSXIdentifier' || !trackElements.has(childName.name)) return false;
             
             // Check kind attribute
             return child.openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 

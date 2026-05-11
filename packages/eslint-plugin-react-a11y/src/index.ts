@@ -150,7 +150,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-react-a11y',
-    version: '1.0.0',
+    version: '2.1.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -160,8 +160,24 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Head-to-head with
+   * `jsx-a11y/alt-text` — covers the same 4 element types (img, object,
+   * area, input[type=image]) plus custom-component support for next/image
+   * and friends.
+   */
+  flagship: {
+    plugins: {
+      'react-a11y': plugin,
+    },
+    rules: {
+      'react-a11y/alt-text': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Recommended accessibility configuration
-   * 
+   *
    * Enables critical accessibility rules with sensible severity levels:
    * - WCAG Level A violations as errors
    * - WCAG Level AA/AAA as warnings

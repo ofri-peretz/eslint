@@ -1,11 +1,18 @@
-import nx from '@nx/eslint-plugin';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import oxlint from 'eslint-plugin-oxlint';
 import localPlugin from './tools/eslint-rules/index.js';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Root ESLint config (flat, ESLint v9+).
+//
+// History: this used to layer @nx/eslint-plugin presets and Nx-specific
+// rules (@nx/enforce-module-boundaries, @nx/dependency-checks). Those left
+// the repo with the Nx → Turbo migration. Module boundaries are now
+// enforced by Turbo's task graph; package.json dependency hygiene is
+// covered by `audit:portability` + `audit:meta` scripts.
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default [
-  ...nx.configs['flat/base'],
-  ...nx.configs['flat/typescript'],
-  ...nx.configs['flat/javascript'],
   {
     ignores: [
       '**/dist',
@@ -21,19 +28,6 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
-      '@nx/enforce-module-boundaries': [
-        'error',
-        {
-          enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
-          depConstraints: [
-            {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
-            },
-          ],
-        },
-      ],
       'unicorn/prefer-node-protocol': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -68,11 +62,11 @@ export default [
       unicorn: eslintPluginUnicorn,
     },
     rules: {
-      // Enforce node: protocol for Node.js built-in imports (e.g., 'node:fs' instead of 'fs')
+      // Enforce node: protocol for Node.js built-ins (e.g. 'node:fs' over 'fs').
       'unicorn/prefer-node-protocol': 'error',
     },
   },
-  // Local rule: Ensure vitest configs have watch: false for CI
+  // Local rule: vitest configs must have watch: false for CI determinism.
   {
     files: [
       '**/vitest.config.mts',
@@ -88,30 +82,6 @@ export default [
   },
   {
     files: ['**/*.json'],
-    rules: {
-      '@nx/dependency-checks': [
-        'error',
-        {
-          ignoredFiles: [
-            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
-            '{projectRoot}/vitest.config.{js,mjs,ts,mts}',
-            '{projectRoot}/vite.config.{js,ts,mjs,mts}',
-            '{projectRoot}/**/*.test.{js,cjs,mjs,ts,cts,mts}',
-            '{projectRoot}/docs/**/*.md', // Doc examples reference external packages
-            '{projectRoot}/benchmark/**/*', // Benchmark files reference external packages
-          ],
-          ignoredDependencies: [
-            'eslint', // Peer dependency - provided by consuming projects
-            'vitest', // Dev dependency - used for testing only
-            '@nx/vite', // Dev dependency - Nx plugin for Vite/Vitest
-            'chalk', // Used in CLI but sometimes misdetected
-            'commander', // Used in CLI but sometimes misdetected
-            'ora', // Used in CLI but sometimes misdetected
-            'tslib', // Usually an internal TSC helper
-          ],
-        },
-      ],
-    },
     languageOptions: {
       parser: await import('jsonc-eslint-parser'),
     },
@@ -141,4 +111,14 @@ export default [
       'local/changelog-format': 'error',
     },
   },
+
+  // ── oxlint integration ──────────────────────────────────────────────────
+  // Disable ESLint rules that oxlint handles natively in Rust (50-100× faster).
+  // oxlint runs FIRST (via `npm run oxlint`), then ESLint runs only custom rules.
+  ...oxlint.configs['flat/recommended'],
+  ...oxlint.configs['flat/correctness'],
+  ...oxlint.configs['flat/suspicious'],
+  ...oxlint.configs['flat/perf'],
+  ...oxlint.configs['flat/unicorn'],
+  ...oxlint.configs['flat/typescript'],
 ];

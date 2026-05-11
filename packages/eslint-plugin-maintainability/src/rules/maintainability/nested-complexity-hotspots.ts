@@ -79,6 +79,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/nested-complexity-hotspots.md',
       description: 'Identifies nested control structures that harm readability',
     },
     messages: {
@@ -159,7 +160,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       countLoops = true,
     }: Options = options || {};
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check control structures

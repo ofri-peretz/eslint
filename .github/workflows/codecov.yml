@@ -1,224 +1,118 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Upload Coverage to Codecov
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# WORKFLOW PURPOSE: Upload test coverage stats to Codecov for Nx Monorepo
-# ═══════════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs every package's `test` task with coverage via Turbo, uploads lcov +
+# JUnit results to Codecov for badges + Test Analytics.
 #
-# This workflow runs all tests with coverage enabled and uploads the results
-# to Codecov for tracking and badge generation using Components for monorepo support.
-#
-# Trigger: Manual (workflow_dispatch) or weekly schedule
-# Required Secret: CODECOV_TOKEN
-# ═══════════════════════════════════════════════════════════════════════════════
+# Trigger: manual (workflow_dispatch). Schedule is intentionally disabled —
+# coverage is regenerated on demand to conserve runner quota.
+# ─────────────────────────────────────────────────────────────────────────────
 
 on:
   workflow_dispatch:
     inputs:
-      project:
-        description: "Project to test (leave empty for all)"
+      filter:
+        description: "Turbo filter (e.g. eslint-plugin-crypto). Empty = all packages."
         required: false
         type: string
         default: ""
-  # schedule: # DISABLED — quota conservation
-    # Run weekly on Monday at 6 AM UTC to keep coverage fresh
-    # - cron: "0 6 * * 1"
 
-# Prevent concurrent runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  NODE_VERSION: "24"
+  TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
   coverage:
-    name: 📊 Test Coverage
+    name: Test Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
           fetch-depth: 0
 
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 🗄️ Restore NX cache
-        uses: actions/cache@v4
-        with:
-          path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-            nx-cache-${{ runner.os }}-
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # RUN TESTS WITH COVERAGE
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 🧪 Run Tests with Coverage
-        id: tests
-        continue-on-error: true
-        run: |
-          PROJECT="${{ inputs.project }}"
-
-          # Validate project input if provided
-          if [ -n "$PROJECT" ]; then
-            if ! npx nx show project "$PROJECT" >/dev/null 2>&1; then
-              echo "❌ Invalid project: $PROJECT"
-              echo "Available projects:"
-              npx nx show projects
-              exit 1
-            fi
-            echo "📊 Running tests with coverage for: $PROJECT"
-            npx nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
-          else
-            echo "📊 Running tests with coverage for all packages..."
-            npx nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
-          fi
+      - name: Run tests with coverage
         env:
-          NX_SKIP_NX_CLOUD: "true"
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # UPLOAD TO CODECOV USING CLI (Recommended for Monorepos)
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 📥 Install Codecov CLI
+          FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
         run: |
-          curl -Os https://cli.codecov.io/latest/linux/codecov
-          chmod +x codecov
+          # `test:coverage` falls back to `test` if a package doesn't define it.
+          npx turbo run test:coverage $FILTER_ARG --continue || \
+            npx turbo run test $FILTER_ARG --continue
 
-      - name: 🔍 Find coverage files
-        id: find-coverage
+      - name: Locate coverage + JUnit reports
+        id: find
         run: |
-          echo "🔍 Searching for coverage files..."
+          set -euo pipefail
+          LCOV=$(find packages -path '*/coverage/lcov.info' -type f | head -200)
+          JUNIT=$(find packages -name 'junit.xml' -o -name 'test-report.junit.xml' 2>/dev/null | head -200)
+          {
+            echo "lcov<<EOF"; echo "$LCOV"; echo "EOF"
+            echo "junit<<EOF"; echo "$JUNIT"; echo "EOF"
+            echo "has_lcov=$([ -n "$LCOV" ] && echo true || echo false)"
+            echo "has_junit=$([ -n "$JUNIT" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
 
-          # Find all coverage files (lcov.info and coverage-final.json)
-          LCOV_FILES=$(find . -name "lcov.info" -type f -not -path "./.nx/cache/*" 2>/dev/null | head -50)
-          JSON_FILES=$(find . -name "coverage-final.json" -type f -not -path "./.nx/cache/*" 2>/dev/null | head -50)
+      - name: Upload coverage to Codecov
+        if: steps.find.outputs.has_lcov == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          # Codecov v5 auto-discovers lcov.info under packages/*/coverage.
 
-          echo "📁 Found lcov.info files:"
-          echo "$LCOV_FILES" | grep -v "^$" || echo "  (none)"
+      - name: Upload test results (Test Analytics)
+        if: steps.find.outputs.has_junit == 'true'
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-          echo ""
-          echo "📁 Found coverage-final.json files:"
-          echo "$JSON_FILES" | grep -v "^$" || echo "  (none)"
-
-          if [ -n "$LCOV_FILES" ] || [ -n "$JSON_FILES" ]; then
-            echo "has_coverage=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_coverage=false" >> $GITHUB_OUTPUT
-            echo "⚠️ No coverage files found"
-          fi
-
-      - name: 📤 Upload coverage to Codecov
-        if: steps.find-coverage.outputs.has_coverage == 'true'
-        run: |
-          echo "📤 Uploading coverage to Codecov..."
-          ./codecov upload-process \
-            --token ${{ secrets.CODECOV_TOKEN }} \
-            --git-service github \
-            --exclude .nx/cache \
-            --fail-on-error || echo "⚠️ Codecov upload completed with warnings"
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: 🧪 Upload test results to Codecov (Test Analytics)
+      - name: Coverage summary
         if: always()
         run: |
-          echo "🧪 Uploading test results for Test Analytics..."
-          # Find all JUnit XML files generated by vitest
-          JUNIT_FILES=$(find packages -name "junit.xml" -o -name "test-report.junit.xml" 2>/dev/null | head -50)
+          set -euo pipefail
+          {
+            echo "## Coverage Report"
+            echo ""
+            echo "Triggered by: ${{ github.event_name }}"
+            echo ""
+            echo "### Per-package coverage"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          if [ -n "$JUNIT_FILES" ]; then
-            echo "📁 Found JUnit files:"
-            echo "$JUNIT_FILES"
-            
-            ./codecov do-upload \
-              --token ${{ secrets.CODECOV_TOKEN }} \
-              --report-type test_results \
-              --git-service github || echo "⚠️ Test results upload completed with warnings"
-          else
-            echo "⚠️ No JUnit XML files found for Test Analytics"
-          fi
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # COVERAGE SUMMARY
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 📊 Generate Coverage Summary
-        if: always()
-        run: |
-          echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Run triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          echo "### Packages with Coverage:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # List packages with coverage from packages/*/coverage
-          FOUND_COVERAGE=false
-          for dir in packages/*/coverage; do
-            if [ -d "$dir" ] && [ -f "$dir/lcov.info" ]; then
-              FOUND_COVERAGE=true
-              PKG=$(echo "$dir" | cut -d'/' -f2)
-              
-              # Calculate coverage percentage
-              LINES_FOUND=$(grep -c "^DA:" "$dir/lcov.info" 2>/dev/null || echo "0")
-              LINES_HIT=$(grep "^DA:" "$dir/lcov.info" 2>/dev/null | grep -v ",0$" | wc -l | tr -d ' ' || echo "0")
-              
-              if [ "$LINES_FOUND" -gt 0 ]; then
-                PCT=$((LINES_HIT * 100 / LINES_FOUND))
-                if [ "$PCT" -ge 80 ]; then
-                  EMOJI="🟢"
-                elif [ "$PCT" -ge 60 ]; then
-                  EMOJI="🟡"
-                else
-                  EMOJI="🔴"
-                fi
-                echo "- $EMOJI **$PKG**: ${PCT}% ($LINES_HIT/$LINES_FOUND lines)" >> $GITHUB_STEP_SUMMARY
+          shopt -s nullglob
+          found=false
+          for lcov in packages/*/coverage/lcov.info; do
+            found=true
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            total=$(grep -c '^DA:' "$lcov" || true)
+            hit=$(grep '^DA:' "$lcov" | grep -cv ',0$' || true)
+            if [ "${total:-0}" -gt 0 ]; then
+              pct=$((hit * 100 / total))
+              if [ "$pct" -ge 80 ]; then emoji="🟢"
+              elif [ "$pct" -ge 60 ]; then emoji="🟡"
+              else emoji="🔴"
               fi
+              echo "- $emoji **$pkg**: ${pct}% ($hit/$total lines)" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+          [ "$found" = true ] || echo "_No coverage reports found._" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View on Codecov](https://codecov.io/gh/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
 
-          # Also check coverage/packages/*/
-          for dir in coverage/packages/*/; do
-            if [ -d "$dir" ] && [ -f "$dir/coverage-final.json" ]; then
-              FOUND_COVERAGE=true
-              PKG=$(echo "$dir" | cut -d'/' -f3)
-              echo "- ✅ **$PKG**: coverage-final.json found" >> $GITHUB_STEP_SUMMARY
-            fi
-          done
-
-          if [ "$FOUND_COVERAGE" = "false" ]; then
-            echo "⚠️ No coverage reports found" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📈 [View on Codecov](https://codecov.io/gh/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📤 Upload coverage artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage artifacts
         if: always()
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-reports-${{ github.run_id }}
           path: |
             packages/*/coverage/
-            coverage/
           retention-days: 7
           if-no-files-found: ignore

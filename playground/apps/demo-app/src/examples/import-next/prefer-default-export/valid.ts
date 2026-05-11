@@ -1,1 +1,0 @@
-// Valid example for prefer-default-export\nexport const valid = true;\n

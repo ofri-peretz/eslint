@@ -97,13 +97,17 @@ export const handler = async (event) => {
   }
 };
 
-// Also dangerous
-catch (error) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify(error)  // ❌ Exposes all error properties
-  };
-}
+// Also dangerous: returning the raw error object
+export const handler2 = async (event) => {
+  try {
+    await processRequest(event);
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify(error),  // ❌ Exposes all error properties
+    };
+  }
+};
 ```
 
 ### ✅ Correct

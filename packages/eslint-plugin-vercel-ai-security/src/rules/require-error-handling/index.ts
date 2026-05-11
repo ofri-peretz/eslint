@@ -27,7 +27,10 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-error-handling.md',
       description: 'Require error handling for AI SDK calls to prevent cascading failures',
+      cwe: 'CWE-755',
+      cvss: 5,
     },
     messages: {
       missingErrorHandling: formatLLMMessage({
@@ -65,8 +68,8 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const allowInTests = options.allowInTests ?? true;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Skip test files if allowed
     if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {
@@ -79,6 +82,7 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
     /**
      * Check if node is inside a try block
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function isInsideTryBlock(node: TSESTree.Node): boolean {
       let parent = node.parent;
       while (parent) {

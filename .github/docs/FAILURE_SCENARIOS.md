@@ -2,7 +2,7 @@
 
 > **📚 Part of [CI/CD Pipeline Documentation](../CICD_PIPELINE.md)**
 >
-> Related docs: [Nx Release Guide](./NX_RELEASE_GUIDE.md) • [NPM Authentication](./NPM_AUTHENTICATION.md)
+> Related docs: [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md#-versioning--releases-changesets) • [NPM Authentication](./NPM_AUTHENTICATION.md)
 
 ---
 
@@ -30,46 +30,46 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 | Aspect            | Value                                           |
 | ----------------- | ----------------------------------------------- |
 | **When**          | ESLint finds errors in changed files            |
-| **Detection**     | `nx affected -t lint` returns non-zero          |
+| **Detection**     | `npx turbo run lint --filter='[origin/main]'` returns non-zero          |
 | **Impact**        | PR cannot merge                                 |
 | **Recovery**      | Fix lint errors locally, push new commit        |
-| **Best Practice** | Run `pnpm nx lint <pkg>` locally before pushing |
+| **Best Practice** | Run `npx turbo run lint --filter=<pkg>` locally before pushing |
 
 ### CI-02: Test Failure
 
 | Aspect            | Value                                           |
 | ----------------- | ----------------------------------------------- |
 | **When**          | Tests fail for affected packages                |
-| **Detection**     | `nx affected -t test -c ci` returns non-zero    |
+| **Detection**     | `npx turbo run test --filter='[origin/main]'` returns non-zero    |
 | **Impact**        | PR cannot merge                                 |
 | **Recovery**      | Fix failing tests locally, push new commit      |
-| **Best Practice** | Run `pnpm nx test <pkg>` locally before pushing |
+| **Best Practice** | Run `npx turbo run test --filter=<pkg>` locally before pushing |
 
 ### CI-03: Build Failure
 
 | Aspect            | Value                                            |
 | ----------------- | ------------------------------------------------ |
 | **When**          | Build fails for affected packages                |
-| **Detection**     | `nx affected -t build` returns non-zero          |
+| **Detection**     | `npx turbo run build --filter='[origin/main]'` returns non-zero          |
 | **Impact**        | PR cannot merge                                  |
 | **Recovery**      | Fix build errors locally, push new commit        |
-| **Best Practice** | Run `pnpm nx build <pkg>` locally before pushing |
+| **Best Practice** | Run `npx turbo run build --filter=<pkg>` locally before pushing |
 
 ### CI-04: Typecheck Failure
 
 | Aspect            | Value                                                |
 | ----------------- | ---------------------------------------------------- |
 | **When**          | TypeScript errors in affected packages               |
-| **Detection**     | `nx affected -t typecheck` returns non-zero          |
+| **Detection**     | `npx turbo run typecheck --filter='[origin/main]'` returns non-zero          |
 | **Impact**        | PR cannot merge                                      |
 | **Recovery**      | Fix TypeScript errors locally, push new commit       |
-| **Best Practice** | Run `pnpm nx typecheck <pkg>` locally before pushing |
+| **Best Practice** | Run `npx turbo run typecheck --filter=<pkg>` locally before pushing |
 
 ### CI-05: Release Dry-Run Warning
 
 | Aspect            | Value                                         |
 | ----------------- | --------------------------------------------- |
-| **When**          | `nx release version --dry-run` detects issues |
+| **When**          | `gh workflow run release.yml -f dry-run=true` detects issues |
 | **Impact**        | ⚠️ Warning only - PR CAN still merge          |
 | **Recovery**      | Review warning, fix if needed before release  |
 | **Best Practice** | Treat warnings as early indicators            |
@@ -258,15 +258,16 @@ fi
 
 | Aspect         | Value                                                      |
 | -------------- | ---------------------------------------------------------- |
-| **Detection**  | `nx release version` output contains "No changes detected" |
-| **Resolution** | Fallback to `patch` version bump                           |
+| **Detection**  | Changesets reports "No changesets present" or `gh pr list --search 'Version Packages'` returns empty |
+| **Resolution** | Add a changeset (`npm run changeset`) for the next change, OR run a patch bump via the release workflow |
 | **Outcome**    | ✅ Released (as patch)                                     |
 
 ```bash
-if [ "$VERSION_FAILED" = "true" ] && echo "$OUTPUT" | grep -q "No changes detected"; then
-  echo "ℹ️ No conventional commits, falling back to patch..."
-  pnpm nx release version patch --projects=$PACKAGE
-fi
+# Add a changeset locally
+npm run changeset
+
+# Or trigger a patch-only release via the workflow
+gh workflow run release.yml --ref main
 ```
 
 ---

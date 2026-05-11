@@ -249,14 +249,14 @@ export function isSanitizationCall(
   node: TSESTree.Node,
   customFunctions: string[] = [],
 ): boolean {
-  const allFunctions = [...SANITIZATION_FUNCTIONS, ...customFunctions];
+  const allFunctions = new Set([...SANITIZATION_FUNCTIONS, ...customFunctions]);
 
   if (node.type === 'CallExpression') {
     const callee = node.callee;
 
     // Direct function call: sanitize(input)
     if (callee.type === 'Identifier') {
-      return allFunctions.includes(callee.name);
+      return allFunctions.has(callee.name);
     }
 
     // Method call: DOMPurify.sanitize(input)
@@ -271,7 +271,7 @@ export function isSanitizationCall(
 
       // Check if the method name itself is a sanitization function
       if (callee.property.type === 'Identifier') {
-        return allFunctions.includes(callee.property.name);
+        return allFunctions.has(callee.property.name);
       }
     }
   }

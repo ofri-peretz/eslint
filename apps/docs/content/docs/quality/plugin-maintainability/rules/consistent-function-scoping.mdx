@@ -1,8 +1,125 @@
 ---
-title: 'consistent-function-scoping'
-description: ESLint rule documentation for consistent-function-scoping
+title: consistent-function-scoping
+description: Move functions to the highest possible scope
+tags: ['quality', 'maintainability']
+category: quality
+autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="maintainability" rule="consistent-function-scoping" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** function scope, hoisting, nested functions, ESLint rule, performance, LLM-optimized
+
+Move functions to the highest possible scope. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
+
+## Quick Summary
+
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Warning (code quality)                                               |
+| **Auto-Fix**   | ❌ No (requires manual move)                                         |
+| **Category**   | Quality |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | Performance optimization, code organization                          |
+
+## Rule Details
+
+Functions that don't use variables from their parent scope should be moved to a higher scope.
+
+### Why This Matters
+
+| Issue                     | Impact                          | Solution                  |
+| ------------------------- | ------------------------------- | ------------------------- |
+| ⚡ **Performance**        | Recreated on each call          | Move to outer scope       |
+| 📖 **Readability**        | Deep nesting                    | Flatten structure         |
+| 🧪 **Testability**        | Hard to test nested functions   | Extract for testing       |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+function outer() {
+  // This function doesn't use any variables from outer
+  function helper(x: number) {
+    return x * 2;
+  }
+  
+  return [1, 2, 3].map(helper);
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Moved to module scope
+function helper(x: number) {
+  return x * 2;
+}
+
+function outer() {
+  return [1, 2, 3].map(helper);
+}
+
+// Or when closure is needed (correct nesting)
+function createMultiplier(factor: number) {
+  return function multiply(x: number) {  // Uses factor from parent
+    return x * factor;
+  };
+}
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'architecture/consistent-function-scoping': 'warn'
+  }
+}
+```
+
+## Related Rules
+
+- [`cognitive-complexity`](./cognitive-complexity.md) - Code complexity
+
+## Further Reading
+
+- **[Closures - MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)** - JavaScript closures
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = externalSource();
+processValue(value); // Variable origin not tracked
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Imported Values
+
+**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.

@@ -1,0 +1,7 @@
+{
+  "cwe": "CWE-798",
+  "name": "Hardcoded Credentials",
+  "owasp": "A07:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-secure-coding", "eslint-plugin-node-security"]
+}

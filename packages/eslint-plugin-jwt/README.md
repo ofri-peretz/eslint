@@ -10,14 +10,13 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-jwt" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-jwt.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-jwt" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-jwt.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-jwt" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-jwt" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=jwt" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=jwt" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
 This plugin provides Security validation for JSON Web Tokens (JWT) implementation (signing, verification).
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -35,13 +34,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 ```bash
 npm install eslint-plugin-jwt --save-dev
 ```
-
-## 💡 What You Get
-- **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
-- **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode
-- **2025 Research** - "Back to the Future" replay attack prevention (LightSEC 2025)
-- **AI-Optimized** - Structured messages for GitHub Copilot, Cursor, Claude assistance
-- **CWE References** - Every rule maps to Common Weakness Enumeration
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                               |
@@ -71,6 +63,21 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 
 By structuring errors with specific CWE codes, OWASP categories, and direct fix suggestions, this format allows AI coding assistants to autonomously identify, explain, and resolve security vulnerabilities with high confidence.
 
+## 💡 What You Get
+- **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
+- **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode
+- **2025 Research** - "Back to the Future" replay attack prevention (LightSEC 2025)
+- **AI-Optimized** - Structured messages for GitHub Copilot, Cursor, Claude assistance
+- **CWE References** - Every rule maps to Common Weakness Enumeration
+
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -78,27 +85,31 @@ By structuring errors with specific CWE codes, OWASP categories, and direct fix 
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-confusion | 💼 |  |  | 💡 |  |
-| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-none | 💼 |  |  | 💡 |  |
-| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify) | CWE-345 | A08:2025 | 7.5 | ESLint rule documentation for no-decode-without-verify | 💼 | ⚠️ |  | 💡 |  |
-| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret) | CWE-798 | A05:2025 | 7.9 | ESLint rule documentation for no-hardcoded-secret | 💼 |  |  | 💡 |  |
-| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | ESLint rule documentation for no-sensitive-payload | 💼 | ⚠️ |  | 💡 |  |
-| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation) | CWE-294 | A05:2025 | 7.5 | ESLint rule documentation for no-timestamp-manipulation | 💼 |  |  | 💡 |  |
-| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret) | CWE-326 | A02:2025 | 7.5 | ESLint rule documentation for no-weak-secret | 💼 |  |  | 💡 |  |
-| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | ESLint rule documentation for require-algorithm-whitelist | 💼 | ⚠️ |  | 💡 |  |
-| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-audience-validation |  |  |  | 💡 |  |
-| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration) | CWE-613 | A04:2025 | 5.3 | ESLint rule documentation for require-expiration | 💼 | ⚠️ |  | 💡 |  |
-| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-issued-at |  |  |  | 💡 |  |
-| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-issuer-validation |  |  |  | 💡 |  |
-| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-max-age |  |  |  | 💡 |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion) | CWE-347 |  |  | This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used wit… | 🟢 |  |  |  |  |  |
+| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none) | CWE-347 |  |  | This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification | 🟢 |  |  |  |  |  |
+| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify) | CWE-345 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret) | CWE-798 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload) | CWE-359 |  |  | JWT payloads are NOT encrypted, only base64-encoded | 🟢 |  |  |  |  |  |
+| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation) | CWE-294 |  |  | This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation | 🟢 |  |  |  |  |  |
+| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret) | CWE-326 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist) | CWE-757 |  |  | This rule enforces explicit algorithm specification in verify() calls | 🟢 |  |  |  |  |  |
+| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration) | CWE-613 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at) | CWE-294 |  |  | This rule ensures tokens have the iat claim for freshness validation | 🟢 |  |  |  |  |  |
+| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age) | CWE-294 |  |  | This rule mandates maxAge in verify operations | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -107,7 +118,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |

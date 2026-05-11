@@ -73,16 +73,7 @@ const output = sprintf(format, ...args);
 ### ✅ Correct
 
 ```typescript
-// Hardcoded format string
-const message = util.format('User %s logged in from %s', username, ip);
-
-// User input as argument, not format
-console.log('User message: %s', userInput);
-logger.info('Event: %s', req.body.message);
-
-// Escape or validate user format
-const safeFormat = escapeFormatSpecifiers(userInput);
-const message = util.format('%s', safeFormat);
+util.format("User: %s, Age: %d", name, age);
 ```
 
 ## Configuration

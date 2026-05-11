@@ -30,7 +30,10 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-tokens.md',
       description: 'Require maxTokens limit in generateText and streamText calls',
+      cwe: 'CWE-770',
+      cvss: 6.5,
     },
     messages: {
       missingMaxTokens: formatLLMMessage({
@@ -77,7 +80,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
       'generateText', 'streamText', 'generateObject', 'streamObject',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

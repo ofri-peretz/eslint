@@ -1,0 +1,532 @@
+{
+  "benchVersion": "v0.0",
+  "bench": "ILB-Arena",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.697Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
+  "timestamp": "2026-02-08T19:33:13.894Z",
+  "benchmarkType": "security",
+  "environment": {
+    "nodeVersion": "v20.19.5",
+    "eslintVersion": "9.39.2",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "installedVersions": {
+    "no-unsanitized": "4.1.4"
+  },
+  "methodology": {
+    "approach": "Static fixture-based comparison",
+    "description": "Each plugin is run in isolation against identical fixture files containing known-vulnerable and known-safe code patterns. Violations are mapped to exported functions to calculate True Positives (correct detections), False Negatives (missed vulnerabilities), False Positives (safe code incorrectly flagged), and True Negatives (safe code correctly passed).",
+    "vulnerablePatterns": 40,
+    "safePatterns": 38,
+    "categories": [
+      "SQL Injection",
+      "Command Injection",
+      "Path Traversal",
+      "Hardcoded Credentials",
+      "JWT Vulnerabilities",
+      "XSS",
+      "Prototype Pollution",
+      "Insecure Randomness",
+      "Weak Cryptography",
+      "Timing Attacks",
+      "NoSQL Injection",
+      "SSRF",
+      "Open Redirect",
+      "ReDoS"
+    ],
+    "expectedDetections": {
+      "vuln_sql_string_concat": {
+        "cwe": "CWE-89",
+        "severity": "CRITICAL"
+      },
+      "vuln_sql_template_literal": {
+        "cwe": "CWE-89",
+        "severity": "CRITICAL"
+      },
+      "vuln_sql_dynamic_column": {
+        "cwe": "CWE-89",
+        "severity": "CRITICAL"
+      },
+      "vuln_sql_conditional": {
+        "cwe": "CWE-89",
+        "severity": "CRITICAL"
+      },
+      "vuln_cmd_exec_concat": {
+        "cwe": "CWE-78",
+        "severity": "CRITICAL"
+      },
+      "vuln_cmd_exec_template": {
+        "cwe": "CWE-78",
+        "severity": "CRITICAL"
+      },
+      "vuln_cmd_execsync": {
+        "cwe": "CWE-78",
+        "severity": "CRITICAL"
+      },
+      "vuln_cmd_spawn_shell": {
+        "cwe": "CWE-78",
+        "severity": "CRITICAL"
+      },
+      "vuln_path_join": {
+        "cwe": "CWE-22",
+        "severity": "HIGH"
+      },
+      "vuln_path_concat": {
+        "cwe": "CWE-22",
+        "severity": "HIGH"
+      },
+      "vuln_path_no_validation": {
+        "cwe": "CWE-22",
+        "severity": "HIGH"
+      },
+      "vuln_path_url_pathname": {
+        "cwe": "CWE-22",
+        "severity": "HIGH"
+      },
+      "vuln_creds_db_password": {
+        "cwe": "CWE-798",
+        "severity": "CRITICAL"
+      },
+      "vuln_creds_api_key": {
+        "cwe": "CWE-798",
+        "severity": "CRITICAL"
+      },
+      "vuln_creds_aws": {
+        "cwe": "CWE-798",
+        "severity": "CRITICAL"
+      },
+      "vuln_creds_jwt_secret": {
+        "cwe": "CWE-798",
+        "severity": "CRITICAL"
+      },
+      "vuln_jwt_alg_none": {
+        "cwe": "CWE-757",
+        "severity": "CRITICAL"
+      },
+      "vuln_jwt_no_algorithm": {
+        "cwe": "CWE-757",
+        "severity": "HIGH"
+      },
+      "vuln_jwt_no_expiry": {
+        "cwe": "CWE-347",
+        "severity": "MEDIUM"
+      },
+      "vuln_xss_innerhtml": {
+        "cwe": "CWE-79",
+        "severity": "HIGH"
+      },
+      "vuln_xss_document_write": {
+        "cwe": "CWE-79",
+        "severity": "HIGH"
+      },
+      "vuln_xss_eval": {
+        "cwe": "CWE-94",
+        "severity": "CRITICAL"
+      },
+      "vuln_xss_new_function": {
+        "cwe": "CWE-94",
+        "severity": "CRITICAL"
+      },
+      "vuln_proto_bracket": {
+        "cwe": "CWE-1321",
+        "severity": "HIGH"
+      },
+      "vuln_proto_nested": {
+        "cwe": "CWE-1321",
+        "severity": "HIGH"
+      },
+      "vuln_proto_assign": {
+        "cwe": "CWE-1321",
+        "severity": "MEDIUM"
+      },
+      "vuln_random_token": {
+        "cwe": "CWE-330",
+        "severity": "MEDIUM"
+      },
+      "vuln_random_session": {
+        "cwe": "CWE-330",
+        "severity": "MEDIUM"
+      },
+      "vuln_crypto_md5": {
+        "cwe": "CWE-328",
+        "severity": "HIGH"
+      },
+      "vuln_crypto_sha1": {
+        "cwe": "CWE-328",
+        "severity": "MEDIUM"
+      },
+      "vuln_crypto_des": {
+        "cwe": "CWE-327",
+        "severity": "HIGH"
+      },
+      "vuln_timing_direct": {
+        "cwe": "CWE-208",
+        "severity": "MEDIUM"
+      },
+      "vuln_timing_token": {
+        "cwe": "CWE-208",
+        "severity": "MEDIUM"
+      },
+      "vuln_nosql_mongo": {
+        "cwe": "CWE-943",
+        "severity": "HIGH"
+      },
+      "vuln_nosql_where": {
+        "cwe": "CWE-943",
+        "severity": "CRITICAL"
+      },
+      "vuln_ssrf_fetch": {
+        "cwe": "CWE-918",
+        "severity": "HIGH"
+      },
+      "vuln_ssrf_axios": {
+        "cwe": "CWE-918",
+        "severity": "HIGH"
+      },
+      "vuln_redirect": {
+        "cwe": "CWE-601",
+        "severity": "MEDIUM"
+      },
+      "vuln_redos_evil": {
+        "cwe": "CWE-1333",
+        "severity": "MEDIUM"
+      },
+      "vuln_redos_user": {
+        "cwe": "CWE-1333",
+        "severity": "HIGH"
+      }
+    },
+    "expectedNoDetections": [
+      "safe_sql_parameterized",
+      "safe_sql_prepared",
+      "safe_sql_named",
+      "safe_sql_prisma",
+      "safe_sql_typeorm",
+      "safe_cmd_execfile_literal",
+      "safe_cmd_spawn_noshell",
+      "safe_cmd_validated",
+      "safe_path_validated",
+      "safe_path_allowlist",
+      "safe_path_regex",
+      "safe_creds_env",
+      "safe_creds_config",
+      "safe_creds_secrets_manager",
+      "safe_jwt_algorithm",
+      "safe_jwt_expiry",
+      "safe_xss_dompurify",
+      "safe_xss_textcontent",
+      "safe_template_logging",
+      "safe_proto_allowlist",
+      "safe_proto_hasownproperty",
+      "safe_proto_hasown",
+      "safe_proto_nullproto",
+      "safe_proto_map",
+      "safe_random_token",
+      "safe_random_uuid",
+      "safe_random_shuffle",
+      "safe_crypto_sha256",
+      "safe_crypto_bcrypt",
+      "safe_crypto_aes_gcm",
+      "safe_timing_compare",
+      "safe_timing_hmac",
+      "safe_redirect_allowlist",
+      "safe_redirect_sameorigin",
+      "safe_ssrf_allowlist",
+      "safe_ssrf_block_internal",
+      "safe_regex_simple",
+      "safe_regex_validator"
+    ]
+  },
+  "fixtures": {
+    "vulnerableFile": "/Users/ofri/repos/ofriperetz.dev/eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/vulnerable/vulnerable.js",
+    "safeFile": "/Users/ofri/repos/ofriperetz.dev/eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js"
+  },
+  "plugins": {
+    "no-unsanitized": {
+      "displayName": "eslint-plugin-no-unsanitized (Mozilla)",
+      "installedVersion": "4.1.4",
+      "rules": 2,
+      "lastUpdated": "2023",
+      "weeklyDownloads": "~500K",
+      "category": "DOM XSS",
+      "securityRelevant": true,
+      "vulnerableAnalysis": {
+        "totalViolations": 2,
+        "uniqueRulesFired": 2,
+        "byFunction": {
+          "vuln_xss_innerhtml": [
+            {
+              "ruleId": "no-unsanitized/property",
+              "severity": "error",
+              "message": "Unsafe assignment to innerHTML (Variable 'userContent' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 226:7)",
+              "line": 227,
+              "column": 3
+            }
+          ],
+          "vuln_xss_document_write": [
+            {
+              "ruleId": "no-unsanitized/method",
+              "severity": "error",
+              "message": "Unsafe call to document.write for argument 0 (Variable 'userInput' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 234:7)",
+              "line": 235,
+              "column": 3
+            }
+          ]
+        },
+        "byRule": {
+          "no-unsanitized/property": 1,
+          "no-unsanitized/method": 1
+        },
+        "exampleViolations": [
+          {
+            "ruleId": "no-unsanitized/property",
+            "message": "Unsafe assignment to innerHTML (Variable 'userContent' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 226:7)",
+            "line": 227,
+            "severity": "error",
+            "codeSnippet": "     225:  */\n     226: export function vuln_xss_innerhtml(userContent) {\n >>> 227:   document.getElementById(\"output\").innerHTML = userContent;\n     228: }\n     229: "
+          },
+          {
+            "ruleId": "no-unsanitized/method",
+            "message": "Unsafe call to document.write for argument 0 (Variable 'userInput' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 234:7)",
+            "line": 235,
+            "severity": "error",
+            "codeSnippet": "     233:  */\n     234: export function vuln_xss_document_write(userInput) {\n >>> 235:   document.write(\"<div>\" + userInput + \"</div>\");\n     236: }\n     237: "
+          }
+        ]
+      },
+      "safeAnalysis": {
+        "totalViolations": 1,
+        "uniqueRulesFired": 1,
+        "byFunction": {
+          "safe_xss_dompurify": [
+            {
+              "ruleId": "no-unsanitized/property",
+              "severity": "error",
+              "message": "Unsafe assignment to innerHTML (Variable 'sanitized' initialized with unsafe value at 228:20)",
+              "line": 229,
+              "column": 3
+            }
+          ]
+        },
+        "byRule": {
+          "no-unsanitized/property": 1
+        },
+        "exampleFalsePositives": [
+          {
+            "ruleId": "no-unsanitized/property",
+            "message": "Unsafe assignment to innerHTML (Variable 'sanitized' initialized with unsafe value at 228:20)",
+            "line": 229,
+            "severity": "error",
+            "codeSnippet": "     227:   const DOMPurify = require(\"dompurify\");\n     228:   const sanitized = DOMPurify.sanitize(userContent);\n >>> 229:   document.getElementById(\"output\").innerHTML = sanitized;\n     230: }\n     231: "
+          }
+        ]
+      },
+      "categoryBreakdown": {
+        "SQL Injection": {
+          "expected": 6,
+          "detected": 0,
+          "missed": [
+            "vuln_sql_string_concat",
+            "vuln_sql_template_literal",
+            "vuln_sql_dynamic_column",
+            "vuln_sql_conditional",
+            "vuln_nosql_mongo",
+            "vuln_nosql_where"
+          ]
+        },
+        "Command Injection": {
+          "expected": 4,
+          "detected": 0,
+          "missed": [
+            "vuln_cmd_exec_concat",
+            "vuln_cmd_exec_template",
+            "vuln_cmd_execsync",
+            "vuln_cmd_spawn_shell"
+          ]
+        },
+        "Path Traversal": {
+          "expected": 4,
+          "detected": 0,
+          "missed": [
+            "vuln_path_join",
+            "vuln_path_concat",
+            "vuln_path_no_validation",
+            "vuln_path_url_pathname"
+          ]
+        },
+        "Hardcoded Credentials": {
+          "expected": 4,
+          "detected": 0,
+          "missed": [
+            "vuln_creds_db_password",
+            "vuln_creds_api_key",
+            "vuln_creds_aws",
+            "vuln_creds_jwt_secret"
+          ]
+        },
+        "JWT Vulnerabilities": {
+          "expected": 3,
+          "detected": 0,
+          "missed": [
+            "vuln_jwt_alg_none",
+            "vuln_jwt_no_algorithm",
+            "vuln_jwt_no_expiry"
+          ]
+        },
+        "XSS": {
+          "expected": 4,
+          "detected": 2,
+          "missed": [
+            "vuln_xss_eval",
+            "vuln_xss_new_function"
+          ]
+        },
+        "Prototype Pollution": {
+          "expected": 3,
+          "detected": 0,
+          "missed": [
+            "vuln_proto_bracket",
+            "vuln_proto_nested",
+            "vuln_proto_assign"
+          ]
+        },
+        "Insecure Randomness": {
+          "expected": 2,
+          "detected": 0,
+          "missed": [
+            "vuln_random_token",
+            "vuln_random_session"
+          ]
+        },
+        "Weak Cryptography": {
+          "expected": 3,
+          "detected": 0,
+          "missed": [
+            "vuln_crypto_md5",
+            "vuln_crypto_sha1",
+            "vuln_crypto_des"
+          ]
+        },
+        "Timing Attacks": {
+          "expected": 2,
+          "detected": 0,
+          "missed": [
+            "vuln_timing_direct",
+            "vuln_timing_token"
+          ]
+        },
+        "SSRF": {
+          "expected": 2,
+          "detected": 0,
+          "missed": [
+            "vuln_ssrf_fetch",
+            "vuln_ssrf_axios"
+          ]
+        },
+        "Open Redirect": {
+          "expected": 1,
+          "detected": 0,
+          "missed": [
+            "vuln_redirect"
+          ]
+        },
+        "ReDoS": {
+          "expected": 2,
+          "detected": 0,
+          "missed": [
+            "vuln_redos_evil",
+            "vuln_redos_user"
+          ]
+        }
+      },
+      "metrics": {
+        "TP": 2,
+        "TN": 37,
+        "FP": 1,
+        "FN": 38,
+        "FNR": "95.0%",
+        "FPR": "2.6%",
+        "precision": "66.7%",
+        "recall": "5.0%",
+        "f1Score": "9.3%",
+        "detectedVulnerabilities": [
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_xss_dompurify"
+        ]
+      }
+    }
+  },
+  "summary": {
+    "totalPluginsTested": 1,
+    "securityRelevantPlugins": 1,
+    "leaderboard": [
+      {
+        "rank": 1,
+        "name": "eslint-plugin-no-unsanitized (Mozilla)",
+        "version": "4.1.4",
+        "f1Score": "9.3%",
+        "precision": "66.7%",
+        "recall": "5.0%",
+        "tp": 2,
+        "fp": 1,
+        "fn": 38
+      }
+    ],
+    "topDetector": "eslint-plugin-no-unsanitized (Mozilla)",
+    "topF1": "9.3%"
+  }
+}

@@ -10,14 +10,13 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-lambda-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-lambda-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-lambda-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-lambda-security" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=lambda-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=lambda-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
 This plugin provides Security best practices for AWS Lambda functions (IAM, timeouts, environment).
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -36,14 +35,20 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-lambda-security --save-dev
 ```
 
-## 💡 What you get
-- **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
-- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
-- **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
-- **Tiered presets:** `recommended`, `strict` for fast policy rollout.
-- **Framework-aware:** Detects Middy middleware, API Gateway response patterns, AWS SDK v3 clients.
-- **Low false positive rate:** Context-aware detection with production heuristics.
+## ⚙️ Configuration Presets
+| Preset        | Description                                                            |
+| :------------ | :--------------------------------------------------------------------- |
+| `recommended` | Balanced security for Lambda projects (critical as error, others warn) |
+| `strict`      | Maximum security enforcement (all rules as errors)                     |
 
+## 📚 Supported Libraries
+| Library                  | npm                                                                                                                                       | Downloads                                                                                                                                        | Detection              |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- |
+| `aws-lambda`             | [![npm](https://img.shields.io/npm/v/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | [![downloads](https://img.shields.io/npm/dt/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | IAM, Logging, Timeouts |
+| `@aws-sdk/client-lambda` | [![npm](https://img.shields.io/npm/v/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | [![downloads](https://img.shields.io/npm/dt/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | Credential Safety      |
+| `middy`                  | [![npm](https://img.shields.io/npm/v/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | [![downloads](https://img.shields.io/npm/dt/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | Middleware Security    |
+
+## 🤖 AI-Optimized Messages
 Every security rule produces a **structured 2-line error message**:
 
 ```bash
@@ -61,20 +66,15 @@ src/handlers/api.ts
 - ✅ **Fix instruction** - exact code to write
 - 📚 **Documentation link** - learn more
 
-## ⚙️ Configuration Presets
-| Preset        | Description                                                            |
-| :------------ | :--------------------------------------------------------------------- |
-| `recommended` | Balanced security for Lambda projects (critical as error, others warn) |
-| `strict`      | Maximum security enforcement (all rules as errors)                     |
+By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
-## 📚 Supported Libraries
-| Library                  | npm                                                                                                                                       | Downloads                                                                                                                                        | Detection              |
-| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- |
-| `aws-lambda`             | [![npm](https://img.shields.io/npm/v/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | [![downloads](https://img.shields.io/npm/dt/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | IAM, Logging, Timeouts |
-| `@aws-sdk/client-lambda` | [![npm](https://img.shields.io/npm/v/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | [![downloads](https://img.shields.io/npm/dt/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | Credential Safety      |
-| `middy`                  | [![npm](https://img.shields.io/npm/v/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | [![downloads](https://img.shields.io/npm/dt/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | Middleware Security    |
-
----
+## 💡 What You Get
+- **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
+- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
+- **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
+- **Tiered presets:** `recommended`, `strict` for fast policy rollout.
+- **Framework-aware:** Detects Middy middleware, API Gateway response patterns, AWS SDK v3 clients.
+- **Low false positive rate:** Context-aware detection with production heuristics.
 
 ## ⚙️ Configuration Options
 All rules accept these common options:
@@ -93,7 +93,13 @@ All rules accept these common options:
 }
 ```
 
----
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## Rules
 
@@ -102,28 +108,32 @@ All rules accept these common options:
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging) | CWE-532 |  | 7.5 | ESLint rule documentation for no-env-logging | 💼 | ⚠️ |  |  |  |
-| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing) | CWE-391 |  | 7.5 | ESLint rule documentation for no-error-swallowing | 💼 | ⚠️ |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints) |  |  |  | ESLint rule documentation for no-exposed-debug-endpoints |  |  |  |  |  |
-| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details) | CWE-209 |  | 7.5 | ESLint rule documentation for no-exposed-error-details | 💼 | ⚠️ |  |  |  |
-| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk) | CWE-798 |  | 9.8 | ESLint rule documentation for no-hardcoded-credentials-sdk | 💼 |  |  |  |  |
-| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check) | CWE-862 |  | 7.5 | ESLint rule documentation for no-missing-authorization-check | 💼 | ⚠️ |  |  |  |
-| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy) | CWE-732 |  | 9.8 | ESLint rule documentation for no-overly-permissive-iam-policy | 💼 |  |  |  |  |
-| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-middy | 💼 |  |  |  |  |
-| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-response | 💼 |  | 🔧 |  |  |
-| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env) | CWE-522 |  | 9.8 | ESLint rule documentation for no-secrets-in-env | 💼 |  |  |  |  |
-| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing) | CWE-400 |  | 7.5 | ESLint rule documentation for no-unbounded-batch-processing | 💼 | ⚠️ |  |  |  |
-| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body) | CWE-20 |  | 7.5 | ESLint rule documentation for no-unvalidated-event-body | 💼 | ⚠️ |  |  |  |
-| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests) | CWE-918 |  | 9.8 | ESLint rule documentation for no-user-controlled-requests | 💼 |  |  |  |  |
-| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling) | CWE-703 |  | 7.5 | ESLint rule documentation for require-timeout-handling | 💼 | ⚠️ |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging) | CWE-532 | A09:2021 |  | Detect logging of process.env which may expose secrets | 🟢 |  | ⚠️ |  |  |  |
+| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing) | CWE-390 | A09:2021 |  | Detect empty catch blocks and missing error logging | 🟢 |  | ⚠️ |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints) | CWE-489 | A05:2021 |  | Detect debug endpoints without authentication in Lambda handlers | 🟢 | 💼 |  |  |  |  |
+| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details) | CWE-209 | A01:2021 |  | Detect Lambda handlers exposing internal error details in responses | 🟢 |  | ⚠️ |  |  |  |
+| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk) | CWE-798 |  |  | Detects hardcoded AWS credentials in SDK client configurations | 🟢 | 💼 |  |  |  |  |
+| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check) |  |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 |  | ⚠️ |  |  |  |
+| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy) | CWE-732 |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  |  | Detects permissive CORS configurations in Middy middleware | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response) | CWE-942 |  |  | Detects permissive CORS headers in Lambda API Gateway responses | 🟢 | 💼 |  |  |  |  |
+| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env) | CWE-798 |  |  | Detects secrets defined directly in environment variable configurations | 🟢 | 💼 |  |  |  |  |
+| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing) | CWE-770 |  |  | Detect processing batch records without size validation | 🟢 |  | ⚠️ |  |  |  |
+| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body) | CWE-20 | A03:2021 |  | Detect Lambda handlers using event body without validation | 🟢 |  | ⚠️ |  |  |  |
+| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests) | CWE-918 | A10:2021 |  | Detect HTTP requests with user-controlled URLs (SSRF) | 🟢 | 💼 |  |  |  |  |
+| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling) | CWE-400 |  |  | Require timeout handling in Lambda handlers with external calls | 🟢 |  | ⚠️ |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -132,7 +142,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |

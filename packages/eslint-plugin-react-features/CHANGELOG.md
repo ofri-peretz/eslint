@@ -1,3 +1,9 @@
+## [1.1.4] - 2026-05-03
+
+### Bug Fixes
+
+- `jsx-no-target-blank`: replaced `/^\/\//.test(href)` with `href.startsWith('//')` (oxlint correctness rule).
+
 ## [1.1.3] - 2026-02-08
 
 ### Bug Fixes

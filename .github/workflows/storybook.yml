@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Storybook Tests
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs the Storybook test-runner against every story in @interlace/ui:
+#   - Renders each story in a headless browser
+#   - Executes any `play` function (interactive flow assertions)
+#   - Runs axe-core at the strict tag stack on every rendered story
+#
+# This is the per-component axe scan that complements the route-level scan
+# in `a11y.yml` — together they form Layers 1 and 4 of UX_PHILOSOPHY.md.
+#
+# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
+# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+    paths:
+      - 'packages/ui/**'
+      - 'apps/docs/**'
+      - '.github/workflows/storybook.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: "10 4 * * 0"
+
+concurrency:
+  group: storybook-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping Storybook tests."
+          fi
+
+  test:
+    name: Storybook test-runner
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          playwright-cache: "true"
+          storybook-cache: "true"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui
+
+      - name: Build @interlace/ui
+        run: npm run build --workspace=@interlace/ui
+
+      # Static-build the storybook + run the test-runner against it via
+      # `start-server-and-test`. Avoids racing a dev-mode server.
+      - name: Build storybook
+        run: npm run storybook:build --workspace=@interlace/ui
+
+      - name: Run Storybook tests (axe + play functions)
+        run: |
+          npx concurrently --kill-others --success first --names "storybook,test-runner" \
+            "npx http-server packages/ui/storybook-static --port 6006 --silent" \
+            "npx wait-on tcp:6006 && npm run storybook:test --workspace=@interlace/ui -- --url http://localhost:6006"
+
+      - name: Upload storybook-static on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: storybook-static
+          path: packages/ui/storybook-static
+          retention-days: 14

@@ -53,7 +53,10 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-has-content.md',
       description: 'Enforce that anchors have content',
+      cwe: 'CWE-252',
+      cvss: 9.5,
     },
     messages: {
       missingContent: formatLLMMessage({
@@ -82,7 +85,7 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { components = [] } = options ?? {};
-    const anchors = ['a', ...components];
+    const anchors = new Set(['a', ...components]);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
@@ -92,7 +95,7 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (!anchors.includes(openingElement.name.name)) {
+        if (!anchors.has(openingElement.name.name)) {
           return;
         }
 

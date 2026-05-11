@@ -92,6 +92,7 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-jsdoc-terminator-in-example.md',
       description:
         'Detects `*/` sequences inside JSDoc @example blocks that prematurely close the comment',
     },
@@ -121,7 +122,7 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     return {
       Program() {

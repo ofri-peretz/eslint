@@ -159,7 +159,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/control-has-associated-label.md',
       description: 'Enforce that controls (interactive elements) have associated labels',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingLabel: formatLLMMessage({

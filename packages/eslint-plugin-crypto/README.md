@@ -1,23 +1,30 @@
+> ## ⛔ DEPRECATED
+>
+> **`eslint-plugin-crypto` is deprecated.** All cryptography rules have been redistributed into [**`eslint-plugin-node-security`**](https://www.npmjs.com/package/eslint-plugin-node-security), which now covers Node.js core-module security including cryptography (weak ciphers/hashes, ECB mode, static IVs, insecure key derivation, timing-unsafe compare, CryptoJS, native-crypto preference, and more).
+>
+> **Migration:** replace `eslint-plugin-crypto` with `eslint-plugin-node-security` in your `package.json` and ESLint config. Rule names map 1:1 under the `node-security/` prefix (e.g. `crypto/no-weak-cipher-algorithm` → `node-security/no-weak-cipher-algorithm`).
+>
+> This package will continue to resolve for already-pinned consumers, but no new releases will ship. Please migrate.
+
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
-  Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).
+  <strong>[DEPRECATED]</strong> Cryptographic security rules — superseded by <a href="https://www.npmjs.com/package/eslint-plugin-node-security">eslint-plugin-node-security</a>.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-crypto" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-crypto.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-crypto" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-crypto.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-crypto" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-crypto" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=crypto" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=crypto" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
 This plugin provides Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -25,30 +32,16 @@ By using this plugin, you can proactively identify and mitigate security risks a
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/crypto), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/crypto), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/crypto) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/crypto)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/crypto), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/crypto)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-crypto), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-crypto), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-crypto) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-crypto)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-crypto), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-crypto)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-crypto --save-dev
 ```
-
-## 💡 What You Get
-- **24 security rules** covering cryptographic best practices
-- **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
-- **OWASP Top 10 coverage** for cryptographic vulnerabilities
-- **LLM-optimized messages** with CWE references and fix guidance
-- **Package support** for crypto-hash, crypto-random-string, crypto-js
-
-## Features
-- 🔐 **24 Rules** covering crypto best practices
-- 🎯 **CVE Detection** (CVE-2023-46809, CVE-2020-36732, CVE-2023-46233)
-- 🤖 **AI-Optimized** messages with CWE references
-- ⚡ **Auto-Fix** suggestions where safe
-- 📦 **Package Support** for crypto-hash, crypto-random-string, crypto-js
 
 ## ⚙️ Configuration Presets
 | Preset               | Description                                  |
@@ -65,7 +58,15 @@ npm install eslint-plugin-crypto --save-dev
 | `crypto` (Node.js) | [![node](https://img.shields.io/badge/node-built--in-green?style=flat-square)](https://nodejs.org/api/crypto.html) | -                                                                                                                      | Weak Algo, Key Length, Randomness |
 | `crypto-js`        | [![npm](https://img.shields.io/npm/v/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js)    | [![downloads](https://img.shields.io/npm/dt/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js) | Legacy patterns, Weak PRNG        |
 
-## Examples
+## 💡 What You Get
+- **24 security rules** covering cryptographic best practices
+- **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
+- **OWASP Top 10 coverage** for cryptographic vulnerabilities
+- **LLM-optimized messages** with CWE references and fix guidance
+- **Package support** for crypto-hash, crypto-random-string, crypto-js
+- **Auto-Fix suggestions** where safe
+
+## 🔍 Examples
 ### ❌ Bad
 
 ```javascript
@@ -107,6 +108,14 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 }
 ```
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -114,25 +123,29 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | Enforce no hardcoded crypto key | 💼 |  |  | 💡 |  |
-| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse) | CWE-323 | A02:2025 | 7.5 | Enforce no key reuse | 💼 | ⚠️ |  | 💡 |  |
-| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto) | CWE-338 | A07:2025 | 5.3 | Enforce no math random crypto | 💼 |  |  | 💡 |  |
-| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | Enforce no numeric only tokens | 💼 | ⚠️ |  | 💡 |  |
-| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt) | CWE-331 | A07:2025 | 7.5 | Enforce no predictable salt | 💼 |  |  | 💡 |  |
-| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | Enforce no web crypto export | 💼 | ⚠️ |  | 💡 |  |
-| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5 | Enforce require authenticated encryption | 💼 | ⚠️ |  | 💡 |  |
-| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | Enforce require key length | 💼 | ⚠️ |  | 💡 |  |
-| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | Enforce require random iv | 💼 | ⚠️ |  | 💡 |  |
-| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest) | CWE-916 | A02:2025 | 9.1 | Enforce require secure pbkdf2 digest | 💼 |  |  | 💡 |  |
-| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length) | CWE-326 | A02:2025 | 7.5 | Enforce require sufficient length | 💼 | ⚠️ |  | 💡 |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
+| [no-key-reuse](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-key-reuse) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-math-random-crypto) | CWE-338 | A02:2021 |  | CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html) | 🟢 |  |  |  |  |  |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-numeric-only-tokens) | CWE-330 | A02:2021 |  | CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html) | 🟢 |  |  |  |  |  |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-predictable-salt) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-web-crypto-export) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-authenticated-encryption) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
+| [require-key-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-key-length) | CWE-326 | A02:2021 |  | CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html) | 🟢 |  |  |  |  |  |
+| [require-random-iv](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-random-iv) | CWE-329 | A02:2021 |  | CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html) | 🟢 |  |  |  |  |  |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-secure-pbkdf2-digest) | CWE-328 | A02:2021 |  | CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html) | 🟢 |  |  |  |  |  |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-sufficient-length) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -156,5 +169,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

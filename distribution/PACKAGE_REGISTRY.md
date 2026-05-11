@@ -18,7 +18,6 @@
 | **eslint-plugin-mongodb-security**   | `8.2.0` | 19    | MongoDB & Mongoose security                                  | [📦](https://npmjs.com/package/eslint-plugin-mongodb-security)   |
 | **eslint-plugin-pg**                 | `1.4.0` | 15    | PostgreSQL/node-postgres security                            | [📦](https://npmjs.com/package/eslint-plugin-pg)                 |
 | **eslint-plugin-jwt**                | `2.2.0` | 13    | JWT security (Algorithm confusion, secrets)                  | [📦](https://npmjs.com/package/eslint-plugin-jwt)                |
-| **eslint-plugin-crypto**             | `2.2.0` | 10    | Cryptographic best practices                                 | [📦](https://npmjs.com/package/eslint-plugin-crypto)             |
 | **eslint-plugin-lambda-security**    | `1.2.0` | 16    | AWS Lambda & Middy security                                  | [📦](https://npmjs.com/package/eslint-plugin-lambda-security)    |
 | **eslint-plugin-express-security**   | `1.2.0` | 14    | Express.js security (Cookies, CORS, ReDoS)                   | [📦](https://npmjs.com/package/eslint-plugin-express-security)   |
 | **eslint-plugin-nestjs-security**    | `1.2.0` | 10    | NestJS security (Guards, Validation)                         | [📦](https://npmjs.com/package/eslint-plugin-nestjs-security)    |
@@ -210,61 +209,6 @@
 | `no-select-all`        | SELECT \* anti-pattern         |
 | `prefer-pool-query`    | pool.query() vs pool.connect() |
 | `no-batch-insert-loop` | N+1 insert loop detection      |
-
----
-
-### eslint-plugin-crypto (24 rules)
-
-> **Version**: 2.0.3 | **CVE Coverage**: CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
-
-#### Core Node.js Crypto (8)
-
-| Rule                          | Description                  |
-| ----------------------------- | ---------------------------- |
-| `no-weak-hash-algorithm`      | MD5, SHA1 detection          |
-| `no-weak-cipher-algorithm`    | DES, RC4, Blowfish detection |
-| `no-deprecated-cipher-method` | Deprecated cipher methods    |
-| `no-static-iv`                | Static IV detection          |
-| `no-ecb-mode`                 | ECB mode detection           |
-| `no-insecure-key-derivation`  | Weak key derivation          |
-| `no-hardcoded-crypto-key`     | Hardcoded encryption keys    |
-| `require-random-iv`           | Random IV requirement        |
-
-#### crypto-hash Package (1)
-
-| Rule           | Description                 |
-| -------------- | --------------------------- |
-| `no-sha1-hash` | SHA1 in crypto-hash package |
-
-#### crypto-random-string Package (2)
-
-| Rule                        | Description                 |
-| --------------------------- | --------------------------- |
-| `require-sufficient-length` | Token length requirements   |
-| `no-numeric-only-tokens`    | Numeric-only token weakness |
-
-#### CryptoJS Package (3)
-
-| Rule                      | Description              |
-| ------------------------- | ------------------------ |
-| `no-cryptojs`             | CryptoJS usage warning   |
-| `no-cryptojs-weak-random` | CVE-2020-36732 detection |
-| `prefer-native-crypto`    | Native crypto preference |
-
-#### Advanced Security (10)
-
-| Rule                               | CVE            | Description                |
-| ---------------------------------- | -------------- | -------------------------- |
-| `no-math-random-crypto`            | —              | Math.random() for crypto   |
-| `no-insecure-rsa-padding`          | CVE-2023-46809 | Marvin Attack detection    |
-| `require-secure-pbkdf2-digest`     | CVE-2023-46233 | PBKDF2 digest security     |
-| `no-predictable-salt`              | —              | Predictable salt detection |
-| `require-authenticated-encryption` | —              | AEAD requirement           |
-| `no-key-reuse`                     | —              | Key reuse detection        |
-| `no-self-signed-certs`             | —              | Self-signed cert detection |
-| `no-timing-unsafe-compare`         | —              | Timing attack prevention   |
-| `require-key-length`               | —              | Key length requirements    |
-| `no-web-crypto-export`             | —              | Web Crypto key export      |
 
 ---
 

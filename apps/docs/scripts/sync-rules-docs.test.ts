@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { convertMdToMdx } from './sync-rules-docs.mjs';
+import { convertMdToMdx } from './sync-rules-docs.ts';
 
 describe('sync-rules-docs', () => {
   describe('convertMdToMdx', () => {

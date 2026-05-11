@@ -21,7 +21,7 @@ Prevent missing React in scope when using JSX. This rule is part of [`eslint-plu
 
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
-| **Severity**   | Error (for React <17)                                                |
+| **Severity**   | Error (for React `<17`)                                              |
 | **Auto-Fix**   | ✅ Yes (adds import)                                                 |
 | **Category**   | React                                                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
@@ -42,12 +42,7 @@ Before React 17, JSX was transformed to `React.createElement()`, requiring React
 
 ### ❌ Incorrect (React < 17)
 
-```tsx
-// Missing React import
-export function Component() {
-  return <div>Hello</div>;  // Error: React must be in scope
-}
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct
 

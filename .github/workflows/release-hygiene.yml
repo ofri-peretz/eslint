@@ -1,0 +1,263 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release Hygiene
+
+run-name: >-
+  Release Hygiene · ${{ inputs.action || 'report' }}${{ inputs.pkg && format(' · {0}', inputs.pkg) || '' }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Detects + optionally repairs drift between three sources of truth for
+# released packages: git tags, npm versions, and GitHub Releases.
+#
+# Drift sources (all silent until something fails):
+#   • orphan-tags     tag exists, npm doesn't (failed publish)
+#   • missing-tags    npm has version, no git tag (manual publish)
+#   • missing-release tag exists, no GitHub Release (older tags from before
+#                     release.yml started creating Releases)
+#
+# Modes:
+#   workflow_dispatch.action = report (default)        → just open an issue if drift found
+#                            = backfill-missing        → create + push missing tags
+#                            = create-releases         → fill in missing GH Releases
+#                            = cleanup-orphans         → DESTRUCTIVE: delete orphan tags
+#                            = full                    → backfill + create-releases (no cleanup)
+#
+# Schedule: weekly. Cheap (one job, no matrix). Findings open / refresh a
+# tracking issue rather than failing the workflow, so a quiet drift state
+# doesn't drown the inbox.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    # Weekly Wednesday 05:13 UTC — staggered off scorecard + codeql.
+    - cron: "13 5 * * 3"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do."
+        required: false
+        default: report
+        type: choice
+        options: [report, backfill-missing, create-releases, full, cleanup-orphans]
+      pkg:
+        description: "Limit to one package (e.g. eslint-plugin-crypto). Empty = all."
+        required: false
+        default: ""
+
+concurrency:
+  group: release-hygiene
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    name: Reconcile (${{ inputs.action || 'report' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write    # tag push / delete
+      issues: write      # open / update the drift-tracking issue
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Configure git (for tag push/delete)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run reconciler
+        id: run
+        env:
+          ACTION: ${{ inputs.action || 'report' }}
+          PKG: ${{ inputs.pkg }}
+        run: |
+          set -euo pipefail
+          pkg_arg=""
+          if [ -n "${PKG:-}" ]; then pkg_arg="--pkg $PKG"; fi
+
+          # First pass: collect machine-readable report so we can comment on
+          # an issue regardless of which mutating action runs after.
+          # shellcheck disable=SC2086
+          npx tsx scripts/reconcile-tags.ts $pkg_arg --json > /tmp/report.json || true
+          {
+            echo 'report<<EOF'
+            cat /tmp/report.json
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+          case "$ACTION" in
+            report) ;;  # no-op
+            backfill-missing)
+              # shellcheck disable=SC2086
+              npx tsx scripts/reconcile-tags.ts $pkg_arg --backfill-missing
+              ;;
+            create-releases)
+              # shellcheck disable=SC2086
+              npx tsx scripts/reconcile-tags.ts $pkg_arg --create-releases
+              ;;
+            full)
+              # shellcheck disable=SC2086
+              npx tsx scripts/reconcile-tags.ts $pkg_arg --backfill-missing
+              # shellcheck disable=SC2086
+              npx tsx scripts/reconcile-tags.ts $pkg_arg --create-releases
+              ;;
+            cleanup-orphans)
+              # shellcheck disable=SC2086
+              npx tsx scripts/reconcile-tags.ts $pkg_arg --cleanup-orphans --confirm
+              ;;
+            *)
+              echo "::error::unknown action: $ACTION"
+              exit 1
+              ;;
+          esac
+
+      - name: Summarize on run page
+        if: always()
+        env:
+          REPORT_JSON: ${{ steps.run.outputs.report }}
+          ACTION: ${{ inputs.action || 'report' }}
+          PKG: ${{ inputs.pkg }}
+        run: |
+          set -euo pipefail
+          # Use Node for safe JSON parsing.
+          node <<'JS' >> "$GITHUB_STEP_SUMMARY"
+          const raw = process.env.REPORT_JSON || '';
+          let report;
+          try { report = JSON.parse(raw); } catch { report = null; }
+          const action = process.env.ACTION;
+          const pkg = process.env.PKG || '(all)';
+          if (!report) {
+            console.log('# ⚠️ Reconciler produced no report');
+            console.log('');
+            console.log(`Action: \`${action}\` · Package: \`${pkg}\``);
+            console.log('Check the previous step’s log for details.');
+            process.exit(0);
+          }
+          const { summary, findings } = report;
+          const drift = (summary.orphanTags ?? 0) + (summary.missingTags ?? 0);
+          const header = drift === 0 ? '✅ No drift detected' : `🧹 Drift: ${summary.orphanTags} orphan / ${summary.missingTags} missing`;
+          console.log(`# ${header}`);
+          console.log('');
+          console.log(`| Field | Value |`);
+          console.log(`|---|---|`);
+          console.log(`| Action | \`${action}\` |`);
+          console.log(`| Scope | \`${pkg}\` |`);
+          console.log(`| Packages scanned | ${summary.packages} |`);
+          console.log(`| Orphan tags | ${summary.orphanTags} |`);
+          console.log(`| Missing tags | ${summary.missingTags} |`);
+          if (action === 'create-releases' || action === 'full') {
+            console.log(`| Missing GH Releases | ${summary.missingReleases ?? 0} |`);
+          }
+          console.log('');
+          if (drift > 0) {
+            console.log('## Per-package detail');
+            console.log('');
+            console.log('| Package | Orphan tags | Missing tags |');
+            console.log('|---|---|---|');
+            for (const f of findings) {
+              if (f.orphan.length === 0 && f.missing.length === 0) continue;
+              console.log(`| \`${f.name}\` | ${f.orphan.join(', ') || '—'} | ${f.missing.join(', ') || '—'} |`);
+            }
+            console.log('');
+            console.log('## Recovery');
+            console.log('');
+            console.log('Re-trigger this workflow with one of:');
+            console.log('- `action=backfill-missing` — create missing tags + push them');
+            console.log('- `action=create-releases` — fill in missing GitHub Releases');
+            console.log('- `action=full` — both');
+            console.log('- `action=cleanup-orphans` — DELETE orphan tags (destructive)');
+          }
+          JS
+
+      - name: Open / refresh tracking issue (drift only)
+        if: always()
+        uses: actions/github-script@v9
+        env:
+          REPORT_JSON: ${{ steps.run.outputs.report }}
+        with:
+          script: |
+            let report;
+            try {
+              report = JSON.parse(process.env.REPORT_JSON);
+            } catch {
+              core.warning('No report JSON to parse — reconciler may have failed.');
+              return;
+            }
+            const { summary, findings } = report;
+            const drift = (summary?.orphanTags ?? 0) + (summary?.missingTags ?? 0);
+
+            const marker = '<!-- release-hygiene -->';
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'release-hygiene',
+              per_page: 5,
+            });
+
+            if (drift === 0) {
+              // Close any open tracking issue — drift is gone.
+              for (const issue of existing) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `${marker}\n✅ Drift cleared on ${new Date().toISOString()}.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                });
+              }
+              core.notice('No drift detected.');
+              return;
+            }
+
+            const lines = ['## Release-hygiene drift', '', `_Generated ${new Date().toISOString()} from \`reconcile-tags.ts\`._`, ''];
+            lines.push('| Package | Orphan tags | Missing tags |');
+            lines.push('|---------|-------------|--------------|');
+            for (const f of findings) {
+              if (f.orphan.length === 0 && f.missing.length === 0) continue;
+              lines.push(`| \`${f.name}\` | ${f.orphan.join(', ') || '—'} | ${f.missing.join(', ') || '—'} |`);
+            }
+            lines.push('', '### Recovery commands');
+            lines.push('```bash');
+            lines.push('# Re-run from the workflow_dispatch UI:');
+            lines.push('#   action=backfill-missing  → create the missing tags + push');
+            lines.push('#   action=cleanup-orphans   → DELETE orphan tags (destructive)');
+            lines.push('#   action=full              → backfill + create-releases');
+            lines.push('# Or locally:');
+            lines.push('npm run release:reconcile               # report');
+            lines.push('npm run release:reconcile:backfill      # create missing tags');
+            lines.push('```');
+            const body = `${marker}\n${lines.join('\n')}`;
+
+            if (existing.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body,
+              });
+              core.notice(`Updated tracking issue #${existing[0].number}.`);
+            } else {
+              const { data: created } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🧹 Release-hygiene drift detected (${summary.orphanTags} orphan / ${summary.missingTags} missing)`,
+                labels: ['release-hygiene', 'maintenance'],
+                body,
+              });
+              core.notice(`Opened tracking issue #${created.number}.`);
+            }

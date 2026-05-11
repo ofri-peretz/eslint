@@ -19,6 +19,7 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/default-props-match-prop-types.md',
       description: 'Validate default props match prop types',
     },
     schema: [],

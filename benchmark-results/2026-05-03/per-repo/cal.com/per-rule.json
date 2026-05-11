@@ -1,0 +1,459 @@
+{
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 12,
+    "avgTimeMs": 1.67,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/version/route.ts",
+        "line": 1,
+        "column": 43,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/tasks/cron/route.ts",
+        "line": 1,
+        "column": 43,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/tasks/cleanup/route.ts",
+        "line": 1,
+        "column": 43,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/me/route.ts",
+        "line": 1,
+        "column": 43,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/geolocation/route.ts",
+        "line": 1,
+        "column": 43,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+      }
+    ]
+  },
+  "node-security/lock-file": {
+    "hits": 1,
+    "avgTimeMs": 4.74,
+    "samples": [
+      {
+        "ruleId": "node-security/lock-file",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(admin-layout)/admin/users/[id]/edit/error.tsx",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-829 OWASP:A03-Software CVSS:7.5 | Package lock file missing (package-lock.json | yarn.lock | pnpm-lock.yaml) for any. Commit the lock file to ensure supply chain integrity. | HIGH\n   Fix: Generate and commit the package-lock.json | y"
+      }
+    ]
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 2,
+    "avgTimeMs": 0.6,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/refer/DubReferralsPage.tsx",
+        "line": 25,
+        "column": 19,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/refer/DubReferralsPage.tsx",
+        "line": 42,
+        "column": 23,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      }
+    ]
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 2.38,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.68,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 1.05,
+    "samples": []
+  },
+  "browser-security/no-clickjacking": {
+    "hits": 0,
+    "avgTimeMs": 1.04,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.94,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.87,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 0.86,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.84,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.76,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.75,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.72,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.68,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.67,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.55,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.52,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.5,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "express-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.34,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.34,
+    "samples": []
+  },
+  "express-security/require-helmet": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "browser-security/no-http-urls": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.3,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.29,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "express-security/require-csrf-protection": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "express-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "express-security/require-express-body-parser-limits": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "express-security/no-graphql-introspection-production": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "express-security/no-express-unsafe-regex-route": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "express-security/no-insecure-cookie-options": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "express-security/require-rate-limiting": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "express-security/no-cors-credentials-wildcard": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  }
+}

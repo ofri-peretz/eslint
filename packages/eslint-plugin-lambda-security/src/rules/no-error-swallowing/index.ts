@@ -36,8 +36,11 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-error-swallowing.md',
       description:
         'Detects empty catch blocks and missing error logging in Lambda handlers',
+      cwe: 'CWE-390',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {
@@ -85,7 +88,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, allowWithComment = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -96,7 +99,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
      * Check if a catch block has any logging
      */
     function hasLogging(block: TSESTree.BlockStatement): boolean {
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode;
       const blockText = sourceCode.getText(block);
 
       // console.log/error/warn/info/debug
@@ -123,7 +126,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     function hasIntentionalComment(node: TSESTree.CatchClause): boolean {
       if (!allowWithComment) return false;
 
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode;
       const comments = sourceCode.getCommentsInside(node.body);
 
       return comments.some((comment) =>
@@ -197,7 +200,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
 
             if (returnStmt?.argument) {
               // Check if return includes status 500 or error body
-              const sourceCode = context.sourceCode || context.getSourceCode();
+              const sourceCode = context.sourceCode;
               const returnText = sourceCode.getText(returnStmt.argument);
               if (/500|error|fail/i.test(returnText)) {
                 return; // Acceptable error handling

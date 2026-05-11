@@ -113,7 +113,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-object-injection.md',
       description: 'Detects variable[key] as a left- or right-hand assignment operand',
+      cwe: 'CWE-915',
+      confidence: 'low',
     },
     messages: {
       // 🎯 Token optimization: 37% reduction (54→34 tokens) - removes verbose current/fix/doc labels
@@ -240,6 +243,39 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+
+    // ── AST-walker / codemod context detection (closes the audit FP
+    // surfaced by `npm run ilb:stress-test`). When the file imports any
+    // AST library (`@babel/types`, `recast`, `jscodeshift`, `eslint`,
+    // `estree-walker`, `unist-util-visit`), `node[name]`-style access is
+    // tree traversal, not user-input indexing. The same helper landed
+    // for `no-insecure-comparison` in audit iter-2; this is the port to
+    // `detect-object-injection`. See benchmarks/AUDIT_PATTERNS.md §2.1.
+    const sourceCode = context.sourceCode;
+    const isInCodemodContext = (() => {
+      const filename = context.filename;
+      if (/\/codemod[s]?\//i.test(filename)) return true;
+      if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
+      const imports = sourceCode.ast.body.filter(
+        (n): n is TSESTree.ImportDeclaration =>
+          n.type === AST_NODE_TYPES.ImportDeclaration,
+      );
+      return imports.some((i) => {
+        const src = String((i as TSESTree.ImportDeclaration).source.value);
+        return (
+          src === '@babel/types' ||
+          src === '@babel/traverse' ||
+          src === 'recast' ||
+          src === 'jscodeshift' ||
+          src === 'eslint' ||
+          src === 'estree-walker' ||
+          src === 'ast-types' ||
+          src === 'esrap' ||
+          src === 'unist-util-visit' ||
+          src.startsWith('@typescript-eslint/')
+        );
+      });
+    })();
 
     // Check if TypeScript parser services are available for type-aware checking
     const hasTypeInfo = hasParserServices(context);
@@ -559,7 +595,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       isAssignment: boolean;
       pattern: ObjectInjectionPattern | null;
     } => {
-      const sourceCode = context.sourceCode || context.sourceCode;
 
       let object: string;
       let property: string;
@@ -612,6 +647,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const { propertyNode } = extractPropertyAccess(node);
 
+      // SAFE: numeric keys can't pollute Object prototypes (typed-array
+      // / numeric-array assignment is structurally safe).
+      if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node)) {
         return false;
@@ -632,6 +673,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const { propertyNode } = extractPropertyAccess(node);
 
+      // Numeric keys cannot pollute Object prototypes — typed-array and
+      // numeric-array access (`arr[0]`, `arr[i]` where i is a for-loop
+      // counter) is structurally safe. This eliminates the bulk of false
+      // positives on numeric/buffer-heavy codebases (Three.js, webpack,
+      // image/audio/geometry libraries) without weakening detection of
+      // string-key prototype pollution.
+      if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node)) {
         return false;
@@ -642,8 +693,76 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Returns true if the property expression is provably a numeric key
+     * (and therefore cannot trigger prototype pollution).
+     *
+     * Detected as numeric:
+     *   - Numeric literal:        arr[0], arr[42]
+     *   - Unary plus on number:   arr[+x]
+     *   - Number(...) coercion:   arr[Number(x)]
+     *   - parseInt/parseFloat:    arr[parseInt(x)]
+     *   - Bitwise on identifier:  arr[x | 0], arr[x >>> 0]
+     *   - Identifier whose declaration is the init of a `for` statement
+     *     (the standard `for (let i = 0; i < n; i++)` counter pattern)
+     */
+    const isNumericKey = (node: TSESTree.Node): boolean => {
+      if (node.type === AST_NODE_TYPES.Literal && typeof (node as TSESTree.Literal).value === 'number') {
+        return true;
+      }
+      if (node.type === AST_NODE_TYPES.UnaryExpression && (node as TSESTree.UnaryExpression).operator === '+') {
+        return true;
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
+        const op = (node as TSESTree.BinaryExpression).operator;
+        if (op === '|' || op === '&' || op === '^' || op === '<<' || op === '>>' || op === '>>>' || op === '*' || op === '/' || op === '%' || op === '-') {
+          return true;
+        }
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = (node as TSESTree.CallExpression).callee;
+        if (callee.type === AST_NODE_TYPES.Identifier) {
+          const name = (callee as TSESTree.Identifier).name;
+          if (name === 'Number' || name === 'parseInt' || name === 'parseFloat') return true;
+        }
+      }
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        return isLoopCounterIdentifier(node as TSESTree.Identifier);
+      }
+      return false;
+    };
+
+    /**
+     * Returns true if the identifier is the loop variable of an enclosing
+     * `for` statement, e.g. `for (let i = 0; i < n; i++) arr[i]`. The loop
+     * counter is by construction numeric, so the access is safe.
+     */
+    const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
+      const scope = context.sourceCode.getScope(node);
+      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      if (!variable || variable.defs.length === 0) return false;
+      const def = variable.defs[0];
+      // Look for `for (let i = <numeric init>; ...; ...)` shape.
+      const parent = def.node?.parent as TSESTree.Node | undefined;
+      const grand = parent?.parent as TSESTree.Node | undefined;
+      if (
+        parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+        grand?.type === AST_NODE_TYPES.ForStatement &&
+        grand.init === parent
+      ) {
+        const init = (def.node as TSESTree.VariableDeclarator).init;
+        if (!init) return false;
+        // Initializer must itself be numeric.
+        if (init.type === AST_NODE_TYPES.Literal && typeof (init as TSESTree.Literal).value === 'number') {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    /**
      * Determine risk level based on the pattern and context
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const determineRiskLevel = (pattern: ObjectInjectionPattern | null, isAssignment: boolean): string => {
       if (pattern?.riskLevel === 'critical' || (pattern && isAssignment)) {
         return 'CRITICAL';
@@ -743,9 +862,63 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       });
     };
 
+    /**
+     * Object.assign(target, untrustedSource) and `{ ...untrustedSource }`
+     * spread into an object are functionally equivalent to `obj[k] = v`
+     * for prototype-pollution purposes — they copy every enumerable
+     * property of `source` onto `target`, including any `__proto__` /
+     * `constructor` / `prototype` keys the source carries. The hand-
+     * curated stress test surfaced this as an FN; closing it requires a
+     * separate visitor since Object.assign is a CallExpression and
+     * spread is a SpreadElement, not a MemberExpression. See
+     * benchmarks/AUDIT_PATTERNS.md §3.4 ("equivalent merger patterns").
+     */
+    const checkObjectAssignSpread = (node: TSESTree.CallExpression) => {
+      if (isInCodemodContext) return;
+      if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
+      const callee = node.callee;
+      const objectIsObject =
+        callee.object.type === AST_NODE_TYPES.Identifier &&
+        callee.object.name === 'Object';
+      const propIsAssign =
+        !callee.computed &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        callee.property.name === 'assign';
+      if (!objectIsObject || !propIsAssign) return;
+      // Object.assign({}, …) — first arg is fresh literal, no taint risk.
+      if (node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) return;
+      // Sources are arguments[1...]. Any non-literal source is an
+      // assumed taint source. Literals are safe (they're inline data).
+      const sources = node.arguments.slice(1);
+      const anyTaintedSource = sources.some(
+        (s) =>
+          s.type !== AST_NODE_TYPES.ObjectExpression &&
+          s.type !== AST_NODE_TYPES.Literal,
+      );
+      if (!anyTaintedSource) return;
+      context.report({
+        node,
+        messageId: 'objectInjection',
+        data: {
+          pattern: 'Object.assign(target, untrustedSource)',
+          riskLevel: 'HIGH',
+          vulnerability: 'object injection via Object.assign spread',
+          safeAlternative:
+            'Validate or whitelist keys before merging: `for (const k of Object.keys(src)) if (!ALLOWED.has(k)) continue;`',
+        },
+      });
+    };
+
     return {
-      AssignmentExpression: checkAssignmentExpression,
-      MemberExpression: checkMemberExpression
+      AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
+        if (isInCodemodContext) return;
+        return checkAssignmentExpression(node);
+      },
+      MemberExpression: (node: TSESTree.MemberExpression) => {
+        if (isInCodemodContext) return;
+        return checkMemberExpression(node);
+      },
+      CallExpression: checkObjectAssignSpread,
     };
   },
 });

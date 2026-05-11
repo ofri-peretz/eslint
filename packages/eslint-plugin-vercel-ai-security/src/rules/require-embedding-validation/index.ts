@@ -28,7 +28,10 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-embedding-validation.md',
       description: 'Require validation of embeddings before storage or similarity search',
+      cwe: 'CWE-20',
+      cvss: 5.5,
     },
     messages: {
       unvalidatedEmbedding: formatLLMMessage({
@@ -84,7 +87,7 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
       'validate', 'verify', 'check', 'sanitize',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vector store operations
     const vectorStoreOps = ['upsert', 'insert', 'add', 'store', 'index', 'save'];

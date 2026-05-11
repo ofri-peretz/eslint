@@ -1,0 +1,60 @@
+{
+  "name": "@interlace/eslint-formatter",
+  "version": "0.1.0",
+  "description": "Smart ESLint formatter — groups errors by rule, supports human/compact/JSON output modes, and includes before/after fix examples",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "require": "./src/index.js",
+      "import": "./src/index.js"
+    },
+    "./schema.json": "./schema.json",
+    "./package.json": "./package.json"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-formatter#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ofri-peretz/eslint",
+    "directory": "packages/eslint-formatter"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "schema.json",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-formatter",
+    "formatter",
+    "structured-output",
+    "compact",
+    "json",
+    "grouped",
+    "lint-errors",
+    "developer-tools",
+    "code-quality"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  }
+}

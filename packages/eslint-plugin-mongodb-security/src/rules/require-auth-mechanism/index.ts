@@ -16,13 +16,17 @@ type MessageIds = 'requireAuthMechanism';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const CONNECTION_METHODS = ['connect', 'createConnection'];
+const CONNECTION_METHODS = new Set(['connect', 'createConnection']);
 
 export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   name: 'require-auth-mechanism',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Require explicit authentication mechanism (SCRAM-SHA-256)' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md', description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
+      cwe: 'CWE-287',
+      cvss: 6.5,
+    },
     hasSuggestions: true,
     messages: {
       requireAuthMechanism: formatLLMMessage({
@@ -43,7 +47,7 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -60,7 +64,7 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !CONNECTION_METHODS.includes(methodName)) {
+        if (!methodName || !CONNECTION_METHODS.has(methodName)) {
           return;
         }
 

@@ -1,0 +1,55 @@
+# Lefthook — git hooks manager
+# Three-tier validation: pre-commit (fast, staged files), pre-push (full local CI), commit-msg.
+# Docs: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    oxlint:
+      glob: "packages/**/*.{ts,tsx,js,mjs}"
+      run: npm run --silent oxlint
+    markdown:
+      glob: "**/*.md"
+      run: npx --no markdownlint-cli2 {staged_files}
+    shim-drift:
+      run: npm run --silent oxlint:shims:check
+    tests-affected:
+      run: |
+        if git rev-parse --verify --quiet origin/main >/dev/null; then
+          npx --no turbo run test --filter="...[origin/main]" --output-logs=errors-only
+        else
+          npx --no turbo run test --output-logs=errors-only
+        fi
+
+# Pre-push: mirrors CI's "promote" gate locally. Runs the full battery in
+# parallel so a developer can `git push` knowing every check CI will run on a
+# ready_for_review PR has already passed. Use `npm run ci:local` for the same
+# battery outside the git-push flow.
+pre-push:
+  parallel: true
+  commands:
+    typecheck:
+      run: npx --no turbo run typecheck --output-logs=errors-only
+    build:
+      run: npx --no turbo run build --output-logs=errors-only
+    tests:
+      run: npx --no turbo run test --output-logs=errors-only
+    markdown-full:
+      run: npm run --silent lint:md
+    portability:
+      run: npm run --silent audit:portability:ci
+    lockfile:
+      run: npm run --silent check-versions
+    workflows:
+      run: npm run --silent lint:workflows
+    changelog:
+      run: npm run --silent changeset:status
+    shim-drift:
+      run: npm run --silent oxlint:shims:check
+    shim-verify:
+      run: npm run --silent oxlint:shims:verify
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no -- commitlint --edit {1}

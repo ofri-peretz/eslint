@@ -21,6 +21,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-dom-node-text-content.md',
       description:
         'Prefer textContent over innerText for better performance and reliability',
     },
@@ -47,6 +48,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
       return false;
@@ -119,6 +121,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isInnerTextAccess(node: TSESTree.MemberExpression): boolean {
       // Check if this is accessing .innerText property
       if (

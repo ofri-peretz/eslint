@@ -64,7 +64,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-sanitization.md',
       description: 'Detects improper sanitization of user input',
+      cwe: 'CWE-116',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -257,8 +259,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -450,13 +452,44 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // SAFE: literal assigned directly to innerHTML/outerHTML with no
+        // concatenation or interpolation AND containing no dangerous
+        // markup. Static developer-authored HTML normally has no taint
+        // source (`el.innerHTML = '<span class="x"></span>'` is the
+        // standard way to set static markup; flagging it would force
+        // every static UI template into the noise floor) — BUT a literal
+        // like `<script>alert(1)</script>` is unsafe even when
+        // developer-authored, because the markup itself is the vector.
+        // Only take the safe path when the literal is free of script
+        // tags, inline event handlers, and `javascript:` URIs.
+        const directParent = node.parent as TSESTree.Node | undefined;
+        if (
+          directParent?.type === 'AssignmentExpression' &&
+          (directParent as TSESTree.AssignmentExpression).right === node &&
+          (directParent as TSESTree.AssignmentExpression).left.type === 'MemberExpression'
+        ) {
+          const left = (directParent as TSESTree.AssignmentExpression).left as TSESTree.MemberExpression;
+          if (
+            left.property.type === 'Identifier' &&
+            ['innerHTML', 'outerHTML'].includes(left.property.name)
+          ) {
+            const literalValue = typeof node.value === 'string' ? node.value : '';
+            const hasDangerousMarkup = /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(literalValue);
+            if (!hasDangerousMarkup) {
+              return;
+            }
+          }
+        }
+
         const text = node.value;
 
         // Check if this string is used in a dangerous context
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
 
-        while (current && !isInDangerousContext) {
+        // Every path that sets `isInDangerousContext = true` is followed by `break`,
+        // so the negation in the condition is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'AssignmentExpression') {
             const left = current.left;
             if (left.type === 'MemberExpression' &&

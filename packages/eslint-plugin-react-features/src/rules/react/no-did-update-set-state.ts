@@ -26,6 +26,7 @@ export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-did-update-set-state.md',
       description: 'Prevent setState in componentDidUpdate',
     },
     messages: {

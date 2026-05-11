@@ -1,0 +1,19 @@
+{
+  "cwe": "CWE-1333",
+  "name": "Inefficient Regular Expression Complexity (ReDoS)",
+  "owasp": "A05:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-secure-coding"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "self-loop.js", "description": "Classic (a+)+ self-loop quantifier" },
+      { "file": "trade-off.js", "description": "Cross-quantifier trade pattern (a*).*b" },
+      { "file": "real-cve.js", "description": "Email regex with cross-quantifier ambiguity (CVE-2017-18342 class)" }
+    ],
+    "safe": [
+      { "file": "simple-anchored.js", "description": "Simple anchored character class" },
+      { "file": "atomic-equivalent.js", "description": "Equivalent regex without backtracking ambiguity" },
+      { "file": "literal-match.js", "description": "Plain string match, no quantifier" }
+    ]
+  }
+}

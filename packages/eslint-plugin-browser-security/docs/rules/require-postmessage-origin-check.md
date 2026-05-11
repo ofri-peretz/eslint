@@ -89,30 +89,7 @@ window.addEventListener('message', (event) => {
 ### ✅ Correct
 
 ```javascript
-// Strict origin validation - SAFE
-const ALLOWED_ORIGINS = [
-  'https://trusted-parent.com',
-  'https://admin.example.com',
-];
-
-window.addEventListener('message', (event) => {
-  if (!ALLOWED_ORIGINS.includes(event.origin)) {
-    console.warn('Rejected message from:', event.origin);
-    return;
-  }
-
-  const { action, data } = event.data;
-  processAction(action, data);
-});
-
-// Single origin check - SAFE
-window.addEventListener('message', (event) => {
-  if (event.origin !== 'https://trusted-parent.com') {
-    return;
-  }
-
-  handleMessage(event.data);
-});
+message
 ```
 
 ## Options

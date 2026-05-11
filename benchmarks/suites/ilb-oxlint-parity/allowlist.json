@@ -1,0 +1,5 @@
+{
+  "_note": "Empty as of 2026-05-09 — fleet is 100% oxlint-compatible after the type-aware-guard refactor and pg variable-tracking refactor. New entries here require a justification line and an introduced date.",
+  "eslintOnly": [],
+  "oxlintOnly": []
+}

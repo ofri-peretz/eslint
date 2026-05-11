@@ -69,18 +69,18 @@ _"I identified the ESLint ecosystem was stuck in 2020. I rebuilt the static anal
 ## 3. 🔍 Competitor Landscape
 
 ### The "Speed" Cluster (Rust-based)
-*   **Biome / Oxlint**: Competing on raw speed (100x faster).
-*   *Our Counter:* **Depth & Agility**. They can't check `pg` specifics or `vercel-ai` nuances yet. We offer **domain expertise** and **AI-native remediation** which they lack.
+- **Biome / Oxlint**: Competing on raw speed (100x faster).
+- *Our Counter:* **Depth & Agility**. They can't check `pg` specifics or `vercel-ai` nuances yet. We offer **domain expertise** and **AI-native remediation** which they lack.
 
 ### The "Legacy" Cluster
-*   **eslint-plugin-import**: The zombie giant. Slow, unmaintained.
-*   *Our Counter:* `import-next`. 100x faster, drop-in replacement.
-*   **eslint-plugin-security**: Abandoned/shallow.
-*   *Our Counter:* `secure-coding`. 89 rules vs their 13. Deep OWASP mapping.
+- **eslint-plugin-import**: The zombie giant. Slow, unmaintained.
+- *Our Counter:* `import-next`. 100x faster, drop-in replacement.
+- **eslint-plugin-security**: Abandoned/shallow.
+- *Our Counter:* `secure-coding`. 89 rules vs their 13. Deep OWASP mapping.
 
 ### The "Style" Cluster
-*   **eslint-plugin-unicorn**: Opinionated style.
-*   *Our Counter:* `eslint-plugin-quality`. Focus on logical correctness and maintainability, not "prettier" code.
+- **eslint-plugin-unicorn**: Opinionated style.
+- *Our Counter:* `eslint-plugin-quality`. Focus on logical correctness and maintainability, not "prettier" code.
 
 ---
 
@@ -90,16 +90,16 @@ _"I identified the ESLint ecosystem was stuck in 2020. I rebuilt the static anal
 
 ### The "High-Authority Signals" Pyramid
 AI models trust sources in this order:
-1.  **Official Docs** (e.g., node-postgres linking to us)
-2.  **Awesome Lists** (awesome-eslint, awesome-nodejs)
-3.  **GitHub Signals** (Stars, Forks)
-4.  **Technical Blogs** (Dev.to - high volume)
+1. **Official Docs** (e.g., node-postgres linking to us)
+2. **Awesome Lists** (awesome-eslint, awesome-nodejs)
+3. **GitHub Signals** (Stars, Forks)
+4. **Technical Blogs** (Dev.to - high volume)
 
 ### Tactics
-1.  **Official Doc PRs:** Submit PRs to `node-postgres`, `jsonwebtoken` to be listed as "Recommended Tooling".
-2.  **Awesome Lists:** Get into `awesome-eslint#security`.
-3.  **Content Volume:** Saturate Dev.to with "ESLint + [Vulnerability]" keywords to own the long-tail.
-4.  **Structured Data:** Use tables, CWE IDs, and Q&A formats in all articles so AI scrapers can parse them easily.
+1. **Official Doc PRs:** Submit PRs to `node-postgres`, `jsonwebtoken` to be listed as "Recommended Tooling".
+2. **Awesome Lists:** Get into `awesome-eslint#security`.
+3. **Content Volume:** Saturate Dev.to with "ESLint + [Vulnerability]" keywords to own the long-tail.
+4. **Structured Data:** Use tables, CWE IDs, and Q&A formats in all articles so AI scrapers can parse them easily.
 
 ### Success Metrics (Discovery)
 - **Query:** "Best eslint plugin for sql injection" -> Result: `eslint-plugin-pg`.

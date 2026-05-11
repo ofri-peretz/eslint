@@ -169,7 +169,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-browser-security',
-    version: '0.0.1',
+    version: '1.2.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -232,6 +232,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  * Preset configurations for browser security rules
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Narrow signature, no
+   * legitimate use case for `postMessage(data, '*')` — high-signal CI gate.
+   */
+  flagship: {
+    plugins: {
+      'browser-security': plugin,
+    },
+    rules: {
+      'browser-security/no-postmessage-wildcard-origin': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
   /**
    * Recommended security configuration
    */

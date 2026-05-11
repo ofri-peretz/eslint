@@ -1,36 +1,66 @@
 name: Link Integrity Check
 
+# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
+# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/docs/content/**/*.mdx"
-      - "apps/docs/content/**/*.md"
   pull_request:
     branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - "apps/docs/content/**/*.mdx"
       - "apps/docs/content/**/*.md"
-  # schedule: # DISABLED — quota conservation
-    # Run weekly on Sundays at midnight UTC
-    # - cron: "0 0 * * 0"
   workflow_dispatch:
+  schedule:
+    - cron: "25 4 * * 0"
+
+concurrency:
+  group: check-links-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  check-links:
+  gate:
+    name: Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping link integrity check."
+          fi
+
+  check-links:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -40,19 +70,19 @@ jobs:
         id: linkcheck
         working-directory: apps/docs
         continue-on-error: true
-        run: node scripts/check-links.mjs
+        run: npx tsx scripts/check-links.ts
 
       - name: Upload link report
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('apps/docs/link-report.json') != ''
+        uses: actions/upload-artifact@v7
         with:
           name: link-report
           path: apps/docs/link-report.json
           retention-days: 30
 
       - name: Comment on PR with results
-        if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure'
-        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure' && hashFiles('apps/docs/link-report.json') != ''
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');

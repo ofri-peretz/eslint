@@ -24,6 +24,7 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-unsupported-elements.md',
       description: 'Enforce that elements that don\'t support ARIA roles, states, and properties do not contain them',
     },
     messages: {

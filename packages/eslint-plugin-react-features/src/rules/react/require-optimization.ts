@@ -38,6 +38,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-optimization.md',
       description:
         'Require performance optimizations for React components based on usage patterns',
     },

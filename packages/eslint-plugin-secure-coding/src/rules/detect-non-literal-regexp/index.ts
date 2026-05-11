@@ -75,6 +75,7 @@ const REGEXP_PATTERNS: RegExpPattern[] = [
     safeAlternative: 'Static RegExp literals or validated patterns',
     example: {
       bad: 'RegExp(userPattern)',
+      // oxlint-disable-next-line no-template-curly-in-string
       good: 'const safePattern = userPattern.replace(/[.*+?^${}()|[\\]\\\\]/g, \'\\\\$&\'); new RegExp(`^${safePattern}$`)'
     },
     effort: '15-20 minutes',
@@ -99,7 +100,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-non-literal-regexp.md',
       description: 'Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression',
+      cwe: 'CWE-400',
     },
     messages: {
       // 🎯 Token optimization: 41% reduction (51→30 tokens) - compact template variables
@@ -148,7 +151,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.INFO,
         issueName: 'Escape Input',
         description: 'Escape special regex characters',
+        // oxlint-disable-next-line no-template-curly-in-string
         severity: 'LOW',
+        // oxlint-disable-next-line no-template-curly-in-string
         fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       })
@@ -198,6 +203,7 @@ allowLiterals = false,
      * Check if a node is a literal string (potentially safe)
      * Includes template literals without expressions
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
       if (node.type === 'Literal' && typeof node.value === 'string') {
         return true;
@@ -213,6 +219,7 @@ allowLiterals = false,
      * Check if a regex pattern contains dangerous ReDoS patterns
      * Only flag truly dangerous patterns like nested quantifiers: (a+)+, (a*)*
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const hasReDoSPatterns = (pattern: string): boolean => {
       // Detect truly dangerous nested quantifier patterns that cause exponential backtracking
       // Pattern like (a+)+, (a*)+, (a+)*, (a*)*, ([a-z]+)+
@@ -240,7 +247,7 @@ allowLiterals = false,
       isDynamic: boolean;
       length: number;
     } => {
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
 
       // Determine constructor type
       let constructor = 'RegExp';
@@ -306,6 +313,7 @@ allowLiterals = false,
     /**
      * Generate refactoring steps based on the vulnerability
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const generateRefactoringSteps = (vulnerability: RegExpPattern): string => {
       if (vulnerability.pattern === 'dynamic') {
         return [

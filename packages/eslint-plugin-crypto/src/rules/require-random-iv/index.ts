@@ -32,7 +32,10 @@ export const requireRandomIv = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/require-random-iv.md',
       description: 'Require IV to be generated from cryptographically secure random source',
+      cwe: 'CWE-329',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

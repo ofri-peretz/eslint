@@ -26,6 +26,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/consistent-function-scoping.md',
       description: 'Move function definitions to the highest possible scope to improve readability and performance',
     },
     hasSuggestions: true,
@@ -102,24 +103,71 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Class methods / class field initializers — these are bound to the
+      // instance and cannot be moved to module scope. The parent chain is
+      // `MethodDefinition` (regular methods) or `PropertyDefinition` (class
+      // fields). Without this exemption, every method that doesn't reference
+      // `this` is wrongly flagged.
+      const p = node.parent;
+      if (p?.type === 'MethodDefinition' || p?.type === 'PropertyDefinition') {
+        return;
+      }
+
+      // Inline callbacks passed to higher-order methods. These functions are
+      // inline BY DESIGN — moving `arr.reduce((a, b) => a + b)` to a
+      // top-level named function loses inline locality without improving
+      // anything. Common high-arity hosts:
+      //   - Array methods: map, filter, reduce, forEach, find, some, every, sort, flatMap
+      //   - Promise: .then, .catch, .finally
+      //   - Event hosts: .on('event', ...), addEventListener('event', ...)
+      //   - Scheduler: setTimeout, setInterval, requestAnimationFrame
+      //   - Promise constructor: `new Promise((resolve, reject) => ...)`
+      if (p?.type === 'CallExpression') {
+        const callee = p.callee;
+        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+          const HOST_METHODS = new Set([
+            'map', 'filter', 'reduce', 'reduceRight', 'forEach', 'find', 'findIndex',
+            'some', 'every', 'sort', 'flatMap', 'flat',
+            'then', 'catch', 'finally',
+            'on', 'once', 'addEventListener', 'removeEventListener', 'subscribe',
+          ]);
+          if (HOST_METHODS.has(callee.property.name)) return;
+        }
+        if (callee.type === 'Identifier') {
+          const HOST_FNS = new Set([
+            'setTimeout', 'setInterval', 'setImmediate',
+            'requestAnimationFrame', 'requestIdleCallback', 'queueMicrotask',
+          ]);
+          if (HOST_FNS.has(callee.name)) return;
+        }
+      }
+      // `new Promise((resolve, reject) => ...)` — executor must stay inline.
+      if (
+        p?.type === 'NewExpression' &&
+        p.callee.type === 'Identifier' &&
+        p.callee.name === 'Promise'
+      ) {
+        return;
+      }
+
       // Get all variables referenced in the function body
       const referencedVars = new Set<string>();
 
-      function collectReferences(node: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
+      function collectReferences(astNode: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
         // Prevent infinite recursion
-        if (depth > 10 || visited.has(node)) {
+        if (depth > 10 || visited.has(astNode)) {
           return;
         }
-        visited.add(node);
+        visited.add(astNode);
 
-        if (node.type === 'Identifier') {
-          referencedVars.add(node.name);
+        if (astNode.type === 'Identifier') {
+          referencedVars.add(astNode.name);
         }
 
         // Recursively check all child nodes with depth limit
         if (depth < 10) {
-          for (const key in node) {
-            const child = (node as unknown as Record<string, unknown>)[key];
+          for (const key in astNode) {
+            const child = (astNode as unknown as Record<string, unknown>)[key];
             if (child && typeof child === 'object') {
               if (Array.isArray(child)) {
                 child.forEach(item => {
@@ -127,7 +175,9 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
                     collectReferences(item, depth + 1, visited);
                   }
                 });
-              } else if ('type' in child && typeof child === 'object' && child !== null) {
+              } else if ('type' in child) {
+                // Outer `child && typeof child === 'object'` already guarantees
+                // a non-null object here (CodeQL: `js/comparison-between-incompatible-types`).
                 collectReferences(child as TSESTree.Node, depth + 1, visited);
               }
             }

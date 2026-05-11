@@ -58,7 +58,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unchecked-loop-condition.md',
       description: 'Detects unchecked loop conditions that could cause DoS',
+      cwe: 'CWE-400',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -194,8 +196,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -416,6 +418,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     /**
      * Estimate loop iterations from static analysis
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const estimateIterations = (loop: TSESTree.ForStatement | TSESTree.WhileStatement | TSESTree.DoWhileStatement): number | null => {
       if (loop.type === 'ForStatement') {
         // Try to parse for loop bounds

@@ -23,6 +23,9 @@ const ruleTester = new RuleTester({
 describe('no-cryptojs-weak-random', () => {
   ruleTester.run('no-cryptojs-weak-random', noCryptojsWeakRandom, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
       { code: 'crypto.randomBytes(32);' },
       { code: 'crypto.getRandomValues(new Uint8Array(32));' },
       { code: 'SomeLib.random();' },

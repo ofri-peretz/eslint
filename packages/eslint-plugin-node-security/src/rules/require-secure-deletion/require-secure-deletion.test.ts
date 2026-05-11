@@ -14,6 +14,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-secure-deletion', requireSecureDeletion, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     // Secure deletion patterns
     { code: "secureDelete(file)" },
     { code: "data = null; gc()" },

@@ -1,0 +1,88 @@
+---
+title: no-json-schema-tags
+description: Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags.
+tags: ['conventions', 'jsdoc', 'documentation']
+category: quality
+autofix: suggestions
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** no-json-schema-tags, JSDoc, JSON Schema, @minimum, @maximum, @pattern, @format, TSDoc, DefinitelyTyped, ESLint rule
+
+Disallow JSON Schema keywords (e.g. `@minimum`, `@maximum`, `@pattern`, `@format`) used as JSDoc tags. These keywords are valid in OpenAPI / JSON Schema documents but not in JSDoc; they fail in projects with strict tag validation (e.g. DefinitelyTyped, TSDoc-strict CI).
+
+This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions).
+
+## Quick Summary
+
+| Aspect         | Details                                                                         |
+| -------------- | ------------------------------------------------------------------------------- |
+| **Severity**   | Medium (Quality)                                                                |
+| **Auto-Fix**   | 💡 Suggestions                                                                  |
+| **Category**   | Conventions                                                                     |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                                         |
+| **Best For**   | Libraries published to npm; codebases that publish TypeScript types externally  |
+
+## Why these tags don't belong in JSDoc
+
+JSDoc and TSDoc define a finite tag vocabulary (`@param`, `@returns`, `@throws`, `@deprecated`, …). JSON Schema keywords like `@minimum`, `@maximum`, `@pattern`, `@format`, `@enum`, `@items`, `@required`, `@additionalProperties` look like JSDoc tags but are not recognized by:
+
+- The TypeScript compiler's strict TSDoc mode (`tsdoc.json` → `noStandardTags`).
+- DefinitelyTyped's lint suite (`dtslint`).
+- IDE tooling that ships type-aware JSDoc autocomplete.
+
+They originate from people generating OpenAPI specs from TypeScript types and leaking constraint annotations into the source. The constraint belongs in the description prose, not in a synthetic tag.
+
+## Examples
+
+### ❌ Incorrect
+
+```ts
+/**
+ * @param age The user's age.
+ * @minimum 0
+ * @maximum 150
+ */
+function setAge(age: number) {}
+
+/**
+ * @param email Contact email.
+ * @format email
+ */
+function setEmail(email: string) {}
+```
+
+### ✅ Correct
+
+```ts
+/**
+ * @param age The user's age. Must be in the range [0, 150].
+ */
+function setAge(age: number) {}
+
+/**
+ * @param email Contact email. Must be a valid RFC 5322 address.
+ */
+function setEmail(email: string) {}
+```
+
+## Error Message Format
+
+```text
+⚠️ CONVENTIONS | @minimum is a JSON Schema keyword, not a valid JSDoc tag | MEDIUM
+   Fix: Move the constraint into the @param description, or move the entire validation to a schema layer (zod, valibot, ajv).
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+- Custom tags allowed via the rule's `additionalForbiddenTags` option are flagged; project-specific tag allowlists in `tsdoc.json` are not consulted.
+- Block-comment text containing `@minimum:` (with a colon, prose-style) is not flagged because it is not a JSDoc tag.

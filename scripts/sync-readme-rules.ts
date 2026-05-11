@@ -1,333 +1,431 @@
 #!/usr/bin/env node
 
 /**
- * Sync README Rules Script
+ * Sync README Rules Tables — canonical generator.
  *
- * Reads rule metadata from plugin source code and docs, then auto-generates
- * the Rules Table in each plugin's README.md.
+ * For every plugin in `apps/docs/src/lib/plugins.ts`, regenerates the rules
+ * table inside the plugin's README.md between paired markers:
  *
- * Features:
- * - Parses `src/index.ts` to extract exported rules
- * - Reads `docs/rules/*.md` to extract CWE, OWASP, and description metadata
- * - Generates high-density Rules Table with consistent format
- * - Uses block delimiters to preserve user content
- * - Repair mode scaffolds missing sections
+ *   <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+ *   ...generated table...
+ *   <!-- AUTO-GENERATED:RULES_TABLE:END -->
  *
- * Usage: npx tsx scripts/sync-readme-rules.ts [--dry-run] [--plugin <name>]
+ * If markers are missing, locates the data-row table after the `## Rules`
+ * legend (header row starts with `| Rule |`) and inserts the markers around
+ * it — idempotent on the second run.
+ *
+ * Inputs (read-only):
+ *   - apps/docs/src/lib/plugins.ts      — canonical 20-plugin registry
+ *   - packages/eslint-plugin-<slug>/src/index.ts  — exported rule names + recommended config
+ *   - packages/eslint-plugin-<slug>/docs/rules/<rule>.md  — frontmatter description, CWE, OWASP
+ *   - .agent/type-awareness-scan.tsv    — per-rule type-aware status
+ *
+ * Output:
+ *   - packages/eslint-plugin-<slug>/README.md  — updated rules table
+ *
+ * Usage:  npx tsx scripts/sync-readme-rules.ts [--dry-run] [--plugin <slug>]
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 const ROOT_DIR = path.join(__dirname, '..');
 const PACKAGES_DIR = path.join(ROOT_DIR, 'packages');
+const TSV_PATH = path.join(ROOT_DIR, '.agent', 'type-awareness-scan.tsv');
+const PLUGINS_REGISTRY = path.join(
+  ROOT_DIR,
+  'apps',
+  'docs',
+  'src',
+  'lib',
+  'plugins.ts',
+);
+const DOCS_BASE_URL = 'https://eslint.interlace.tools';
 
-// Plugins to process
-const PLUGIN_NAMES = [
-  'eslint-plugin-secure-coding',
-  'eslint-plugin-pg',
-  'eslint-plugin-jwt',
-  'eslint-plugin-crypto',
-  'eslint-plugin-express-security',
-  'eslint-plugin-nestjs-security',
-  'eslint-plugin-lambda-security',
-  'eslint-plugin-browser-security',
-  'eslint-plugin-mongodb-security',
-  'eslint-plugin-vercel-ai-security',
-  'eslint-plugin-import-next',
-];
-
-// Block delimiters
-const RULES_TABLE_START = '<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->';
+const RULES_TABLE_START =
+  '<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->';
 const RULES_TABLE_END = '<!-- AUTO-GENERATED:RULES_TABLE:END -->';
-const LICENSE_START = '<!-- AUTO-GENERATED:LICENSE:START -->';
-const LICENSE_END = '<!-- AUTO-GENERATED:LICENSE:END -->';
 
-// Copyright template
-const COPYRIGHT_TEMPLATE = `MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+export type TypeStatus = 'unaware' | 'optional' | 'aware';
+export type Pillar = 'security' | 'quality';
 
-© 2025 Ofri Peretz. All rights reserved.`;
+export interface PluginEntry {
+  slug: string;
+  package: string;
+  pillar: Pillar;
+}
 
-// ============================================================================
-// Types
-// ============================================================================
-
-interface RuleMetadata {
+export interface RuleMeta {
   name: string;
   description: string;
   cwe: string;
   owasp: string;
-  inRecommended: boolean;
-  hasAutofix: boolean;
-  hasSuggestions: boolean;
+  cvss: string;
+  recommended: boolean;
+  warns: boolean;
+  fixable: boolean;
+  suggestions: boolean;
+  deprecated: boolean;
+  typeStatus: TypeStatus;
 }
 
-interface PluginRules {
-  pluginName: string;
-  shortName: string;
-  rules: RuleMetadata[];
-}
+// ---------------------------------------------------------------------------
+// Registry loading — parses apps/docs/src/lib/plugins.ts statically. Avoids
+// importing TS at runtime so the script can run with bare `tsx` without
+// resolving the workspace package graph.
+// ---------------------------------------------------------------------------
 
-// ============================================================================
-// Rule Extraction
-// ============================================================================
-
-/**
- * Extract rule names from plugin's src/index.ts
- */
-function extractRuleNamesFromIndex(pluginPath: string): string[] {
-  const indexPath = path.join(pluginPath, 'src', 'index.ts');
-
-  if (!fs.existsSync(indexPath)) {
-    console.warn(`  ⚠️  No src/index.ts found`);
-    return [];
+export function loadPluginRegistry(registryPath = PLUGINS_REGISTRY): PluginEntry[] {
+  const src = fs.readFileSync(registryPath, 'utf-8');
+  const arrayMatch = src.match(/export const PLUGINS:[^=]*=\s*\[([\s\S]*?)\];/);
+  if (!arrayMatch) {
+    throw new Error(`Could not locate PLUGINS array in ${registryPath}`);
   }
+  const entries: PluginEntry[] = [];
+  const blockRegex = /\{\s*slug:\s*['"]([^'"]+)['"][\s\S]*?package:\s*['"]([^'"]+)['"][\s\S]*?pillar:\s*['"]([^'"]+)['"]/g;
+  for (const m of arrayMatch[1].matchAll(blockRegex)) {
+    entries.push({
+      slug: m[1],
+      package: m[2],
+      pillar: m[3] as Pillar,
+    });
+  }
+  return entries;
+}
 
+// ---------------------------------------------------------------------------
+// TSV loader for type-awareness status. The TSV is the single source of truth
+// per .agent/type-awareness-audit.md.
+// ---------------------------------------------------------------------------
+
+export function loadTypeAwarenessMap(tsvPath = TSV_PATH): Map<string, TypeStatus> {
+  const map = new Map<string, TypeStatus>();
+  if (!fs.existsSync(tsvPath)) {
+    console.warn(`  ⚠️  TSV not found at ${tsvPath} — every rule will render as 🟢 (unaware)`);
+    return map;
+  }
+  const lines = fs.readFileSync(tsvPath, 'utf-8').split('\n');
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const [plugin, rule, status] = line.split('\t');
+    if (!plugin || !rule || !status) continue;
+    const normalized = status.trim() as TypeStatus;
+    if (normalized !== 'unaware' && normalized !== 'optional' && normalized !== 'aware') continue;
+    map.set(`${plugin}/${rule}`, normalized);
+  }
+  return map;
+}
+
+// ---------------------------------------------------------------------------
+// Rule discovery — canonical rule names live in src/index.ts as the keys of
+// the exported `rules` object. We keep only single-segment keys (no `/`) to
+// drop categorized aliases like `error-handling/no-silent-errors`.
+// ---------------------------------------------------------------------------
+
+export function extractRuleNamesFromIndex(pluginPath: string): string[] {
+  const indexPath = path.join(pluginPath, 'src', 'index.ts');
+  if (!fs.existsSync(indexPath)) return [];
   const content = fs.readFileSync(indexPath, 'utf-8');
 
-  // Match rule entries in the rules object
-  // Pattern: 'rule-name': ruleName, or "rule-name": ruleName,
-  const rulePattern = /['"]([a-z][a-z0-9-]*)['"]:\s*\w+/g;
-  const matches = content.matchAll(rulePattern);
+  // Scope to the `rules` object literal so we don't pick up config map keys.
+  // Match: `export const rules = { ... }` or `rules = { ... } satisfies ...`.
+  // Allows an optional type annotation between `rules` and `=` (used by crypto,
+  // lambda-security, and others as `export const rules: Record<...> = { ... }`).
+  const rulesBlockMatch = content.match(
+    /(?:export\s+const\s+)?rules\s*(?::[^=\n{]+)?\s*=\s*\{([\s\S]*?)\n\}\s*(?:satisfies|as\s|;)/,
+  );
+  const scope = rulesBlockMatch ? rulesBlockMatch[1] : content;
 
-  const ruleNames: string[] = [];
-  for (const match of matches) {
-    ruleNames.push(match[1]);
+  // Walk lines so quoted (`'no-cycle':`) and unquoted bare-identifier
+  // (`named:`, `default:`) keys are both captured. The unquoted form is used
+  // by import-next for the `eslint-plugin-import` compatibility aliases —
+  // missing it silently dropped those rules from the regenerated README.
+  const names = new Set<string>();
+  for (const rawLine of scope.split('\n')) {
+    const line = rawLine.replace(/\/\/.*$/, '').trimStart();
+    if (!line) continue;
+    const quoted = line.match(/^['"]([a-z][a-z0-9-]*)['"]\s*:/);
+    if (quoted) {
+      names.add(quoted[1]);
+      continue;
+    }
+    const bare = line.match(/^([a-z][a-zA-Z0-9_]*)\s*:/);
+    if (bare) names.add(bare[1]);
   }
-
-  // Deduplicate
-  return [...new Set(ruleNames)];
+  return [...names].toSorted();
 }
 
 /**
- * Extract metadata from a rule's documentation file
+ * Parse the `configs.recommended.rules` block to learn which rules are on by
+ * default and whether they fire as `warn` or `error`.
  */
-function extractRuleMetadata(
-  pluginPath: string,
-  ruleName: string,
-  shortName: string
-): RuleMetadata | null {
-  const docPath = path.join(pluginPath, 'docs', 'rules', `${ruleName}.md`);
+export function extractRecommendedMap(pluginPath: string): Map<string, 'warn' | 'error'> {
+  const indexPath = path.join(pluginPath, 'src', 'index.ts');
+  const recommended = new Map<string, 'warn' | 'error'>();
+  if (!fs.existsSync(indexPath)) return recommended;
+  const content = fs.readFileSync(indexPath, 'utf-8');
 
-  const metadata: RuleMetadata = {
+  // Find `recommended: { ... rules: { <entries> } ... }`. The outer-config
+  // object may have multiple fields, so we grab the nested rules object.
+  const recMatch = content.match(/recommended\s*:\s*\{[\s\S]*?rules\s*:\s*\{([\s\S]*?)\n\s*\}/);
+  if (!recMatch) return recommended;
+
+  const block = recMatch[1];
+  const entryPattern = /['"][^'"/]+\/([a-z0-9-]+)['"]\s*:\s*['"](warn|error)['"]/g;
+  for (const m of block.matchAll(entryPattern)) {
+    recommended.set(m[1], m[2] as 'warn' | 'error');
+  }
+  return recommended;
+}
+
+// ---------------------------------------------------------------------------
+// Per-rule metadata from docs/rules/<rule>.md frontmatter + body.
+// ---------------------------------------------------------------------------
+
+const PIPE_ESCAPE_RE = /\|/g;
+
+export function extractRuleMetadata(
+  pluginPath: string,
+  pluginSlug: string,
+  ruleName: string,
+  recommended: Map<string, 'warn' | 'error'>,
+  typeMap: Map<string, TypeStatus>,
+): RuleMeta {
+  const docPath = path.join(pluginPath, 'docs', 'rules', `${ruleName}.md`);
+  const recLevel = recommended.get(ruleName);
+  const meta: RuleMeta = {
     name: ruleName,
     description: '',
     cwe: '',
     owasp: '',
-    inRecommended: true, // Default to true, can be refined
-    hasAutofix: false,
-    hasSuggestions: true, // Most rules have suggestions
+    cvss: '',
+    recommended: recLevel === 'error',
+    warns: recLevel === 'warn',
+    fixable: false,
+    suggestions: false,
+    deprecated: false,
+    typeStatus: typeMap.get(`${pluginSlug}/${ruleName}`) ?? 'unaware',
   };
 
-  if (!fs.existsSync(docPath)) {
-    // No doc file, return basic metadata
-    return metadata;
-  }
-
+  if (!fs.existsSync(docPath)) return meta;
   const content = fs.readFileSync(docPath, 'utf-8');
 
-  // Extract CWE
-  const cweMatch = content.match(/CWE[:\s-]*(\d+)/i);
-  if (cweMatch) {
-    metadata.cwe = `CWE-${cweMatch[1]}`;
-  }
-
-  // Extract OWASP
-  const owaspMatch = content.match(/(A\d{2}:\d{4})/);
-  if (owaspMatch) {
-    metadata.owasp = owaspMatch[1];
-  }
-
-  // Extract description from first paragraph after title
-  const lines = content.split('\n');
-  let inDescription = false;
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Skip title
-    if (trimmed.startsWith('# ')) continue;
-
-    // Start capturing after Description header or first non-empty line
-    if (trimmed === '## Description') {
-      inDescription = true;
-      continue;
+  // Frontmatter.
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (fmMatch) {
+    const fm = fmMatch[1];
+    const descLine = fm.match(/^description:\s*["']?(.+?)["']?\s*$/m);
+    if (descLine) meta.description = descLine[1].trim();
+    const autofix = fm.match(/^autofix:\s*(\w+)/m);
+    if (autofix) {
+      const v = autofix[1].toLowerCase();
+      if (v === 'true' || v === 'autofix' || v === 'fix') meta.fixable = true;
+      if (v === 'suggestions' || v === 'suggest') meta.suggestions = true;
     }
-
-    if (inDescription && trimmed && !trimmed.startsWith('#')) {
-      metadata.description = trimmed
-        .replace(/TODO:.*$/, '')
-        .replace(/\*\*/g, '')
-        .slice(0, 100);
-      break;
-    }
-
-    // Fallback: first non-header, non-empty line
-    if (!trimmed.startsWith('#') && trimmed && !metadata.description) {
-      metadata.description = trimmed.slice(0, 100);
-    }
+    if (/^deprecated:\s*true/m.test(fm)) meta.deprecated = true;
+    const cweFm = fm.match(/^cwe:\s*["']?(CWE-?\d+)["']?/im);
+    if (cweFm) meta.cwe = cweFm[1].replace(/^CWE-?/, 'CWE-');
+    const owaspFm = fm.match(/^owasp:\s*["']?(A\d{1,2}:?\d{4})["']?/im);
+    if (owaspFm) meta.owasp = owaspFm[1];
   }
 
-  // Check for autofix indicator
-  if (content.includes('🔧') || content.toLowerCase().includes('auto-fix')) {
-    metadata.hasAutofix = true;
+  // Fallbacks if frontmatter was silent.
+  if (!meta.cwe) {
+    const cweBody = content.match(/CWE-(\d+)/);
+    if (cweBody) meta.cwe = `CWE-${cweBody[1]}`;
+  }
+  if (!meta.owasp) {
+    // Restrict to the real Top-10 range A01–A10. A00 appears in some legacy
+    // docs as a "General Security" placeholder and must not propagate into
+    // README rule tables (it's not a real OWASP category).
+    const owaspBody = content.match(/(A(?:0[1-9]|10):\d{4})/);
+    if (owaspBody) meta.owasp = owaspBody[1];
   }
 
-  return metadata;
+  // Clamp description and escape pipes so the markdown table doesn't split.
+  // Backslashes must be escaped BEFORE pipes — otherwise a literal `\` in the
+  // description gets re-interpreted as a markdown escape character (CodeQL:
+  // `js/incomplete-sanitization`).
+  if (meta.description.length > 110) {
+    meta.description = meta.description.slice(0, 107).trimEnd() + '…';
+  }
+  meta.description = meta.description
+    .replace(/\\/g, '\\\\')
+    .replace(PIPE_ESCAPE_RE, '\\|');
+
+  return meta;
 }
 
-/**
- * Extract all rules from a plugin
- */
-function extractPluginRules(pluginName: string): PluginRules | null {
-  const pluginPath = path.join(PACKAGES_DIR, pluginName);
+// ---------------------------------------------------------------------------
+// Table rendering — canonical 11-column schema.
+//   | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+// ---------------------------------------------------------------------------
 
-  if (!fs.existsSync(pluginPath)) {
-    console.warn(`  ⚠️  Plugin ${pluginName} not found`);
-    return null;
-  }
+const TYPE_GLYPH: Record<TypeStatus, string> = {
+  unaware: '🟢',
+  optional: '🟡',
+  aware: '🟠',
+};
 
-  // Short name for rule prefixes (e.g., "crypto" from "eslint-plugin-crypto")
-  const shortName = pluginName.replace('eslint-plugin-', '');
+export function renderRulesTable(
+  rules: RuleMeta[],
+  pluginSlug: string,
+  pillar: Pillar,
+): string {
+  const header = '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
+  const sep = '| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |';
+  const lines = [header, sep];
 
-  console.log(`📦 Processing ${pluginName}`);
-
-  const ruleNames = extractRuleNamesFromIndex(pluginPath);
-  console.log(`  Found ${ruleNames.length} rules in index`);
-
-  const rules: RuleMetadata[] = [];
-
-  for (const ruleName of ruleNames) {
-    const metadata = extractRuleMetadata(pluginPath, ruleName, shortName);
-    if (metadata) {
-      rules.push(metadata);
-    }
-  }
-
-  return {
-    pluginName,
-    shortName,
-    rules,
-  };
-}
-
-// ============================================================================
-// Table Generation
-// ============================================================================
-
-/**
- * Generate Rules Table markdown
- */
-function generateRulesTable(pluginRules: PluginRules): string {
-  const { rules } = pluginRules;
-
-  if (rules.length === 0) {
-    return '(No rules found)';
-  }
-
-  // Table header
-  const lines: string[] = [
-    '| Rule | CWE | OWASP | Description | 💼 | 🔧 | 💡 |',
-    '| --- | --- | --- | --- | --- | --- | --- |',
-  ];
-
-  // Sort rules alphabetically
-  const sortedRules = [...rules].sort((a, b) => a.name.localeCompare(b.name));
-
-  for (const rule of sortedRules) {
-    const ruleLink = `[${rule.name}](docs/rules/${rule.name}.md)`;
-    const cwe = rule.cwe || '-';
-    const owasp = rule.owasp || '-';
-    const desc = rule.description || '-';
-    const recommended = rule.inRecommended ? '💼' : '';
-    const autofix = rule.hasAutofix ? '🔧' : '';
-    const suggestions = rule.hasSuggestions ? '💡' : '';
-
+  const sorted = [...rules].toSorted((a, b) => a.name.localeCompare(b.name));
+  for (const r of sorted) {
+    const url = `${DOCS_BASE_URL}/docs/${pillar}/plugin-${pluginSlug}/rules/${r.name}`;
     lines.push(
-      `| ${ruleLink} | ${cwe} | ${owasp} | ${desc} | ${recommended} | ${autofix} | ${suggestions} |`
+      `| [${r.name}](${url}) | ${r.cwe} | ${r.owasp} | ${r.cvss} | ${r.description} | ${TYPE_GLYPH[r.typeStatus]} | ${r.recommended ? '💼' : ''} | ${r.warns ? '⚠️' : ''} | ${r.fixable ? '🔧' : ''} | ${r.suggestions ? '💡' : ''} | ${r.deprecated ? '🚫' : ''} |`,
     );
   }
-
   return lines.join('\n');
 }
 
-// ============================================================================
-// README Update
-// ============================================================================
+// ---------------------------------------------------------------------------
+// README splicing — replaces the rule-data table (Rule-header row + body)
+// inside the AUTO-GENERATED markers. If markers are missing, locates the
+// existing `| Rule |` header table after the `## Rules` section and inserts
+// markers around it (auto-migration). Idempotent on a second run.
+// ---------------------------------------------------------------------------
 
-/**
- * Update README with generated content
- */
-function updateReadme(pluginPath: string, pluginRules: PluginRules, dryRun: boolean): boolean {
-  const readmePath = path.join(pluginPath, 'README.md');
+// Matches `| Rule | ... |\n| :--- | ... |\n| data... |\n...` — the canonical
+// rule-table block. The dash is escaped (`\-`) to keep it a literal inside
+// the character class; an unescaped `-` between `:` and `|` becomes a range
+// (charcodes 58–124) which excludes the dash and causes the lazy preamble to
+// run past the rule table into the next markdown table.
+const RULE_TABLE_REGEX =
+  /\|\s*Rule\s*\|[^\n]*\n\|[\s:|-]+\|\n(?:\|[^\n]*\|\n?)+/;
 
-  if (!fs.existsSync(readmePath)) {
-    console.warn(`  ⚠️  No README.md found`);
-    return false;
-  }
+export function spliceTable(readme: string, generatedTable: string): { content: string; modified: boolean } {
+  const hasStart = readme.includes(RULES_TABLE_START);
+  const hasEnd = readme.includes(RULES_TABLE_END);
 
-  let content = fs.readFileSync(readmePath, 'utf-8');
-  let modified = false;
-
-  // Generate new rules table
-  const rulesTable = generateRulesTable(pluginRules);
-
-  // Check if delimiters exist
-  const hasRulesDelimiters =
-    content.includes(RULES_TABLE_START) && content.includes(RULES_TABLE_END);
-
-  if (hasRulesDelimiters) {
-    // Replace content between delimiters
-    const startIdx = content.indexOf(RULES_TABLE_START) + RULES_TABLE_START.length;
-    const endIdx = content.indexOf(RULES_TABLE_END);
-
-    if (startIdx < endIdx) {
-      const before = content.slice(0, startIdx);
-      const after = content.slice(endIdx);
-      content = `${before}\n${rulesTable}\n${after}`;
-      modified = true;
-      console.log(`  ✅ Updated Rules Table (${pluginRules.rules.length} rules)`);
+  if (hasStart && hasEnd) {
+    const startIdx = readme.indexOf(RULES_TABLE_START) + RULES_TABLE_START.length;
+    const endIdx = readme.indexOf(RULES_TABLE_END);
+    if (startIdx >= endIdx) {
+      throw new Error('Auto-generated markers are out of order in README');
     }
-  } else {
-    console.log(`  ℹ️  No Rules Table delimiters found - skipping auto-generation`);
-    console.log(`     Add these markers to enable auto-generation:`);
-    console.log(`     ${RULES_TABLE_START}`);
-    console.log(`     ${RULES_TABLE_END}`);
+    const before = readme.slice(0, startIdx);
+    const after = readme.slice(endIdx);
+    const next = `${before}\n${generatedTable}\n${after}`;
+    return { content: next, modified: next !== readme };
   }
 
-  // Check for License delimiter
-  const hasLicenseDelimiters = content.includes(LICENSE_START) && content.includes(LICENSE_END);
-
-  if (hasLicenseDelimiters) {
-    const startIdx = content.indexOf(LICENSE_START) + LICENSE_START.length;
-    const endIdx = content.indexOf(LICENSE_END);
-
-    if (startIdx < endIdx) {
-      const before = content.slice(0, startIdx);
-      const after = content.slice(endIdx);
-      content = `${before}\n${COPYRIGHT_TEMPLATE}\n${after}`;
-      modified = true;
-      console.log(`  ✅ Updated License footer`);
-    }
+  // Auto-migration: find the existing rule-data table and wrap it in markers.
+  // Scope the search to the body of `## Rules` so we don't match unrelated
+  // tables earlier in the README (e.g., parity / compat matrices that also
+  // happen to start with `| Rule |`).
+  const rulesHeadingIdx = readme.search(/^## Rules\b/m);
+  if (rulesHeadingIdx === -1) {
+    throw new Error('Could not locate `## Rules` heading to anchor table search');
   }
-
-  // Write back
-  if (modified && !dryRun) {
-    fs.writeFileSync(readmePath, content);
-    console.log(`  💾 Saved README.md`);
-  } else if (modified && dryRun) {
-    console.log(`  🔍 DRY RUN - would update README.md`);
+  const rulesSection = readme.slice(rulesHeadingIdx);
+  const match = RULE_TABLE_REGEX.exec(rulesSection);
+  if (!match) {
+    throw new Error('Could not locate existing rule-data table to wrap with markers');
   }
-
-  return modified;
+  const tableStart = rulesHeadingIdx + match.index;
+  const tableEnd = tableStart + match[0].length;
+  const before = readme.slice(0, tableStart);
+  const after = readme.slice(tableEnd);
+  const next = `${before}${RULES_TABLE_START}\n${generatedTable}\n${RULES_TABLE_END}${after}`;
+  return { content: next, modified: true };
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
+// Per-plugin driver.
+// ---------------------------------------------------------------------------
+
+export interface ProcessOptions {
+  dryRun: boolean;
+  typeMap: Map<string, TypeStatus>;
+}
+
+export interface ProcessResult {
+  slug: string;
+  ruleCount: number;
+  modified: boolean;
+  skipped?: string;
+  error?: string;
+}
+
+export function processPlugin(entry: PluginEntry, opts: ProcessOptions): ProcessResult {
+  const pluginPath = path.join(PACKAGES_DIR, entry.package);
+  const readmePath = path.join(pluginPath, 'README.md');
+
+  // Read README via try/catch instead of existsSync precheck — closes the
+  // existsSync → readFileSync → writeFileSync TOCTOU window (CodeQL:
+  // `js/file-system-race`). If the directory itself is missing, the read
+  // throws ENOENT and we report that path explicitly.
+  let readme: string;
+  try {
+    readme = fs.readFileSync(readmePath, 'utf-8');
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') {
+      return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'README.md or plugin path missing' };
+    }
+    throw e;
+  }
+
+  // The README rule listing is a user-facing index of *documented* rules.
+  // Alias/preset/compat exports that ship in `src/index.ts` without their
+  // own `docs/rules/<name>.md` file are deliberately excluded so the README
+  // never advertises an undocumented rule. The drift validator separately
+  // confirms every documented rule is also exported.
+  const docsRulesDir = path.join(pluginPath, 'docs', 'rules');
+  let documentedNames: string[] = [];
+  try {
+    documentedNames = fs
+      .readdirSync(docsRulesDir)
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''))
+      .toSorted();
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  if (documentedNames.length === 0) {
+    return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'no rules in docs/rules' };
+  }
+  const recommended = extractRecommendedMap(pluginPath);
+  const rules = documentedNames.map((n) =>
+    extractRuleMetadata(pluginPath, entry.slug, n, recommended, opts.typeMap),
+  );
+
+  const table = renderRulesTable(rules, entry.slug, entry.pillar);
+
+  let result: { content: string; modified: boolean };
+  try {
+    result = spliceTable(readme, table);
+  } catch (e) {
+    return {
+      slug: entry.slug,
+      ruleCount: rules.length,
+      modified: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
+
+  if (result.modified && !opts.dryRun) {
+    fs.writeFileSync(readmePath, result.content);
+  }
+  return {
+    slug: entry.slug,
+    ruleCount: rules.length,
+    modified: result.modified,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // CLI
-// ============================================================================
+// ---------------------------------------------------------------------------
 
 function main(): void {
   const args = process.argv.slice(2);
@@ -335,42 +433,45 @@ function main(): void {
   const pluginIdx = args.indexOf('--plugin');
   const singlePlugin = pluginIdx !== -1 ? args[pluginIdx + 1] : null;
 
-  console.log('🔄 Sync README Rules Tables\n');
+  console.log('🔄 Sync README Rules Tables');
+  if (dryRun) console.log('📋 DRY RUN — no files will be modified');
 
-  if (dryRun) {
-    console.log('📋 DRY RUN MODE - no files will be modified\n');
+  const registry = loadPluginRegistry();
+  const typeMap = loadTypeAwarenessMap();
+  const targets = singlePlugin ? registry.filter((p) => p.slug === singlePlugin) : registry;
+
+  if (targets.length === 0) {
+    console.error(singlePlugin ? `No plugin matches slug "${singlePlugin}"` : 'Registry is empty');
+    process.exit(1);
   }
 
-  const pluginsToProcess = singlePlugin ? [singlePlugin] : PLUGIN_NAMES;
+  let modified = 0;
+  let skipped = 0;
+  let errored = 0;
 
-  let processed = 0;
-  let updated = 0;
-
-  for (const pluginName of pluginsToProcess) {
-    const pluginPath = path.join(PACKAGES_DIR, pluginName);
-
-    if (!fs.existsSync(pluginPath)) {
-      console.log(`⏭️  Skipping ${pluginName} - not found`);
+  for (const entry of targets) {
+    const result = processPlugin(entry, { dryRun, typeMap });
+    if (result.error) {
+      console.error(`✗ ${entry.slug}: ${result.error}`);
+      errored++;
       continue;
     }
-
-    const pluginRules = extractPluginRules(pluginName);
-
-    if (pluginRules) {
-      const wasUpdated = updateReadme(pluginPath, pluginRules, dryRun);
-      processed++;
-      if (wasUpdated) updated++;
+    if (result.skipped) {
+      console.warn(`⏭️  ${entry.slug}: ${result.skipped}`);
+      skipped++;
+      continue;
     }
-
-    console.log();
+    const verb = result.modified ? (dryRun ? 'would update' : 'updated') : 'unchanged';
+    console.log(`${result.modified ? '✓' : '·'} ${entry.slug}: ${result.ruleCount} rules — ${verb}`);
+    if (result.modified) modified++;
   }
 
-  console.log('='.repeat(50));
-  console.log(`✨ Processed ${processed} plugins, updated ${updated}`);
+  console.log('='.repeat(60));
+  console.log(`Processed ${targets.length} — modified ${modified}, skipped ${skipped}, errored ${errored}`);
 
-  if (!dryRun) {
-    console.log(`\nRun 'nx run lint-docs' to validate documentation.`);
-  }
+  if (errored > 0) process.exit(1);
 }
 
-main();
+if (require.main === module) {
+  main();
+}

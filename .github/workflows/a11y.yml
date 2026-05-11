@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Accessibility
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Strict axe-core scan against the apps/docs site, run in both light and dark
+# color schemes across the four route archetypes (home, articles, docs
+# landing, rule page).
+#
+# Tag stack: WCAG 2 A/AA/AAA + WCAG 2.1 + WCAG 2.2 + axe best-practice + ACT.
+#
+# Blocks PR merges on any violation. See apps/docs/A11Y.md for the policy.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'apps/docs/**'
+      - 'packages/ui/**'
+      - '.github/workflows/a11y.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: a11y-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  axe:
+    name: axe-core strict scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          playwright-cache: "true"
+          next-cache: "true"
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/docs
+
+      - name: Build @interlace/ui
+        run: npm run build --workspace=@interlace/ui
+
+      # Playwright's webServer runs `npm run start` in CI (next start), which
+      # requires `.next/` from a production build. Build the docs app once
+      # before invoking the spec so playwright doesn't crash with
+      # "Could not find a production build in the '.next' directory".
+      - name: Build docs (production)
+        run: npm run build --workspace=docs
+
+      - name: Run strict a11y scan (Playwright + axe)
+        run: npm run test:a11y
+        working-directory: apps/docs
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-a11y-report
+          path: apps/docs/playwright-report/
+          retention-days: 14

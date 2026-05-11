@@ -1,1 +1,0 @@
-// Valid example for no-dynamic-require\nexport const valid = true;\n

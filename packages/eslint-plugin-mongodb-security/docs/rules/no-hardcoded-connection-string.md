@@ -30,6 +30,20 @@ Detects hardcoded MongoDB connection strings containing credentials in source co
 | **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) — Use of Hard-coded Credentials (CVSS 7.5 High) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — credentials in version-controlled code are textbook long-tail breach events ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech (regulatory), healthtech (HIPAA database access controls), cybersecurity · **High:** B2B SaaS, infra/devtools · **Medium:** B2C, marketplaces |
+| **Investor-frame impact** | Hardcoded MongoDB connection string → database credentials in repo → on disclosure, full database breach + audit-cycle restart. **SOC2/HIPAA/PCI-DSS all explicitly prohibit this**; rule provides automated control evidence. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:

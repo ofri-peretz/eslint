@@ -25,7 +25,10 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-data-in-cache.md',
       description: 'Prevent caching sensitive data without encryption',
+      cwe: 'CWE-200',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -49,7 +52,8 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
             ['set', 'put', 'store'].includes(node.callee.property.name)) {
           const keyArg = node.arguments[0];
           if (keyArg && keyArg.type === 'Literal') {
-            const key = keyArg.value.toString().toLowerCase();
+            const rawValue = keyArg?.value;
+            const key = (rawValue === undefined || rawValue === null) ? '' : String(rawValue).toLowerCase();
             if (['password', 'token', 'credit', 'ssn'].some(k => key.includes(k))) {
               context.report({ node, messageId: 'violationDetected' });
             }

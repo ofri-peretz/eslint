@@ -16,13 +16,17 @@ type MessageIds = 'hardcodedCredentials';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const CREDENTIAL_KEYS = ['user', 'username', 'pass', 'password', 'auth'];
+const CREDENTIAL_KEYS = new Set(['user', 'username', 'pass', 'password', 'auth']);
 
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent hardcoded MongoDB authentication credentials' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-credentials.md', description: 'Prevent hardcoded MongoDB authentication credentials',
+      cwe: 'CWE-798',
+      cvss: 7.5,
+    },
     hasSuggestions: true,
     messages: {
       hardcodedCredentials: formatLLMMessage({
@@ -42,7 +46,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -57,7 +61,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             ? String(node.key.value)
             : null;
 
-        if (!keyName || !CREDENTIAL_KEYS.includes(keyName.toLowerCase())) {
+        if (!keyName || !CREDENTIAL_KEYS.has(keyName.toLowerCase())) {
           return;
         }
 

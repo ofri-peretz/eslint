@@ -29,7 +29,10 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-http-urls.md',
       description: 'Disallow hardcoded HTTP URLs (require HTTPS)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     messages: {
       insecureHttp: formatLLMMessage({

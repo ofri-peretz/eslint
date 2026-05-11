@@ -30,7 +30,10 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-debug-code-in-production.md',
       description: 'Detect debug code in production',
+      cwe: 'CWE-489',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

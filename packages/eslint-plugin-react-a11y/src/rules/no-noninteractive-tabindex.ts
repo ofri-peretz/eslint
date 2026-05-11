@@ -99,7 +99,10 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-tabindex.md',
       description: 'Enforce that non-interactive elements do not have tabindex',
+      cwe: 'CWE-252',
+      cvss: 5,
     },
     messages: {
       noNoninteractiveTabindex: formatLLMMessage({

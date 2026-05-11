@@ -102,6 +102,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-unsafe-type-narrowing.md',
       description: 'Detects unsafe type narrowing patterns',
     },
     hasSuggestions: true,
@@ -175,7 +176,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, allowWithComment = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -183,7 +184,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check type assertions

@@ -18,6 +18,7 @@ Use this checklist for every rule before release:
 □ Documentation - Complete README, rule docs, CHANGELOG (see §4)
 □ Rule Documentation - Has description, examples, OWASP mapping (see §5)
 □ Coverage Limitations - Follows c8 ignore guidelines (see §6)
+□ ESLint Peer Dep - package.json declares "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0" (see ESLINT_VERSION_SUPPORT.md)
 ```
 
 ---
@@ -35,7 +36,7 @@ Each plugin has a specific scope. Rules must NOT leak across boundaries.
 | Plugin                        | Scope                       | Examples                                       | ❌ NOT Allowed        |
 | ----------------------------- | --------------------------- | ---------------------------------------------- | --------------------- |
 | `eslint-plugin-secure-coding` | Framework-agnostic security | `no-sql-injection`, `no-hardcoded-credentials` | SDK-specific patterns |
-| `eslint-plugin-crypto`        | Cryptographic operations    | `no-weak-cipher`, `require-random-iv`          | JWT handling          |
+| `eslint-plugin-node-security` | Node.js core modules incl. cryptography | `no-weak-cipher-algorithm`, `no-static-iv`, `prefer-native-crypto` | Browser APIs, JWT |
 | `eslint-plugin-jwt`           | JWT token handling          | `no-algorithm-none`, `require-expiration`      | Generic crypto        |
 
 #### Framework-Specific Plugins
@@ -112,13 +113,13 @@ if (node.value.includes('password') || node.value.includes('secret')) {
 
 ```bash
 # Check coverage for a specific plugin
-nx run eslint-plugin-X:test --coverage
+npx turbo run test --filter=eslint-plugin-X -- --coverage
 
 # Check coverage for a specific rule
-nx run eslint-plugin-X:test --coverage -- --testPathPattern="rule-name"
+npx turbo run test --filter=eslint-plugin-X -- --coverage --testPathPattern="rule-name"
 
 # Generate coverage report for Codecov
-nx run-many -t test --coverage --projects='eslint-plugin-*'
+npx turbo run test --filter='eslint-plugin-*' -- --coverage
 ```
 
 ### Required Edge Cases (per rule)
@@ -626,7 +627,7 @@ pluginName.configs.recommended,
 | Plugin                                                                                           |                                                                Downloads                                                                 | Description                       | Rules |
 | ------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------- | :---: |
 | [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10) |  89   |
-| [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic security            |  24   |
+| [`eslint-plugin-node-security`](https://npmjs.com/package/eslint-plugin-node-security)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-node-security.svg)](https://npmjs.com/package/eslint-plugin-node-security)      | Node.js core modules (incl. crypto) |  34   |
 | [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT token handling                |  13   |
 | [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser APIs & DOM                |  21   |
 | [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js framework              |   9   |
@@ -781,31 +782,20 @@ AGENTS.md
 | `*.d.ts`       |        ✅        | TypeScript type definitions                          |
 | `*.js`         |        ✅        | Compiled JavaScript                                  |
 
-#### project.json Assets Configuration
+#### `package.json` `files` Configuration
 
-Every plugin's `project.json` MUST include README.md in the build assets:
+Every plugin's `package.json` MUST include README.md in the published `files` array (Turborepo + npm convention; Nx-era `project.json` `assets` is gone):
 
 ```json
 {
-  "targets": {
-    "build": {
-      "options": {
-        "assets": [
-          "packages/{plugin-name}/README.md", // ← MANDATORY
-          "packages/{plugin-name}/LICENSE",
-          "packages/{plugin-name}/CHANGELOG.md",
-          "packages/{plugin-name}/.npmignore"
-        ]
-      }
-    }
-  }
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
 }
-```
-
-Alternative glob pattern (also acceptable):
-
-```json
-"assets": ["packages/{plugin-name}/*.md", "packages/{plugin-name}/.npmignore"]
 ```
 
 #### Pre-Publish Verification Checklist
@@ -814,27 +804,26 @@ Before running `npm publish`, verify:
 
 ```bash
 # 1. Build the package
-nx run {plugin-name}:build
+npx turbo run build --filter={plugin-name}
 
-# 2. Verify README.md exists in dist
-ls -la dist/packages/{plugin-name}/README.md
+# 2. Pack a tarball locally to inspect what will actually publish
+npm pack --workspace=packages/{plugin-name} --dry-run
 
-# 3. Check README.md content is not empty
-head -20 dist/packages/{plugin-name}/README.md
+# 3. Confirm README.md is in the file list (the `npm pack` dry-run prints it)
 
-# 4. Verify all required files exist
-ls dist/packages/{plugin-name}/ | grep -E "(README|LICENSE|CHANGELOG|package.json)"
+# 4. Verify build output exists
+ls dist/packages/{plugin-name}/
 ```
 
 #### ❌ BLOCKING: Missing README
 
-If `README.md` is missing from the dist folder:
+If `README.md` is missing from the npm tarball:
 
 1. **DO NOT PUBLISH** - npm will show "This package does not have a README"
-2. Check `project.json` assets configuration
+2. Check the `files` array in `packages/{plugin-name}/package.json` includes `"README.md"`
 3. Verify the source `README.md` exists in the package root
-4. Run `nx run {plugin-name}:build --skip-nx-cache` to rebuild
-5. Verify the file was copied to `dist/packages/{plugin-name}/README.md`
+4. Re-run `npx turbo run build --filter={plugin-name} --force` to rebuild without cache
+5. Re-run `npm pack --workspace=packages/{plugin-name} --dry-run` and confirm the file appears
 
 ### CHANGELOG.md Format
 
@@ -999,7 +988,7 @@ Check: No generic patterns in SDK-specific plugins
 ### Step 2: Coverage Analysis
 
 ```bash
-npx nx test {plugin-name} --coverage --testPathPattern="{rule-name}"
+npx turbo run test --filter={plugin-name} -- --coverage --testPathPattern="{rule-name}"
 ```
 
 ```
@@ -1150,3 +1139,4 @@ Always include the year in OWASP references:
 - [Contributing Guide](./CONTRIBUTING.md) - Release process and versioning
 - [Coverage Limitations](./RULETESTER-COVERAGE-LIMITATIONS.md) - c8 ignore patterns
 - [CI/CD Pipeline](./CICD.md) - Automated quality gates
+- [ESLint Version Support Policy](./ESLINT_VERSION_SUPPORT.md) - Which ESLint majors we support, the 20% gate, and the forward-looking exception

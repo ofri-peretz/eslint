@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join, basename, dirname } from 'path';
+import { join } from 'path';
 
 // ============================================================================
 // Configuration

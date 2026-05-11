@@ -1,0 +1,103 @@
+# Claims Registry — `@interlace/eslint-plugin-*`
+
+> Every marketing claim in this repo's docs and home page is mapped here to its evidence file. Format mandated by the [Interlace Evidence Framework](https://github.com/ofri-peretz/agents/blob/main/interlace/evidence-framework.md).
+>
+> If a claim doesn't have a row, it can't ship in the docs. If "Last verified" is older than 90 days, the claim is **stale** and gets a "verification pending" banner in docs until refreshed.
+>
+> Sister registry: [`serverless/CLAIMS.md`](https://github.com/ofri-peretz/serverless/blob/main/CLAIMS.md).
+
+## Verified claims
+
+### Security detection (ilb-arena suite)
+
+| Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
+| --- | --- | --- | --- |
+| "97.6% precision, 100% recall, 98.8% F1 on 40-vuln corpus" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
+| "1st place vs 17 ecosystem plugins" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
+| "Next-best plugin scores 66.1% F1 (eslint-plugin-jsdoc)" | ilb-arena (relative ranking) | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
+
+### ESLint version support
+
+| Claim (as it appears in docs/marketing) | Evidence | Last verified |
+| --- | --- | --- |
+| "Supports ESLint 8, 9 (full); ESLint 10 partial — see caveat below" | All 37 packages declare `peerDependencies.eslint: ^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0`; benchmark fixtures for each major in [`benchmarks/suites/ilb-arena/eslint{8,9,10}-compat/`](benchmarks/suites/ilb-arena/). **Caveat (2026-05-09):** cross-version benchmarking ([`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Level G) found that **140 of 217 Interlace rules (64.5%) use `context.getFilename()` / `context.getSourceCode()` / `context.getCwd()` — APIs removed in ESLint 10**. The peerDependency declaration is overly optimistic; in practice, most Interlace rules will fail at lint time on ESLint 10 with `context.X is not a function`. **Same class of break as eslint-plugin-security@4.0.0** (which we publicly cite as disqualifying for them). Remediation is mechanical (`context.getFilename()` → `context.filename`, etc.) and tracked as Open Item #6 in [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) §6.5. ESLint 8 + 9 support is unaffected. | 2026-05-09 |
+| "Supported majors cover ~94% of weekly ESLint downloads" | 60.4% (v9) + 24.3% (v8) + 9.2% (v10) per npm registry; refresh via `npm run stats:eslint-versions` | 2026-05-09 |
+
+### Performance — circular dependency detection (ilb-perf-import-no-cycle suite)
+
+| Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
+| --- | --- | --- | --- |
+| "import-next is 3.1x faster end-to-end than eslint-plugin-import on a 5,483-file React codebase" | ilb-perf-import-no-cycle (real-codebase: snappy-dashboard) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
+| "8x faster in pure rule execution time" | ilb-perf-import-no-cycle | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
+| "Cycle detection completes in ~4.9s on 455K LoC" | ilb-perf-import-no-cycle (Phase 6 ruleTimeMs) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
+| "Negligible memory overhead (<50 MB)" | ilb-perf-import-no-cycle (peakRssMb) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
+| "100% detection parity with official plugin" | ilb-perf-import-no-cycle (detection accuracy) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
+| "Synthetic-corpus 25.7x speedup at 1K files" | ilb-perf-import-no-cycle (synthetic) | [2026-01-02.json](benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json) | 2026-01-02 (re-verify recommended — > 90 days) |
+
+### CI/CD impact framework — value, philosophy, methodology
+
+These are framework-level claims, not measurement claims. The "evidence" is the published artifact; the "last verified" date is the last time the artifact was reviewed for org-agnosticism (no internal data leaked) and citation freshness.
+
+| Claim (as it appears in docs/marketing) | Artifact | Source | Last verified |
+| --- | --- | --- | --- |
+| "Value of static code analysis grounded in Buffett/Munger + software-industry leaders, satisfying both the capitalist and humanist tests" | [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) | 35 numbered sources (Aristotle → Andreessen) | 2026-05-09 |
+| "Three-axis CI/CD impact model — money, velocity, deliverability — plus an investor frame mapping each axis to burn efficiency / lead-to-revenue / CFR-driven churn / M&A tech-DD" | [`cicd-impact/philosophy.md`](cicd-impact/philosophy.md) | DORA 2024, Mark/Gloria/Klocke 2008, Reinertsen 2009, BLS, Levels.fyi, Atlassian, CircleCI 2023 | 2026-05-09 |
+| "Defendable `$/CI minute` formula — `(D × R × W) × (1 + S/T_pipeline) × (1 + F × K)` — every coefficient measurable or cited" | [`cicd-impact/methodology.md`](cicd-impact/methodology.md) | 15 numbered sources in [`cicd-impact/research/sources.md`](cicd-impact/research/sources.md) | 2026-05-09 |
+| "Forkable calculator: any GitHub Actions repo can produce its own `$/CI minute` headline + 9-sheet executive XLSX without code changes" | [`cicd-impact/scripts/`](cicd-impact/scripts/) (01–05) | Synthetic fixtures in [`cicd-impact/data/fixtures/`](cicd-impact/data/fixtures/) | 2026-05-09 |
+| "Eight-niche investor-expectations table with auditable budget-derivation methodology — per-niche recommendations land within the published ranges using a four-factor formula plugged with primary-source per-industry data" | [`cicd-impact/philosophy.md`](cicd-impact/philosophy.md) "Investor expectations and recommended static-analysis investment by software niche" + "How the niche-budget recommendations were derived" | DORA 2024, IBM Cost of a Data Breach, Bessemer, OpenView, a16z by sector, Verizon DBIR | 2026-05-09 |
+| "Per-niche calculator presets loadable directly into `inputs.yml` and `report-data.json` — 10 niches, each with investor metrics, recommended budget range, expected velocity uplift, and static-analysis priority" | [`cicd-impact/data/niche-presets.json`](cicd-impact/data/niche-presets.json) | Cross-references `cicd-impact/philosophy.md` niche table | 2026-05-09 |
+| "Vendor-neutral six-dimension analyzer-evaluation framework — same scorecard applies to SonarQube / Snyk / CodeQL / Semgrep / our plugins; structurally answers vendor-conflict skepticism" | [`cicd-impact/analyzer-evaluation-framework.md`](cicd-impact/analyzer-evaluation-framework.md) | NIST SARD / Juliet, OWASP Benchmark v1.2 methodology | 2026-05-09 |
+| "Hostile-review survival: 7 attacks named, 5 fully defended, 2 explicitly conceded as open items, with Bradford Hill causal-inference assessment for the CFR feedback loop (7 of 9 criteria met)" | [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) §6.5 | Bradford Hill 1965; DORA 2024 longitudinal; Reinertsen 2009 mechanism; Kleinrock 1975 | 2026-05-09 |
+| "Seven falsifiable predictions with stated horizons — each prediction names the data signal that would falsify it and the philosophy section at stake if it fails" | [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) §6.6 | Self-imposed; tracked across DORA reports / npm download stats / IBM annual breach reports | 2026-05-09 |
+| "Eats own dog food: framework runs end-to-end on its own monorepo with real GitHub Actions data, producing $6.25/CI minute · $2,000 annualised over a 180-day window with 119 runs" | [`cicd-impact/dogfood-case-study.md`](cicd-impact/dogfood-case-study.md) | Real `gh api` data from `ofri-peretz/eslint`; framework output validated end-to-end | 2026-05-09 |
+| "Continuous worked example demonstrating the full chain from value-philosophy → philosophy → niche-preset → calculator → board-narrative for an 80-engineer fintech (Acme Pay) producing a $180K/year headline with $1.56M ARR-at-risk and a 3.5× year-1 ROI on a 3% lint-budget recommendation" | [`cicd-impact/worked-example.md`](cicd-impact/worked-example.md) | Cross-references all other framework docs; numbers fall inside published per-niche ranges | 2026-05-09 |
+| "Bradford Hill causal-inference assessment: 7 of 9 epidemiological criteria for inferring causation from observational evidence are met for the slow-CI → high-CFR feedback loop, with criterion 8 (controlled experiment) explicitly open" | [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) §6.5 Attack 4 | Bradford Hill 1965; DORA 2024 longitudinal; CircleCI 2023; GitLab 2024; Reinertsen 2009; Kleinrock 1975 | 2026-05-09 |
+| "Auditable niche-budget derivation: four-factor formula (`base_pct × cfr_severity × disclosure_cost × deploy_freq × efficacy`) with each multiplier traced to a primary source; three worked derivations match published table within ±0.3pp" | [`cicd-impact/philosophy.md`](cicd-impact/philosophy.md) "How the niche-budget recommendations were derived" | McKinsey DVI; DORA 2024; IBM Cost of a Data Breach 2024 | 2026-05-09 |
+| "Explicit scope limits: 7 named regimes where this philosophy does NOT apply (solo developer, throwaway prototype, internal tools, regulated mandated tooling, sunsetting codebase, research codebase, pre-revenue seed startup), each with what-still-applies guidance" | [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) §6.7 | Self-imposed scope discipline | 2026-05-09 |
+| "Rule-level economic case for 17 strategic rules across 8 plugins (secure-coding, crypto, node-security, express-security, pg, mongodb-security, lambda-security, vercel-ai-security) — each rule's docs include a Value & investment case section linking CWE, feedback-loop tier, defensive-layer leverage, niche relevance, and investor-frame impact back to the cicd-impact framework" | Each rule's `docs/rules/<rule>.md` | Per-rule CWE / OWASP / CVE references; framework anchors in `cicd-impact/philosophy.md` | 2026-05-09 |
+| "v0 competitor scorecard: analyzer-evaluation framework applied to ourselves and 7 competitors with real precision/recall data, maintenance, adoption stats, and honest losses (our distribution is ~1/1500 of the most-adopted competitor; competitor latency comparison is a v1 deliverable)" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) | ILB-Arena 2026-05-03 (40-vuln corpus); npm registry; published plugin documentation | 2026-05-09 |
+| "Within-repo workflow cohort: same `ofri-peretz/eslint` repo, four workflows (`ci-pr.yml`, `lint-pr.yml`, `quality.yml`, `benchmark.yml`), four meaningfully-different unit costs ($0.48–$12.18/min) — confirms the framework differentiates by workflow shape. Reveals dog-food single-workflow figure was a lower bound: real per-developer-action cost is 2–3× higher when the gate-blocking quality.yml workflow is included" | [`cicd-impact/workflow-cohort-case-study.md`](cicd-impact/workflow-cohort-case-study.md) | Real `gh api` data from `ofri-peretz/eslint`, 180-day window, 4 workflows | 2026-05-09 |
+| "Pre-registered seven falsifiable predictions (P1–P7) with frozen 2026-05-09 wording, horizons, and falsification signals — git-tag-ready (`predictions-v1-2026-05-09`); pre-registration discipline borrowed from OSF / Good Judgment Project" | [`cicd-impact/predictions-registry.md`](cicd-impact/predictions-registry.md) | Self-imposed scientific-replication discipline | 2026-05-09 |
+| "v0 scorecard latency dimension measured: median wall-clock for 5 working competitor plugins on 30-file ILB corpus (sonarjs 559 ms · microsoft-sdl 523 ms · no-secrets 319 ms · no-unsanitized 312 ms · security-node 325 ms · baseline 453 ms). All comfortably under 1-s editor-loop threshold. **eslint-plugin-security@4.0.0 crashes on ESLint 9** with `context.getScope is not a function` — disqualified for functional currency on the current host-runtime major version" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level A | Direct measurement: ESLint 9.39.2, Node 24.12.0, 1 warmup + 3 timed runs; eslint-plugin-security stack trace from `npx eslint` invocation | 2026-05-09 |
+| "Interlace measured at 1.02 ms/file on the same 40-file ILB corpus via programmatic ESLint API — tied with eslint-plugin-sonarjs on per-file latency (1.03 ms/file) but catches 2.7× more issues (43 vs 16). Closes the largest honest-loss in the v0 scorecard's latency dimension" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level B | Direct measurement: programmatic ESLint Linter API + CJS resolution shim ([`scripts/cjs-resolve-shim.cjs`](cicd-impact/scripts/cjs-resolve-shim.cjs)) + ESM loader hook ([`scripts/loader-hook.mjs`](cicd-impact/scripts/loader-hook.mjs)) + bench script ([`scripts/latency-bench.mjs`](cicd-impact/scripts/latency-bench.mjs)); 11 Interlace plugins fully loaded from built `dist/src/index.js` artifacts | 2026-05-09 |
+| "Large-corpus measurement on real-world code (1,046-file lodash, ~50K LoC): Interlace's full 11-plugin security fleet at 0.94 ms/file is **2.0× faster than eslint-plugin-sonarjs (1 plugin) at 1.90 ms/file**, while catching **5.1× more issues** (1,351 vs 267). Plugins with low ILB-Arena F1 (eslint-plugin-security 0%, no-secrets 5%, no-unsanitized 5%) caught 0 issues on lodash — corroborating the 'adoption ≠ efficacy' finding on a real codebase, not just a synthetic corpus" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level C | Direct measurement on `node_modules/lodash`: programmatic ESLint Linter + CJS shim + ESM loader-hook + bench script with `--expose-gc` and heap-delta tracking | 2026-05-09 |
+| "Signal-to-noise ratio measured on the matched ILB safe/vulnerable corpus (24+24 files): Interlace **41 fires on vulnerable / 5 fires on safe = 8.2 : 1 S/N**, vs eslint-plugin-sonarjs 26 / 18 = 1.4 : 1 (~6× lower). Sonarjs fires on **75% of safe files** — the canonical alert-fatigue pattern. eslint-plugin-security@4.0.0 produces **0 fires in either direction** on this corpus, confirming its 0% F1 from ILB-Arena on a different fixture set" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level D | Direct measurement on `benchmarks/corpus/{*,*}/safe` and `benchmarks/corpus/{*,*}/vulnerable` with `CORPUS_FILTER` env in `latency-bench.mjs` | 2026-05-09 |
+| "Multi-corpus latency speedup is consistent at 2.0× — 3.1× across lodash / axios / jsdom / date-fns. Recall ratio is corpus-shape-dependent: 11.2× more findings than sonarjs on jsdom (security-heavy), 5.1× on lodash, 1.7× on axios, **0.5× on date-fns (sonarjs ahead — pure-functional date math has more code-quality issues than security issues)**. Honest loss preserved" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level E | Direct measurement on `node_modules/{lodash,axios,jsdom,date-fns}` with `CORPUS=` env in `latency-bench.mjs` | 2026-05-09 |
+| "Per-rule TIMING attribution within Interlace on lodash: top hot rule `secure-coding/no-improper-type-validation` accounts for **26.5% of all rule-time** (140.8 ms / 532 ms total rule-time); top 5 rules account for ~45%. Optimisation roadmap is concrete and published — anyone can verify the math" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level F · [`cicd-impact/scripts/per-rule-timing.mjs`](cicd-impact/scripts/per-rule-timing.mjs) · [`cicd-impact/outputs/per-rule-timing.json`](cicd-impact/outputs/per-rule-timing.json) | Custom listener-wrapping instrumentation; 207 Interlace rules enabled simultaneously; lodash 1,046-file corpus | 2026-05-09 |
+| "Cross-ESLint-version honest finding: 140 of 217 Interlace rules (64.5%) use `context.getFilename()` / `context.getSourceCode()` / `context.getCwd()` — removed in ESLint 10. Same class of break as eslint-plugin-security@4.0.0 (which we cite as disqualifying for them). The peerDependency declaration `^10.0.0` is overly optimistic; remediation is mechanical and **a pre-staged migration runbook is published at [`cicd-impact/eslint10-migration-runbook.md`](cicd-impact/eslint10-migration-runbook.md)** — two-phase sed + 5-step verification + rollback plan. Status: ⏸️ awaiting maintainer authorisation to run" | [`cicd-impact/v0-competitor-scorecard.md`](cicd-impact/v0-competitor-scorecard.md) Dimension 3 Level G · [`cicd-impact/scripts/eslint10-compat-test.mjs`](cicd-impact/scripts/eslint10-compat-test.mjs) · [`cicd-impact/eslint10-migration-runbook.md`](cicd-impact/eslint10-migration-runbook.md) | Direct measurement: ESLint 10.3.0 from `benchmarks/suites/ilb-arena/eslint10-compat/node_modules/eslint`; static analysis via `grep` on `packages/eslint-plugin-*/dist/src/rules/` and `packages/eslint-plugin-*/src/rules/` for removed-API usage | 2026-05-10 |
+
+## Honest losses (preserved)
+
+These are measured outcomes where Interlace lost or didn't yet meet a goal. Per framework anti-pattern policy, we report and keep them visible:
+
+| Statement | Where measured | Status |
+| --- | --- | --- |
+| "import-next is still 3.6x slower than the inline naive-DFS custom rule" | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) `kpiStatus.vsNaiveDFS` | Reported. Naive DFS is structural floor; closing the gap is roadmap Phase 7+ |
+| "es-module-lexer Phase 5 ABANDONED — can't parse JSX" | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) `phases[4].status: "abandoned"` | Decision documented; no silent drop |
+
+## Pending claims (require new suites)
+
+| Claim | Required suite | Status |
+| --- | --- | --- |
+| "Lower false-positive rate than eslint-plugin-security" | ilb-arena (already covers) | Verified — see ilb-arena 2026-05-03.json `plugins.eslint-plugin-security.scores.precision` |
+| "First-fix accuracy improvement from V2 formatter" (Phase 7 of report) | New: `ilb-formatter-eval` (LLM eval harness) | Not started — see [no-cycle-performance-roadmap.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/no-cycle-performance-roadmap.md) |
+| "Compact-mode tokens are 6% cheaper than V1" | Token-counter test | Verified statically (tiktoken o200k) — see Phase 7 of [2026-05-03-snappy-dashboard.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/2026-05-03-snappy-dashboard.md) — needs JSON capture |
+| "Native ESLint 9 concurrency speedup" | Future ilb-perf-eslint9 suite | Not started; depends on ESLint 9 migration |
+
+## How to add a new claim
+
+1. **Don't write the marketing copy first.** Build (or extend) the benchmark first; ensure it produces a measurable result for our plugin and at least one competitor.
+2. Add a row to "Verified claims" above with: claim text, suite name, latest result link, today's date.
+3. Add the marketing copy to docs / home page.
+4. (Recommended) cross-link from the docs page to the benchmark result so curious readers can audit.
+
+## How to refresh a claim
+
+1. Re-run the benchmark from `eslint/benchmarks/`.
+2. Commit the new dated JSON in `benchmarks/results/<suite>/`.
+3. Bump the "Last verified" date in this table.
+4. If a number changed (we won, we lost, scores moved), update the docs copy to match — never let docs and benchmarks disagree.
+
+## Refusing claims
+
+The repo policy (per evidence framework) is: **claims without rows here are not allowed in docs.** When tempted to add unbacked copy, route the instinct into a row in "Pending claims" instead and queue the suite that would back it.

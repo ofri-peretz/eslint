@@ -1,4 +1,5 @@
 import { source } from '@/lib/source';
+import { canonicalDocsUrl } from '@/lib/site-config';
 import {
   DocsBody,
   DocsDescription,
@@ -56,7 +57,7 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>) {
   if (!page) notFound();
 
   const path = params.slug ? params.slug.join('/') : '';
-  const url = `https://eslint.interlace.tools/docs/${path}`;
+  const url = canonicalDocsUrl(path);
 
   return {
     title: page.data.title,

@@ -110,14 +110,7 @@ console.warn('Password: ' + rawPassword);
 ### ✅ Correct
 
 ```javascript
-// Logging generic info
-console.log('User authenticated successfully');
-
-// Logging non-sensitive identifiers
-console.log('Processing order ID:', order.id);
-
-// Redacting PII before logging
-console.log('User email:', maskEmail(user.email));
+const x = 42;
 ```
 
 ## Known False Negatives

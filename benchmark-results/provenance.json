@@ -1,0 +1,2128 @@
+{
+  "generatedAt": "2026-05-11T06:27:51.517Z",
+  "summary": {
+    "totalSecurityRules": 207,
+    "rulesWithProvenance": 18,
+    "coveragePct": 9,
+    "rulesMissingProvenance": 189
+  },
+  "rules": [
+    {
+      "ruleId": "browser-security/detect-mixed-content",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-allow-arbitrary-loads",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-clickjacking",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-client-side-auth-logic",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-cookie-auth-tokens",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-credentials-in-query-params",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-disabled-certificate-validation",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-dynamic-service-worker-url",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-eval",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-filereader-innerhtml",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-http-urls",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-innerhtml",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-27316",
+        "CVE-2023-26136"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "browser-security/no-insecure-redirects",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-insecure-websocket",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-jwt-in-storage",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-missing-cors-check",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-missing-csrf-protection",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-missing-security-headers",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-password-in-url",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-permissive-cors",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-21505"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-innerhtml",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-wildcard-origin",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-cookie-js",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-analytics",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-cache",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-indexeddb",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-localstorage",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-sessionstorage",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-tracking-without-consent",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-unencrypted-transmission",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-unescaped-url-parameter",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-eval-csp",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-inline-csp",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-unvalidated-deeplinks",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-websocket-eval",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-websocket-innerhtml",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/no-worker-message-innerhtml",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-blob-url-revocation",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-cookie-secure-attrs",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-csp-headers",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-https-only",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-mime-type-validation",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-postmessage-origin-check",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-url-validation",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "browser-security/require-websocket-wss",
+      "plugin": "browser-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-hardcoded-crypto-key",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-key-reuse",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-math-random-crypto",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-numeric-only-tokens",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-predictable-salt",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/no-web-crypto-export",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/require-authenticated-encryption",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/require-key-length",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/require-random-iv",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/require-secure-pbkdf2-digest",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "crypto/require-sufficient-length",
+      "plugin": "crypto",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-cors-credentials-wildcard",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-exposed-debug-endpoints",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-express-unsafe-regex-route",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-graphql-introspection-production",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-insecure-cookie-options",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/no-permissive-cors",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-21505"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "express-security/require-csrf-protection",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/require-express-body-parser-limits",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "express-security/require-helmet",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2017-16614"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "express-security/require-rate-limiting",
+      "plugin": "express-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-algorithm-confusion",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-algorithm-none",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2015-9235",
+        "CVE-2022-23529"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "jwt/no-decode-without-verify",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-hardcoded-secret",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-sensitive-payload",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-timestamp-manipulation",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/no-weak-secret",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2022-23529"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "jwt/require-algorithm-whitelist",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/require-audience-validation",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/require-expiration",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/require-issued-at",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/require-issuer-validation",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "jwt/require-max-age",
+      "plugin": "jwt",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-env-logging",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-error-swallowing",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-debug-endpoints",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-error-details",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-hardcoded-credentials-sdk",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-missing-authorization-check",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-overly-permissive-iam-policy",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-middy",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-response",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-secrets-in-env",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-unbounded-batch-processing",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-unvalidated-event-body",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/no-user-controlled-requests",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "lambda-security/require-timeout-handling",
+      "plugin": "lambda-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-bypass-middleware",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-debug-mode-production",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-connection-string",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-credentials",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-operator-injection",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-select-sensitive-fields",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-unbounded-find",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-populate",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-query",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2019-10854",
+        "CVE-2024-29415"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-regex-query",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-where",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/require-auth-mechanism",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/require-lean-queries",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/require-projection",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/require-schema-validation",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "mongodb-security/require-tls-connection",
+      "plugin": "mongodb-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/no-exposed-private-fields",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/no-missing-validation-pipe",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/require-class-validator",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/require-guards",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "nestjs-security/require-throttler",
+      "plugin": "nestjs-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/detect-child-process",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/detect-eval-with-expression",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/detect-non-literal-fs-filename",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/detect-suspicious-dependencies",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/lock-file",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-arbitrary-file-access",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-buffer-overread",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-cryptojs",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-cryptojs-weak-random",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-data-in-temp-storage",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-deprecated-buffer",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-deprecated-cipher-method",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-dynamic-dependency-loading",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-dynamic-require",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-ecb-mode",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-insecure-key-derivation",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-insecure-rsa-padding",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-pii-in-logs",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-self-signed-certs",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-sha1-hash",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-ssrf",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2018-3737",
+        "CVE-2024-21512"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "node-security/no-static-iv",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-timing-unsafe-compare",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-toctou-vulnerability",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-unsafe-dynamic-require",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-weak-cipher-algorithm",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-weak-hash-algorithm",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/no-zip-slip",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/prefer-native-crypto",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/require-dependency-integrity",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/require-secure-credential-storage",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/require-secure-deletion",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "node-security/require-storage-encryption",
+      "plugin": "node-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/check-query-params",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-batch-insert-loop",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-floating-query",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-hardcoded-credentials",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2018-9989"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "pg/no-insecure-ssl",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2020-7733"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "pg/no-missing-client-release",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-select-all",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-transaction-on-pool",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-23645"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "pg/no-unsafe-copy-from",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/no-unsafe-query",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2017-7536",
+        "CVE-2024-7340"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "pg/no-unsafe-search-path",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/prefer-pool-query",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "pg/prevent-double-release",
+      "plugin": "pg",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2019-15604"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "secure-coding/detect-non-literal-regexp",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/detect-object-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2019-10744",
+        "CVE-2018-16487",
+        "CVE-2022-24999"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "secure-coding/detect-weak-password-validation",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-directive-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-electron-security-issues",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-format-string-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-graphql-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-credentials",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2018-9989",
+        "CVE-2021-3162",
+        "CVE-2022-1388"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-session-tokens",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-improper-sanitization",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-improper-type-validation",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-insecure-comparison",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-ldap-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-missing-authentication",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-pii-in-logs",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-privilege-escalation",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-redos-vulnerable-regex",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-sensitive-data-exposure",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-unchecked-loop-condition",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-unlimited-resource-allocation",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-deserialization",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2017-1002101",
+        "CVE-2019-7609"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-regex-construction",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-weak-password-recovery",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-xpath-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/no-xxe-injection",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/require-backend-authorization",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "secure-coding/require-secure-defaults",
+      "plugin": "secure-coding",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-dynamic-system-prompt",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-hardcoded-api-keys",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-sensitive-in-prompt",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-system-prompt-leak",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-training-data-exposure",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/no-unsafe-output-handling",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-21513",
+        "CVE-2024-46451"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-abort-signal",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-audit-logging",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-embedding-validation",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-error-handling",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-steps",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-tokens",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-output-filtering",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-output-validation",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-rag-content-validation",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-request-timeout",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [
+        "CVE-2024-46451"
+      ],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": true
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-confirmation",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-schema",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    },
+    {
+      "ruleId": "vercel-ai-security/require-validated-prompt",
+      "plugin": "vercel-ai-security",
+      "isSecurityPlugin": true,
+      "cveExamples": [],
+      "sources": {
+        "fromRule": false,
+        "fromSeed": false
+      }
+    }
+  ]
+}

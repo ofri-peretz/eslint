@@ -19,6 +19,7 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-access-state-in-setstate.md',
       description: 'Disallow accessing this.state inside setState calls',
     },
     schema: [],

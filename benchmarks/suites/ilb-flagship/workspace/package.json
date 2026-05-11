@@ -1,0 +1,28 @@
+{
+  "name": "@interlace/ilb-flagship-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Hermetic install of all flagship + competitor plugins so we don't touch OSS repo node_modules.",
+  "type": "module",
+  "dependencies": {
+    "eslint-plugin-import-next": "*",
+    "eslint-plugin-pg": "*",
+    "eslint-plugin-secure-coding": "*",
+    "eslint-plugin-mongodb-security": "*",
+    "eslint-plugin-jwt": "*",
+    "eslint-plugin-browser-security": "*",
+    "eslint-plugin-react-features": "*",
+    "eslint-plugin-react-a11y": "*",
+    "eslint-plugin-vercel-ai-security": "*",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-no-secrets": "^1.0.2",
+    "eslint-plugin-regexp": "^2.6.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-jsx-a11y": "^6.10.0",
+    "@typescript-eslint/parser": "^8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "oxlint": "^1.0.0"
+  }
+}

@@ -15,6 +15,7 @@
  * It relies on node-utils for low-level system operations.
  */
 import { resolveModule } from './resolver';
+import { realpathSync } from 'node:fs';
 import { ResolverSetting } from './resolver-adapter';
 import {
   fileExistsSync,
@@ -40,8 +41,13 @@ import {
 /**
  * Maximum entries in LRU cache before eviction
  * eslint-plugin-import uses similar approach for their ExportMap cache
+ *
+ * PERFORMANCE: Sized for large codebases (5K+ files × ~10 imports = ~50K entries).
+ * A too-small cache causes thrashing: every evicted entry requires a full
+ * re-resolution through the resolver pipeline (enhanced-resolve, getTsconfig,
+ * extension fan-out). Memory cost is ~2KB per entry, so 50K ≈ 100MB max.
  */
-const LRU_MAX_SIZE = 1000;
+const LRU_MAX_SIZE = 50_000;
 
 /**
  * Quick check patterns for skipping external modules early
@@ -118,6 +124,25 @@ const DYNAMIC_IMPORT_REGEX = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
  * Matches: import type { x } from 'y'
  */
 const TYPE_IMPORT_REGEX = /import\s+type\s/;
+
+/**
+ * Pre-compiled regex for re-exports (export … from '…').
+ *
+ * Re-exports establish runtime import edges. The cycle in next.js's
+ * `client/router.ts` ↔ `client/with-router.tsx` propagates ENTIRELY through
+ * re-exports — without this regex our DFS doesn't see the edge and misses
+ * the cycle (verified against oxlint native, which catches it).
+ *
+ * Negative lookahead `(?!type[\s{])` excludes `export type ... from` —
+ * those are erased at compile time and don't cause runtime cycles.
+ */
+const EXPORT_FROM_REGEX = /(?:^|[\s;])export\s+(?!type[\s{])[\w*{}\s,]+from\s+['"]([^'"]+)['"]/gm;
+
+/**
+ * Default extensions for import resolution.
+ * Module-level constant to avoid allocating a new array per resolve call.
+ */
+const DEFAULT_EXTENSIONS: string[] = ['.ts', '.tsx', '.js', '.jsx'];
 
 // =============================================================================
 // LRU Cache Implementation (inspired by eslint-plugin-import's caching)
@@ -264,13 +289,28 @@ export interface FileSystemCache {
    * Resolved import paths cache (LRU)
    * Key: `${fromFile}::${importPath}`, Value: resolved path or null
    * This avoids re-resolving the same import from the same file
+   *
+   * PERFORMANCE: Uses plain Map instead of LRU cache. The LRU's
+   * delete+re-insert on every get() was 3x overhead at 40K+ calls.
+   * Within a lint run, memory is bounded by codebase size (~50K entries ≈ 2MB).
    */
-  resolvedPaths: LRUCache<string, string | null>;
+  resolvedPaths: Map<string, string | null>;
   /**
    * Files known to not be in any cycle (optimization)
    * Once a file is confirmed to not be in a cycle, we can skip SCC check for it
    */
   nonCyclicFiles: Set<string>;
+  /**
+   * Pending cycle reports keyed by *member* file path. Populated when ANY
+   * file's DFS discovers a cycle: every member of the discovered cycle gets
+   * a pending entry. When ESLint later lints that member, the rule flushes
+   * the entry as a diagnostic at `Program:exit`.
+   *
+   * This is what closes the with-router.tsx gap — without it, only the file
+   * whose DFS discovered the cycle gets the diagnostic, and ordering
+   * sometimes leaves other members silent.
+   */
+  pendingCycleReports: Map<string, Array<{ minimalCycle: string[]; cycleHash: string }>>;
 }
 
 /**
@@ -287,8 +327,9 @@ export function createFileSystemCache(): FileSystemCache {
     sccs: [],
     sccComputed: false,
     graphHash: '',
-    resolvedPaths: new LRUCache<string, string | null>(LRU_MAX_SIZE),
+    resolvedPaths: new Map<string, string | null>(),
     nonCyclicFiles: new Set(),
+    pendingCycleReports: new Map(),
   };
 }
 
@@ -305,8 +346,9 @@ export function clearCache(cache: FileSystemCache): void {
   cache.sccs = [];
   cache.sccComputed = false;
   cache.graphHash = '';
-  cache.resolvedPaths.clear();
+  cache.resolvedPaths = new Map<string, string | null>();
   cache.nonCyclicFiles.clear();
+  cache.pendingCycleReports.clear();
 }
 
 /**
@@ -430,31 +472,45 @@ export function resolveImportPath(
   importPath: string,
   options: ResolveOptions,
 ): string | null {
-  const {
-    fromFile,
-    extensions = ['.ts', '.tsx', '.js', '.jsx'],
-    cache,
-    resolverSettings,
-  } = options;
+  const fromFile = options.fromFile;
+  const extensions = options.extensions || DEFAULT_EXTENSIONS;
+  const cache = options.cache;
+  const resolverSettings = options.resolverSettings;
 
   // OPTIMIZATION 1: Quick external check (no fs access needed)
   // This avoids unnecessary file system calls for packages like 'lodash', 'react', etc.
-  // We skip this for paths starting with @ to ensure we check tsconfig paths/aliases
-  if (isDefinitelyExternal(importPath) && !importPath.startsWith('@')) {
-    return null;
+  if (isDefinitelyExternal(importPath)) {
+    // For @-scoped imports, we can't use isDefinitelyExternal alone
+    // because @app/foo (internal alias) looks like @testing-library/react (external).
+    // We still skip the external check for these and let the resolver handle them.
+    if (!importPath.startsWith('@')) {
+      return null;
+    }
   }
 
-  // OPTIMIZATION 2: Check resolved paths cache (LRU)
-  const cacheKey = `${fromFile}::${importPath}`;
+  // OPTIMIZATION 2a: For non-relative imports, use a global cache keyed by
+  // just the import specifier. Non-relative imports (like @app/utils, react)
+  // resolve to the same path regardless of which file imports them in a
+  // single-tsconfig project. This turns ~14K resolution calls into ~400.
+  const isRelative = importPath.startsWith('.');
+  if (!isRelative) {
+    const globalCached = cache.resolvedPaths.get(importPath);
+    if (globalCached !== undefined) {
+      return globalCached;
+    }
+  }
+
+  // OPTIMIZATION 2b: Per-file cache for relative imports (./foo varies by dir)
+  const cacheKey = isRelative ? `${fromFile}::${importPath}` : importPath;
   const cached = cache.resolvedPaths.get(cacheKey);
   if (cached !== undefined) {
     return cached;
   }
 
-  // Use the new robust resolver (Priority 2 implementation)
+  // Use the robust resolver
   // This supports:
   // 1. TypeScript paths (tsconfig.json)
-  // 2. Webpack aliases (via enhanced-resolve/tsconfig)
+  // 2. Webpack aliases (via oxc-resolver/tsconfig)
   // 3. Package.json exports
   // 4. Monorepo resolution
   let result = resolveModule(importPath, fromFile, {
@@ -465,8 +521,30 @@ export function resolveImportPath(
     resolverSettings,
   });
 
+  // OPTIMIZATION 3: If non-relative import resolved to node_modules, treat as external.
+  // This prevents the DFS from traversing into external packages.
+  //
+  // CAVEAT: In monorepos, workspace packages are often symlinked into
+  // node_modules (e.g., pnpm/npm workspaces). We use realpathSync to check
+  // if the file truly lives in node_modules vs being a symlinked local package.
+  if (result && !isRelative && result.includes('node_modules')) {
+    try {
+      const realPath = realpathSync(result);
+      if (realPath.includes('node_modules')) {
+        cache.resolvedPaths.set(cacheKey, null);
+        return null;
+      }
+      // Symlinked workspace package — use the real path for DFS traversal
+      result = realPath;
+    } catch {
+      // realpathSync failed (broken symlink, etc.) — treat as external
+      cache.resolvedPaths.set(cacheKey, null);
+      return null;
+    }
+  }
+
   // Fallback for relative imports that don't exist (useful for error reporting)
-  if (!result && importPath.startsWith('.')) {
+  if (!result && isRelative) {
     // We can't know the extension, but we can return the absolute path base
     // This matches what tests expect for non-existent files
     result = resolvePath(getDirname(fromFile), importPath);
@@ -510,12 +588,14 @@ export function getFileImports(
 ): ImportInfo[] {
   const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
 
-  // Check if we have a valid cached result
-  if (isCacheValid(file, cache)) {
-    const cached = cache.dependencies.get(file);
-    if (cached) {
-      return cached;
-    }
+  // PHASE 6 OPTIMIZATION: Within a single lint run, files don't change.
+  // Skip the expensive isCacheValid (which calls statSync per file) and
+  // just check if we already have cached dependencies. The hash-based
+  // invalidation still runs after parsing (line ~635) to support watch
+  // mode and cross-run ESLint cache.
+  const cached = cache.dependencies.get(file);
+  if (cached) {
+    return cached;
   }
 
   const imports: ImportInfo[] = [];
@@ -530,43 +610,48 @@ export function getFileImports(
       return imports;
     }
 
+    // PHASE 6 OPTIMIZATION: Pre-allocate the resolve options object ONCE per file.
+    // Previously, a new options object was created for every regex match (~25K
+    // allocations per lint run on snappy-client-dashboard). The `importPath`
+    // field is set to a placeholder and will never be used because
+    // resolveImportPath takes it as a separate argument.
+    const resolveOpts: ResolveOptions = {
+      fromFile: file,
+      workspaceRoot,
+      barrelExports,
+      cache,
+      extensions: DEFAULT_EXTENSIONS,
+      resolverSettings,
+    };
+
     // Use pre-compiled regex - reset lastIndex for reuse
     IMPORT_REGEX.lastIndex = 0;
     DYNAMIC_IMPORT_REGEX.lastIndex = 0;
+    EXPORT_FROM_REGEX.lastIndex = 0;
 
     let match;
 
-    // Match ES6 static imports using pre-compiled regex
-    while ((match = IMPORT_REGEX.exec(content)) !== null) {
-      const importPath = match[1];
-      const resolved = resolveImportPath(importPath, {
-        fromFile: file,
-        workspaceRoot,
-        barrelExports,
-        cache,
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
-        resolverSettings,
-      });
-      if (resolved && fileExists(resolved, cache)) {
-        imports.push({ path: resolved, source: importPath });
+    // Track resolved paths to dedupe across the three regexes (a single file
+    // may have both `import X from 'y'` and `export { X } from 'y'`).
+    const seen = new Set<string>();
+    const pushImport = (importPath: string, dynamic = false) => {
+      const resolved = resolveImportPath(importPath, resolveOpts);
+      if (resolved && fileExists(resolved, cache) && !seen.has(resolved)) {
+        seen.add(resolved);
+        imports.push(dynamic ? { path: resolved, source: importPath, dynamic } : { path: resolved, source: importPath });
       }
-    }
+    };
 
-    // Match dynamic imports using pre-compiled regex
-    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) {
-      const importPath = match[1];
-      const resolved = resolveImportPath(importPath, {
-        fromFile: file,
-        workspaceRoot,
-        barrelExports,
-        cache,
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
-        resolverSettings,
-      });
-      if (resolved && fileExists(resolved, cache)) {
-        imports.push({ path: resolved, source: importPath, dynamic: true });
-      }
-    }
+    // Match ES6 static imports using pre-compiled regex
+    while ((match = IMPORT_REGEX.exec(content)) !== null) pushImport(match[1]);
+
+    // Match re-exports (`export … from '…'`). Without this, cycles routed
+    // through re-export-only files (a common pattern in barrel-heavy
+    // codebases) are invisible.
+    while ((match = EXPORT_FROM_REGEX.exec(content)) !== null) pushImport(match[1]);
+
+    // Match dynamic imports
+    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) pushImport(match[1], true);
 
     // Store file hash for cache invalidation + invalidate SCC if graph changed
     const hash = getFileHash(file);
@@ -853,23 +938,139 @@ export interface CycleDetectionOptions {
 }
 
 /**
- * Find all circular dependencies using optimized SCC + DFS hybrid approach
+ * Lightweight per-import cycle detector (Phase 3 optimization)
  *
- * Performance Strategy:
- * 1. First, compute SCCs using Tarjan's algorithm (O(V+E), cached)
- * 2. Use SCC membership for fast cycle detection (O(1) per file)
- * 3. Only run DFS to get actual cycle paths when needed for error messages
+ * Instead of building the full graph upfront via BFS + Tarjan SCC,
+ * this function does a simple bounded DFS from a target file, looking
+ * for any path back to the source file. This is architecturally similar
+ * to eslint-plugin-import's no-cycle approach and is dramatically faster
+ * because it only reads files along the actual traversal path.
  *
- * This is faster than eslint-plugin-import's no-cycle because:
- * - SCC computation is cached across all files in a lint run
- * - O(1) cycle membership check instead of O(depth) DFS per file
- * - Still guarantees finding ALL cycles (no depth-based false negatives)
+ * Performance characteristics:
+ * - O(depth) file reads per call (not O(|V|) like BFS)
+ * - nonCyclicFiles cache provides O(1) rejection across the lint run
+ * - getFileImports cache reuses parsed results across files
+ * - Bounded by maxDepth to prevent runaway traversal
+ *
+ * @param sourceFile - The file containing the import (looking for path back to here)
+ * @param targetFile - The file being imported (starting point for DFS)
+ * @param options - Detection options
+ * @returns Array of cycle paths found (each is an array of file paths ending at sourceFile)
+ */
+export function detectCycleFromImport(
+  sourceFile: string,
+  targetFile: string,
+  options: CycleDetectionOptions,
+): string[][] {
+  const {
+    maxDepth,
+    reportAllCycles,
+    workspaceRoot,
+    barrelExports,
+    cache,
+    resolverSettings,
+  } = options;
+
+  // Fast path: target is known to not be in any cycle
+  if (cache.nonCyclicFiles.has(targetFile)) {
+    return [];
+  }
+
+  const allCycles: string[][] = [];
+
+  // PERFORMANCE: Use mutable stack instead of [...currentPath, file]
+  // to avoid O(depth) array allocations per DFS branch. The path is
+  // only copied when a cycle is actually found (rare).
+  const pathStack: string[] = [sourceFile];
+
+  // Track whether the DFS was truncated by the depth limit. If it was, we
+  // CANNOT cache the target as `nonCyclic` — depth-limit truncation isn't
+  // proof of acyclicity, and a poisoned cache cascades into every later
+  // lint pass that touches a file in the same subtree (verified on next.js:
+  // wide scope reported 0 cycles vs. 17 in oxlint, narrow scope reported 5+).
+  let depthLimitHit = false;
+
+  function dfs(
+    file: string,
+    depth: number,
+    visited: Set<string>,
+  ): void {
+    // Found the cycle — we've reached back to the source file
+    if (file === sourceFile) {
+      allCycles.push([...pathStack, file]);
+      return;
+    }
+
+    // Depth limit
+    if (depth >= maxDepth) {
+      depthLimitHit = true;
+      return;
+    }
+
+    // Already visited in this search tree
+    if (visited.has(file)) return;
+
+    // Known non-cyclic from previous lint file visits
+    if (cache.nonCyclicFiles.has(file)) return;
+
+    // Early exit when only first cycle needed
+    if (!reportAllCycles && allCycles.length > 0) return;
+
+    visited.add(file);
+    pathStack.push(file);
+
+    const imports = getFileImports(file, {
+      workspaceRoot,
+      barrelExports,
+      cache,
+      resolverSettings,
+    });
+
+    for (const imp of imports) {
+      if (imp.dynamic) continue;
+      if (!reportAllCycles && allCycles.length > 0) break;
+
+      dfs(imp.path, depth + 1, visited);
+    }
+
+    pathStack.pop();
+  }
+
+  const visited = new Set<string>();
+  dfs(targetFile, 1, visited);
+
+  // Only cache as non-cyclic when the DFS was complete AND found no cycles.
+  // A depth-truncated DFS cannot prove acyclicity (the cycle may exist past
+  // the depth limit), and caching it poisons every future lint pass that
+  // traverses the same subtree.
+  if (allCycles.length === 0 && !depthLimitHit) {
+    cache.nonCyclicFiles.add(targetFile);
+  }
+
+  return allCycles;
+}
+
+/**
+ * Find all circular dependencies using SCC + DFS hybrid approach
+ *
+ * Performance Strategy (v2 — optimized based on benchmark data):
+ * 1. Compute SCCs via Tarjan's algorithm on first call (cached for lint run)
+ *    — now significantly faster thanks to resolver fast path + getTsconfig cache
+ * 2. Use O(1) SCC membership for instant non-cyclic file rejection
+ * 3. Only run DFS for files known to be in a cycle (to extract paths)
+ * 4. Build graph lazily via getFileImports() with caching
+ *
+ * Key optimizations vs v1:
+ * - Resolver fast path: existsSync for relative imports (10-50x per call)
+ * - Global getTsconfig cache: eliminates per-file directory traversal
+ * - visited Set: prevents DFS re-traversal of explored subtrees
+ * - nonCyclicFiles cache: O(1) rejection across entire lint run
  *
  * @param file - Starting file for cycle detection
  * @param options - Detection options
  * @param currentPath - Current path in DFS (internal use)
  * @param depth - Current depth (internal use)
- * @param visited - Set of visited files in current search (internal use)
+ * @param visited - Set of fully explored files (internal use, persistent)
  * @returns Array of cycles found (each cycle is an array of file paths)
  */
 export function findAllCircularDependencies(
@@ -889,14 +1090,18 @@ export function findAllCircularDependencies(
   } = options;
 
   // OPTIMIZATION 1: Check if file is known to not be in any cycle
-  // This saves SCC computation for files we've already verified
+  // This is populated across the lint run — once a file is confirmed
+  // non-cyclic, all future calls skip it in O(1).
   if (cache.nonCyclicFiles.has(file)) {
     return [];
   }
 
-  // OPTIMIZATION 2: If this is the initial call (depth === 0), use SCC-based detection first
+  // OPTIMIZATION 2: At the root call, compute or use cached SCC data.
+  // SCC computation uses Tarjan's O(V+E) algorithm and is now much faster
+  // thanks to the resolver fast path (existsSync for relative imports) and
+  // global getTsconfig caching. The one-time cost is amortized across all
+  // file visits in the lint run via O(1) cycle membership lookups.
   if (depth === 0) {
-    // Compute SCCs (cached - only computed once per lint run)
     computeSCCsFromFile(file, {
       maxDepth,
       workspaceRoot,
@@ -905,32 +1110,27 @@ export function findAllCircularDependencies(
       resolverSettings,
     });
 
-    // Fast path: Check if file is in a cycle using O(1) SCC lookup
+    // Fast path: O(1) SCC lookup — if file is not in any cycle, skip
     if (!isFileInCycle(file, cache)) {
-      // Mark this file as non-cyclic for future fast lookups
       cache.nonCyclicFiles.add(file);
-      return []; // No cycles involving this file
+      return [];
     }
-
-    // File is in a cycle - now use DFS to get the actual cycle path for error messages
   }
 
-  // Standard DFS for getting cycle paths (only reached if SCC detected a cycle)
+  // Depth limit for performance
   if (depth > maxDepth) {
     return [];
   }
 
-  // Found a cycle
+  // Found a cycle — the current file is already on the current DFS path
   if (currentPath.includes(file)) {
     return [[...currentPath, file]];
   }
 
-  // OPTIMIZATION 3: Skip if already visited in this search
-  /* v8 ignore start -- perf optimization: prevents re-traversal in complex graphs */
+  // OPTIMIZATION 3: Skip if already fully explored in this DFS tree
   if (visited.has(file)) {
     return [];
   }
-  /* v8 ignore stop */
 
   visited.add(file);
 
@@ -949,8 +1149,7 @@ export function findAllCircularDependencies(
       continue;
     }
 
-    // OPTIMIZATION 4: Only follow paths that could lead to cycles
-    // If reportAllCycles is false and we already found one, skip remaining imports
+    // OPTIMIZATION 4: Early exit when only first cycle is needed
     if (!reportAllCycles && allCycles.length > 0) {
       break;
     }
@@ -963,6 +1162,11 @@ export function findAllCircularDependencies(
       visited,
     );
     allCycles.push(...cycles);
+  }
+
+  // If no cycles found for this file in this search, mark as non-cyclic
+  if (depth === 0 && allCycles.length === 0) {
+    cache.nonCyclicFiles.add(file);
   }
 
   return allCycles;

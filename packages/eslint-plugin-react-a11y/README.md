@@ -10,14 +10,13 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-react-a11y" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-react-a11y" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-react-a11y.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-react-a11y" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-react-a11y" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=react-a11y" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=react-a11y" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
 This plugin provides Accessibility (a11y) rules for React applications, enforcing WCAG standards.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -34,14 +33,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 
 ```bash
 npm install eslint-plugin-react-a11y --save-dev
-```
-
-## Quick Start
-```javascript
-// eslint.config.js
-import reactA11y from 'eslint-plugin-react-a11y';
-
-export default [reactA11y.configs.recommended];
 ```
 
 ## ⚙️ Configuration Presets
@@ -122,6 +113,14 @@ export default [
 ];
 ```
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -129,51 +128,55 @@ export default [
 | Icon | Description |
 | :---: | :--- |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text) |  |  |  | Enforce alt text |  |  |  |  |  |
-| [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text) |  |  |  | Enforce anchor ambiguous text |  |  |  |  |  |
-| [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content) |  |  |  | Enforce anchor has content |  |  |  |  |  |
-| [anchor-is-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-is-valid) |  |  |  | Enforce anchor is valid |  |  |  |  |  |
-| [aria-activedescendant-has-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-activedescendant-has-tabindex) |  |  |  | Enforce aria activedescendant has tabindex |  |  |  |  |  |
-| [aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-props) |  |  |  | Enforce aria props |  |  |  |  |  |
-| [aria-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-role) |  |  |  | Enforce aria role |  |  |  |  |  |
-| [aria-unsupported-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-unsupported-elements) |  |  |  | Enforce aria unsupported elements |  |  |  |  |  |
-| [autocomplete-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/autocomplete-valid) |  |  |  | Enforce autocomplete valid |  |  |  |  |  |
-| [click-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/click-events-have-key-events) |  |  |  | Enforce click events have key events |  |  |  |  |  |
-| [control-has-associated-label](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/control-has-associated-label) |  |  |  | Enforce control has associated label |  |  |  |  |  |
-| [heading-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/heading-has-content) |  |  |  | Enforce heading has content |  |  |  |  |  |
-| [html-has-lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/html-has-lang) |  |  |  | Enforce html has lang |  |  |  |  |  |
-| [iframe-has-title](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/iframe-has-title) |  |  |  | Enforce iframe has title |  |  |  |  |  |
-| [img-redundant-alt](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/img-redundant-alt) |  |  |  | Enforce img redundant alt |  |  |  |  |  |
-| [interactive-supports-focus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/interactive-supports-focus) |  |  |  | Enforce interactive supports focus |  |  |  |  |  |
-| [label-has-associated-control](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/label-has-associated-control) |  |  |  | Enforce label has associated control |  |  |  |  |  |
-| [lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/lang) |  |  |  | Enforce lang |  |  |  |  |  |
-| [media-has-caption](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/media-has-caption) |  |  |  | Enforce media has caption |  |  |  |  |  |
-| [mouse-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/mouse-events-have-key-events) |  |  |  | Enforce mouse events have key events |  |  |  |  |  |
-| [no-access-key](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-access-key) |  |  |  | Enforce no access key |  |  |  |  |  |
-| [no-aria-hidden-on-focusable](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-aria-hidden-on-focusable) |  |  |  | Enforce no aria hidden on focusable |  |  |  |  |  |
-| [no-autofocus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-autofocus) |  |  |  | Enforce no autofocus |  |  |  |  |  |
-| [no-distracting-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-distracting-elements) |  |  |  | Enforce no distracting elements |  |  |  |  |  |
-| [no-interactive-element-to-noninteractive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-interactive-element-to-noninteractive-role) |  |  |  | Enforce no interactive element to noninteractive role |  |  |  |  |  |
-| [no-keyboard-inaccessible-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-keyboard-inaccessible-elements) |  |  |  | Enforce no keyboard inaccessible elements |  |  |  |  |  |
-| [no-missing-aria-labels](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-missing-aria-labels) |  |  |  | Enforce no missing aria labels |  |  |  |  |  |
-| [no-noninteractive-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-interactions) |  |  |  | Enforce no noninteractive element interactions |  |  |  |  |  |
-| [no-noninteractive-element-to-interactive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-to-interactive-role) |  |  |  | Enforce no noninteractive element to interactive role |  |  |  |  |  |
-| [no-noninteractive-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-tabindex) |  |  |  | Enforce no noninteractive tabindex |  |  |  |  |  |
-| [no-redundant-roles](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-redundant-roles) |  |  |  | Enforce no redundant roles |  |  |  |  |  |
-| [no-static-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-static-element-interactions) |  |  |  | Enforce no static element interactions |  |  |  |  |  |
-| [prefer-tag-over-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/prefer-tag-over-role) |  |  |  | Enforce prefer tag over role |  |  |  |  |  |
-| [role-has-required-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-has-required-aria-props) |  |  |  | Enforce role has required aria props |  |  |  |  |  |
-| [role-supports-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-supports-aria-props) |  |  |  | Enforce role supports aria props |  |  |  |  |  |
-| [scope](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/scope) |  |  |  | Enforce scope |  |  |  |  |  |
-| [tabindex-no-positive](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/tabindex-no-positive) |  |  |  | Enforce tabindex no positive |  |  |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text) | CWE-252 |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
+| [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text) |  |  |  | anchor-ambiguous-text rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content) |  |  |  | anchor-has-content rule | 🟢 | 💼 |  |  | 💡 |  |
+| [anchor-is-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-is-valid) |  |  |  | anchor-is-valid rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [aria-activedescendant-has-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-activedescendant-has-tabindex) |  |  |  | aria-activedescendant-has-tabindex rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-props) |  |  |  | aria-props rule | 🟢 | 💼 |  |  | 💡 |  |
+| [aria-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-role) |  |  |  | aria-role rule | 🟢 | 💼 |  |  | 💡 |  |
+| [aria-unsupported-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-unsupported-elements) |  |  |  | aria-unsupported-elements rule | 🟢 | 💼 |  |  | 💡 |  |
+| [autocomplete-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/autocomplete-valid) |  |  |  | autocomplete-valid rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [click-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/click-events-have-key-events) |  |  |  | click-events-have-key-events rule | 🟢 | 💼 |  |  | 💡 |  |
+| [control-has-associated-label](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/control-has-associated-label) |  |  |  | control-has-associated-label rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [heading-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/heading-has-content) |  |  |  | heading-has-content rule | 🟢 | 💼 |  |  | 💡 |  |
+| [html-has-lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/html-has-lang) |  |  |  | html-has-lang rule | 🟢 | 💼 |  |  | 💡 |  |
+| [iframe-has-title](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/iframe-has-title) |  |  |  | iframe-has-title rule | 🟢 | 💼 |  |  | 💡 |  |
+| [img-redundant-alt](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/img-redundant-alt) |  |  |  | img-redundant-alt rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [interactive-supports-focus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/interactive-supports-focus) |  |  |  | interactive-supports-focus rule | 🟢 | 💼 |  |  | 💡 |  |
+| [label-has-associated-control](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/label-has-associated-control) |  |  |  | label-has-associated-control rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/lang) |  |  |  | lang rule | 🟢 | 💼 |  |  | 💡 |  |
+| [media-has-caption](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/media-has-caption) |  |  |  | media-has-caption rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [mouse-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/mouse-events-have-key-events) |  |  |  | mouse-events-have-key-events rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-access-key](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-access-key) |  |  |  | no-access-key rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-aria-hidden-on-focusable](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-aria-hidden-on-focusable) |  |  |  | no-aria-hidden-on-focusable rule | 🟢 | 💼 |  |  | 💡 |  |
+| [no-autofocus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-autofocus) |  |  |  | no-autofocus rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-distracting-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-distracting-elements) |  |  |  | no-distracting-elements rule | 🟢 | 💼 |  |  | 💡 |  |
+| [no-interactive-element-to-noninteractive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-interactive-element-to-noninteractive-role) |  |  |  | no-interactive-element-to-noninteractive-role rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-keyboard-inaccessible-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-keyboard-inaccessible-elements) |  |  |  | no-keyboard-inaccessible-elements rule | 🟢 | 💼 |  |  | 💡 |  |
+| [no-missing-aria-labels](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-missing-aria-labels) |  |  |  | no-missing-aria-labels rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-noninteractive-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-interactions) |  |  |  | no-noninteractive-element-interactions rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-noninteractive-element-to-interactive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-to-interactive-role) |  |  |  | no-noninteractive-element-to-interactive-role rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-noninteractive-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-tabindex) |  |  |  | no-noninteractive-tabindex rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-redundant-roles](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-redundant-roles) |  |  |  | no-redundant-roles rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-static-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-static-element-interactions) |  |  |  | no-static-element-interactions rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [prefer-tag-over-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/prefer-tag-over-role) |  |  |  | prefer-tag-over-role rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [role-has-required-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-has-required-aria-props) |  |  |  | role-has-required-aria-props rule | 🟢 | 💼 |  |  | 💡 |  |
+| [role-supports-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-supports-aria-props) |  |  |  | role-supports-aria-props rule | 🟢 | 💼 |  |  | 💡 |  |
+| [scope](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/scope) |  |  |  | scope rule | 🟢 | 💼 |  |  | 💡 |  |
+| [tabindex-no-positive](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/tabindex-no-positive) |  |  |  | tabindex-no-positive rule | 🟢 |  | ⚠️ |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -182,7 +185,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |

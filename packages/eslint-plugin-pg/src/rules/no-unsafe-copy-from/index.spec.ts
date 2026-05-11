@@ -143,17 +143,17 @@ ruleTester.run('no-unsafe-copy-from', noUnsafeCopyFrom, {
     // ===========================================
     {
       name: 'Template literal with variable in path',
-      code: "client.query(`COPY users FROM '${filepath}'`)",
+      code: `client.query(\`COPY users FROM '\${filepath}'\`)`,
       errors: [{ messageId: 'dynamicPath' }],
     },
     {
       name: 'Template literal with expression in table name',
-      code: "client.query(`COPY ${table} FROM '/etc/passwd'`)",
+      code: `client.query(\`COPY \${table} FROM '/etc/passwd'\`)`,
       errors: [{ messageId: 'dynamicPath' }],
     },
     {
       name: 'Template literal with req.body',
-      code: "client.query(`COPY users FROM '${req.body.path}'`)",
+      code: `client.query(\`COPY users FROM '\${req.body.path}'\`)`,
       errors: [{ messageId: 'dynamicPath' }],
     },
     {

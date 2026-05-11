@@ -78,28 +78,28 @@ function checkFunctionForSecurityHeaders(
   }
 
   // Collect all setHeader calls in this scope
-  function collectHeaders(node: TSESTree.Node): void {
-    if (node.type === 'CallExpression' &&
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier' &&
-        ['setHeader', 'header', 'set'].includes(node.callee.property.name)) {
-      const headerName = extractHeaderName(node);
+  function collectHeaders(astNode: TSESTree.Node): void {
+    if (astNode.type === 'CallExpression' &&
+        astNode.callee.type === 'MemberExpression' &&
+        astNode.callee.property.type === 'Identifier' &&
+        ['setHeader', 'header', 'set'].includes(astNode.callee.property.name)) {
+      const headerName = extractHeaderName(astNode);
       if (headerName) {
         setHeaders.add(headerName);
       }
     }
 
     // Recursively check children - only traverse standard AST properties
-    if (node.type === 'Program' && node.body) {
-      node.body.forEach(collectHeaders);
-    } else if ((node.type === 'FunctionDeclaration' ||
-                node.type === 'FunctionExpression' ||
-                node.type === 'ArrowFunctionExpression') && node.body) {
-      collectHeaders(node.body);
-    } else if (node.type === 'BlockStatement' && node.body) {
-      node.body.forEach(collectHeaders);
-    } else if (node.type === 'ExpressionStatement' && node.expression) {
-      collectHeaders(node.expression);
+    if (astNode.type === 'Program' && astNode.body) {
+      astNode.body.forEach(collectHeaders);
+    } else if ((astNode.type === 'FunctionDeclaration' ||
+                astNode.type === 'FunctionExpression' ||
+                astNode.type === 'ArrowFunctionExpression') && astNode.body) {
+      collectHeaders(astNode.body);
+    } else if (astNode.type === 'BlockStatement' && astNode.body) {
+      astNode.body.forEach(collectHeaders);
+    } else if (astNode.type === 'ExpressionStatement' && astNode.expression) {
+      collectHeaders(astNode.expression);
     }
   }
 
@@ -118,7 +118,10 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-security-headers.md',
       description: 'Detects missing security headers in HTTP responses',
+      cwe: 'CWE-693',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -187,7 +190,7 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
     
 }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (isTestFile) {

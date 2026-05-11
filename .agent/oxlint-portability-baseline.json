@@ -1,0 +1,151 @@
+{
+  "recordedAt": "2026-05-09",
+  "tolerancePct": 1,
+  "totalRules": 397,
+  "typeAware": 4,
+  "oxlintReady": 397,
+  "oxlintBlocked": 0,
+  "fixDegraded": 93,
+  "perPlugin": {
+    "eslint-plugin-browser-security": {
+      "ruleCount": 45,
+      "ready": 45,
+      "blocked": 0,
+      "fixDegraded": 7,
+      "typeAware": 0
+    },
+    "eslint-plugin-conventions": {
+      "ruleCount": 10,
+      "ready": 10,
+      "blocked": 0,
+      "fixDegraded": 7,
+      "typeAware": 0
+    },
+    "eslint-plugin-crypto": {
+      "ruleCount": 11,
+      "ready": 11,
+      "blocked": 0,
+      "fixDegraded": 5,
+      "typeAware": 0
+    },
+    "eslint-plugin-express-security": {
+      "ruleCount": 10,
+      "ready": 10,
+      "blocked": 0,
+      "fixDegraded": 2,
+      "typeAware": 0
+    },
+    "eslint-plugin-import-next": {
+      "ruleCount": 55,
+      "ready": 55,
+      "blocked": 0,
+      "fixDegraded": 25,
+      "typeAware": 3
+    },
+    "eslint-plugin-jwt": {
+      "ruleCount": 13,
+      "ready": 13,
+      "blocked": 0,
+      "fixDegraded": 0,
+      "typeAware": 0
+    },
+    "eslint-plugin-lambda-security": {
+      "ruleCount": 14,
+      "ready": 14,
+      "blocked": 0,
+      "fixDegraded": 2,
+      "typeAware": 0
+    },
+    "eslint-plugin-maintainability": {
+      "ruleCount": 12,
+      "ready": 12,
+      "blocked": 0,
+      "fixDegraded": 4,
+      "typeAware": 0
+    },
+    "eslint-plugin-modernization": {
+      "ruleCount": 3,
+      "ready": 3,
+      "blocked": 0,
+      "fixDegraded": 2,
+      "typeAware": 0
+    },
+    "eslint-plugin-modularity": {
+      "ruleCount": 5,
+      "ready": 5,
+      "blocked": 0,
+      "fixDegraded": 1,
+      "typeAware": 0
+    },
+    "eslint-plugin-mongodb-security": {
+      "ruleCount": 16,
+      "ready": 16,
+      "blocked": 0,
+      "fixDegraded": 1,
+      "typeAware": 0
+    },
+    "eslint-plugin-nestjs-security": {
+      "ruleCount": 6,
+      "ready": 6,
+      "blocked": 0,
+      "fixDegraded": 0,
+      "typeAware": 0
+    },
+    "eslint-plugin-node-security": {
+      "ruleCount": 33,
+      "ready": 33,
+      "blocked": 0,
+      "fixDegraded": 11,
+      "typeAware": 0
+    },
+    "eslint-plugin-operability": {
+      "ruleCount": 6,
+      "ready": 6,
+      "blocked": 0,
+      "fixDegraded": 1,
+      "typeAware": 0
+    },
+    "eslint-plugin-pg": {
+      "ruleCount": 13,
+      "ready": 13,
+      "blocked": 0,
+      "fixDegraded": 0,
+      "typeAware": 0
+    },
+    "eslint-plugin-react-a11y": {
+      "ruleCount": 37,
+      "ready": 37,
+      "blocked": 0,
+      "fixDegraded": 1,
+      "typeAware": 0
+    },
+    "eslint-plugin-react-features": {
+      "ruleCount": 53,
+      "ready": 53,
+      "blocked": 0,
+      "fixDegraded": 7,
+      "typeAware": 0
+    },
+    "eslint-plugin-reliability": {
+      "ruleCount": 9,
+      "ready": 9,
+      "blocked": 0,
+      "fixDegraded": 2,
+      "typeAware": 0
+    },
+    "eslint-plugin-secure-coding": {
+      "ruleCount": 27,
+      "ready": 27,
+      "blocked": 0,
+      "fixDegraded": 15,
+      "typeAware": 1
+    },
+    "eslint-plugin-vercel-ai-security": {
+      "ruleCount": 19,
+      "ready": 19,
+      "blocked": 0,
+      "fixDegraded": 0,
+      "typeAware": 0
+    }
+  }
+}

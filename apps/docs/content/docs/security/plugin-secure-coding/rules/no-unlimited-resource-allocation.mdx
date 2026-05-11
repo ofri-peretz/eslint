@@ -1,17 +1,174 @@
 ---
-title: 'no-unlimited-resource-allocation'
-description: ESLint security rule documentation for no-unlimited-resource-allocation
+title: no-unlimited-resource-allocation
+description: Detects unlimited resource allocation that could cause DoS
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-770
+autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="secure-coding" rule="no-unlimited-resource-allocation" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unlimited-resource-allocation.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+> **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
+
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+Detects unlimited resource allocation that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-770](https://cwe.mitre.org/data/definitions/770.html) (Allocation Without Limits) |
+| **Severity**      | High (CVSS 7.5)                                                                        |
+| **Auto-Fix**      | 💡 Suggestions available                                                               |
+| **Category**   | Security |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unlimited resource allocation occurs when an application allocates resources (like memory, file descriptors, or database connections) based on untrusted user input without any upper bounds.
+
+**Risk:** An attacker can trigger the allocation of massive amounts of resources (e.g., sending a request with a very large `size` parameter), causing the application to crash due to Out-Of-Memory (OOM) errors or exhaustion of system limits (Denial of Service).
+
+## Rule Details
+
+Unlimited resource allocation can cause denial of service by exhausting system resources like memory, file handles, or network connections. Attackers can:
+
+- Crash the application with memory exhaustion
+- Exhaust file descriptors
+- Overwhelm network resources
+- Cause system-wide resource starvation
+
+### Why This Matters
+
+| Issue                    | Impact              | Solution                 |
+| ------------------------ | ------------------- | ------------------------ |
+| 💾 **Memory Exhaustion** | Application crash   | Limit allocation sizes   |
+| 📂 **FD Exhaustion**     | Service unavailable | Close resources properly |
+| 🌐 **Connection Flood**  | Network DoS         | Implement rate limiting  |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+const buf = Buffer.alloc(req.query.size);
+```
+
+### ✅ Correct
+
+```typescript
+// Limit allocation size
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const size = parseInt(req.query.size);
+if (size > MAX_SIZE || size <= 0) {
+  throw new Error('Invalid size');
+}
+const buffer = Buffer.alloc(size);
+
+// Stream large files
+const stream = fs.createReadStream(userFile);
+stream.pipe(response);
+
+// Limit array size
+const MAX_ITEMS = 1000;
+const length = Math.min(userInput.length, MAX_ITEMS);
+const array = new Array(length).fill(0);
+
+// Limit concurrent connections
+import pLimit from 'p-limit';
+const limit = pLimit(10); // Max 10 concurrent
+const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-unlimited-resource-allocation': ['error', {
+      maxResourceSize: 10485760, // 10MB
+      userInputVariables: ['req', 'request', 'input'],
+      safeResourceFunctions: ['limitedAlloc', 'safeBuffer'],
+      requireResourceValidation: true
+    }]
+  }
+}
+```
+
+## Options
+
+| Option                      | Type       | Default              | Description                           |
+| --------------------------- | ---------- | -------------------- | ------------------------------------- |
+| `maxResourceSize`           | `number`   | `10485760`           | Maximum allowed resource size (bytes) |
+| `userInputVariables`        | `string[]` | `['req', 'request']` | User input variable patterns          |
+| `safeResourceFunctions`     | `string[]` | `[]`                 | Safe allocation functions             |
+| `requireResourceValidation` | `boolean`  | `true`               | Require validation before allocation  |
+
+## Error Message Format
+
+```
+🔒 CWE-770 OWASP:A05-Misconfig CVSS:7.5 | Unlimited Resource Allocation | HIGH [SOC2,PCI-DSS]
+   Fix: Add size limits and validate user input before allocation | https://cwe.mitre.org/...
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
+## Further Reading
+
+- **[CWE-770](https://cwe.mitre.org/data/definitions/770.html)** - Allocation without limits
+- **[Node.js Streams](https://nodejs.org/api/stream.html)** - Efficient data handling
+- **[OWASP DoS](https://owasp.org/www-community/attacks/Denial_of_Service)** - DoS attack prevention
+
+## Related Rules
+
+- [`no-unchecked-loop-condition`](./no-unchecked-loop-condition.md) - Infinite loop conditions
+- [`no-buffer-overread`](./no-buffer-overread.md) - Buffer over-read

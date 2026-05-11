@@ -23,7 +23,10 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-client-side-auth-logic.md',
       description: 'Prevent authentication logic in client code',
+      cwe: 'CWE-602',
+      cvss: 9.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -67,6 +70,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
         
         // Detect password comparison
         if (node.test.type === 'BinaryExpression') {
+          // oxlint-disable-next-line consistent-function-scoping
           const checkMember = (expr: TSESTree.Expression) => {
             if (expr.type === 'MemberExpression' && 
                 expr.property.type === 'Identifier' &&

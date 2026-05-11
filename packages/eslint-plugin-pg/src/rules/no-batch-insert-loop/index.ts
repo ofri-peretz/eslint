@@ -16,6 +16,8 @@ export const noBatchInsertLoop: TSESLint.RuleModule<
     docs: {
       description: 'Prevent executing database queries within loops (N+1 problem).',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-batch-insert-loop.md',
+      cwe: 'CWE-1049',
+      cvss: 7.5,
     },
     messages: {
       noBatchInsertLoop: formatLLMMessage({
@@ -51,7 +53,7 @@ export const noBatchInsertLoop: TSESLint.RuleModule<
            }
         }
         
-        let ancestor = node.parent;
+        let ancestor: any = node.parent;
         while (ancestor) {
           if (
             ancestor.type === AST_NODE_TYPES.ForStatement ||

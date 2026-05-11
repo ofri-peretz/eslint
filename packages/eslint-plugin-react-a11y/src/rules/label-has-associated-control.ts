@@ -31,7 +31,10 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/label-has-associated-control.md',
       description: 'Enforce that labels have accessible controls',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingControl: formatLLMMessage({
@@ -71,15 +74,15 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         depth = 2
     } = options ?? {} as Options;
     
-    const labelTags = ['label', ...labelComponents];
-    const controlTags = ['input', 'select', 'textarea', 'meter', 'output', 'progress', ...controlComponents];
+    const labelTags = new Set(['label', ...labelComponents]);
+    const controlTags = new Set(['input', 'select', 'textarea', 'meter', 'output', 'progress', ...controlComponents]);
 
     function hasNestedControl(node: TSESTree.JSXElement, currentDepth: number): boolean {
         if (currentDepth > depth) return false;
         
         return node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
-            if (child.openingElement.name.type === 'JSXIdentifier' && controlTags.includes(child.openingElement.name.name)) {
+            if (child.openingElement.name.type === 'JSXIdentifier' && controlTags.has(child.openingElement.name.name)) {
                 return true;
             }
             return hasNestedControl(child, currentDepth + 1);
@@ -89,7 +92,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        if (openingElement.name.type !== 'JSXIdentifier' || !labelTags.includes(openingElement.name.name)) return;
+        if (openingElement.name.type !== 'JSXIdentifier' || !labelTags.has(openingElement.name.name)) return;
 
         // Check htmlFor
         const hasHtmlFor = openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 

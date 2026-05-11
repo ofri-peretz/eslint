@@ -32,6 +32,20 @@ Detects `RegExp(variable)`, which might allow an attacker to DOS your server wit
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                   |
 | **Best For**      | Applications processing user input with regex, validation libraries                                       |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) — Uncontrolled Resource Consumption (ReDoS) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, infra/devtools (downstream consumers of vulnerable libraries) · **High:** B2B SaaS, cybersecurity · **Medium:** B2C, marketplaces · **Low:** gaming |
+| **Investor-frame impact** | A single ReDoS in a fintech / B2B SaaS production system = an outage event with regulatory and ARR-at-risk exposure ($50K–$500K typical incident cost). One catch at lint-time costs ~$0 of CI minutes. See [Acme Pay walk-through](../../../../cicd-impact/worked-example.md). |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Creating regular expressions from dynamic, untrusted input (e.g., using `new RegExp()`) can lead to the creation of complex or malicious patterns.
@@ -119,29 +133,7 @@ RegExp(`^${userPattern}$`); // Unvalidated pattern construction
 ### ✅ Correct
 
 ```typescript
-// Pre-defined patterns
-const PATTERNS = {
-  email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-  phone: /^\+?[\d\s\-\(\)]+$/,
-  url: /^https?:\/\/[^\s/$.?#].[^\s]*$/i,
-};
-
-// Safe usage
-if (PATTERNS[userChoice]) {
-  const result = PATTERNS[userChoice].test(input);
-}
-
-// Dynamic with escaping
-function escapeRegex(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-const safePattern = new RegExp(`^${escapeRegex(userInput)}$`);
-
-// Length validation
-if (userPattern.length > 100) {
-  throw new Error('Pattern too long');
-}
+const result = myFunction(pattern);
 ```
 
 ## ReDoS Prevention

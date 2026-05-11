@@ -85,7 +85,7 @@ We propose a new formatting engine that renders messages based on the **Target I
 
 | Feature         | Current (`eslint-devkit`) | Proposed "AI-Native"                         | Improvement         |
 | :-------------- | :------------------------ | :------------------------------------------- | :------------------ | --------------------- |
-| **Puntuation**  | `                         | ` separators                                 | JSON/YAML keys      | Parsing 100% reliable |
+| **Puntuation**  | ` | ` separators                                 | JSON/YAML keys      | Parsing 100% reliable |
 | **Token Cost**  | ~50 tokens/msg            | ~20 tokens/msg (Compressed)                  | **60% Reduction**   |
 | **Context**     | "Fix: Use X"              | "Fix: X via Standard Y"                      | Contextual Accuracy |
 | **Speed**       | 100ms (Text Gen)          | 5ms (Structured Lookup)                      | Faster Planning     |
@@ -112,6 +112,6 @@ export const GLOBAL_AI_CONFIG = {
 
 ## 6. Recommendations
 
-1.  **Immediate**: Add `astSelector` and `aiDifficulty` to `EnterpriseMessageOptions`.
-2.  **Short-term**: Create a `formatAgentResult` function that outputs compact JSON.
-3.  **Strategic**: Build the `CursorRules` generator for your ecosystem.
+1. **Immediate**: Add `astSelector` and `aiDifficulty` to `EnterpriseMessageOptions`.
+2. **Short-term**: Create a `formatAgentResult` function that outputs compact JSON.
+3. **Strategic**: Build the `CursorRules` generator for your ecosystem.

@@ -27,7 +27,10 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/export.md',
       description: 'Forbid any invalid exports, i.e. re-export of the same name',
+      cwe: 'CWE-694',
+      cvss: 7.5,
     },
     messages: {
       duplicateExport: formatLLMMessage({

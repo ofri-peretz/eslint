@@ -6,7 +6,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchCachedJSON, type CachedData } from '@/lib/json-cache';
+import { fetchCachedJSON } from '@/lib/json-cache';
+import { PLUGINS } from '@/lib/plugins';
 
 // Codecov API Types
 export interface CodecovTotals {
@@ -70,21 +71,14 @@ async function fetchCodecovRepo(): Promise<CodecovRepo> {
  */
 async function fetchCodecovComponents(): Promise<CodecovComponent[]> {
   if (!CODECOV_TOKEN) {
-    // Return mock data for development
-    return [
-      { component_id: 'browser-security', name: 'eslint-plugin-browser-security', coverage: 90.2 },
-      { component_id: 'crypto', name: 'eslint-plugin-crypto', coverage: 88.5 },
-      { component_id: 'jwt', name: 'eslint-plugin-jwt', coverage: 92.1 },
-      { component_id: 'secure-coding', name: 'eslint-plugin-secure-coding', coverage: 85.3 },
-      { component_id: 'secrets', name: 'eslint-plugin-secrets', coverage: 87.8 },
-      { component_id: 'node-security', name: 'eslint-plugin-node-security', coverage: 83.4 },
-      { component_id: 'pg', name: 'eslint-plugin-pg', coverage: 89.2 },
-      { component_id: 'mongodb-security', name: 'eslint-plugin-mongodb-security', coverage: 86.1 },
-      { component_id: 'vercel-ai-security', name: 'eslint-plugin-vercel-ai-security', coverage: 84.6 },
-      { component_id: 'react-best-practices', name: 'eslint-plugin-react-best-practices', coverage: 82.3 },
-      { component_id: 'react-hooks-best-practices', name: 'eslint-plugin-react-hooks-best-practices', coverage: 80.1 },
-      { component_id: 'documentation', name: 'eslint-plugin-documentation', coverage: 78.5 },
-    ];
+    // Mock data derived from the canonical registry so dev coverage values
+    // never reference packages that don't exist. Coverage figures are
+    // deterministic-but-fake (85% baseline ± stable per-slug jitter).
+    return PLUGINS.map((p, i) => ({
+      component_id: p.slug,
+      name: p.package,
+      coverage: Number((85 + ((i * 7) % 13) - 6).toFixed(1)),
+    }));
   }
 
   const { data } = await fetchCachedJSON<{ data: { components: CodecovComponent[] } }>(

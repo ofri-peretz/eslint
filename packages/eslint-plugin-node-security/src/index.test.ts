@@ -17,10 +17,15 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'detect-non-literal-fs-filename',
       'no-unsafe-dynamic-require',
       'no-buffer-overread',
+      'no-deprecated-buffer',
       'no-toctou-vulnerability',
       'no-zip-slip',
       'no-arbitrary-file-access',
       'no-data-in-temp-storage',
+      // Wired 2026-05-09 — the rule's implementation existed but the
+      // plugin index didn't register it (doc-harvest stress test was
+      // reporting it as `rule-not-registered`).
+      'no-pii-in-logs',
       'no-ssrf',
       'detect-suspicious-dependencies',
       'lock-file',

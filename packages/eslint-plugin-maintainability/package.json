@@ -13,6 +13,10 @@
     "./types": {
       "types": "./src/types/index.d.ts",
       "default": "./src/types/index.js"
+    },
+    "./oxlint": {
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -39,7 +43,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "peerDependencies": {},
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+  },
   "peerDependenciesMeta": {
     "typescript": {
       "optional": true
@@ -61,5 +67,11 @@
   "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-maintainability#readme",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   }
 }

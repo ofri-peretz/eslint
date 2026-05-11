@@ -32,6 +32,20 @@ Detects hardcoded passwords, API keys, tokens, and other sensitive credentials i
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                    |
 | **Best For**      | All applications handling sensitive data, API integrations, database connections           |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) — Use of Hard-coded Credentials |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than customer disclosure** — secrets in code are the textbook long-tail disclosure event ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, healthtech, cybersecurity (mandatory disclosure on breach + regulatory penalty) · **High:** B2B SaaS, infra/devtools · **Medium:** B2C, marketplaces · **Lower (still important):** gaming |
+| **Investor-frame impact** | Hardcoded credentials → no rotation possible → on detection, full breach disclosure cycle. [IBM Cost of a Data Breach 2024](https://www.ibm.com/reports/data-breach): median credentials-related breach $4.5M; healthcare-specific $9.8M. One catch at lint-time prevents the entire cycle. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Embedding sensitive credentials (like passwords, API keys, or database connection strings) directly in the source code.

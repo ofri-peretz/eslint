@@ -1,0 +1,402 @@
+[
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_mapping.js",
+    "line": 271,
+    "column": 17,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_convertBrowser.js",
+    "line": 15,
+    "column": 5,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof _ === 'function' | https://cwe.mitre.org/data/definitio"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_convertBrowser.js",
+    "line": 15,
+    "column": 31,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof _.runInContext === 'function' | https://cwe.mitre.org/d"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 17,
+    "column": 10,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: n === 2 | https://cwe.mitre.org/data/definitions/697.html"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 32,
+    "column": 10,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: n === 2 | https://cwe.mitre.org/data/definitions/697.html"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 49,
+    "column": 5,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 49,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 83,
+    "column": 7,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 83,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 85,
+    "column": 17,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 91,
+    "column": 9,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (!=) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (!==) instead: start !== lastIndex | https://cwe.mitre.org/data/definitions/6"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 115,
+    "column": 7,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 115,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 139,
+    "column": 15,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof name === 'function' | https://cwe.mitre.org/data/defini"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 147,
+    "column": 7,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: func === null | https://cwe.mitre.org/data/definitions/697.htm"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 215,
+    "column": 27,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof arity === 'number' | https://cwe.mitre.org/data/definit"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 230,
+    "column": 26,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 231,
+    "column": 30,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 240,
+    "column": 13,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 242,
+    "column": 20,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 279,
+    "column": 21,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 283,
+    "column": 25,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 316,
+    "column": 41,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 317,
+    "column": 18,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 335,
+    "column": 54,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 336,
+    "column": 21,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 357,
+    "column": 12,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (!=) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (!==) instead: nested !== null | https://cwe.mitre.org/data/definitions/697.h"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 359,
+    "column": 19,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 361,
+    "column": 11,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (!=) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (!==) instead: value !== null | https://cwe.mitre.org/data/definitions/697.ht"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 363,
+    "column": 9,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 363,
+    "column": 29,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: index === lastIndex | https://cwe.mitre.org/data/definitions/6"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 365,
+    "column": 16,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 389,
+    "column": 20,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 390,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 395,
+    "column": 29,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 413,
+    "column": 14,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof func === 'function' | https://cwe.mitre.org/data/defini"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 451,
+    "column": 9,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 451,
+    "column": 24,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 470,
+    "column": 20,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 472,
+    "column": 19,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 478,
+    "column": 11,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 481,
+    "column": 16,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 484,
+    "column": 16,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 489,
+    "column": 12,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 490,
+    "column": 13,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: realName === otherName | https://cwe.mitre.org/data/definition"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 491,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 507,
+    "column": 9,
+    "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: result === func | https://cwe.mitre.org/data/definitions/697.h"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 528,
+    "column": 10,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 529,
+    "column": 18,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+    "line": 529,
+    "column": 20,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  }
+]

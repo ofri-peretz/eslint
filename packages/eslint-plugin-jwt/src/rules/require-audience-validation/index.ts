@@ -26,8 +26,11 @@ export const requireAudienceValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-audience-validation.md',
       description:
         'Require audience (aud) claim validation in JWT verify operations',
+      cwe: 'CWE-287',
+      cvss: 5,
     },
     fixable: undefined,
     hasSuggestions: false,

@@ -109,8 +109,12 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-helmet.md',
       description:
         'Require helmet middleware for security headers in Express.js applications',
+      cwe: 'CWE-693',
+      cvss: 7.5,
+      confidence: 'high',
     },
     hasSuggestions: true,
     messages: {

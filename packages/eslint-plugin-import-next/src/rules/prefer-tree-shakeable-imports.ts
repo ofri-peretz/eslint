@@ -90,6 +90,7 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-tree-shakeable-imports.md',
       description:
         'Prefer import patterns that enable effective tree-shaking',
     },

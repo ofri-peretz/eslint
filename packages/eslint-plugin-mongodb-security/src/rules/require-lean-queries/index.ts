@@ -16,7 +16,7 @@ type MessageIds = 'useLean';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const READ_METHODS = ['find', 'findOne', 'findById'];
+const READ_METHODS = new Set(['find', 'findOne', 'findById']);
 
 /**
  * Check if any chained call in the parent chain includes .lean()
@@ -48,7 +48,11 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
   name: 'require-lean-queries',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Suggest .lean() for read-only Mongoose queries' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-lean-queries.md', description: 'Suggest .lean() for read-only Mongoose queries',
+      cwe: 'CWE-400',
+      cvss: 4.3,
+    },
     hasSuggestions: true,
     messages: {
       useLean: formatLLMMessage({
@@ -69,7 +73,7 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -86,7 +90,7 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !READ_METHODS.includes(methodName)) {
+        if (!methodName || !READ_METHODS.has(methodName)) {
           return;
         }
 

@@ -37,13 +37,13 @@ type RuleOptions = [Options?];
 /**
  * Valid HTTP methods for REST
  */
-const VALID_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+const VALID_HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
 
 /**
  * Check if HTTP method is valid
  */
 function isValidHttpMethod(method: string): boolean {
-  return VALID_HTTP_METHODS.includes(method.toUpperCase());
+  return VALID_HTTP_METHODS.has(method.toUpperCase());
 }
 
 export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
@@ -51,6 +51,7 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/enforce-rest-conventions.md',
       description: 'Validates REST endpoint design against best practices',
     },
     messages: {

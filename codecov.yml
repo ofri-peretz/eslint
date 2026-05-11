@@ -251,7 +251,5 @@ ignore:
   - '**/*.config.ts'
   - '**/*.config.mts'
   - '**/vitest.global-setup.ts'
-  # Infrastructure packages without tests
-  - 'packages/cli/**'
   # Plugin entry points (configuration code, not tested)
   - 'packages/*/src/index.ts'

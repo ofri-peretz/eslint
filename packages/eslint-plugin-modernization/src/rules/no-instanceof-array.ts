@@ -26,6 +26,7 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/no-instanceof-array.md',
       description: 'Prefer Array.isArray() over instanceof Array for better cross-realm compatibility',
     },
     hasSuggestions: false,
@@ -61,6 +62,7 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
 
     const allowedContexts = new Set(allow);
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isInstanceofArray(node: TSESTree.BinaryExpression): boolean {
       return (
         node.operator === 'instanceof' &&

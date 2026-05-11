@@ -115,19 +115,7 @@ const mysqlUrl = 'mysql://user:pass@localhost/db'; // ❌ MySQL without SSL
 ### ✅ Correct
 
 ```typescript
-// Encrypted transmission
-fetch('https://api.example.com/data'); // ✅ HTTPS
-
-const ws = new WebSocket('wss://socket.example.com'); // ✅ WSS
-
-const mongoUrl = 'mongodb+srv://cluster.mongodb.net/db'; // ✅ MongoDB with encryption
-
-const redisUrl = 'rediss://localhost:6379'; // ✅ Redis with TLS
-
-const mysqlUrl = 'mysql://user:pass@localhost/db?ssl=true'; // ✅ MySQL with SSL
-
-// localhost is allowed in test files
-fetch('http://localhost:3000/api'); // ✅ localhost in tests
+const url = "https://api.example.com";
 ```
 
 ## Configuration

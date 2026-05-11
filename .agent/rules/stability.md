@@ -64,11 +64,11 @@ You can @mention rules or specific files to bring them into the active context w
 
 If the application is pinned (high CPU) or stuck in a "Failed to fetch" loop:
 
-1.  **Kill Zombie Processes**:
+1. **Kill Zombie Processes**:
     ```bash
     killall -9 Antigravity language_server_macos_arm "Antigravity Helper"
     ```
-2.  **Run Hardening Script**: Use the specialist script in the devtools repo:
+2. **Run Hardening Script**: Use the specialist script in the devtools repo:
     ```bash
     bash ~/repos/ofriperetz.dev/devtools/scripts/antigravity-performance-hardening.sh
     ```

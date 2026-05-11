@@ -35,6 +35,7 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-static-element-interactions.md',
       description: 'Enforce that static elements don\'t have interactive handlers',
     },
     messages: {

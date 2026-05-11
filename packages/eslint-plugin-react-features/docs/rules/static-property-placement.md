@@ -50,38 +50,7 @@ Enforces consistent placement and grouping of static properties like `propTypes`
 
 ### ❌ Incorrect
 
-```tsx
-class UserCard extends React.Component {
-  state = { loading: true };
-  
-  // BAD: Static properties scattered throughout class
-  static propTypes = {
-    name: PropTypes.string.isRequired
-  };
-  
-  componentDidMount() {
-    this.fetchData();
-  }
-  
-  // BAD: defaultProps far from propTypes
-  static defaultProps = {
-    name: 'Guest'
-  };
-  
-  static getDerivedStateFromProps(props, state) {
-    return { name: props.name };
-  }
-  
-  // BAD: contextTypes separated from related statics
-  static contextTypes = {
-    theme: PropTypes.object
-  };
-  
-  render() {
-    return <div>{this.props.name}</div>;
-  }
-}
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct
 

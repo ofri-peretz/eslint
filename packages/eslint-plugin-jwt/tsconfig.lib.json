@@ -3,11 +3,13 @@
   "compilerOptions": {
     "sourceMap": false,
     "composite": true,
-    "outDir": "../../dist/out-tsc",
+    "outDir": "./dist/src",
     "declaration": true,
     "types": [
       "node"
-    ]
+    ],
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts"
@@ -25,5 +27,10 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
+  ],
+  "references": [
+    {
+      "path": "../eslint-devkit/tsconfig.lib.json"
+    }
   ]
 }

@@ -30,7 +30,10 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-arbitrary-file-access.md',
       description: 'Prevent file access from user input',
+      cwe: 'CWE-22',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -55,7 +58,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     
     const fsReadMethods = ['readFile', 'readFileSync', 'readdir', 'readdirSync', 'stat', 'statSync'];
     const fsWriteMethods = ['writeFile', 'writeFileSync', 'appendFile', 'appendFileSync'];
-    const userInputSources = ['req', 'request', 'params', 'query', 'body'];
+    const userInputSources = new Set(['req', 'request', 'params', 'query', 'body']);
     
     // Track variables that have been sanitized with path.basename()
     const sanitizedVariables = new Set<string>();
@@ -233,7 +236,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           if (pathArg?.type === 'MemberExpression' &&
               pathArg.object.type === 'Identifier') {
             const objName = pathArg.object.name.toLowerCase();
-            if (userInputSources.includes(objName)) {
+            if (userInputSources.has(objName)) {
               report(node);
             }
           }

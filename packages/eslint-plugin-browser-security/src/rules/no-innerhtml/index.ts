@@ -72,8 +72,12 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-innerhtml.md',
       description:
         'Disallow dangerous innerHTML/outerHTML assignments that can lead to XSS',
+      cwe: 'CWE-79',
+      cvss: 9.5,
+      confidence: 'medium',
     },
     hasSuggestions: true,
     messages: {
@@ -144,7 +148,42 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     }
 
     const sourceCode = context.sourceCode;
-    const dangerousProperties = ['innerHTML', 'outerHTML'];
+    const dangerousProperties = new Set(['innerHTML', 'outerHTML']);
+    // Sibling DOM sinks that share the same XSS class — surfaced as
+    // FN by the hand-curated stress test. See benchmarks/AUDIT_PATTERNS.md
+    // §3.1 ("DOM XSS sink list"). Each takes user-controlled HTML and
+    // injects it into the live DOM exactly the same way innerHTML does.
+    const dangerousSinkMethods = new Set([
+      'insertAdjacentHTML',
+      'write',
+      'writeln',
+    ]);
+
+    function reportSink(
+      reportNode: TSESTree.Node,
+      sinkName: string,
+      taintedNode: TSESTree.Node,
+    ) {
+      // Allow literal strings if configured.
+      if (allowLiteralStrings && isLiteralString(taintedNode)) return;
+      // Allow if sanitized via a trusted sanitiser call.
+      if (isSanitized(taintedNode, sourceCode, trustedSanitizers)) return;
+      // Determine source type for the diagnostic message.
+      let source = 'dynamic content';
+      if (taintedNode.type === 'Identifier') {
+        source = `variable "${taintedNode.name}"`;
+      } else if (taintedNode.type === 'TemplateLiteral') {
+        source = 'template literal with expressions';
+      } else if (taintedNode.type === 'CallExpression') {
+        source = 'function call result';
+      }
+      context.report({
+        node: reportNode,
+        messageId: 'dangerousInnerHTML',
+        data: { property: sinkName, source },
+        suggest: [{ messageId: 'useSanitizer', fix: () => null }],
+      });
+    }
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
@@ -159,46 +198,27 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (!dangerousProperties.includes(property.name)) {
+        if (!dangerousProperties.has(property.name)) {
           return;
         }
 
-        const rightSide = node.right;
+        reportSink(node, property.name, node.right);
+      },
 
-        // Allow literal strings if configured
-        if (allowLiteralStrings && isLiteralString(rightSide)) {
-          return;
-        }
-
-        // Allow if sanitized
-        if (isSanitized(rightSide, sourceCode, trustedSanitizers)) {
-          return;
-        }
-
-        // Determine source type for message
-        let source = 'dynamic content';
-        if (rightSide.type === 'Identifier') {
-          source = `variable "${rightSide.name}"`;
-        } else if (rightSide.type === 'TemplateLiteral') {
-          source = 'template literal with expressions';
-        } else if (rightSide.type === 'CallExpression') {
-          source = 'function call result';
-        }
-
-        context.report({
-          node,
-          messageId: 'dangerousInnerHTML',
-          data: {
-            property: property.name,
-            source,
-          },
-          suggest: [
-            {
-              messageId: 'useSanitizer',
-              fix: () => null,
-            },
-          ],
-        });
+      // element.insertAdjacentHTML(position, htmlString) — same XSS class
+      // as innerHTML but a different sink shape. Also covers
+      // document.write(...) and document.writeln(...) which are the
+      // historic parent injection sinks.
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== 'MemberExpression') return;
+        const property = node.callee.property;
+        if (property.type !== 'Identifier') return;
+        if (!dangerousSinkMethods.has(property.name)) return;
+        // The HTML payload is the LAST argument for insertAdjacentHTML
+        // (`(position, html)`) and the only argument for write/writeln.
+        const tainted = node.arguments[node.arguments.length - 1];
+        if (!tainted) return;
+        reportSink(node, property.name, tainted);
       },
     };
   },

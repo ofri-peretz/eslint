@@ -26,6 +26,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-process-exit.md',
       description:
         'Prevent usage of process.exit() which can terminate the process unexpectedly',
     },
@@ -58,6 +59,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allow: [] }],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
       return false;
@@ -65,6 +67,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
 
     function isProcessExitCall(node: TSESTree.CallExpression): boolean {
       // Check if this is a call to process.exit
+      // oxlint-disable-next-line consistent-function-scoping
       function isProcessExitMember(callee: TSESTree.Expression): boolean {
         if (
           callee.type === 'MemberExpression' &&

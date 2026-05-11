@@ -17,9 +17,7 @@ I've created a command system that allows you to quickly inject checklists into 
    - `.cursor/commands/QUICK_REFERENCE.md` - Quick reference guide
    - `.cursor/commands/SETUP.md` - Setup and troubleshooting guide
 
-3. **Updated**:
-   - `.cursorrules/README.md` - Added command quick start section
-   - `.cursor/commands/README.md` - Updated to reflect Markdown format
+3. **Note:** `.cursor/commands/` is the canonical location for these checklists. The earlier dual `.cursorrules/` directory has been removed.
 
 ## 🚀 How to Use
 
@@ -73,7 +71,7 @@ This ensures the LLM always has the complete, up-to-date checklist context.
 4. **Restart Cursor**: After adding or modifying command files, restart Cursor to refresh the command palette
 5. **Manual Fallback**: You can always manually reference checklists:
    ```
-   Please follow the checklist in .cursorrules/eslint-rule-checklist.md
+   Please follow the checklist in .cursor/commands/eslint-rule.md
    ```
 
 ## 📝 Testing

@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Validated embedding
     {
       code: `

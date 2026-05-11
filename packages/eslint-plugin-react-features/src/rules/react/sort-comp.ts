@@ -28,7 +28,7 @@ const DEFAULT_ORDER = [
   'render'
 ];
 
-const LIFECYCLE_METHODS = [
+const LIFECYCLE_METHODS = new Set([
   'constructor',
   'getDerivedStateFromProps',
   'componentWillMount',
@@ -43,13 +43,14 @@ const LIFECYCLE_METHODS = [
   'componentDidUpdate',
   'componentDidCatch',
   'componentWillUnmount',
-];
+]);
 
 export const sortComp = createRule<[Options], MessageIds>({
   name: 'sort-comp',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/sort-comp.md',
       description: 'Enforce component method ordering',
     },
     messages: {
@@ -88,6 +89,7 @@ export const sortComp = createRule<[Options], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -107,7 +109,7 @@ export const sortComp = createRule<[Options], MessageIds>({
       return false;
     }
 
-    function checkMethodOrder(node: TSESTree.ClassDeclaration, order: string[]) {
+    function checkMethodOrder(node: TSESTree.ClassDeclaration, sortOrder: string[]) {
       const members = node.body.body;
       const methodOrder: Array<{ name: string; index: number; node: TSESTree.ClassBody['body'][0] }> = [];
 
@@ -116,7 +118,7 @@ export const sortComp = createRule<[Options], MessageIds>({
         const member = members[i];
         const methodName = getMemberName(member);
         if (methodName) {
-          const orderIndex = getOrderIndex(methodName, member, order);
+          const orderIndex = getOrderIndex(methodName, member, sortOrder);
           methodOrder.push({ name: methodName, index: orderIndex, node: member });
         }
       }
@@ -133,6 +135,7 @@ export const sortComp = createRule<[Options], MessageIds>({
       }
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getMemberName(member: TSESTree.ClassBody['body'][0]): string | null {
       if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
         return member.key.name;
@@ -144,6 +147,7 @@ export const sortComp = createRule<[Options], MessageIds>({
       return null;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getMemberKeyNode(member: TSESTree.ClassBody['body'][0]): TSESTree.Node {
       if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
         return member.key;
@@ -155,35 +159,35 @@ export const sortComp = createRule<[Options], MessageIds>({
       return member;
     }
 
-    function getOrderIndex(name: string, member: TSESTree.ClassBody['body'][0], order: string[]): number {
+    function getOrderIndex(name: string, member: TSESTree.ClassBody['body'][0], sortOrder: string[]): number {
       // Static methods and properties
       if (member.type === 'MethodDefinition' && member.static) {
-        if (name === 'render') return order.indexOf('render');
-        return order.indexOf('static-methods');
+        if (name === 'render') return sortOrder.indexOf('render');
+        return sortOrder.indexOf('static-methods');
       }
 
       // Handle PropertyDefinition (TypeScript parser)
       if (member.type === 'PropertyDefinition' && member.static) {
-        return order.indexOf('static-variables');
+        return sortOrder.indexOf('static-variables');
       }
 
       // Instance variables - Handle PropertyDefinition (TypeScript parser)
       if (member.type === 'PropertyDefinition' && !member.static) {
-        return order.indexOf('instance-variables');
+        return sortOrder.indexOf('instance-variables');
       }
 
       // Lifecycle methods
-      if (LIFECYCLE_METHODS.includes(name)) {
-        return order.indexOf('lifecycle');
+      if (LIFECYCLE_METHODS.has(name)) {
+        return sortOrder.indexOf('lifecycle');
       }
 
       // Render method
       if (name === 'render') {
-        return order.indexOf('render');
+        return sortOrder.indexOf('render');
       }
 
       // Everything else
-      return order.indexOf('everything-else');
+      return sortOrder.indexOf('everything-else');
     }
   },
 });

@@ -1,7 +1,8 @@
 {
   "name": "eslint-plugin-crypto",
   "version": "2.2.3",
-  "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices. Detects weak algorithms, insecure key handling, CVE-specific vulnerabilities, and deprecated crypto patterns.",
+  "deprecated": "eslint-plugin-crypto is deprecated. Use eslint-plugin-node-security instead — it includes all cryptography rules (weak ciphers/hashes, ECB mode, static IVs, insecure key derivation, timing-unsafe compare, CryptoJS, native-crypto preference, and more).",
+  "description": "[DEPRECATED — use eslint-plugin-node-security] Security-focused ESLint plugin for cryptographic best practices. All rules redistributed into eslint-plugin-node-security.",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
@@ -13,6 +14,10 @@
     "./types": {
       "types": "./src/types/index.d.ts",
       "default": "./src/types/index.js"
+    },
+    "./oxlint": {
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -69,5 +74,14 @@
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
   }
 }

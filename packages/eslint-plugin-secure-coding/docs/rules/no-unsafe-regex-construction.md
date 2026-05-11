@@ -60,8 +60,8 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 This rule detects the creation of `RegExp` objects using user-controlled input. Constructing a regular expression from untrusted input is dangerous because it leads to:
 
-1.  **ReDoS (Regular Expression Denial of Service)**: An attacker can provide a pattern that causes catastrophic backtracking (e.g., `(a+)+`).
-2.  **Logic Errors**: An attacker can inject special characters (like `*`, `+`, `|`) to alter the matching behavior in unintended ways.
+1. **ReDoS (Regular Expression Denial of Service)**: An attacker can provide a pattern that causes catastrophic backtracking (e.g., `(a+)+`).
+2. **Logic Errors**: An attacker can inject special characters (like `*`, `+`, `|`) to alter the matching behavior in unintended ways.
 
 ```mermaid
 %%{init: {
@@ -136,16 +136,7 @@ function search(term) {
 ### ✅ Correct
 
 ```typescript
-import escapeStringRegexp from 'escape-string-regexp';
-
-// Escaping input first
-const safePattern = new RegExp(escapeStringRegexp(req.query.search));
-
-// Fixed strings (if allowLiterals: true)
-const fixed = new RegExp('^[a-z]+$');
-
-// RegExp literal (always preferred if pattern is static)
-const literal = /^[a-z]+$/;
+const regex = /^[a-z]+$/;
 ```
 
 ## LLM-Based Suggestions

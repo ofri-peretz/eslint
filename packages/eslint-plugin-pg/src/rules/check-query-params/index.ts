@@ -23,6 +23,8 @@ export const checkQueryParams: TSESLint.RuleModule<
     docs: {
       description: 'Ensure the number of query parameters matches the arguments array.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/check-query-params.md',
+      cwe: 'CWE-20',
+      cvss: 7.5,
     },
     messages: {
       parameterCountMismatch: formatLLMMessage({

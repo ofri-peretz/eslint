@@ -49,12 +49,46 @@ export interface Options {
 type RuleOptions = [Options?];
 
 
+/**
+ * Check if path contains dangerous traversal sequences
+ */
+const containsPathTraversal = (pathText: string): boolean => {
+  // Check for ../ sequences
+  return /\.\.\//.test(pathText) ||
+         /\.\.\\/.test(pathText) || // Windows paths
+         pathText.startsWith('..') ||
+         /\/\.\./.test(pathText);  // Embedded /..
+};
+
+/**
+ * Check if destination is dangerous (sensitive system directories)
+ * Note: /tmp is NOT dangerous - it's the standard safe temp location
+ */
+const isDangerousDestination = (destText: string): boolean => {
+  // /tmp is SAFE - it's the standard temp location
+  if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
+    return false;
+  }
+  
+  return destText.includes('/var') ||
+         destText.includes('/usr') ||
+         destText.includes('/etc') ||
+         destText.includes('/root') ||
+         destText.includes('/home') ||
+         destText.includes('C:\\Windows') ||
+         destText.includes('C:\\Program Files') ||
+         destText.includes('C:\\Users');
+};
+
+
 export const noZipSlip = createRule<RuleOptions, MessageIds>({
   name: 'no-zip-slip',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-zip-slip.md',
       description: 'Detects zip slip/archive extraction vulnerabilities',
+      cwe: 'CWE-22',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -192,7 +226,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       safeLibraries = ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
     }: Options = options;
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Safety checks are implemented directly in the handlers
 
@@ -216,17 +250,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
-    };
-
-    /**
-     * Check if path contains dangerous traversal sequences
-     */
-    const containsPathTraversal = (pathText: string): boolean => {
-      // Check for ../ sequences
-      return /\.\.\//.test(pathText) ||
-             /\.\.\\/.test(pathText) || // Windows paths
-             /^\.\./.test(pathText) || // Leading ..
-             /\/\.\./.test(pathText);  // Embedded /..
     };
 
 
@@ -315,26 +338,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
-    };
-
-    /**
-     * Check if destination is dangerous (sensitive system directories)
-     * Note: /tmp is NOT dangerous - it's the standard safe temp location
-     */
-    const isDangerousDestination = (destText: string): boolean => {
-      // /tmp is SAFE - it's the standard temp location
-      if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
-        return false;
-      }
-      
-      return destText.includes('/var') ||
-             destText.includes('/usr') ||
-             destText.includes('/etc') ||
-             destText.includes('/root') ||
-             destText.includes('/home') ||
-             destText.includes('C:\\Windows') ||
-             destText.includes('C:\\Program Files') ||
-             destText.includes('C:\\Users');
     };
 
     return {
@@ -487,7 +490,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           let current: TSESTree.Node | undefined = node;
           let isArchiveContext = false;
 
-          while (current && !isArchiveContext) {
+          // Every assignment of `isArchiveContext = true` is followed by `break`,
+          // so the negation is dead (CodeQL: `js/useless-conditional`).
+          while (current) {
             if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
               isArchiveContext = true;
               break;
@@ -529,41 +534,12 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Dangerous destinations are handled by the CallExpression handler to avoid duplicates
-        // Only check for dangerous destinations not related to archive extraction
-        if (isDangerousDestination(text) && !containsPathTraversal(text)) {
-          // Check if this is used as an extraction destination
-          let current: TSESTree.Node | undefined = node;
-          let isExtractionDest = false;
-
-          while (current && !isExtractionDest) {
-            if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
-              // Check if this node is a destination argument
-              const args = current.arguments;
-              const callee = current.callee;
-              const isMethodCall = callee.type === 'MemberExpression';
-
-              if ((isMethodCall && args.length >= 1 && args[0] === node) ||
-                  (!isMethodCall && args.length >= 2 && args[1] === node)) {
-                isExtractionDest = true;
-                break;
-              }
-            }
-            current = current.parent as TSESTree.Node;
-          }
-
-          // Only report if not already handled by CallExpression handler
-          if (!isExtractionDest) {
-            context.report({
-              node,
-              messageId: 'dangerousArchiveDestination',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
-        }
+        // Dangerous-destination check moved to the CallExpression handler
+        // (see lines 407-427). It already fires `dangerousArchiveDestination`
+        // for archive-extraction calls; firing again here would duplicate.
+        // The previous "fire on any /etc or /home literal" logic produced
+        // false positives on unrelated calls (fs.readFileSync, exec, etc.)
+        // and is no longer needed now that the call-site check is precise.
       },
 
       // Check variable assignments

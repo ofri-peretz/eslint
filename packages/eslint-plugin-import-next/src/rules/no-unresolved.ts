@@ -36,6 +36,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unresolved.md',
       description: 'Ensures imports point to resolvable modules',
     },
     hasSuggestions: true,
@@ -146,7 +147,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const filePath = context.filename || context.getFilename();
+      const filePath = context.filename;
       const resolved = resolveModule(importPath, filePath, {
         extensions: options?.extensions,
       });
@@ -187,7 +188,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
 
                 return fixer.insertTextBefore(
                   statement,
-                  '// eslint-disable-next-line eslint-plugin-llm-optimized/no-unresolved\n',
+                  '// eslint-disable-next-line import-next/no-unresolved\n',
                 );
               },
             },

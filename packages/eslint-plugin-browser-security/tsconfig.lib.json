@@ -3,11 +3,17 @@
   "compilerOptions": {
     "sourceMap": false,
     "composite": true,
-    "outDir": "../../dist/out-tsc",
+    "outDir": "./dist/src",
     "declaration": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "vite.config.ts",
     "vite.config.mts",
@@ -21,5 +27,10 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
+  ],
+  "references": [
+    {
+      "path": "../eslint-devkit/tsconfig.lib.json"
+    }
   ]
 }

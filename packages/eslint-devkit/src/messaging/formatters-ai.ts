@@ -7,9 +7,28 @@
 /**
  * AI-Native Runtime functions for LLM message formatting (Next-Gen)
  *
- * Contains the "Dual-Hertz" formatting engine for Agentic workflows
- * This module provides context-aware message formatting that automatically
- * routes between Human (CLI), Agent (JSON), and Hybrid (Cursor) modes.
+ * Contains the "Dual-Hertz" formatting engine for Agentic workflows.
+ * Provides context-aware message formatting that automatically routes
+ * between Human (CLI), Agent (JSON), and Hybrid (Cursor) modes.
+ *
+ * ⚠️ For NEW rule code, prefer the V2 formatters in `./formatters-v2`:
+ *   - `formatSecurityMessage`    — CWE-mapped security rules
+ *   - `formatCodeQualityMessage` — structural / import / cycle rules
+ *   - `formatPerformanceMessage` — performance / complexity rules
+ *
+ * The V2 formatters are category-specific (no force-fit security metadata
+ * on quality rules), expose `why` + before/after examples for higher
+ * first-fix accuracy, and support `'human' | 'compact' | 'agent'` modes.
+ *
+ * This file is retained for two reasons:
+ *   1. `buildASTSelector` — AST-targeting precision selector that V2 does
+ *      not yet replicate. Still useful for agent-mode messages that want
+ *      to hand the model an esquery target instead of a file/line.
+ *   2. `formatMessageNextGen` — the IDE_CURSOR mode that injects hidden
+ *      `<!-- AI_HINT: ... -->` comments. Not yet ported to V2.
+ *
+ * Do not deprecate — downstream plugins still consume this API. New work
+ * should land in `formatters-v2.ts` instead.
  */
 
 import type {

@@ -31,8 +31,11 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/dynamic-import-chunkname.md',
       description:
         'Enforce a leading comment with the webpackChunkName for dynamic imports',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     hasSuggestions: true,
     messages: {
@@ -86,7 +89,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     const { allowEmpty = false, webpackChunknameFormat = '[a-zA-Z0-9-_/.]+' } =
       options;
     const chunkNamePattern = new RegExp(`^${webpackChunknameFormat}$`);
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     function checkChunkName(node: TSESTree.ImportExpression) {
       // Get leading comments

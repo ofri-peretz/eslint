@@ -28,6 +28,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-amd.md',
       description: 'Prevents AMD require/define calls',
     },
     hasSuggestions: false,
@@ -77,7 +78,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
       // suggestES6 = true // Reserved for future use when hasSuggestions is enabled
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(): boolean {
       // Check if the call is in an allowed pattern

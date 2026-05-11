@@ -59,7 +59,10 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-exposed-private-fields.md',
       description: 'Detects sensitive fields not excluded from serialization',
+      cwe: 'CWE-200',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -97,7 +100,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true, sensitivePatterns: [] }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true, sensitivePatterns = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -130,14 +133,14 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      */
     function isEntityOrDto(decorators: TSESTree.Decorator[] | undefined): boolean {
       if (!decorators) return false;
-      const entityDecorators = [
+      const entityDecorators = new Set([
         'Entity',
         'Schema',
         'ObjectType',
         'InputType',
         'ArgsType',
         'ApiProperty',
-      ];
+      ]);
       return decorators.some((dec) => {
         const name =
           dec.expression.type === AST_NODE_TYPES.Identifier
@@ -146,7 +149,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return entityDecorators.includes(name);
+        return entityDecorators.has(name);
       });
     }
 

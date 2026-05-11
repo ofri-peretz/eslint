@@ -42,10 +42,7 @@ Prefer `includes()` over `indexOf() !== -1` for existence checks.
 ### ❌ Incorrect
 
 ```typescript
-if (array.indexOf(item) !== -1) { }
-if (array.indexOf(item) >= 0) { }
-if (array.indexOf(item) > -1) { }
-if (string.indexOf(substring) !== -1) { }
+obj.hasOwnProperty("key")
 ```
 
 ### ✅ Correct

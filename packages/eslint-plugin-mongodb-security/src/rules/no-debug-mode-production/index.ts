@@ -20,7 +20,11 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
   name: 'no-debug-mode-production',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent Mongoose debug mode in production' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-debug-mode-production.md', description: 'Prevent Mongoose debug mode in production',
+      cwe: 'CWE-489',
+      cvss: 3.1,
+    },
     hasSuggestions: true,
     messages: {
       debugModeProduction: formatLLMMessage({
@@ -41,7 +45,7 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

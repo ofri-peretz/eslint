@@ -83,6 +83,7 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-dependency-direction.md',
       description:
         'Ensures dependencies flow in the correct architectural direction',
     },
@@ -172,7 +173,7 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     const {
       layers: providedLayers,

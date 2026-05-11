@@ -5,7 +5,6 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
-  vi,
 } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -173,16 +172,16 @@ describe('resolveModule Integration Tests', () => {
     // Let's check if basic relative works first.
   });
 
-  it('should track resolver performance metrics', () => {
+  it('should return empty performance metrics (metrics removed for performance)', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
 
-    // Make some resolutions to generate metrics
+    // Make some resolutions
     resolveModule('./utils', fromFile);
     resolveModule('react', fromFile);
 
+    // With oxc-resolver, metrics tracking is removed for performance
     const metrics = getResolverPerformanceMetrics();
-    expect(metrics.length).toBeGreaterThan(0);
-    expect(metrics.some((m) => m.resolveCount > 0)).toBe(true);
+    expect(metrics).toEqual([]);
   });
 
   it('should clear resolver cache', () => {
@@ -313,20 +312,19 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBeNull();
   });
 
-  it('should track performance metrics for different resolver types', () => {
+  it('should resolve via different resolver types without metrics tracking', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
 
-    // Use different resolution paths
-    resolveModule('./utils', fromFile); // enhanced-resolve
-    resolveModule('@/utils', fromFile); // typescript paths
-    resolveModule('react', fromFile); // node_modules
+    // Use different resolution paths — all should resolve correctly
+    const relative = resolveModule('./utils', fromFile);
+    expect(relative).toBe(path.join(tempDir, 'project', 'src', 'utils.ts'));
 
+    const nodeModule = resolveModule('react', fromFile);
+    expect(nodeModule).toBe(path.join(tempDir, 'project', 'node_modules', 'react', 'index.js'));
+
+    // Metrics are disabled with oxc-resolver for performance
     const metrics = getResolverPerformanceMetrics();
-    expect(metrics.length).toBeGreaterThan(0);
-
-    // Should have metrics for different resolver types
-    const resolverNames = metrics.map((m) => m.name);
-    expect(resolverNames.some((name) => name !== 'none')).toBe(true);
+    expect(metrics).toEqual([]);
   });
 
   it('should handle custom extensions', () => {
@@ -485,35 +483,20 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBeNull();
   });
 
-  it('should track failed resolution metrics', () => {
+  it('should return null for failed resolution without metrics', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
-    // Clear metrics first
     clearResolverCache();
 
-    // Try to resolve non-existent module
-    resolveModule('completely-nonexistent-module-xyz-12345', fromFile);
-
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
-    expect(failedMetric?.resolveCount).toBeGreaterThan(0);
+    const resolved = resolveModule('completely-nonexistent-module-xyz-12345', fromFile);
+    expect(resolved).toBeNull();
   });
 
-  it('should track error resolution metrics', () => {
-    // Use invalid fromFile to trigger error path
+  it('should return null for error resolution without metrics', () => {
     const invalidFile = '/invalid/path/file.ts';
-
-    // Clear metrics first
     clearResolverCache();
 
-    resolveModule('./utils', invalidFile);
-
-    const metrics = getResolverPerformanceMetrics();
-    // With invalid file path, resolution fails gracefully and creates 'failed' metric
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
-    expect(failedMetric?.resolveCount).toBeGreaterThan(0);
+    const resolved = resolveModule('./utils', invalidFile);
+    expect(resolved).toBeNull();
   });
 
   it('should handle multiple TypeScript path matches and try each', () => {
@@ -709,12 +692,6 @@ describe('resolveModule Integration Tests', () => {
       fromFile,
     );
     expect(resolved).toBeNull();
-
-    // Should track as failed resolution
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
-    expect(failedMetric?.resolveCount).toBeGreaterThan(0);
   });
 
   it('should handle TypeScript paths when match is a file with exact path', () => {
@@ -1004,45 +981,29 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBe(jsFile);
   });
 
-  it('should handle CSS import resolution success path (lines 321-325)', () => {
+  it('should handle CSS import resolution success path', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
     const cssFile = path.join(tempDir, 'project', 'src', 'success.css');
     fs.writeFileSync(cssFile, 'body { color: blue; }');
 
     clearResolverCache();
 
-    // Exclude CSS from extensions so enhanced-resolve fails, triggering CSS resolver
-    // This should hit the success path in CSS resolution (lines 321-325)
     const resolved = resolveModule('./success.css', fromFile, {
       cssSupport: true,
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // No .css
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     });
     expect(resolved).toBe(cssFile);
-
-    // Verify metrics were tracked
-    const metrics = getResolverPerformanceMetrics();
-    const cssMetric = metrics.find((m) => m.name === 'css');
-    expect(cssMetric).toBeDefined();
-    expect(cssMetric?.resolveCount).toBeGreaterThan(0);
   });
 
-  it('should handle CSS import resolution failure path (lines 327-332)', () => {
+  it('should handle CSS import resolution failure path', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
     clearResolverCache();
 
-    // CSS import that doesn't exist - should hit failure path
-    // Exclude CSS from extensions so enhanced-resolve fails, triggering CSS resolver
     const resolved = resolveModule('./nonexistent.css', fromFile, {
       cssSupport: true,
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // No .css
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     });
     expect(resolved).toBeNull();
-
-    // Should track as failed
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
   });
 
   it('should handle CSS import with relative path that matches isCssImport pattern', () => {
@@ -1122,78 +1083,44 @@ describe('resolveModule Integration Tests', () => {
     // Don't check metrics as enhanced-resolve might have resolved it first
   });
 
-  it('should handle CSS resolution when cssResult is truthy (line 321-325)', () => {
+  it('should handle CSS resolution when cssResult is truthy', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
     const cssFile = path.join(tempDir, 'project', 'src', 'success.css');
     fs.writeFileSync(cssFile, 'body { color: green; }');
-
     clearResolverCache();
 
-    // Exclude CSS from extensions so enhanced-resolve fails, triggering CSS resolver
-    // This should hit the success path in CSS resolution (lines 321-325)
     const resolved = resolveModule('./success.css', fromFile, {
       cssSupport: true,
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // No .css
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     });
     expect(resolved).toBe(cssFile);
-
-    // Verify success was tracked
-    const metrics = getResolverPerformanceMetrics();
-    const cssMetric = metrics.find((m) => m.name === 'css');
-    expect(cssMetric).toBeDefined();
-    expect(cssMetric?.resolveCount).toBeGreaterThan(0);
   });
 
-  it('should handle CSS resolution when cssResult is null (line 327, falls through to failed)', () => {
+  it('should handle CSS resolution when cssResult is null (falls through to oxc-resolver)', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
     clearResolverCache();
 
-    // Non-relative CSS import - resolveCssImport returns null
-    // Exclude CSS from extensions so enhanced-resolve fails, triggering CSS resolver
-    // This tests line 327 where CSS resolver returns null
     const resolved = resolveModule('external-package.css', fromFile, {
       cssSupport: true,
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // No .css
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     });
-    // Should fall through to failed path (line 329-332)
     expect(resolved).toBeNull();
-
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
   });
 
-  it('should handle failed resolution path (line 329-332)', () => {
+  it('should handle failed resolution path gracefully', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
     clearResolverCache();
 
-    // Try to resolve something that doesn't exist anywhere
     const resolved = resolveModule('completely-nonexistent-xyz-999', fromFile);
     expect(resolved).toBeNull();
-
-    // Should track as failed (line 331)
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
-    expect(failedMetric?.resolveCount).toBeGreaterThan(0);
   });
 
-  it('should handle error path in try-catch (line 334-338)', () => {
-    // Use invalid file path to trigger error
+  it('should handle error path in try-catch gracefully', () => {
     const invalidFile = '/invalid/path/that/does/not/exist/file.ts';
-
     clearResolverCache();
 
     const resolved = resolveModule('./utils', invalidFile);
     expect(resolved).toBeNull();
-
-    // With invalid paths, resolution fails gracefully and tracks as 'failed' (line 355)
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
-    expect(failedMetric?.resolveCount).toBeGreaterThan(0);
   });
 
   it('should handle CSS import when cssSupport is false (should skip CSS resolver)', () => {
@@ -1290,21 +1217,13 @@ describe('resolveModule Integration Tests', () => {
 
   it('should handle CSS import when resolveCssImport returns null for non-relative import', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
     clearResolverCache();
 
-    // Non-relative CSS import - resolveCssImport should return null (line 162)
-    // Exclude CSS from extensions so enhanced-resolve fails, triggering CSS resolver
-    // This should fall through to failed path (line 329-332)
     const resolved = resolveModule('package-name.css', fromFile, {
       cssSupport: true,
-      extensions: ['.ts', '.tsx', '.js', '.jsx'], // No .css
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
     });
     expect(resolved).toBeNull();
-
-    const metrics = getResolverPerformanceMetrics();
-    const failedMetric = metrics.find((m) => m.name === 'failed');
-    expect(failedMetric).toBeDefined();
   });
 
   it('should handle TypeScript path resolution with multiple matches, first succeeds as file', () => {
@@ -1506,20 +1425,17 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBe('/resolved/path.ts');
   });
 
-  it('should handle cache hit path in performance tracking (line 180)', () => {
+  it('should handle repeated resolution (oxc-resolver internal cache)', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
-
-    // Clear metrics and cache first
     clearResolverCache();
 
-    // Do a resolution to populate cache
-    resolveModule('./utils', fromFile);
+    // First resolution
+    const result1 = resolveModule('./utils', fromFile);
+    // Second resolution (oxc-resolver handles caching internally)
+    const result2 = resolveModule('./utils', fromFile);
 
-    // This should result in a cache hit for the next call
-    // (though in practice this is hard to trigger, the code path exists)
-    const metrics = getResolverPerformanceMetrics();
-    // Just verify the metrics structure is correct
-    expect(metrics.length).toBeGreaterThan(0);
+    expect(result1).toBe(result2);
+    expect(result1).toBe(path.join(tempDir, 'project', 'src', 'utils.ts'));
   });
 
   it('should handle CSS imports with non-relative paths (exercises line 109)', () => {
@@ -1535,47 +1451,12 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBeNull();
   });
 
-  it('should handle error path in outer try-catch (lines 322-324)', () => {
-    // Create a file in a directory that has a tsconfig.json to trigger TypeScript path resolution
-    const tsconfigDir = path.join(tempDir, 'tsconfig-test');
-    const fromFile = path.join(tsconfigDir, 'src', 'index.ts');
-
-    // Create directory structure and tsconfig.json
-    fs.mkdirSync(path.join(tsconfigDir, 'src'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tsconfigDir, 'tsconfig.json'),
-      '{"compilerOptions": {"paths": {"@/*": ["src/*"]}}}',
-      'utf-8',
-    );
-    fs.writeFileSync(fromFile, 'console.log("test");', 'utf-8');
-
-    // Clear metrics first to ensure clean state
+  it('should handle error path in outer try-catch gracefully', () => {
+    // Test that resolution errors are caught and return null
     clearResolverCache();
 
-    // Mock getTsconfig to throw an exception to test the outer catch block (lines 322-324)
-    const originalGetTsconfig = require('get-tsconfig').getTsconfig;
-    (require('get-tsconfig') as { getTsconfig: unknown }).getTsconfig = vi.fn(
-      () => {
-        throw new Error('Mock TypeScript config error');
-      },
-    );
-
-    try {
-      // Try to resolve a module that would trigger TypeScript path resolution
-      const resolved = resolveModule('@/nonexistent', fromFile);
-      expect(resolved).toBeNull();
-
-      // Verify that error metrics are created by the outer catch block
-      const metrics = getResolverPerformanceMetrics();
-      const errorMetric = metrics.find((m) => m.name === 'error');
-      expect(errorMetric).toBeDefined();
-      expect(errorMetric?.resolveCount).toBe(1);
-    } finally {
-      // Restore the original function
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (require('get-tsconfig').getTsconfig as any) = originalGetTsconfig;
-      // Clean up
-      fs.rmSync(tsconfigDir, { recursive: true, force: true });
-    }
+    // Use a path that will trigger the outer catch (non-existent directory)
+    const resolved = resolveModule('@/nonexistent', '/nonexistent/path/file.ts');
+    expect(resolved).toBeNull();
   });
 });

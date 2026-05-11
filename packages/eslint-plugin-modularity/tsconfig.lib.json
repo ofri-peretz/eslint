@@ -1,15 +1,27 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "./dist/src",
     "declaration": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "composite": true,
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "jest.config.ts",
     "jest.config.cts",
     "src/**/*.spec.ts",
     "src/**/*.test.ts"
+  ],
+  "references": [
+    {
+      "path": "../eslint-devkit/tsconfig.lib.json"
+    }
   ]
 }

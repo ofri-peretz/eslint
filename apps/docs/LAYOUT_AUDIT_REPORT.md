@@ -2,11 +2,27 @@
 
 **Date:** 2026-01-30  
 **Page Tested:** `/docs/secure-coding/rules/detect-non-literal-regexp`  
-**Status:** 🔴 **CRITICAL ISSUES DETECTED**
+**Status:** ✅ **RESOLVED (verified 2026-05-10)** — historical record kept for context
 
 ---
 
-## Executive Summary
+## ✅ Resolution Summary (2026-05-10)
+
+Every root cause flagged below has been addressed:
+
+| Root cause (original) | Current state |
+| :--- | :--- |
+| `LayoutFix.tsx` JS fighting CSS | **Removed** (`grep -r LayoutFix src/` returns 0 hits) |
+| 1,947-line monolithic `global.css` | **247 lines** (87% reduction) |
+| 500+ `!important` declarations | **26** (95% reduction) |
+| Triple breakpoint source-of-truth | Consolidated into Fumadocs config + `global.css` only |
+| Duplicate `LayoutFix` mounting | N/A (component gone) |
+
+The original audit content is preserved below for historical reference. Future layout work should not re-introduce the anti-patterns it documented.
+
+---
+
+## Original Executive Summary (historical)
 
 A comprehensive responsive layout test was performed across 6 standard breakpoints. The audit revealed **critical layout violations** that prevent users from viewing documentation content. The main issues stem from:
 

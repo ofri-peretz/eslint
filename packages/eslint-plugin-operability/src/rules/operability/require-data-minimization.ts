@@ -30,7 +30,10 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/require-data-minimization.md',
       description: 'Identify excessive data collection patterns',
+      cwe: 'CWE-213',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

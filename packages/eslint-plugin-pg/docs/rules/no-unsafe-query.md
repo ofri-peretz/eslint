@@ -28,6 +28,20 @@ SQL injection is one of the most critical security vulnerabilities
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration                                |
 | **Best For**      | Protecting database operations from SQL injection vulnerabilities        |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) — Improper Neutralization of Special Elements used in an SQL Command (CVSS 9.8 Critical) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — SQL injection is the most-cited OWASP A03 finding ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech (regulatory + transaction data), healthtech (PHI), B2B SaaS (multi-tenant exposure), cybersecurity · **High:** marketplaces, infra/devtools · **Medium:** B2C |
+| **Investor-frame impact** | SQL injection → full database disclosure → mandatory disclosure cycle. The most-cited single attack class in security-incident reports for two decades. Lint-time enforcement of parameterized queries is the cheapest possible structural defense. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Rule Details
 
 SQL injection is one of the most critical security vulnerabilities. This rule detects potentially unsafe SQL query construction in `pg` driver calls.

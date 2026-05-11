@@ -1,0 +1,166 @@
+{
+  "bench": "ILB-TSC-Matrix",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T22:08:41.129Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "preregistration": {
+    "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+    "dirtyPaths": [
+      "M benchmarks/score.mjs",
+      "benchmarks/suites/ilb-arena/README.md",
+      "scripts/ilb-wild.mjs",
+      "benchmarks/corpus/CVE/",
+      "benchmarks/lib/history.mjs",
+      "benchmarks/lib/preregister.mjs",
+      "benchmarks/lib/result-schema.json",
+      "benchmarks/lib/stats.mjs",
+      "benchmarks/lib/toolchain.mjs",
+      "benchmarks/suites/ilb-arena/eslint10-compat/",
+      "benchmarks/suites/ilb-arena/eslint9-compat/",
+      "benchmarks/suites/ilb-determinism/",
+      "benchmarks/suites/ilb-diff/",
+      "benchmarks/suites/ilb-flagship/",
+      "benchmarks/suites/ilb-formatter/",
+      "benchmarks/suites/ilb-tsc-matrix/"
+    ],
+    "capturedAt": "2026-05-09T22:08:36.668Z",
+    "paths": [
+      "benchmarks/corpus",
+      "benchmarks/suites",
+      "benchmarks/lib",
+      "benchmarks/score.mjs",
+      "scripts/ilb-wild.mjs",
+      "scripts/ilb-validate-fixtures.mjs"
+    ]
+  },
+  "cost": {},
+  "effectiveness": {
+    "ruleSurvivalRate": 1
+  },
+  "latency": {
+    "meanLatencyMs": 733.5409165000001
+  },
+  "perCompiler": {
+    "tsc-classic": {
+      "version": "5.9.3",
+      "runs": 2,
+      "medianMs": 733.5409165000001,
+      "meanMs": 733.5409165000001,
+      "driftAcrossRuns": 0,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10,
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe SQL query detected. Variable interpolation found. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Use parameterized queries ($1, $2) instead of string concatenation. | https://node-postgres.com/features/queries#parameterized-queries"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10,
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe SQL query detected. Variable interpolation found. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Use parameterized queries ($1, $2) instead of string concatenation. | https://node-postgres.com/features/queries#parameterized-queries"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10,
+          "message": "🔒 Unsafe SQL query construction detected (template literal). | CRITICAL\n   Fix: Use parameterized queries ($1, $2) instead of interpolating values. | https://owasp.org/www-community/attacks/SQL_Injection"
+        }
+      ],
+      "findingCount": 6
+    },
+    "tsc-go": {
+      "version": "7.0.0-dev.20260509.2",
+      "runs": 2,
+      "medianMs": 1334.9815414999998,
+      "meanMs": 1334.9815414999998,
+      "driftAcrossRuns": 0,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10,
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe SQL query detected. Variable interpolation found. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Use parameterized queries ($1, $2) instead of string concatenation. | https://node-postgres.com/features/queries#parameterized-queries"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10,
+          "message": "🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe SQL query detected. Variable interpolation found. | CRITICAL [SOC2,PCI-DSS,NIST-CSF]\n   Fix: Use parameterized queries ($1, $2) instead of string concatenation. | https://node-postgres.com/features/queries#parameterized-queries"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1,
+          "message": "⚠️ CWE-391 OWASP:A10-Mishandling CVSS:5.3 | Promise-returning query is neither awaited nor returned. | HIGH\n   Fix: Add \"await\" or \"return\" to handle the query promise. | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10,
+          "message": "🔒 Unsafe SQL query construction detected (template literal). | CRITICAL\n   Fix: Use parameterized queries ($1, $2) instead of interpolating values. | https://owasp.org/www-community/attacks/SQL_Injection"
+        }
+      ],
+      "findingCount": 6
+    }
+  },
+  "crossDelta": {
+    "latencyRatio": 0.5494764486973996,
+    "findingsDelta": {
+      "onlyInClassic": [],
+      "onlyInGo": [],
+      "shared": 6
+    }
+  },
+  "corpus": "benchmarks/corpus/CWE-089"
+}

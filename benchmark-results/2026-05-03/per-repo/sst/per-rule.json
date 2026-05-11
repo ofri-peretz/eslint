@@ -1,0 +1,257 @@
+{
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 0.86,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.77,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "lambda-security/no-secrets-in-env": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "lambda-security/no-hardcoded-credentials-sdk": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "lambda-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "lambda-security/no-user-controlled-requests": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-response": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "lambda-security/no-unvalidated-event-body": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "lambda-security/no-missing-authorization-check": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "lambda-security/no-exposed-error-details": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "lambda-security/no-overly-permissive-iam-policy": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "lambda-security/no-unbounded-batch-processing": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "lambda-security/require-timeout-handling": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-middy": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "lambda-security/no-env-logging": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "lambda-security/no-error-swallowing": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  }
+}

@@ -1,0 +1,249 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Changesets
+
+run-name: >-
+  Changesets · ${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || (github.event_name == 'push' && 'open / refresh Version PR' || 'manual') }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Two responsibilities:
+#
+# 1. On PR — soft "is there a changeset?" advisory. Posts a one-time PR
+#    comment if a PR touches `packages/*/src` or `package.json` but has no
+#    `.changeset/*.md` file. Skipped (passes silently) when the PR carries
+#    the `skip-changeset` label.
+#
+# 2. On push to main — opens / refreshes the "Version Packages" PR. It
+#    accumulates every changeset since the last release, bumps each
+#    affected `package.json`, regenerates CHANGELOG.md, and deletes the
+#    consumed changeset files. Merging that PR triggers release.yml.
+#
+# We do NOT pass `publish:` to changesets/action — version-only mode keeps
+# publishing in release.yml where we already have matrix-parallel fan-out.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+concurrency:
+  group: changesets-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Open / refresh Version Packages PR
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write       # commit version bumps + CHANGELOGs
+      pull-requests: write  # open / update the Version PR
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Open / refresh Version PR
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # `version` runs `npm run changeset:version`, which bumps versions
+          # AND regenerates the lockfile so the PR diff is complete.
+          version: npm run changeset:version
+          title: "chore(release): version packages"
+          commit: "chore(release): version packages"
+          # No `publish:` — release.yml does that on merge.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Closes the loop for solo-maintainer continuous delivery: once CI is
+      # green, GitHub auto-squash-merges the Version PR. release.yml then fires
+      # on the resulting push to main and ships to npm.
+      #
+      # If branch protection requires a CODEOWNERS review:
+      #   - Set `RELEASE_BOT_PAT` (a fine-grained PAT with `pull_request: write`
+      #     on this repo) to have the bot self-approve.
+      #   - Without the PAT: auto-merge waits until you click "Approve" once.
+      #     Auto-merge persists across CI re-runs, so the merge still happens
+      #     unattended after that single approval.
+      - name: Enable auto-merge on the Version PR
+        if: steps.changesets.outputs.hasChangesets == 'true' && steps.changesets.outputs.pullRequestNumber
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.changesets.outputs.pullRequestNumber }}
+          HAS_PAT: ${{ secrets.RELEASE_BOT_PAT != '' }}
+        run: |
+          set -euo pipefail
+          # Self-approve when a PAT is configured (bypasses CODEOWNERS gate).
+          if [ "$HAS_PAT" = "true" ]; then
+            gh pr review "$PR" --approve --body "Auto-approved by changesets bot — review via the changesets that produced this PR." || \
+              echo "::warning::Auto-approve failed (PAT may lack permission). Auto-merge still set."
+          fi
+          # Idempotent: re-running the workflow re-asserts auto-merge.
+          gh pr merge "$PR" --auto --squash || \
+            echo "::warning::gh pr merge --auto returned non-zero. Repo may have auto-merge disabled in Settings → General."
+
+      - name: Summarize
+        if: always()
+        env:
+          HAS_CHANGESETS: ${{ steps.changesets.outputs.hasChangesets }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+          PUBLISHED: ${{ steps.changesets.outputs.published }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo "# Changesets · push to main"
+            echo ""
+            if [ "$HAS_CHANGESETS" = "true" ]; then
+              if [ -n "${PR_NUMBER:-}" ] && [ "$PR_NUMBER" != "null" ]; then
+                echo "📦 Version PR ready: [#${PR_NUMBER}](https://github.com/${REPO}/pull/${PR_NUMBER})"
+                echo ""
+                echo "Merging that PR triggers \`release.yml\` to publish the bumped packages."
+              else
+                echo "📦 Changesets detected but Version PR not opened (likely first run after CI was set up). Re-running may help; otherwise check the action logs."
+              fi
+            else
+              echo "✅ No pending changesets — nothing queued for release."
+              echo ""
+              echo "Add one with \`npm run changeset\` in your next user-visible PR."
+            fi
+            echo ""
+            echo "_Tip: \`npm run release:status\` shows the same view locally._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  required:
+    name: Changeset present
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: write   # post the advisory comment
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Check for changeset
+        id: check
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -euo pipefail
+          if echo ",$LABELS," | grep -q ',skip-changeset,'; then
+            echo "status=skipped" >> "$GITHUB_OUTPUT"
+            echo "Label 'skip-changeset' present — passing."
+            exit 0
+          fi
+
+          added=$(git diff --name-only --diff-filter=A "$BASE_SHA"..."$HEAD_SHA" \
+            | grep -E '^\.changeset/[^/]+\.md$' \
+            | grep -vE '^\.changeset/(README|config)\.md$' || true)
+
+          src=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" \
+            | grep -E '^packages/[^/]+/(src|package\.json)' || true)
+
+          if [ -n "$added" ]; then
+            echo "status=present" >> "$GITHUB_OUTPUT"
+            echo "Found changeset(s):"
+            echo "$added"
+          elif [ -z "$src" ]; then
+            echo "status=not-needed" >> "$GITHUB_OUTPUT"
+            echo "No package source changed — no changeset required."
+          else
+            echo "status=missing" >> "$GITHUB_OUTPUT"
+            echo "::warning::PR changes packages/ source but has no changeset."
+          fi
+
+      - name: Summarize
+        if: always()
+        env:
+          STATUS: ${{ steps.check.outputs.status }}
+        run: |
+          set -euo pipefail
+          case "$STATUS" in
+            present)
+              header="✅ Changeset present"
+              body="This PR ships at least one \`.changeset/*.md\` file — version bump + CHANGELOG entry will be derived from it."
+              ;;
+            not-needed)
+              header="✅ No changeset needed"
+              body="This PR doesn't touch \`packages/*/src/**\` or any \`package.json\` — release flow is unaffected."
+              ;;
+            missing)
+              header="⚠️ Missing changeset"
+              body="This PR touches package source but has no changeset. Run \`npm run changeset\` and commit the result, or add the \`skip-changeset\` label for internal-only work. A reminder comment was posted on the PR."
+              ;;
+            skipped)
+              header="⏭ Skipped (label opt-out)"
+              body="Label \`skip-changeset\` is present — this PR will not produce a release entry."
+              ;;
+            *)
+              header="❓ Unknown"
+              body="Status: \`$STATUS\`."
+              ;;
+          esac
+          {
+            echo "# $header"
+            echo ""
+            echo "$body"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on PR (when missing)
+        if: steps.check.outputs.status == 'missing'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = '<!-- changeset-reminder -->';
+            const body = `${marker}
+            ### 📝 Changeset reminder
+
+            This PR touches \`packages/*/src/**\` or a \`package.json\`, but doesn't
+            include a changeset. If this change is user-visible, please run:
+
+            \`\`\`bash
+            npm run changeset
+            \`\`\`
+
+            …and commit the resulting \`.changeset/*.md\` file. The version bump
+            and CHANGELOG entry are derived from it.
+
+            If the change is internal-only (refactor, tests, build tooling),
+            add the \`skip-changeset\` label to silence this check.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

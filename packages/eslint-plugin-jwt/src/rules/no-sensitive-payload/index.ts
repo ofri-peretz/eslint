@@ -26,8 +26,11 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-sensitive-payload.md',
       description:
         'Prevent storing sensitive data in JWT payload which is only base64-encoded',
+      cwe: 'CWE-359',
+      cvss: 5,
     },
     fixable: undefined,
     hasSuggestions: false,

@@ -27,7 +27,10 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-abort-signal.md',
       description: 'Require AbortSignal for streaming AI calls to enable proper cleanup',
+      cwe: 'CWE-404',
+      cvss: 4,
     },
     messages: {
       missingAbortSignal: formatLLMMessage({
@@ -65,7 +68,7 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const targetFunctions = options.targetFunctions ?? ['streamText', 'streamObject'];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

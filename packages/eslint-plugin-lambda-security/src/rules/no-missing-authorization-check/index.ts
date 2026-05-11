@@ -51,7 +51,7 @@ const AUTHORIZATION_CHECK_PATTERNS = [
 ];
 
 // Sensitive operations that require authorization
-const SENSITIVE_OPERATIONS = [
+const SENSITIVE_OPERATIONS = new Set([
   // Database operations
   'query',
   'put',
@@ -70,17 +70,20 @@ const SENSITIVE_OPERATIONS = [
   'deleteItem',
   'updateItem',
   'getItem',
-];
+]);
 
 // Event parameter names
-const EVENT_PARAM_NAMES = ['event', 'evt', 'e', 'request', 'req'];
+const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-authorization-check',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-missing-authorization-check.md',
       description: 'Detects Lambda handlers without authorization checks',
+      cwe: 'CWE-862',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -136,7 +139,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -169,7 +172,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       const hasEvent = node.params.some(
         (param) =>
           param.type === AST_NODE_TYPES.Identifier &&
-          EVENT_PARAM_NAMES.includes(param.name),
+          EVENT_PARAM_NAMES.has(param.name),
       );
 
       if (hasEvent) {
@@ -216,7 +219,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
      * Check if a member expression chain indicates auth check
      */
     function isAuthorizationAccess(node: TSESTree.MemberExpression): boolean {
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode;
       const text = sourceCode.getText(node);
 
       return AUTHORIZATION_CHECK_PATTERNS.some(
@@ -235,7 +238,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
         const property = node.callee.property;
         if (property.type === AST_NODE_TYPES.Identifier) {
-          if (SENSITIVE_OPERATIONS.includes(property.name)) {
+          if (SENSITIVE_OPERATIONS.has(property.name)) {
             return property.name;
           }
         }

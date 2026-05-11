@@ -10,9 +10,6 @@ import { describe, it, expect } from 'vitest';
  * These tests focus on module structure and exported interface validation.
  */
 
-// Import types and functions we expect to exist
-import type { CompiledContent } from '../src/lib/mdx-compiler';
-
 describe('MDX Compiler Module', () => {
   // ===========================================================================
   // Module Structure Tests - Lock the exported interface
@@ -178,18 +175,19 @@ describe('MDX Compiler Module', () => {
       expect(source).not.toMatch(/await\s+compileMDX\(/);
     });
 
-    it('should create compiler instance at module level', async () => {
+    it('should create compiler instance per compile call (supports dynamic remark plugins)', async () => {
       const fs = await import('fs/promises');
       const path = await import('path');
-      
+
       const modulePath = path.resolve(
         process.cwd(),
         'src/lib/mdx-compiler.tsx'
       );
       const source = await fs.readFile(modulePath, 'utf-8');
-      
-      // Compiler should be created at module level for reuse
-      expect(source).toMatch(/const\s+compiler\s*=\s*createCompiler/);
+
+      // Each compile call instantiates its own compiler with the call-specific
+      // remark plugin list (link-rewriting depends on baseUrl/pluginName).
+      expect(source).toMatch(/const\s+localCompiler\s*=\s*createCompiler/);
     });
   });
 

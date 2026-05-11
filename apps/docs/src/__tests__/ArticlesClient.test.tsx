@@ -103,7 +103,7 @@ function sortArticles(
   sortField: SortField,
   sortDirection: SortDirection
 ): DevToArticle[] {
-  return [...articles].sort((a, b) => {
+  return [...articles].toSorted((a, b) => {
     let comparison = 0;
     switch (sortField) {
       case 'date':
@@ -129,13 +129,13 @@ function getTagCounts(articles: DevToArticle[]): [string, number][] {
   articles.forEach(a => a.tag_list.forEach(tag => {
     counts[tag] = (counts[tag] || 0) + 1;
   }));
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return Object.entries(counts).toSorted((a, b) => b[1] - a[1]);
 }
 
 // Featured article selection logic
 function getFeaturedArticle(articles: DevToArticle[]): DevToArticle | null {
   if (articles.length === 0) return null;
-  return [...articles].sort((a, b) => b.positive_reactions_count - a.positive_reactions_count)[0];
+  return [...articles].toSorted((a, b) => b.positive_reactions_count - a.positive_reactions_count)[0];
 }
 
 // View count formatting
@@ -452,7 +452,7 @@ describe('UI Styling Locks - CRITICAL', () => {
   // These class strings are extracted from ArticlesClient.tsx and must match exactly
   const EXPECTED_STYLING = {
     // Gradient placeholder classes for cards WITHOUT images (ArticleCard component)
-    GRADIENT_PLACEHOLDER_CONTAINER: 'relative h-44 overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900',
+    GRADIENT_PLACEHOLDER_CONTAINER: 'relative h-44 overflow-hidden bg-linear-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900',
     
     // Light radial overlay effect on gradient
     GRADIENT_LIGHT_EFFECT: 'absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]',
@@ -484,12 +484,12 @@ describe('UI Styling Locks - CRITICAL', () => {
       expect(gradientClass).not.toContain('to-fd-muted/30');
     });
 
-    it('includes proper container structure (h-44, overflow-hidden, bg-gradient-to-br)', () => {
+    it('includes proper container structure (h-44, overflow-hidden, bg-linear-to-br)', () => {
       const gradientClass = EXPECTED_STYLING.GRADIENT_PLACEHOLDER_CONTAINER;
       
       expect(gradientClass).toContain('h-44');
       expect(gradientClass).toContain('overflow-hidden');
-      expect(gradientClass).toContain('bg-gradient-to-br');
+      expect(gradientClass).toContain('bg-linear-to-br');
       expect(gradientClass).toContain('relative');
     });
 
@@ -660,13 +660,13 @@ describe('Source File Class Verification', () => {
 describe('Featured Article Card Styling - CRITICAL', () => {
   const FEATURED_STYLING = {
     // Featured article container - large hero card
-    CONTAINER: 'group relative block rounded-2xl overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 animate-fade-in-up',
+    CONTAINER: 'group relative block rounded-2xl overflow-hidden bg-linear-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 animate-fade-in-up',
     
     // Dark gradient overlay for WCAG-compliant text contrast
-    DARK_OVERLAY: 'absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 via-50% to-black/20',
+    DARK_OVERLAY: 'absolute inset-0 bg-linear-to-t from-black/90 via-black/60 via-50% to-black/20',
     
     // Featured badge styling
-    FEATURED_BADGE: 'absolute top-4 left-4 flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-slide-in-left',
+    FEATURED_BADGE: 'absolute top-4 left-4 flex items-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-slide-in-left',
     
     // Tag styling with semi-transparent background
     TAG: 'bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/30 transition-colors',
@@ -782,7 +782,7 @@ describe('Article Card Author Layout - CRITICAL', () => {
     CONTENT_CONTAINER: 'flex flex-col flex-grow p-4',
     
     // Cover image section - no avatar overlapping at bottom
-    COVER_IMAGE_CONTAINER: 'relative h-44 overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900',
+    COVER_IMAGE_CONTAINER: 'relative h-44 overflow-hidden bg-linear-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900',
   };
 
   describe('Author Avatar Positioning (Bug Fix Lock)', () => {

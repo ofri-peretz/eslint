@@ -1,0 +1,10 @@
+.env
+.DS_Store
+node_modules/
+fixtures/
+# ILB-Arena fixtures are hand-written test corpora consumed by suites/ilb-arena/run.js;
+# they must travel with the repo (CI cannot regenerate them) so they're allow-listed here.
+!/suites/ilb-arena/fixtures/
+!/suites/ilb-arena/fixtures/**
+results/*.json
+!results/.gitkeep

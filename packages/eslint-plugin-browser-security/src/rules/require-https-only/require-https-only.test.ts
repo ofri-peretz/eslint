@@ -16,6 +16,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-https-only', requireHttpsOnly, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
+        'class Foo {}',
     { code: "fetch('https://api.example.com')" },
     { code: "axios.get('https://secure.io')" }
   ],

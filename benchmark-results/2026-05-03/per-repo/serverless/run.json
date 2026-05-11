@@ -1,0 +1,37 @@
+{
+  "repo": "serverless",
+  "meta": {
+    "stars": 46000,
+    "commit": "main",
+    "category": "Serverless Framework",
+    "plugins": [
+      "lambda-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/**/*.{js,ts}"
+  },
+  "fileCount": 609,
+  "loc": 128881,
+  "timing": {
+    "runsMs": [
+      2930
+    ],
+    "medianMs": 2930,
+    "meanMs": 2930,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 4.81
+  },
+  "peakRssMb": 565,
+  "findings": {
+    "total": 2399,
+    "errors": 722,
+    "warnings": 1677,
+    "filesWithFindings": 376,
+    "densityPerKloc": 18.61,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}

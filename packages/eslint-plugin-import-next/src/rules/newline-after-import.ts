@@ -20,6 +20,7 @@ export const newlineAfterImport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'layout',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/newline-after-import.md',
       description: 'Enforce a newline after import statements',
     },
     fixable: 'whitespace',

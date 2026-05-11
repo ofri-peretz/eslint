@@ -70,16 +70,7 @@ res.json(users); // Just doing JSON conversion anyway
 ### ✅ Correct
 
 ```typescript
-// Plain JavaScript objects - minimal memory
-const users = await User.find({ active: true }).lean();
-
-// With virtuals if needed
-const users = await User.find().lean({ virtuals: true });
-
-// For documents that need modification, skip lean()
-const user = await User.findById(id); // Full document
-user.lastLogin = new Date();
-await user.save();
+const x = 1;
 ```
 
 ## When Not To Use It

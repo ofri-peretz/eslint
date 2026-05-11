@@ -47,18 +47,7 @@ Detects secrets defined directly in environment variable configurations. This ru
 ### ❌ Incorrect
 
 ```javascript
-// CDK - Hardcoded secrets in environment - VULNERABLE
-new lambda.Function(this, 'Handler', {
-  environment: {
-    DATABASE_PASSWORD: 'super_secret_password',
-    API_KEY: 'sk-1234567890abcdef',
-  },
-});
-
-// SAM/CloudFormation template
-// Environment:
-//   Variables:
-//     SECRET_KEY: "hardcoded-secret-value"
+process.env.API_KEY = 'sk-1234567890abcdef1234567890abcdef';
 ```
 
 ### ✅ Correct

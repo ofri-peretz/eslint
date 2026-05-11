@@ -69,7 +69,10 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-cookie-auth-tokens.md',
       description: 'Disallow storing auth tokens in cookies via JavaScript',
+      cwe: 'CWE-1004',
+      cvss: 8.5,
     },
     hasSuggestions: true,
     messages: {
@@ -110,7 +113,7 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

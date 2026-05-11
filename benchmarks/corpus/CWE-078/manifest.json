@@ -1,0 +1,7 @@
+{
+  "cwe": "CWE-078",
+  "name": "OS Command Injection",
+  "owasp": "A03:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": ["eslint-plugin-secure-coding", "eslint-plugin-node-security"]
+}

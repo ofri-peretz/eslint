@@ -1,0 +1,17 @@
+{
+  "cwe": "CWE-943",
+  "name": "Improper Neutralization of Special Elements in Data Query Logic (NoSQL Injection)",
+  "owasp": "A03:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": ["eslint-plugin-mongodb-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "user-input-in-find.js", "description": "User-supplied object spread into find() filter" },
+      { "file": "where-string.js", "description": "$where operator with string-built JS" }
+    ],
+    "safe": [
+      { "file": "explicit-eq.js", "description": "User input wrapped in explicit $eq operator" },
+      { "file": "static-filter.js", "description": "Filter object with literal-only fields" }
+    ]
+  }
+}

@@ -57,20 +57,8 @@ Directive injection occurs when user input is used to inject malicious directive
 
 ### ❌ Incorrect
 
-```typescript
-// Dynamic directive name from user input
-const directive = userInput;
-<div {...{[directive]: value}} />
-
-// Template injection in Angular
-const template = `<div ${userControlledDirective}>Content</div>`;
-this.compile(template);
-
-// dangerouslySetInnerHTML with user content
-<div dangerouslySetInnerHTML={{__html: userHtml}} />
-
-// Vue v-html with untrusted content
-<div v-html="userContent"></div>
+```tsx
+element.innerHTML = userInput;
 ```
 
 ### ✅ Correct

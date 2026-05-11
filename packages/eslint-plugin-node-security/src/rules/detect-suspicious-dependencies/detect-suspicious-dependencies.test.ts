@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Valid popular package names
     { code: "import React from 'react'" },
     { code: "import _ from 'lodash'" },

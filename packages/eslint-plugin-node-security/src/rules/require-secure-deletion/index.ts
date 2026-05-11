@@ -25,7 +25,10 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-secure-deletion.md',
       description: 'Require secure data deletion patterns',
+      cwe: 'CWE-459',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

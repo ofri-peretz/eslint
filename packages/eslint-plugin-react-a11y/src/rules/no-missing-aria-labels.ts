@@ -46,6 +46,7 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-missing-aria-labels.md',
       description: 'Detects elements missing ARIA labels',
     },
     hasSuggestions: true,
@@ -114,7 +115,7 @@ ignoreInTests = true,
     
 }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (isTestFile) {

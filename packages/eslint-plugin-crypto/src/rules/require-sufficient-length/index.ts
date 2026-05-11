@@ -33,7 +33,10 @@ export const requireSufficientLength = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/require-sufficient-length.md',
       description: 'Require crypto-random-string to use sufficient token length',
+      cwe: 'CWE-330',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

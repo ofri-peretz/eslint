@@ -85,17 +85,17 @@ ruleTester.run('rule-name', rule, {
 
 ## Commands
 
-When implementing changes, use these Nx commands:
+When implementing changes, use these Turborepo commands:
 
 ```bash
 # Run tests for a specific package
-nx run eslint-plugin-secure-coding:test
+npx turbo run test --filter=eslint-plugin-secure-coding
 
 # Run lint
-nx run eslint-plugin-secure-coding:lint
+npx turbo run lint --filter=eslint-plugin-secure-coding
 
 # Build
-nx run eslint-plugin-secure-coding:build
+npx turbo run build --filter=eslint-plugin-secure-coding
 ```
 
 ## Behavior

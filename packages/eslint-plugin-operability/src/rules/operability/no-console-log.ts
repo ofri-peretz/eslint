@@ -79,8 +79,11 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-console-log.md',
       description:
         'Disallow console.log with configurable remediation strategies',
+      cwe: 'CWE-532',
+      cvss: 5,
     },
     fixable: 'code',
     hasSuggestions: false,
@@ -218,8 +221,9 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     /** Merge user's severityMap with defaults to determine method mappings */
     const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
 
-    const filename = context.filename || context.getFilename();
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const filename = context.filename;
+    // oxlint-disable-next-line no-shadow
+    const sourceCode = context.sourceCode;
     const occurrences: number[] = [];
 
     /**
@@ -292,11 +296,20 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         /** Directory match */
         if (normalizedPath.startsWith(normalizedPattern + '/')) return true;
 
-        /** Glob-like pattern support */
-        const regexPattern = normalizedPattern
-          .replace(/\./g, '\\.')
-          .replace(/\*/g, '.*')
-          .replace(/\?/g, '.');
+        /**
+         * Glob-like pattern support. Escape ALL regex metacharacters (the
+         * previous logic only escaped `.`, so `(`, `)`, `+`, `[`, `]`, `\`
+         * etc. were interpreted as regex syntax). CodeQL specifically flagged
+         * the unescaped backslash as `js/incomplete-sanitization`. The escape
+         * set MUST include `*` and `?` so the subsequent replaces can find
+         * the escaped tokens and translate them to glob equivalents — without
+         * that, raw `*` / `?` reach `new RegExp()` and the pattern matching
+         * is silently broken.
+         */
+        const escaped = normalizedPattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
+        const regexPattern = escaped
+          .replace(/\\\*/g, '.*')
+          .replace(/\\\?/g, '.');
 
         return new RegExp(regexPattern).test(normalizedPath);
       });
@@ -347,7 +360,6 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           maxOccurrences > 0 &&
           occurrences.length > maxOccurrences;
 
-        const sourceCode = context.sourceCode || context.sourceCode;
         const relativePath = getRelativePath(process.cwd(), filename);
 
         /**

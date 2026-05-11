@@ -16,18 +16,22 @@ type MessageIds = 'bypassMiddleware';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const BYPASS_METHODS = [
+const BYPASS_METHODS = new Set([
   'updateOne', 'updateMany', 'deleteOne', 'deleteMany',
   'findOneAndUpdate', 'findOneAndDelete', 'findOneAndReplace',
   'findByIdAndUpdate', 'findByIdAndDelete',
   'insertMany', 'bulkWrite',
-];
+]);
 
 export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
   name: 'no-bypass-middleware',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Prevent bypassing Mongoose pre/post middleware hooks' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-bypass-middleware.md', description: 'Prevent bypassing Mongoose pre/post middleware hooks',
+      cwe: 'CWE-284',
+      cvss: 5.3,
+    },
     hasSuggestions: true,
     messages: {
       bypassMiddleware: formatLLMMessage({
@@ -48,7 +52,7 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -65,7 +69,7 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (methodName && BYPASS_METHODS.includes(methodName)) {
+        if (methodName && BYPASS_METHODS.has(methodName)) {
           context.report({
             node,
             messageId: 'bypassMiddleware',

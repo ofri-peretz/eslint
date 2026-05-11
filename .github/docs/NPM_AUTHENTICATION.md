@@ -2,7 +2,7 @@
 
 > **📚 Part of [CI/CD Pipeline Documentation](../CICD_PIPELINE.md)**
 >
-> Related docs: [Failure Scenarios](./FAILURE_SCENARIOS.md) • [Nx Release Guide](./NX_RELEASE_GUIDE.md)
+> Related docs: [Failure Scenarios](./FAILURE_SCENARIOS.md) • [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md#-versioning--releases-changesets)
 
 ---
 
@@ -154,7 +154,7 @@ rm -f .npmrc
 | -------------------- | ---------------------- | ------------------------------- |
 | **Detection**        | `npm view` returns 404 | `npm view` returns package info |
 | **Auth Method**      | NPM_TOKEN (Granular)   | OIDC (Trusted Publishers)       |
-| **Publish Command**  | Direct `npm publish`   | `pnpm nx release publish`       |
+| **Publish Command**  | Direct `npm publish`   | `gh workflow run release.yml`       |
 | **Provenance**       | Not available          | ✅ Enabled                      |
 | **Token Validation** | ✅ Pre-flight check    | Not needed                      |
 

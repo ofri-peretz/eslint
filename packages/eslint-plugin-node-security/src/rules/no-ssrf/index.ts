@@ -188,8 +188,11 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
       description:
         'Detects HTTP requests with user-controlled URLs (SSRF vulnerability)',
+      cwe: 'CWE-918',
+      cvss: 7.5,
     },
     messages: {
       ssrfVulnerability: formatLLMMessage({
@@ -224,7 +227,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true }: Options = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     if (isTestFile) return {};

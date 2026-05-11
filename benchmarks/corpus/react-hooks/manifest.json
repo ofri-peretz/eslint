@@ -1,0 +1,17 @@
+{
+  "cwe": "—",
+  "name": "React hooks exhaustive-deps",
+  "owasp": "—",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-react-features"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "missing-dep.tsx", "description": "useEffect missing closed-over variable in deps" },
+      { "file": "non-array-deps.tsx", "description": "useMemo passed a variable instead of an array literal" }
+    ],
+    "safe": [
+      { "file": "complete-deps.tsx", "description": "useEffect with all closed-over deps in array" },
+      { "file": "no-deps-empty-array.tsx", "description": "useEffect intentionally run-once with empty deps and no closures" }
+    ]
+  }
+}

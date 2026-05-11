@@ -1,0 +1,16 @@
+{
+    "name": "fn-fp-benchmark-eslint8",
+    "version": "1.0.0",
+    "description": "ESLint 8 compatibility environment for fair plugin comparison",
+    "private": true,
+    "type": "commonjs",
+    "scripts": {
+        "benchmark": "node run-eslint8.js"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.0",
+        "eslint-plugin-security": "^2.1.0",
+        "eslint-plugin-no-unsanitized": "^4.0.2",
+        "eslint-plugin-import": "^2.32.0"
+    }
+}

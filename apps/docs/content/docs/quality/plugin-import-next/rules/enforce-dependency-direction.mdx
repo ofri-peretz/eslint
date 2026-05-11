@@ -1,17 +1,72 @@
 ---
-title: 'enforce-dependency-direction'
-description: ESLint rule documentation for enforce-dependency-direction
+title: "enforce-dependency-direction"
+description: "Ensures dependencies flow in the correct architectural direction"
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="enforce-dependency-direction" />
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-dependency-direction.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+## Rule Details
+
+This rule aims to prevent issues related to enforce-dependency-direction.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "layers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "domain",
+          "application",
+          "infrastructure",
+          "presentation"
+        ],
+        "description": "Layer definitions with dependency order"
+      },
+      "layerPatterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "domain",
+          "application",
+          "infrastructure",
+          "presentation",
+          "ui",
+          "api"
+        ],
+        "description": "Layer directory patterns"
+      },
+      "allowSameLayer": {
+        "type": "boolean",
+        "default": true,
+        "description": "Allow same-layer imports"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/enforce-dependency-direction.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/enforce-dependency-direction.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

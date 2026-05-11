@@ -296,7 +296,7 @@ describe('resolver-detection', () => {
 
       // Apply the same sorting logic as in generateRecommendedConfig
       const priorityOrder = ['typescript', 'webpack', 'vite', 'rollup', 'css'];
-      const sorted = mockResolvers.sort((a, b) => {
+      const sorted = mockResolvers.toSorted((a, b) => {
         const aIndex = priorityOrder.indexOf(a.name);
         const bIndex = priorityOrder.indexOf(b.name);
         // This is the exact line 105 from the source code
@@ -353,7 +353,7 @@ describe('resolver-detection', () => {
       };
       const { migrated, suggestions } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBe('error');
+      expect(rules['import-next/no-unresolved']).toBe('error');
       expect(suggestions.some((s) => s.includes('no-unresolved'))).toBe(true);
     });
 
@@ -365,7 +365,7 @@ describe('resolver-detection', () => {
       };
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['eslint-plugin-llm-optimized/no-circular-dependencies']).toEqual(
+      expect(rules['import-next/no-cycle']).toEqual(
         ['error', { maxDepth: 2 }],
       );
     });
@@ -383,15 +383,15 @@ describe('resolver-detection', () => {
       };
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBeDefined();
+      expect(rules['import-next/no-unresolved']).toBeDefined();
       expect(
-        rules['eslint-plugin-llm-optimized/no-circular-dependencies'],
+        rules['import-next/no-cycle'],
       ).toBeDefined();
-      expect(rules['eslint-plugin-llm-optimized/no-self-import']).toBeDefined();
-      expect(rules['eslint-plugin-llm-optimized/no-absolute-path']).toBeDefined();
-      expect(rules['eslint-plugin-llm-optimized/no-dynamic-require']).toBeDefined();
+      expect(rules['import-next/no-self-import']).toBeDefined();
+      expect(rules['import-next/no-absolute-path']).toBeDefined();
+      expect(rules['import-next/no-dynamic-require']).toBeDefined();
       expect(
-        rules['eslint-plugin-llm-optimized/no-webpack-loader-syntax'],
+        rules['import-next/no-webpack-loader-syntax'],
       ).toBeDefined();
     });
 
@@ -417,7 +417,7 @@ describe('resolver-detection', () => {
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
       expect(rules['no-console']).toBe('error');
-      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBe('error');
+      expect(rules['import-next/no-unresolved']).toBe('error');
     });
 
     it('should handle empty config', () => {

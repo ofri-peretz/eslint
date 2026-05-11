@@ -1,0 +1,381 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: SDK Compatibility
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Consolidated replacement for sdk-{express,jwt,lambda,mongodb,nestjs,pg,
+# vercel-ai}.yml. Each plugin's compatibility tests now run as a matrix entry
+# instead of a separate workflow file (~1700 LoC → ~200 LoC).
+#
+# DESIGN GOALS
+#   - Quotas: manual-trigger only (no schedules). Selecting one SDK via the
+#     `sdk` input keeps the cost to a single matrix cell.
+#   - Duration: composite setup hydrates npm + node_modules caches; matrix
+#     fan-out runs all SDKs in parallel when "all" is chosen.
+#   - Usability: one dispatch UI, one place to add a new SDK row.
+#
+# RUN IT
+#   gh workflow run sdk-compatibility.yml                     # all SDKs
+#   gh workflow run sdk-compatibility.yml -f sdk=express      # one SDK
+#   gh workflow run sdk-compatibility.yml -f create_issue=false
+#
+# ADD A NEW SDK
+#   1. Append a row to the JSON roster in the `setup` job's `Compute filtered
+#      matrix` step below.
+#   2. Add the same `key` to the `sdk` input's `options:` choice list above.
+#   3. Done. No new workflow file needed.
+#
+# WHY THE SETUP JOB
+#   The `matrix` context isn't available in a job-level `if:` (GH Actions
+#   evaluates job-level `if:` before expanding the matrix), so we can't filter
+#   rows by `inputs.sdk` inline. Instead, `setup` filters the static roster
+#   and emits the result as JSON; `compatibility` consumes it via
+#   `fromJSON(needs.setup.outputs.matrix)`. Result: running with `-f sdk=express`
+#   produces exactly one matrix cell — same as the original design intent.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk:
+        description: "Which SDK to test. 'all' fans out to every row."
+        required: false
+        default: all
+        type: choice
+        options: [all, express, jwt, lambda, mongodb, nestjs, pg, vercel-ai]
+      create_issue:
+        description: "Create a GitHub issue if breaking changes are detected."
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  # Allow per-SDK runs to coexist (group by input), but cancel duplicate
+  # in-flights of the same SDK on the same ref.
+  group: sdk-compat-${{ github.ref }}-${{ inputs.sdk }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: Compute matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+    steps:
+      - name: Compute filtered matrix
+        id: compute
+        env:
+          SDK: ${{ inputs.sdk }}
+        run: |
+          set -euo pipefail
+          # Full SDK roster. To add a row: append an object below and add
+          # the same `key` to the `sdk` input's `options:` list at the top
+          # of this file. `rules` uses `\n` for newlines in JSON.
+          full=$(cat <<'JSON'
+          [
+            {
+              "key": "express",
+              "label": "Express Ecosystem",
+              "plugin": "eslint-plugin-express-security",
+              "issue_label": "express",
+              "packages": "express@latest helmet@latest cors@latest express-rate-limit@latest",
+              "rules": "| express | no-unsafe-redirect, require-helmet |\n| helmet | require-helmet |\n| cors | no-unsafe-cors |\n| express-rate-limit | require-rate-limit |\n"
+            },
+            {
+              "key": "jwt",
+              "label": "JWT Ecosystem",
+              "plugin": "eslint-plugin-jwt",
+              "issue_label": "jwt",
+              "packages": "jose@latest jsonwebtoken@latest express-jwt@latest",
+              "rules": "| jose / jsonwebtoken | no-weak-algorithm, require-expiration, no-hardcoded-secret |\n| express-jwt | require-issuer, require-audience |\n"
+            },
+            {
+              "key": "lambda",
+              "label": "AWS Lambda Ecosystem (Middy)",
+              "plugin": "eslint-plugin-lambda-security",
+              "issue_label": "middy",
+              "packages": "@middy/core@latest @middy/http-security-headers@latest @middy/http-cors@latest",
+              "rules": "| @middy/core | require-error-handler, require-input-validation |\n| @middy/http-security-headers | require-security-headers |\n| @middy/http-cors | no-unsafe-cors |\n"
+            },
+            {
+              "key": "mongodb",
+              "label": "MongoDB Ecosystem",
+              "plugin": "eslint-plugin-mongodb-security",
+              "issue_label": "mongodb",
+              "packages": "mongodb@latest mongoose@latest",
+              "rules": "| mongodb | no-unsafe-query, require-projection |\n| mongoose | no-server-side-evaluation, require-strict-mode |\n"
+            },
+            {
+              "key": "nestjs",
+              "label": "NestJS Ecosystem",
+              "plugin": "eslint-plugin-nestjs-security",
+              "issue_label": "nestjs",
+              "packages": "@nestjs/common@latest @nestjs/throttler@latest class-validator@latest class-transformer@latest rxjs@latest reflect-metadata@latest",
+              "rules": "| @nestjs/common | require-guards, require-validation-pipe |\n| @nestjs/throttler | require-rate-limit |\n| class-validator | require-validation |\n"
+            },
+            {
+              "key": "pg",
+              "label": "PostgreSQL Ecosystem (pg)",
+              "plugin": "eslint-plugin-pg",
+              "issue_label": "pg",
+              "packages": "pg@latest",
+              "rules": "| pg | no-unsafe-query, require-parameterized-query |\n"
+            },
+            {
+              "key": "vercel-ai",
+              "label": "Vercel AI Ecosystem",
+              "plugin": "eslint-plugin-vercel-ai-security",
+              "issue_label": "vercel-ai",
+              "packages": "ai@latest @ai-sdk/openai@latest",
+              "rules": "| ai | require-prompt-validation, no-hardcoded-system-prompt |\n| @ai-sdk/openai | require-api-key-env |\n"
+            }
+          ]
+          JSON
+          )
+          if [ "$SDK" = "all" ]; then
+            filtered="$full"
+          else
+            filtered=$(jq --arg sdk "$SDK" '[.[] | select(.key == $sdk)]' <<< "$full")
+          fi
+          matrix=$(jq -c '{include: .}' <<< "$filtered")
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          echo "Resolved matrix:"
+          jq . <<< "$matrix"
+
+  compatibility:
+    name: ${{ matrix.label }}
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write # for the failure-issue step (no-op when create_issue=false)
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Install latest ${{ matrix.label }} packages
+        # `--no-save` keeps package.json clean; we're testing transient versions.
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086 # word splitting intentional for multi-pkg install
+          npm install --no-save ${{ matrix.packages }}
+          echo "Installed: ${{ matrix.packages }}"
+
+      - name: Snapshot resolved versions
+        id: versions
+        run: |
+          set -euo pipefail
+          echo "## Resolved package versions" >> "$GITHUB_STEP_SUMMARY"
+          for spec in ${{ matrix.packages }}; do
+            name="${spec%@*}"
+            ver=$(node -p "try { require(require.resolve('$name/package.json', { paths: [process.cwd()] })).version } catch (e) { 'not-resolved' }" 2>/dev/null || echo "not-resolved")
+            printf -- "- **%s**: \`%s\`\n" "$name" "$ver" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Run interface compatibility tests
+        id: test
+        continue-on-error: true
+        env:
+          PLUGIN_PATH: packages/${{ matrix.plugin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$PLUGIN_PATH/.compatibility-results"
+          npx vitest run \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile="$PLUGIN_PATH/.compatibility-results/test-results.json" \
+            "$PLUGIN_PATH/src/__compatibility__/**/*.spec.ts" \
+            2>&1 | tee "$PLUGIN_PATH/.compatibility-results/test-output.txt"
+
+      - name: Generate breaking-change report
+        if: steps.test.outcome == 'failure'
+        env:
+          PLUGIN_PATH: packages/${{ matrix.plugin }}
+        run: |
+          set -euo pipefail
+          cat > "$PLUGIN_PATH/.compatibility-results/BREAKING_CHANGE_REPORT.md" <<EOF
+          # 🚨 ${{ matrix.label }} Breaking Change Report
+
+          The \`${{ matrix.plugin }}\` interface compatibility tests have failed
+          against the latest published versions of:
+
+          \`${{ matrix.packages }}\`
+
+          ## Affected rules
+
+          | Package | Rules that may need updates |
+          |---------|-----------------------------|
+          ${{ matrix.rules }}
+
+          ## Test output (head)
+
+          \`\`\`
+          $(grep -A 50 "FAIL" "$PLUGIN_PATH/.compatibility-results/test-output.txt" | head -100 || echo "No FAIL output captured")
+          \`\`\`
+
+          ## Where to look
+
+          1. Compatibility tests: \`$PLUGIN_PATH/src/__compatibility__/\`
+          2. Plugin rules: \`$PLUGIN_PATH/src/rules/\`
+          3. Plugin manifest: \`$PLUGIN_PATH/package.json\`
+
+          _Generated by \`.github/workflows/sdk-compatibility.yml\`._
+          EOF
+
+      - name: Upload compatibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.key }}-compatibility-results
+          path: packages/${{ matrix.plugin }}/.compatibility-results/
+          retention-days: 30
+
+      - name: Open / update issue on failure
+        if: steps.test.outcome == 'failure' && inputs.create_issue != false
+        uses: actions/github-script@v9
+        env:
+          PLUGIN_PATH: packages/${{ matrix.plugin }}
+          ISSUE_LABEL: ${{ matrix.issue_label }}
+          SDK_LABEL: ${{ matrix.label }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = `${process.env.PLUGIN_PATH}/.compatibility-results/BREAKING_CHANGE_REPORT.md`;
+            let body;
+            try {
+              body = fs.readFileSync(path, 'utf8');
+            } catch {
+              body = `## ${process.env.SDK_LABEL} breaking change\n\nSee workflow run for details.`;
+            }
+
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: `sdk-compatibility,${process.env.ISSUE_LABEL}`,
+              per_page: 5,
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body: `🔄 Re-ran via \`sdk-compatibility.yml\` — still failing.\n\n${body}`,
+              });
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 [SDK Compatibility] ${process.env.SDK_LABEL} breaking change`,
+              body,
+              labels: ['sdk-compatibility', process.env.ISSUE_LABEL, 'maintenance', 'breaking-change'],
+            });
+
+      - name: Per-cell summary
+        if: always()
+        env:
+          STATUS: ${{ steps.test.outcome }}
+        run: |
+          set -euo pipefail
+          if [ "$STATUS" = "success" ]; then
+            badge="✅ compatible"
+          else
+            badge="❌ breaking changes detected"
+          fi
+          {
+            echo "# ${{ matrix.label }} — $badge"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Plugin     | \`${{ matrix.plugin }}\` |"
+            echo "| Packages   | \`${{ matrix.packages }}\` |"
+            echo "| Status     | $badge |"
+            echo ""
+            echo "_Latest installed versions are listed in the \"Snapshot resolved versions\" step above._"
+            if [ "$STATUS" != "success" ]; then
+              echo ""
+              echo "A breaking-change issue is being opened automatically (see next step)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Stash per-cell status so the rollup job can build a matrix-wide table.
+      - name: Stash status for rollup
+        if: always()
+        env:
+          STATUS: ${{ steps.test.outcome }}
+        run: |
+          mkdir -p .sdk-status
+          printf "%s\n" "${{ matrix.key }}|${{ matrix.label }}|$STATUS" > ".sdk-status/${{ matrix.key }}.txt"
+
+      - name: Upload status artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sdk-status-${{ matrix.key }}
+          path: .sdk-status/
+          retention-days: 1
+
+      # Translate the soft-failure into a hard failure at the very end so the
+      # job result reflects test outcome (issue creation already happened).
+      - name: Propagate test failure
+        if: steps.test.outcome == 'failure'
+        run: exit 1
+
+  rollup:
+    name: Rollup
+    needs: compatibility
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Download per-cell statuses
+        uses: actions/download-artifact@v8
+        with:
+          path: .sdk-status
+          pattern: sdk-status-*
+          merge-multiple: true
+
+      - name: Render matrix-wide rollup
+        run: |
+          set -euo pipefail
+          ok=0; fail=0; skip=0
+          rows=""
+          for f in .sdk-status/*.txt; do
+            [ -f "$f" ] || continue
+            IFS='|' read -r key label status < "$f"
+            case "$status" in
+              success)  icon="✅"; ok=$((ok+1)) ;;
+              failure)  icon="❌"; fail=$((fail+1)) ;;
+              skipped)  icon="⏭"; skip=$((skip+1)) ;;
+              *)        icon="⚠️" ;;
+            esac
+            rows+="| \`$key\` | $label | $icon $status |"$'\n'
+          done
+          total=$((ok + fail + skip))
+          if [ $fail -gt 0 ]; then
+            header="❌ ${fail}/${total} SDK(s) have breaking changes"
+          elif [ $total -eq 0 ]; then
+            header="⚠️ No SDK results captured"
+          else
+            header="✅ All ${ok}/${total} SDKs compatible"
+          fi
+          {
+            echo "# $header"
+            echo ""
+            echo "| Key | SDK | Status |"
+            echo "|---|---|---|"
+            printf "%s" "$rows"
+          } >> "$GITHUB_STEP_SUMMARY"

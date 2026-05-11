@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Docs Governance
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Validates that documentation stays in sync with code:
+#   - validate-docs.ts: structural checks (README sections, LICENSE, etc.)
+#   - sync-readme-rules.ts --dry-run: rule tables in READMEs match src/index.ts
+#
+# Replaces the old lint-pr.yml + lint-docs.yml duo, which both ran
+# validate-docs.ts on overlapping triggers (any PR that touched both code and
+# docs ran the same script twice). One workflow, two complementary triggers.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    # Run on any PR — `paths-ignore` is intentionally absent. validate-docs is
+    # cheap (~15s) and code changes can break docs/rule alignment, so we want
+    # it to gate every PR.
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Validate documentation structure
+        run: npx tsx scripts/validate-docs.ts
+
+      - name: Check rule tables sync (dry run)
+        run: npx tsx scripts/sync-readme-rules.ts --dry-run

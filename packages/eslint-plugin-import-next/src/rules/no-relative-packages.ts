@@ -56,7 +56,10 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-relative-packages.md',
       description: 'Forbid importing packages through relative paths',
+      cwe: 'CWE-1047',
+      cvss: 5,
     },
     fixable: 'code',
     messages: {
@@ -87,7 +90,7 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { allowSamePackage = true } = options;
-    const filename = context.getFilename();
+    const filename = context.filename;
     const currentDir = path.dirname(filename);
     const currentPackageRoot = findPackageJson(currentDir);
 

@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "ESNext",
     "lib": [
       "dom",
@@ -23,8 +22,11 @@
       "@/*": [
         "./src/*"
       ],
+      "#interlace/*": [
+        "./.interlace/*"
+      ],
       "fumadocs-mdx:collections/*": [
-        ".source/*"
+        "./.source/*"
       ]
     },
     "plugins": [
@@ -37,6 +39,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    ".interlace/**/*.ts",
+    ".interlace/**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "dist/types/**/*.ts",
@@ -47,6 +51,7 @@
     "/Users/ofri/repos/ofriperetz.dev/eslint/dist/apps/docs/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "scripts"
   ]
 }

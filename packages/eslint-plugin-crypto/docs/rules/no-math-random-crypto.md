@@ -30,6 +30,20 @@ ESLint Rule: no-math-random-crypto. This rule is part of [`eslint-plugin-crypto`
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration     |
 | **Best For**   | All applications generating security tokens |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-338](https://cwe.mitre.org/data/definitions/338.html) — Use of Cryptographically Weak Pseudo-Random Number Generator |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech (transaction tokens), cybersecurity · **High:** B2B SaaS (session/reset tokens), healthtech · **Medium:** B2C · **Low:** gaming (most tokens not security-sensitive) |
+| **Investor-frame impact** | Predictable PRNG → attacker can compute the next token without brute force → session hijacking, password-reset bypass, MFA bypass. Single bug class that defeats authentication at scale; the catch at lint-time prevents an entire well-documented attack family. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Use of `Math.random()` to generate security-sensitive values like session tokens, password reset codes, or temporary passwords. `Math.random()` is a non-cryptographically secure PRNG designed for speed, not security. Its state can often be reconstructed by observing a few previous outputs.

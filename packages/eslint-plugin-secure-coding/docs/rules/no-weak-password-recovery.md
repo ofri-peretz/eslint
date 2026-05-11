@@ -41,9 +41,9 @@ ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-f
 
 This rule scans for weak password recovery mechanisms, such as:
 
-1.  **Low Entropy Tokens**: Tokens that are easy to guess or predict (e.g., using `Math.random()` or timestamps).
-2.  **No Expiration**: Recovery links that valid indefinitely.
-3.  **Knowledge-Based Authentication (KBA)**: Using security questions like "What is your mother's maiden name?" which are easily researchable.
+1. **Low Entropy Tokens**: Tokens that are easy to guess or predict (e.g., using `Math.random()` or timestamps).
+2. **No Expiration**: Recovery links that valid indefinitely.
+3. **Knowledge-Based Authentication (KBA)**: Using security questions like "What is your mother's maiden name?" which are easily researchable.
 
 Account Takeover (ATO) often happens via weak recovery flows rather than cracking the main password.
 
@@ -114,16 +114,7 @@ This rule accepts an options object:
 ### ❌ Incorrect
 
 ```typescript
-// Weak token generation
-const resetToken = Math.random().toString(36);
-
-// Relying on timestamps
-const token = Date.now() + userId;
-
-// KBA (Knowledge Based Authentication)
-if (answer === user.securityAnswer) {
-  allowReset();
-}
+const passwordResetToken = generatePredictableToken();
 ```
 
 ### ✅ Correct

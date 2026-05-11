@@ -39,7 +39,7 @@ import {
   clearCache,
   resolveImportPath,
   hasOnlyTypeImports,
-  findAllCircularDependencies,
+  detectCycleFromImport,
   getMinimalCycle,
   getCycleHash,
 } from '@interlace/eslint-devkit';
@@ -179,20 +179,18 @@ export interface Options {
 
 export type RuleOptions = [Options?];
 
-interface CycleInfo {
-  cycleTarget: string;
-  strategy: FixStrategy;
-  relevantCycle: string[];
-  cycleHash: string;
-}
 
 export const noCycle = createRule<RuleOptions, MessageIds>({
   name: 'no-cycle',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cycle.md',
       description:
         'Detect circular dependencies that cause bundle memory bloat and initialization issues',
+      cwe: 'CWE-407',
+      cvss: 9.5,
+      confidence: 'high',
     },
     messages: {
       // 🎯 Token optimization: 45% reduction (~70→38 tokens per message) for architecture clarity
@@ -243,9 +241,9 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         properties: {
           maxDepth: {
             type: 'number',
-            default: 5,
+            default: Number.MAX_SAFE_INTEGER,
             description:
-              'Maximum depth to traverse when detecting cycles (performance optimization)',
+              'Maximum depth to traverse when detecting cycles. Default: unlimited (matches eslint-plugin-import and oxlint). Lower values are a performance escape hatch — but with our nonCyclicFiles cache, traversal cost is amortized, and a low cap silently misses cycles deeper than the limit. Set to a finite number only on huge graphs where the bench latency hurts you.',
           },
           ignorePatterns: {
             type: 'array',
@@ -314,7 +312,12 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
   defaultOptions: [
     {
-      maxDepth: 10,
+      // Unlimited: matches eslint-plugin-import (Infinity) and oxlint
+      // (u32::MAX). The earlier default of 10 silently missed any cycle
+      // deeper than 10 hops — verified on next.js's webpack-config.ts
+      // (~12 hops). The nonCyclicFiles cache + the depth-limit-truncation
+      // fix in eslint-devkit's dependency-analysis make unlimited safe.
+      maxDepth: Number.MAX_SAFE_INTEGER,
       ignorePatterns: [],
       barrelExports: ['index.ts', 'index.tsx', 'index.js', 'index.jsx'],
       reportAllCycles: true,
@@ -327,7 +330,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const maxDepth = options.maxDepth ?? 10;
+    const maxDepth = options.maxDepth ?? Number.MAX_SAFE_INTEGER;
     const ignorePatterns = options.ignorePatterns ?? [
       '**/*.test.ts',
       '**/*.test.tsx',
@@ -349,15 +352,17 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     const coreModuleSuffix = options.coreModuleSuffix ?? 'core';
     const extendedModuleSuffix = options.extendedModuleSuffix ?? 'extended';
 
-    const filename = context.getFilename();
-    const workspaceRoot = context.getCwd();
+    const filename = context.filename;
+    const workspaceRoot = context.cwd;
 
     // Get resolver settings from ESLint settings (compatible with eslint-plugin-import)
-    // eslint-plugin-import uses settings['import/resolver']
+    // eslint-plugin-import uses settings['import/resolver']; allow either the
+    // upstream key or our drop-in `import-next/resolver` form for users
+    // migrating off eslint-plugin-import.
     const settings = context.settings as Record<string, unknown>;
     const resolverSettings: ResolverSetting | undefined =
       (settings?.['import/resolver'] as ResolverSetting) ||
-      (settings?.['eslint-plugin-llm-optimized/resolver'] as ResolverSetting);
+      (settings?.['import-next/resolver'] as ResolverSetting);
 
     // Skip ignored files early
     if (
@@ -431,10 +436,10 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       cycle: string[],
       sourceImport: ImportInfo,
     ): Record<string, string> {
-      const currentFile = getBasename(context.getFilename());
+      const currentFile = getBasename(context.filename);
       const targetFile = cycle[1];
       const relativeImport = getRelativeImportPath(
-        context.getFilename(),
+        context.filename,
         targetFile,
       );
 
@@ -531,69 +536,11 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    // Store found cycles to report on specific imports
-    let detectedCycles: CycleInfo[] = [];
-
     return {
-      Program() {
-        // Clear per-file state
-        detectedCycles = [];
-
-        // Find ALL circular dependencies starting from current file
-        const cycles = findAllCircularDependencies(filename, {
-          maxDepth,
-          reportAllCycles,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-        });
-
-        if (cycles.length > 0) {
-          for (const cycle of cycles) {
-            // Extract the minimal cycle (the actual loop)
-            const minimalCycle = getMinimalCycle(cycle);
-
-            // Only report if current file is part of the minimal cycle
-            // (not just a file that imports into the cycle)
-            if (!minimalCycle.includes(filename)) {
-              continue;
-            }
-
-            const cycleStart = minimalCycle.indexOf(filename);
-            if (cycleStart === -1) continue;
-
-            const relevantCycle = [
-              ...minimalCycle.slice(cycleStart),
-              ...minimalCycle.slice(0, cycleStart),
-            ];
-            const cycleHash = getCycleHash(relevantCycle);
-
-            // Skip if we've already reported this cycle (shared across all files)
-            if (sharedCache.reportedCycles.has(cycleHash)) {
-              continue;
-            }
-            sharedCache.reportedCycles.add(cycleHash);
-
-            // Select the appropriate fix strategy
-            const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-
-            // Find the target of the first import that causes the cycle
-            const cycleTarget = relevantCycle[1] || relevantCycle[0]; // The next file in the cycle
-
-            detectedCycles.push({
-              cycleTarget,
-              strategy,
-              relevantCycle,
-              cycleHash,
-            });
-          }
-        }
-      },
-
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        // Check if this import is part of any detected circular dependency
         const importSource = node.source.value;
+
+        // Resolve the import target to an absolute path
         const resolved = resolveImportPath(importSource, {
           fromFile: filename,
           workspaceRoot,
@@ -604,29 +551,97 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
         if (!resolved) return;
 
-        for (const cycle of detectedCycles) {
-          if (resolved === cycle.cycleTarget) {
-            // This is an import that causes a circular dependency
-            const sourceImport: ImportInfo = {
-              path: resolved,
-              source: importSource,
-            };
+        // =====================================================================
+        // PER-IMPORT CYCLE DETECTION (Phase 3 optimization)
+        //
+        // Instead of computing all cycles upfront in Program() via full-graph
+        // BFS + Tarjan SCC (which reads ALL ~5K reachable files), we check
+        // each import individually with a targeted DFS.
+        //
+        // Performance advantage:
+        // - Only reads files along the actual DFS path (not all reachable)
+        // - nonCyclicFiles cache provides O(1) rejection after first visit
+        // - getFileImports cache reuses parsed results across files
+        // =====================================================================
 
-            // Generate the appropriate message based on strategy
-            const { messageId, data } = generateMessageData(
-              cycle.relevantCycle,
-              cycle.strategy,
-              sourceImport,
-            );
+        // Fast path: if the target file is known to be non-cyclic, skip
+        if (sharedCache.nonCyclicFiles.has(resolved)) {
+          return;
+        }
 
-            context.report({
-              node,
-              messageId,
-              data,
-            });
+        // Check if following this import leads back to the current file
+        const cycles = detectCycleFromImport(filename, resolved, {
+          maxDepth,
+          reportAllCycles,
+          workspaceRoot,
+          barrelExports,
+          cache: sharedCache,
+          resolverSettings,
+        });
+
+        if (cycles.length === 0) return;
+
+        for (const cycle of cycles) {
+          // Extract the minimal cycle (the actual loop)
+          const minimalCycle = getMinimalCycle(cycle);
+
+          // Only report if current file is part of the minimal cycle
+          if (!minimalCycle.includes(filename)) {
+            continue;
           }
+
+          const cycleStart = minimalCycle.indexOf(filename);
+          if (cycleStart === -1) continue;
+
+          const relevantCycle = [
+            ...minimalCycle.slice(cycleStart),
+            ...minimalCycle.slice(0, cycleStart),
+          ];
+          // Dedupe by (file, cycle) instead of cycle alone. Without the
+          // file in the key, the cycle [A, B] reports only on whichever
+          // of A or B is linted first; the other gets silently skipped.
+          // Per-file keying matches oxlint's behavior — every file in a
+          // cycle gets its own diagnostic. The user can navigate from any
+          // entry point in the cycle and see the report there.
+          const cycleHash = `${filename}::${getCycleHash(relevantCycle)}`;
+
+          // Skip only if THIS file already reported THIS cycle (e.g. the
+          // same import statement appearing twice in the same file).
+          // (Earlier we experimented with a `pendingCycleReports` fan-out
+          // that emits on every cycle member regardless of which one's
+          // DFS discovered it — closes the with-router.tsx presentational
+          // gap but caused a 10× slowdown and 23× finding-count explosion
+          // because each cycle member iterates every other member of every
+          // cycle it touches. The cycle IS still reported on its other
+          // end; the one-finding loss isn't worth the perf hit.)
+          if (sharedCache.reportedCycles.has(cycleHash)) {
+            continue;
+          }
+          sharedCache.reportedCycles.add(cycleHash);
+
+          // Select the appropriate fix strategy
+          const strategy = selectFixStrategy(relevantCycle, fixStrategy);
+
+          // Generate the appropriate message based on strategy
+          const sourceImport: ImportInfo = {
+            path: resolved,
+            source: importSource,
+          };
+
+          const { messageId, data } = generateMessageData(
+            relevantCycle,
+            strategy,
+            sourceImport,
+          );
+
+          context.report({
+            node,
+            messageId,
+            data,
+          });
         }
       },
+
     };
   },
 });

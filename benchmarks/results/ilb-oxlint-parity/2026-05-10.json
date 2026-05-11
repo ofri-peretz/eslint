@@ -1,0 +1,29 @@
+{
+  "bench": "ILB-Wild",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-11T06:42:01.396Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
+  "suite": "ilb-oxlint-parity",
+  "version": "1.0",
+  "runAt": "2026-05-10T19:14:45.578Z",
+  "corpus": "benchmarks/corpus/CWE-089",
+  "eslintFindings": 6,
+  "oxlintFindings": 6,
+  "shared": 6,
+  "eslintOnly": 0,
+  "oxlintOnly": 0,
+  "parityRate": 1,
+  "eslintOnlyAllowlisted": 0,
+  "oxlintOnlyAllowlisted": 0,
+  "eslintOnlyUnexplained": [],
+  "oxlintOnlyUnexplained": [],
+  "timestamp": "2026-05-10T00:00:00.000Z"
+}

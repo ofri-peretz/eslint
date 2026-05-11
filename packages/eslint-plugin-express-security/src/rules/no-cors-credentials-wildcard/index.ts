@@ -118,8 +118,11 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-cors-credentials-wildcard.md',
       description:
         'Disallow credentials: true with wildcard CORS origin (CVE-2024-25124)',
+      cwe: 'CWE-942',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {

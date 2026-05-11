@@ -30,6 +30,20 @@ Detects improper sanitization of user input. This rule is part of [`eslint-plugi
 | **Auto-Fix**      | 💡 Suggestions available                                                                                                                       |
 | **Category**   | Security |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) — Cross-site Scripting (XSS) + [CWE-116](https://cwe.mitre.org/data/definitions/116.html) (Improper Encoding) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** B2C, marketplaces, B2B SaaS (any frontend surface) · **High:** fintech (admin/back-office UI), healthtech (patient portals) · **Medium:** infra/devtools |
+| **Investor-frame impact** | XSS is the most-cited OWASP Top-10 issue. Session hijacking → user-data exposure → mandatory disclosure. For B2C orgs, an XSS incident is a brand event with churn impact; for B2B, it's an enterprise-customer disclosure cycle. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Improper sanitization occurs when user input is treated as safe without removing or encoding potentially dangerous characters (like HTML tags or script injection vectors) before using it in a sensitive context (like rendering in a browser or executing as code).
@@ -58,21 +72,7 @@ Improper sanitization occurs when user input is not properly cleaned before use 
 ### ❌ Incorrect
 
 ```typescript
-// Incomplete HTML escaping
-const sanitized = input.replace('<', '&lt;');
-element.innerHTML = sanitized; // Missing '>' escaping!
-
-// Wrong context encoding
-const jsValue = htmlEscape(userInput);
-const script = `var x = "${jsValue}"`; // HTML escape in JS context!
-
-// Using replace() for sanitization
-const clean = userInput.replace(/[<>]/g, '');
-// Bypassable with: <img onerror=alert(1) src=x>
-
-// Incomplete SQL sanitization
-const query = `SELECT * FROM users WHERE name = '${input.replace("'", "''")}'`;
-// Doesn't handle all edge cases
+element.innerHTML = userInput.replace(/</g, "&lt;");
 ```
 
 ### ✅ Correct

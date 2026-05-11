@@ -25,7 +25,10 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-password-in-url.md',
       description: 'Prevent passwords in URLs',
+      cwe: 'CWE-521',
+      cvss: 9.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

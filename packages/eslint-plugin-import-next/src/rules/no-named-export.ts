@@ -32,6 +32,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-named-export.md',
       description: 'Prevents named exports',
     },
     hasSuggestions: false,
@@ -108,7 +109,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // suggestDefault // unused option
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(specifier?: TSESTree.ExportSpecifier): boolean {
       if (!filename) {

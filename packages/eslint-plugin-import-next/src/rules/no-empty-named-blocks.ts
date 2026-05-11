@@ -22,7 +22,10 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-empty-named-blocks.md',
       description: 'Forbid empty named import blocks',
+      cwe: 'CWE-561',
+      cvss: 2.5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -59,7 +62,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
         );
 
         // Get the source code
-        const sourceCode = context.getSourceCode();
+        const sourceCode = context.sourceCode;
         const importText = sourceCode.getText(node);
 
         // Check for empty braces pattern: {}

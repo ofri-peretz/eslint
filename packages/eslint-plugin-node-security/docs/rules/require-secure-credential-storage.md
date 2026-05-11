@@ -60,49 +60,7 @@ fs.writeFileSync('pass.txt', obfuscated); // ❌ Trivially reversible
 ## ✅ Correct
 
 ```typescript
-// Encrypted localStorage (browser)
-import { encrypt } from './crypto';
-
-const encryptedToken = await encrypt(user.token, encryptionKey);
-localStorage.setItem('authToken', encryptedToken); // ✅ Encrypted before storage
-
-// Encrypted file storage (Node.js)
-import fs from 'fs';
-import crypto from 'crypto';
-
-const encryptData = (data: string, key: Buffer) => {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const encrypted = Buffer.concat([
-    cipher.update(data, 'utf8'),
-    cipher.final(),
-  ]);
-  const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, encrypted]).toString('base64');
-};
-
-const encrypted = encryptData(JSON.stringify(credentials), encryptionKey);
-fs.writeFileSync('credentials.enc', encrypted); // ✅ AES-256-GCM encrypted
-
-// Mobile platform secure storage
-// iOS: Keychain Services
-await Keychain.setGenericPassword(username, password); // ✅ iOS Keychain
-
-// Android: EncryptedSharedPreferences
-import EncryptedStorage from 'react-native-encrypted-storage';
-await EncryptedStorage.setItem(
-  'credentials',
-  JSON.stringify({
-    username,
-    password,
-  }),
-); // ✅ Android hardware-backed encryption
-
-// Never store passwords - use tokens
-// Server issues short-lived tokens, not passwords
-const authToken = await login(username, password);
-const encryptedToken = await encrypt(authToken);
-localStorage.setItem('token', encryptedToken); // ✅ Token, not password
+const x = 42;
 ```
 
 ## Known False Negatives

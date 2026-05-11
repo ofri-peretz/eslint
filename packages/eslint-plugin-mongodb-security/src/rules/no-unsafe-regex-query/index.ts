@@ -41,18 +41,22 @@ function containsUserInput(node: TSESTree.Node): boolean {
   return USER_INPUT_PATTERNS.some((pattern) => source.includes(pattern));
 }
 
-const QUERY_METHODS = [
+const QUERY_METHODS = new Set([
   'find', 'findOne', 'findById',
   'findOneAndUpdate', 'findOneAndDelete',
   'updateOne', 'updateMany', 'deleteOne', 'deleteMany',
   'countDocuments',
-];
+]);
 
 export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-regex-query',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent ReDoS attacks via $regex with user input' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-regex-query.md', description: 'Prevent ReDoS attacks via $regex with user input',
+      cwe: 'CWE-400',
+      cvss: 7.5,
+    },
     hasSuggestions: true,
     messages: {
       unsafeRegex: formatLLMMessage({
@@ -73,7 +77,7 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -90,7 +94,7 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !QUERY_METHODS.includes(methodName)) {
+        if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
         }
 

@@ -17,8 +17,16 @@ vi.mock('next/cache', () => ({
   unstable_cache: <T>(fn: () => Promise<T>) => fn,
 }));
 
-// Mock fs/promises for unit tests
-vi.mock('fs/promises');
+// Mock fs/promises with an explicit factory — vitest 4 requires this for ESM
+// namespace imports; the auto-mock returns an empty object that has no
+// `mockResolvedValue` on its members.
+vi.mock('fs/promises', () => {
+  const readFile = vi.fn();
+  return {
+    default: { readFile },
+    readFile,
+  };
+});
 
 // Sample test data matching the expected schema
 const mockPluginStats = {

@@ -27,7 +27,10 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-tool-confirmation.md',
       description: 'Require human confirmation for destructive tool operations (delete, transfer, execute)',
+      cwe: 'CWE-862',
+      cvss: 7,
     },
     messages: {
       missingConfirmation: formatLLMMessage({
@@ -90,17 +93,18 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
     /**
      * Check if tool has confirmation requirement
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function hasConfirmationFlag(toolDef: TSESTree.ObjectExpression): boolean {
-      const confirmationProps = [
+      const confirmationProps = new Set([
         'requiresConfirmation', 'requireConfirmation', 'confirmation',
         'requiresApproval', 'requireApproval', 'approval',
         'dangerouslyAllowBrowser', // If explicitly acknowledged
-      ];
+      ]);
       
       return toolDef.properties.some(prop => {
         if (prop.type !== 'Property') return false;
         const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-        return keyName && confirmationProps.includes(keyName);
+        return keyName && confirmationProps.has(keyName);
       });
     }
 

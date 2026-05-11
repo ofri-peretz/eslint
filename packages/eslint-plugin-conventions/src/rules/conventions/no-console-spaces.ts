@@ -21,6 +21,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-console-spaces.md',
       description:
         'Prevent leading/trailing space between console.log parameters',
     },
@@ -56,6 +57,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       'groupCollapsed',
     ]);
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
       return false;
@@ -76,6 +78,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getConsoleMethodName(node: TSESTree.CallExpression): string {
       // Safe extraction of console method name
       if (
@@ -87,6 +90,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return 'console';
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasLeadingOrTrailingSpaces(text: string): boolean {
       // Check if string starts or ends with whitespace, but not if it's only whitespace
       // Only flag if there's actual content with leading/trailing spaces
@@ -94,6 +98,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return trimmed.length > 0 && /^\s|\s$/.test(text);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasLeadingOrTrailingSpacesInTemplate(text: string): boolean {
       // For template literals, even whitespace-only quasis should be flagged
       return /^\s|\s$/.test(text);

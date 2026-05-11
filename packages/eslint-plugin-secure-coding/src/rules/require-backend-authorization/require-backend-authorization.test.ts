@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Server-side checks
     { code: "const response = await api.checkPermission(userId, resource)" },
     { code: "if (isEnabled) { showFeature() }" },

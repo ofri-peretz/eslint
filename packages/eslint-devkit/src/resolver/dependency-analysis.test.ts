@@ -916,16 +916,16 @@ import { c } from './c';
       });
     });
 
-    it('should benefit from SCC caching across multiple files in same lint run', () => {
+    it('should benefit from shared cache across multiple files in same lint run', () => {
       // Create a cycle: a -> b -> c -> a
       const fileA = createTempFile('cached/a.ts', `import { b } from './b';`);
       const fileB = createTempFile('cached/b.ts', `import { c } from './c';`);
       const fileC = createTempFile('cached/c.ts', `import { a } from './a';`);
 
-      // Use same cache for multiple calls
+      // Use same cache for multiple calls (simulates shared lint run)
       const sharedCache = createFileSystemCache();
 
-      // First call - computes SCCs
+      // First call - computes SCCs and builds dependency graph
       const cyclesFromA = findAllCircularDependencies(fileA, {
         maxDepth: 10,
         reportAllCycles: true,
@@ -934,11 +934,11 @@ import { c } from './c';
         cache: sharedCache,
       });
 
-      // SCC should be computed
+      // SCC should be computed (restored SCC-based approach)
       expect(sharedCache.sccComputed).toBe(true);
       expect(sharedCache.sccs.length).toBeGreaterThan(0);
 
-      // Second call from fileB - should use cached SCC (O(1) lookup)
+      // Second call from fileB - should benefit from cached dependency data
       const cyclesFromB = findAllCircularDependencies(fileB, {
         maxDepth: 10,
         reportAllCycles: true,
@@ -947,7 +947,7 @@ import { c } from './c';
         cache: sharedCache,
       });
 
-      // Third call from fileC - should also use cached SCC
+      // Third call from fileC - should also benefit from cached data
       const cyclesFromC = findAllCircularDependencies(fileC, {
         maxDepth: 10,
         reportAllCycles: true,

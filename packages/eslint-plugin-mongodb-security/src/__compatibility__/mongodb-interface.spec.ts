@@ -83,7 +83,7 @@ describe('MongoDB Driver Interface Compatibility', () => {
 
       it('MongoClient can be instantiated with options', () => {
         expect(() => {
-          new mongodb.MongoClient('mongodb://localhost:27017', {
+          void new mongodb.MongoClient('mongodb://localhost:27017', {
             tls: true,
             authMechanism: 'SCRAM-SHA-256',
           });

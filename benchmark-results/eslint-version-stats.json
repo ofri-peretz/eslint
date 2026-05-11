@@ -1,0 +1,86 @@
+{
+  "package": "eslint",
+  "period": "last-week",
+  "fetchedAt": "2026-05-09T20:55:42.114Z",
+  "totalDownloads": 127299530,
+  "byMajor": [
+    {
+      "major": 9,
+      "stable": 76901061,
+      "prerelease": 5711,
+      "total": 76906772,
+      "pct": 60.41402666608431
+    },
+    {
+      "major": 8,
+      "stable": 30884217,
+      "prerelease": 90,
+      "total": 30884307,
+      "pct": 24.26113199318175
+    },
+    {
+      "major": 10,
+      "stable": 11764764,
+      "prerelease": 346,
+      "total": 11765110,
+      "pct": 9.24206868634943
+    },
+    {
+      "major": 7,
+      "stable": 4046824,
+      "prerelease": 72,
+      "total": 4046896,
+      "pct": 3.1790345180378905
+    },
+    {
+      "major": 6,
+      "stable": 1548663,
+      "prerelease": 148,
+      "total": 1548811,
+      "pct": 1.2166667072533575
+    },
+    {
+      "major": 5,
+      "stable": 820443,
+      "prerelease": 443,
+      "total": 820886,
+      "pct": 0.6448460571692605
+    },
+    {
+      "major": 4,
+      "stable": 634088,
+      "prerelease": 67,
+      "total": 634155,
+      "pct": 0.49815973397545144
+    },
+    {
+      "major": 3,
+      "stable": 407855,
+      "prerelease": 0,
+      "total": 407855,
+      "pct": 0.3203900281485721
+    },
+    {
+      "major": 2,
+      "stable": 194637,
+      "prerelease": 137,
+      "total": 194774,
+      "pct": 0.15300449263245514
+    },
+    {
+      "major": 1,
+      "stable": 55444,
+      "prerelease": 161,
+      "total": 55605,
+      "pct": 0.04368044406762539
+    },
+    {
+      "major": 0,
+      "stable": 34314,
+      "prerelease": 45,
+      "total": 34359,
+      "pct": 0.026990673099892826
+    }
+  ],
+  "latestStable": "10.3.0"
+}

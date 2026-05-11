@@ -9,7 +9,11 @@
         "security-metadata",
         "detect-understand-fix",
         "---Ecosystem---",
+        "compatibility",
+        "runtime-portability",
         "coverage",
-        "benchmarks"
+        "benchmarks",
+        "compare",
+        "cwe-compatibility"
     ]
 }

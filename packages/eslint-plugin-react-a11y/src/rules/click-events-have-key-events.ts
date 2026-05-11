@@ -23,6 +23,7 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/click-events-have-key-events.md',
       description: 'Enforce that onClick is accompanied by keyboard events',
     },
     messages: {

@@ -1,0 +1,34 @@
+# Sensitive data (real numbers — internal org only).
+# These files are reproducible from `01-fetch-actions-data.sh` + `inputs.yml`,
+# so they belong in your local checkout but should never be checked in.
+#
+# Anything under data/ EXCEPT fixtures (which are synthetic and safe).
+data/runs-90d.json
+data/jobs-90d.json
+data/actors-90d.txt
+data/metrics.json
+data/fetched-at.txt
+data/report-data.json
+
+# Keep fixtures explicitly (synthetic, framework-illustrating, no sensitive data).
+!data/fixtures/
+
+# Outputs — contain the sensitive headline numbers, the wage assumption,
+# the team count, the failure rate. Internal only.
+outputs/unit-cost.json
+outputs/sensitivity.csv
+outputs/headline.md
+outputs/presentation-table.md
+outputs/cicd-impact-*.xlsx
+
+# Executive narrative — embeds the sensitive numbers directly.
+EXECUTIVE-REPORT.md
+
+# Inputs — the wage figure is sensitive ($/dev-min ≈ company-wide comp band).
+# If you want to share this folder, share inputs.template.yml instead.
+inputs.yml
+
+# Python venv for the XLSX builder
+.venv/
+__pycache__/
+*.pyc

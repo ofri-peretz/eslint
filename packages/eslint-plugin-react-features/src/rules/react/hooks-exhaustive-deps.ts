@@ -15,12 +15,13 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 
-  | 'missingDep' 
-  | 'extraDep' 
+type MessageIds =
+  | 'missingDep'
+  | 'extraDep'
   | 'unnecessaryDep'
   | 'suggestAddDep'
-  | 'suggestRemoveDep';
+  | 'suggestRemoveDep'
+  | 'depsNotArrayLiteral';
 
 export interface Options {
   /** Additional hooks to check (e.g., custom hooks using useEffect internally) */
@@ -31,21 +32,55 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Per-(node.type) cache of which property keys point at child AST nodes.
+ *
+ * The previous traversal allocated `Object.keys(node)` for every visited
+ * node and filtered out metadata (`loc`, `range`, `parent`, …). On next.js's
+ * 14K-file lint pass the same node types recur millions of times — the
+ * Object.keys allocation alone showed up as ~4% of the rule's runtime in
+ * the v2 profile. Caching by node.type makes the second-and-later visit
+ * per type a single map lookup.
+ *
+ * Module-level so the cache amortizes across files in one ESLint run.
+ */
+const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'type']);
+const CHILD_KEYS_CACHE = new Map<string, string[]>();
+
+function getChildKeys(node: TSESTree.Node): string[] {
+  const cached = CHILD_KEYS_CACHE.get(node.type);
+  if (cached) return cached;
+  const keys: string[] = [];
+  for (const key of Object.keys(node)) {
+    if (SKIP_KEYS.has(key)) continue;
+    const v = (node as unknown as Record<string, unknown>)[key];
+    if (v && typeof v === 'object') {
+      // Either an AST node or an array of nodes — record either way; the
+      // traversal logic at the call site handles both shapes.
+      keys.push(key);
+    }
+  }
+  CHILD_KEYS_CACHE.set(node.type, keys);
+  return keys;
+}
+
 // Hook names that require dependency array checking
-const HOOKS_WITH_DEPS = [
+const HOOKS_WITH_DEPS = new Set([
   'useEffect',
   'useLayoutEffect',
   'useCallback',
   'useMemo',
   'useImperativeHandle',
-];
+]);
 
 export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
   name: 'hooks-exhaustive-deps',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/hooks-exhaustive-deps.md',
       description: 'Enforce exhaustive dependencies in React hooks to prevent stale closures',
+      confidence: 'high',
     },
     hasSuggestions: true,
     messages: {
@@ -89,6 +124,14 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         fix: 'Remove the unnecessary dependency',
         documentationLink: 'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
       }),
+      depsNotArrayLiteral: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Non-literal Dependency Array',
+        description: 'React Hook {{hookName}} was passed a dependency list that is not an array literal. This means we cannot statically verify whether you have passed the correct dependencies.',
+        severity: 'HIGH',
+        fix: 'Replace the variable with an inline array literal: [dep1, dep2]. If you need dynamic deps, refactor to compute them inside the hook callback instead.',
+        documentationLink: 'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
+      }),
     },
     schema: [
       {
@@ -124,7 +167,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       
       // Direct hook call: useEffect(...)
       if (callee.type === 'Identifier') {
-        if (HOOKS_WITH_DEPS.includes(callee.name)) {
+        if (HOOKS_WITH_DEPS.has(callee.name)) {
           return true;
         }
         if (additionalHooksPattern?.test(callee.name)) {
@@ -138,7 +181,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         callee.object.type === 'Identifier' &&
         callee.object.name === 'React' &&
         callee.property.type === 'Identifier' &&
-        HOOKS_WITH_DEPS.includes(callee.property.name)
+        HOOKS_WITH_DEPS.has(callee.property.name)
       ) {
         return true;
       }
@@ -149,6 +192,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Get the hook name from a call expression
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function getHookName(node: TSESTree.CallExpression): string {
       const callee = node.callee;
       if (callee.type === 'Identifier') {
@@ -169,7 +213,6 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     function extractLocallyDeclaredIdentifiers(node: TSESTree.Node): Set<string> {
       const declared = new Set<string>();
       const visited = new WeakSet<TSESTree.Node>();
-      const skipKeys = new Set(['parent', 'loc', 'range', 'tokens', 'comments']);
       
       function visit(n: TSESTree.Node) {
         if (visited.has(n)) return;
@@ -202,25 +245,58 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         if (n.type === 'FunctionDeclaration' && n.id) {
           declared.add(n.id.name);
         }
-        
-        // Traverse children
-        for (const key of Object.keys(n)) {
-          if (skipKeys.has(key)) continue;
-          const child = (n as unknown as Record<string, unknown>)[key];
-          if (child && typeof child === 'object') {
-            if (Array.isArray(child)) {
-              child.forEach((c) => {
-                if (c && typeof c === 'object' && 'type' in c) {
-                  visit(c as TSESTree.Node);
+
+        // Function parameters of nested arrow / function expressions —
+        // these are LOCAL to the inner callback, not closures over the
+        // hook's body. Without this, callbacks like `.then((r) => ...)`
+        // had `r` flagged as a missing dependency (real FP found by the
+        // CWE-react-hooks corpus).
+        if (
+          n.type === 'ArrowFunctionExpression' ||
+          n.type === 'FunctionExpression' ||
+          n.type === 'FunctionDeclaration'
+        ) {
+          const collectFromPattern = (param: TSESTree.Node) => {
+            if (param.type === 'Identifier') {
+              declared.add(param.name);
+            } else if (param.type === 'ObjectPattern') {
+              for (const prop of param.properties) {
+                if (prop.type === 'Property' && prop.value.type === 'Identifier') {
+                  declared.add(prop.value.name);
+                } else if (prop.type === 'RestElement' && prop.argument.type === 'Identifier') {
+                  declared.add(prop.argument.name);
                 }
-              });
-            } else if ('type' in child) {
-              visit(child as TSESTree.Node);
+              }
+            } else if (param.type === 'ArrayPattern') {
+              for (const el of param.elements) {
+                if (el && el.type === 'Identifier') declared.add(el.name);
+              }
+            } else if (param.type === 'RestElement' && param.argument.type === 'Identifier') {
+              declared.add(param.argument.name);
+            } else if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
+              declared.add(param.left.name);
             }
+          };
+          for (const param of n.params) collectFromPattern(param);
+        }
+        
+        // Traverse children using the cached child-keys table.
+        const keys = getChildKeys(n);
+        for (let i = 0; i < keys.length; i++) {
+          const child = (n as unknown as Record<string, unknown>)[keys[i]];
+          if (Array.isArray(child)) {
+            for (let j = 0; j < child.length; j++) {
+              const c = child[j];
+              if (c && typeof c === 'object' && 'type' in c) {
+                visit(c as TSESTree.Node);
+              }
+            }
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            visit(child as TSESTree.Node);
           }
         }
       }
-      
+
       visit(node);
       return declared;
     }
@@ -233,7 +309,6 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       const visited = new WeakSet<TSESTree.Node>();
       
       // Keys to skip during traversal (to avoid infinite loops)
-      const skipKeys = new Set(['parent', 'loc', 'range', 'tokens', 'comments']);
       
       function visit(n: TSESTree.Node, isPropertyKey = false) {
         // Prevent infinite loops
@@ -269,28 +344,23 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           used.add(n.name);
         }
         
-        // Traverse child nodes
-        for (const key of Object.keys(n)) {
-          // Skip parent and metadata to avoid circular references
-          if (skipKeys.has(key)) {
-            continue;
-          }
-          
-          const child = (n as unknown as Record<string, unknown>)[key];
-          if (child && typeof child === 'object') {
-            if (Array.isArray(child)) {
-              child.forEach((c) => {
-                if (c && typeof c === 'object' && 'type' in c) {
-                  visit(c as TSESTree.Node, false);
-                }
-              });
-            } else if ('type' in child) {
-              visit(child as TSESTree.Node, false);
+        // Traverse child nodes (cached child-keys table — see getChildKeys).
+        const keys = getChildKeys(n);
+        for (let i = 0; i < keys.length; i++) {
+          const child = (n as unknown as Record<string, unknown>)[keys[i]];
+          if (Array.isArray(child)) {
+            for (let j = 0; j < child.length; j++) {
+              const c = child[j];
+              if (c && typeof c === 'object' && 'type' in c) {
+                visit(c as TSESTree.Node, false);
+              }
             }
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            visit(child as TSESTree.Node, false);
           }
         }
       }
-      
+
       visit(node);
       return used;
     }
@@ -309,7 +379,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           element.object.type === 'Identifier'
         ) {
           // For props.foo, we track the full path
-          const sourceCode = context.sourceCode || context.getSourceCode();
+          const sourceCode = context.sourceCode;
           deps.add(sourceCode.getText(element));
         }
       }
@@ -320,6 +390,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Check if an identifier is a stable React reference
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function isStableReference(name: string): boolean {
       // setState functions from useState are stable
       // dispatch from useReducer is stable
@@ -417,10 +488,28 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           return;
         }
         
-        if (depsArg.type !== 'ArrayExpression') {
+        // Mirrors eslint-plugin-react-hooks: handle `as const` casts on the
+        // deps array, then report when the deps argument is anything other
+        // than an inline array literal (we can't statically verify a variable
+        // reference, so the user gets no protection — silent skip would be
+        // a missed FN, see CWE-XXX in next.js compiled bundles for examples).
+        const isTSAsArrayExpression =
+          depsArg.type === 'TSAsExpression' && depsArg.expression?.type === 'ArrayExpression';
+        const isArrayExpression = depsArg.type === 'ArrayExpression';
+
+        if (!isArrayExpression && !isTSAsArrayExpression) {
+          context.report({
+            node: depsArg,
+            messageId: 'depsNotArrayLiteral',
+            data: { hookName },
+          });
           return;
         }
-        
+
+        const depsArrayNode = isTSAsArrayExpression
+          ? ((depsArg as TSESTree.TSAsExpression).expression as TSESTree.ArrayExpression)
+          : (depsArg as TSESTree.ArrayExpression);
+
         // Extract used identifiers from callback
         const usedInCallback = extractUsedIdentifiers(callback.body);
         
@@ -438,7 +527,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         const reactiveDeps = filterReactiveDeps(externalUsed);
         
         // Extract declared dependencies
-        const declaredDeps = extractDependencies(depsArg);
+        const declaredDeps = extractDependencies(depsArrayNode);
         
         // Find missing dependencies
         const missingDeps: string[] = [];
@@ -471,13 +560,13 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               messageId: 'suggestAddDep' as const,
               data: { dep },
               fix(fixer: TSESLint.RuleFixer) {
-                const lastElement = depsArg.elements[depsArg.elements.length - 1];
+                const lastElement = depsArrayNode.elements[depsArrayNode.elements.length - 1];
                 if (lastElement) {
                   return fixer.insertTextAfter(lastElement, `, ${dep}`);
                 } else {
                   // Empty array
                   return fixer.insertTextAfterRange(
-                    [depsArg.range[0] + 1, depsArg.range[0] + 1],
+                    [depsArrayNode.range[0] + 1, depsArrayNode.range[0] + 1],
                     dep
                   );
                 }
@@ -500,17 +589,17 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                 messageId: 'suggestRemoveDep' as const,
                 data: { dep },
                 fix(fixer: TSESLint.RuleFixer) {
-                  const element = depsArg.elements.find(
+                  const element = depsArrayNode.elements.find(
                     (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el?.type === 'Identifier' && el.name === dep
                   );
                   if (element) {
-                    const index = depsArg.elements.indexOf(element);
-                    const isLast = index === depsArg.elements.length - 1;
+                    const index = depsArrayNode.elements.indexOf(element);
+                    const isLast = index === depsArrayNode.elements.length - 1;
                     const isFirst = index === 0;
                     
-                    if (isFirst && depsArg.elements.length > 1) {
+                    if (isFirst && depsArrayNode.elements.length > 1) {
                       // Remove first element and following comma
-                      const nextElement = depsArg.elements[1];
+                      const nextElement = depsArrayNode.elements[1];
                       if (nextElement) {
                         return fixer.removeRange([
                           element.range[0],
@@ -519,7 +608,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                       }
                     } else if (isLast && index > 0) {
                       // Remove last element and preceding comma
-                      const prevElement = depsArg.elements[index - 1];
+                      const prevElement = depsArrayNode.elements[index - 1];
                       if (prevElement) {
                         return fixer.removeRange([
                           prevElement.range[1],

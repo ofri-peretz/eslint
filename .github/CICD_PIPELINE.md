@@ -39,10 +39,10 @@ flowchart LR
 
 | Task                  | Command                                       |
 | --------------------- | --------------------------------------------- |
-| **Run tests locally** | `pnpm nx test <package>`                      |
-| **Run lint locally**  | `pnpm nx lint <package>`                      |
-| **Build package**     | `pnpm nx build <package>`                     |
-| **Dry-run release**   | `pnpm nx release --dry-run`                   |
+| **Run tests locally** | `npx turbo run test --filter=<package>`                      |
+| **Run lint locally**  | `npx turbo run lint --filter=<package>`                      |
+| **Build package**     | `npx turbo run build --filter=<package>`                     |
+| **Dry-run release**   | `gh workflow run release.yml -f dry-run=true`                   |
 | **Trigger release**   | GitHub Actions → `release.yml` → Run workflow |
 
 ### Commit Message Format
@@ -79,7 +79,7 @@ Examples:
 | ------------------------------------------------------ | ---------------------------------------------------------- |
 | **This file**                                          | Overview, workflows, configuration                         |
 | [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 24 failure scenarios (R01-R23 + R02b), recovery matrix |
-| [**Nx Release Guide**](./docs/NX_RELEASE_GUIDE.md)     | Conventional commits, versioning, changelogs               |
+| [**Versioning & Releases**](../CONTRIBUTING.md#-versioning--releases-changesets)     | Conventional commits, versioning, changelogs               |
 | [**NPM Authentication**](./docs/NPM_AUTHENTICATION.md) | Trusted Publishers, tokens, error diagnostics              |
 
 ---
@@ -189,7 +189,7 @@ The release logic is extracted to `.github/scripts/release-packages.sh` to avoid
 }
 ```
 
-> **📖 Full details:** [Nx Release Guide](./docs/NX_RELEASE_GUIDE.md)
+> **📖 Full details:** [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md#-versioning--releases-changesets)
 
 ### Conventional Commit → Version Mapping
 
@@ -208,11 +208,11 @@ The release logic is extracted to `.github/scripts/release-packages.sh` to avoid
 
 | Check               | Workflow    | Blocking?       | Command                        |
 | ------------------- | ----------- | --------------- | ------------------------------ |
-| **ESLint**          | lint-pr.yml | ✅ Yes          | `nx affected -t lint`          |
-| **Tests**           | ci-pr.yml   | ✅ Yes          | `nx affected -t test -c ci`    |
-| **Build**           | ci-pr.yml   | ✅ Yes          | `nx affected -t build`         |
-| **Typecheck**       | ci-pr.yml   | ✅ Yes          | `nx affected -t typecheck`     |
-| **Release Dry-Run** | ci-pr.yml   | ⚠️ Warning only | `nx release version --dry-run` |
+| **ESLint**          | lint-pr.yml | ✅ Yes          | `npx turbo run lint --filter='[origin/main]'`          |
+| **Tests**           | ci-pr.yml   | ✅ Yes          | `npx turbo run test --filter='[origin/main]'`    |
+| **Build**           | ci-pr.yml   | ✅ Yes          | `npx turbo run build --filter='[origin/main]'`         |
+| **Typecheck**       | ci-pr.yml   | ✅ Yes          | `npx turbo run typecheck --filter='[origin/main]'`     |
+| **Release Dry-Run** | ci-pr.yml   | ⚠️ Warning only | `gh workflow run release.yml -f dry-run=true` |
 
 ### Docs-Only Optimization
 

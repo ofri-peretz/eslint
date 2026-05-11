@@ -17,6 +17,8 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     docs: {
       description: 'Detect hardcoded credentials in pg Client or Pool initialization.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-hardcoded-credentials.md',
+      cwe: 'CWE-798',
+      cvss: 9.5,
     },
     messages: {
       noHardcodedCredentials: formatLLMMessage({

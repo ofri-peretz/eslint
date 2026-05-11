@@ -26,7 +26,10 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-hardcoded-api-keys.md',
       description: 'Prevent hardcoded API keys in AI SDK model configuration',
+      cwe: 'CWE-798',
+      cvss: 8.5,
     },
     messages: {
       hardcodedApiKey: formatLLMMessage({
@@ -67,7 +70,7 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
       'apiKey', 'api_key', 'token', 'secret', 'credentials',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Known model provider functions
     const providerFunctions = [
@@ -78,6 +81,7 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a string looks like an API key
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function looksLikeApiKey(value: string): boolean {
       // Common API key patterns
       const patterns = [

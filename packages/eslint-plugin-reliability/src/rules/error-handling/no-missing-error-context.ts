@@ -41,6 +41,20 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     return false;
   }
 
+  // `throw error;` — re-throwing a caught/named identifier. The original
+  // error already carries its own message + stack; demanding context on the
+  // re-throw is an FP. Same for `throw err`, `throw cause`, etc. Excludes
+  // the literal-like `undefined` / `NaN` / `Infinity` identifiers, which
+  // are typed as global constants but carry no diagnostic value.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
+    return true;
+  }
+
   // Check if it's a new Error() with message (includes TypeError, ReferenceError, etc.)
   if (
     node.argument.type === 'NewExpression' &&
@@ -48,13 +62,24 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     (node.argument.callee.name === 'Error' ||
       node.argument.callee.name.endsWith('Error'))
   ) {
-    // Check if first argument is a string (message)
+    // Check if first argument is a string (message) OR ANY expression — a
+    // custom error class like `new UserNotFoundError(userId)` builds its
+    // own message internally; the constructor argument IS the context.
     if (node.argument.arguments.length > 0) {
       const firstArg = node.argument.arguments[0];
       if (firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
         return firstArg.value.length > 0;
       }
       if (firstArg.type === 'TemplateLiteral') {
+        return true;
+      }
+      // Non-string argument to a custom *Error class — accept as context.
+      // The rule's purpose is "throws should carry information"; passing an
+      // identifier/object to the error constructor carries information.
+      if (
+        node.argument.callee.name !== 'Error' &&
+        node.argument.callee.name.endsWith('Error')
+      ) {
         return true;
       }
     }
@@ -84,6 +109,18 @@ function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
     return false;
   }
 
+  // `throw error;` — caught/named identifier already has a stack from the
+  // place where it was first thrown. Re-throws preserve the stack. Excludes
+  // `undefined` / `NaN` / `Infinity` global-constant identifiers.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
+    return true;
+  }
+
   // Check if it's a new Error() instance
   if (
     node.argument.type === 'NewExpression' &&
@@ -104,6 +141,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-missing-error-context.md',
       description: 'Detects thrown errors without context',
     },
     hasSuggestions: true,
@@ -186,7 +224,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
       ignoreInTests = true,
     }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 

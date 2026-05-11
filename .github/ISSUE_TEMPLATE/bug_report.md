@@ -35,7 +35,8 @@ Steps to reproduce the behavior:
 
 ## Environment
 
-- **Package**: eslint-plugin-llm-optimized or @interlace/eslint-devkit
+- **Package**: <!-- e.g. eslint-plugin-pg, eslint-plugin-secure-coding, @interlace/eslint-devkit -->
+- **Plugin family**: <!-- security / quality / formatter / mcp / tooling -->
 - **Version**: <!-- e.g. 0.0.3-rc.5 -->
 - **Node.js**: <!-- output of `node --version` -->
 - **pnpm/npm/yarn**: <!-- e.g. pnpm 10.18.3 -->

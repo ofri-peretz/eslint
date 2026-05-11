@@ -24,6 +24,8 @@ describe('no-timestamp-manipulation', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - default timestamps', noTimestampManipulation, {
       valid: [
+        'const x = 42;',
+        'const flag = true;',
         { code: `jwt.sign(payload, secret);` },
         { code: `jwt.sign(payload, secret, {});` },
         { code: `jwt.sign(payload, secret, { expiresIn: '1h' });` },

@@ -34,8 +34,11 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-hardcoded-secret.md',
       description:
         'Disallow hardcoded secrets in JWT sign/verify operations',
+      cwe: 'CWE-798',
+      cvss: 7.5,
     },
     fixable: undefined,
     hasSuggestions: false,
@@ -101,6 +104,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a node is a hardcoded string literal
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isHardcodedString = (node: TSESTree.Node): boolean => {
       // String literal
       if (node.type === 'Literal' && typeof node.value === 'string') {
@@ -116,6 +120,29 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
+    };
+
+    /**
+     * Resolve an Identifier node to its initializer (one frame of indirection).
+     * Closes the audit FN where `const SECRET = 'x'; jwt.sign(p, SECRET)`
+     * was treated as safe — the literal-via-const pattern hides the
+     * hardcoded secret behind one declaration. See benchmarks/AUDIT_PATTERNS.md
+     * §3.2 ("Indirection through one level of variable").
+     */
+    const resolveConstLiteralValue = (
+      node: TSESTree.Node,
+    ): TSESTree.Node | null => {
+      if (node.type !== 'Identifier') return null;
+      const scope = context.sourceCode.getScope?.(node) ?? null;
+      if (!scope) return null;
+      const variable = scope.references.find(
+        (r) => r.identifier === node,
+      )?.resolved;
+      const def = variable?.defs[0];
+      if (!def || def.type !== 'Variable') return null;
+      const decl = def.parent;
+      if (decl?.type !== 'VariableDeclaration' || decl.kind !== 'const') return null;
+      return def.node.init ?? null;
     };
 
     /**
@@ -137,8 +164,17 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Variable reference (could be configured externally)
+      // Variable reference: resolve `const X = ...` one level. If X is a
+      // hardcoded literal, treat as unsafe — fall through to the
+      // hardcoded check. Otherwise (env var, call, identifier chain)
+      // it's safe.
       if (node.type === 'Identifier') {
+        const init = resolveConstLiteralValue(node);
+        if (init && isHardcodedString(init)) {
+          // Unsafe — let the caller's `isHardcodedString` (with the
+          // resolved init) flag it.
+          return false;
+        }
         return true;
       }
 
@@ -148,6 +184,16 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
+    };
+
+    /**
+     * Like isHardcodedString but resolves single-level `const X = '...'`
+     * indirection so the caller fires on `const SECRET = 'x'; jwt.sign(p, SECRET)`.
+     */
+    const isHardcodedStringOrResolvedConst = (node: TSESTree.Node): boolean => {
+      if (isHardcodedString(node)) return true;
+      const init = resolveConstLiteralValue(node);
+      return init ? isHardcodedString(init) : false;
     };
 
     return {
@@ -169,8 +215,8 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Flag hardcoded strings
-        if (isHardcodedString(secretArg)) {
+        // Flag hardcoded strings (also follows single-frame `const X = '...'`).
+        if (isHardcodedStringOrResolvedConst(secretArg)) {
           context.report({
             node: secretArg,
             messageId: 'hardcodedSecret',

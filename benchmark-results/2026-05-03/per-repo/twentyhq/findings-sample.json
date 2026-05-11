@@ -1,0 +1,234 @@
+[
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+    "line": 38,
+    "column": 22,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+    "line": 51,
+    "column": 13,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CONVERSATION_ID or secret management service | https://cwe.mitre.org/data/defini"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+    "line": 107,
+    "column": 22,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+    "line": 196,
+    "column": 22,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+    "line": 209,
+    "column": 13,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CONVERSATION_ID or secret management service | https://cwe.mitre.org/data/defini"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/constants/workspace-migration-action-handler-metadata-key.constant.ts",
+    "line": 2,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.WORKSPACE_MIGRATION_ACTION_HANDLER_METADATA_KEY or secret management service | http"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/workspace-cleaner/constants/user-workspace-deletion-warning-sent-key.constant.ts",
+    "line": 2,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.USER_WORKSPACE_DELETION_WARNING_SENT_KEY or secret management service | https://cwe"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/twenty-standard-application/constants/twenty-cli-application-registration.constant.ts",
+    "line": 2,
+    "column": 24,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.UNIVERSAL_IDENTIFIER or secret management service | https://cwe.mitre.org/data/defi"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/constants/page-layout-widget-seeds.constant.ts",
+    "line": 11,
+    "column": 31,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CUSTOMER_COMPANIES_BY_SIZE or secret management service | https://cwe.mitre.org/dat"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/constants/page-layout-widget-seeds.constant.ts",
+    "line": 12,
+    "column": 38,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CUSTOMER_ANNUAL_RECURRING_REVENUE or secret management service | https://cwe.mitre."
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/constants/page-layout-widget-seeds.constant.ts",
+    "line": 13,
+    "column": 34,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CUSTOMER_REVENUE_DISTRIBUTION or secret management service | https://cwe.mitre.org/"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/constants/page-layout-widget-seeds.constant.ts",
+    "line": 16,
+    "column": 35,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CUSTOMER_LINKEDIN_DISTRIBUTION or secret management service | https://cwe.mitre.org"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/workspace-manager/dev-seeder/core/constants/page-layout-widget-seeds.constant.ts",
+    "line": 19,
+    "column": 33,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.TEAM_GEOGRAPHIC_DISTRIBUTION or secret management service | https://cwe.mitre.org/d"
+  },
+  {
+    "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/permissions/constants/admin-role-label.constants.ts",
+    "line": 1,
+    "column": 33,
+    "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html"
+  },
+  {
+    "ruleId": "secure-coding/detect-non-literal-regexp",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/logic-function/constants/handler.contant.ts",
+    "line": 8,
+    "column": 3,
+    "message": "⚠️ CWE-400 OWASP:A06-Insecure CVSS:7.5 | ReDoS vulnerability detected | CRITICAL\n   Fix: Restructure regex to avoid nested quantifiers | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/logic-function/constants/handler.contant.ts",
+    "line": 8,
+    "column": 3,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Nested Quantifiers: Nested quantifiers like (a+)+, (a*)*, (a?)? cause exponential backtracking | CRITICAL\n   Fix: Use atomic groups (?>...) or restructure to avoid nesting | https://owasp.org/www-com"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/enterprise/constants/enterprise-public-key.constant.ts",
+    "line": 26,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded JWT token detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ENTERPRISE_DEV_VALIDITY_TOKEN or secret management service | https://cwe.mitre.or"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+    "line": 75,
+    "column": 5,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+    "line": 163,
+    "column": 24,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+    "line": 164,
+    "column": 24,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+    "line": 165,
+    "column": 23,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 2,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.LICENSE_PRICE_ENTERPRISE_MONTH_ID or secret management service | https://cwe.mitre."
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 5,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.LICENSE_PRICE_ENTERPRISE_YEAR_ID or secret management service | https://cwe.mitre.o"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 15,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.METER_PRICE_ENTERPRISE_MONTH_TIER_LOW_ID or secret management service | https://cwe"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 17,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.METER_PRICE_ENTERPRISE_MONTH_TIER_HIGH_ID or secret management service | https://cw"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 19,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.METER_PRICE_PRO_MONTH_TIER_LOW_ID or secret management service | https://cwe.mitre."
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/billing/services/__test__/utils/price.constants.ts",
+    "line": 21,
+    "column": 3,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.METER_PRICE_PRO_MONTH_TIER_HIGH_ID or secret management service | https://cwe.mitre"
+  },
+  {
+    "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/database/clickHouse/seeds/run-seeds.ts",
+    "line": 12,
+    "column": 34,
+    "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/database/clickHouse/seeds/run-seeds.ts",
+    "line": 12,
+    "column": 34,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+  }
+]

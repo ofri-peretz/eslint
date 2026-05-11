@@ -130,10 +130,14 @@ function matchPattern(filePath: string, pattern: string): boolean {
   
   // Replace glob patterns with regex equivalents
   // Use placeholders to avoid double-replacement
+  // NUL byte is used as a non-occurring placeholder while we swap globs to
+  // regex tokens; the input is user-side glob, never the byte itself.
+  // eslint-disable-next-line no-control-regex
   regexPattern = regexPattern
     .replace(/\*\*\//g, '\x00') // Placeholder for **/
     .replace(/\*/g, '[^/]*') // * matches any filename segment (non-slash)
     .replace(/\?/g, '.') // ? matches single character
+    // eslint-disable-next-line no-control-regex
     .replace(/\x00/g, '(?:.*/)?'); // **/ matches any path prefix or nothing
   
   const regex = new RegExp(`^${regexPattern}$`);
@@ -253,7 +257,7 @@ export async function fetchLocalJSON<T>(
   const fs = await import('fs/promises');
   const path = await import('path');
   
-  const absolutePath = path.resolve(process.cwd(), filePath);
+  const absolutePath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), filePath);
   const content = await fs.readFile(absolutePath, 'utf-8');
   const data = JSON.parse(content) as T;
   

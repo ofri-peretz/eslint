@@ -1,0 +1,402 @@
+[
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/webpack.js",
+    "line": 206,
+    "column": 5,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/webpack.js",
+    "line": 260,
+    "column": 5,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 90,
+    "column": 8,
+    "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 101,
+    "column": 8,
+    "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 111,
+    "column": 9,
+    "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 120,
+    "column": 8,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 133,
+    "column": 8,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 154,
+    "column": 9,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 154,
+    "column": 9,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 154,
+    "column": 9,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 154,
+    "column": 9,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+  },
+  {
+    "ruleId": "secure-coding/no-graphql-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+    "line": 154,
+    "column": 9,
+    "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+    "line": 117,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+    "line": 274,
+    "column": 4,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+    "line": 281,
+    "column": 4,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+    "line": 467,
+    "column": 5,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 115,
+    "column": 18,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-unchecked-loop-condition",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 133,
+    "column": 28,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+  },
+  {
+    "ruleId": "secure-coding/no-unchecked-loop-condition",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 148,
+    "column": 28,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+  },
+  {
+    "ruleId": "secure-coding/no-unchecked-loop-condition",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 162,
+    "column": 28,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 217,
+    "column": 3,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 258,
+    "column": 8,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 259,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 270,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 278,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 290,
+    "column": 3,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 332,
+    "column": 8,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 404,
+    "column": 20,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 466,
+    "column": 15,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 470,
+    "column": 5,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-unlimited-resource-allocation",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 470,
+    "column": 25,
+    "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 471,
+    "column": 23,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/no-unlimited-resource-allocation",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 472,
+    "column": 16,
+    "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 487,
+    "column": 9,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 488,
+    "column": 6,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 489,
+    "column": 16,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 489,
+    "column": 44,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 497,
+    "column": 13,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 500,
+    "column": 12,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 512,
+    "column": 16,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 515,
+    "column": 17,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 517,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 518,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 519,
+    "column": 21,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 521,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 522,
+    "column": 22,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 523,
+    "column": 21,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 532,
+    "column": 7,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 533,
+    "column": 4,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  },
+  {
+    "ruleId": "secure-coding/detect-object-injection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+    "line": 534,
+    "column": 14,
+    "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+  }
+]

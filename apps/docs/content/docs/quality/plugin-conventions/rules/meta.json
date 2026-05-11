@@ -1,5 +1,18 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "consistent-existence-index-check",
+    "expiring-todo-comments",
+    "filename-case",
+    "no-commented-code",
+    "no-console-spaces",
+    "no-deprecated-api",
+    "no-json-schema-tags",
+    "prefer-code-point",
+    "prefer-dependency-version-strategy",
+    "prefer-dom-node-text-content",
+    "require-data-testid"
+  ]
 }

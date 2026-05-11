@@ -14,13 +14,13 @@ Serverless CWE/CVE Analytics Engine for the Interlace ESLint ecosystem. Fetches,
 ### Sync Data
 
 ```bash
-nx run cwe-analytics-engine:sync
+npx turbo run sync --filter=@interlace/cwe-analytics-engine
 ```
 
 ### View Stats Only
 
 ```bash
-nx run cwe-analytics-engine:stats
+npx turbo run stats --filter=@interlace/cwe-analytics-engine
 ```
 
 ## Output

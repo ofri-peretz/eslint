@@ -17,6 +17,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { RegExpParser } from '@eslint-community/regexpp';
+import { analyse } from 'scslre';
+
+// Module-level parser; cheap to reuse.
+const REGEXPP_PARSER = new RegExpParser();
 
 type MessageIds =
   | 'redosVulnerable'
@@ -178,7 +183,9 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-redos-vulnerable-regex.md',
       description: 'Detects ReDoS-vulnerable regex patterns in literal regex patterns',
+      cwe: 'CWE-400',
     },
     hasSuggestions: true,
     messages: {
@@ -256,6 +263,55 @@ allowCommonPatterns = false, maxPatternLength = 500
 }: Options = options || {};
 
     /**
+     * NFA-based ReDoS detection via scslre — the same library used by
+     * eslint-plugin-regexp. Catches patterns that the heuristic regex
+     * pattern matching can't see (cross-quantifier "trade" issues, deep
+     * nested loops, etc.). Heuristic detection runs as a fallback for
+     * cases where parsing fails or the pattern is exotic.
+     */
+    function checkWithScslre(
+      node: TSESTree.Node,
+      pattern: string,
+      flags: string
+    ): boolean {
+      try {
+        const ast = REGEXPP_PARSER.parsePattern(
+          pattern,
+          0,
+          pattern.length,
+          { unicode: flags.includes('u'), unicodeSets: flags.includes('v') }
+        );
+        const result = analyse(
+          { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
+          { reportTypes: { Move: false } }
+        );
+        if (result.reports.length === 0) return false;
+
+        for (const report of result.reports) {
+          const isExp = report.exponential;
+          context.report({
+            node,
+            messageId: 'redosVulnerable',
+            data: {
+              vulnerabilityName: report.type === 'Self'
+                ? `Self-loop quantifier (${isExp ? 'exponential' : 'polynomial'} backtracking)`
+                : `Cross-quantifier trade (${isExp ? 'exponential' : 'polynomial'} backtracking)`,
+              description: report.type === 'Self'
+                ? `A quantifier reaches itself via the parent loop. An attacker can craft input that triggers ${isExp ? 'exponential' : 'polynomial'} backtracking.`
+                : `Two quantifiers can exchange characters, enabling ${isExp ? 'exponential' : 'polynomial'} backtracking on crafted input.`,
+              severity: isExp ? 'CRITICAL' : 'HIGH',
+              fix: 'Atomic group, possessive quantifier, or rewrite to eliminate the ambiguity. The scslre auto-suggested fix may be available.',
+            },
+          });
+        }
+        return true;
+      } catch {
+        // Fall through to heuristic check
+        return false;
+      }
+    }
+
+    /**
      * Check literal regex patterns for ReDoS vulnerabilities
      */
     function checkLiteralRegExp(node: TSESTree.Node) {
@@ -264,9 +320,15 @@ allowCommonPatterns = false, maxPatternLength = 500
       }
 
       const pattern = node.regex.pattern;
-      
+      const flags = node.regex.flags || '';
+
       // Skip if pattern is too long (performance)
       if (pattern.length > maxPatternLength) {
+        return;
+      }
+
+      // NFA-based detection first — catches what heuristics miss.
+      if (checkWithScslre(node, pattern, flags)) {
         return;
       }
 
@@ -330,6 +392,44 @@ allowCommonPatterns = false, maxPatternLength = 500
       }
 
       const firstArg = node.arguments[0];
+
+      // Template literal with interpolation — runtime-built pattern.
+      // Closes the audit FN where `new RegExp(\`^(\${pattern}+)+$\`)` was
+      // bypassing detection. We can't fully analyse the resulting regex
+      // (the interpolated parts are user-controlled), but we CAN detect
+      // the nested-quantifier signature `+)+`/`+)*`/`*)+`/`*)*` in the
+      // static template text — that shape is catastrophic regardless of
+      // what the interpolation injects. See benchmarks/AUDIT_PATTERNS.md
+      // §3.5 ("Runtime-built patterns").
+      if (firstArg.type === 'TemplateLiteral' && firstArg.expressions.length > 0) {
+        const concatenated = firstArg.quasis
+          .map((q) => q.value.cooked ?? q.value.raw)
+          .join(' '); // sentinel between static parts
+        // Look for the nested-quantifier signature on either side of an
+        // interpolation: `+)+`, `+)*`, `*)+`, `*)*`, `})+` etc.
+        const hasNestedQuantifier =
+          /[+*}](?:\)\s*[+*]|\)\s*\{\s*\d+\s*,?\s*\d*\s*\}| \s*[+*])/.test(
+            concatenated,
+          ) ||
+          /[+*] .*\)[+*]/.test(concatenated) ||
+          /\( [+*]\)[+*]/.test(concatenated);
+        if (hasNestedQuantifier) {
+          context.report({
+            node,
+            messageId: 'redosVulnerable',
+            data: {
+              vulnerabilityName: 'Runtime-built nested quantifier',
+              description:
+                'Template-literal pattern interpolation places user input inside a nested-quantifier shape (`(...+)+` / `(...*)*`); this is catastrophic regardless of what the interpolation injects.',
+              severity: 'HIGH',
+              fix:
+                'Avoid runtime-built nested quantifiers. Build the pattern at module load time and validate; or constrain the interpolated section to a non-quantifier region.',
+            },
+          });
+        }
+        return;
+      }
+
       if (firstArg.type !== 'Literal' || typeof firstArg.value !== 'string') {
         /* c8 ignore next */
         return;

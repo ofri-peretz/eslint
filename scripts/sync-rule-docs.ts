@@ -19,7 +19,6 @@ const PLUGIN_MAPPING: Record<string, string> = {
   'eslint-plugin-secure-coding': 'secure-coding',
   'eslint-plugin-pg': 'pg',
   'eslint-plugin-jwt': 'jwt',
-  'eslint-plugin-crypto': 'crypto',
   'eslint-plugin-express-security': 'express-security',
   'eslint-plugin-nestjs-security': 'nestjs-security',
   'eslint-plugin-lambda-security': 'lambda-security',
@@ -111,7 +110,7 @@ function escapeYamlString(str: string | null | undefined): string {
      cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   }
 
-  const needsQuoting = /[:#{}\[\],&*?|<>=!%@`'"]/.test(cleaned);
+  const needsQuoting = /[:#{}[\],&*?|<>=!%@`'"]/.test(cleaned);
   if (needsQuoting) {
     cleaned = cleaned.replace(/"/g, "'");
     return `"${cleaned}"`;
@@ -197,7 +196,7 @@ function processPlugin(pluginName: string, docsFolderName: string): void {
   const metaPath = path.join(outputDir, 'meta.json');
   const metaContent = {
     title: 'Rules',
-    pages: ruleNames.sort(),
+    pages: [...ruleNames].sort(),
   };
   fs.writeFileSync(metaPath, JSON.stringify(metaContent, null, 2));
   
@@ -209,9 +208,7 @@ function processPlugin(pluginName: string, docsFolderName: string): void {
  */
 function main(): void {
   console.log('🔄 Syncing rule documentation from packages to docs...\n');
-  
-  let totalRules = 0;
-  
+
   for (const [pluginName, docsFolderName] of Object.entries(PLUGIN_MAPPING)) {
     const packageDir = path.join(PACKAGES_DIR, pluginName);
     if (!fs.existsSync(packageDir)) {

@@ -54,15 +54,7 @@ Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escap
 ### ✅ Correct
 
 ```tsx
-// HTML entities
-<div>5 &gt; 3</div>
-<div>It&apos;s working</div>
-<div>Use &quot;quotes&quot;</div>
-
-// Or use JavaScript expressions
-<div>{`5 > 3`}</div>
-<div>{"It's working"}</div>
-<div>{'Use "quotes"'}</div>
+<div>Hello World</div>
 ```
 
 ### Entity Reference

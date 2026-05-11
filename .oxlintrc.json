@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "unicorn"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "no-debugger": "error",
+    "no-console": "off",
+    "no-constant-binary-expression": "error",
+    "no-self-compare": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-useless-rename": "warn",
+    "prefer-const": "warn",
+    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "eqeqeq": ["warn", "smart"],
+    "no-underscore-dangle": "off",
+    "no-shadow": "off",
+    "no-await-in-loop": "off",
+    "preserve-caught-error": "off",
+    "no-template-curly-in-string": "warn",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/__tests__/**", "**/tests/**"],
+      "rules": {
+        "no-template-curly-in-string": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.d.ts",
+    "benchmarks/suites/**",
+    "**/benchmark/test-files/**",
+    "tools/oxlint-plugins/**",
+    "benchmarks/corpus/**",
+    "benchmarks/results/**",
+    "**/storybook-static/**",
+    "apps/docs/test-results/**",
+    "**/playwright-report/**"
+  ]
+}

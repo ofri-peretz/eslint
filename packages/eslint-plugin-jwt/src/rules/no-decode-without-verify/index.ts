@@ -31,8 +31,11 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-decode-without-verify.md',
       description:
         'Disallow trusting decoded JWT payload without signature verification',
+      cwe: 'CWE-345',
+      cvss: 7.5,
     },
     fixable: undefined,
     hasSuggestions: false,
@@ -111,6 +114,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is a jwt-decode import usage
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean => {
       // Direct call: jwtDecode(token)
       if (

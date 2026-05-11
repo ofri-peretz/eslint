@@ -494,19 +494,21 @@ const rule = createRule<[], 'messageId'>({
 
 ## Compatibility
 
-| Package                   | Version            |
-| ------------------------- | ------------------ |
-| ESLint                    | ^8.0.0 \|\| ^9.0.0 |
-| TypeScript                | >=4.0.0            |
-| @typescript-eslint/parser | >=6.0.0            |
-| @typescript-eslint/utils  | ^8.0.0             |
-| Node.js                   | >=18.0.0           |
+| Package                   | Version                       |
+| ------------------------- | ----------------------------- |
+| ESLint                    | ^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0 |
+| TypeScript                | >=4.0.0                       |
+| @typescript-eslint/parser | >=6.0.0                       |
+| @typescript-eslint/utils  | ^8.0.0                        |
+| Node.js                   | >=18.0.0                      |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for current ecosystem share data and the rules that determine which majors are supported.
 
 ---
 
 ## Related Packages
 
-- **[eslint-plugin-llm-optimized](https://www.npmjs.com/package/eslint-plugin-llm-optimized)** - Ready-to-use LLM-optimized rules built with this package
+- **The `@interlace/eslint-plugin-*` family** — Ready-to-use LLM-optimized rules built with this package. See the [root README](https://github.com/ofri-peretz/eslint#-available-packages) for the full list.
 - **[@typescript-eslint/utils](https://www.npmjs.com/package/@typescript-eslint/utils)** - Official TypeScript ESLint utilities
 - **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation
 

@@ -77,8 +77,11 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-cookie-js.md',
       description:
         'Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript',
+      cwe: 'CWE-1004',
+      cvss: 8.1,
     },
     hasSuggestions: true,
     messages: {
@@ -139,7 +142,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
       sensitivePatterns = DEFAULT_SENSITIVE_PATTERNS,
     } = options as Options;
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

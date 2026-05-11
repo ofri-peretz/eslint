@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-05-10T01:56:23.840Z",
+  "methodology": {
+    "runs": 3,
+    "files": 500,
+    "corpus": "/Users/ofri/repos/ofriperetz.dev/eslint/node_modules/date-fns"
+  },
+  "results": [
+    {
+      "name": "baseline (Linter, no rules)",
+      "median": 175.23291699999993,
+      "perFile": 0.35046583399999987,
+      "issues": 0,
+      "parseErrors": 498,
+      "samples": [
+        173.17104099999995,
+        175.23291699999993,
+        196.84779200000003
+      ],
+      "heapDeltaMB": 274.92137908935547
+    },
+    {
+      "name": "Interlace (full security fleet)",
+      "median": 424.03237500000023,
+      "perFile": 0.8480647500000005,
+      "issues": 220,
+      "parseErrors": 498,
+      "samples": [
+        406.69216700000015,
+        424.03237500000023,
+        424.3530000000003
+      ],
+      "heapDeltaMB": 405.80833435058594
+    },
+    {
+      "name": "eslint-plugin-sonarjs",
+      "median": 1200.4547090000005,
+      "perFile": 2.4009094180000012,
+      "issues": 416,
+      "parseErrors": 498,
+      "samples": [
+        1159.1115829999999,
+        1200.4547090000005,
+        1274.9097500000007
+      ],
+      "heapDeltaMB": 290.3362808227539
+    },
+    {
+      "name": "eslint-plugin-no-secrets",
+      "median": 216.20800000000054,
+      "perFile": 0.4324160000000011,
+      "issues": 16,
+      "parseErrors": 498,
+      "samples": [
+        208.62312500000007,
+        216.20800000000054,
+        234.35133300000052
+      ],
+      "heapDeltaMB": 214.27500915527344
+    },
+    {
+      "name": "eslint-plugin-no-unsanitized",
+      "median": 181.1729170000017,
+      "perFile": 0.36234583400000336,
+      "issues": 0,
+      "parseErrors": 498,
+      "samples": [
+        180.77649999999994,
+        181.1729170000017,
+        182.08529200000157
+      ],
+      "heapDeltaMB": 434.26124572753906
+    },
+    {
+      "name": "eslint-plugin-security-node",
+      "median": 204.6307909999996,
+      "perFile": 0.4092615819999992,
+      "issues": 38,
+      "parseErrors": 498,
+      "samples": [
+        202.0765420000007,
+        204.6307909999996,
+        205.4187920000004
+      ],
+      "heapDeltaMB": 403.23741149902344
+    },
+    null,
+    null
+  ]
+}

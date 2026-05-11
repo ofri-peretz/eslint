@@ -32,7 +32,10 @@ export const noPredictableSalt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-predictable-salt.md',
       description: 'Disallow predictable, empty, or short salts in key derivation',
+      cwe: 'CWE-331',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

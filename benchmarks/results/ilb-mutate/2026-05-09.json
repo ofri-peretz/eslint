@@ -1,0 +1,103 @@
+{
+  "bench": "ILB-Mutate",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T23:38:18.939Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "cost": {},
+  "effectiveness": {
+    "ruleSurvivalRate": 1
+  },
+  "latency": {},
+  "perRule": {
+    "pg/no-floating-query": {
+      "total": 5,
+      "survived": 5
+    },
+    "pg/no-unsafe-query": {
+      "total": 5,
+      "survived": 5
+    }
+  },
+  "perMutator": {
+    "comment-injection": {
+      "total": 6,
+      "survived": 6
+    },
+    "paren-redundancy": {
+      "total": 4,
+      "survived": 4
+    }
+  },
+  "totalChecks": 10,
+  "totalSurvived": 10,
+  "triples": [
+    {
+      "rule": "pg/no-floating-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+      "mutator": "comment-injection",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+      "mutator": "comment-injection",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-floating-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+      "mutator": "paren-redundancy",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+      "mutator": "paren-redundancy",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-floating-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+      "mutator": "comment-injection",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+      "mutator": "comment-injection",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-floating-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+      "mutator": "paren-redundancy",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+      "mutator": "paren-redundancy",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-floating-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+      "mutator": "comment-injection",
+      "survived": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "fixture": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+      "mutator": "comment-injection",
+      "survived": true
+    }
+  ]
+}

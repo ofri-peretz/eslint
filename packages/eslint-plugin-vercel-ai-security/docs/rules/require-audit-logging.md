@@ -52,28 +52,7 @@ export async function processRequest(req) {
 ## ✅ Correct Code
 
 ```typescript
-// With logging
-async function handler() {
-  logger.info('AI generation started', { userId, promptHash });
-  try {
-    const result = await generateText({
-      prompt: userInput,
-    });
-    logger.info('AI generation completed', { userId, tokens: result.usage });
-    return result.text;
-  } catch (error) {
-    logger.error('AI generation failed', { userId, error });
-    throw error;
-  }
-}
-
-// Console log (acceptable)
-export async function processRequest(req) {
-  console.log('Processing AI request', { requestId });
-  await streamText({
-    prompt: req.body.message,
-  });
-}
+Hello
 ```
 
 ## ⚙️ Options

@@ -29,7 +29,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = [
+const HTTP_METHOD_DECORATORS = new Set([
   'Get',
   'Post',
   'Put',
@@ -38,17 +38,20 @@ const HTTP_METHOD_DECORATORS = [
   'Options',
   'Head',
   'All',
-];
+]);
 
 // Throttle-related decorators
-const THROTTLE_DECORATORS = ['Throttle', 'SkipThrottle'];
+const THROTTLE_DECORATORS = new Set(['Throttle', 'SkipThrottle']);
 
 export const requireThrottler = createRule<RuleOptions, MessageIds>({
   name: 'require-throttler',
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-throttler.md',
       description: 'Requires ThrottlerGuard or @Throttle decorator for rate limiting',
+      cwe: 'CWE-770',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -92,7 +95,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -135,7 +138,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return THROTTLE_DECORATORS.includes(name);
+        return THROTTLE_DECORATORS.has(name);
       });
     }
 
@@ -169,7 +172,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return HTTP_METHOD_DECORATORS.includes(name);
+        return HTTP_METHOD_DECORATORS.has(name);
       });
     }
 

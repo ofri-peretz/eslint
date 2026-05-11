@@ -71,8 +71,11 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-localstorage.md',
       description:
         'Disallow storing sensitive data like tokens and passwords in localStorage',
+      cwe: 'CWE-922',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

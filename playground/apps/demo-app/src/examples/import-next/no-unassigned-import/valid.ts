@@ -1,1 +1,0 @@
-// Valid example for no-unassigned-import\nexport const valid = true;\n

@@ -53,7 +53,7 @@ const userData = {
 };
 
 // Collecting data not needed for the feature
-async function createNewsletter Subscription(user: any) {
+async function createNewsletterSubscription(user: any) {
   return db.subscribers.create({
     email: user.email,
     name: user.name,

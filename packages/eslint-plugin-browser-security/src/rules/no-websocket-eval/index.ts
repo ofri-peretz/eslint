@@ -30,15 +30,18 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Dangerous eval-like functions
-const EVAL_FUNCTIONS = ['eval', 'Function'];
+const EVAL_FUNCTIONS = new Set(['eval', 'Function']);
 
 export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
   name: 'no-websocket-eval',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-websocket-eval.md',
       description:
         'Disallow using eval() or Function() with WebSocket message data',
+      cwe: 'CWE-95',
+      cvss: 9.8,
     },
     hasSuggestions: true,
     messages: {
@@ -84,7 +87,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -185,7 +188,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
       // eval(...)
       if (
         node.callee.type === AST_NODE_TYPES.Identifier &&
-        EVAL_FUNCTIONS.includes(node.callee.name)
+        EVAL_FUNCTIONS.has(node.callee.name)
       ) {
         return node.callee.name;
       }

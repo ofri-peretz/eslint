@@ -59,21 +59,7 @@ if (__DEV__) {
 ### ✅ Correct
 
 ```javascript
-// Use proper logging service
-import { logger } from './logger';
-
-function processPayment(card) {
-  logger.info('Processing payment', { cardLast4: card.number.slice(-4) });
-  return chargeCard(card);
-}
-
-// Remove debug blocks entirely for production
-// Or use build-time dead code elimination
-
-// Conditional logging based on environment
-if (process.env.NODE_ENV !== 'production') {
-  console.log('Development only log');
-}
+const mode = 'production'
 ```
 
 ## Error Message Format

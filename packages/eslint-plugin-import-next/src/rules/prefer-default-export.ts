@@ -33,6 +33,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-default-export.md',
       description: 'Prefer a default export if module exports a single name',
     },
     hasSuggestions: true,
@@ -108,7 +109,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
       allowNamedExports = false,
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     if (!filename) {
       return {};
     }

@@ -23,6 +23,8 @@ const ruleTester = new RuleTester({
 describe('no-cryptojs', () => {
   ruleTester.run('no-cryptojs', noCryptojs, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
       // Valid: Native crypto
       { code: 'import crypto from "node:crypto";' },
       { code: 'const crypto = require("crypto");' },

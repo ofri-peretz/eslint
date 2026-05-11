@@ -1,1 +1,0 @@
-// Invalid example for consistent-type-specifier-style\n// TODO: Add failing code\nexport const invalid = true;\n

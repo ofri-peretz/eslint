@@ -1,0 +1,94 @@
+---
+title: 'Use Interlace with Cursor'
+description: 'Wire Interlace rules into Cursor via the official ESLint MCP server. Local install, no remote server. ~2 minutes.'
+icon: MousePointer
+---
+
+# Use Interlace with Cursor
+
+> **Time to set up:** ~2 minutes.
+> **Result:** Cursor's agent can call ESLint MCP tools against your project — Interlace plugin rules included — and apply fixes through Cursor's editing primitives. Identical surface to [Claude Code](./claude-code).
+
+We **do not ship our own MCP server**. The ESLint team maintains [`@eslint/mcp`](https://www.npmjs.com/package/@eslint/mcp) — the official, local-only stdio MCP. It auto-discovers every ESLint plugin (including ours) from your project's `eslint.config.*`. One server, every plugin, no per-package sprawl.
+
+## Step 1 — install ESLint + the Interlace plugins you want
+
+```bash
+npm install --save-dev eslint
+npm install --save-dev eslint-plugin-secure-coding eslint-plugin-browser-security eslint-plugin-node-security
+# …or any of our other plugins. See /docs/getting-started/installation
+```
+
+Wire them into your `eslint.config.mjs`:
+
+```js
+import secureCoding from 'eslint-plugin-secure-coding';
+import browserSecurity from 'eslint-plugin-browser-security';
+import nodeSecurity from 'eslint-plugin-node-security';
+
+export default [
+  secureCoding.configs.recommended,
+  browserSecurity.configs.recommended,
+  nodeSecurity.configs.recommended,
+];
+```
+
+## Step 2 — register `@eslint/mcp` with Cursor
+
+Cursor's MCP config lives at `~/.cursor/mcp.json` (global) or `<project>/.cursor/mcp.json` (project-scoped). Add a single entry:
+
+```json
+{
+  "mcpServers": {
+    "eslint": {
+      "command": "npx",
+      "args": ["--yes", "@eslint/mcp"]
+    }
+  }
+}
+```
+
+That one entry exposes every plugin you've installed. No per-plugin server.
+
+## Step 3 — restart Cursor
+
+The `eslint` server appears in Cursor's tool panel with the tools `@eslint/mcp` exposes — typically `lint-files`, `lint-code`, and friends.
+
+## Step 4 — use it
+
+In Cursor's agent panel:
+
+> *"Lint the file I just changed for security issues. Apply auto-fixes for high-severity findings."*
+
+Cursor calls the lint tool → reads diagnostics → applies any auto-fix range via its built-in Edit primitives.
+
+Other prompts that work well:
+
+| Prompt | What Cursor's agent does |
+| :--- | :--- |
+| *"Show me every hardcoded credential in src/"* | Lints + filters by `secure-coding/no-hardcoded-credentials` |
+| *"Lint the diff I'm about to commit"* | Walks the changed files, lints each, summarizes |
+| *"What rules from eslint-plugin-jwt are active in this project?"* | Reads `eslint.config.*` via the MCP and lists the JWT rules |
+
+Our rule messages are LLM-optimized: every diagnostic carries the CWE id, OWASP category, CVSS, and an inline remediation hint — Cursor has everything it needs without extra lookups. See [AI Leverage](/docs/getting-started/concepts/ai-integration) for the format.
+
+## Why this is useful in Cursor specifically
+
+Cursor's agent already has good code-editing primitives. ESLint diagnostics include a structured `fix` range (when the rule is auto-fixable) — the agent applies them through Cursor's existing Edit tool without any string parsing. Auto-fix loops become reliable.
+
+Severity routing:
+
+- **`error`** → apply the fix automatically (high confidence)
+- **`warn`** → propose the diff and wait for review
+- (Our rules also surface CWE-derived priority in the message — Cursor can route on that too.)
+
+## Troubleshooting
+
+Identical to [Claude Code troubleshooting](./claude-code#troubleshooting). The MCP protocol is the same; the host difference doesn't change the failure modes.
+
+## See also
+
+- [Use Interlace with Claude Code](./claude-code) — same MCP, slightly different config path
+- [Interlace VS Code extension](https://github.com/ofri-peretz/eslint/tree/main/packages/interlace-vscode) — bundles the CLI + an ESLint MCP launcher
+- [Compare Interlace to CodeQL / Semgrep / Snyk](/docs/getting-started/concepts/compare) — the buyer's guide
+- [`@eslint/mcp`](https://github.com/eslint/mcp) — upstream source

@@ -29,14 +29,17 @@ type Options = {
 type RuleOptions = [ComponentConfig[]?, Options?];
 
 // Attributes that commonly accept URLs
-const URL_PROPS = ['href', 'src', 'action', 'formAction', 'data', 'poster', 'background'];
+const URL_PROPS = new Set(['href', 'src', 'action', 'formAction', 'data', 'poster', 'background']);
 
 export const jsxNoScriptUrl = createRule<RuleOptions, MessageIds>({
   name: 'jsx-no-script-url',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-script-url.md',
       description: 'Forbid javascript: URLs',
+      cwe: 'CWE-79',
+      cvss: 9.5,
     },
     messages: {
       noScriptUrl: formatLLMMessage({
@@ -81,6 +84,7 @@ export const jsxNoScriptUrl = createRule<RuleOptions, MessageIds>({
       componentPropsMap.set(config.name, new Set(config.props));
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isJavaScriptUrl(value: string): boolean {
       // Match javascript: protocol (case insensitive, with optional whitespace)
       return /^\s*javascript:/i.test(value);
@@ -92,7 +96,7 @@ export const jsxNoScriptUrl = createRule<RuleOptions, MessageIds>({
       const propName = node.name.name;
       
       // Check if this is a URL prop for standard elements
-      const isUrlProp = URL_PROPS.includes(propName);
+      const isUrlProp = URL_PROPS.has(propName);
       
       // Check if this is a configured custom component prop
       const customProps = componentPropsMap.get(elementName);

@@ -83,8 +83,11 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-insecure-cookie-options.md',
       description:
         'Require secure cookie flags (httpOnly, secure, sameSite) in Express.js',
+      cwe: 'CWE-614',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

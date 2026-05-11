@@ -69,7 +69,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt',
-    version: '1.0.0',
+    version: '2.2.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -133,6 +133,20 @@ const legacyRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  * Configuration presets for flat config
  */
 export const configs = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Use this when you want
+   * the highest-signal JWT subset shippable in CI gates.
+   */
+  flagship: {
+    plugins: {
+      jwt: plugin,
+    },
+    rules: {
+      'jwt/no-algorithm-none': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
   /**
    * Recommended preset - balanced security
    */

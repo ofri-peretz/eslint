@@ -29,7 +29,10 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-permissive-cors-middy.md',
       description: 'Detects @middy/http-cors middleware with permissive origin (*)',
+      cwe: 'CWE-942',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -67,7 +70,7 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

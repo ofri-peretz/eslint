@@ -151,6 +151,7 @@ function normalizeResolverSettings(
   }
 
   // Sort by priority (lower number = higher priority)
+  // oxlint-disable-next-line no-array-sort
   return normalized.sort((a, b) => a.priority - b.priority);
 }
 

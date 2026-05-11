@@ -71,7 +71,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-graphql-injection.md',
       description: 'Detects GraphQL injection vulnerabilities and DoS attacks',
+      cwe: 'CWE-89',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -246,8 +248,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -348,6 +350,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     };
 
     // ─── AST-based GraphQL detection helpers ──────────────────────────
+    // oxlint-disable-next-line consistent-function-scoping
     const isWordChar = (ch: string): boolean => {
       const code = ch.charCodeAt(0);
       return (code >= 65 && code <= 90) ||   // A-Z
@@ -356,6 +359,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
              code === 95;                     // _
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     const isWhitespace = (ch: string): boolean =>
       ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r';
 
@@ -470,6 +474,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * Check if a TemplateLiteral contains introspection patterns.
      * AST-based: scans quasis directly.
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const templateHasIntrospection = (node: TSESTree.TemplateLiteral): boolean => {
       return node.quasis.some(q => {
         const text = (q.value.cooked ?? q.value.raw).toLowerCase();
@@ -480,6 +485,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Calculate query depth from template quasis (brace depth scan).
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const templateQueryDepth = (node: TSESTree.TemplateLiteral): number => {
       let depth = 0;
       let braceCount = 0;

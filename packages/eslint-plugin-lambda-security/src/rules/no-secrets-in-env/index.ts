@@ -49,7 +49,10 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-secrets-in-env.md',
       description: 'Detects secrets directly assigned to environment variables',
+      cwe: 'CWE-798',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {
@@ -85,7 +88,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

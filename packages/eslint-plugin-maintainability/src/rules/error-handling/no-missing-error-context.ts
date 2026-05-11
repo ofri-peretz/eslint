@@ -104,6 +104,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-missing-error-context.md',
       description: 'Detects thrown errors without context',
     },
     hasSuggestions: true,
@@ -186,7 +187,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
       ignoreInTests = true,
     }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 

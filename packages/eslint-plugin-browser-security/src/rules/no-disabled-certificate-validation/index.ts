@@ -23,7 +23,10 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-disabled-certificate-validation.md',
       description: 'Prevent disabled SSL/TLS certificate validation',
+      cwe: 'CWE-295',
+      cvss: 9.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -44,13 +47,13 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
       context.report({ node, messageId: 'violationDetected' });
     }
     
-    const dangerousProperties = ['rejectUnauthorized', 'strictSSL', 'verify'];
+    const dangerousProperties = new Set(['rejectUnauthorized', 'strictSSL', 'verify']);
     
     return {
       Property(node: TSESTree.Property) {
         // Check for dangerous SSL options set to false
         if (node.key.type === 'Identifier' && 
-            dangerousProperties.includes(node.key.name) &&
+            dangerousProperties.has(node.key.name) &&
             node.value.type === 'Literal' && 
             node.value.value === false) {
           report(node);

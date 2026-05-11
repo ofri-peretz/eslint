@@ -32,7 +32,10 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-target-blank.md',
       description: 'Forbid target="_blank" without rel="noopener noreferrer"',
+      cwe: 'CWE-1022',
+      cvss: 7.5,
     },
     fixable: 'code',
     messages: {
@@ -122,7 +125,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       if (hrefAttr.value.type === 'Literal' && typeof hrefAttr.value.value === 'string') {
         const href = hrefAttr.value.value;
         // External if starts with http:// or https:// or //
-        return /^(https?:)?\/\//.test(href) || /^\/\//.test(href);
+        return /^(https?:)?\/\//.test(href) || href.startsWith('//');
       }
 
       // Dynamic href - assume external
@@ -138,6 +141,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasNoopener(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
       
@@ -149,6 +153,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasNoreferrer(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
       
@@ -160,6 +165,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
       return node.attributes.some(attr => attr.type === 'JSXSpreadAttribute');
     }

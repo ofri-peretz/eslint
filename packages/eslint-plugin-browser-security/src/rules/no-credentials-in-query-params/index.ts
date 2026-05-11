@@ -25,7 +25,10 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-credentials-in-query-params.md',
       description: 'Disallow credentials in URL query parameters',
+      cwe: 'CWE-798',
+      cvss: 9.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

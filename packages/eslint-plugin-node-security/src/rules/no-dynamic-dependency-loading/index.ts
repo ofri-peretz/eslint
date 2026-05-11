@@ -25,7 +25,10 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-dependency-loading.md',
       description: 'Prevent runtime dependency injection with dynamic paths',
+      cwe: 'CWE-1104',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

@@ -26,6 +26,7 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-restricted-paths.md',
       description: 'Enforce which files can be imported in a given folder',
     },
     hasSuggestions: false,

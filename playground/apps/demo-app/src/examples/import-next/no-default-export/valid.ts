@@ -1,1 +1,0 @@
-// Valid example for no-default-export\nexport const valid = true;\n

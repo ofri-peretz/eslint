@@ -164,7 +164,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-vercel-ai-security',
-    version: '0.3.0',
+    version: '1.3.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -255,6 +255,19 @@ const strictConfig: TSESLint.FlatConfig.Config = {
  * Available configurations (3 options)
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Anchors the OWASP LLM02
+   * niche — green-field, no competitor.
+   */
+  flagship: {
+    plugins: {
+      'vercel-ai-security': plugin,
+    },
+    rules: {
+      'vercel-ai-security/no-unsafe-output-handling': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
   /** Minimal: 2 critical rules for gradual adoption */
   minimal: minimalConfig,
   /** Recommended: Balanced security (7 errors, 7 warnings) */

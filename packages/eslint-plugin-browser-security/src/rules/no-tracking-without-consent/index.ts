@@ -23,7 +23,10 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-tracking-without-consent.md',
       description: 'Require consent before analytics tracking',
+      cwe: 'CWE-359',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

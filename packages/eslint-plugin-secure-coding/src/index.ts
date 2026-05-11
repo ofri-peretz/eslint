@@ -59,6 +59,12 @@ import { noPiiInLogs } from './rules/no-pii-in-logs';
 import { noUnlimitedResourceAllocation } from './rules/no-unlimited-resource-allocation';
 import { noUncheckedLoopCondition } from './rules/no-unchecked-loop-condition';
 
+// Security rules - Auth & runtime hardening (wired 2026-05-09 — implementations existed but were unregistered)
+import { detectWeakPasswordValidation } from './rules/detect-weak-password-validation';
+import { noElectronSecurityIssues } from './rules/no-electron-security-issues';
+import { noHardcodedSessionTokens } from './rules/no-hardcoded-session-tokens';
+import { requireSecureDefaults } from './rules/require-secure-defaults';
+
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
@@ -100,6 +106,12 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   // Resource Handling (2 rules)
   'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
   'no-unchecked-loop-condition': noUncheckedLoopCondition,
+
+  // Auth & runtime hardening (4 rules — wired 2026-05-09)
+  'detect-weak-password-validation': detectWeakPasswordValidation,
+  'no-electron-security-issues': noElectronSecurityIssues,
+  'no-hardcoded-session-tokens': noHardcodedSessionTokens,
+  'require-secure-defaults': requireSecureDefaults,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -108,7 +120,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-secure-coding',
-    version: '1.1.0',
+    version: '3.2.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -118,17 +130,22 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Injection vulnerabilities
-  'secure-coding/no-graphql-injection': 'error',
+  // no-graphql-injection demoted to 'warn' 2026-05-09 — `npm run ilb:severity-audit`
+  // showed 61% of Wild hits on adversarial Edge code. Fails the README §1
+  // ≥ 95% precision floor for `error`-tier severity.
+  'secure-coding/no-graphql-injection': 'warn',
   'secure-coding/no-xxe-injection': 'error',
   'secure-coding/no-xpath-injection': 'error',
   'secure-coding/no-ldap-injection': 'error',
 
   // Critical - Deserialization
-  'secure-coding/no-unsafe-deserialization': 'error',
+  // Demoted 2026-05-09 — 76% Edge ratio.
+  'secure-coding/no-unsafe-deserialization': 'warn',
 
   // High - Regex vulnerabilities
   'secure-coding/detect-non-literal-regexp': 'warn',
-  'secure-coding/no-redos-vulnerable-regex': 'error',
+  // Demoted 2026-05-09 — 91% Edge ratio.
+  'secure-coding/no-redos-vulnerable-regex': 'warn',
   'secure-coding/no-unsafe-regex-construction': 'warn',
 
   // High - Prototype pollution
@@ -150,15 +167,33 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-sensitive-data-exposure': 'warn',
 
   // Medium - Resource & DoS
-  'secure-coding/no-unlimited-resource-allocation': 'error',
-  'secure-coding/no-unchecked-loop-condition': 'error',
+  // Demoted 2026-05-09 — both rules fail the volume-error-risk gate
+  // (firing ≥ 100 times on Wild without sufficient fixture coverage to
+  // guarantee precision). Rules were also flagged for ≥ 76% Edge ratio.
+  'secure-coding/no-unlimited-resource-allocation': 'warn',
+  'secure-coding/no-unchecked-loop-condition': 'warn',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
+  /**
+   * Flagship preset — the two rules from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Use this when you want the
+   * highest-signal security subset shippable in CI gates without the noise
+   * of `recommended`.
+   */
+  flagship: {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: {
+      'secure-coding/no-hardcoded-credentials': 'error',
+      'secure-coding/no-redos-vulnerable-regex': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
 
   /**
    * Recommended security configuration
-   * 
+   *
    * Enables all core security rules with sensible severity levels.
    */
   recommended: {

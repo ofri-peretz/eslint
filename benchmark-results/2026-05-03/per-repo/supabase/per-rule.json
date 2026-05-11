@@ -1,0 +1,462 @@
+{
+  "browser-security/no-clickjacking": {
+    "hits": 2,
+    "avgTimeMs": 3.65,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-clickjacking",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/Storage/AnalyticsBuckets/index.tsx",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-1021 | No frame-busting code to prevent clickjacking | HIGH\n   Fix: Add frame-busting JavaScript to prevent framing | https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html"
+      },
+      {
+        "ruleId": "browser-security/no-clickjacking",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/Account/TOTPFactors/index.tsx",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-1021 | No frame-busting code to prevent clickjacking | HIGH\n   Fix: Add frame-busting JavaScript to prevent framing | https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html"
+      }
+    ]
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 4,
+    "avgTimeMs": 2.5,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/OrganizationInvite/OrganizationInvite.tsx",
+        "line": 44,
+        "column": 29,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      },
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/OrganizationInvite/OrganizationInvite.tsx",
+        "line": 44,
+        "column": 69,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      },
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/OrganizationInvite/OrganizationInvite.tsx",
+        "line": 45,
+        "column": 30,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      },
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/OrganizationInvite/OrganizationInvite.tsx",
+        "line": 45,
+        "column": 70,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      }
+    ]
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 3,
+    "avgTimeMs": 0.74,
+    "samples": [
+      {
+        "ruleId": "browser-security/detect-mixed-content",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 7,
+        "column": 11,
+        "message": "🔒 CWE-311 OWASP:A04-Cryptographic CVSS:7.5 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html"
+      },
+      {
+        "ruleId": "browser-security/detect-mixed-content",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 139,
+        "column": 11,
+        "message": "🔒 CWE-311 OWASP:A04-Cryptographic CVSS:7.5 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html"
+      },
+      {
+        "ruleId": "browser-security/detect-mixed-content",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 248,
+        "column": 11,
+        "message": "🔒 CWE-311 OWASP:A04-Cryptographic CVSS:7.5 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html"
+      }
+    ]
+  },
+  "browser-security/no-http-urls": {
+    "hits": 3,
+    "avgTimeMs": 1.36,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 7,
+        "column": 11,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://www.w3.org/2000/svg\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 139,
+        "column": 11,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://www.w3.org/2000/svg\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/apps/studio/components/interfaces/JwtSecrets/illustrations.tsx",
+        "line": 248,
+        "column": 11,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://www.w3.org/2000/svg\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      }
+    ]
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 11.82,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 7.29,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 3.06,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 2.87,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 2.09,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 1.76,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 1.75,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 1.63,
+    "samples": []
+  },
+  "pg/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 1.34,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 1.13,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 1.12,
+    "samples": []
+  },
+  "jwt/no-sensitive-payload": {
+    "hits": 0,
+    "avgTimeMs": 1.08,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 1.01,
+    "samples": []
+  },
+  "jwt/no-algorithm-none": {
+    "hits": 0,
+    "avgTimeMs": 1,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.98,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.98,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.97,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.97,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.96,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.95,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.93,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.93,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.92,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.89,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.87,
+    "samples": []
+  },
+  "jwt/no-decode-without-verify": {
+    "hits": 0,
+    "avgTimeMs": 0.84,
+    "samples": []
+  },
+  "jwt/no-algorithm-confusion": {
+    "hits": 0,
+    "avgTimeMs": 0.82,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.81,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.78,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.77,
+    "samples": []
+  },
+  "pg/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "jwt/no-weak-secret": {
+    "hits": 0,
+    "avgTimeMs": 0.7,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 0.69,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.69,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.69,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.68,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 0.67,
+    "samples": []
+  },
+  "jwt/no-hardcoded-secret": {
+    "hits": 0,
+    "avgTimeMs": 0.67,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 0.62,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.61,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 0.56,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 0.55,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "jwt/require-expiration": {
+    "hits": 0,
+    "avgTimeMs": 0.53,
+    "samples": []
+  },
+  "jwt/require-algorithm-whitelist": {
+    "hits": 0,
+    "avgTimeMs": 0.53,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 0.5,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "jwt/no-timestamp-manipulation": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "pg/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "pg/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "pg/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "pg/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "pg/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "pg/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "pg/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "pg/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "pg/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "pg/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "pg/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  }
+}

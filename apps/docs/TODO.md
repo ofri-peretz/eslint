@@ -1,6 +1,6 @@
 # Documentation Site - Remaining Work
 
-> Last updated: January 5, 2026
+> Last updated: 2026-05-10
 
 ## ✅ Completed
 
@@ -12,6 +12,7 @@
 - [x] ESLint branding (logo, favicon, Space Grotesk font)
 - [x] WCAG AAA accessible color palette
 - [x] Mobile-first responsive design
+- [x] Layout architecture audit resolved (`LayoutFix.tsx` removed; `global.css` 1947 → 247 lines; `!important` count 500+ → 26)
 
 ### Interactive Features
 
@@ -22,6 +23,13 @@
 - [x] Feature matrix table
 - [x] Killer features spotlight section
 - [x] Community pain points with GitHub links
+
+### Search & Discovery
+
+- [x] Fumadocs built-in search (Orama-backed, `/api/search` route)
+- [x] Pillar-based search tagging (security / quality / getting-started via `lib/search-utils.ts`)
+- [x] Cmd+K keyboard shortcut (default `RootProvider` behavior, both home and docs layouts)
+- [x] Search trigger in nav (default `searchToggle` enabled in HomeLayout + DocsLayout)
 
 ### Pages
 
@@ -65,10 +73,12 @@
 
 ### Medium Priority
 
-#### 4. Search Enhancement
+#### 4. Search Enhancement (next iteration)
 
-- [ ] Implement Algolia DocSearch or Fumadocs search
-- [ ] Add keyboard shortcuts (Cmd+K)
+- [x] Fumadocs search (Orama) — done
+- [x] Cmd+K keyboard shortcut — done
+- [ ] Per-pillar filter chips in the search dialog (tags exist, UI doesn't)
+- [ ] Algolia DocSearch (deferred — only if Orama proves too slow at scale)
 
 #### 5. Code Block Improvements
 
@@ -124,19 +134,19 @@
 
 ```bash
 # Run locally (from monorepo root)
-nx dev docs
+npx turbo run dev --filter=docs
 
 # Build for production
-nx build docs
+npx turbo run build --filter=docs
 
 # Deploy via Vercel CLI
-nx build docs && cd apps/docs && npx vercel --prod
+npx turbo run build --filter=docs && cd apps/docs && npx vercel --prod
 
 # Or connect via Vercel Dashboard
 # - Import project from GitHub
 # - Set root directory: apps/docs
 # - Framework: Next.js
-# - Build command: pnpm nx build docs
+# - Build command: npx turbo run build --filter=docs
 # - Output: apps/docs/.next
 ```
 

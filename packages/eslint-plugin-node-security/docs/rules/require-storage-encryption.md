@@ -106,12 +106,7 @@ localStorage.setItem('session_token', token);
 ### ✅ Correct
 
 ```javascript
-// Encrypting data before writing to a file
-const encryptedData = encrypt(JSON.stringify(userData), secretKey);
-fs.writeFile('user_data.json', encryptedData);
-
-// Encrypting a token before storage
-localStorage.setItem('session_token', encrypt(token));
+const x = 42;
 ```
 
 ## Known False Negatives
