@@ -257,7 +257,7 @@ export async function fetchLocalJSON<T>(
   const fs = await import('fs/promises');
   const path = await import('path');
   
-  const absolutePath = path.resolve(process.cwd(), filePath);
+  const absolutePath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), filePath);
   const content = await fs.readFile(absolutePath, 'utf-8');
   const data = JSON.parse(content) as T;
   
