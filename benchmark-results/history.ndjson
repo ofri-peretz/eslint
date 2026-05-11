@@ -122,3 +122,12 @@
 {"bench":"ILB-Discover","benchVersion":"1.0","timestamp":"2026-05-09T23:38:12.904Z","toolchain":{"node":"24.12.0","eslint":"9.39.2","typescript":"5.9.3","tsCompiler":"tsc-classic","typescriptEslint":"8.54.0","platform":"darwin-arm64"},"methodologyCommit":"19b89fc5b924386f2d1f7a5a8dd210c90664841f","summary":{"recall1":0.34285714285714286,"recall5":0.45714285714285713},"resultPath":"benchmarks/results/ilb-discover/2026-05-09.json","superseded":false}
 {"bench":"ILB-Mutate","benchVersion":"0.1","timestamp":"2026-05-09T23:38:18.939Z","toolchain":{"node":"24.12.0","eslint":"9.39.2","typescript":"5.9.3","tsCompiler":"tsc-classic","typescriptEslint":"8.54.0","platform":"darwin-arm64"},"methodologyCommit":"19b89fc5b924386f2d1f7a5a8dd210c90664841f","summary":{"ruleSurvivalRate":1},"resultPath":"benchmarks/results/ilb-mutate/2026-05-09.json","superseded":false}
 {"bench":"ILB-Discover","benchVersion":"1.0","timestamp":"2026-05-09T23:57:07.980Z","toolchain":{"node":"24.12.0","eslint":"9.39.2","typescript":"5.9.3","tsCompiler":"tsc-classic","typescriptEslint":"8.54.0","platform":"darwin-arm64"},"methodologyCommit":"19b89fc5b924386f2d1f7a5a8dd210c90664841f","summary":{"recall1":0.26,"recall5":0.37},"resultPath":"benchmarks/results/ilb-discover/2026-05-09.json","superseded":false}
+{"date":"2026-05-11","bench":"ILB-Juliet","score":"F1 100% (rank 1/6)","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-Arena","score":"F1 97.5% (rank 1/18)","asOf":"2026-05-11"}
+{"date":"2026-05-11","bench":"ILB-Wild","score":"3.48 findings/kLoC","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-Edge","score":"3837 FP candidates","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-Perf","score":"5.4 ms/file (median)","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-Cov","score":"19% rules fired","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-AI","score":"68% detection","asOf":"2026-02-09"}
+{"date":"2026-05-11","bench":"ILB-LLM-Tokens","score":"sec/compact -8.7% vs V1","asOf":"2026-05-03"}
+{"date":"2026-05-11","bench":"ILB-LLM-Fix","score":"97.22% macro pass","asOf":"2026-05-03"}

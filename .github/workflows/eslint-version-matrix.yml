@@ -30,7 +30,6 @@ on:
       - 'packages/eslint-devkit/**'
       - 'benchmarks/**'
       - 'scripts/ilb-*.ts'
-      - 'scripts/ilb-*.ts'
       - '.github/workflows/eslint-version-matrix.yml'
   schedule:
     # Downgraded from nightly to weekly Sunday — quota conservation. Drift

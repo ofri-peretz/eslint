@@ -34,8 +34,8 @@
  * Exit non-zero only if an `error`-level rule has a high-risk indicator.
  *
  * Usage:
- *   node scripts/ilb-severity-audit.mjs
- *   node scripts/ilb-severity-audit.mjs --print
+ *   tsx scripts/ilb-severity-audit.ts
+ *   tsx scripts/ilb-severity-audit.ts --print
  */
 
 import fs from 'node:fs';

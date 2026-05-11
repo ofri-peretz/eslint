@@ -8,9 +8,9 @@
  * rules live in allowlist.json with a reason and introduction date.
  *
  * Usage:
- *   node benchmarks/suites/ilb-oxlint-parity/run.mjs
- *   node benchmarks/suites/ilb-oxlint-parity/run.mjs --corpus benchmarks/corpus/CWE-798
- *   node benchmarks/suites/ilb-oxlint-parity/run.mjs --ci --threshold 0.95
+ *   tsx benchmarks/suites/ilb-oxlint-parity/run.ts
+ *   tsx benchmarks/suites/ilb-oxlint-parity/run.ts --corpus benchmarks/corpus/CWE-798
+ *   tsx benchmarks/suites/ilb-oxlint-parity/run.ts --ci --threshold 0.95
  *
  * Prerequisite: `npx turbo run build` — shims require dist/.
  */

@@ -18,8 +18,17 @@ interface RemoteRuleDocProps {
 }
 
 function cleanRuleDoc(markdown: string): string {
-  return markdown
-    .replace(/<!--[\s\S]*?-->/g, '')
+  // Loop the comment strip until stable — a single pass leaves nested
+  // `<!-- a <!-- b --> c -->` partially intact, which CodeQL flagged as
+  // "Incomplete multi-character sanitization".
+  let stripped = markdown;
+  let prev: string;
+  do {
+    prev = stripped;
+    stripped = stripped.replace(/<!--[\s\S]*?-->/g, '');
+  } while (stripped !== prev);
+
+  return stripped
     .replace(/^#\s+[^\n]+\n+/, '')
     .replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '')
     .replace(/!\[.*?badge.*?\]\(.*?\)/gi, '')

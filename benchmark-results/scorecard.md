@@ -1,20 +1,20 @@
 # Interlace Bench Scorecard
 
-> Generated: 2026-05-09 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
+> Generated: 2026-05-11 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
 
 ## Top-line scorecard
 
 | Bench | Dimension | Score | Trend | Detail | SLO | As of |
 |---|---|---|---|---|---|---|
-| **ILB-Juliet** | Synthetic CWE accuracy | **F1 100% (rank 1/6)** | `—` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
-| **ILB-Arena** | Head-to-head vs competitors | **F1 100.0% (rank 1/18)** | `—` | TP 40/40 · FP 0 · FN 0 · precision 100.0% · recall 100.0% | Rank ≤ 3 | 2026-05-03 |
-| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `—` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
-| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `—` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
-| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `—` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
-| **ILB-Cov** | Rule activation rate | **19% rules fired** | `—` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
-| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `—` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
-| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `—` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
-| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `—` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
+| **ILB-Juliet** | Synthetic CWE accuracy | **F1 100% (rank 1/6)** | `▁▁` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
+| **ILB-Arena** | Head-to-head vs competitors | **F1 97.5% (rank 1/18)** | `▁▁` | TP 40/40 · FP 2 · FN 0 · precision 95.2% · recall 100.0% | Rank ≤ 3 | 2026-05-11 |
+| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `▁▁` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
+| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `▁▁` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
+| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `▁▁` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
+| **ILB-Cov** | Rule activation rate | **19% rules fired** | `▁▁` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
+| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `▁▁` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
+| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `▁▁` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
+| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `▁▁` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
 
 The **Trend** column shows the last ≤ 12 recorded scores per bench (one per recording day). `▁` = lowest in window, `█` = highest. Source: [`benchmark-results/history.ndjson`](history.ndjson).
 

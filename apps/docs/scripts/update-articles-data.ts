@@ -3,7 +3,7 @@
  * Fetch articles from Dev.to API and cache to JSON
  * 
  * Usage: 
- *   node apps/docs/scripts/update-articles-data.mjs
+ *   tsx apps/docs/scripts/update-articles-data.ts
  * 
  * Environment:
  *   DEV_TO_API_KEY - Optional API key for authenticated endpoint (includes page views)
@@ -60,17 +60,47 @@ async function fetchArticles() {
   return { articles, source: apiKey ? 'authenticated' : 'public' };
 }
 
+// Whitelist the article fields we actually consume on the docs site, with
+// String() coercion at the boundary. CodeQL flagged the original spread of
+// the raw Dev.to API response into the on-disk JSON cache as "Network data
+// written to file" — a compromised upstream API could otherwise inject
+// arbitrary fields, prototype-pollution payloads, or non-string scalars into
+// our build artifact. Picking explicit fields turns the cache into a typed,
+// audit-able surface instead of a passthrough.
+function pickArticleFields(article: any) {
+  return {
+    id: article?.id,
+    title: String(article?.title ?? ''),
+    description: String(article?.description ?? ''),
+    url: String(article?.url ?? ''),
+    canonical_url: String(article?.canonical_url ?? article?.url ?? ''),
+    cover_image: article?.cover_image ? String(article.cover_image) : null,
+    published_at: String(article?.published_at ?? ''),
+    readable_publish_date: String(article?.readable_publish_date ?? ''),
+    reading_time_minutes: Number(article?.reading_time_minutes ?? 0),
+    page_views_count: Number(article?.page_views_count ?? 0),
+    public_reactions_count: Number(article?.public_reactions_count ?? 0),
+    comments_count: Number(article?.comments_count ?? 0),
+    tag_list: Array.isArray(article?.tag_list)
+      ? article.tag_list.filter((t: unknown): t is string => typeof t === 'string')
+      : [],
+  };
+}
+
 function processArticles(articles) {
   return articles
     // Filter to only published articles
-    .filter(article => article.published_at)
-    // Remove 'eslint' from tag_list as it's redundant for this site
+    .filter(article => article?.published_at)
+    // Pick only the fields we render — see pickArticleFields. Drop 'eslint'
+    // from the tag list since every article carries it and it's redundant
+    // for this site.
+    .map(pickArticleFields)
     .map(article => ({
       ...article,
       tag_list: article.tag_list.filter(tag => tag.toLowerCase() !== 'eslint'),
     }))
     // Sort by published date (newest first)
-    .sort((a, b) => 
+    .sort((a, b) =>
       new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
     );
 }

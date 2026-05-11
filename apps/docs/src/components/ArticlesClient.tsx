@@ -544,7 +544,7 @@ export function ArticlesClient({
             data-testid="no-results"
           >
             <Search className="size-12 text-fd-muted-foreground/50 mb-4" aria-hidden />
-            <h3 className="text-xl font-semibold text-fd-foreground mb-2">No articles found</h3>
+            <h2 className="text-xl font-semibold text-fd-foreground mb-2">No articles found</h2>
             <p className="text-fd-muted-foreground mb-4">Try adjusting your search or filters</p>
             <Button data-testid="clear-all-filters" onClick={clearFilters}>Clear all filters</Button>
           </div>

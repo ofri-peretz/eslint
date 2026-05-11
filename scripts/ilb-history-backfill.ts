@@ -8,8 +8,8 @@
  * forward; this script exists to seed the timeline with what we already have.
  *
  * Usage:
- *   node scripts/ilb-history-backfill.mjs           # reads all results/*, writes history.ndjson
- *   node scripts/ilb-history-backfill.mjs --dry-run # preview rows without writing
+ *   tsx scripts/ilb-history-backfill.ts           # reads all results/*, writes history.ndjson
+ *   tsx scripts/ilb-history-backfill.ts --dry-run # preview rows without writing
  */
 
 import fs from 'node:fs';

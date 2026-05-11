@@ -21,14 +21,14 @@ BODY  (markdown, may contain shields.io badges in tables)
   7.  ## ⚙️ Configuration Presets
   8.  ## 📚 Supported Libraries           (lib-specific plugins only)
   9.  ## 🤖 AI-Optimized Messages         (security plugins only)
-  10. ## Rules                            (legend + unified table with 🧠 column)
-  11. ## 🔗 Related ESLint Plugins
-  12. ## 📦 Compatibility
+  10. ## 📦 Compatibility                 (peer / ESLint / Node matrix)
+  11. ## Rules                            (legend + unified table with 🧠 column)
+  12. ## 🔗 Related ESLint Plugins
   13. ## 📄 License
   14. Footer image (centered <p>, HTML <a><img>)
 ```
 
-Optional sections (`## 🙋 FAQ`, `## 💡 What You Get`, `## ⚡ Performance`, `## 🏢 Usage Example`, `## Why These Rules?`, `## 📊 Test Coverage`) live **between Configuration Presets (7) and Rules (10)**. Never below Rules. Never between Rules and Related Plugins.
+Optional sections (`## 🙋 FAQ`, `## 💡 What You Get`, `## ⚡ Performance`, `## 🏢 Usage Example`, `## Why These Rules?`, `## 📊 Test Coverage`) live **between Configuration Presets (7) and Compatibility (10)**. Never below Rules. Never between Rules and Related Plugins.
 
 ---
 

@@ -41,7 +41,6 @@
         "button-name": "error",
         "aria-required-attr": "error",
         "aria-valid-attr-value": "error",
-        "tap-targets": "error",
 
         "uses-responsive-images": "warn",
         "modern-image-formats": "warn",

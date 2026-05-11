@@ -18,8 +18,8 @@
  * truth principle as the rest of the bench.
  *
  * Usage:
- *   node scripts/ilb-leaderboard-publish.mjs
- *   node scripts/ilb-leaderboard-publish.mjs --check    # CI gate, fail on invalid envelope
+ *   tsx scripts/ilb-leaderboard-publish.ts
+ *   tsx scripts/ilb-leaderboard-publish.ts --check    # CI gate, fail on invalid envelope
  */
 
 import fs from 'node:fs';

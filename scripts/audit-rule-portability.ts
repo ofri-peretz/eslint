@@ -10,9 +10,9 @@
  *  4. Per-plugin and fleet-wide summary
  *
  * Usage:
- *   node scripts/audit-rule-portability.mjs                    # full fleet
- *   node scripts/audit-rule-portability.mjs secure-coding      # single plugin
- *   node scripts/audit-rule-portability.mjs --json             # machine-readable
+ *   tsx scripts/audit-rule-portability.ts                    # full fleet
+ *   tsx scripts/audit-rule-portability.ts secure-coding      # single plugin
+ *   tsx scripts/audit-rule-portability.ts --json             # machine-readable
  *
  * Output: stdout (human) or JSON for CI integration
  */
@@ -370,7 +370,7 @@ async function runCi(allPlugins) {
 
   if (!fs.existsSync(BASELINE_PATH)) {
     console.error(`✗ baseline missing: ${path.relative(process.cwd(), BASELINE_PATH)}`);
-    console.error(`  run: node scripts/audit-rule-portability.mjs --write-baseline`);
+    console.error(`  run: tsx scripts/audit-rule-portability.ts --write-baseline`);
     process.exit(1);
   }
   const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf-8'));

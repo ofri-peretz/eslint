@@ -20,7 +20,7 @@
  *
  * Usage:
  *   npm run ilb:federated:aggregate
- *   node scripts/ilb-federated-aggregate.mjs --check    # CI gate
+ *   tsx scripts/ilb-federated-aggregate.ts --check    # CI gate
  */
 
 import fs from 'node:fs';

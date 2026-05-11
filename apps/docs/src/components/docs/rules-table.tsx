@@ -84,8 +84,10 @@ async function readLocalReadme(packageName: string): Promise<string | null> {
     ];
     for (const p of candidates) {
       try {
-        const stat = await fs.stat(p);
-        if (stat.isFile()) return await fs.readFile(p, 'utf-8');
+        // Read directly and catch ENOENT/EISDIR rather than `stat()` + `readFile()`:
+        // any check-then-use sequence is a TOCTOU race the file could lose
+        // between the two calls (CodeQL: "Potential file system race condition").
+        return await fs.readFile(p, 'utf-8');
       } catch {}
     }
   } catch {}
@@ -131,10 +133,20 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
  * Fetch descriptions from individual rule docs
  * Priority: 1) frontmatter.description  2) @rule-summary anchor  3) blockquote fallback
  */
+// Rule slug allow-list: lowercase alphanumeric + dashes. The values flow from
+// markdown READMEs (file data) into the fetch URL below — CodeQL flagged this
+// as "File data in outbound network request". Constraining the shape here
+// prevents any future README change from injecting a path-traversal segment
+// or arbitrary host into the constructed URL.
+const VALID_RULE_NAME = /^[a-z0-9][a-z0-9-]*$/;
+
 async function fetchRuleDescriptions(plugin: string, rules: ParsedRule[]): Promise<ParsedRule[]> {
   const packageName = `eslint-plugin-${plugin}`;
-  
+
   const fetchPromises = rules.map(async (rule) => {
+    if (!VALID_RULE_NAME.test(rule.name)) {
+      return rule;
+    }
     try {
       const ruleDocUrl = `${GITHUB_RAW_BASE}/${packageName}/docs/rules/${rule.name}.md`;
       const res = await fetch(ruleDocUrl, {

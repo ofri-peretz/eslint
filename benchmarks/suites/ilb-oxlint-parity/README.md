@@ -41,10 +41,10 @@ npx turbo run build       # all plugins must be built — shims load from dist/
 npm run ilb:oxlint-parity
 
 # Specific corpus
-node benchmarks/suites/ilb-oxlint-parity/run.mjs --corpus benchmarks/corpus/CWE-798
+tsx benchmarks/suites/ilb-oxlint-parity/run.ts --corpus benchmarks/corpus/CWE-798
 
 # CI mode — exits non-zero if parity drops below threshold
-node benchmarks/suites/ilb-oxlint-parity/run.mjs --ci --threshold 0.95
+tsx benchmarks/suites/ilb-oxlint-parity/run.ts --ci --threshold 0.95
 ```
 
 ## Output

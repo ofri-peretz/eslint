@@ -37,6 +37,7 @@ vi.mock('@interlace/eslint-devkit', () => {
       sccComputed: false,
       graphHash: '',
       resolvedPaths: new Map(),
+      pendingCycleReports: new Map(),
     }),
     clearCache: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
     resolveImportPath: mocks.resolveImportPath,

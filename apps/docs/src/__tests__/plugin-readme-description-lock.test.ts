@@ -2,7 +2,7 @@
  * Plugin README description lock — CI guardrail.
  *
  * Asserts every `packages/eslint-plugin-{slug}/README.md` carries the
- * canonical per-plugin description from `tools/scripts/fix-readmes.js`'s
+ * canonical per-plugin description from `tools/scripts/fix-readmes.ts`'s
  * DESCRIPTIONS map, and that no non-security plugin ships the
  * "Security-focused ESLint plugin." fallback string. Pins the regression
  * surfaced on `/docs/quality/plugin-reliability` in 2026-05.
@@ -56,12 +56,12 @@ describe('plugin README description lock', () => {
   it('reports a fallback-copy finding for non-security plugin with the security tagline (fixture)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'readme-lock-'));
 
-    // Stub fix-readmes.js with a complete DESCRIPTIONS map — fixture targets
+    // Stub fix-readmes.ts with a complete DESCRIPTIONS map — fixture targets
     // *only* the fallback-copy surface, not the missing-entry one.
     const toolsDir = join(dir, 'tools', 'scripts');
     mkdirSync(toolsDir, { recursive: true });
     writeFileSync(
-      join(toolsDir, 'fix-readmes.js'),
+      join(toolsDir, 'fix-readmes.ts'),
       `const DESCRIPTIONS = {
     'eslint-plugin-demo': 'Demo plugin description.'
 };

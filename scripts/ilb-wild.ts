@@ -16,13 +16,13 @@
  *   - Pinned commits per repo (frozen corpus per version)
  *
  * Usage:
- *   node scripts/ilb-wild.mjs                  # all repos in registry
- *   node scripts/ilb-wild.mjs --repo three.js  # single repo
- *   node scripts/ilb-wild.mjs --list           # show target matrix
- *   node scripts/ilb-wild.mjs --runs 1         # quick mode (1 run, no warmup)
- *   node scripts/ilb-wild.mjs --no-reports     # skip MD report generation
- *   node scripts/ilb-wild.mjs --results        # show last results summary
- *   node scripts/ilb-wild.mjs --fp-corpus      # ILB-Edge mode (FP candidates)
+ *   tsx scripts/ilb-wild.ts                  # all repos in registry
+ *   tsx scripts/ilb-wild.ts --repo three.js  # single repo
+ *   tsx scripts/ilb-wild.ts --list           # show target matrix
+ *   tsx scripts/ilb-wild.ts --runs 1         # quick mode (1 run, no warmup)
+ *   tsx scripts/ilb-wild.ts --no-reports     # skip MD report generation
+ *   tsx scripts/ilb-wild.ts --results        # show last results summary
+ *   tsx scripts/ilb-wild.ts --fp-corpus      # ILB-Edge mode (FP candidates)
  *
  * Output:
  *   benchmark-results/<date>/

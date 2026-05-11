@@ -6,8 +6,8 @@
  * no dangerous assignments) that cannot trigger any security rule.
  *
  * Usage:
- *   node scripts/fix-shallow-tests.mjs --dry-run
- *   node scripts/fix-shallow-tests.mjs
+ *   tsx scripts/fix-shallow-tests.ts --dry-run
+ *   tsx scripts/fix-shallow-tests.ts
  */
 
 import fs from 'fs';

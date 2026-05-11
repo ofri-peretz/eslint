@@ -609,7 +609,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           // Per-file keying matches oxlint's behavior — every file in a
           // cycle gets its own diagnostic. The user can navigate from any
           // entry point in the cycle and see the report there.
-          const cycleHash = `${filename}::${getCycleHash(relevantCycle)}`;
+          const baseCycleHash = getCycleHash(relevantCycle);
+          const cycleHash = `${filename}::${baseCycleHash}`;
 
           // Skip only if THIS file already reported THIS cycle (e.g. the
           // same import statement appearing twice in the same file).
@@ -617,6 +618,28 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             continue;
           }
           sharedCache.reportedCycles.add(cycleHash);
+
+          // Fan out: every OTHER file in the cycle should also receive a
+          // diagnostic when ESLint lints it. Record a pending entry so the
+          // `Program:exit` handler in those files' lint passes can flush.
+          // This closes the with-router.tsx gap: previously only the file
+          // whose DFS discovered the cycle got reported on; cycle partners
+          // silently relied on their own DFS rediscovering the cycle,
+          // which the cache short-circuits don't always permit.
+          for (const member of minimalCycle) {
+            if (member === filename) continue;
+            const memberKey = `${member}::${baseCycleHash}`;
+            if (sharedCache.reportedCycles.has(memberKey)) continue;
+            // Rotate cycle to start at this member for member-perspective display.
+            const memberStart = minimalCycle.indexOf(member);
+            const rotated = [
+              ...minimalCycle.slice(memberStart),
+              ...minimalCycle.slice(0, memberStart),
+            ];
+            const list = sharedCache.pendingCycleReports.get(member) ?? [];
+            list.push({ minimalCycle: rotated, cycleHash: baseCycleHash });
+            sharedCache.pendingCycleReports.set(member, list);
+          }
 
           // Select the appropriate fix strategy
           const strategy = selectFixStrategy(relevantCycle, fixStrategy);
@@ -639,6 +662,41 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             data,
           });
         }
+      },
+
+      /**
+       * Flush pending cycle reports for this file. Populated when an earlier
+       * file's DFS discovered a cycle that includes this one as a member.
+       * Without this handler, the with-router.tsx case (cycle propagated
+       * through `export { default as withRouter } from './with-router'`)
+       * was silently missed because with-router's own DFS short-circuited
+       * on the cache before re-discovering the same cycle.
+       */
+      'Program:exit'(programNode: TSESTree.Program) {
+        const pending = sharedCache.pendingCycleReports.get(filename);
+        if (!pending || pending.length === 0) return;
+
+        for (const entry of pending) {
+          const memberKey = `${filename}::${entry.cycleHash}`;
+          if (sharedCache.reportedCycles.has(memberKey)) continue;
+          sharedCache.reportedCycles.add(memberKey);
+
+          const strategy = selectFixStrategy(entry.minimalCycle, fixStrategy);
+          const sourceImport: ImportInfo = {
+            path: entry.minimalCycle[1] ?? entry.minimalCycle[0],
+            source: getRelativeImportPath(filename, entry.minimalCycle[1] ?? entry.minimalCycle[0]),
+          };
+          const { messageId, data } = generateMessageData(
+            entry.minimalCycle,
+            strategy,
+            sourceImport,
+          );
+          context.report({ node: programNode, messageId, data });
+        }
+
+        // Clear so a subsequent lint pass on the same file (watch mode)
+        // doesn't double-report.
+        sharedCache.pendingCycleReports.delete(filename);
       },
     };
   },

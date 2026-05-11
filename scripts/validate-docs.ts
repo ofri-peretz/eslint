@@ -34,7 +34,6 @@ const PLUGIN_NAMES = [
   'eslint-plugin-secure-coding',
   'eslint-plugin-pg',
   'eslint-plugin-jwt',
-  'eslint-plugin-crypto',
   'eslint-plugin-express-security',
   'eslint-plugin-nestjs-security',
   'eslint-plugin-lambda-security',

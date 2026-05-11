@@ -471,12 +471,17 @@ function OverlayBody({
           </div>
         ) : null}
 
-        <h3
+        {/* h2 (not h3) so the heading hierarchy from a page-level h1 →
+            article card title increases by exactly one level. axe's
+            `heading-order` rule flags h1→h3 jumps on the /articles route
+            and in isolated Storybook scans. The visual size (text-2xl/3xl)
+            is preserved via class names, decoupled from semantic level. */}
+        <h2
           data-testid="article-card-title"
           className="line-clamp-2 text-2xl md:text-3xl font-bold leading-tight text-white mb-2 drop-shadow"
         >
           {title}
-        </h3>
+        </h2>
 
         {description ? (
           <p

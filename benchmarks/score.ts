@@ -9,10 +9,10 @@
  * - Precision, Recall, F1 Score per CWE and aggregate
  *
  * Usage:
- *   node benchmarks/score.mjs                    # Run all CWEs
- *   node benchmarks/score.mjs --cwe CWE-089      # Run single CWE
- *   node benchmarks/score.mjs --json              # Output JSON
- *   node benchmarks/score.mjs --ci --threshold 80 # CI gate (exit 1 if F1 < threshold)
+ *   tsx benchmarks/score.ts                    # Run all CWEs
+ *   tsx benchmarks/score.ts --cwe CWE-089      # Run single CWE
+ *   tsx benchmarks/score.ts --json              # Output JSON
+ *   tsx benchmarks/score.ts --ci --threshold 80 # CI gate (exit 1 if F1 < threshold)
  */
 
 import { execSync } from 'node:child_process';

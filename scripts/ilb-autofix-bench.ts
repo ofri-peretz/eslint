@@ -24,9 +24,9 @@
  * round-trip fix produces non-silent code.
  *
  * Usage:
- *   node scripts/ilb-autofix-bench.mjs           # check, write JSON
- *   node scripts/ilb-autofix-bench.mjs --print
- *   node scripts/ilb-autofix-bench.mjs --rule no-eval   # one rule only
+ *   tsx scripts/ilb-autofix-bench.ts           # check, write JSON
+ *   tsx scripts/ilb-autofix-bench.ts --print
+ *   tsx scripts/ilb-autofix-bench.ts --rule no-eval   # one rule only
  */
 
 import fs from 'node:fs';

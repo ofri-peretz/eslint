@@ -33,23 +33,23 @@ Results: `benchmarks/results/ilb-flagship/<date>.json`. Scorecard: `benchmark-re
 cd benchmarks/suites/ilb-flagship/workspace && npm install
 
 # run the full sweep (~5–10 min on a warm machine)
-node benchmarks/suites/ilb-flagship/run.mjs
+tsx benchmarks/suites/ilb-flagship/run.ts
 
 # render the markdown scorecard
-node benchmarks/suites/ilb-flagship/scorecard.mjs
+tsx benchmarks/suites/ilb-flagship/scorecard.ts
 ```
 
 Targeted runs:
 
 ```bash
 # single rule
-node benchmarks/suites/ilb-flagship/run.mjs --rule="secure-coding/no-redos-vulnerable-regex"
+tsx benchmarks/suites/ilb-flagship/run.ts --rule="secure-coding/no-redos-vulnerable-regex"
 
 # pin a different repo for a rule (override manifest)
-node benchmarks/suites/ilb-flagship/run.mjs --rule="..." --repo=lodash
+tsx benchmarks/suites/ilb-flagship/run.ts --rule="..." --repo=lodash
 
 # point at a different OOS root
-ILB_OOS_DIR=/tmp/oos node benchmarks/suites/ilb-flagship/run.mjs
+ILB_OOS_DIR=/tmp/oos tsx benchmarks/suites/ilb-flagship/run.ts
 ```
 
 ## How a rule earns "minimal-setup" comparability

@@ -7,8 +7,8 @@
  * Inputs: two SARIF v2.1.0 files. Output: JSON + Markdown report.
  *
  * Usage:
- *   node scripts/ilb-kappa.mjs --a interlace.sarif --b external-reviewer.sarif
- *   node scripts/ilb-kappa.mjs --a a.sarif --b b.sarif --out kappa-report
+ *   tsx scripts/ilb-kappa.ts --a interlace.sarif --b external-reviewer.sarif
+ *   tsx scripts/ilb-kappa.ts --a a.sarif --b b.sarif --out kappa-report
  */
 
 import fs from 'node:fs';

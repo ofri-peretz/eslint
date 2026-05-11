@@ -21,10 +21,11 @@ on:
       - 'benchmarks/suites/ilb-formatter/**'
       - 'benchmarks/results/ilb-formatter/baseline.json'
       - 'scripts/ilb-*.ts'
-      - 'scripts/ilb-*.ts'
       - 'scripts/audit-rule-meta-completeness.ts'
       - 'scripts/audit-cwe-rendering.ts'
       - 'scripts/codemod-lift-cwe-to-meta-docs.ts'
+      - 'scripts/tsconfig.json'
+      - 'benchmarks/tsconfig.scripts.json'
       - 'benchmark-results/baseline.json'
       - '.github/workflows/benchmark.yml'
   workflow_dispatch:

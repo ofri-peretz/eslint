@@ -1,20 +1,14 @@
-/**
- * README structure gate for `packages/eslint-plugin-*/README.md`.
- *
- * Enforces the canonical structure codified in
- * `.agent/rules/readme-structure.md`. Fail-fast: if any check fails the
- * process exits non-zero with a per-plugin violation report.
- *
- * Validates:
- *   - Required sections present in canonical order.
- *   - Interlace logo + standard badge row in the prelude.
- *   - Identical Philosophy paragraph.
- *   - Exactly one rule-data table (Rule-header + alignment + body),
- *     under `## Rules`, with the 🧠 type-aware column.
- *   - Every rule row populates the 🧠 column.
- *   - No legacy `Set towarn` typo.
- *   - No leftover AUTO-GENERATED markers outside of `## Rules`.
- */
+// README structure gate for packages/eslint-plugin-* README.md files.
+//
+// Enforces the canonical structure codified in
+// .agent/rules/readme-structure.md. Fail-fast: any violation exits non-zero
+// with a per-plugin report.
+//
+// Validates: required sections present in canonical order; Interlace logo +
+// standard badge row in the prelude; identical Philosophy paragraph; exactly
+// one rule-data table under the Rules heading with the brain type-aware
+// column populated for every row; no legacy "Set towarn" typo; no stray
+// AUTO-GENERATED markers above the Rules heading.
 
 import fs from 'fs';
 import path from 'path';
@@ -36,9 +30,9 @@ const REQUIRED_ORDER = [
   '## Philosophy',
   '## Getting Started',
   '## ⚙️ Configuration Presets',
+  '## 📦 Compatibility',
   '## Rules',
   '## 🔗 Related ESLint Plugins',
-  '## 📦 Compatibility',
   '## 📄 License',
 ];
 
@@ -86,14 +80,18 @@ function checkPlugin(pkg: string): Violation | null {
     reasons.push('Philosophy paragraph does not match the canonical Interlace text');
   }
 
-  // 4. Exactly one rule-data table (header + alignment + at least one row),
-  //    and it must sit under `## Rules`.
-  const ruleTableRegex =
-    /\|\s*Rule\s*\|[^\n]*\n\|[\s:|\\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
-  const ruleTableMatches = [...content.matchAll(ruleTableRegex)];
+  // 4. Exactly one canonical 11-column rule-data table under `## Rules`.
+  //    Only tables whose header lists the canonical column set count — that
+  //    way Parity / Compatibility tables that happen to start with `| Rule |`
+  //    don't trigger the "duplicate" check.
   const rulesHeaderIdx = content.indexOf('## Rules');
+  const canonicalHeader =
+    '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
+  const ruleTableRegex =
+    /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
+  const ruleTableMatches = [...content.matchAll(ruleTableRegex)];
   if (ruleTableMatches.length === 0) {
-    reasons.push('no rule-data table found');
+    reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);
   } else if (ruleTableMatches.length > 1) {
     reasons.push(
       `expected exactly 1 rule-data table, found ${ruleTableMatches.length} (duplicate generator run?)`,
@@ -103,32 +101,28 @@ function checkPlugin(pkg: string): Violation | null {
       'rule-data table sits above `## Rules` (auto-migration may have wrapped the wrong table)',
     );
   } else {
-    // 5. Rule-table header includes the 🧠 column.
-    const header = ruleTableMatches[0][0].split('\n')[0];
-    if (!header.includes('🧠')) {
-      reasons.push('rule-data table is missing the 🧠 (type-aware) column');
-    } else {
-      // 6. Every data row populates the 🧠 cell with a known glyph.
-      const dataRows = ruleTableMatches[0][0]
-        .split('\n')
-        .slice(2) // skip header + alignment
-        .filter((l) => l.startsWith('| ['));
-      const bad: string[] = [];
-      for (const row of dataRows) {
-        // The 🧠 cell is the 6th column (index 5 in pipe-split, 1-based after
-        // the leading empty cell). Pull all cells and check.
-        const cells = row.split('|').slice(1, -1).map((c) => c.trim());
-        const brain = cells[5];
-        if (!brain || !/^(🟢|🟡|🟠)$/.test(brain)) {
-          const ruleMatch = row.match(/\[([a-z0-9-]+)\]/);
-          bad.push(ruleMatch ? ruleMatch[1] : '(unknown)');
-        }
+    // 5. Every data row populates the 🧠 cell with a known glyph. The header
+    //    is guaranteed canonical by the regex above, so we go straight to
+    //    cell-level validation.
+    const dataRows = ruleTableMatches[0][0]
+      .split('\n')
+      .slice(2) // skip header + alignment
+      .filter((l) => l.startsWith('| ['));
+    const bad: string[] = [];
+    for (const row of dataRows) {
+      // 🧠 is the 6th data cell (index 5 after stripping the leading + trailing
+      // empties produced by `|`-split).
+      const cells = row.split('|').slice(1, -1).map((c) => c.trim());
+      const brain = cells[5];
+      if (!brain || !/^(🟢|🟡|🟠)$/.test(brain)) {
+        const ruleMatch = row.match(/\[([a-z0-9-]+)\]/);
+        bad.push(ruleMatch ? ruleMatch[1] : '(unknown)');
       }
-      if (bad.length > 0) {
-        reasons.push(
-          `🧠 column is empty / invalid for ${bad.length} rule(s): ${bad.slice(0, 5).join(', ')}${bad.length > 5 ? '…' : ''}`,
-        );
-      }
+    }
+    if (bad.length > 0) {
+      reasons.push(
+        `🧠 column is empty / invalid for ${bad.length} rule(s): ${bad.slice(0, 5).join(', ')}${bad.length > 5 ? '…' : ''}`,
+      );
     }
   }
 

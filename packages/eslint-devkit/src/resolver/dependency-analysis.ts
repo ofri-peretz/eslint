@@ -300,6 +300,17 @@ export interface FileSystemCache {
    * Once a file is confirmed to not be in a cycle, we can skip SCC check for it
    */
   nonCyclicFiles: Set<string>;
+  /**
+   * Pending cycle reports keyed by *member* file path. Populated when ANY
+   * file's DFS discovers a cycle: every member of the discovered cycle gets
+   * a pending entry. When ESLint later lints that member, the rule flushes
+   * the entry as a diagnostic at `Program:exit`.
+   *
+   * This is what closes the with-router.tsx gap — without it, only the file
+   * whose DFS discovered the cycle gets the diagnostic, and ordering
+   * sometimes leaves other members silent.
+   */
+  pendingCycleReports: Map<string, Array<{ minimalCycle: string[]; cycleHash: string }>>;
 }
 
 /**
@@ -318,6 +329,7 @@ export function createFileSystemCache(): FileSystemCache {
     graphHash: '',
     resolvedPaths: new Map<string, string | null>(),
     nonCyclicFiles: new Set(),
+    pendingCycleReports: new Map(),
   };
 }
 
@@ -336,6 +348,7 @@ export function clearCache(cache: FileSystemCache): void {
   cache.graphHash = '';
   cache.resolvedPaths = new Map<string, string | null>();
   cache.nonCyclicFiles.clear();
+  cache.pendingCycleReports.clear();
 }
 
 /**

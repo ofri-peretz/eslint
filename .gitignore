@@ -102,6 +102,9 @@ test-report.junit.xml
 **/test-results/**
 **/tmp/**
 **/.cache/**
+**/storybook-static/**
+**/playwright-report/**
+**/.lighthouseci/**
 **/.pnpm-store/**
 **/.contentlayer/**
 **/.eslintcache

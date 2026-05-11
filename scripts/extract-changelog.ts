@@ -9,8 +9,8 @@
  *
  * Usage:
  *   tsx scripts/extract-changelog.ts <package-dir> <version>
- *   tsx scripts/extract-changelog.ts packages/eslint-plugin-crypto 2.3.0
- *   tsx scripts/extract-changelog.ts packages/eslint-plugin-crypto 2.3.0 --fallback
+ *   tsx scripts/extract-changelog.ts packages/eslint-plugin-node-security 2.3.0
+ *   tsx scripts/extract-changelog.ts packages/eslint-plugin-node-security 2.3.0 --fallback
  *
  * Flags:
  *   --fallback     If the version isn't found, emit a generic stub instead

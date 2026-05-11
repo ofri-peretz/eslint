@@ -20,9 +20,9 @@
  * by the CI gate, parity benchmark, and docs generators).
  *
  * Usage:
- *   node scripts/generate-oxlint-shims.mjs              # write
- *   node scripts/generate-oxlint-shims.mjs --check      # exit 1 on drift, no writes
- *   node scripts/generate-oxlint-shims.mjs --json       # print summary as JSON
+ *   tsx scripts/generate-oxlint-shims.ts              # write
+ *   tsx scripts/generate-oxlint-shims.ts --check      # exit 1 on drift, no writes
+ *   tsx scripts/generate-oxlint-shims.ts --json       # print summary as JSON
  */
 
 import fs from 'fs';

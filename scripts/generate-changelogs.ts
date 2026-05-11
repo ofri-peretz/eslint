@@ -4,10 +4,10 @@
  * generate-changelogs.mjs — Generate CHANGELOGs from git history
  *
  * Usage:
- *   node scripts/generate-changelogs.mjs                     # all plugins missing CHANGELOGs
- *   node scripts/generate-changelogs.mjs secure-coding       # single plugin
- *   node scripts/generate-changelogs.mjs --all               # all plugins (overwrite existing)
- *   node scripts/generate-changelogs.mjs --check             # dry-run: list missing
+ *   tsx scripts/generate-changelogs.ts                     # all plugins missing CHANGELOGs
+ *   tsx scripts/generate-changelogs.ts secure-coding       # single plugin
+ *   tsx scripts/generate-changelogs.ts --all               # all plugins (overwrite existing)
+ *   tsx scripts/generate-changelogs.ts --check             # dry-run: list missing
  *
  * Reads git log for each package → groups by conventional commit type → writes CHANGELOG.md
  */

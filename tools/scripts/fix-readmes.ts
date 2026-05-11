@@ -3,17 +3,61 @@ import path from 'node:path';
 
 const packagesDir = path.join(process.cwd(), 'packages');
 const docsDir = path.join(process.cwd(), 'apps/docs/content/docs');
+const tsvPath = path.join(process.cwd(), '.agent', 'type-awareness-scan.tsv');
+
+// The 🧠 column is the type-awareness indicator (see `.agent/type-awareness-philosophy.md`).
+// Glyph semantics — canonical, must agree with `scripts/sync-readme-rules.ts`:
+//   🟢 = type-unaware (AST-only)
+//   🟡 = type-aware (refining)  — pure-AST primary path; types refine precision
+//   🟠 = type-aware (graceful)  — requires TS program; silent without it
+type TypeStatus = 'unaware' | 'optional' | 'aware';
+
+const TYPE_GLYPH: Record<TypeStatus, string> = {
+    unaware: '🟢',
+    optional: '🟡',
+    aware: '🟠',
+};
+
+/**
+ * Load the per-rule type-awareness classification from the canonical TSV at
+ * `.agent/type-awareness-scan.tsv`. The TSV is the single source of truth
+ * (see `.agent/type-awareness-audit.md`). Returns an empty map when the
+ * file is absent so the script stays runnable.
+ */
+function loadTypeAwarenessMap(): Map<string, TypeStatus> {
+    const map = new Map<string, TypeStatus>();
+    if (!fs.existsSync(tsvPath)) return map;
+    const lines = fs.readFileSync(tsvPath, 'utf-8').split('\n');
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        const [pluginShort, rule, status] = line.split('\t');
+        if (!pluginShort || !rule || !status) continue;
+        const normalized = status.trim();
+        if (normalized !== 'unaware' && normalized !== 'optional' && normalized !== 'aware') continue;
+        map.set(`${pluginShort}/${rule}`, normalized);
+    }
+    return map;
+}
+
+const TYPE_AWARENESS_MAP = loadTypeAwarenessMap();
+
+// Packages whose READMEs are hand-maintained (e.g. carry a deprecation banner).
+// The generator skips these entirely so it never rewrites or "fixes" them.
+const DEPRECATED_PACKAGES = new Set<string>([
+    'eslint-plugin-crypto', // Consolidated into eslint-plugin-node-security (2026-05-10)
+]);
 
 // Get all directories in packages/
 const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
     .filter((dirent: fs.Dirent) => dirent.isDirectory())
     .map((dirent: fs.Dirent) => dirent.name)
-    .filter((name: string) => name.startsWith('eslint-plugin-'));
+    .filter((name: string) => name.startsWith('eslint-plugin-'))
+    .filter((name: string) => !DEPRECATED_PACKAGES.has(name));
 
 // Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
-    'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
     'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
@@ -74,7 +118,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :--- |
 | [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
 | [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [\`eslint-plugin-crypto\`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [\`eslint-plugin-node-security\`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
 | [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
@@ -126,7 +170,16 @@ function getMdxDescription(docsSubPath: string, ruleName: string): string {
     return '';
 }
 
-packages.forEach((pkg: string) => {
+// Guard the top-level loop so importing this module for testing or for its
+// exported helpers does not silently rewrite all 20 plugin READMEs. The
+// previous version ran on every `import` — discovered the hard way when a
+// type-probe import overwrote every README, reverting the canonical
+// generator's rule table to the obsolete phantom-rules form.
+function main(): void {
+    packages.forEach(processPackage);
+}
+
+function processPackage(pkg: string): void {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
     if (!fs.existsSync(readmePath)) return;
 
@@ -137,7 +190,7 @@ packages.forEach((pkg: string) => {
     const shortDesc = DESCRIPTIONS[pkg];
     if (!shortDesc) {
         console.error(
-            `No DESCRIPTIONS entry for ${pkg} — add one to tools/scripts/fix-readmes.js. ` +
+            `No DESCRIPTIONS entry for ${pkg} — add one to tools/scripts/fix-readmes.ts. ` +
             `Refusing to silently substitute the security-plugin fallback into a non-security README.`
         );
         process.exit(1);
@@ -149,13 +202,18 @@ packages.forEach((pkg: string) => {
     const baseUrl = `https://eslint.interlace.tools`;
 
     // --- 1. HARVEST METADATA from existing README ---
-    // We scrape existing tables to preserve manual CWE/OWASP/CVSS tags
+    // We scrape existing tables to preserve manual CWE/OWASP/CVSS tags. The
+    // type-awareness column (🧠 header) carries one of 🟢/🟡/🟠 per row —
+    // earlier versions of this script mistakenly checked for a 🧠 in cells
+    // (it's the header glyph, never a cell value) and then mislabeled the
+    // column as "AI-Analyzed" in the legend, which contradicted the canonical
+    // generator at `scripts/sync-readme-rules.ts`.
     type RuleMeta = {
         cwe: string;
         owasp: string;
         cvss: string;
+        typeStatus: TypeStatus | null;
         flags: {
-            aiAnalyzed: boolean;
             recommended: boolean;
             warn: boolean;
             fixable: boolean;
@@ -173,24 +231,33 @@ packages.forEach((pkg: string) => {
              // Extract Cells
              const cells = line.split('|').map((c: string) => c.trim());
              if (cells.length < 3) return;
-             
+
              // Extract Metadata
              let cwe = cells.find((c: string) => c.includes('CWE-')) || '';
              let owasp = cells.find((c: string) => c.includes(':202')) || '';
              if (owasp) owasp = owasp.replace('2021', '2025');
              let cvss = cells.find((c: string) => /^[0-9]\.[0-9]$/.test(c)) || '';
-             
-             // Flags
+
+             // Type-awareness from the harvested row (the 🧠 column body cell).
+             // `null` means the harvest could not determine — the renderer
+             // below falls back to the canonical TSV.
+             const typeStatus: TypeStatus | null = cells.some((c: string) => c.includes('🟢'))
+                 ? 'unaware'
+                 : cells.some((c: string) => c.includes('🟡'))
+                     ? 'optional'
+                     : cells.some((c: string) => c.includes('🟠'))
+                         ? 'aware'
+                         : null;
+
              const flags = {
-                 aiAnalyzed: cells.includes('🧠'),
                  recommended: cells.includes('💼'),
                  warn: cells.includes('⚠️'),
                  fixable: cells.includes('🔧'),
                  suggestions: cells.includes('💡'),
                  deprecated: cells.includes('🚫')
              };
-             
-             ruleMetadata[rawRuleName] = { cwe, owasp, cvss, flags };
+
+             ruleMetadata[rawRuleName] = { cwe, owasp, cvss, typeStatus, flags };
         }
     });
 
@@ -327,29 +394,42 @@ packages.forEach((pkg: string) => {
         output.push('');
         output.push('| Icon | Description |');
         output.push('| :---: | :--- |');
-        output.push('| 🧠 | **AI-Analyzed**: This rule has been analyzed by AI and has optimized error messages. |');
         output.push('| 💼 | **Recommended**: Included in the recommended preset. |');
         output.push('| ⚠️ | **Warns**: Set to warn in recommended preset. |');
         output.push('| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |');
         output.push('| 💡 | **Suggestions**: Providing code suggestions in IDE. |');
         output.push('| 🚫 | **Deprecated**: This rule is deprecated. |');
+        output.push('| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |');
+        output.push('| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |');
+        output.push('| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |');
         output.push('');
 
         const generateRow = (ruleName: string) => {
             const meta = ruleMetadata[ruleName] as RuleMeta | undefined;
             const desc = getMdxDescription(docsSubPath, ruleName) || `Enforce ${ruleName.replace(/-/g, ' ')}`;
             const link = `[${ruleName}](${docUrl}/rules/${ruleName})`;
-            
+
             // Fallbacks
             const cwe = meta?.cwe || '';
             const owasp = meta?.owasp || '';
             const cvss = meta?.cvss || CVSS_MAP[ruleName] || '';
-            
+
+            // Type-awareness glyph (🧠 column body). Prefer the canonical TSV
+            // so a regenerated README never loses a classification the legacy
+            // version of this script would have dropped. Fall back to the
+            // harvested glyph, then default to 🟢 (type-unaware).
+            const pluginShort = pkg.replace(/^eslint-plugin-/, '');
+            const typeStatus: TypeStatus =
+                TYPE_AWARENESS_MAP.get(`${pluginShort}/${ruleName}`)
+                ?? meta?.typeStatus
+                ?? 'unaware';
+            const typeCell = TYPE_GLYPH[typeStatus];
+
             const has = (key: keyof RuleMeta['flags']) => (meta?.flags && meta.flags[key]) ? ({
-                aiAnalyzed: '🧠', recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
+                recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
             })[key] : '';
 
-            return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${has('aiAnalyzed')} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
+            return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${typeCell} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
         };
 
         const hasCategories = CATEGORIES[pkg];
@@ -404,4 +484,12 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
     fs.writeFileSync(readmePath, output.join('\n'));
     console.log(`[${pkg}] Regenerated successfully.`);
-});
+}
+
+// Only run when invoked directly (e.g. `tsx tools/scripts/fix-readmes.ts`).
+// Importing this module for tests or for the helpers above must not regenerate
+// any READMEs as a side effect — the repo is CJS so `require.main` is the
+// idiomatic entry-point check (matches `scripts/sync-readme-rules.ts`).
+if (require.main === module) {
+    main();
+}

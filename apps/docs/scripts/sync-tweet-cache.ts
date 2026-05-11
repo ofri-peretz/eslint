@@ -7,8 +7,8 @@
  * when Twitter API is rate-limited or unavailable.
  * 
  * Usage:
- *   node scripts/sync-tweet-cache.mjs
- *   node scripts/sync-tweet-cache.mjs --force  # Force refresh all tweets
+ *   tsx scripts/sync-tweet-cache.ts
+ *   tsx scripts/sync-tweet-cache.ts --force  # Force refresh all tweets
  * 
  * The script scans source files for TweetCard usages and fetches
  * the tweet data for each ID found.

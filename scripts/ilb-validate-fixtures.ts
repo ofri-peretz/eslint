@@ -24,10 +24,10 @@
  *   - The CI mode (--strict) fails when these are missing.
  *
  * Usage:
- *   node scripts/ilb-validate-fixtures.mjs              # human report
- *   node scripts/ilb-validate-fixtures.mjs --strict     # exit 1 on any drift / missing metadata
- *   node scripts/ilb-validate-fixtures.mjs --cwe=CWE-089
- *   node scripts/ilb-validate-fixtures.mjs --json
+ *   tsx scripts/ilb-validate-fixtures.ts              # human report
+ *   tsx scripts/ilb-validate-fixtures.ts --strict     # exit 1 on any drift / missing metadata
+ *   tsx scripts/ilb-validate-fixtures.ts --cwe=CWE-089
+ *   tsx scripts/ilb-validate-fixtures.ts --json
  */
 
 import fs from 'fs';

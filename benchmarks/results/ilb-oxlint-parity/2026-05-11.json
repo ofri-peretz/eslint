@@ -1,0 +1,16 @@
+{
+  "suite": "ilb-oxlint-parity",
+  "version": "1.0",
+  "runAt": "2026-05-11T06:29:48.646Z",
+  "corpus": "benchmarks/corpus/CWE-089",
+  "eslintFindings": 6,
+  "oxlintFindings": 6,
+  "shared": 6,
+  "eslintOnly": 0,
+  "oxlintOnly": 0,
+  "parityRate": 1,
+  "eslintOnlyAllowlisted": 0,
+  "oxlintOnlyAllowlisted": 0,
+  "eslintOnlyUnexplained": [],
+  "oxlintOnlyUnexplained": []
+}

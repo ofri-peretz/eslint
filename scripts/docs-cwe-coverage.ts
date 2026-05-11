@@ -17,8 +17,8 @@
  *
  * Usage:
  *   npm run docs:cwe-coverage
- *   node scripts/docs-cwe-coverage.mjs --json
- *   node scripts/docs-cwe-coverage.mjs --check       # CI gate: fail if any unmapped rule has no `cwe: null` justification
+ *   tsx scripts/docs-cwe-coverage.ts --json
+ *   tsx scripts/docs-cwe-coverage.ts --check       # CI gate: fail if any unmapped rule has no `cwe: null` justification
  */
 
 import fs from 'node:fs';

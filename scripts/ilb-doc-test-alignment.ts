@@ -16,8 +16,8 @@
  * Exit code: 0 if all rules align, 1 if any drift is found (gate-able in CI).
  *
  * Usage:
- *   node scripts/ilb-doc-test-alignment.mjs           # check, write JSON
- *   node scripts/ilb-doc-test-alignment.mjs --print   # also print human report
+ *   tsx scripts/ilb-doc-test-alignment.ts           # check, write JSON
+ *   tsx scripts/ilb-doc-test-alignment.ts --print   # also print human report
  */
 
 import fs from 'node:fs';

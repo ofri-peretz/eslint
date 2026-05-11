@@ -15,9 +15,9 @@
  * the baseline and reports any change. Run nightly; alert on mismatch.
  *
  * Usage:
- *   node scripts/ilb-corpus-integrity.mjs              # check + write report
- *   node scripts/ilb-corpus-integrity.mjs --update     # also update the baseline
- *   node scripts/ilb-corpus-integrity.mjs --json       # print JSON to stdout
+ *   tsx scripts/ilb-corpus-integrity.ts              # check + write report
+ *   tsx scripts/ilb-corpus-integrity.ts --update     # also update the baseline
+ *   tsx scripts/ilb-corpus-integrity.ts --json       # print JSON to stdout
  */
 
 import fs from 'node:fs';

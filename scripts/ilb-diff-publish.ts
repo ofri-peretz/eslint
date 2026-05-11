@@ -11,9 +11,9 @@
  * formats it for human + agent consumption.
  *
  * Usage:
- *   node scripts/ilb-diff-publish.mjs                           # latest result
- *   node scripts/ilb-diff-publish.mjs --result <path>           # specific JSON
- *   node scripts/ilb-diff-publish.mjs --out path/to/output.md
+ *   tsx scripts/ilb-diff-publish.ts                           # latest result
+ *   tsx scripts/ilb-diff-publish.ts --result <path>           # specific JSON
+ *   tsx scripts/ilb-diff-publish.ts --out path/to/output.md
  */
 
 import fs from 'node:fs';

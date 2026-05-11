@@ -5,10 +5,10 @@
  * This script fetches DEV.to article data and caches it locally
  * to prevent API rate limits during builds.
  * 
- * Usage: node scripts/sync-devto-cache.mjs
+ * Usage: tsx scripts/sync-devto-cache.ts
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,7 +16,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const CACHE_FILE = join(__dirname, '../src/data/cached-devto-articles.json');
-const SRC_DIR = join(__dirname, '../src');
 
 // DEV.to article paths to cache (format: username/slug)
 // These are extracted from usage in the codebase
@@ -47,14 +46,16 @@ async function scanForArticlePaths() {
 async function main() {
   console.log('🔄 Syncing DEV.to article cache...\n');
   
-  // Load existing cache
+  // Load existing cache. Read directly and catch missing/parse failures —
+  // an `existsSync` + `readFileSync` pair is a TOCTOU race the file could
+  // lose between the two calls (CodeQL: "Potential file system race
+  // condition" later flagged the matching `writeFileSync` for the same
+  // pattern earlier in this function's lifecycle).
   let cache: { articles: Record<string, any>; _lastUpdated: string | null; _comment?: string } = { articles: {}, _lastUpdated: null };
-  if (existsSync(CACHE_FILE)) {
-    try {
-      cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    } catch {
-      console.log('⚠️  Could not parse existing cache, starting fresh');
-    }
+  try {
+    cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+  } catch {
+    // Missing or unparseable — start with the empty default above.
   }
   
   // Get article paths to fetch

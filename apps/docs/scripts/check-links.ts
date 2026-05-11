@@ -7,7 +7,7 @@
  * - HTTPS enforcement
  * - rel="noopener noreferrer" security attributes
  * 
- * Run: node scripts/check-links.mjs
+ * Run: tsx scripts/check-links.ts
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
@@ -21,7 +21,6 @@ const OUTPUT_FILE = join(__dirname, '../link-report.json');
 // Regex patterns for finding links
 const MARKDOWN_LINK_REGEX = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
 const JSX_HREF_REGEX = /href=["'](https?:\/\/[^"']+)["']/g;
-const URL_REGEX = /(https?:\/\/[^\s<>"')\]]+)/g;
 
 // Links to skip (known external services that block bots, plus self-
 // references to this repo's main branch — those resolve only after the
@@ -69,14 +68,14 @@ function extractUrls(content: string, filePath: string) {
   // Find markdown links
   let match;
   while ((match = MARKDOWN_LINK_REGEX.exec(content)) !== null) {
-    const [fullMatch, linkText, url] = match;
+    const [, linkText, url] = match;
     urls.set(url, { linkText, source: 'markdown', line: getLineNumber(content, match.index) });
   }
-  
+
   // Find JSX href attributes
   const jsxRegex = new RegExp(JSX_HREF_REGEX.source, 'g');
   while ((match = jsxRegex.exec(content)) !== null) {
-    const [fullMatch, url] = match;
+    const [, url] = match;
     if (!urls.has(url)) {
       urls.set(url, { linkText: '', source: 'jsx', line: getLineNumber(content, match.index) });
     }
@@ -104,8 +103,8 @@ function shouldSkip(url: string): boolean {
  * Validate a single URL
  */
 async function validateUrl(urlInfo: any, timeout = 10000) {
-  const { url, file, line, linkText } = urlInfo;
-  
+  const { url } = urlInfo;
+
   if (shouldSkip(url)) {
     return { ...urlInfo, status: 'skipped', reason: 'Known external service' };
   }

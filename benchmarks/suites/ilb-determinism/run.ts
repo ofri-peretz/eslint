@@ -21,10 +21,10 @@
  * findings that appear identically across all runs. SLO: 1.0 (zero drift).
  *
  * Usage:
- *   node benchmarks/suites/ilb-determinism/run.mjs
- *   node benchmarks/suites/ilb-determinism/run.mjs --runs 10
- *   node benchmarks/suites/ilb-determinism/run.mjs --corpus path/to/dir
- *   node benchmarks/suites/ilb-determinism/run.mjs --plugin secure-coding
+ *   tsx benchmarks/suites/ilb-determinism/run.ts
+ *   tsx benchmarks/suites/ilb-determinism/run.ts --runs 10
+ *   tsx benchmarks/suites/ilb-determinism/run.ts --corpus path/to/dir
+ *   tsx benchmarks/suites/ilb-determinism/run.ts --plugin secure-coding
  */
 
 import fs from 'node:fs';

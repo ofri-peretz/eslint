@@ -31,9 +31,9 @@
  * Exit code: 0 on full success; 1 on any assertion failure.
  *
  * Usage:
- *   node scripts/ilb-e2e.mjs                       # local pack-and-install
- *   node scripts/ilb-e2e.mjs --registry            # install from npm
- *   node scripts/ilb-e2e.mjs --keep-tmp            # don't clean up tmp dir
+ *   tsx scripts/ilb-e2e.ts                       # local pack-and-install
+ *   tsx scripts/ilb-e2e.ts --registry            # install from npm
+ *   tsx scripts/ilb-e2e.ts --keep-tmp            # don't clean up tmp dir
  */
 
 import fs from 'node:fs';

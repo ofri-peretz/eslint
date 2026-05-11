@@ -12,11 +12,11 @@
  * 5. TEST DEPTH SCORE: valid/invalid counts, edge case categories
  *
  * Usage:
- *   node scripts/audit-rule.mjs pg/no-unsafe-query              # single rule
- *   node scripts/audit-rule.mjs secure-coding --all             # entire plugin
- *   node scripts/audit-rule.mjs pg/no-unsafe-query --json       # JSON output
- *   node scripts/audit-rule.mjs --fleet                         # all security plugins
- *   node scripts/audit-rule.mjs --fleet --ci --threshold 80     # CI gate
+ *   tsx scripts/audit-rule.ts pg/no-unsafe-query              # single rule
+ *   tsx scripts/audit-rule.ts secure-coding --all             # entire plugin
+ *   tsx scripts/audit-rule.ts pg/no-unsafe-query --json       # JSON output
+ *   tsx scripts/audit-rule.ts --fleet                         # all security plugins
+ *   tsx scripts/audit-rule.ts --fleet --ci --threshold 80     # CI gate
  */
 
 import fs from 'fs';
@@ -287,7 +287,7 @@ function analyzeTestDepth(testSource, result) {
       id: 'NO_TEST_FILE',
       severity: 'ERROR',
       message: 'No test file found — rule has zero test coverage',
-      fix: 'Run: node scripts/generate-rule-tests.mjs <plugin> <rule>',
+      fix: 'Run: tsx scripts/generate-rule-tests.ts <plugin> <rule>',
     });
     result.score -= 30;
     return;
@@ -423,7 +423,7 @@ function getRulesToAudit() {
 
   const target = args.find(a => !a.startsWith('--'));
   if (!target) {
-    console.error('Usage: node scripts/audit-rule.mjs <plugin>/<rule> | <plugin> --all | --fleet');
+    console.error('Usage: tsx scripts/audit-rule.ts <plugin>/<rule> | <plugin> --all | --fleet');
     process.exit(1);
   }
 

@@ -155,7 +155,7 @@ describe('Social Embeds - Tweet Integrity', () => {
     }[] = [];
 
     // Validate each tweet ID
-    for (const [id, { files, contexts }] of tweetReferences) {
+    for (const [id, { files }] of tweetReferences) {
       try {
         const tweet = await getTweet(id);
         

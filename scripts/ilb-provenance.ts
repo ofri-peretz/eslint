@@ -17,7 +17,7 @@
  *
  * Usage:
  *   npm run ilb:provenance
- *   node scripts/ilb-provenance.mjs --check     # CI gate: fail if any security rule has no CVE example
+ *   tsx scripts/ilb-provenance.ts --check     # CI gate: fail if any security rule has no CVE example
  */
 
 import fs from 'node:fs';

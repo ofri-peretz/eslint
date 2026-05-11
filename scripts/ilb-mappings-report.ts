@@ -26,7 +26,7 @@
  *
  * Usage:
  *   npm run ilb:mappings:report
- *   node scripts/ilb-mappings-report.mjs --plugin secure-coding
+ *   tsx scripts/ilb-mappings-report.ts --plugin secure-coding
  */
 
 import fs from 'node:fs';

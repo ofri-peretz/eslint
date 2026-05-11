@@ -18,10 +18,10 @@
  * locally or in `gh pr review`).
  *
  * Usage:
- *   node scripts/ilb-promotion-gate.mjs                  # CI mode (exit non-zero on fail)
- *   node scripts/ilb-promotion-gate.mjs --base origin/main
- *   node scripts/ilb-promotion-gate.mjs --explain        # report only
- *   node scripts/ilb-promotion-gate.mjs --rule pg/no-unsafe-query  # one-off check
+ *   tsx scripts/ilb-promotion-gate.ts                  # CI mode (exit non-zero on fail)
+ *   tsx scripts/ilb-promotion-gate.ts --base origin/main
+ *   tsx scripts/ilb-promotion-gate.ts --explain        # report only
+ *   tsx scripts/ilb-promotion-gate.ts --rule pg/no-unsafe-query  # one-off check
  */
 
 import fs from 'node:fs';
@@ -206,7 +206,7 @@ function checkRule(promotion) {
     checks.push({
       name: 'severity-audit data',
       pass: false,
-      detail: `no severity-audit row found — run \`node scripts/ilb-severity-audit.mjs\` first`,
+      detail: `no severity-audit row found — run \`tsx scripts/ilb-severity-audit.ts\` first`,
     });
   }
 

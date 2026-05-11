@@ -66,20 +66,20 @@ const VERBOSE = process.argv.includes('--verbose');
 const STEPS = [
   // Validation — instant, hard gates
   { id: 'validate-fixtures',    group: 'validation', cmd: 'npm run ilb:validate-fixtures:strict --silent',         required: true,  timeoutMs: 30_000 },
-  { id: 'validate-results',     group: 'validation', cmd: 'node scripts/ilb-validate-results.mjs --quiet',          required: true,  timeoutMs: 30_000 },
-  { id: 'cwe-coverage-check',   group: 'validation', cmd: 'node scripts/docs-cwe-coverage.mjs --check',             required: true,  timeoutMs: 30_000 },
-  { id: 'provenance-check',     group: 'validation', cmd: 'node scripts/ilb-provenance.mjs --check',                required: false, timeoutMs: 30_000 },
-  { id: 'leaderboard-check',    group: 'validation', cmd: 'node scripts/ilb-leaderboard-publish.mjs --check',       required: true,  timeoutMs: 30_000 },
-  { id: 'promotion-gate',       group: 'validation', cmd: 'node scripts/ilb-promotion-gate.mjs --explain',          required: true,  timeoutMs: 30_000 },
+  { id: 'validate-results',     group: 'validation', cmd: 'tsx scripts/ilb-validate-results.ts --quiet',          required: true,  timeoutMs: 30_000 },
+  { id: 'cwe-coverage-check',   group: 'validation', cmd: 'tsx scripts/docs-cwe-coverage.ts --check',             required: true,  timeoutMs: 30_000 },
+  { id: 'provenance-check',     group: 'validation', cmd: 'tsx scripts/ilb-provenance.ts --check',                required: false, timeoutMs: 30_000 },
+  { id: 'leaderboard-check',    group: 'validation', cmd: 'tsx scripts/ilb-leaderboard-publish.ts --check',       required: true,  timeoutMs: 30_000 },
+  { id: 'promotion-gate',       group: 'validation', cmd: 'tsx scripts/ilb-promotion-gate.ts --explain',          required: true,  timeoutMs: 30_000 },
 
   // Reporting — sub-second; failure usually means a structural break
-  { id: 'mappings-report',      group: 'reporting',  cmd: 'node scripts/ilb-mappings-report.mjs',                   required: true,  timeoutMs: 30_000 },
-  { id: 'iso25010-report',      group: 'reporting',  cmd: 'node scripts/ilb-iso25010-report.mjs',                   required: true,  timeoutMs: 30_000 },
-  { id: 'cwe-coverage',         group: 'reporting',  cmd: 'node scripts/docs-cwe-coverage.mjs',                     required: true,  timeoutMs: 30_000 },
+  { id: 'mappings-report',      group: 'reporting',  cmd: 'tsx scripts/ilb-mappings-report.ts',                   required: true,  timeoutMs: 30_000 },
+  { id: 'iso25010-report',      group: 'reporting',  cmd: 'tsx scripts/ilb-iso25010-report.ts',                   required: true,  timeoutMs: 30_000 },
+  { id: 'cwe-coverage',         group: 'reporting',  cmd: 'tsx scripts/docs-cwe-coverage.ts',                     required: true,  timeoutMs: 30_000 },
 
   // Fast benches
-  { id: 'severity-audit',       group: 'bench',      cmd: 'node scripts/ilb-severity-audit.mjs',                    required: false, timeoutMs: 60_000 },
-  { id: 'autofix',              group: 'bench',      cmd: 'node scripts/ilb-autofix-bench.mjs',                     required: false, timeoutMs: 60_000 },
+  { id: 'severity-audit',       group: 'bench',      cmd: 'tsx scripts/ilb-severity-audit.ts',                    required: false, timeoutMs: 60_000 },
+  { id: 'autofix',              group: 'bench',      cmd: 'tsx scripts/ilb-autofix-bench.ts',                     required: false, timeoutMs: 60_000 },
   { id: 'determinism-cwe089',   group: 'bench',      cmd: 'npx tsx benchmarks/suites/ilb-determinism/run.mjs --runs 2 --corpus benchmarks/corpus/CWE-089',  required: true, timeoutMs: 90_000 },
   { id: 'confidence',           group: 'bench',      cmd: 'npx tsx benchmarks/suites/ilb-confidence/run.mjs',       required: false, timeoutMs: 60_000 },
   { id: 'discover',             group: 'bench',      cmd: 'npx tsx benchmarks/suites/ilb-discover/run.mjs',         required: false, timeoutMs: 60_000 },

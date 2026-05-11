@@ -30,9 +30,9 @@
  *     before/after snippets for review.
  *
  * Usage:
- *   node scripts/ilb-doc-resync.mjs                   # dry-run, prints plan
- *   node scripts/ilb-doc-resync.mjs --apply           # write doc changes
- *   node scripts/ilb-doc-resync.mjs --rule=<name>     # single rule
+ *   tsx scripts/ilb-doc-resync.ts                   # dry-run, prints plan
+ *   tsx scripts/ilb-doc-resync.ts --apply           # write doc changes
+ *   tsx scripts/ilb-doc-resync.ts --rule=<name>     # single rule
  */
 
 import fs from 'node:fs';

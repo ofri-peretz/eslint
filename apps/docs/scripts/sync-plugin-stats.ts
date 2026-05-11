@@ -5,7 +5,7 @@
  * Scans all ESLint plugin packages and counts their rules.
  * Outputs to a JSON file for consumption by the docs site.
  * 
- * Run: node scripts/sync-plugin-stats.mjs
+ * Run: tsx scripts/sync-plugin-stats.ts
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
@@ -164,23 +164,24 @@ async function main() {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  // Compare with existing file to prevent unnecessary git diffs
+  // Compare with existing file to prevent unnecessary git diffs. Read
+  // directly and catch missing/parse failures rather than `existsSync` +
+  // `readFileSync` (CodeQL: "Potential file system race condition" — the
+  // file could be removed between the two calls).
   let writeNeeded = true;
-  if (existsSync(OUTPUT_FILE)) {
-    try {
-      const existing = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8'));
-      const existingData = { ...existing };
-      const newData = { ...output };
-      Reflect.deleteProperty(existingData, 'generatedAt');
-      Reflect.deleteProperty(newData, 'generatedAt');
-      
-      if (JSON.stringify(existingData) === JSON.stringify(newData)) {
-        writeNeeded = false;
-        console.log(`\n✅ plugin-stats.json data unchanged, skipping write to prevent git churn.`);
-      }
-    } catch (e) {
-      // Proceed with write if parsing fails
+  try {
+    const existing = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8'));
+    const existingData = { ...existing };
+    const newData = { ...output };
+    Reflect.deleteProperty(existingData, 'generatedAt');
+    Reflect.deleteProperty(newData, 'generatedAt');
+
+    if (JSON.stringify(existingData) === JSON.stringify(newData)) {
+      writeNeeded = false;
+      console.log(`\n✅ plugin-stats.json data unchanged, skipping write to prevent git churn.`);
     }
+  } catch {
+    // Missing or unparseable — fall through to write.
   }
 
   if (writeNeeded) {

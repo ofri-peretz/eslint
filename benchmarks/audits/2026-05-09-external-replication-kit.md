@@ -64,7 +64,7 @@ Once the reviewer's SARIF is in `benchmarks/external-reviews/<reviewer-id>/<date
 
 ```bash
 # Cohen's κ between Interlace's SARIF and the reviewer's SARIF
-node scripts/ilb-kappa.mjs \
+tsx scripts/ilb-kappa.ts \
   --a benchmarks/results/ilb-arena/<date>.sarif \
   --b benchmarks/external-reviews/<reviewer-id>/<date>/result.sarif \
   --out benchmark-results/external-replication-<reviewer-id>

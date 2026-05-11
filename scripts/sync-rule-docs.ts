@@ -19,7 +19,6 @@ const PLUGIN_MAPPING: Record<string, string> = {
   'eslint-plugin-secure-coding': 'secure-coding',
   'eslint-plugin-pg': 'pg',
   'eslint-plugin-jwt': 'jwt',
-  'eslint-plugin-crypto': 'crypto',
   'eslint-plugin-express-security': 'express-security',
   'eslint-plugin-nestjs-security': 'nestjs-security',
   'eslint-plugin-lambda-security': 'lambda-security',

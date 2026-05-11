@@ -14,7 +14,7 @@
  * is written to harvested-fixtures/<plugin>/<rule>/<idx>.js so the parity bench
  * can lint the directory.
  *
- * Usage: node benchmarks/suites/ilb-oxlint-parity/harvest-fixtures.mjs
+ * Usage: tsx benchmarks/suites/ilb-oxlint-parity/harvest-fixtures.ts
  */
 
 import fs from 'fs';

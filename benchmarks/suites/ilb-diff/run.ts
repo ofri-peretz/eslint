@@ -22,8 +22,8 @@
  *   - Adding a new SAST tool = drop a file in adapters/.
  *
  * Usage:
- *   node benchmarks/suites/ilb-diff/run.mjs --corpus benchmarks/corpus/CWE-089
- *   node benchmarks/suites/ilb-diff/run.mjs --tools interlace,semgrep
+ *   tsx benchmarks/suites/ilb-diff/run.ts --corpus benchmarks/corpus/CWE-089
+ *   tsx benchmarks/suites/ilb-diff/run.ts --tools interlace,semgrep
  */
 
 import fs from 'node:fs';

@@ -24,8 +24,8 @@
  * which renders the Trust Signals section directly into scorecard.md.
  *
  * Usage:
- *   node scripts/ilb-fixture-coverage.mjs            # write coverage.json
- *   node scripts/ilb-fixture-coverage.mjs --print    # also print to stdout
+ *   tsx scripts/ilb-fixture-coverage.ts            # write coverage.json
+ *   tsx scripts/ilb-fixture-coverage.ts --print    # also print to stdout
  */
 
 import fs from 'fs';

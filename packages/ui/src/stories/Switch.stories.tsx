@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { Switch } from '../primitives/switch.js';
-import { Label } from '../primitives/label.js';
 
 const meta: Meta<typeof Switch> = {
   title: 'Primitives/Switch',
@@ -13,21 +12,25 @@ const meta: Meta<typeof Switch> = {
 export default meta;
 type Story = StoryObj<typeof Switch>;
 
+// Base UI's Switch renders its own internal id on the role="switch" span,
+// so `<Label htmlFor>` doesn't reach the interactive element. Wrap in a
+// native `<label>` (DOM-nested association) + add `aria-label` as a
+// belt-and-suspenders accessible-name source for axe.
 export const Default: Story = {
   render: () => (
-    <div className="flex items-center gap-2">
-      <Switch id="airplane" />
-      <Label htmlFor="airplane">Airplane mode</Label>
-    </div>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <Switch aria-label="Airplane mode" />
+      <span>Airplane mode</span>
+    </label>
   ),
 };
 
 export const Disabled: Story = {
   render: () => (
-    <div className="flex items-center gap-2">
-      <Switch id="dis" disabled />
-      <Label htmlFor="dis">Disabled switch</Label>
-    </div>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <Switch aria-label="Disabled switch" disabled />
+      <span>Disabled switch</span>
+    </label>
   ),
 };
 
@@ -37,10 +40,10 @@ export const Disabled: Story = {
  */
 export const KeyboardToggle: Story = {
   render: () => (
-    <div className="flex items-center gap-2">
-      <Switch id="kbd" />
-      <Label htmlFor="kbd">Keyboard-operable</Label>
-    </div>
+    <label className="flex items-center gap-2 cursor-pointer">
+      <Switch aria-label="Keyboard-operable" />
+      <span>Keyboard-operable</span>
+    </label>
   ),
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);

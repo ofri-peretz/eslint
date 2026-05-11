@@ -62,10 +62,6 @@ function buildCommand(
   return `bun ${command ?? 'add'} ${flags ? `${flags} ` : ''}${packages}`.trim();
 }
 
-function isPm(value: string | null): value is PackageManager {
-  return value !== null && (PMS as readonly string[]).includes(value);
-}
-
 export function InstallSnippet({
   packages,
   dev,

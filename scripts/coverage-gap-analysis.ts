@@ -11,10 +11,10 @@
  * 5. Outputs a structured report
  *
  * Usage:
- *   node scripts/coverage-gap-analysis.mjs                     # all security plugins
- *   node scripts/coverage-gap-analysis.mjs --plugin pg         # single plugin
- *   node scripts/coverage-gap-analysis.mjs --json              # JSON output for CI
- *   node scripts/coverage-gap-analysis.mjs --ci --threshold 90 # CI gate (exit 1 if below)
+ *   tsx scripts/coverage-gap-analysis.ts                     # all security plugins
+ *   tsx scripts/coverage-gap-analysis.ts --plugin pg         # single plugin
+ *   tsx scripts/coverage-gap-analysis.ts --json              # JSON output for CI
+ *   tsx scripts/coverage-gap-analysis.ts --ci --threshold 90 # CI gate (exit 1 if below)
  */
 
 import { execSync } from 'child_process';

@@ -52,8 +52,8 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
             ['set', 'put', 'store'].includes(node.callee.property.name)) {
           const keyArg = node.arguments[0];
           if (keyArg && keyArg.type === 'Literal') {
-            const rawValue = keyArg.value;
-            const key = rawValue == null ? '' : String(rawValue).toLowerCase();
+            const rawValue = keyArg?.value;
+            const key = (rawValue === undefined || rawValue === null) ? '' : String(rawValue).toLowerCase();
             if (['password', 'token', 'credit', 'ssn'].some(k => key.includes(k))) {
               context.report({ node, messageId: 'violationDetected' });
             }
