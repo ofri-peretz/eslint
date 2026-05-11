@@ -73,7 +73,7 @@ function SelectContent({
           data-slot="select-popup"
           className={cn(
             'min-w-[var(--anchor-width)] overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg',
-            'origin-[var(--transform-origin)]',
+            'origin-(--transform-origin)',
             'data-[starting-style]:opacity-0 data-[starting-style]:scale-95',
             'data-[ending-style]:opacity-0 data-[ending-style]:scale-95',
             'transition-[opacity,scale] duration-150',
