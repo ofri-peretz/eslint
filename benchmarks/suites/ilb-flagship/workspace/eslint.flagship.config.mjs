@@ -1,3 +1,4 @@
+import tsParser from '@typescript-eslint/parser';
 import importNext from 'eslint-plugin-import-next';
 import pg from 'eslint-plugin-pg';
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -14,6 +15,10 @@ export default [
   },
   {
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
+    },
     plugins: {
       'interlace-import-next': importNext,
       'interlace-pg': pg,

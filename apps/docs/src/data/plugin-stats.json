@@ -59,7 +59,7 @@
     {
       "name": "eslint-plugin-crypto",
       "rules": 10,
-      "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices",
+      "description": "[DEPRECATED — use eslint-plugin-node-security] Security-focused ESLint plugin for cryptographic best practices",
       "category": "security",
       "version": "2.2.3",
       "published": true
@@ -164,5 +164,5 @@
   "totalRules": 350,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-05-11T05:40:31.451Z"
+  "generatedAt": "2026-05-11T07:01:20.356Z"
 }
