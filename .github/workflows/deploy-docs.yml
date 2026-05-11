@@ -86,12 +86,15 @@ jobs:
 
       - name: Deploy prebuilt artifact
         id: deploy
+        # `--archive=tgz` packs the prebuilt artifact into a tarball before
+        # upload. Required because the docs build emits >15k files (Vercel's
+        # per-deploy file-count limit), driven by the rule-table page corpus.
         run: |
           set -euo pipefail
           if [ "${{ inputs.environment }}" = "production" ]; then
-            url=$(npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+            url=$(npx vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN")
           else
-            url=$(npx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+            url=$(npx vercel deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN")
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to: $url"
