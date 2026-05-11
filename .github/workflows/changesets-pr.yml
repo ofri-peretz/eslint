@@ -46,7 +46,7 @@ jobs:
       contents: write       # commit version bumps + CHANGELOGs
       pull-requests: write  # open / update the Version PR
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
@@ -131,7 +131,7 @@ jobs:
       contents: read
       pull-requests: write   # post the advisory comment
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
@@ -207,7 +207,7 @@ jobs:
 
       - name: Comment on PR (when missing)
         if: steps.check.outputs.status == 'missing'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const marker = '<!-- changeset-reminder -->';

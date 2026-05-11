@@ -134,7 +134,7 @@ jobs:
     # Skip rows that don't match the input filter (when not "all").
     if: ${{ inputs.sdk == 'all' || inputs.sdk == matrix.key }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload compatibility artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.key }}-compatibility-results
           path: packages/${{ matrix.plugin }}/.compatibility-results/
@@ -218,7 +218,7 @@ jobs:
 
       - name: Open / update issue on failure
         if: steps.test.outcome == 'failure' && inputs.create_issue != false
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PLUGIN_PATH: packages/${{ matrix.plugin }}
           ISSUE_LABEL: ${{ matrix.issue_label }}
@@ -298,7 +298,7 @@ jobs:
 
       - name: Upload status artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sdk-status-${{ matrix.key }}
           path: .sdk-status/
@@ -318,7 +318,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Download per-cell statuses
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: .sdk-status
           pattern: sdk-status-*

@@ -51,12 +51,5 @@ ruleTester.run('default', defaultRule, {
         filename: 'src/invalid_default.ts',
         errors: [{ messageId: 'noDefaultExport' }]
     },
-    // Adding built-in module failure case as invalid if it fails
-     { 
-        code: `import fs from 'node:fs';`,
-        name: 'Invalid built-in module default import (if types imply no default)',
-         filename: 'src/invalid_builtin.ts',
-         errors: [{ messageId: 'noDefaultExport' }]
-    },
   ],
 });

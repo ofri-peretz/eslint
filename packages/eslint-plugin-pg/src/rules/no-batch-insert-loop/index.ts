@@ -53,7 +53,7 @@ export const noBatchInsertLoop: TSESLint.RuleModule<
            }
         }
         
-        let ancestor = node.parent;
+        let ancestor: any = node.parent;
         while (ancestor) {
           if (
             ancestor.type === AST_NODE_TYPES.ForStatement ||

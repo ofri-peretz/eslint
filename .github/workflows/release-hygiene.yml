@@ -61,7 +61,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -180,7 +180,7 @@ jobs:
 
       - name: Open / refresh tracking issue (drift only)
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           REPORT_JSON: ${{ steps.run.outputs.report }}
         with:

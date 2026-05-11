@@ -168,8 +168,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(
-    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: RuleOptions,
+    context: Readonly<TSESLint.RuleContext<MessageIds, RuleOptions>>,
+    [options]: readonly [Options?],
   ) {
     const {
       safeParserOptions = ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],

@@ -12,6 +12,7 @@ out/
 .cache/
 _next/
 
+
 # Environment variables
 .env
 .env.local

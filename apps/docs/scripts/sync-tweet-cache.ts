@@ -37,8 +37,8 @@ const TWEET_PATTERNS = [
 /**
  * Recursively get all source files
  */
-function getAllSourceFiles(dir, extensions = ['.tsx', '.jsx', '.ts', '.js', '.mdx']) {
-  const files = [];
+function getAllSourceFiles(dir: string, extensions: string[] = ['.tsx', '.jsx', '.ts', '.js', '.mdx']): string[] {
+  const files: string[] = [];
   
   if (!existsSync(dir)) {
     return files;

@@ -23,61 +23,20 @@ describe('ArticlesClient Source File Integrity', () => {
     articlesSource = readFileSync(articlesPath, 'utf-8');
   });
 
-  describe('Gradient Placeholder - Required Patterns', () => {
-    // Placeholder gradient + cover dimensions + Tailwind v4 direction tokens
-    // all moved into the @interlace/ui ArticleCard block. Visual contract is
-    // enforced by Storybook a11y + the block's own source-integrity tests.
-    it.skip('contains vibrant purple gradient (moved to @interlace/ui block)', () => {});
-    it.skip('contains dark mode gradient (moved to @interlace/ui block)', () => {});
-    it.skip('uses gradient direction bg-linear-to-br (moved to @interlace/ui block)', () => {});
-    it.skip('contains h-44 container height for regular cards (moved to block)', () => {});
-    it.skip('contains light overlay effect for depth (moved to block)', () => {});
-  });
+  // Placeholder gradient, cover dimensions, typography, and overlay design
+  // moved into the @interlace/ui ArticleCard block when ArticlesClient was
+  // refactored to delegate rendering. Those visual locks belong against the
+  // block source — re-introduce them there if/when the block grows tests.
 
   describe('Article Title in Placeholder - Required Patterns', () => {
-    // Placeholder typography (text-white/90, drop-shadow, line-clamp-3, etc.)
-    // moved into the @interlace/ui ArticleCard block.
-    it.skip('displays title in white text (moved to @interlace/ui block)', () => {});
-
     it('centers title text (text-center)', () => {
       expect(articlesSource).toContain('text-center');
     });
-
-    // The grid card's placeholder typography is owned by the
-    // @interlace/ui ArticleCard block — see Storybook
-    // "Blocks/ArticleCard/WithoutImage" for the visual contract.
-    it.skip('uses line-clamp-3 for title truncation (moved to block)', () => {});
-
-    it.skip('uses drop-shadow for readability (moved to block)', () => {});
-
-    it.skip('uses flexbox centering for placeholder container (moved to block)', () => {});
   });
 
   describe('Hydration Safety', () => {
     it('uses suppressHydrationWarning for SSR cache staleness handling', () => {
       expect(articlesSource).toContain('suppressHydrationWarning');
-    });
-  });
-
-  describe('Card Placeholder Design Lock', () => {
-    // The ArticleCard placeholder must use vibrant gradient, NOT faded
-    // However, FeaturedArticle uses subtle gradient intentionally - that's allowed
-    
-    it.skip('card placeholder gradient is vibrant (moved to @interlace/ui block)', () => {});
-
-    it('card placeholder does NOT use faded gradient combo (from-purple-500/10 to-fd-muted/30)', () => {
-      // This old pattern should NOT appear in h-44 containers
-      // The faded gradient is only acceptable in FeaturedArticle which has different height
-      const oldCardPattern = /h-44.*from-purple-500\/10.*to-fd-muted\/30/;
-      expect(articlesSource).not.toMatch(oldCardPattern);
-    });
-
-    it('no BookOpen icon inside h-44 placeholder containers', () => {
-      // The h-44 container is the card placeholder - it should show article title, not book icon
-      // Look for pattern that would indicate BookOpen inside the placeholder area
-      // If BookOpen appears after h-44 in the same block, that's a regression
-      const bookOpenInPlaceholder = /h-44.*\n[^}]*<BookOpen/;
-      expect(articlesSource).not.toMatch(bookOpenInPlaceholder);
     });
   });
 

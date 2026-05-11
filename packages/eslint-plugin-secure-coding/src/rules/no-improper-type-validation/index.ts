@@ -282,7 +282,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         }
 
         if (varName) {
-            let current = node.parent;
+            let current: TSESTree.Node | undefined = node.parent;
             let child: TSESTree.Node = node;
 
             while (current) {
@@ -302,7 +302,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
                 }
                 
                 child = current;
-                current = current.parent;
+                current = current.parent as TSESTree.Node | undefined;
             }
         }
 
@@ -447,11 +447,11 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (isUnreliableConstructorCheck(node)) {
           // Check if this involves user input
-          let current: TSESTree.Node = node;
+          let current: TSESTree.Node | undefined = node;
           let involvesUserInput = false;
 
           // Walk up to find if this is used with user input
-          while (current.parent) {
+          while (current?.parent) {
             current = current.parent;
             if (current.type === 'VariableDeclarator' &&
                 current.init === node) {

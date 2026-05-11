@@ -17,6 +17,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "stripInternal": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@interlace/eslint-devkit": [

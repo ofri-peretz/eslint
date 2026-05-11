@@ -171,8 +171,8 @@ async function main() {
       const existing = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8'));
       const existingData = { ...existing };
       const newData = { ...output };
-      delete existingData.generatedAt;
-      delete newData.generatedAt;
+      Reflect.deleteProperty(existingData, 'generatedAt');
+      Reflect.deleteProperty(newData, 'generatedAt');
       
       if (JSON.stringify(existingData) === JSON.stringify(newData)) {
         writeNeeded = false;

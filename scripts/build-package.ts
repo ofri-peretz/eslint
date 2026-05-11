@@ -17,7 +17,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, copyFileSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import process from 'node:process';
 
@@ -63,13 +63,25 @@ if (tscResult.status !== 0) {
   process.exit(tscResult.status ?? 1);
 }
 
-// 3. Copy publish-time assets to the dist root.
-const assets = ['README.md', 'CHANGELOG.md', 'LICENSE', 'AGENTS.md', '.npmignore', 'package.json'];
+// 3. Copy publish-time assets to the dist root. The package.json gets a
+//    targeted rewrite: any `./dist/src/...` path (used by the workspace
+//    for monorepo-dev resolution) becomes `./src/...` in the dist copy,
+//    because once the dist directory IS the package root at publish time,
+//    `./src/...` is the correct resolution path. This lets the workspace
+//    package.json point at the actual built artifact while keeping the
+//    published package layout backward-compatible.
+const assets = ['README.md', 'CHANGELOG.md', 'LICENSE', 'AGENTS.md', '.npmignore'];
 for (const asset of assets) {
   const src = resolve(pkgDir, asset);
   if (existsSync(src)) {
     copyFileSync(src, join(distDir, asset));
   }
 }
+
+const pkgJsonForDist = readFileSync(pkgJsonPath, 'utf-8').replace(
+  /"\.\/dist\/src\//g,
+  '"./src/',
+);
+writeFileSync(join(distDir, 'package.json'), pkgJsonForDist, 'utf-8');
 
 console.log(`build-package(${pkg.name}@${pkg.version}): wrote ${distDir}`);

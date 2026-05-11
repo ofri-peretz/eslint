@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/setup
         with:
@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload Storybook static (on failure, for triage)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: storybook-static-${{ github.run_number }}
           path: apps/storybook/storybook-static

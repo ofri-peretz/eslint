@@ -88,8 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -106,7 +106,7 @@ jobs:
         run: npm run audit:cwe-rendering
       - name: Upload formatter result artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ilb-formatter-${{ github.run_number }}
           path: |
@@ -129,8 +129,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -139,7 +139,7 @@ jobs:
         run: npm run audit:meta:strict
       - name: Upload meta-hygiene report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: meta-hygiene-${{ github.run_number }}
           path: docs/META_HYGIENE.md
@@ -158,8 +158,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -176,9 +176,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -187,7 +187,7 @@ jobs:
 
       # Cache cloned target repos between CI runs to keep things fast.
       - name: Restore .bench-repos cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .bench-repos
           key: ilb-bench-repos-${{ hashFiles('scripts/ilb-wild.ts') }}
@@ -226,7 +226,7 @@ jobs:
 
       - name: Upload scorecard + summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ilb-scorecard-${{ github.run_number }}
           path: |
@@ -239,7 +239,7 @@ jobs:
 
       - name: Comment scorecard on PR
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');

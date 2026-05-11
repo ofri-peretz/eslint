@@ -42,7 +42,7 @@ jobs:
     permissions:
       contents: write   # commits regenerated JSON back to main
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: ./.github/actions/setup

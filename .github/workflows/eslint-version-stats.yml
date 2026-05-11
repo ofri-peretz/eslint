@@ -48,9 +48,9 @@ jobs:
       pull-requests: write  # only used when open_pr=true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -76,7 +76,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload JSON artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eslint-version-stats-${{ github.run_number }}
           path: benchmark-results/eslint-version-stats.json
