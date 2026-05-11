@@ -35,7 +35,7 @@
  *         └── report.md
  */
 
-import { execSync, spawnSync } from 'child_process';
+import { execSync, execFileSync, spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -415,12 +415,20 @@ async function main() {
   }
 
   // Merge with existing summary so successive `--repo X` runs accumulate
-  // into a single date-stamped summary instead of overwriting it.
+  // into a single date-stamped summary instead of overwriting it. Try/catch
+  // read closes the existsSync → readFileSync → writeFileSync TOCTOU window
+  // (CodeQL: `js/file-system-race`).
   const summaryPath = path.join(outDir, 'summary.json');
   let mergedRepos = results;
-  if (fs.existsSync(summaryPath)) {
+  let priorSummaryText: string | null = null;
+  try {
+    priorSummaryText = fs.readFileSync(summaryPath, 'utf-8');
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  if (priorSummaryText !== null) {
     try {
-      const existing: any = JSON.parse(fs.readFileSync(summaryPath, 'utf-8'));
+      const existing: any = JSON.parse(priorSummaryText);
       const byName = new Map((existing.repos || []).map((r) => [r.repo, r]));
       // Overwrite entries from current run, preserve prior ones.
       for (const r of results) byName.set(r.repo, normalizeRepoForSummary(r));
@@ -451,8 +459,11 @@ function cloneRepo(repo) {
   const dir = path.join(BENCH_DIR, repo.name);
 
   if (fs.existsSync(dir)) {
-    const head = safeExec(`git -C "${dir}" rev-parse HEAD`, { allowFail: true }).trim();
-    const expected = safeExec(`git -C "${dir}" rev-parse "${repo.commit}"`, { allowFail: true }).trim();
+    // Use execFileSync with array args — no shell, no interpolation. Closes
+    // the dataflow CodeQL flagged (`js/indirect-command-line-injection`) from
+    // argv/env → registry → git command argument.
+    const head = safeGit(['-C', dir, 'rev-parse', 'HEAD'], { allowFail: true }).trim();
+    const expected = safeGit(['-C', dir, 'rev-parse', repo.commit], { allowFail: true }).trim();
     if (expected && head && head === expected) {
       console.log(`   📂 Cached at ${repo.commit} (${head.slice(0, 7)})`);
       return dir;
@@ -460,12 +471,9 @@ function cloneRepo(repo) {
     if (!expected) {
       // Ref isn't in this clone (likely shallow). Try to fetch it; if that
       // fails, run on cached HEAD with a warning so we don't block on network.
-      const fetched = safeExec(
-        `git -C "${dir}" fetch --depth 1 origin "${repo.commit}" 2>&1`,
-        { allowFail: true },
-      );
-      if (fetched && safeExec(`git -C "${dir}" rev-parse FETCH_HEAD`, { allowFail: true }).trim()) {
-        safeExec(`git -C "${dir}" checkout FETCH_HEAD 2>&1`, { allowFail: true });
+      const fetched = safeGit(['-C', dir, 'fetch', '--depth', '1', 'origin', repo.commit], { allowFail: true });
+      if (fetched && safeGit(['-C', dir, 'rev-parse', 'FETCH_HEAD'], { allowFail: true }).trim()) {
+        safeGit(['-C', dir, 'checkout', 'FETCH_HEAD'], { allowFail: true });
         console.log(`   📥 Fetched & checked out ${repo.commit}`);
       } else {
         console.log(`   ⚠️  Could not resolve ${repo.commit} on cached clone — using HEAD ${head.slice(0, 7)}`);
@@ -473,22 +481,19 @@ function cloneRepo(repo) {
       return dir;
     }
     console.log(`   🔄 Cache stale — checking out ${repo.commit}`);
-    safeExec(`git -C "${dir}" fetch --depth 1 origin "${repo.commit}" 2>&1`, { allowFail: true });
-    safeExec(`git -C "${dir}" checkout "${repo.commit}" 2>&1`, { allowFail: true });
+    safeGit(['-C', dir, 'fetch', '--depth', '1', 'origin', repo.commit], { allowFail: true });
+    safeGit(['-C', dir, 'checkout', repo.commit], { allowFail: true });
     return dir;
   }
 
   console.log(`   ⬇️  Cloning ${repo.name}@${repo.commit} (shallow)...`);
   // Try shallow clone of the specific ref; fall back to full clone + checkout.
   try {
-    execSync(
-      `git clone --depth 1 --branch "${repo.commit}" --single-branch "${repo.repo}" "${dir}"`,
-      { stdio: 'pipe' },
-    );
+    execFileSync('git', ['clone', '--depth', '1', '--branch', repo.commit, '--single-branch', repo.repo, dir], { stdio: 'pipe' });
   } catch {
-    execSync(`git clone --depth 50 --single-branch "${repo.repo}" "${dir}"`, { stdio: 'pipe' });
+    execFileSync('git', ['clone', '--depth', '50', '--single-branch', repo.repo, dir], { stdio: 'pipe' });
     try {
-      execSync(`git -C "${dir}" checkout "${repo.commit}"`, { stdio: 'pipe' });
+      execFileSync('git', ['-C', dir, 'checkout', repo.commit], { stdio: 'pipe' });
     } catch {
       console.log(`   ⚠️  Could not pin to ${repo.commit}, using HEAD`);
     }
@@ -966,10 +971,14 @@ function renderPerRepoMd(repo: any, r: any) {
   const sampleRows = r.samples
     .slice(0, 15)
     .map((s) => {
-      // Escape pipes for table compatibility, replace newlines with spaces,
-      // and strip trailing whitespace (markdownlint MD009 fails on lines
-      // with stray trailing spaces).
-      const msg = (s.message || '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+      // Escape `\` BEFORE escaping `|` — otherwise a literal `\` in the
+      // message gets re-interpreted as a markdown escape character (CodeQL:
+      // `js/incomplete-sanitization`). Also collapse whitespace and trim.
+      const msg = (s.message || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\|/g, '\\|')
+        .replace(/\s+/g, ' ')
+        .trim();
       return `- \`${s.ruleId}\` — ${s.file}:${s.line} — ${msg}`;
     })
     .join('\n');
@@ -1165,9 +1174,14 @@ function clearEslintCache() {
   }
 }
 
-function safeExec(cmd: string, opts: any = {}) {
+// `safeGit` runs git via `execFileSync` (no shell, no interpolation), so
+// arbitrary characters in `args` cannot influence command parsing. This is the
+// shape CodeQL's `js/indirect-command-line-injection` query recognizes as a
+// sanitizer for argv/env data flowing into a git invocation. Replaced the
+// prior `safeExec` shell-wrapper, which was the source of the 4 alerts.
+function safeGit(args: string[], opts: { allowFail?: boolean } = {}) {
   try {
-    return execSync(cmd, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], ...opts });
+    return execFileSync('git', args, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }).toString();
   } catch (e: any) {
     if (opts.allowFail) return e.stdout?.toString() || '';
     throw e;

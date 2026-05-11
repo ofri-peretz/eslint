@@ -108,8 +108,17 @@ for (const plugin of plugins) {
 
   const pkgDir = path.join(PACKAGES_DIR, plugin);
   const changelogPath = path.join(pkgDir, 'CHANGELOG.md');
-  const exists = fs.existsSync(changelogPath);
-  const isSkeleton = exists && fs.statSync(changelogPath).size < 200;
+  // Read-once: captures both existence and size in a single syscall and
+  // closes the existsSync/statSync → writeFileSync TOCTOU window
+  // (CodeQL: `js/file-system-race`).
+  let priorContent: string | null = null;
+  try {
+    priorContent = fs.readFileSync(changelogPath, 'utf-8');
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  const exists = priorContent !== null;
+  const isSkeleton = exists && priorContent!.length < 200;
 
   if (isCheck) {
     if (!exists || isSkeleton) {

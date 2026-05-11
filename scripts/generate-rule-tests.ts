@@ -174,8 +174,16 @@ function generateTestFile(meta, sourceCode) {
   const validCases = generateValidCases(meta, sourceCode);
   const invalidCases = generateInvalidCases(meta, sourceCode);
 
+  // We're emitting a TypeScript source file containing template literals.
+  // The fixture code needs ALL three template-string metacharacters escaped:
+  // `\`, `` ` ``, and `${` — otherwise a fixture with a literal backslash
+  // would be re-interpreted as an escape sequence when the generated test
+  // file is parsed (CodeQL: `js/incomplete-sanitization`).
+  const escapeForTemplate = (s: string) =>
+    s.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
   const validBlock = validCases.map(c => {
-    let entry = `        // ${c.comment}\n        {\n          code: \`${c.code.replace(/`/g, '\\`')}\`,`;
+    let entry = `        // ${c.comment}\n        {\n          code: \`${escapeForTemplate(c.code)}\`,`;
     if (c.filename) entry += `\n          filename: '${c.filename}',`;
     if (c.options) entry += `\n          options: [${JSON.stringify(c.options[0])}],`;
     entry += `\n        },`;
@@ -183,7 +191,7 @@ function generateTestFile(meta, sourceCode) {
   }).join('\n');
 
   const invalidBlock = invalidCases.map(c => {
-    let entry = `        // ${c.comment}\n        {\n          code: \`${c.code.replace(/`/g, '\\`')}\`,`;
+    let entry = `        // ${c.comment}\n        {\n          code: \`${escapeForTemplate(c.code)}\`,`;
     entry += `\n          errors: [{ messageId: '${c.messageId}' }],`;
     entry += `\n        },`;
     return entry;
@@ -263,17 +271,20 @@ function processRule(pluginName, ruleName) {
   const ruleFile = path.join(ruleDir, 'index.ts');
   const testFile = path.join(ruleDir, `${ruleName}.test.ts`);
 
-  if (!fs.existsSync(ruleFile)) {
-    console.log(`  ⚠️  ${ruleName}: rule not found, skipping`);
-    return { status: 'skipped', reason: 'not-found' };
+  // Read-or-skip via try/catch. Captures both existence and content atomically,
+  // closing the existsSync → readFileSync TOCTOU window the analyzer flagged
+  // (CodeQL: `js/file-system-race`).
+  let sourceCode: string;
+  try {
+    sourceCode = fs.readFileSync(ruleFile, 'utf-8');
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
+      console.log(`  ⚠️  ${ruleName}: rule not found, skipping`);
+      return { status: 'skipped', reason: 'not-found' };
+    }
+    throw e;
   }
 
-  if (fs.existsSync(testFile) && !isForce) {
-    console.log(`  ✅ ${ruleName}: test already exists, skipping (use --force to overwrite)`);
-    return { status: 'skipped', reason: 'exists' };
-  }
-
-  const sourceCode = fs.readFileSync(ruleFile, 'utf-8');
   const meta = extractRuleMetadata(sourceCode, ruleName);
 
   if (!meta.exportName) {
@@ -282,7 +293,17 @@ function processRule(pluginName, ruleName) {
   }
 
   const testCode = generateTestFile(meta, sourceCode);
-  fs.writeFileSync(testFile, testCode, 'utf-8');
+  // Atomic create-or-fail when not forcing overwrite. `wx` ensures we never
+  // clobber an existing test file in the absence of --force.
+  try {
+    fs.writeFileSync(testFile, testCode, { encoding: 'utf-8', flag: isForce ? 'w' : 'wx' });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'EEXIST') {
+      console.log(`  ✅ ${ruleName}: test already exists, skipping (use --force to overwrite)`);
+      return { status: 'skipped', reason: 'exists' };
+    }
+    throw e;
+  }
   console.log(`  📝 ${ruleName}: created ${meta.messageIds.length} messageId(s), ${meta.optionKeys.length} option(s)`);
   return { status: 'created', messageIds: meta.messageIds.length };
 }

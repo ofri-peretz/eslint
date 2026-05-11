@@ -177,12 +177,19 @@ let totalFn = 0;
 let totalFp = 0;
 const errors: string[] = [];
 
+// Validate the LLM-emitted shape before persisting — closes both the
+// existsSync→write TOCTOU and the network-data-to-file dataflow (CodeQL:
+// `js/file-system-race` + `js/file-from-untrusted-data`).
+function normalizeFuzzReply(raw: unknown): { fnCandidates: unknown[]; fpCandidates: unknown[] } | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as { fnCandidates?: unknown; fpCandidates?: unknown };
+  const fn = Array.isArray(r.fnCandidates) ? r.fnCandidates : [];
+  const fp = Array.isArray(r.fpCandidates) ? r.fpCandidates : [];
+  return { fnCandidates: fn, fpCandidates: fp };
+}
+
 for (const r of rules) {
   const outPath = path.join(OUT_DIR, `${r.plugin}__${r.rule}.json`);
-  if (fs.existsSync(outPath)) {
-    console.log(`  skip  ${r.plugin}/${r.rule} (already generated; delete to regenerate)`);
-    continue;
-  }
   process.stdout.write(`  fuzz  ${r.plugin}/${r.rule} ... `);
   try {
     const reply = await callClaude(buildPrompt(r));
@@ -194,16 +201,39 @@ for (const r of rules) {
       errors.push(`${r.plugin}/${r.rule}: no JSON parsed`);
       continue;
     }
-    const parsed = JSON.parse(jsonMatch[0]);
-    fs.writeFileSync(outPath, JSON.stringify({ ...r, candidates: parsed, model: MODEL, generatedAt: new Date().toISOString() }, null, 2));
-    totalFn += parsed.fnCandidates?.length ?? 0;
-    totalFp += parsed.fpCandidates?.length ?? 0;
-    console.log(`✓ ${parsed.fnCandidates?.length ?? 0} FN + ${parsed.fpCandidates?.length ?? 0} FP`);
+    const parsed = normalizeFuzzReply(JSON.parse(jsonMatch[0]));
+    if (!parsed) {
+      console.log('unexpected reply shape');
+      errors.push(`${r.plugin}/${r.rule}: bad shape`);
+      continue;
+    }
+    // Atomic create-or-skip: `wx` flag means we never overwrite an existing
+    // generated file in lieu of the prior existsSync precheck.
+    try {
+      fs.writeFileSync(
+        outPath,
+        JSON.stringify({ ...r, candidates: parsed, model: MODEL, generatedAt: new Date().toISOString() }, null, 2),
+        { encoding: 'utf-8', flag: 'wx' },
+      );
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'EEXIST') {
+        console.log('skip (already generated; delete to regenerate)');
+        continue;
+      }
+      throw e;
+    }
+    totalFn += parsed.fnCandidates.length;
+    totalFp += parsed.fpCandidates.length;
+    console.log(`✓ ${parsed.fnCandidates.length} FN + ${parsed.fpCandidates.length} FP`);
     // Cooperative rate limit (Anthropic: 50 req/min on default tier).
     await new Promise((r) => setTimeout(r, 1500));
   } catch (err) {
-    console.log(`error: ${(err as Error).message}`);
-    errors.push(`${r.plugin}/${r.rule}: ${(err as Error).message}`);
+    // Cap error message length so an LLM-derived JSON.parse snippet can't
+    // smuggle large untrusted blobs into the summary file
+    // (CodeQL: `js/file-from-untrusted-data` on the summary write below).
+    const msg = (err as Error).message.slice(0, 200).replace(/[\n\r]/g, ' ');
+    console.log(`error: ${msg}`);
+    errors.push(`${r.plugin}/${r.rule}: ${msg}`);
   }
 }
 

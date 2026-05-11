@@ -2,16 +2,26 @@
 name: Lighthouse (Web Vitals Budget)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Enforces the performance, accessibility, and SEO budgets declared by our
-# philosophies — MOTION_PHILOSOPHY.md (CLS = 0), UX_PHILOSOPHY.md #6 (LCP ≤ 1.5s),
+# Tracks the performance, accessibility, and SEO budgets declared by our
+# philosophies — MOTION_PHILOSOPHY.md (CLS = 0), UX_PHILOSOPHY.md #6 (LCP),
 # COLOR_PHILOSOPHY.md (contrast budget), TYPOGRAPHY_PHILOSOPHY.md (AA floor).
 #
-# Without this gate the budgets are aspirational. With it, a regressing PR
-# fails the build.
+# Gating model (intentionally split):
+#   • PR runs (pull_request)        → ADVISORY. The lhci step uses
+#     `continue-on-error: true`. The report still uploads as an artifact
+#     and renders in checks, but a budget breach doesn't block merge.
+#     Rationale: single-pass Lighthouse on a shared GitHub runner has
+#     ~50–100ms of LCP jitter from cold CPU / network — too noisy to use
+#     as a PR-blocking gate. We were treating noise as failure.
+#   • Schedule (weekly Sunday)      → HARD GATE. Same job, same config,
+#     but a budget breach exits non-zero and pages the perf owner. This
+#     is the canonical "did we regress?" check.
+#   • workflow_dispatch (manual)    → HARD GATE. Use for opt-in PR runs
+#     when you're explicitly chasing a perf claim.
 #
 # Config: apps/docs/lighthouserc.json
-# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
-# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+# Triggers: ready_for_review / `run-full-ci` label / synchronize, plus the
+# weekly Sunday cron. See AGENTS.md "Promotion gate".
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -93,13 +103,20 @@ jobs:
         run: npm install -g @lhci/cli@0.14.x
 
       - name: Run Lighthouse CI
+        id: lhci
         working-directory: apps/docs
-        # Continue-on-error=false: a budget breach fails the build. That's
-        # the entire point of this gate — see MOTION_PHILOSOPHY's CLS=0
-        # contract and the rest of the perf rules in lighthouserc.json.
+        # Advisory on PRs (single-pass Lighthouse is too noisy to block on),
+        # hard gate on the weekly cron + manual dispatch. The step always
+        # produces the .lighthouseci/ artifact for the upload step below.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: lhci autorun --config=./lighthouserc.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Annotate PR when budgets breach (advisory)
+        if: github.event_name == 'pull_request' && steps.lhci.outcome == 'failure'
+        run: |
+          echo "::warning title=Lighthouse budget breached (advisory)::Lighthouse assertions failed but did not block this PR. Download the lighthouse-report artifact for full diagnostics, or re-run with the \`run-full-ci\` label / manual dispatch to enforce. The weekly Sunday cron still enforces the budget on main."
 
       - name: Upload Lighthouse artifacts
         if: always()

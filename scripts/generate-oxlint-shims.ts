@@ -130,8 +130,17 @@ function loadPortabilityData() {
 const drift = []; // { kind, path, action }
 
 function ensureFile(filePath, expectedContent) {
-  const exists = fs.existsSync(filePath);
-  const current = exists ? fs.readFileSync(filePath, 'utf-8') : null;
+  // Single read captures both existence and content — eliminates the
+  // existsSync → readFileSync → writeFileSync sequence the analyzer flagged
+  // (CodeQL: `js/file-system-race`).
+  let current = null;
+  let exists = false;
+  try {
+    current = fs.readFileSync(filePath, 'utf-8');
+    exists = true;
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+  }
   if (current === expectedContent) return 'unchanged';
 
   drift.push({ kind: 'file', path: filePath, action: exists ? 'updated' : 'created' });

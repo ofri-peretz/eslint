@@ -88,9 +88,16 @@ function resolveOnRemote(repo, commitish) {
 const registry = parseRegistry();
 console.log(`Checking ${registry.length} pinned repos...`);
 
-const baseline = fs.existsSync(REPORT_PATH)
-  ? JSON.parse(fs.readFileSync(REPORT_PATH, 'utf-8'))
-  : null;
+// Try/catch read closes the existsSync → readFileSync → writeFileSync TOCTOU
+// window the analyzer flagged (CodeQL: `js/file-system-race`).
+const baseline = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(REPORT_PATH, 'utf-8'));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw e;
+  }
+})();
 
 const current = {};
 const drifts = [];

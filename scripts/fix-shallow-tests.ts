@@ -46,22 +46,31 @@ function countCases(testSource) {
   return { valid: validCode + bareStrings, invalid, total: validCode + bareStrings + invalid };
 }
 
+function tryReadFile(p) {
+  try { return fs.readFileSync(p, 'utf-8'); } catch { return null; }
+}
+
 function processRule(pluginName, ruleName) {
   const ruleDir = path.join(ROOT, 'packages', `eslint-plugin-${pluginName}`, 'src', 'rules', ruleName);
   const ruleFile = path.join(ruleDir, 'index.ts');
   const testFile = path.join(ruleDir, `${ruleName}.test.ts`);
 
-  if (!fs.existsSync(ruleFile) || !fs.existsSync(testFile)) return null;
+  // Read-or-skip via try/catch closes the TOCTOU window the analyzer flagged
+  // (existsSync → readFileSync sequence; CodeQL: `js/file-system-race`).
+  if (tryReadFile(ruleFile) === null) return null;
+  const baseContent = tryReadFile(testFile);
+  if (baseContent === null) return null;
 
-  // Merge all test files for counting
+  // Merge all test files for counting (each read is itself atomic — missing
+  // files yield empty string instead of separately stat-ing first).
   const testCandidates = [testFile, path.join(ruleDir, 'index.spec.ts'), path.join(ruleDir, 'index.test.ts')];
-  const allTestSource = testCandidates.filter(f => fs.existsSync(f)).map(f => fs.readFileSync(f, 'utf-8')).join('\n');
+  const allTestSource = testCandidates.map((f) => tryReadFile(f) ?? '').join('\n');
   const counts = countCases(allTestSource);
 
   if (counts.total >= 8) return null; // Already passing
 
   const deficit = 8 - counts.total;
-  const content = fs.readFileSync(testFile, 'utf-8');
+  const content = baseContent;
 
   // Find the first `valid: [` and insert after the opening bracket
   const match = content.match(/valid\s*:\s*\[/);
