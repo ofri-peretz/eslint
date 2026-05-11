@@ -35,7 +35,7 @@ function SelectTrigger({
         'flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm whitespace-nowrap shadow-sm transition-[color,box-shadow] outline-none',
         'hover:bg-accent hover:text-accent-foreground',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        'data-[popup-open]:border-ring',
+        'data-popup-open:border-ring',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'data-[size=default]:h-9 data-[size=sm]:h-8',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
@@ -72,10 +72,10 @@ function SelectContent({
         <BaseSelect.Popup
           data-slot="select-popup"
           className={cn(
-            'min-w-[var(--anchor-width)] overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg',
+            'min-w-(--anchor-width) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lg',
             'origin-(--transform-origin)',
-            'data-[starting-style]:opacity-0 data-[starting-style]:scale-95',
-            'data-[ending-style]:opacity-0 data-[ending-style]:scale-95',
+            'data-starting-style:opacity-0 data-starting-style:scale-95',
+            'data-ending-style:opacity-0 data-ending-style:scale-95',
             'transition-[opacity,scale] duration-150',
             'p-1',
             popupClassName,
@@ -113,9 +113,9 @@ function SelectItem({
       className={cn(
         'relative flex w-full cursor-pointer items-center gap-2 rounded-lg py-2.5 pr-8 pl-3 text-sm outline-hidden select-none transition-all duration-150',
         'text-popover-foreground',
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
-        'data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:font-medium',
-        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+        'data-selected:bg-primary data-selected:text-primary-foreground data-selected:font-medium',
+        'data-disabled:pointer-events-none data-disabled:opacity-50',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
         className,
       )}

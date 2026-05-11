@@ -21,8 +21,8 @@ type Story = StoryObj<typeof DropdownMenu>;
 export const Default: Story = {
   render: () => (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline">Sort by</Button>
+      <DropdownMenuTrigger render={<Button variant="outline" />}>
+        Open
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuLabel>Sort articles</DropdownMenuLabel>

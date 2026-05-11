@@ -2,6 +2,7 @@
   "name": "docs",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "tsx scripts/sync-plugin-stats.ts && tsx scripts/sync-tweet-cache.ts && next build",
     "dev": "tsx scripts/sync-plugin-stats.ts && next dev --port 3000",

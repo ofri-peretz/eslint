@@ -16,7 +16,7 @@ type Story = StoryObj<typeof Accordion>;
 
 export const Default: Story = {
   render: () => (
-    <Accordion type="single" collapsible className="w-[420px]">
+    <Accordion className="w-[420px]">
       <AccordionItem value="a">
         <AccordionTrigger>What does eslint-plugin-jwt detect?</AccordionTrigger>
         <AccordionContent>

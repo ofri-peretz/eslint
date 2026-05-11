@@ -20,8 +20,8 @@ type Story = StoryObj<typeof Popover>;
 export const Default: Story = {
   render: () => (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline">Date range</Button>
+      <PopoverTrigger render={<Button variant="outline" />}>
+        Open
       </PopoverTrigger>
       <PopoverContent className="w-72">
         <div className="flex flex-col gap-2">

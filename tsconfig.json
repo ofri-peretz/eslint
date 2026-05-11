@@ -44,8 +44,7 @@
     // typecheck those via `npm run typecheck:scripts` /
     // `npm run typecheck:benchmarks`.
     "include": [
-        "packages/*/src/**/*",
-        "apps/*/src/**/*"
+        "packages/*/src/**/*"
     ],
     // Exclude generated and external files
     "exclude": [

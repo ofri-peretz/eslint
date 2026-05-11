@@ -22,8 +22,8 @@ type Story = StoryObj<typeof Sheet>;
 export const Default: Story = {
   render: () => (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline">Filters</Button>
+      <SheetTrigger render={<Button variant="outline" />}>
+        Open
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
