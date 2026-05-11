@@ -70,7 +70,7 @@ jobs:
         id: linkcheck
         working-directory: apps/docs
         continue-on-error: true
-        run: tsx scripts/check-links.ts
+        run: npx tsx scripts/check-links.ts
 
       - name: Upload link report
         if: always()
