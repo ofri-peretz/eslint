@@ -13,6 +13,7 @@ name: ILB Benchmark Regression Gate
 on:
   pull_request:
     branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
@@ -37,6 +38,8 @@ on:
         required: false
         type: boolean
         default: false
+  schedule:
+    - cron: "20 4 * * 0"
 
 concurrency:
   group: ilb-bench-${{ github.ref }}
@@ -47,6 +50,31 @@ permissions:
   pull-requests: write
 
 jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping benchmark gate."
+          fi
+
   # Synthetic, deterministic, ~10 s wall-clock — runs on every matching PR
   # with three hard gates: signal-preservation contract (4/4 on every
   # structured-format cell), latency contract (per-scale ms ceilings on
@@ -55,6 +83,8 @@ jobs:
   # at any of the three exits the runner non-zero and fails the job.
   ilb-formatter:
     name: ILB-Formatter (signal + latency + regression gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -94,6 +124,8 @@ jobs:
   # plugins improve.
   audit-meta:
     name: Plugin rule-meta hygiene audit (strict)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -121,6 +153,8 @@ jobs:
   # TS converted from .mjs in the 2026-05-09 batch.
   typecheck-scripts:
     name: Typecheck scripts + benchmark runners
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -137,6 +171,8 @@ jobs:
 
   ilb-wild:
     name: ILB-Wild smoke + regression gate
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

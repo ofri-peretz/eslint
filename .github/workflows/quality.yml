@@ -5,13 +5,24 @@ run-name: >-
   Quality · ${{ github.event_name == 'pull_request' && format('PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PR gates for the monorepo. On `pull_request`, all turbo runs are scoped to
-# affected packages via `--filter=...[origin/main]`. On `push` to main, the
-# full graph runs (post-merge validation).
+# Fast-loop quality gate. Auto-runs on every PR push + push to main.
 #
-# Caching:
-#   - `./.github/actions/setup` hydrates node_modules (skips `npm ci` on hit)
-#     and the `.turbo` task cache (keyed per job, falls back across runs).
+# Heavy jobs (Build, Tests, Typecheck, Portability Audit) have moved to
+# `quality-full.yml` which only fires on a PR marked `ready_for_review` or
+# labelled `run-full-ci`, plus weekly Sunday cron. Run them locally with
+# `npm run ci:local` before promoting a PR.
+#
+# What stays auto here:
+#   - oxlint (fast pass)        ~15s
+#   - Markdown Lint             ~20s
+#   - CHANGELOG Check           ~15s
+#   - Workflow Conventions      ~15s
+#   - Lockfile Sync             ~10s
+#
+# Total wall ~30s. Compared to the pre-split ~3m, ~80% GHA-minute reduction.
+#
+# Caching: `./.github/actions/setup` hydrates node_modules and (where used)
+# the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -28,15 +39,7 @@ permissions:
   contents: read
 
 env:
-  TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
   TURBO_TELEMETRY_DISABLED: "1"
-  # Turbo Remote Cache (optional). Setting both lets jobs share cache
-  # artefacts across runs/branches/PRs — typical 50–80% reduction in build
-  # + test wall time. Falls back to local cache when unset.
-  #   - secrets.TURBO_TOKEN  : Vercel access token (or self-hosted token)
-  #   - vars.TURBO_TEAM      : Vercel team slug (e.g. "interlace")
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
   oxlint:
@@ -49,42 +52,6 @@ jobs:
         with:
           turbo-cache: "false"
       - run: npm run oxlint
-
-  test:
-    name: Unit Tests (Turbo)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - name: Run tests via Turbo
-        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
-
-  build:
-    name: Build (Turbo)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - name: Build via Turbo
-        run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
-
-  typecheck:
-    name: Typecheck (Turbo)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - name: Typecheck via Turbo
-        run: npx turbo run typecheck ${{ env.TURBO_FILTER_ARGS }}
 
   markdown:
     name: Markdown Lint
@@ -107,17 +74,6 @@ jobs:
         with:
           turbo-cache: "false"
       - run: npm run audit:changelogs
-
-  portability:
-    name: Portability Audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-        with:
-          turbo-cache: "false"
-      - run: npm run audit:portability
 
   workflows:
     name: Workflow Conventions
@@ -159,28 +115,23 @@ jobs:
           echo "✅ Lockfile is in sync."
 
   # Aggregate gate so branch protection has a single required check to gate on.
-  # When you add a new gate above, add it to the `needs:` list below.
+  # Heavy gates (test/build/typecheck/portability) live in quality-full.yml.
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, test, build, typecheck, markdown, changelog, portability, workflows, lockfile]
+    needs: [oxlint, markdown, changelog, workflows, lockfile]
     if: always()
     steps:
       - name: Render gate report
         env:
           R_OXLINT: ${{ needs.oxlint.result }}
-          R_TEST: ${{ needs.test.result }}
-          R_BUILD: ${{ needs.build.result }}
-          R_TYPECHECK: ${{ needs.typecheck.result }}
           R_MARKDOWN: ${{ needs.markdown.result }}
           R_CHANGELOG: ${{ needs.changelog.result }}
-          R_PORTABILITY: ${{ needs.portability.result }}
           R_WORKFLOWS: ${{ needs.workflows.result }}
           R_LOCKFILE: ${{ needs.lockfile.result }}
         run: |
           set -euo pipefail
-          # Map raw conclusion → emoji.
           icon() {
             case "$1" in
               success)   echo "✅" ;;
@@ -192,15 +143,13 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_TEST" "$R_BUILD" "$R_TYPECHECK" \
-                   "$R_MARKDOWN" "$R_CHANGELOG" "$R_PORTABILITY" "$R_WORKFLOWS" \
-                   "$R_LOCKFILE"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_LOCKFILE"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
-            header="✅ All quality gates passed"
+            header="✅ Fast quality gates passed"
           else
-            header="❌ One or more quality gates failed"
+            header="❌ One or more fast quality gates failed"
           fi
 
           {
@@ -209,17 +158,15 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
-            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
-            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`turbo run typecheck\` (affected on PRs) |"
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
-            echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo "| Workflow conventions | $(icon "$R_WORKFLOWS") $R_WORKFLOWS    | \`scripts/lint-workflows.ts\` |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo ""
+            echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
             if ! $all_pass; then
-              echo "**Investigate failures via the per-gate jobs above.** Branch-protection gates only on this aggregate, so all checks must be green to merge."
+              echo ""
+              echo "**Investigate failures via the per-gate jobs above.**"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 

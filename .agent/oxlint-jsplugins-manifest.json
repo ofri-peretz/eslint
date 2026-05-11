@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-10",
+  "generatedAt": "2026-05-11",
   "totalPlugins": 20,
-  "totalRules": 397,
-  "oxlintCompatible": 397,
+  "totalRules": 398,
+  "oxlintCompatible": 398,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -291,7 +291,7 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 10,
+      "ruleCount": 11,
       "rules": [
         {
           "name": "conventions/consistent-existence-index-check",
@@ -343,6 +343,12 @@
         },
         {
           "name": "conventions/prefer-dom-node-text-content",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/require-data-testid",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

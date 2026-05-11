@@ -1,0 +1,186 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Quality (Full)
+
+run-name: >-
+  Quality (Full) · ${{ github.event_name == 'pull_request' && format('PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title) || (github.event_name == 'schedule' && 'Weekly drift scan' || github.event_name) }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Heavy half of the Quality Gate — Build, Tests, Typecheck, Portability Audit.
+#
+# Triggers (the "promote" gate):
+#   - `pull_request: types: [ready_for_review, labeled, synchronize]` — fires
+#     once a PR leaves draft (ready_for_review), is re-synced while non-draft,
+#     or gets the `run-full-ci` label.
+#   - `workflow_dispatch` — manual on demand.
+#   - `schedule` — weekly Sunday 04:00 UTC for drift detection.
+#
+# A gate job filters out the cheap-loop case (draft PR without the label) by
+# computing `should-run`. Downstream jobs `needs: gate` + `if: gate.outputs.run`.
+#
+# Run the same battery locally with `npm run ci:local` before promoting a PR.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 0"
+
+concurrency:
+  group: quality-full-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
+  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          ACTION: ${{ github.event.action }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            # workflow_dispatch / schedule always run.
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # On pull_request, run if the PR is not a draft OR has the label.
+          if [[ "$IS_DRAFT" == "false" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping heavy quality gates. Mark ready-for-review or apply the label to promote."
+          fi
+
+  test:
+    name: Unit Tests (Turbo)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Run tests via Turbo
+        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
+
+  build:
+    name: Build (Turbo)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          next-cache: "true"
+      - name: Build via Turbo
+        run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+
+  typecheck:
+    name: Typecheck (Turbo)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Typecheck via Turbo
+        run: npx turbo run typecheck ${{ env.TURBO_FILTER_ARGS }}
+
+  portability:
+    name: Portability Audit
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run audit:portability
+
+  # Aggregate gate so a single PR check status surfaces the heavy-half result.
+  quality-full-gate:
+    name: Quality (Full) Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [gate, test, build, typecheck, portability]
+    if: always() && needs.gate.outputs.run == 'true'
+    steps:
+      - name: Render gate report
+        env:
+          R_TEST: ${{ needs.test.result }}
+          R_BUILD: ${{ needs.build.result }}
+          R_TYPECHECK: ${{ needs.typecheck.result }}
+          R_PORTABILITY: ${{ needs.portability.result }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹" ;;
+              skipped)   echo "⏭" ;;
+              *)         echo "⚠️" ;;
+            esac
+          }
+
+          all_pass=true
+          for r in "$R_TEST" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
+            [ "$r" = "success" ] || all_pass=false
+          done
+          if $all_pass; then
+            header="✅ All heavy quality gates passed"
+          else
+            header="❌ One or more heavy quality gates failed"
+          fi
+
+          {
+            echo "# $header"
+            echo ""
+            echo "| Gate | Result | Notes |"
+            echo "|---|---|---|"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
+            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
+            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`turbo run typecheck\` (affected on PRs) |"
+            echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
+            echo ""
+            echo "_Run \`npm run ci:local\` to mirror these gates locally before promoting a PR._"
+            if ! $all_pass; then
+              echo ""
+              echo "**Investigate failures via the per-gate jobs above.**"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          $all_pass || { echo "::error::One or more heavy quality gates failed"; exit 1; }
+          echo "All heavy quality gates passed."

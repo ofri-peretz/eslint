@@ -1,20 +1,18 @@
 name: Link Integrity Check
 
+# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
+# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/docs/content/**/*.mdx"
-      - "apps/docs/content/**/*.md"
   pull_request:
     branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - "apps/docs/content/**/*.mdx"
       - "apps/docs/content/**/*.md"
-  # schedule: # DISABLED — quota conservation
-    # Run weekly on Sundays at midnight UTC
-    # - cron: "0 0 * * 0"
   workflow_dispatch:
+  schedule:
+    - cron: "25 4 * * 0"
 
 concurrency:
   group: check-links-${{ github.ref }}
@@ -25,7 +23,34 @@ permissions:
   pull-requests: write
 
 jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping link integrity check."
+          fi
+
   check-links:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

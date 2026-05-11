@@ -24,6 +24,7 @@ name: ILB Cross-Version Matrix
 on:
   pull_request:
     branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
@@ -32,8 +33,10 @@ on:
       - 'scripts/ilb-*.ts'
       - '.github/workflows/eslint-version-matrix.yml'
   schedule:
-    # Nightly at 04:00 UTC — surfaces upstream-version drift overnight.
-    - cron: '0 4 * * *'
+    # Downgraded from nightly to weekly Sunday — quota conservation. Drift
+    # still surfaces in time for the weekly engineering review, and any
+    # promoted PR runs the full matrix via the `run-full-ci` label gate.
+    - cron: '30 4 * * 0'
   workflow_dispatch:
 
 concurrency:
@@ -44,13 +47,45 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping cross-version matrix."
+          fi
+
   matrix:
     name: ${{ matrix.bench }} · node-${{ matrix.node }} · eslint-${{ matrix.eslint }}
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: ${{ matrix.experimental }}
     strategy:
-      fail-fast: false
+      # Cancel sibling cells on first failure when running the cross-version
+      # matrix — when an ESLint major bumps and breaks one cell, the other
+      # 7 will almost always break the same way. Saves ~7 cells worth of
+      # runner minutes per regression. Override via workflow_dispatch if
+      # you need full results.
+      fail-fast: true
       matrix:
         node: [22, 24]
         # All three are supported per docs/ESLINT_VERSION_SUPPORT.md:

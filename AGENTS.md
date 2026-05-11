@@ -185,6 +185,82 @@ Each plugin's README contains an OWASP coverage matrix.
 
 ---
 
+## Promotion gate (three-tier CI)
+
+Validation is layered into three tiers so cheap signal runs on every commit
+while heavy gates only fire on PRs you're ready to land. The goal: keep the
+fast-loop signal tight without burning GHA minutes on draft work.
+
+### T1 — Pre-commit (lefthook, staged files, <30s)
+
+Runs on `git commit`. Configured in `lefthook.yml`'s `pre-commit:` block.
+Catches the cheap-to-detect issues: oxlint, markdownlint on staged `.md`,
+oxlint shim drift, and `turbo run test --filter=...[origin/main]` (affected
+packages only). Adding more here makes commits slow — keep it tight.
+
+### T2 — Pre-push (lefthook, full local battery, ~2–4 min)
+
+Runs on `git push`. Configured in `lefthook.yml`'s `pre-push:` block. Mirrors
+the heavy CI gate so a clean local push means CI will be green:
+
+- `turbo run typecheck` / `build` / `test`
+- Full markdown lint
+- Portability audit, lockfile sync, workflows lint, changelog status
+- Oxlint shim drift + shim verify
+
+Run the same battery outside of `git push` with:
+
+```bash
+npm run ci:local
+```
+
+**Always run `npm run ci:local` before marking a PR ready-for-review.**
+
+What's *not* in T2 (cloud-only, intentional):
+
+- CodeQL — runs on GitHub's infrastructure with security-events upload.
+- Lighthouse — needs a clean Chrome instance.
+- Storybook a11y full crawl — needs Playwright on a clean box.
+- ILB cross-version matrix — multi-node-version, multi-eslint-version axes.
+
+### T3 — CI on promote (workflow_dispatch + ready_for_review + label)
+
+The heavy workflows (CodeQL, Lighthouse, Storybook test-runner, Storybook
+a11y, benchmark, check-links, ILB matrix, oxlint-parity, `quality-full.yml`)
+**do not run automatically on every WIP push.** They fire only when a PR is
+"promoted":
+
+- The PR is marked **ready-for-review** (out of draft), OR
+- The PR is labelled **`run-full-ci`**, OR
+- A maintainer manually triggers via `gh workflow run <name>.yml`, OR
+- Weekly Sunday cron (04:05 → 04:35 UTC, staggered) for drift detection.
+
+Each heavy workflow has a `gate` job that decides `run=true` / `run=false`.
+Downstream jobs `needs: gate` + `if: needs.gate.outputs.run == 'true'`. A
+skipped gate surfaces as a workflow-level "skipped" status, not a failing
+required check.
+
+Workflows that always auto-run on every PR push (T0 fast loop):
+
+| Workflow | Runtime | What it gates |
+|---|---|---|
+| `quality.yml` | ~30s | oxlint, markdown, lockfile, workflows, changelog |
+| `docs.yml` | ~45s | docs structure validation |
+| `a11y.yml` | ~60s | axe scan of route archetypes |
+| `changesets-pr.yml` | ~21s (Changeset present) | every PR has a changeset |
+
+### Triggering a full CI run on a draft PR
+
+```bash
+gh pr edit <PR-number> --add-label run-full-ci
+```
+
+Or via the GitHub UI: PR sidebar → Labels → `run-full-ci`. The label persists
+across pushes — subsequent commits re-run the full battery until you remove
+it. Drop the label or mark the PR ready-for-review when you're confident.
+
+---
+
 ## Secrets / variables
 
 | Name | Type | Purpose | Required? |

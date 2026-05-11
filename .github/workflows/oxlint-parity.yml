@@ -16,6 +16,7 @@ name: Oxlint Parity Gate
 on:
   pull_request:
     branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
@@ -30,6 +31,8 @@ on:
       - '.github/workflows/oxlint-parity.yml'
       - 'package.json'
   workflow_dispatch:
+  schedule:
+    - cron: "35 4 * * 0"
 
 concurrency:
   group: oxlint-parity-${{ github.ref }}
@@ -39,8 +42,35 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping oxlint parity gate."
+          fi
+
   static-audit:
     name: Audit + shim drift (no build required)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -63,6 +93,8 @@ jobs:
 
   runtime-and-parity:
     name: Runtime smoke + parity (requires dist build)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

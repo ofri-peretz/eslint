@@ -10,22 +10,21 @@ name: Storybook Tests
 # This is the per-component axe scan that complements the route-level scan
 # in `a11y.yml` — together they form Layers 1 and 4 of UX_PHILOSOPHY.md.
 #
-# Triggered only when @interlace/ui or apps/docs change (Storybook is
-# scoped to packages/ui; apps/docs consumes it). Not published anywhere —
-# CI-only gate. Static `storybook:build` artifact uploaded for inspection
-# when the run fails.
+# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
+# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
     paths:
       - 'packages/ui/**'
       - 'apps/docs/**'
       - '.github/workflows/storybook.yml'
-  push:
-    branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "10 4 * * 0"
 
 concurrency:
   group: storybook-${{ github.ref }}
@@ -35,13 +34,43 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping Storybook tests."
+          fi
+
   test:
     name: Storybook test-runner
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          playwright-cache: "true"
+          storybook-cache: "true"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
