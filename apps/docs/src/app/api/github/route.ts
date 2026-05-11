@@ -106,13 +106,24 @@ async function fetchGitHubContent(
   if (!isAllowedPath(path)) {
     return { success: false, error: 'Path not allowed' };
   }
-  const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
+  // Build the request URL via the URL constructor with the GitHub raw CDN as
+  // the base. The constructor normalizes any `..` segments inside `path` and
+  // — crucially for CodeQL's SSRF analysis — refuses to leave the base origin
+  // unless `path` is itself an absolute URL. The origin re-check below is
+  // belt-and-braces: if `path` ever smuggles an absolute URL through
+  // `isAllowedPath` (it shouldn't), the constructed `URL` would have a
+  // different `.origin` and we bail.
+  const base = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
+  const requestUrl = new URL(path, base);
+  if (requestUrl.origin !== 'https://raw.githubusercontent.com') {
+    return { success: false, error: 'Path not allowed' };
+  }
   const extension = path.split('.').pop() || 'txt';
   const contentType = CONTENT_TYPES[extension as keyof typeof CONTENT_TYPES] || CONTENT_TYPES.txt;
   const ttl = getTTLForPath(path);
-  
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(requestUrl, {
       next: { revalidate: ttl },
       headers: {
         'Accept': contentType.mimeType,
