@@ -26,7 +26,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +65,10 @@ function parseConfigSeverityMap(src) {
 
 function gitShow(ref, filePath) {
   try {
-    return execSync(`git show ${ref}:${filePath}`, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    // execFileSync with array args — no shell, no interpolation. Closes the
+    // argv → shell-string → git invocation dataflow (CodeQL:
+    // `js/indirect-command-line-injection`).
+    return execFileSync('git', ['show', `${ref}:${filePath}`], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   } catch {
     return '';
   }
@@ -74,7 +77,7 @@ function gitShow(ref, filePath) {
 function changedConfigFiles() {
   let diffOut;
   try {
-    diffOut = execSync(`git diff --name-only ${BASE_REF}...HEAD`, { cwd: REPO_ROOT, encoding: 'utf8' });
+    diffOut = execFileSync('git', ['diff', '--name-only', `${BASE_REF}...HEAD`], { cwd: REPO_ROOT, encoding: 'utf8' });
   } catch (err) {
     process.stderr.write(`promotion-gate: git diff failed (${err.message}). Are you running outside a PR? Use --base to override.\n`);
     return [];

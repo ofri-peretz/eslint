@@ -244,10 +244,15 @@ export function extractRuleMetadata(
   }
 
   // Clamp description and escape pipes so the markdown table doesn't split.
+  // Backslashes must be escaped BEFORE pipes — otherwise a literal `\` in the
+  // description gets re-interpreted as a markdown escape character (CodeQL:
+  // `js/incomplete-sanitization`).
   if (meta.description.length > 110) {
     meta.description = meta.description.slice(0, 107).trimEnd() + '…';
   }
-  meta.description = meta.description.replace(PIPE_ESCAPE_RE, '\\|');
+  meta.description = meta.description
+    .replace(/\\/g, '\\\\')
+    .replace(PIPE_ESCAPE_RE, '\\|');
 
   return meta;
 }
@@ -355,11 +360,19 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   const pluginPath = path.join(PACKAGES_DIR, entry.package);
   const readmePath = path.join(pluginPath, 'README.md');
 
-  if (!fs.existsSync(pluginPath)) {
-    return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'plugin path missing' };
-  }
-  if (!fs.existsSync(readmePath)) {
-    return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'README.md missing' };
+  // Read README via try/catch instead of existsSync precheck — closes the
+  // existsSync → readFileSync → writeFileSync TOCTOU window (CodeQL:
+  // `js/file-system-race`). If the directory itself is missing, the read
+  // throws ENOENT and we report that path explicitly.
+  let readme: string;
+  try {
+    readme = fs.readFileSync(readmePath, 'utf-8');
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') {
+      return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'README.md or plugin path missing' };
+    }
+    throw e;
   }
 
   // The README rule listing is a user-facing index of *documented* rules.
@@ -368,13 +381,16 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   // never advertises an undocumented rule. The drift validator separately
   // confirms every documented rule is also exported.
   const docsRulesDir = path.join(pluginPath, 'docs', 'rules');
-  const documentedNames = fs.existsSync(docsRulesDir)
-    ? fs
-        .readdirSync(docsRulesDir)
-        .filter((f) => f.endsWith('.md'))
-        .map((f) => f.replace(/\.md$/, ''))
-        .toSorted()
-    : [];
+  let documentedNames: string[] = [];
+  try {
+    documentedNames = fs
+      .readdirSync(docsRulesDir)
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''))
+      .toSorted();
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
   if (documentedNames.length === 0) {
     return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'no rules in docs/rules' };
   }
@@ -384,7 +400,6 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   );
 
   const table = renderRulesTable(rules, entry.slug, entry.pillar);
-  const readme = fs.readFileSync(readmePath, 'utf-8');
 
   let result: { content: string; modified: boolean };
   try {

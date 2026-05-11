@@ -371,14 +371,14 @@ allowLiterals = false,
       
       // AST-based validation detection (faster than getText + regex)
       const isValidationCall = (testNode: TSESTree.Node): boolean => {
-        // Handle negation: !path.startsWith(...)
-        // oxlint-disable-next-line no-underscore-dangle
-        let _isNegated = false;
-        if (testNode.type === AST_NODE_TYPES.UnaryExpression && 
+        // Handle negation: !path.startsWith(...). The negation flag was
+        // tracked here but never read afterwards (CodeQL:
+        // `js/useless-assignment-to-local`); current callers only need to
+        // know whether the call matches a validation idiom.
+        if (testNode.type === AST_NODE_TYPES.UnaryExpression &&
             testNode.operator === '!' &&
             testNode.argument.type === AST_NODE_TYPES.CallExpression) {
           testNode = testNode.argument;
-          _isNegated = true;
         }
         
         if (testNode.type !== AST_NODE_TYPES.CallExpression) {

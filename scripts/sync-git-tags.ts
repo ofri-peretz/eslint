@@ -14,7 +14,7 @@
  *   --commit SHA  Point tags to specific commit (default: HEAD)
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -89,7 +89,7 @@ function getPackageInfo(projectPath: string): PackageInfo | null {
 // Check if tag already exists
 function tagExists(tagName: string): boolean {
   try {
-    execSync(`git rev-parse "${tagName}"`, { stdio: 'ignore' });
+    execFileSync('git', ['rev-parse', tagName], { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -109,7 +109,10 @@ function createTag(tagName: string, commit: string, dryRun: boolean): void {
   }
 
   try {
-    execSync(`git tag -f "${tagName}" "${commit}"`, { stdio: 'inherit' });
+    // execFileSync with array args — no shell, no interpolation. Closes the
+    // argv → shell-string → git invocation dataflow (CodeQL:
+    // `js/indirect-command-line-injection`).
+    execFileSync('git', ['tag', '-f', tagName, commit], { stdio: 'inherit' });
     console.log(`  ✅ Created/updated tag: ${tagName}`);
   } catch (error) {
     console.error(`  ❌ Failed to create tag ${tagName}:`, error);
@@ -156,7 +159,7 @@ function main() {
   for (const pkg of packages) {
     const exists = tagExists(pkg.tagName);
     const currentTagCommit = exists
-      ? execSync(`git rev-parse "${pkg.tagName}"`, { encoding: 'utf-8' }).trim()
+      ? execFileSync('git', ['rev-parse', pkg.tagName], { encoding: 'utf-8' }).trim()
       : null;
 
     if (exists && currentTagCommit === commit) {

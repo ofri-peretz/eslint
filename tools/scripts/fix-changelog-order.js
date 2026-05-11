@@ -9,8 +9,16 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
 
 packages.forEach(pkg => {
     const changelogPath = path.join(packagesDir, pkg, 'CHANGELOG.md');
-    if (fs.existsSync(changelogPath)) {
-        const content = fs.readFileSync(changelogPath, 'utf8');
+    // Try/catch read closes the existsSync → readFileSync → writeFileSync
+    // TOCTOU window (CodeQL: `js/file-system-race`).
+    let content;
+    try {
+        content = fs.readFileSync(changelogPath, 'utf8');
+    } catch (e) {
+        if (e.code === 'ENOENT') return;
+        throw e;
+    }
+    {
         
         // If file already starts with # Changelog, it's likely fine (or at least cleaner)
         if (content.trim().startsWith('# Changelog')) {

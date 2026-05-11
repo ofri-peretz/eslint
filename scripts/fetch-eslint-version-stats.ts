@@ -82,12 +82,18 @@ async function fetchDownloads(pkg: string): Promise<NpmVersionsResponse> {
   return (await res.json()) as NpmVersionsResponse;
 }
 
+// Strict semver matcher used to gate any network-derived version string
+// before it flows into the report file. Closes CodeQL's `js/file-from-untrusted-data`
+// finding by giving the analyzer a structural sanitizer it recognizes.
+const SEMVER_RE = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+
 async function fetchLatest(pkg: string): Promise<string | null> {
   const url = `https://registry.npmjs.org/${encodeURIComponent(pkg)}/latest`;
   const res = await fetch(url);
   if (!res.ok) return null;
   const data = (await res.json()) as { version?: string };
-  return data.version ?? null;
+  const v = typeof data.version === 'string' ? data.version : null;
+  return v && SEMVER_RE.test(v) ? v : null;
 }
 
 function aggregate(downloads: Record<string, number>): {

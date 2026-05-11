@@ -54,13 +54,19 @@ console.log('');
 
 for (const entry of manifest.plugins) {
   const shimAbs = path.join(ROOT, entry.shim);
-  if (!fs.existsSync(shimAbs)) {
+  // Use require.resolve to detect missing shims — throws if not resolvable,
+  // letting us avoid an existsSync precheck that flows into the read/write
+  // of the manifest later (CodeQL: `js/file-system-race`).
+  let resolved: string;
+  try {
+    resolved = require.resolve(shimAbs);
+  } catch {
     failures.push(`${entry.short}: shim missing at ${entry.shim}`);
     continue;
   }
 
   // Drop any cached require for this shim so each run sees fresh state.
-  delete require.cache[require.resolve(shimAbs)];
+  delete require.cache[resolved];
 
   let plugin;
   try {

@@ -23,8 +23,9 @@
  *   --quiet                   suppress per-package log lines
  */
 
-import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { execFileSync, execSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -271,14 +272,37 @@ if (CLEANUP) {
 }
 
 if (CREATE_RELEASES) {
+  // Use a per-run random tempdir via `mkdtempSync` instead of a predictable
+  // `/tmp/notes-<tag>.md` path — closes CodeQL's `js/insecure-temporary-file`
+  // finding. The directory has 0700 permissions and a random suffix that an
+  // attacker can't predict.
+  const tmpDir = mkdtempSync(join(tmpdir(), 'reconcile-tags-'));
   for (const f of findings) {
     for (const ver of f.noRelease) {
       const tag = `${f.short}@${ver}`;
       const fullPath = join('packages', f.dir);
-      const notes = shOpt(`npx tsx scripts/extract-changelog.ts "${fullPath}" "${ver}" --fallback`);
-      const tmp = `/tmp/notes-${tag.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+      // Run via execFileSync (no shell). The original `shOpt` interpolated
+      // env-derived `fullPath` and `ver` into a shell string — CodeQL flagged
+      // it as `js/shell-command-injection-from-environment`.
+      let notes = '';
+      try {
+        notes = execFileSync(
+          'npx',
+          ['tsx', 'scripts/extract-changelog.ts', fullPath, ver, '--fallback'],
+          { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+        ).trim();
+      } catch { /* fall back to empty notes */ }
+      const tmp = join(tmpDir, `${tag.replace(/[^a-zA-Z0-9]/g, '_')}.md`);
       writeFileSync(tmp, notes);
-      const ok = shOk(`gh release create "${tag}" --title "${f.name}@${ver}" --notes-file "${tmp}" --latest=false`);
+      let ok = false;
+      try {
+        execFileSync(
+          'gh',
+          ['release', 'create', tag, '--title', `${f.name}@${ver}`, '--notes-file', tmp, '--latest=false'],
+          { stdio: ['pipe', 'pipe', 'pipe'] },
+        );
+        ok = true;
+      } catch { /* ok stays false */ }
       if (ok) {
         log(`  + GH Release: ${tag}`);
       } else {

@@ -164,7 +164,12 @@ function validateLink(
 
   // External links (http/https)
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    if (url.includes('github.com')) {
+    // Parse the URL and compare the hostname exactly, not via substring match.
+    // The previous `url.includes('github.com')` matched `evil-github.com`
+    // and `github.com.attacker.com` (CodeQL: `js/incomplete-url-substring-sanitization`).
+    let host = '';
+    try { host = new URL(url).hostname.toLowerCase(); } catch { /* malformed URL */ }
+    if (host === 'github.com' || host.endsWith('.github.com')) {
       const result = validateGitHubLink(url);
       if (!result.valid) {
         issues.push({

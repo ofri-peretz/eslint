@@ -23,7 +23,7 @@ const colors = {
   red: '\x1b[31m',
 };
 
-function log(msg, color = colors.reset) {
+function log(msg: string, color = colors.reset) {
   console.log(`${color}${msg}${colors.reset}`);
 }
 
@@ -31,12 +31,12 @@ function hr() {
   console.log('─'.repeat(75));
 }
 
-function runESLint(configFile, targetFile, iterations = 1) {
-  const times = [];
+function runESLint(configFile: string, targetFile: string, iterations = 1) {
+  const times: number[] = [];
   let output = '';
   let errorCount = 0;
   let warningCount = 0;
-  const rules = {};
+  const rules: Record<string, number> = {};
   
   for (let i = 0; i < iterations; i++) {
     const start = performance.now();
@@ -45,7 +45,7 @@ function runESLint(configFile, targetFile, iterations = 1) {
         `npx eslint --config ${configFile} ${targetFile} --format json 2>/dev/null`,
         { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
       );
-    } catch (e) {
+    } catch (e: any) {
       output = e.stdout || '';
     }
     const end = performance.now();
@@ -179,8 +179,9 @@ async function runFairBenchmark() {
     
     const diff = scCount - secCount;
     const diffStr = diff > 0 ? `+${diff}` : diff === 0 ? '=' : `${diff}`;
-    const color = diff > 0 ? colors.green : diff < 0 ? colors.red : colors.reset;
-    
+    // The `color` value was computed but never used downstream — the row
+    // log line below renders `diffStr` un-colored (CodeQL: `js/unused-local-variable`).
+
     const ruleName = secRule.replace('security/', '').substring(0, 40);
     console.log(`   │ ${ruleName.padEnd(41)} │ ${String(secCount).padStart(9)} │ ${String(scCount).padStart(9)} │ ${diffStr.padStart(11)} │`);
   }

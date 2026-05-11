@@ -28,7 +28,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -118,8 +118,13 @@ function shimBasename(packageName) {
 // Reuse the audit script for rule discovery + classification so the manifest
 // stays in lockstep with what the CI gate measures.
 function loadPortabilityData() {
-  const out = execSync(
-    `npx tsx ${path.join(__dirname, 'audit-rule-portability.ts')} --json`,
+  // execFileSync with array args — no shell, no interpolation. The
+  // `__dirname`-derived absolute path is now passed as a discrete arg, not
+  // interpolated into a shell string (CodeQL:
+  // `js/shell-command-injection-from-environment`).
+  const out = execFileSync(
+    'npx',
+    ['tsx', path.join(__dirname, 'audit-rule-portability.ts'), '--json'],
     { encoding: 'utf-8', maxBuffer: 32 * 1024 * 1024 },
   );
   return JSON.parse(out);

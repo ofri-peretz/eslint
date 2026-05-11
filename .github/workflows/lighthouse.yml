@@ -111,7 +111,7 @@ jobs:
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: lhci autorun --config=./lighthouserc.json
         env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Annotate PR when budgets breach (advisory)
         if: github.event_name == 'pull_request' && steps.lhci.outcome == 'failure'

@@ -17,7 +17,7 @@
  *   tsx scripts/coverage-gap-analysis.ts --ci --threshold 90 # CI gate (exit 1 if below)
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -35,19 +35,29 @@ const threshold = args.includes('--threshold') ? parseInt(args[args.indexOf('--t
 
 const plugins = pluginFilter ? [pluginFilter] : SECURITY_PLUGINS;
 
+// Strict plugin-name validator. Used at every entry point so downstream
+// `execFileSync` invocations only see allow-listed identifiers, satisfying
+// CodeQL's `js/indirect-command-line-injection` query.
+const SAFE_PLUGIN_NAME = /^[a-z][a-z0-9-]*$/;
+
 function runCoverage(pluginName) {
+  if (!SAFE_PLUGIN_NAME.test(pluginName)) {
+    throw new Error(`unsafe plugin name: ${pluginName}`);
+  }
   const pkg = `eslint-plugin-${pluginName}`;
   const coverageDir = `packages/${pkg}/coverage`;
   const configPath = `packages/${pkg}/vitest.config.mts`;
 
   try {
-    // Clean old coverage
-    execSync(`rm -rf ${coverageDir}`, { stdio: 'pipe' });
+    // Use fs.rmSync (no shell) instead of `rm -rf`, and execFileSync (no shell)
+    // for vitest — closes the argv → shell command dataflow.
+    fs.rmSync(coverageDir, { recursive: true, force: true });
 
     // Run vitest directly with JSON coverage reporter for deterministic flag handling.
-    execSync(
-      `npx vitest run --config ${configPath} --coverage --coverage.reporter=json 2>/dev/null`,
-      { stdio: 'pipe', cwd: process.cwd(), timeout: 120000 }
+    execFileSync(
+      'npx',
+      ['vitest', 'run', '--config', configPath, '--coverage', '--coverage.reporter=json'],
+      { stdio: ['ignore', 'pipe', 'ignore'], cwd: process.cwd(), timeout: 120000 },
     );
 
     const jsonPath = path.join(coverageDir, 'coverage-final.json');
@@ -147,8 +157,9 @@ function classifyGap(lineContent, branchType, armIndex) {
     return { type: 'FP_RISK', reason: 'Else-branch untested — safe alternative may be flagged' };
   }
 
-  // Untested conditional in a guard
-  if (lower.includes('!==') || lower.includes('!==') || lower.includes('!')) {
+  // Untested conditional in a guard. Original had a duplicate `!==` check
+  // (CodeQL: `js/identical-operands`); the second slot was meant to be `!=`.
+  if (lower.includes('!==') || lower.includes('!=') || lower.includes('!')) {
     return { type: 'FP_RISK', reason: 'Negation guard untested — may over-match' };
   }
 

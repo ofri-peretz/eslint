@@ -244,8 +244,18 @@ function parseStringLiteral(literal) {
   if (!literal) return '';
   const quote = literal[0];
   if (quote === '`') {
-    // Template literal — strip backticks and unescape
-    return literal.slice(1, -1).replace(/\\n/g, '\n').replace(/\\\\/g, '\\').replace(/\\`/g, '`');
+    // Template literal — strip backticks and unescape in a single pass so
+    // `\\` is never re-interpreted as the start of another escape sequence.
+    // The prior chain `.replace(/\\n/g, '\n').replace(/\\\\/g, '\\')...` was
+    // a double-unescape: a literal `\\n` in the input lost a backslash on the
+    // first pass before the `\\\\` rule could see it (CodeQL:
+    // `js/double-escaping`).
+    return literal.slice(1, -1).replace(/\\(.)/g, (_, c) => {
+      if (c === 'n') return '\n';
+      if (c === '`') return '`';
+      if (c === '\\') return '\\';
+      return c;
+    });
   }
   // Single or double quoted
   return literal

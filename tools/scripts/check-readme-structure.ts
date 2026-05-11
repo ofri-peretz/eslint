@@ -52,13 +52,14 @@ function checkPlugin(pkg: string): Violation | null {
   const content = fs.readFileSync(readmePath, 'utf8');
   const reasons: string[] = [];
 
-  // 1. Required sections in canonical order.
+  // 1. Required sections in canonical order. The prior code assigned
+  // `cursor = -1` before `break`, but the cursor was never read after the
+  // loop (CodeQL: `js/useless-assignment-to-local`).
   let cursor = 0;
   for (const header of REQUIRED_ORDER) {
     const idx = content.indexOf(header, cursor);
     if (idx === -1) {
       reasons.push(`missing or out-of-order section: \`${header}\``);
-      cursor = -1;
       break;
     }
     cursor = idx + header.length;
@@ -89,7 +90,7 @@ function checkPlugin(pkg: string): Violation | null {
     '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
   const ruleTableRegex =
     /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
-  const ruleTableMatches = [...content.matchAll(ruleTableRegex)];
+  const ruleTableMatches = Array.from(content.matchAll(ruleTableRegex));
   if (ruleTableMatches.length === 0) {
     reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);
   } else if (ruleTableMatches.length > 1) {
@@ -132,9 +133,9 @@ function checkPlugin(pkg: string): Violation | null {
   }
 
   // 8. Stray AUTO-GENERATED markers outside `## Rules` body.
-  const autoGenMarkers = [
-    ...content.matchAll(/<!-- AUTO-GENERATED:RULES_TABLE:(START|END)[^\n]*-->/g),
-  ];
+  const autoGenMarkers = Array.from(
+    content.matchAll(/<!-- AUTO-GENERATED:RULES_TABLE:(START|END)[^\n]*-->/g)
+  );
   if (autoGenMarkers.length > 0) {
     if (rulesHeaderIdx === -1) {
       reasons.push('AUTO-GENERATED markers present but `## Rules` is missing');

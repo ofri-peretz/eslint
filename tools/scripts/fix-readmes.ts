@@ -185,10 +185,18 @@ function main(): void {
 
 function processPackage(pkg: string): void {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
-    if (!fs.existsSync(readmePath)) return;
+    // Try/catch read closes the existsSync → readFileSync → writeFileSync
+    // TOCTOU window the analyzer flagged on the write below (CodeQL:
+    // `js/file-system-race`).
+    let content: string;
+    try {
+        content = fs.readFileSync(readmePath, 'utf8');
+    } catch (e) {
+        if ((e as NodeJS.ErrnoException).code === 'ENOENT') return;
+        throw e;
+    }
 
     console.log(`Processing ${pkg}...`);
-    const content = fs.readFileSync(readmePath, 'utf8');
     const lines = content.split('\n');
     const pluginName = pkg.replace('eslint-plugin-', '');
     const shortDesc = DESCRIPTIONS[pkg];

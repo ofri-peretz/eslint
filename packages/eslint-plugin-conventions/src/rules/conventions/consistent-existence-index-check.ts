@@ -114,16 +114,19 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
     return {
       // Check for hasOwnProperty calls
       CallExpression(node: TSESTree.CallExpression) {
-      // Direct hasOwnProperty calls: obj.hasOwnProperty(prop)
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier' &&
-        node.callee.property.name === 'hasOwnProperty' &&
-        node.arguments.length === 1 &&
-        preferred !== 'hasOwnProperty'
-      ) {
-        reportInconsistentCheck(node, 'hasOwnProperty', node.callee.object, node.arguments[0]);
-      }
+        // Direct hasOwnProperty calls: obj.hasOwnProperty(prop). Reindented
+        // to match the sibling `if` blocks below — the original 6-space
+        // indent here suggested this branch was at a different scope level
+        // (CodeQL: `js/misleading-indentation-after-control-statement`).
+        if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.property.type === 'Identifier' &&
+          node.callee.property.name === 'hasOwnProperty' &&
+          node.arguments.length === 1 &&
+          preferred !== 'hasOwnProperty'
+        ) {
+          reportInconsistentCheck(node, 'hasOwnProperty', node.callee.object, node.arguments[0]);
+        }
 
         // Object.prototype.hasOwnProperty.call(obj, prop)
         if (
