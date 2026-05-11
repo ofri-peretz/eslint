@@ -9,7 +9,7 @@
 - **0** FN findings (rule silent on doc-labelled vulnerable example)
 - **0** FP findings (rule fired on doc-labelled safe example)
 - 0 snippets failed to parse · 0 plugins failed to load
-- Duration: 0.9 s
+- Duration: 2.3 s
 
 ## Rules with the most FN findings (rule misses its own bad examples)
 

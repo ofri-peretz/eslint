@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-11T06:42:36.859Z",
+  "generatedAt": "2026-05-11T07:02:49.863Z",
   "totals": {
     "plugins": 20,
     "rulesScanned": 399,
@@ -10,7 +10,7 @@
     "fps": 0,
     "parseErrors": 0,
     "loadErrors": 0,
-    "durationMs": 889
+    "durationMs": 2339
   },
   "perRule": [
     {

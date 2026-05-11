@@ -94,6 +94,28 @@ Ordered by impact-per-effort. Each item names the rule and the concrete conditio
 
 Every audit P0 item landed in iterations 1–3.
 
+### Closed 2026-05-11 (docs-site test drift + 4 FP rules)
+
+Continued the precision pass. After `npm run build` produced a complete dist tree, several latent test failures surfaced — all were `process.cwd()`-rooted relative-path bugs in docs tests (worked under `vitest` from `apps/docs` but broke under `turbo run test` which uses workspace-root cwd). All resolved by rooting paths from `import.meta.url`. Two source-of-truth drifts (`apps/docs/src/lib/plugins.ts` missing `crypto`; MDX shells missing for that plugin) also closed.
+
+| Item | Result | How |
+| :--- | :--- | :--- |
+| `apps/docs/src/lib/plugins.ts` missing `crypto` registry entry | fixed | Added `slug: 'crypto', package: 'eslint-plugin-crypto'` row to bring the canonical registry to 20 entries (matches `packages/` count); updated `// === Security pillar (11) ===` comment. |
+| Crypto plugin missing docs shells (`index.mdx`, `changelog.mdx`, `meta.json`) | fixed | Created the three sibling-conformant template files under `apps/docs/content/docs/security/plugin-crypto/`; added `plugin-crypto` to the security pillar's `meta.json` pages list. |
+| 19 plugin READMEs missing AUTO-GENERATED:RULES_TABLE markers | fixed | Ran `tsx scripts/sync-readme-rules.ts`; modified 19/20 READMEs. |
+| 13 plugins missing MDX rule shells | fixed | Ran `tsx apps/docs/scripts/sync-rules-docs.ts`. |
+| 343 MDX rule shells with stub `description` frontmatter | fixed | Ran `node apps/docs/scripts/refresh-rule-descriptions.mjs` — pulls `meta.docs.description` from each rule's source. |
+| 343 MDX rule shells with orphan dual-frontmatter blocks | fixed | Ran `node apps/docs/scripts/fix-orphan-frontmatter.mjs`. |
+| 264 MDX rule shells with `description` duplicated as body paragraph | fixed | Wrote `apps/docs/scripts/dedupe-body-description.mjs` — finds the first body paragraph that matches the frontmatter `description` and removes it (fumadocs already renders the description under the H1). |
+| 29 MDX rule shells with `[markdown link](url)` in frontmatter `description` | fixed | Wrote `apps/docs/scripts/strip-markdown-from-description.mjs` — strips `[text](url)` → `text` and `<url>` from the description string (meta tags render markdown as literal text). |
+| 7 mermaid `-->\|label\| Node[text]` arrows corrupted into `-->"\|label\| Node[text"]` | fixed at both ends | Bug was in `sync-rules-docs.ts:188-196` node-quoting regex — the asymmetric-node pattern `/([A-Z0-9_-]+)>([^\]"]+)\]/g` mistakenly matched `App-->...` because `[A-Z0-9_-]+` allows hyphens. Added negative lookbehind `(?<![-=.])` to keep the regex from matching the head of an arrow. Repaired the 7 already-corrupted MDX files by hand. |
+| `apps/docs/src/__tests__/mdx-frontmatter.test.ts` 17 ENOENT failures under turbo | fixed | Resolved `CONTENT_ROOT` and `CONTENT_ROOT_ALL` from `import.meta.url` instead of `process.cwd()`. |
+| `apps/docs/src/__tests__/rule-docs-mdx-compatibility.test.ts` empty `ruleDocFiles` under turbo | fixed | Same fix: `PACKAGES_ROOT` now resolves relative to the test file, not `cwd`. |
+| `apps/docs/tests/mermaid-syntax.test.ts` empty file glob under turbo | fixed | Replaced relative globs with `cwd: ROOT/DOCS_DIR` + `absolute: true` so the test works regardless of cwd. |
+| `.markdownlint-cli2.jsonc` flagged 3 errors in `apps/docs/test-results/*.md` | fixed | Added `**/test-results`, `**/playwright-report` to `ignores` — these are auto-generated playwright artifacts. |
+| `cicd-impact/eslint10-migration-runbook.md:172` markdown table column-count error | fixed | Escaped literal `\|` inside `string \| undefined` cell. |
+| 4 oxlint errors: unused `os` import, unused `Severity` type, dead `CycleInfo` interface, control-char regex | fixed | Removed unused imports; renamed `CycleInfo` → `_CycleInfo` to follow underscore-prefixed-unused convention; replaced `\x1b` literal with `String.fromCharCode(27)` constant. |
+
 ### Closed 2026-05-11 (FP precision pass — Quality fleet continued)
 
 Continued the Quality-fleet precision pass from 2026-05-10. Tackled `consistent-function-scoping` (8 FPs), `require-network-timeout` (5 FPs), and `no-missing-error-context` (2 FPs) — all reduced to zero or near-zero on the clean fixture without breaking any existing tests.
