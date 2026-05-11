@@ -69,7 +69,7 @@ function getAllSourceFiles(dir: string, extensions: string[] = ['.tsx', '.jsx', 
  * Extract tweet IDs from file content
  */
 function extractTweetIds(content: string) {
-  const ids = new Set();
+  const ids = new Set<string>();
   
   for (const pattern of TWEET_PATTERNS) {
     pattern.lastIndex = 0;
@@ -275,7 +275,7 @@ async function main() {
         }
       }
     } catch (error) {
-      console.error(`  ✗ ${id}: API error - ${error.message}`);
+      console.error(`  ✗ ${id}: API error - ${(error as Error).message}`);
       failed++;
       
       // Keep old cached version if available

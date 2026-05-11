@@ -8,7 +8,15 @@ import { cn } from '../lib/cn.js';
 
 const Select = BaseSelect.Root;
 const SelectGroup = BaseSelect.Group;
-const SelectValue = BaseSelect.Value;
+function SelectValue({
+  placeholder,
+  ...props
+}: React.ComponentProps<typeof BaseSelect.Value> & {
+  placeholder?: React.ReactNode;
+}) {
+  const Component = BaseSelect.Value as any;
+  return <Component placeholder={placeholder} {...props} />;
+}
 const SelectPortal = BaseSelect.Portal;
 
 function SelectTrigger({

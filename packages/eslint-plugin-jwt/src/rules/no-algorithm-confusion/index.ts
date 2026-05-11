@@ -131,7 +131,7 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
     const symmetricAlgSet = new Set(
       options.symmetricAlgorithms ?? ['HS256', 'HS384', 'HS512']
     );
-    const sourceCode = context.sourceCode ?? context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if a node looks like a public key reference

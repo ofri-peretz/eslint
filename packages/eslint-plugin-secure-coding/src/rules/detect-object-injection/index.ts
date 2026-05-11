@@ -737,7 +737,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * counter is by construction numeric, so the access is safe.
      */
     const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
-      const scope = (context.sourceCode ?? context.sourceCode).getScope(node);
+      const scope = context.sourceCode.getScope(node);
       const variable = scope.references.find((r) => r.identifier === node)?.resolved;
       if (!variable || variable.defs.length === 0) return false;
       const def = variable.defs[0];

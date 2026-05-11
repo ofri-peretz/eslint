@@ -11,9 +11,10 @@
     "importHelpers": true,
     "target": "ES2022",
     "lib": [
-      "ES2023",
+      "ESNext",
       "dom"
     ],
+    "downlevelIteration": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "stripInternal": true,

@@ -20,8 +20,8 @@ export const Default: Story = {
   render: () => (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="outline">Hover or focus me</Button>
+        <TooltipTrigger render={<Button variant="outline" />}>
+          Hover or focus me
         </TooltipTrigger>
         <TooltipContent>Sort direction (asc/desc)</TooltipContent>
       </Tooltip>

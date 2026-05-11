@@ -142,11 +142,17 @@ function cmdAudit(args) {
 function cmdInit(args) {
   const force = args.includes('--force');
   const target = path.join(process.cwd(), 'eslint.config.mjs');
-  if (fs.existsSync(target) && !force) {
-    console.error(`interlace init: ${target} already exists. Use --force to overwrite.`);
-    process.exit(1);
+  // Single atomic write: 'wx' fails if the file exists (no TOCTOU window
+  // between an existsSync probe and the write); 'w' overwrites on --force.
+  try {
+    fs.writeFileSync(target, STARTER_CONFIG, { encoding: 'utf8', flag: force ? 'w' : 'wx' });
+  } catch (err) {
+    if (err && err.code === 'EEXIST') {
+      console.error(`interlace init: ${target} already exists. Use --force to overwrite.`);
+      process.exit(1);
+    }
+    throw err;
   }
-  fs.writeFileSync(target, STARTER_CONFIG, 'utf8');
   console.log(`interlace init: wrote ${path.relative(process.cwd(), target)}`);
   console.log('');
   console.log('Next:  interlace audit');
@@ -307,7 +313,7 @@ function main() {
     case 'audit':  return cmdAudit(rest);
     case 'init':   return cmdInit(rest);
     case 'bench':  return cmdBench(rest);
-    case 'mcp':    return cmdMcp(rest);
+    case 'mcp':    return cmdMcp();
     case 'doctor': return cmdDoctor(rest);
     default:
       console.error(`interlace: unknown command "${sub}". Try \`interlace --help\`.`);

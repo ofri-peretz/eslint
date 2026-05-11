@@ -126,7 +126,9 @@ async function main() {
     // Print tag summary
     const allTags = new Set(processedArticles.flatMap(a => a.tag_list));
     console.log(`🏷️  Unique tags: ${allTags.size}`);
-    console.log(`   ${[...allTags].sort().join(', ')}`);
+    const allTagsList: string[] = [];
+    allTags.forEach(tag => allTagsList.push(tag));
+    console.log(`   ${allTagsList.sort().join(', ')}`);
     
   } catch (error) {
     console.error('❌ Error fetching articles:', error);

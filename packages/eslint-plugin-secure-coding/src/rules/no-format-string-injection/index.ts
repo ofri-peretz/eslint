@@ -670,7 +670,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         let templateCurrent: TSESTree.Node | undefined = node;
         let isFormatString = false;
 
-        while (templateCurrent && !isFormatString) {
+        while (templateCurrent) {
           if (templateCurrent.type === 'CallExpression' && isFormatFunctionCall(templateCurrent)) {
             const args = templateCurrent.arguments;
             if (args.length > 0 && args[0] === node) {

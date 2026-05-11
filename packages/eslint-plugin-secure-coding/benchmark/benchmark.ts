@@ -15,8 +15,6 @@
 
 import { execSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
-import fs from 'node:fs';
-import path from 'node:path';
 
 const ITERATIONS = 5;
 const TEST_FILES = {
@@ -35,7 +33,7 @@ const colors = {
   red: '\x1b[31m',
 };
 
-function log(msg, color = colors.reset) {
+function log(msg: string, color = colors.reset) {
   console.log(`${color}${msg}${colors.reset}`);
 }
 
@@ -46,7 +44,7 @@ function hr() {
 /**
  * Run ESLint with a specific config and measure time
  */
-function runESLint(configFile, targetFile, iterations = 1) {
+function runESLint(configFile: string, targetFile: string, iterations = 1) {
   const times = [];
   let output = '';
   let errorCount = 0;
@@ -61,7 +59,7 @@ function runESLint(configFile, targetFile, iterations = 1) {
       );
     } catch (e) {
       // ESLint exits with error code when it finds issues
-      output = e.stdout || '';
+      output = (e as any).stdout || '';
     }
     const end = performance.now();
     times.push(end - start);
@@ -96,7 +94,7 @@ function runESLint(configFile, targetFile, iterations = 1) {
 /**
  * Get detailed rule breakdown
  */
-function getDetailedResults(configFile, targetFile) {
+function getDetailedResults(configFile: string, targetFile: string) {
   let output = '';
   try {
     output = execSync(
@@ -104,10 +102,10 @@ function getDetailedResults(configFile, targetFile) {
       { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
     );
   } catch (e) {
-    output = e.stdout || '';
+    output = (e as any).stdout || '';
   }
   
-  const ruleBreakdown = {};
+  const ruleBreakdown: Record<string, number> = {};
   try {
     const results = JSON.parse(output);
     if (results && results[0] && results[0].messages) {
@@ -202,7 +200,7 @@ async function runBenchmark() {
   
   // oxlint-disable-next-line no-array-sort
   log('\n   eslint-plugin-security rules triggered:', colors.yellow);
-  Object.entries(secJSRules).toSorted((a, b) => b[1] - a[1]).forEach(([rule, count]) => {
+  Object.entries(secJSRules).sort((a, b) => b[1] - a[1]).forEach(([rule, count]) => {
     log(`      • ${rule}: ${count} issues`, colors.reset);
   });
   
