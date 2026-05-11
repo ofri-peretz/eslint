@@ -30,10 +30,10 @@
     "@interlace/ui": "*",
     "@tailwindcss/postcss": "^4.2.4",
     "clsx": "^2.1.1",
-    "fumadocs-core": "^16.8.7",
-    "fumadocs-mdx": "^14.3.2",
-    "fumadocs-ui": "^16.8.7",
-    "mermaid": "^11.14.0",
+    "fumadocs-core": "^16.8.9",
+    "fumadocs-mdx": "^15.0.2",
+    "fumadocs-ui": "^16.8.9",
+    "mermaid": "^11.15.0",
     "motion": "^12.29.2",
     "next": "^16.2.4",
     "radix-ui": "^1.4.3",
@@ -47,7 +47,7 @@
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.59.1",
     "@types/mdx": "^2.0.13",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "axe-core": "^4.11.4",
     "vitest": "^2.1.0"
   }
