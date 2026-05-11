@@ -11,7 +11,7 @@ Scripts scoped specifically to the **changelog and per-package README workflow**
 | [`check-readme-structure.ts`](./check-readme-structure.ts) | Audit per-package README structure for consistency |
 | [`fix-changelog-format.js`](./fix-changelog-format.js) | Patch CHANGELOG entries to the standard format |
 | [`fix-changelog-order.js`](./fix-changelog-order.js) | Re-order CHANGELOG entries chronologically |
-| [`fix-readmes.js`](./fix-readmes.js) | Bulk patches for per-package READMEs |
+| [`fix-readmes.ts`](./fix-readmes.ts) | Bulk patches for per-package READMEs |
 | [`update-changelogs.js`](./update-changelogs.js) | Refresh CHANGELOGs from conventional-commits |
 | [`revert-changelogs.js`](./revert-changelogs.js) | Revert a CHANGELOG batch (rollback for `update-changelogs.js`) |
 

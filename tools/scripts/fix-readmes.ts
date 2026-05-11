@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const packagesDir = path.join(process.cwd(), 'packages');
 const docsDir = path.join(process.cwd(), 'apps/docs/content/docs');
@@ -11,7 +11,7 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
     .filter(name => name.startsWith('eslint-plugin-'));
 
 // Map of short specific descriptions for the Plugin itself
-const DESCRIPTIONS = {
+const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
     'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
@@ -35,7 +35,7 @@ const DESCRIPTIONS = {
 };
 
 // CVSS fallback map
-const CVSS_MAP = {
+const CVSS_MAP: Record<string, string> = {
     'no-insecure-rsa-padding': '7.4',
     'no-cryptojs-weak-random': '5.3',
     'require-secure-pbkdf2-digest': '9.1',
@@ -92,7 +92,7 @@ const CATEGORIES = {
 /**
  * Find the documentation path for a plugin
  */
-function findDocsPath(pluginName) {
+function findDocsPath(pluginName: string): string {
     const name = pluginName.replace('eslint-plugin-', '');
     // Check known categories
     const categories = ['security', 'quality'];
@@ -113,7 +113,7 @@ function findDocsPath(pluginName) {
 /**
  * Get description from MDX doc
  */
-function getMdxDescription(docsSubPath, ruleName) {
+function getMdxDescription(docsSubPath: string, ruleName: string): string {
     const mdxPath = path.join(docsDir, docsSubPath, 'rules', `${ruleName}.mdx`);
     if (fs.existsSync(mdxPath)) {
         const content = fs.readFileSync(mdxPath, 'utf8');
@@ -169,6 +169,7 @@ packages.forEach(pkg => {
              
              // Flags
              const flags = {
+                 aiAnalyzed: cells.includes('🧠'),
                  recommended: cells.includes('💼'),
                  warn: cells.includes('⚠️'),
                  fixable: cells.includes('🔧'),
@@ -215,8 +216,8 @@ packages.forEach(pkg => {
         '## Command Execution'
     ];
 
-    const customSections = [];
-    let currentCustomSection = null;
+    const customSections: { header: string; content: string[] }[] = [];
+    let currentCustomSection: { header: string; content: string[] } | null = null;
     let capture = false;
 
     lines.forEach(line => {
@@ -240,7 +241,7 @@ packages.forEach(pkg => {
     });
 
     // --- 4. RECONSTRUCT CONTENT ---
-    const output = [];
+    const output: string[] = [];
 
     // Header & Logo
     output.push('<p align="center">');
@@ -313,14 +314,15 @@ packages.forEach(pkg => {
         output.push('');
         output.push('| Icon | Description |');
         output.push('| :---: | :--- |');
+        output.push('| 🧠 | **AI-Analyzed**: This rule has been analyzed by AI and has optimized error messages. |');
         output.push('| 💼 | **Recommended**: Included in the recommended preset. |');
-        output.push('| ⚠️ | **Warns**: Set towarn in recommended preset. |');
+        output.push('| ⚠️ | **Warns**: Set to warn in recommended preset. |');
         output.push('| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |');
         output.push('| 💡 | **Suggestions**: Providing code suggestions in IDE. |');
         output.push('| 🚫 | **Deprecated**: This rule is deprecated. |');
         output.push('');
 
-        const generateRow = (ruleName) => {
+        const generateRow = (ruleName: string) => {
             const meta = ruleMetadata[ruleName] || {};
             const desc = getMdxDescription(docsSubPath, ruleName) || `Enforce ${ruleName.replace(/-/g, ' ')}`;
             const link = `[${ruleName}](${docUrl}/rules/${ruleName})`;
@@ -330,11 +332,11 @@ packages.forEach(pkg => {
             const owasp = meta.owasp || '';
             const cvss = meta.cvss || CVSS_MAP[ruleName] || '';
             
-            const has = (key) => (meta.flags && meta.flags[key]) ? ({
-                recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
-            })[key] : '';
+            const has = (key: string) => (meta.flags && meta.flags[key]) ? ({
+                aiAnalyzed: '🧠', recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
+            })[key as keyof typeof meta.flags] : '';
 
-            return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
+            return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${has('aiAnalyzed')} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
         };
 
         const hasCategories = CATEGORIES[pkg];
@@ -347,8 +349,8 @@ packages.forEach(pkg => {
                 if (rulesInCat.length > 0) {
                     output.push(`### ${catName}`);
                     output.push('');
-                    output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
-                    output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+                    output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+                    output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
                     rulesInCat.forEach(r => output.push(generateRow(r)));
                     output.push('');
                 }
@@ -360,15 +362,15 @@ packages.forEach(pkg => {
             if (leftover.length > 0) {
                 output.push('### Other Rules');
                 output.push('');
-                output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
-                output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+                output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+                output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
                 leftover.forEach(r => output.push(generateRow(r)));
                 output.push('');
             }
         } else {
             // Single Table
-            output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
-            output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+            output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+            output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
             realRules.sort().forEach(r => output.push(generateRow(r)));
             output.push('');
         }

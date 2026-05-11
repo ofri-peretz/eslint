@@ -51,66 +51,9 @@ npm install eslint-plugin-import-next --save-dev
 | `warnings`          | Matches eslint-plugin-import warnings preset     |
 
 ## 🔄 Parity with `eslint-plugin-import`
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [consistent-type-specifier-style](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/consistent-type-specifier-style) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/default) |  | A00:2021 |  |  | 🟡 | 💼 |  |  |  |  |
-| [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
-| [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named) |  | A00:2021 |  |  | 🟡 | 💼 |  |  |  |  |
-| [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace) |  | A00:2021 |  |  | 🟡 |  | ⚠️ |  |  |  |
-| [newline-after-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/newline-after-import) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-absolute-path](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-absolute-path) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-amd](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-amd) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-anonymous-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-anonymous-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-barrel-file](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-file) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-barrel-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-commonjs](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-commonjs) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-cross-domain-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cross-domain-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-cycle](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle) |  | A05:2021 |  |  | 🟢 | 💼 |  |  |  |  |
-| [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated) |  | A09:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-import-module-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-import-module-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-internal-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-internal-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-legacy-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-legacy-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-mutable-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-named-as-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-named-as-default-member](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default-member) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [no-named-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-default) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-named-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-namespace) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-nodejs-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-nodejs-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-relative-packages](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-packages) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-relative-parent-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-parent-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-restricted-paths](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-restricted-paths) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-self-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-self-import) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
-| [no-unassigned-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unassigned-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved) |  | A03:2021 |  |  | 🟢 | 💼 |  |  |  |  |
-| [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/order) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
-| [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [prefer-modern-api](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-modern-api) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [prefer-node-protocol](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-node-protocol) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [prefer-tree-shakeable-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-tree-shakeable-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [require-import-approval](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/require-import-approval) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-| [unambiguous](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/unambiguous) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
+| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
 
 ## 📦 Compatibility
 | Package | Version |
@@ -126,69 +69,70 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 
 | Icon | Description |
 | :---: | :--- |
+| 🧠 | **AI-Analyzed**: This rule has been analyzed by AI and has optimized error messages. |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [consistent-type-specifier-style](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/consistent-type-specifier-style) |  |  |  | Enforce or ban the use of inline type-only markers for named imports |  |  |  |  |  |
-| [default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/default) |  |  |  | Ensure a default export is present, given a default import |  |  |  |  |  |
-| [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname) |  |  |  | Enforce a leading comment with the webpackChunkName for dynamic imports |  |  |  |  |  |
-| [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction) |  |  |  | Ensures dependencies flow in the correct architectural direction |  |  |  |  |  |
-| [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order) |  |  |  | Enforces a specific order for import statements |  |  |  |  |  |
-| [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries) |  |  |  | Prevent unauthorized cross-team imports in large codebases |  |  |  |  |  |
-| [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export) |  |  |  | Forbid any invalid exports, i.e. re-export of the same name |  |  |  |  |  |
-| [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last) |  |  |  | Ensure all exports appear after other statements |  |  |  |  |  |
-| [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions) |  |  |  | Ensure consistent use of file extensions in imports |  |  |  |  |  |
-| [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first) |  |  |  | Ensure all imports appear before other statements |  |  |  |  |  |
-| [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports) |  |  |  | Prefer named exports to be grouped together in a single export declaration |  |  |  |  |  |
-| [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies) |  |  |  | Enforce the maximum number of dependencies a module can have |  |  |  |  |  |
-| [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named) |  |  |  | Ensure named imports correspond to a named export in the remote file |  |  |  |  |  |
-| [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace) |  |  |  | Ensure imported namespaces contain dereferenced properties as they are dereferenced |  |  |  |  |  |
-| [newline-after-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/newline-after-import) |  |  |  | Enforce a newline after import statements |  |  |  |  |  |
-| [no-absolute-path](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-absolute-path) |  |  |  | Forbid import of modules using absolute paths |  |  |  |  |  |
-| [no-amd](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-amd) |  |  |  | Prevents AMD require/define calls |  |  |  |  |  |
-| [no-anonymous-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-anonymous-default-export) |  |  |  | Forbid anonymous values as default exports |  |  |  |  |  |
-| [no-barrel-file](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-file) |  |  |  | Disallow barrel files that harm build performance and tree-shaking efficiency |  |  |  |  |  |
-| [no-barrel-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-import) |  |  |  | Disallow imports from barrel files to improve build performance and tree-shaking |  |  |  |  |  |
-| [no-commonjs](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-commonjs) |  |  |  | Prevents CommonJS require/module.exports |  |  |  |  |  |
-| [no-cross-domain-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cross-domain-imports) |  |  |  | Prevents imports across domain/feature boundaries |  |  |  |  |  |
-| [no-cycle](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle) |  |  |  | Detect circular dependencies that cause bundle memory bloat and initialization issues |  |  |  |  |  |
-| [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export) |  |  |  | Prevents default exports |  |  |  |  |  |
-| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated) |  |  |  | Forbid imported names marked with @deprecated documentation tag |  |  |  |  |  |
-| [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates) |  |  |  | Reports duplicate imports |  |  |  |  |  |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require) |  |  |  | Forbid require() calls with expressions |  |  |  |  |  |
-| [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks) |  |  |  | Forbid empty named import blocks |  |  |  |  |  |
-| [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies) |  |  |  | Forbid the use of extraneous packages not listed in package.json |  |  |  |  |  |
-| [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import) |  |  |  | Disallow full package imports from known large packages that prevent tree-shaking |  |  |  |  |  |
-| [no-import-module-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-import-module-exports) |  |  |  | Forbid import statements with CommonJS module.exports |  |  |  |  |  |
-| [no-internal-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-internal-modules) |  |  |  | Forbid importing the submodules of other modules |  |  |  |  |  |
-| [no-legacy-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-legacy-imports) |  |  |  | Detect imports from deprecated internal paths and suggest alternatives |  |  |  |  |  |
-| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-mutable-exports) |  |  |  | Forbid the use of mutable exports with `var` or `let` |  |  |  |  |  |
-| [no-named-as-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default) |  |  |  | Forbid use of exported name as identifier of default export |  |  |  |  |  |
-| [no-named-as-default-member](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default-member) |  |  |  | Forbid use of exported name as property of default export |  |  |  |  |  |
-| [no-named-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-default) |  |  |  | Forbid named default exports |  |  |  |  |  |
-| [no-named-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-export) |  |  |  | Prevents named exports |  |  |  |  |  |
-| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-namespace) |  |  |  | Namespace imports are not recommended |  |  |  |  |  |
-| [no-nodejs-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-nodejs-modules) |  |  |  | Prevents Node.js builtin imports |  |  |  |  |  |
-| [no-relative-packages](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-packages) |  |  |  | Forbid importing packages through relative paths |  |  |  |  |  |
-| [no-relative-parent-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-parent-imports) |  |  |  | Prevents ../ imports |  |  |  |  |  |
-| [no-restricted-paths](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-restricted-paths) |  |  |  | Enforce which files can be imported in a given folder |  |  |  |  |  |
-| [no-self-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-self-import) |  |  |  | Forbid a module from importing itself |  |  |  |  |  |
-| [no-unassigned-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unassigned-import) |  |  |  | Prevents unassigned imports |  |  |  |  |  |
-| [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved) |  |  |  | Ensures imports point to resolvable modules |  |  |  |  |  |
-| [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules) |  |  |  | Forbid modules without exports |  |  |  |  |  |
-| [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments) |  |  |  | Forbid unnecessary path segments in import and require statements |  |  |  |  |  |
-| [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export) |  |  |  | Prefer a default export if module exports a single name |  |  |  |  |  |
-| [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import) |  |  |  | Prefer direct imports over barrel imports for better tree-shaking and build performance |  |  |  |  |  |
-| [prefer-modern-api](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-modern-api) |  |  |  | Suggest modern replacements for deprecated or outdated libraries |  |  |  |  |  |
-| [prefer-node-protocol](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-node-protocol) |  |  |  | Prefer using the node: protocol when importing Node.js builtin modules |  |  |  |  |  |
-| [prefer-tree-shakeable-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-tree-shakeable-imports) |  |  |  | Prefer import patterns that enable effective tree-shaking |  |  |  |  |  |
-| [require-import-approval](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/require-import-approval) |  |  |  | Enforce explicit approval for high-risk package imports |  |  |  |  |  |
-| [unambiguous](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/unambiguous) |  |  |  | Forbid potentially ambiguous parse goal (script vs. module) |  |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [consistent-type-specifier-style](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/consistent-type-specifier-style) |  |  |  | Enforce or ban the use of inline type-only markers for named imports |  |  |  |  |  |  |
+| [default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/default) |  |  |  | Ensure a default export is present, given a default import |  | 💼 |  |  |  |  |
+| [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname) |  |  |  | Enforce a leading comment with the webpackChunkName for dynamic imports |  |  |  |  |  |  |
+| [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction) |  |  |  | Ensures dependencies flow in the correct architectural direction |  |  |  |  |  |  |
+| [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order) |  |  |  | Enforces a specific order for import statements |  |  |  |  |  |  |
+| [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries) |  |  |  | Prevent unauthorized cross-team imports in large codebases |  |  |  |  |  |  |
+| [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export) |  |  |  | Forbid any invalid exports, i.e. re-export of the same name |  | 💼 |  |  |  |  |
+| [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last) |  |  |  | Ensure all exports appear after other statements |  |  |  |  |  |  |
+| [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions) |  |  |  | Ensure consistent use of file extensions in imports |  |  |  |  |  |  |
+| [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first) |  |  |  | Ensure all imports appear before other statements |  |  | ⚠️ |  |  |  |
+| [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports) |  |  |  | Prefer named exports to be grouped together in a single export declaration |  |  |  |  |  |  |
+| [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies) |  |  |  | Enforce the maximum number of dependencies a module can have |  |  |  |  |  |  |
+| [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named) |  |  |  | Ensure named imports correspond to a named export in the remote file |  | 💼 |  |  |  |  |
+| [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace) |  |  |  | Ensure imported namespaces contain dereferenced properties as they are dereferenced |  |  | ⚠️ |  |  |  |
+| [newline-after-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/newline-after-import) |  |  |  | Enforce a newline after import statements |  |  | ⚠️ |  |  |  |
+| [no-absolute-path](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-absolute-path) |  |  |  | Forbid import of modules using absolute paths |  |  |  |  |  |  |
+| [no-amd](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-amd) |  |  |  | Prevents AMD require/define calls |  |  | ⚠️ |  |  |  |
+| [no-anonymous-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-anonymous-default-export) |  |  |  | Forbid anonymous values as default exports |  |  |  |  |  |  |
+| [no-barrel-file](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-file) |  |  |  | Disallow barrel files that harm build performance and tree-shaking efficiency |  |  |  |  |  |  |
+| [no-barrel-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-import) |  |  |  | Disallow imports from barrel files to improve build performance and tree-shaking |  |  |  |  |  |  |
+| [no-commonjs](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-commonjs) |  |  |  | Prevents CommonJS require/module.exports |  |  |  |  |  |  |
+| [no-cross-domain-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cross-domain-imports) |  |  |  | Prevents imports across domain/feature boundaries |  |  |  |  |  |  |
+| [no-cycle](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle) |  |  |  | Detect circular dependencies that cause bundle memory bloat and initialization issues |  | 💼 |  |  |  |  |
+| [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export) |  |  |  | Prevents default exports |  |  |  |  |  |  |
+| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated) |  |  |  | Forbid imported names marked with @deprecated documentation tag |  |  |  |  |  |  |
+| [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates) |  |  |  | Reports duplicate imports |  | 💼 |  |  |  |  |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require) |  |  |  | Forbid require() calls with expressions |  |  |  |  |  |  |
+| [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks) |  |  |  | Forbid empty named import blocks |  |  | ⚠️ |  |  |  |
+| [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies) |  |  |  | Forbid the use of extraneous packages not listed in package.json |  |  | ⚠️ |  |  |  |
+| [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import) |  |  |  | Disallow full package imports from known large packages that prevent tree-shaking |  |  |  |  |  |  |
+| [no-import-module-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-import-module-exports) |  |  |  | Forbid import statements with CommonJS module.exports |  |  |  |  |  |  |
+| [no-internal-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-internal-modules) |  |  |  | Forbid importing the submodules of other modules |  |  |  |  |  |  |
+| [no-legacy-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-legacy-imports) |  |  |  | Detect imports from deprecated internal paths and suggest alternatives |  |  |  |  |  |  |
+| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-mutable-exports) |  |  |  | Forbid the use of mutable exports with `var` or `let` |  |  |  |  |  |  |
+| [no-named-as-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default) |  |  |  | Forbid use of exported name as identifier of default export |  |  | ⚠️ |  |  |  |
+| [no-named-as-default-member](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default-member) |  |  |  | Forbid use of exported name as property of default export |  |  | ⚠️ |  |  |  |
+| [no-named-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-default) |  |  |  | Forbid named default exports |  |  |  |  |  |  |
+| [no-named-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-export) |  |  |  | Prevents named exports |  |  |  |  |  |  |
+| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-namespace) |  |  |  | Namespace imports are not recommended |  |  |  |  |  |  |
+| [no-nodejs-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-nodejs-modules) |  |  |  | Prevents Node.js builtin imports |  |  |  |  |  |  |
+| [no-relative-packages](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-packages) |  |  |  | Forbid importing packages through relative paths |  |  |  |  |  |  |
+| [no-relative-parent-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-parent-imports) |  |  |  | Prevents ../ imports |  |  |  |  |  |  |
+| [no-restricted-paths](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-restricted-paths) |  |  |  | Enforce which files can be imported in a given folder |  |  |  |  |  |  |
+| [no-self-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-self-import) |  |  |  | Forbid a module from importing itself |  | 💼 |  |  |  |  |
+| [no-unassigned-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unassigned-import) |  |  |  | Prevents unassigned imports |  |  |  |  |  |  |
+| [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved) |  |  |  | Ensures imports point to resolvable modules |  | 💼 |  |  |  |  |
+| [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules) |  |  |  | Forbid modules without exports |  |  |  |  |  |  |
+| [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments) |  |  |  | Forbid unnecessary path segments in import and require statements |  |  |  |  |  |  |
+| [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export) |  |  |  | Prefer a default export if module exports a single name |  |  |  |  |  |  |
+| [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import) |  |  |  | Prefer direct imports over barrel imports for better tree-shaking and build performance |  |  |  |  |  |  |
+| [prefer-modern-api](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-modern-api) |  |  |  | Suggest modern replacements for deprecated or outdated libraries |  |  |  |  |  |  |
+| [prefer-node-protocol](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-node-protocol) |  |  |  | Prefer using the node: protocol when importing Node.js builtin modules |  |  |  |  |  |  |
+| [prefer-tree-shakeable-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-tree-shakeable-imports) |  |  |  | Prefer import patterns that enable effective tree-shaking |  |  |  |  |  |  |
+| [require-import-approval](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/require-import-approval) |  |  |  | Enforce explicit approval for high-risk package imports |  |  |  |  |  |  |
+| [unambiguous](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/unambiguous) |  |  |  | Forbid potentially ambiguous parse goal (script vs. module) |  |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

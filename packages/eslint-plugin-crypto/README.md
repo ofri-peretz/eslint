@@ -114,27 +114,27 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 
 | Icon | Description |
 | :---: | :--- |
+| 🧠 | **AI-Analyzed**: This rule has been analyzed by AI and has optimized error messages. |
 | 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
-| [no-key-reuse](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-key-reuse) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
-| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-math-random-crypto) | CWE-338 | A02:2021 |  | CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html) | 🟢 |  |  |  |  |  |
-| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-numeric-only-tokens) | CWE-330 | A02:2021 |  | CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html) | 🟢 |  |  |  |  |  |
-| [no-predictable-salt](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-predictable-salt) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
-| [no-web-crypto-export](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-web-crypto-export) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
-| [require-authenticated-encryption](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-authenticated-encryption) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
-| [require-key-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-key-length) | CWE-326 | A02:2021 |  | CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html) | 🟢 |  |  |  |  |  |
-| [require-random-iv](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-random-iv) | CWE-329 | A02:2021 |  | CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html) | 🟢 |  |  |  |  |  |
-| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-secure-pbkdf2-digest) | CWE-328 | A02:2021 |  | CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html) | 🟢 |  |  |  |  |  |
-| [require-sufficient-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-sufficient-length) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | Disallow hardcoded encryption keys |  |  |  |  |  |  |
+| [no-key-reuse](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-key-reuse) | CWE-327 | A02:2025 | 7.5 | Warn when same key is used for multiple cipher operations |  |  |  |  |  |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-math-random-crypto) | CWE-338 | A02:2025 | 5.3 | Disallow Math.random() for cryptographic purposes |  |  |  |  |  |  |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-numeric-only-tokens) | CWE-330 | A02:2025 | 5.3 | Warn against using numeric-only tokens for security purposes |  |  |  |  |  |  |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-predictable-salt) | CWE-331 | A02:2025 | 7.5 | Disallow predictable, empty, or short salts in key derivation |  |  |  |  |  |  |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | Warn on crypto.subtle.exportKey() usage |  |  |  |  |  |  |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-authenticated-encryption) | CWE-327 | A02:2025 | 6.5 | Require authenticated encryption (GCM) instead of unauthenticated modes (CBC) |  |  |  |  |  |  |
+| [require-key-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | Require AES-256 instead of AES-128/192 |  |  |  |  |  |  |
+| [require-random-iv](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | Require IV to be generated from cryptographically secure random source |  |  |  |  |  |  |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-secure-pbkdf2-digest) | CWE-328 | A02:2025 | 9.1 | Require secure digest algorithm for PBKDF2 (not SHA1) |  |  |  |  |  |  |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-sufficient-length) | CWE-331 | A02:2025 | 7.5 | Require crypto-random-string to use sufficient token length |  |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
