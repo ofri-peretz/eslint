@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchCachedJSON, type CachedData } from '@/lib/json-cache';
+import { fetchCachedJSON } from '@/lib/json-cache';
 import { PLUGINS } from '@/lib/plugins';
 
 // Codecov API Types

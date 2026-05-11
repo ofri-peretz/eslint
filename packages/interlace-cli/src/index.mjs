@@ -37,7 +37,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
-const requireFromHere = createRequire(import.meta.url);
+const _requireFromHere = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_VERSION = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'package.json'), 'utf8')).version;
 

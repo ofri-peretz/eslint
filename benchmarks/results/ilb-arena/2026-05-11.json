@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Arena",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-11T06:42:01.112Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "timestamp": "2026-05-11T06:11:18.531Z",
   "benchmarkType": "security",
   "environment": {

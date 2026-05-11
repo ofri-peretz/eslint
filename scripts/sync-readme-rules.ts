@@ -153,7 +153,7 @@ export function extractRuleNamesFromIndex(pluginPath: string): string[] {
     const bare = line.match(/^([a-z][a-zA-Z0-9_]*)\s*:/);
     if (bare) names.add(bare[1]);
   }
-  return [...names].sort();
+  return [...names].toSorted();
 }
 
 /**
@@ -272,7 +272,7 @@ export function renderRulesTable(
   const sep = '| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |';
   const lines = [header, sep];
 
-  const sorted = [...rules].sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...rules].toSorted((a, b) => a.name.localeCompare(b.name));
   for (const r of sorted) {
     const url = `${DOCS_BASE_URL}/docs/${pillar}/plugin-${pluginSlug}/rules/${r.name}`;
     lines.push(
@@ -295,7 +295,7 @@ export function renderRulesTable(
 // (charcodes 58–124) which excludes the dash and causes the lazy preamble to
 // run past the rule table into the next markdown table.
 const RULE_TABLE_REGEX =
-  /\|\s*Rule\s*\|[^\n]*\n\|[\s:|\-]+\|\n(?:\|[^\n]*\|\n?)+/;
+  /\|\s*Rule\s*\|[^\n]*\n\|[\s:|-]+\|\n(?:\|[^\n]*\|\n?)+/;
 
 export function spliceTable(readme: string, generatedTable: string): { content: string; modified: boolean } {
   const hasStart = readme.includes(RULES_TABLE_START);
@@ -373,7 +373,7 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
         .readdirSync(docsRulesDir)
         .filter((f) => f.endsWith('.md'))
         .map((f) => f.replace(/\.md$/, ''))
-        .sort()
+        .toSorted()
     : [];
   if (documentedNames.length === 0) {
     return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'no rules in docs/rules' };

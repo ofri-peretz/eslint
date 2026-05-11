@@ -117,7 +117,7 @@ test.describe('Articles Page', () => {
       const card = page.getByTestId('article-card').first();
       
       // Get initial transform
-      const initialTransform = await card.evaluate((el) => {
+      const _initialTransform = await card.evaluate((el) => {
         return window.getComputedStyle(el).transform;
       });
       
@@ -137,7 +137,7 @@ test.describe('Articles Page', () => {
       const resultsCount = page.getByTestId('results-count');
       
       // Get initial count
-      const initialCount = await resultsCount.textContent();
+      const _initialCount = await resultsCount.textContent();
       
       // Search for something specific
       await searchInput.fill('security');

@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
-const RESULTS_ROOT = path.join(REPO_ROOT, 'benchmarks', 'results');
+const _RESULTS_ROOT = path.join(REPO_ROOT, 'benchmarks', 'results');
 const HISTORY_PATH = path.join(REPO_ROOT, 'benchmark-results', 'history.ndjson');
 const CORPUS_DIR = path.join(REPO_ROOT, 'benchmarks', 'corpus');
 const SEVERITY_AUDIT_JSON = path.join(REPO_ROOT, 'benchmark-results', 'severity-audit.json');

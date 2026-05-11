@@ -193,7 +193,13 @@ type_aware_status: ${typeStatusForFm}
                  .replace(/([A-Z0-9_-]+)\((?!\()([^)"]+)\)/g, '$1("$2")')
                  .replace(/([A-Z0-9_-]+)\(\(([^)"]+)\)\)/g, '$1(("$2"))')
                  .replace(/([A-Z0-9_-]+)\[\[([^\]"]+)\]\]/g, '$1[["$2"]]')
-                 .replace(/([A-Z0-9_-]+)>([^\]"]+)\]/g, '$1>"$2"]');
+                 // The `A>shape]` asymmetric-node regex must NOT match arrows
+                 // (`-->`, `==>`, `-.->`). A bare `>` immediately after an
+                 // identifier with no preceding arrow glyph is a node; with
+                 // one, it's an edge head. Negative lookbehind on the arrow
+                 // glyphs `-`, `=`, `.` prevents the converter from mangling
+                 // `App -->|label| Node[...]` into `App-->"|label| Node[...]"`.
+                 .replace(/(?<![-=.])([A-Z0-9_]+)>([^\]"]+)\]/g, '$1>"$2"]');
     });
     return '```mermaid\n' + fixedLines.join('\n') + '\n```\n';
   });
@@ -220,7 +226,7 @@ export function updateMetaJson(pluginRulesDir, ruleSlugs) {
   // is to omit it when the directory is auto-listed). Merge against [] in that
   // case rather than crashing on a non-iterable.
   const existingPages = Array.isArray(meta.pages) ? meta.pages : [];
-  meta.pages = Array.from(new Set([...existingPages, ...ruleSlugs])).sort();
+  meta.pages = Array.from(new Set([...existingPages, ...ruleSlugs])).toSorted();
 
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
 }

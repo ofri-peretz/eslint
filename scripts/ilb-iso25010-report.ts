@@ -106,7 +106,7 @@ function renderMd(rules) {
   lines.push('');
   lines.push('| Characteristic / sub-characteristic | Rules covering |');
   lines.push('|---|---:|');
-  for (const [key, n] of [...coverage.entries()].sort((a, b) => b[1] - a[1])) {
+  for (const [key, n] of [...coverage.entries()].toSorted((a, b) => b[1] - a[1])) {
     lines.push(`| ${key} | ${n} |`);
   }
   lines.push('');
@@ -119,12 +119,12 @@ function renderMd(rules) {
     if (!byPlugin.has(r.plugin)) byPlugin.set(r.plugin, []);
     byPlugin.get(r.plugin).push(r);
   }
-  for (const [plugin, list] of [...byPlugin.entries()].sort()) {
+  for (const [plugin, list] of [...byPlugin.entries()].toSorted()) {
     lines.push(`### ${plugin}`);
     lines.push('');
     lines.push('| Rule | Characteristics |');
     lines.push('|---|---|');
-    for (const r of list.sort((a, b) => a.ruleId.localeCompare(b.ruleId))) {
+    for (const r of list.toSorted((a, b) => a.ruleId.localeCompare(b.ruleId))) {
       const mapped = r.mappings.length > 0 ? r.mappings.map((m) => `${m.characteristic} (${m.subCharacteristic})`).join(' · ') : '— (needs annotation)';
       lines.push(`| \`${r.ruleId}\` | ${mapped} |`);
     }

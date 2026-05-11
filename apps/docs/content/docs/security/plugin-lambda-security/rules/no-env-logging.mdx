@@ -1,6 +1,6 @@
 ---
 title: no-env-logging
-description: "Detects logging of process.env which may expose secrets"
+description: Detect logging of process.env which may expose secrets
 tags: ['security', 'logging', 'cwe-532', 'lambda', 'aws']
 category: security
 severity: high
@@ -18,8 +18,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 > **Keywords:** logging, process.env, secrets, CloudWatch, CWE-532, Lambda, serverless
 > **CWE:** [CWE-532](https://cwe.mitre.org/data/definitions/532.html)  
 > **OWASP:** [A09:2021-Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
-
-Detect logging of process.env which may expose secrets
 
 Detects logging of `process.env` which may expose API keys, passwords, and tokens in CloudWatch logs. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

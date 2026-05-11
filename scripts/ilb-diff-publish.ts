@@ -32,7 +32,7 @@ const ARG = (flag) => {
 
 function findLatest() {
   if (!fs.existsSync(DIFF_DIR)) return null;
-  const files = fs.readdirSync(DIFF_DIR).filter((f) => f.endsWith('.json')).sort();
+  const files = fs.readdirSync(DIFF_DIR).filter((f) => f.endsWith('.json')).toSorted();
   return files.length ? path.join(DIFF_DIR, files[files.length - 1]) : null;
 }
 
@@ -65,7 +65,7 @@ function renderMd(diff) {
     lines.push('');
     lines.push('| Tool combination | Locations |');
     lines.push('|---|---:|');
-    const combos = (Object.entries(diff.matrix.byCombo) as Array<[string, number]>).sort((a, b) => b[1] - a[1]);
+    const combos = (Object.entries(diff.matrix.byCombo) as Array<[string, number]>).toSorted((a, b) => b[1] - a[1]);
     for (const [combo, count] of combos) lines.push(`| ${combo} | ${count} |`);
     lines.push('');
     const totalLocations: number = combos.reduce((s: number, [, n]) => s + n, 0);

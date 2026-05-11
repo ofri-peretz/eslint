@@ -1,15 +1,15 @@
 # ILB Doc-Harvest Stress Test
 
-> Generated 2026-05-10 from each rule's own `## ❌ Incorrect` and `## ✅ Correct` doc blocks. Disagreements = the rule's documentation contradicts its implementation.
+> Generated 2026-05-11 from each rule's own `## ❌ Incorrect` and `## ✅ Correct` doc blocks. Disagreements = the rule's documentation contradicts its implementation.
 
 ## Top-line
 
-- **20** plugins scanned · **392** rules with docs · **275** rules contributed cases
-- **547** total cases · **547** matched expectation
+- **20** plugins scanned · **399** rules with docs · **280** rules contributed cases
+- **557** total cases · **557** matched expectation
 - **0** FN findings (rule silent on doc-labelled vulnerable example)
 - **0** FP findings (rule fired on doc-labelled safe example)
 - 0 snippets failed to parse · 0 plugins failed to load
-- Duration: 1.0 s
+- Duration: 0.9 s
 
 ## Rules with the most FN findings (rule misses its own bad examples)
 

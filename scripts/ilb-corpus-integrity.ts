@@ -29,8 +29,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WILD_SOURCE = path.join(ROOT, 'scripts', 'ilb-wild.ts');
 const REPORT_PATH = path.join(ROOT, 'benchmark-results', 'corpus-integrity.json');
 
-const args = process.argv.slice(2);
-const flag = (n) => args.includes(`--${n}`);
+const args = new Set(process.argv.slice(2));
+const flag = (n) => args.has(`--${n}`);
 const UPDATE = flag('update');
 const EMIT_JSON = flag('json');
 

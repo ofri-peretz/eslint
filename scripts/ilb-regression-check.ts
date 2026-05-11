@@ -123,8 +123,8 @@ function loadLatestWildSummary(): { path: string; data: WildSummary } | null {
     .readdirSync(RESULTS_DIR)
     .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e))
     .filter((e) => fs.statSync(path.join(RESULTS_DIR, e)).isDirectory())
-    .sort()
-    .reverse();
+    .toSorted()
+    .toReversed();
   for (const d of dirs) {
     const p = path.join(RESULTS_DIR, d, 'summary.json');
     if (fs.existsSync(p)) return { path: p, data: JSON.parse(fs.readFileSync(p, 'utf-8')) as WildSummary };
@@ -180,7 +180,7 @@ function computeRuleDeltas(
     if (b === c) continue;
     deltas.push({ rule, baseline: b, current: c, delta: c - b });
   }
-  return deltas.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  return deltas.toSorted((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 }
 
 function loadJson<T>(p: string): T | null {
@@ -465,8 +465,8 @@ function latestFileInDir(dir: string): string | null {
   const entries = fs
     .readdirSync(dir)
     .filter((e) => /^\d{4}-\d{2}-\d{2}\.json$/.test(e))
-    .sort()
-    .reverse();
+    .toSorted()
+    .toReversed();
   return entries[0] ? path.join(dir, entries[0]) : null;
 }
 

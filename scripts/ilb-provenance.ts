@@ -129,7 +129,7 @@ function main() {
   lines.push('');
   lines.push('| Rule | CVE Examples | Source |');
   lines.push('|---|---|---|');
-  for (const r of securityRules.sort((a, b) => a.ruleId.localeCompare(b.ruleId))) {
+  for (const r of securityRules.toSorted((a, b) => a.ruleId.localeCompare(b.ruleId))) {
     const links = r.cveExamples.map((c) => `[${c}](https://nvd.nist.gov/vuln/detail/${c})`).join(' · ') || '—';
     const src = r.sources.fromRule && r.sources.fromSeed ? 'rule+seed' : r.sources.fromRule ? 'rule' : r.sources.fromSeed ? 'seed' : '—';
     lines.push(`| \`${r.ruleId}\` | ${links} | ${src} |`);

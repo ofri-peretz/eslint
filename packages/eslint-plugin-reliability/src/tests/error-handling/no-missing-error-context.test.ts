@@ -49,6 +49,21 @@ describe('no-missing-error-context', () => {
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true, requireMessage: true }],
         },
+        // Re-throw of caught error — original message + stack already attached.
+        {
+          code: 'try { run(); } catch (e) { throw e; }',
+          options: [{ requireMessage: true }],
+        },
+        // Re-throw of a bare named identifier (e.g. forwarded error param).
+        {
+          code: 'function forward(error) { throw error; }',
+          options: [{ requireMessage: true }],
+        },
+        // Re-throw also satisfies stack-trace requirement.
+        {
+          code: 'try { run(); } catch (err) { throw err; }',
+          options: [{ requireStackTrace: true }],
+        },
       ],
       invalid: [],
     });
@@ -68,6 +83,18 @@ describe('no-missing-error-context', () => {
           options: [{ requireMessage: true }],
           errors: [{ messageId: 'missingErrorContext' }],
         },
+        // `NaN` is a global identifier but carries no diagnostic value.
+        {
+          code: 'throw NaN;',
+          options: [{ requireMessage: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+        // `Infinity` — same reasoning.
+        {
+          code: 'throw Infinity;',
+          options: [{ requireMessage: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
       ],
     });
 
@@ -79,6 +106,22 @@ describe('no-missing-error-context', () => {
         invalid: [
           {
             code: 'throw "Error message";',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          // Global-constant identifiers don't carry a stack.
+          {
+            code: 'throw undefined;',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          {
+            code: 'throw NaN;',
+            options: [{ requireStackTrace: true }],
+            errors: [{ messageId: 'missingErrorContext' }],
+          },
+          {
+            code: 'throw Infinity;',
             options: [{ requireStackTrace: true }],
             errors: [{ messageId: 'missingErrorContext' }],
           },

@@ -92,7 +92,7 @@ describe('groupByRule', () => {
     const grouped = groupByRule(sampleResults, context);
 
     expect(grouped).toHaveLength(2);
-    const ruleIds = grouped.map(g => g.ruleId).sort();
+    const ruleIds = grouped.map(g => g.ruleId).toSorted();
     expect(ruleIds).toEqual(['@interlace/pg/no-unsafe-query', 'no-unused-vars']);
     expect(grouped[0]!.count).toBe(3);
     expect(grouped[1]!.count).toBe(3);
@@ -102,7 +102,7 @@ describe('groupByRule', () => {
     // Two rules with identical counts must always emit in the same order
     // regardless of which file the linter visited first.
     const grouped1 = groupByRule(sampleResults, context);
-    const reversed = [...sampleResults].reverse();
+    const reversed = [...sampleResults].toReversed();
     const grouped2 = groupByRule(reversed, context);
 
     expect(grouped1.map(g => g.ruleId)).toEqual(grouped2.map(g => g.ruleId));
@@ -405,7 +405,6 @@ describe('renderJSON', () => {
 
     const human = renderHuman(grouped, summary);
     const compact = renderCompact(grouped, summary);
-    const json = renderJSON(grouped, summary);
 
     // JSON has structural overhead (keys, brackets) but compact is the leanest prose format
     // For small datasets, JSON is larger — its advantage is parseability, not size

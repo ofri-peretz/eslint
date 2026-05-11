@@ -42,7 +42,7 @@ function compareSemver(a: string, b: string): number {
   return 0;
 }
 
-const issues: PackageInfo[] = [];
+const _issues: PackageInfo[] = [];
 
 // Enumerate every non-private package under `packages/*` (Turborepo workspace).
 function getReleaseProjects(): string[] {
@@ -59,7 +59,7 @@ function getReleaseProjects(): string[] {
 }
 
 // Get version from package.json
-function getPackageJsonVersion(projectPath: string): string | null {
+function _getPackageJsonVersion(projectPath: string): string | null {
   const packageJsonPath = join(projectPath, 'package.json');
   if (!existsSync(packageJsonPath)) return null;
   
@@ -75,7 +75,7 @@ function getLockfileVersion(packageName: string): string | null {
       // Search in packages (npm v2/v3 lockfile format)
       if (lockfile.packages) {
         // Try exact path in monorepo first
-        for (const [path, info] of Object.entries(lockfile.packages)) {
+        for (const [_path, info] of Object.entries(lockfile.packages)) {
           if ((info as any).name === packageName) {
             return (info as any).version;
           }

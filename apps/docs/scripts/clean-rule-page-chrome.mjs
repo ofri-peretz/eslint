@@ -90,7 +90,7 @@ for (const file of allRuleMdx) {
     const fmLines = fmBody.split(/\r?\n/);
     let touchedDesc = false;
     const newFmLines = fmLines.map((line) => {
-      if (!touchedDesc && /^description:/.test(line)) {
+      if (!touchedDesc && line.startsWith('description:')) {
         const cleaned = cleanDescription(line, ruleName);
         if (cleaned !== line) {
           touchedDesc = true;

@@ -36,7 +36,7 @@ if (!A || !B) {
 const sarifA = JSON.parse(fs.readFileSync(A, 'utf8'));
 const sarifB = JSON.parse(fs.readFileSync(B, 'utf8'));
 
-const { raterA, raterB, items } = sarifToRaters(sarifA, sarifB);
+const { raterA, raterB, items: _items } = sarifToRaters(sarifA, sarifB);
 const k = cohensKappa(raterA, raterB);
 
 const passed = k.kappa >= 0.75; // SLO from roadmap item 4.4

@@ -141,7 +141,7 @@ test.describe('Visual Regression Tests', () => {
         
         return {
           visibleLineCount: visibleLines.length,
-          uniqueXPositions: Array.from(xPositions).sort((a, b) => a - b),
+          uniqueXPositions: Array.from(xPositions).toSorted((a, b) => a - b),
           lines: visibleLines,
         };
       });

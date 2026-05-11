@@ -241,7 +241,7 @@ function scanPlugin(pluginName) {
 // ── Output ───────────────────────────────────────────────────────────
 
 function printHumanReport(allPlugins) {
-  let totalRules = 0, typeAware = 0, oxlintReady = 0, oxlintPartial = 0, oxlintBlocked = 0;
+  let totalRules = 0, typeAware = 0, oxlintReady = 0, _oxlintPartial = 0, oxlintBlocked = 0;
 
   console.log(`\n${'═'.repeat(70)}`);
   console.log(`  INTERLACE FLEET — PORTABILITY & COST AUDIT`);

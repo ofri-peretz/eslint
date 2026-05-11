@@ -54,7 +54,7 @@ function runCoverage(pluginName) {
     if (!fs.existsSync(jsonPath)) return null;
 
     return JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-  } catch (e) {
+  } catch {
     // Tests may "fail" but still produce coverage
     const jsonPath = path.join(coverageDir, 'coverage-final.json');
     if (fs.existsSync(jsonPath)) {
@@ -185,9 +185,9 @@ for (const plugin of plugins) {
     const ruleName = filePath.match(/rules\/([^/]+)\//)?.[1];
     if (!ruleName) continue;
 
-    const { uncoveredBranches, uncoveredStatements } = analyzeFile(filePath, fileCoverage);
+    const { uncoveredBranches, uncoveredStatements: _uncoveredStatements } = analyzeFile(filePath, fileCoverage);
 
-    const branchMap = fileCoverage.branchMap || {};
+    const _branchMap = fileCoverage.branchMap || {};
     const branches: Record<string, number[]> = fileCoverage.b || {};
     let ruleTotalBranches = 0;
     let ruleCoveredBranches = 0;

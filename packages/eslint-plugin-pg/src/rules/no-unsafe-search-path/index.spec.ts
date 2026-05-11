@@ -35,7 +35,7 @@ ruleTester.run('no-unsafe-search-path', noUnsafeSearchPath, {
       errors: [{ messageId: 'noUnsafeSearchPath' }],
     },
     {
-      code: "client.query(`SET search_path TO ${schema}`)",
+      code: `client.query(\`SET search_path TO \${schema}\`)`,
       errors: [{ messageId: 'noUnsafeSearchPath' }],
     },
     {

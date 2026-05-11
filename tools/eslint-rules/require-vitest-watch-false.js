@@ -114,7 +114,6 @@ module.exports = {
                */
               fix(fixer) {
                 // Insert after the opening brace of test object
-                const sourceCode = context.sourceCode || context.getSourceCode();
                 const firstProperty = nodeToReport.properties[0];
 
                 if (firstProperty) {

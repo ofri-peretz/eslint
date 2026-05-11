@@ -103,7 +103,7 @@ function sortArticles(
   sortField: SortField,
   sortDirection: SortDirection
 ): DevToArticle[] {
-  return [...articles].sort((a, b) => {
+  return [...articles].toSorted((a, b) => {
     let comparison = 0;
     switch (sortField) {
       case 'date':
@@ -129,13 +129,13 @@ function getTagCounts(articles: DevToArticle[]): [string, number][] {
   articles.forEach(a => a.tag_list.forEach(tag => {
     counts[tag] = (counts[tag] || 0) + 1;
   }));
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return Object.entries(counts).toSorted((a, b) => b[1] - a[1]);
 }
 
 // Featured article selection logic
 function getFeaturedArticle(articles: DevToArticle[]): DevToArticle | null {
   if (articles.length === 0) return null;
-  return [...articles].sort((a, b) => b.positive_reactions_count - a.positive_reactions_count)[0];
+  return [...articles].toSorted((a, b) => b.positive_reactions_count - a.positive_reactions_count)[0];
 }
 
 // View count formatting

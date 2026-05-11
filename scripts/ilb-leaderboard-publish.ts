@@ -64,7 +64,7 @@ function validateEnvelope(env, label) {
 }
 
 function rankSubmissions(submissions) {
-  return [...submissions].sort((a, b) => {
+  return [...submissions].toSorted((a, b) => {
     const f1A = a.effectiveness?.f1 ?? -Infinity;
     const f1B = b.effectiveness?.f1 ?? -Infinity;
     if (f1A !== f1B) return f1B - f1A;

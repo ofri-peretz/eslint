@@ -1,6 +1,6 @@
 ---
 title: no-hardcoded-api-keys
-description: "Prevent hardcoded API keys in AI SDK model configuration"
+description: This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers
 tags: ['security', 'ai']
 category: security
 severity: critical
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Detects hardcoded API keys and secrets in AI SDK configuration.
-
-This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers
 
 ## 📊 Rule Details
 

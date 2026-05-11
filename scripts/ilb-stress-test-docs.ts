@@ -207,7 +207,7 @@ function extractBlocks(md: string): ExtractedBlock[] {
     // Whole-heading emoji marker (e.g. "❌ Incorrect" → already stripped,
     // OR a heading like "### ✅" alone).
     else if (/^❌|incorrect/.test(m[0].toLowerCase())) section = 'incorrect';
-    else if (/^✅/.test(m[0])) section = 'correct';
+    else if (m[0].startsWith('✅')) section = 'correct';
     headers.push({ index: m.index + m[0].length, section });
   }
   // Section [i] runs from headers[i].index to headers[i+1].index (or EOF).
@@ -317,8 +317,8 @@ function escapeJsxTextOperators(code: string): string {
   // ` < `  (whitespace + < + whitespace) → &lt;
   // We're careful not to touch `<Foo>` or `</Foo>` (alpha follows the bracket).
   return code
-    .replace(/([0-9A-Za-z\)])\s+>\s+([0-9A-Za-z\(])/g, '$1 &gt; $2')
-    .replace(/([0-9A-Za-z\)])\s+<\s+([0-9A-Za-z\(])/g, '$1 &lt; $2');
+    .replace(/([0-9A-Za-z)])\s+>\s+([0-9A-Za-z(])/g, '$1 &gt; $2')
+    .replace(/([0-9A-Za-z)])\s+<\s+([0-9A-Za-z(])/g, '$1 &lt; $2');
 }
 
 function tryParse(
@@ -575,7 +575,7 @@ async function main() {
   // Top disagreements (rules with the most contractual mismatches)
   const ranked = perRule
     .filter((r) => r.fnCount + r.fpCount > 0)
-    .sort((a, b) => (b.fnCount + b.fpCount) - (a.fnCount + a.fpCount));
+    .toSorted((a, b) => (b.fnCount + b.fpCount) - (a.fnCount + a.fpCount));
 
   // Top FN-only and FP-only lists
   const topFn = ranked.filter((r) => r.fnCount > 0).slice(0, 25);

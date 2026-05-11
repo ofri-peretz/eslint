@@ -15,13 +15,17 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CONTENT_ROOT = join(process.cwd(), 'content/docs/getting-started');
+// Resolve paths from this file's location so the tests behave the same under
+// vitest (cwd = apps/docs) and under turbo (cwd may be the workspace root).
+const DOCS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const CONTENT_ROOT = join(DOCS_ROOT, 'content/docs/getting-started');
 
 // Valid Lucide React icon names - comprehensive list
 // Updated 2026-02-01 - includes all icons used in content + common documentation icons
@@ -33,7 +37,7 @@ const VALID_LUCIDE_ICONS = new Set([
   'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Brain',
   'Cloud', 'Database', 'Download',
   'FileCode', 'FileText', 'Gauge', 'GitBranch', 'GitFork', 'Globe',
-  'History', 'Key', 'Layers', 'Lightbulb', 'Map', 'Monitor',
+  'History', 'Key', 'KeyRound', 'Layers', 'Lightbulb', 'Map', 'Monitor',
   'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
   'Shield', 'Terminal', 'TreeDeciduous', 'Users', 'Workflow',
   'Wrench',
@@ -256,7 +260,7 @@ describe('MDX Frontmatter - Icon Validation', () => {
 // Tests: Site-Wide Icon Validation (All Content)
 // ============================================================================
 
-const CONTENT_ROOT_ALL = join(process.cwd(), 'content');
+const CONTENT_ROOT_ALL = join(DOCS_ROOT, 'content');
 
 describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
   let allMdxFiles: string[];

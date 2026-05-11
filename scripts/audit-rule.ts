@@ -73,7 +73,7 @@ function auditRule(pluginName: string, ruleName: string): any {
   };
 
   // ─── 1. META COMPLIANCE ───────────────────────────────────────────
-  const meta = analyzeMeta(source, result);
+  analyzeMeta(source, result);
 
   // ─── 2. GUARD ANALYSIS (FP risk) ─────────────────────────────────
   analyzeGuards(lines, testSource, result);
@@ -249,8 +249,6 @@ function analyzeDetections(lines, testSource, result) {
 }
 
 function analyzeVisitors(source, testSource, result) {
-  // Extract AST node types the rule visits
-  const visitorPattern = /^\s+(\w+)\s*\(/gm;
   const createMatch = source.match(/create\s*\([^)]*\)\s*\{[\s\S]*?return\s*\{([\s\S]*?)\};/);
 
   if (!createMatch) {
@@ -517,7 +515,7 @@ if (!jsonOutput && (fleetMode || allMode)) {
     console.log(`  ${icon} ${plugin}: avg=${avg} | ${stats.passing}/${stats.total} passing | ${stats.violations} violations | ${stats.warnings} warnings`);
 
     // Show worst rules
-    const worstRules = allResults
+    const worstRules = [...allResults]
       .filter(r => r.rule.startsWith(plugin + '/'))
       .sort((a, b) => a.score - b.score)
       .slice(0, 3)

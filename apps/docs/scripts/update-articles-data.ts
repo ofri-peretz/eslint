@@ -100,7 +100,7 @@ function processArticles(articles) {
       tag_list: article.tag_list.filter(tag => tag.toLowerCase() !== 'eslint'),
     }))
     // Sort by published date (newest first)
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
     );
 }
@@ -134,7 +134,7 @@ async function main() {
     // Print tag summary
     const allTags = new Set(processedArticles.flatMap(a => a.tag_list));
     console.log(`🏷️  Unique tags: ${allTags.size}`);
-    console.log(`   ${Array.from(allTags).sort().join(', ')}`);
+    console.log(`   ${Array.from(allTags).toSorted().join(', ')}`);
     
   } catch (error) {
     console.error('❌ Error fetching articles:', error);

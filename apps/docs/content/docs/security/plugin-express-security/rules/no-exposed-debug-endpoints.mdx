@@ -1,6 +1,6 @@
 ---
 title: no-exposed-debug-endpoints
-description: "Detect debug endpoints without auth in Express applications"
+description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -16,8 +16,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
-
-Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
 
 **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10 M8](https://owasp.org/www-project-mobile-top-10/)

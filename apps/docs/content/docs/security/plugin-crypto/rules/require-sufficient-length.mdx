@@ -1,17 +1,21 @@
 ---
 title: require-sufficient-length
-description: "Require crypto-random-string to use sufficient token length"
+description: 'CWE: CWE-331'
 tags: ['security', 'crypto']
 category: security
 severity: medium
 cwe: CWE-331
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
 
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+import {
+  FalseNegativeCTA,
+  WhenNotToUse,
+  RuleBadges,
+} from '@/components/RuleComponents';
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
@@ -25,7 +29,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | -------------- | --------------------------------------- |
 | **Severity**   | Medium (Insufficient Entropy)           |
 | **Auto-Fix**   | ❌ No (requires length adjustment)      |
-| **Category**   | Security |
+| **Category**   | Security                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
 | **Best For**   | Session tokens, CSRF tokens, API keys   |
 
@@ -79,7 +83,6 @@ flowchart TD
     C --> E["💡 Suggest length: 32+"]
 
 ```
-
 
 ### Why This Matters
 

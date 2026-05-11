@@ -1,6 +1,6 @@
 ---
 title: no-sensitive-localstorage
-description: "Disallow storing sensitive data like tokens and passwords in localStorage"
+description: Detects storage of sensitive data (tokens, passwords, PII) in localStorage
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
-
-Detects storage of sensitive data (tokens, passwords, PII) in localStorage
 
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)

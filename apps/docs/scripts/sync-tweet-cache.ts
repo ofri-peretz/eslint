@@ -68,7 +68,7 @@ function getAllSourceFiles(dir: string, extensions: string[] = ['.tsx', '.jsx', 
 /**
  * Extract tweet IDs from file content
  */
-function extractTweetIds(content) {
+function extractTweetIds(content: string) {
   const ids = new Set();
   
   for (const pattern of TWEET_PATTERNS) {
@@ -85,7 +85,7 @@ function extractTweetIds(content) {
 /**
  * Dynamically import react-tweet/api
  */
-async function fetchTweet(id) {
+async function fetchTweet(id: string) {
   // Dynamic import for ESM compatibility
   const { getTweet } = await import('react-tweet/api');
   return getTweet(id);
@@ -94,23 +94,28 @@ async function fetchTweet(id) {
 /**
  * Load existing cache
  */
-function loadCache() {
+function loadCache(): TweetCache {
   if (!existsSync(CACHE_FILE)) {
     return { tweets: {}, _lastUpdated: null };
   }
   
   try {
     return JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-  } catch (error) {
+  } catch {
     console.warn('⚠️ Could not parse cache file, starting fresh');
     return { tweets: {}, _lastUpdated: null };
   }
 }
 
+export interface TweetCache {
+  tweets: Record<string, any>;
+  _lastUpdated: string | null;
+}
+
 /**
  * Save cache to file
  */
-function saveCache(cache) {
+function saveCache(cache: TweetCache) {
   // Read directly and catch ENOENT instead of `existsSync()` + `readFileSync()`
   // (CodeQL: "Potential file system race condition" — the file could vanish
   // between the two calls). Any read/parse failure means we should just write.
@@ -134,7 +139,7 @@ function saveCache(cache) {
 /**
  * Check if a cached tweet is still fresh
  */
-function isCacheFresh(cachedTweet) {
+function isCacheFresh(cachedTweet: any) {
   if (!cachedTweet || !cachedTweet._cachedAt) {
     return false;
   }
@@ -150,7 +155,7 @@ function isCacheFresh(cachedTweet) {
  * Twitter's syndication endpoint sometimes drops these bindings —
  * see `mergePreservedCardImages`. The lock test asserts the same path.
  */
-function getCardImageUrl(tweet) {
+function getCardImageUrl(tweet: any) {
   const bv = tweet?.card?.binding_values;
   return (
     bv?.photo_image_full_size_large?.image_value?.url ||
@@ -168,7 +173,7 @@ function getCardImageUrl(tweet) {
  * previous image bindings rather than silently regressing the card.
  * The HTTP check downstream still rejects stale 404 URLs.
  */
-function mergePreservedCardImages(fresh, previous) {
+function mergePreservedCardImages(fresh: any, previous: any) {
   if (!previous?.card?.binding_values) return fresh;
   if (getCardImageUrl(fresh)) return fresh;
   if (!getCardImageUrl(previous)) return fresh;
@@ -187,7 +192,7 @@ function mergePreservedCardImages(fresh, previous) {
 /**
  * HEAD-check a URL. Returns the HTTP status, or 0 on network error.
  */
-async function headStatus(url) {
+async function headStatus(url: string) {
   try {
     const res = await fetch(url, { method: 'HEAD' });
     return res.status;

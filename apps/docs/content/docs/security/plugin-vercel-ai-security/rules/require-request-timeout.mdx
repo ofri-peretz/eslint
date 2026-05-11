@@ -1,6 +1,6 @@
 ---
 title: require-request-timeout
-description: "Require timeout configuration for AI SDK calls to prevent DoS"
+description: "This rule identifies AI SDK calls that don't have timeout or abort signal configuration."
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -28,8 +28,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | **Config Default** | `warn` (recommended), `error` (strict)                                                                        |
 
 ## 🔍 What This Rule Detects
-
-This rule identifies AI SDK calls that don't have timeout or abort signal configuration.
 
 ## ❌ Incorrect Code
 

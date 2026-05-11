@@ -18,7 +18,6 @@ const outputDir = path.resolve(__dirname, '../src/data/plugin-rules');
 // Plugin slug to package name mapping
 export const PLUGIN_MAPPINGS = {
   'browser-security': 'eslint-plugin-browser-security',
-  'crypto': 'eslint-plugin-crypto',
   'express-security': 'eslint-plugin-express-security',
   'jwt': 'eslint-plugin-jwt',
   'lambda-security': 'eslint-plugin-lambda-security',

@@ -252,7 +252,7 @@ const CASES: RuleSpec[] = [
       },
       {
         label: 'FN: ReDoS in dynamically constructed RegExp',
-        hypothesis: 'new RegExp(\`(\${pattern})+\`) hides the catastrophic shape',
+        hypothesis: 'new RegExp(`(${pattern})+`) hides the catastrophic shape',
         expected: 'fire',
         code: `
           function build(pattern) {

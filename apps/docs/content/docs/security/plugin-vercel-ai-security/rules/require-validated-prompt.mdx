@@ -1,6 +1,6 @@
 ---
 title: require-validated-prompt
-description: "Require validated/sanitized prompts in generateText and streamText calls"
+description: This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents prompt injection by detecting unvalidated user input in AI prompts.
-
-This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
 
 ## 📊 Rule Details
 

@@ -188,7 +188,7 @@ function processPackage(pkg: string): void {
     if (!fs.existsSync(readmePath)) return;
 
     console.log(`Processing ${pkg}...`);
-    let content = fs.readFileSync(readmePath, 'utf8');
+    const content = fs.readFileSync(readmePath, 'utf8');
     const lines = content.split('\n');
     const pluginName = pkg.replace('eslint-plugin-', '');
     const shortDesc = DESCRIPTIONS[pkg];
@@ -226,7 +226,7 @@ function processPackage(pkg: string): void {
         };
     };
     const ruleMetadata: Record<string, RuleMeta> = {};
-    const ruleRowRegex = /^\|\s*\[?([a-zA-Z0-9\-\/]+)\]?.*\|.*$/;
+    const ruleRowRegex = /^\|\s*\[?([a-zA-Z0-9\-/]+)\]?.*\|.*$/;
 
     lines.forEach((line: string) => {
         const match = line.match(ruleRowRegex);
@@ -237,10 +237,10 @@ function processPackage(pkg: string): void {
              if (cells.length < 3) return;
 
              // Extract Metadata
-             let cwe = cells.find((c: string) => c.includes('CWE-')) || '';
+             const cwe = cells.find((c: string) => c.includes('CWE-')) || '';
              let owasp = cells.find((c: string) => c.includes(':202')) || '';
              if (owasp) owasp = owasp.replace('2021', '2025');
-             let cvss = cells.find((c: string) => /^[0-9]\.[0-9]$/.test(c)) || '';
+             const cvss = cells.find((c: string) => /^[0-9]\.[0-9]$/.test(c)) || '';
 
              // Type-awareness from the harvested row (the 🧠 column body cell).
              // `null` means the harvest could not determine — the renderer
@@ -454,8 +454,8 @@ function processPackage(pkg: string): void {
             });
             
             // Catch-all for uncategorized
-            const allCategorized = Object.values(hasCategories).flat();
-            const leftover = realRules.filter((r: string) => !allCategorized.includes(r));
+            const allCategorized = new Set(Object.values(hasCategories).flat());
+            const leftover = realRules.filter((r: string) => !allCategorized.has(r));
             if (leftover.length > 0) {
                 output.push('### Other Rules');
                 output.push('');
@@ -468,7 +468,7 @@ function processPackage(pkg: string): void {
             // Single Table
             output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
             output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
-            realRules.sort().forEach((r: string) => output.push(generateRow(r)));
+            realRules.toSorted().forEach((r: string) => output.push(generateRow(r)));
             output.push('');
         }
     }

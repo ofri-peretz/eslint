@@ -37,8 +37,8 @@ const BENCH_RESULTS = path.join(ROOT, 'benchmarks', 'results');
 const CORPUS_DIR = path.join(ROOT, 'benchmarks', 'corpus');
 const OUT_PATH = path.join(ROOT, 'benchmark-results', 'coverage.json');
 
-const args = process.argv.slice(2);
-const flag = (n) => args.includes(`--${n}`);
+const args = new Set(process.argv.slice(2));
+const flag = (n) => args.has(`--${n}`);
 const PRINT = flag('print');
 
 // ── Latest result files ─────────────────────────────────────────────
@@ -47,7 +47,7 @@ function latestDated(dir) {
   if (!fs.existsSync(dir)) return null;
   const entries = fs.readdirSync(dir).filter((e) => /^\d{4}-\d{2}-\d{2}\.json$/.test(e));
   if (entries.length === 0) return null;
-  return path.join(dir, entries.sort().reverse()[0]);
+  return path.join(dir, entries.toSorted().toReversed()[0]);
 }
 
 const arenaPath = latestDated(path.join(BENCH_RESULTS, 'ilb-arena'));
@@ -221,7 +221,7 @@ function arenaAgreement() {
 
 function coverageBreadth() {
   if (!fs.existsSync(CORPUS_DIR)) return { cwes: [], gaps: [] };
-  const cwes = fs.readdirSync(CORPUS_DIR).filter((d) => /^CWE-\d+$/.test(d)).sort();
+  const cwes = fs.readdirSync(CORPUS_DIR).filter((d) => /^CWE-\d+$/.test(d)).toSorted();
   const cweData = cwes.map((cwe) => {
     const v = path.join(CORPUS_DIR, cwe, 'vulnerable');
     const s = path.join(CORPUS_DIR, cwe, 'safe');

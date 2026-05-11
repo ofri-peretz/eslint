@@ -32,7 +32,6 @@
  */
 
 import type {
-  Severity,
   OWASPCategory,
   ComplianceFramework,
 } from './types';

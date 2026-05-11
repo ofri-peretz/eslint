@@ -88,7 +88,7 @@ function checkPlugin(pkg: string): Violation | null {
   const canonicalHeader =
     '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
   const ruleTableRegex =
-    /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
+    /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
   const ruleTableMatches = [...content.matchAll(ruleTableRegex)];
   if (ruleTableMatches.length === 0) {
     reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);

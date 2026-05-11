@@ -220,7 +220,7 @@ async function listPluginFolders(
     if (prefix && !entry.startsWith(prefix)) continue;
     folders.push(entry);
   }
-  return folders.sort();
+  return folders.toSorted();
 }
 
 async function listRuleDocFiles(
@@ -254,7 +254,7 @@ async function listRuleDocFiles(
   }
 
   await visit(rulesRoot);
-  return results.sort();
+  return results.toSorted();
 }
 
 interface Heading {

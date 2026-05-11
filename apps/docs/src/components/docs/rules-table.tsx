@@ -11,7 +11,7 @@ import { Briefcase, Wrench, Lightbulb, AlertTriangle, Brain, ExternalLink } from
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/ofri-peretz/eslint/main/packages';
 
 // Security plugins that should link to /docs/security/
-const SECURITY_PLUGINS = [
+const SECURITY_PLUGINS = new Set([
   'browser-security',
   'secure-coding',
   'jwt',
@@ -23,7 +23,7 @@ const SECURITY_PLUGINS = [
   'nestjs-security',
   'lambda-security',
   'vercel-ai-security',
-];
+]);
 
 interface RulesTableProps {
   /** Plugin slug (e.g., 'import-next', 'browser-security') */
@@ -61,7 +61,7 @@ interface ParsedRule {
  * Determine the category path for a plugin
  */
 function getPluginCategory(plugin: string): 'security' | 'quality' {
-  return SECURITY_PLUGINS.includes(plugin) ? 'security' : 'quality';
+  return SECURITY_PLUGINS.has(plugin) ? 'security' : 'quality';
 }
 
 /**
@@ -298,7 +298,7 @@ function parseRulesFromReadme(markdown: string, plugin: string, category: 'secur
   return rules;
 }
 
-export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTableProps) {
+export async function RulesTable({ plugin, limit, compact: _compact, showLinks: _showLinks }: RulesTableProps) {
   const rules = await fetchRules(plugin);
   const displayRules = limit ? rules.slice(0, limit) : rules;
   

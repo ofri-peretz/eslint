@@ -53,7 +53,7 @@ export const PLUGINS: PluginEntry[] = [
     slug: 'crypto',
     package: 'eslint-plugin-crypto',
     pillar: 'security',
-    description: 'Weak algorithms, PRNG',
+    description: 'Cryptographic algorithm and randomness safety',
   },
   {
     slug: 'express-security',
@@ -177,10 +177,10 @@ export const PLUGINS_BY_PACKAGE: Record<string, PluginEntry> = Object.fromEntrie
 );
 
 /** All canonical plugin slugs (sorted). */
-export const PLUGIN_SLUGS: readonly string[] = PLUGINS.map((p) => p.slug).sort();
+export const PLUGIN_SLUGS: readonly string[] = PLUGINS.map((p) => p.slug).toSorted();
 
 /** All canonical package names (sorted). */
-export const PLUGIN_PACKAGES: readonly string[] = PLUGINS.map((p) => p.package).sort();
+export const PLUGIN_PACKAGES: readonly string[] = PLUGINS.map((p) => p.package).toSorted();
 
 /**
  * Plugins under a given pillar.

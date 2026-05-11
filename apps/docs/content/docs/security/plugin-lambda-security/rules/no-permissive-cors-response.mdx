@@ -1,6 +1,6 @@
 ---
 title: no-permissive-cors-response
-description: "Detects permissive CORS (Access-Control-Allow-Origin: *) in Lambda response headers"
+description: Detects permissive CORS headers in Lambda API Gateway responses
 tags: ['security', 'lambda']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CORS, Lambda, API Gateway, CWE-942, security, Access-Control-Allow-Origin, wildcard, auto-fix
-
-Detects permissive CORS headers in Lambda API Gateway responses
 
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)

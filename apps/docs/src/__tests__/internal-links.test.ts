@@ -388,7 +388,7 @@ describe('Internal Links - No Relative Paths', () => {
       const content = readFileSync(file, 'utf-8');
       
       // Match relative paths in href or markdown links
-      const relativeRegex = /(?:href=["']|]\()\.\.?\/[^"'\)]+/g;
+      const relativeRegex = /(?:href=["']|]\()\.\.?\/[^"')]+/g;
       let match;
       
       while ((match = relativeRegex.exec(content)) !== null) {

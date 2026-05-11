@@ -1,6 +1,6 @@
 ---
 title: no-console-log
-description: "Disallow console.log with configurable remediation strategies"
+description: Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part of eslint-plugin-operability and provides 4 auto-f
 tags: ['quality', 'operability', 'production']
 category: quality
 autofix: suggestions
@@ -13,8 +13,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** console.log, logging, ESLint rule, production logging, structured logging, logger migration, auto-fix, LLM-optimized, code quality, debugging, observability, Winston, Pino
-
-Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part of eslint-plugin-operability and provides 4 auto-f
 
 Disallow `console.log` with configurable remediation strategies and LLM-optimized output. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability) and provides 4 auto-fix strategies for migrating from console.log to proper logging.
 

@@ -44,7 +44,6 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import os from 'node:os';
 import { createRequire } from 'node:module';
 
 const requireFromHere = createRequire(import.meta.url);

@@ -1,6 +1,6 @@
 ---
 title: no-sensitive-in-prompt
-description: "Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts"
+description: This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally identifiable ...
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents sensitive data (passwords, tokens, PII) from being sent to LLMs.
-
-This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally identifiable ...
 
 ## 📊 Rule Details
 

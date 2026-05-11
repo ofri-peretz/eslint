@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { globSync } from 'glob';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const DOCS_DIR = dirname(fileURLToPath(import.meta.url)) + '/..';
+const ROOT = resolve(DOCS_DIR, '..', '..');
 
 /**
  * Mermaid Syntax Validation Tests
@@ -20,9 +25,9 @@ describe('Mermaid Diagram Syntax Validation', () => {
     it('should not contain quoted pipe labels in arrows (e.g., -->"|label|")', () => {
       const invalidPattern = /-->\s*"\|[^"]*\|/;
       const files = [
-        ...globSync('../../packages/**/docs/**/*.md', { nodir: true }),
-        ...globSync('content/**/*.mdx', { nodir: true }),
-        ...globSync('content/**/*.md', { nodir: true })
+        ...globSync('packages/**/docs/**/*.md', { cwd: ROOT, absolute: true, nodir: true }),
+        ...globSync('content/**/*.mdx', { cwd: DOCS_DIR, absolute: true, nodir: true }),
+        ...globSync('content/**/*.md', { cwd: DOCS_DIR, absolute: true, nodir: true }),
       ];
 
       const violations: Violation[] = [];
@@ -72,8 +77,8 @@ describe('Mermaid Diagram Syntax Validation', () => {
     it('should not contain unclosed brackets in node definitions', () => {
       const invalidPattern = /\[[^\]]*\|[^\]]*"/;
       const files = [
-        ...globSync('../../packages/**/docs/**/*.md', { nodir: true }),
-        ...globSync('content/**/*.mdx', { nodir: true })
+        ...globSync('packages/**/docs/**/*.md', { cwd: ROOT, absolute: true, nodir: true }),
+        ...globSync('content/**/*.mdx', { cwd: DOCS_DIR, absolute: true, nodir: true }),
       ];
 
       const violations: Violation[] = [];
@@ -183,8 +188,8 @@ More markdown with -->"|Still Ignore|"
 
   describe('File Coverage', () => {
     it('should scan all documentation markdown files', () => {
-      const mdFiles = globSync('../../packages/**/docs/**/*.md', { nodir: true });
-      const mdxFiles = globSync('content/**/*.{md,mdx}', { nodir: true });
+      const mdFiles = globSync('packages/**/docs/**/*.md', { cwd: ROOT, nodir: true });
+      const mdxFiles = globSync('content/**/*.{md,mdx}', { cwd: DOCS_DIR, nodir: true });
       
       const totalFiles = mdFiles.length + mdxFiles.length;
       

@@ -179,12 +179,6 @@ export interface Options {
 
 export type RuleOptions = [Options?];
 
-interface CycleInfo {
-  cycleTarget: string;
-  strategy: FixStrategy;
-  relevantCycle: string[];
-  cycleHash: string;
-}
 
 export const noCycle = createRule<RuleOptions, MessageIds>({
   name: 'no-cycle',

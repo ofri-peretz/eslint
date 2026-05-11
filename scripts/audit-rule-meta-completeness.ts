@@ -425,7 +425,7 @@ function buildMarkdown(audit: PluginAudit[]): string {
   lines.push('');
   lines.push('| Plugin | Rules | Score | type | description | url | **cwe** | cvss | fixable | hasSuggestions |');
   lines.push('| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
-  const sorted = [...audit].sort((a, b) => b.avgScore - a.avgScore);
+  const sorted = [...audit].toSorted((a, b) => b.avgScore - a.avgScore);
   for (const p of sorted) {
     const cweCol = p.counts.cweEmbeddedInMessage > 0
       ? `${p.counts.cwe}/${p.ruleCount} (+${p.counts.cweEmbeddedInMessage} embedded)`
@@ -495,7 +495,7 @@ function buildConsoleSummary(audit: PluginAudit[]): string {
   lines.push('');
   lines.push('Plugin                                 Rules  Score  desc   url    cwe (embedded)');
   lines.push('────────────────────────────────────  ─────  ─────  ─────  ─────  ──────────────');
-  const sorted = [...audit].sort((a, b) => b.avgScore - a.avgScore);
+  const sorted = [...audit].toSorted((a, b) => b.avgScore - a.avgScore);
   for (const p of sorted) {
     lines.push([
       p.pluginName.padEnd(38),

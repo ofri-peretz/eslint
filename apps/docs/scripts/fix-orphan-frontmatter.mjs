@@ -158,7 +158,7 @@ function dedupeRedundantParagraphs(body, description) {
     if (line.trim() === '') { i++; continue; }
     const start = i;
     while (i < lines.length && lines[i].trim() !== '') {
-      if (/^```/.test(lines[i])) inFence = !inFence;
+      if (lines[i].startsWith('```')) inFence = !inFence;
       i++;
     }
     const end = i;
@@ -171,7 +171,7 @@ function dedupeRedundantParagraphs(body, description) {
 
   const isProsey = (text) => {
     // Reject anything that doesn't look like a plain prose paragraph.
-    if (/^```/.test(text)) return false;
+    if (text.startsWith('```')) return false;
     if (/^[#>|]/.test(text)) return false;
     if (/^\s*[-*+]\s/.test(text)) return false;
     if (/^\s*<[A-Za-z!/]/.test(text)) return false;

@@ -44,8 +44,8 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
   it('exposes the same rule names as the main entry (no rules dropped)', async () => {
     const oxlintModule = await import('./oxlint');
     const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
-    expect(Object.keys(oxlintPlugin.rules || {}).sort()).toEqual(
-      Object.keys(mainPlugin.rules || {}).sort(),
+    expect(Object.keys(oxlintPlugin.rules || {}).toSorted()).toEqual(
+      Object.keys(mainPlugin.rules || {}).toSorted(),
     );
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   getTTLForPath,
   DEFAULT_CACHE_CONFIG,
@@ -187,7 +187,7 @@ describe('JSON Cache Module', () => {
     describe('clearCache', () => {
       it('should clear all cache entries', () => {
         // We can't directly test the cache state, but we can verify stats
-        const statsBefore = getCacheStats();
+        const _statsBefore = getCacheStats();
         clearCache();
         const statsAfter = getCacheStats();
         

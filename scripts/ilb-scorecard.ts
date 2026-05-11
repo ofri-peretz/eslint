@@ -33,9 +33,9 @@ const ROOT = path.resolve(HERE, '..');
 const BENCH_RESULTS = path.join(ROOT, 'benchmarks/results');
 const WILD_RESULTS = path.join(ROOT, 'benchmark-results');
 
-const args = process.argv.slice(2);
-const PRINT = args.includes('--print');
-const EMIT_JSON = args.includes('--json');
+const args = new Set(process.argv.slice(2));
+const PRINT = args.has('--print');
+const EMIT_JSON = args.has('--json');
 
 // ---------------------------------------------------------------------------
 // TYPES
@@ -98,9 +98,9 @@ function latestFile(dir: string, suffix = '.json'): string | null {
   const entries = fs.readdirSync(dir).filter((e) => e.endsWith(suffix));
   if (entries.length === 0) return null;
   // Filter for date-stamped files (YYYY-MM-DD.json) before fancy variants.
-  const dated = entries.filter((e) => /^\d{4}-\d{2}-\d{2}\b/.test(e)).sort().reverse();
+  const dated = entries.filter((e) => /^\d{4}-\d{2}-\d{2}\b/.test(e)).toSorted().toReversed();
   if (dated.length > 0) return path.join(dir, dated[0]);
-  return path.join(dir, entries.sort().reverse()[0]);
+  return path.join(dir, entries.toSorted().toReversed()[0]);
 }
 
 function latestWildSummary(): WildResult | null {
@@ -109,8 +109,8 @@ function latestWildSummary(): WildResult | null {
     .readdirSync(WILD_RESULTS)
     .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e))
     .filter((e) => fs.statSync(path.join(WILD_RESULTS, e)).isDirectory())
-    .sort()
-    .reverse();
+    .toSorted()
+    .toReversed();
   for (const d of dirs) {
     const p = path.join(WILD_RESULTS, d, 'summary.json');
     if (fs.existsSync(p)) return { path: p, date: d, data: readJson<WildSummary>(p) };
@@ -160,7 +160,7 @@ function readArena(): BenchScore {
   if (m && Number.isFinite(m.TP)) {
     const sorted = Object.entries(d.plugins ?? {})
       .map(([name, p]) => ({ name, f1: parseFloat(p.metrics?.f1Score ?? '0') || 0 }))
-      .sort((a, b) => b.f1 - a.f1);
+      .toSorted((a, b) => b.f1 - a.f1);
     const rank = sorted.findIndex((p) => p.name === 'interlace') + 1;
     return {
       score: `F1 ${m.f1Score} (rank ${rank}/${sorted.length})`,
@@ -191,7 +191,7 @@ function readJuliet(): BenchScore {
   if (interlace && Number.isFinite(interlace.TP)) {
     const sorted = Object.entries(d.plugins ?? {})
       .map(([name, p]) => ({ name, f1: p.aggregate?.f1 ?? 0 }))
-      .sort((a, b) => b.f1 - a.f1);
+      .toSorted((a, b) => b.f1 - a.f1);
     const rank = sorted.findIndex((p) => p.name === 'interlace') + 1;
     const cwes = (d.corpus ?? []).length;
     return {
@@ -248,7 +248,7 @@ function readPerf(): BenchScore {
   const ok = wild.data.repos.filter((r) => r.success);
   if (ok.length === 0) return missing(wild.path);
   const median = (arr: number[]): number => {
-    const s = [...arr].sort((a, b) => a - b);
+    const s = [...arr].toSorted((a, b) => a - b);
     return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
   };
   const msPerFile = median(ok.map((r) => r.timing.msPerFile));
@@ -490,7 +490,7 @@ function aggregatePerRule(): PerRuleAgg[] {
       measuredInArena: measuredArena.has(rule),
       measuredInJuliet: measuredJuliet.has(rule),
     }))
-    .sort((x, y) => y.totalHits - x.totalHits);
+    .toSorted((x, y) => y.totalHits - x.totalHits);
 }
 
 function readMeasuredRuleSet(dir: string): Set<string> {
@@ -616,7 +616,7 @@ function renderMd(benches: BenchRow[]): string {
   const trendFor = (benchName: string): string => {
     const rows = history
       .filter((h) => h.bench === benchName && h.date)
-      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+      .toSorted((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
       .slice(-12);
     if (rows.length < 2) return '—';
     return sparkline(rows.map((r) => numericScore(r.score)));
@@ -639,7 +639,7 @@ function renderMd(benches: BenchRow[]): string {
       })
       .join('\n');
     const pluginRows = Object.entries(wildData.pluginRollup ?? {})
-      .sort((a, b) => b[1].corpusActivationRate - a[1].corpusActivationRate)
+      .toSorted((a, b) => b[1].corpusActivationRate - a[1].corpusActivationRate)
       .map(
         ([p, v]) =>
           `| ${p} | ${v.rulesEverFired} / ${v.totalRules} | ${v.corpusActivationRate}% | ${v.reposExercising} |`,
@@ -669,7 +669,7 @@ ${pluginRows}
   if (coverage) {
     const renderKappas = (kappas: Record<string, number | null>) =>
       Object.entries(kappas)
-        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+        .toSorted((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
         .map(([k, v]) => `| ${k} | ${v == null ? '—' : v} | ${interpretKappa(v)} |`)
         .join('\n');
 

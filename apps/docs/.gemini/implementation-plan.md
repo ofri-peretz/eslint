@@ -3342,12 +3342,6 @@ export const PLUGIN_SOURCES = {
     changelog: 'CHANGELOG.md',
     rulesDir: 'docs/rules',
   },
-  crypto: {
-    repo: 'eslint-plugin-crypto',
-    readme: 'README.md',
-    changelog: 'CHANGELOG.md',
-    rulesDir: 'docs/rules',
-  },
   'mongodb-security': {
     repo: 'eslint-plugin-mongodb-security',
     readme: 'README.md',

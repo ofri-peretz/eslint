@@ -1,6 +1,6 @@
 ---
 title: require-tool-confirmation
-description: "Require human confirmation for destructive tool operations (delete, transfer, execute)"
+description: "This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before..."
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Requires human confirmation for destructive tool operations.
-
-This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before...
 
 ## 📊 Rule Details
 

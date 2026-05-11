@@ -42,7 +42,7 @@ const CWE_TOP_25 = [
   'CWE-476', 'CWE-798', 'CWE-190', 'CWE-400', 'CWE-306',
 ];
 
-const CWE_TOP_10_OWASP = ['CWE-79', 'CWE-89', 'CWE-78', 'CWE-22', 'CWE-94', 'CWE-918', 'CWE-77', 'CWE-352', 'CWE-862', 'CWE-863'];
+const CWE_TOP_10_OWASP = new Set(['CWE-79', 'CWE-89', 'CWE-78', 'CWE-22', 'CWE-94', 'CWE-918', 'CWE-77', 'CWE-352', 'CWE-862', 'CWE-863']);
 
 function discoverPlugins() {
   if (!fs.existsSync(PACKAGES_ROOT)) return [];
@@ -148,7 +148,7 @@ function renderCoverageMd(report) {
   for (const cwe of report.coveredCwes) {
     const rules = report.byCwe.get(cwe);
     const isTop25 = CWE_TOP_25.includes(cwe) ? '✓' : '';
-    const isOwasp = CWE_TOP_10_OWASP.includes(cwe) ? '✓' : '';
+    const isOwasp = CWE_TOP_10_OWASP.has(cwe) ? '✓' : '';
     const plugins = [...new Set(rules.map((r) => r.split('/')[0]))].sort().join(', ');
     lines.push(`| [${cwe}](https://cwe.mitre.org/data/definitions/${cwe.slice(4)}.html) | ${isTop25} | ${isOwasp} | ${rules.length} | ${plugins} |`);
   }
@@ -183,7 +183,7 @@ function renderGapsMd(report) {
   lines.push('| CWE | Title (lookup) | OWASP Top-10? | JS-detectable? |');
   lines.push('|---|---|:---:|:---:|');
   for (const cwe of report.top25Gaps) {
-    const isOwasp = CWE_TOP_10_OWASP.includes(cwe) ? '✓' : '';
+    const isOwasp = CWE_TOP_10_OWASP.has(cwe) ? '✓' : '';
     // JS-detectable heuristic: AST-detectable from JS/TS source. C/C++-only CWEs (memory) are out of scope.
     const cppOnly = ['CWE-787', 'CWE-125', 'CWE-416', 'CWE-119', 'CWE-476', 'CWE-190'];
     const detectable = cppOnly.includes(cwe) ? '— (C/C++ memory)' : '✓';
@@ -219,7 +219,7 @@ function main() {
       report.coveredCwes.map((c) => [c, {
         rules: report.byCwe.get(c),
         top25: CWE_TOP_25.includes(c),
-        owaspTop10: CWE_TOP_10_OWASP.includes(c),
+        owaspTop10: CWE_TOP_10_OWASP.has(c),
       }]),
     ),
     unmappedRules: report.unmapped,

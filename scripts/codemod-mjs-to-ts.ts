@@ -110,7 +110,7 @@ function collectInScope(): string[] {
   const out: string[] = [];
   for (const rule of CONVERT_SCOPE) out.push(...listFromScope(rule));
   out.push(...listSuiteRunners());
-  return out.sort();
+  return out.toSorted();
 }
 
 // ---------------------------------------------------------------------------

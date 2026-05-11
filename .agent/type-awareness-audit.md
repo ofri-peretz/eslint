@@ -39,7 +39,6 @@ Zero hard-required type-aware rules. Every rule we ship runs in oxlint's JS-plug
 | :--- | ---: | ---: | ---: | ---: | ---: |
 | `eslint-plugin-browser-security` | 45 | 45 | 0 | 0 | 0 |
 | `eslint-plugin-conventions` | 10 | 10 | 0 | 0 | 0 |
-| `eslint-plugin-crypto` | 11 | 11 | 0 | 0 | 0 |
 | `eslint-plugin-express-security` | 10 | 10 | 0 | 0 | 0 |
 | `eslint-plugin-import-next` | 55 | 52 | 0 | **3** | 0 |
 | `eslint-plugin-jwt` | 13 | 13 | 0 | 0 | 0 |

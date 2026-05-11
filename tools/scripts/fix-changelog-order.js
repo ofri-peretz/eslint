@@ -10,7 +10,7 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
 packages.forEach(pkg => {
     const changelogPath = path.join(packagesDir, pkg, 'CHANGELOG.md');
     if (fs.existsSync(changelogPath)) {
-        let content = fs.readFileSync(changelogPath, 'utf8');
+        const content = fs.readFileSync(changelogPath, 'utf8');
         
         // If file already starts with # Changelog, it's likely fine (or at least cleaner)
         if (content.trim().startsWith('# Changelog')) {

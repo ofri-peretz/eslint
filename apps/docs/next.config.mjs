@@ -62,7 +62,7 @@ const config = {
   },
 
   // Webpack optimizations for production builds (fallback)
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer: _isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       react: path.resolve(monorepoRoot, 'node_modules/react'),

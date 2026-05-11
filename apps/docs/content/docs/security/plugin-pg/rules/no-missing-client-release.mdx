@@ -1,6 +1,6 @@
 ---
 title: no-missing-client-release
-description: "Ensure pg client is released after use to prevent pool exhaustion."
+description: Ensures acquired pool clients are released back to the pool.
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -17,8 +17,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 > **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
-
-Ensures acquired pool clients are released back to the pool.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

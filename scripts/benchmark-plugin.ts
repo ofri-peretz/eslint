@@ -22,7 +22,7 @@ import {
 } from '../packages/eslint-plugin/src/utils/dependency-analysis';
 
 // Type alias for clarity
-type LRUCache<K, V> = ReturnType<typeof createLRUCache<K, V>>;
+type _LRUCache<K, V> = ReturnType<typeof createLRUCache<K, V>>;
 
 import {
   formatLLMMessage,

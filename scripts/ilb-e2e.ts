@@ -155,7 +155,7 @@ function main() {
       catch (err) {
         out = (err.stdout?.toString() ?? '') + (err.stderr?.toString() ?? '');
         if (!out.includes('no-hardcoded-credentials') && !out.includes('no-eval')) {
-          throw new Error(`audit did not surface expected findings; got: ${out.slice(0, 300)}`);
+          throw new Error(`audit did not surface expected findings; got: ${out.slice(0, 300)}`, { cause: err });
         }
         return; // expected non-zero exit; treat as pass
       }

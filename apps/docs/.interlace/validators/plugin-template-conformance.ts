@@ -125,7 +125,7 @@ async function listPluginFolders(root: string, prefix?: string): Promise<string[
     if (prefix && !entry.startsWith(prefix)) continue;
     folders.push(entry);
   }
-  return folders.sort();
+  return folders.toSorted();
 }
 
 async function fileExists(path: string): Promise<boolean> {

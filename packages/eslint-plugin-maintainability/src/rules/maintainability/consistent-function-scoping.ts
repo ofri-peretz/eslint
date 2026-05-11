@@ -103,6 +103,53 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Class methods / class field initializers — these are bound to the
+      // instance and cannot be moved to module scope. The parent chain is
+      // `MethodDefinition` (regular methods) or `PropertyDefinition` (class
+      // fields). Without this exemption, every method that doesn't reference
+      // `this` is wrongly flagged.
+      const p = node.parent;
+      if (p?.type === 'MethodDefinition' || p?.type === 'PropertyDefinition') {
+        return;
+      }
+
+      // Inline callbacks passed to higher-order methods. These functions are
+      // inline BY DESIGN — moving `arr.reduce((a, b) => a + b)` to a
+      // top-level named function loses inline locality without improving
+      // anything. Common high-arity hosts:
+      //   - Array methods: map, filter, reduce, forEach, find, some, every, sort, flatMap
+      //   - Promise: .then, .catch, .finally
+      //   - Event hosts: .on('event', ...), addEventListener('event', ...)
+      //   - Scheduler: setTimeout, setInterval, requestAnimationFrame
+      //   - Promise constructor: `new Promise((resolve, reject) => ...)`
+      if (p?.type === 'CallExpression') {
+        const callee = p.callee;
+        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+          const HOST_METHODS = new Set([
+            'map', 'filter', 'reduce', 'reduceRight', 'forEach', 'find', 'findIndex',
+            'some', 'every', 'sort', 'flatMap', 'flat',
+            'then', 'catch', 'finally',
+            'on', 'once', 'addEventListener', 'removeEventListener', 'subscribe',
+          ]);
+          if (HOST_METHODS.has(callee.property.name)) return;
+        }
+        if (callee.type === 'Identifier') {
+          const HOST_FNS = new Set([
+            'setTimeout', 'setInterval', 'setImmediate',
+            'requestAnimationFrame', 'requestIdleCallback', 'queueMicrotask',
+          ]);
+          if (HOST_FNS.has(callee.name)) return;
+        }
+      }
+      // `new Promise((resolve, reject) => ...)` — executor must stay inline.
+      if (
+        p?.type === 'NewExpression' &&
+        p.callee.type === 'Identifier' &&
+        p.callee.name === 'Promise'
+      ) {
+        return;
+      }
+
       // Get all variables referenced in the function body
       const referencedVars = new Set<string>();
 

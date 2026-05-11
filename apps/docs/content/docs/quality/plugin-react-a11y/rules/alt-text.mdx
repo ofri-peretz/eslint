@@ -1,6 +1,6 @@
 ---
 title: alt-text
-description: "Enforce alt text on images with accessibility impact context"
+description: Enforce alt text on images and other visual elements that carry accessibility impact.
 tags: ['accessibility', 'a11y', 'react', 'wcag']
 category: quality
 cwe: CWE-252
@@ -14,7 +14,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** alt-text, accessibility, a11y, WCAG, screen reader, img alt, role=presentation, aria-label, object alt, area alt, ESLint rule
-
 > **WCAG:** [1.1.1 Non-text Content (Level A)](https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html)
 
 Enforce alt text on images and other visual elements that carry accessibility impact. Missing alt text breaks screen readers, blocks Lighthouse a11y audits, and fails WCAG 1.1.1 (Level A).

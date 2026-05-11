@@ -190,7 +190,7 @@ function generateTestFile(meta, sourceCode) {
   }).join('\n');
 
   // If rule has suggestions, add a note at the top of the test file
-  const suggestionsNote = meta.hasSuggestions
+  const _suggestionsNote = meta.hasSuggestions
     ? `\n * NOTE: This rule has hasSuggestions: true. Run \`/write-tests\` to generate exact suggestion assertions.`
     : '';
 

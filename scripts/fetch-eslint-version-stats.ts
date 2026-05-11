@@ -115,7 +115,7 @@ function aggregate(downloads: Record<string, number>): {
       total: stable + prerelease,
       pct: 0,
     }))
-    .sort((a, b) => b.total - a.total);
+    .toSorted((a, b) => b.total - a.total);
   for (const b of buckets) b.pct = total === 0 ? 0 : (b.total / total) * 100;
   return { buckets, total };
 }

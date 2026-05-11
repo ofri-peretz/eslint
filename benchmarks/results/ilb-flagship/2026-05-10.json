@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Wild",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-11T06:42:01.122Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "schema": "ilb-flagship/v2",
   "runAt": "2026-05-10T16:50:19.028Z",
   "workspace": "/Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/suites/ilb-flagship/workspace",
@@ -42880,5 +42892,6 @@
       "overlap": null,
       "corpus": null
     }
-  ]
+  ],
+  "timestamp": "2026-05-10T00:00:00.000Z"
 }

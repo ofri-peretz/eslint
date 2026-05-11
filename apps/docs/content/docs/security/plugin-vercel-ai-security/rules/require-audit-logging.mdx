@@ -1,6 +1,6 @@
 ---
 title: require-audit-logging
-description: "Suggest audit logging for AI SDK operations"
+description: "This rule identifies AI SDK calls that aren't preceded by logging statements"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Suggests audit logging for AI SDK operations.
-
-This rule identifies AI SDK calls that aren't preceded by logging statements
 
 ## 📊 Rule Details
 

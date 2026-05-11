@@ -153,7 +153,7 @@ for (const pluginDir of readPlugins()) {
 
   const pluginReport = { rules: {}, missingDoc: [], missingTest: [], docNoExamples: [], missingImpl: [] };
 
-  for (const rule of [...allRules].sort()) {
+  for (const rule of [...allRules].toSorted()) {
     const inSrc = srcRules.has(rule);
     const inDoc = docRules.has(rule);
     const testPath = inSrc ? findTest(pluginDir, rule) : null;

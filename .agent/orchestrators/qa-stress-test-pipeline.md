@@ -22,7 +22,7 @@ agents:
 /pipeline qa-stress: Run full QA for eslint-plugin-pg
 /pipeline qa-stress: FP audit for eslint-plugin-jwt
 /pipeline qa-stress: Performance benchmark eslint-plugin-secure-coding
-/pipeline qa-stress: FN discovery for eslint-plugin-crypto
+/pipeline qa-stress: FN discovery for eslint-plugin-node-security
 ```
 
 ---
@@ -34,7 +34,7 @@ agents:
 | `eslint-plugin-secure-coding`      | 75    | Core Security     | P0       |
 | `eslint-plugin-pg`                 | 13    | PostgreSQL        | P0       |
 | `eslint-plugin-jwt`                | 12    | Token Security    | P0       |
-| `eslint-plugin-crypto`             | 18    | Cryptography      | P0       |
+| `eslint-plugin-node-security`      | 34    | Node.js + Cryptography | P0  |
 | `eslint-plugin-browser-security`   | 21    | Browser/DOM       | P1       |
 | `eslint-plugin-vercel-ai-security` | 15    | AI/LLM Safety     | P1       |
 | `eslint-plugin-mongodb-security`   | 11    | MongoDB/NoSQL     | P1       |
@@ -295,7 +295,7 @@ After running all phases, generate a comprehensive report:
 /pipeline qa-stress: FP audit for eslint-plugin-jwt
 
 # FN discovery only
-/pipeline qa-stress: FN discovery for eslint-plugin-crypto
+/pipeline qa-stress: FN discovery for eslint-plugin-node-security
 
 # Performance only
 /pipeline qa-stress: Performance benchmark eslint-plugin-secure-coding
@@ -370,7 +370,7 @@ qa-stress-test:
       plugin:
         - eslint-plugin-pg
         - eslint-plugin-jwt
-        - eslint-plugin-crypto
+        - eslint-plugin-node-security
   steps:
     - uses: actions/checkout@v4
     - uses: pnpm/action-setup@v4

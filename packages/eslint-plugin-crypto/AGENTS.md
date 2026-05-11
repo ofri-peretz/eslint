@@ -1,6 +1,8 @@
 # AGENTS.md
 
-> Context for AI coding agents working on eslint-plugin-crypto
+> ⛔ **DEPRECATED PACKAGE.** Do not add new rules or features here. `eslint-plugin-crypto` has been consolidated into [`eslint-plugin-node-security`](../eslint-plugin-node-security/). Cryptography work belongs in that package. This package is kept on disk only so already-pinned consumers continue to resolve; no new releases will ship from here. If asked to "add a crypto rule" or "update the crypto plugin", route the work to `eslint-plugin-node-security` instead.
+>
+> Context for AI coding agents working on eslint-plugin-crypto (historical)
 
 ## Setup Commands
 

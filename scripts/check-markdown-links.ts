@@ -246,7 +246,7 @@ function validateLink(
           message: `Anchor #${anchor} not found in ${relative('.', targetFile)}`,
         });
       }
-    } catch (error) {
+    } catch {
       // File exists but couldn't read - that's okay, just skip anchor check
     }
   }

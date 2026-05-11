@@ -56,8 +56,8 @@ function latestWildDir() {
     .readdirSync(RESULTS_DIR)
     .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e))
     .filter((e) => fs.statSync(path.join(RESULTS_DIR, e)).isDirectory())
-    .sort()
-    .reverse();
+    .toSorted()
+    .toReversed();
   for (const d of dirs) {
     if (fs.existsSync(path.join(RESULTS_DIR, d, 'summary.json'))) return path.join(RESULTS_DIR, d);
   }
@@ -70,8 +70,8 @@ function latestBenchFile(name) {
   const entries = fs
     .readdirSync(dir)
     .filter((e) => /^\d{4}-\d{2}-\d{2}\.json$/.test(e))
-    .sort()
-    .reverse();
+    .toSorted()
+    .toReversed();
   return entries[0] ? path.join(dir, entries[0]) : null;
 }
 

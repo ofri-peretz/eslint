@@ -71,7 +71,7 @@ function getPackagesToCheck(): { name: string; path: string; packageJsonVersion:
           packageJsonVersion: pkgJson.version,
         });
       }
-    } catch (e) {
+    } catch {
       console.warn(`⚠️  Could not read ${pkgJsonPath}`);
     }
   }

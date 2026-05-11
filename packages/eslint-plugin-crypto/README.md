@@ -1,9 +1,17 @@
+> ## ⛔ DEPRECATED
+>
+> **`eslint-plugin-crypto` is deprecated.** All cryptography rules have been redistributed into [**`eslint-plugin-node-security`**](https://www.npmjs.com/package/eslint-plugin-node-security), which now covers Node.js core-module security including cryptography (weak ciphers/hashes, ECB mode, static IVs, insecure key derivation, timing-unsafe compare, CryptoJS, native-crypto preference, and more).
+>
+> **Migration:** replace `eslint-plugin-crypto` with `eslint-plugin-node-security` in your `package.json` and ESLint config. Rule names map 1:1 under the `node-security/` prefix (e.g. `crypto/no-weak-cipher-algorithm` → `node-security/no-weak-cipher-algorithm`).
+>
+> This package will continue to resolve for already-pinned consumers, but no new releases will ship. Please migrate.
+
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
-  Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).
+  <strong>[DEPRECATED]</strong> Cryptographic security rules — superseded by <a href="https://www.npmjs.com/package/eslint-plugin-node-security">eslint-plugin-node-security</a>.
 </p>
 
 <p align="center">

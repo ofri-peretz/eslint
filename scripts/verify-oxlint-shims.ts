@@ -76,7 +76,7 @@ for (const entry of manifest.plugins) {
     continue;
   }
 
-  const runtimeRuleNames = Object.keys(rulesObj).sort();
+  const runtimeRuleNames = Object.keys(rulesObj).toSorted();
   updatedRuntime[entry.short] = runtimeRuleNames;
 
   // Detect rule aliasing: a name like `react/jsx-key` registered alongside

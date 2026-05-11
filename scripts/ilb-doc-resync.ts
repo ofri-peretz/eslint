@@ -329,7 +329,7 @@ function deleteDocBlock(docPath: string, section: 'incorrect' | 'correct', block
     if (/^(incorrect|bad|anti[-\s]?pattern|wrong|don['’]?t)\b/.test(core)) s = 'incorrect';
     else if (/^(correct|good|do|right)\b/.test(core)) s = 'correct';
     else if (/^❌|incorrect/.test(m[0].toLowerCase())) s = 'incorrect';
-    else if (/^✅/.test(m[0])) s = 'correct';
+    else if (m[0].startsWith('✅')) s = 'correct';
     headers.push({ index: m.index + m[0].length, section: s });
   }
   const NON_CODE = new Set([
@@ -386,7 +386,7 @@ function replaceDocBlock(docPath, section /* 'incorrect'|'correct' */, blockInde
     if (/^(incorrect|bad|anti[-\s]?pattern|wrong|don['’]?t)\b/.test(core)) s = 'incorrect';
     else if (/^(correct|good|do|right)\b/.test(core)) s = 'correct';
     else if (/^❌|incorrect/.test(m[0].toLowerCase())) s = 'incorrect';
-    else if (/^✅/.test(m[0])) s = 'correct';
+    else if (m[0].startsWith('✅')) s = 'correct';
     headers.push({ index: m.index + m[0].length, section: s });
   }
 

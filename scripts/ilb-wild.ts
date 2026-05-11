@@ -904,7 +904,7 @@ async function computePluginCoverage(plugins, ruleHits) {
 
 function statSummary(values) {
   if (values.length === 0) return { median: 0, mean: 0, stddev: 0, cv: 0 };
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = [...values].toSorted((a, b) => a - b);
   const median = sorted.length % 2
     ? sorted[(sorted.length - 1) / 2]
     : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
@@ -946,10 +946,10 @@ function writePerRepoArtifacts(outDir, repo, result) {
 
 function renderPerRepoMd(repo: any, r: any) {
   const topRulesByHits = (Object.entries(r.perRule) as Array<[string, any]>)
-    .sort((a, b) => b[1].hits - a[1].hits)
+    .toSorted((a, b) => b[1].hits - a[1].hits)
     .slice(0, 10);
   const topRulesByTime = (Object.entries(r.perRule) as Array<[string, any]>)
-    .sort((a, b) => b[1].avgTimeMs - a[1].avgTimeMs)
+    .toSorted((a, b) => b[1].avgTimeMs - a[1].avgTimeMs)
     .slice(0, 10);
 
   const cov = (Object.entries(r.pluginCoverage) as Array<[string, any]>)
@@ -1117,7 +1117,7 @@ function renderSummaryMd(s: any) {
     .join('\n');
 
   const pluginRows = (Object.entries(s.pluginRollup) as Array<[string, any]>)
-    .sort((a, b) => b[1].corpusActivationRate - a[1].corpusActivationRate)
+    .toSorted((a, b) => b[1].corpusActivationRate - a[1].corpusActivationRate)
     .map(
       ([p, v]) =>
         `| ${p} | ${v.reposExercising} | ${v.rulesEverFired} / ${v.totalRules} | ${v.corpusActivationRate}% |`,
@@ -1210,8 +1210,8 @@ function showLastResults() {
   }
   // Find latest date dir or legacy <date>.json file.
   const entries = fs.readdirSync(RESULTS_DIR);
-  const dirs = entries.filter((e) => fs.statSync(path.join(RESULTS_DIR, e)).isDirectory()).sort().reverse();
-  const legacyFiles = entries.filter((e) => e.endsWith('.json')).sort().reverse();
+  const dirs = entries.filter((e) => fs.statSync(path.join(RESULTS_DIR, e)).isDirectory()).toSorted().toReversed();
+  const legacyFiles = entries.filter((e) => e.endsWith('.json')).toSorted().toReversed();
 
   if (dirs.length > 0) {
     const latest = dirs[0];

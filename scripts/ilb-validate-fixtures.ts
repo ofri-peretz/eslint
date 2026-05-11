@@ -31,7 +31,6 @@
  */
 
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { ESLint } from 'eslint';
@@ -76,7 +75,7 @@ function listCorpus() {
   return fs.readdirSync(CORPUS_DIR)
     .filter((d) => /^CWE-\d+$/.test(d))
     .filter((d) => !FOCUS_CWE || d === FOCUS_CWE)
-    .sort()
+    .toSorted()
     .map((cwe) => {
       const dir = path.join(CORPUS_DIR, cwe);
       const manifestPath = path.join(dir, 'manifest.json');
@@ -125,7 +124,7 @@ async function lintFile(filePath, eslint) {
   return messages;
 }
 
-function fixtureKindResult({ kind, expected, actual, prefixes }) {
+function fixtureKindResult({ kind, expected: _expected, actual, prefixes }) {
   // For vulnerable fixtures: at least one of the actual rules must start
   // with one of the manifest's expected prefixes.
   // For safe fixtures: no actual rule should start with any prefix.

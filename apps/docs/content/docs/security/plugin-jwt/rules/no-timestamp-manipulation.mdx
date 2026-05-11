@@ -1,6 +1,6 @@
 ---
 title: no-timestamp-manipulation
-description: "Prevent disabling automatic timestamp generation which enables replay attacks"
+description: "This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation"
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
-
-This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation
 
 **Severity:** 🟠 High  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

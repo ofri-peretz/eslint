@@ -10,9 +10,6 @@ import { describe, it, expect } from 'vitest';
  * These tests focus on module structure and exported interface validation.
  */
 
-// Import types and functions we expect to exist
-import type { CompiledContent } from '../src/lib/mdx-compiler';
-
 describe('MDX Compiler Module', () => {
   // ===========================================================================
   // Module Structure Tests - Lock the exported interface

@@ -15,13 +15,17 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const PACKAGES_ROOT = join(process.cwd(), '../../packages');
+// Resolve relative to this test file rather than process.cwd() so the test
+// works under both vitest (cwd=apps/docs) and turbo (cwd=workspace root).
+const DOCS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const PACKAGES_ROOT = join(DOCS_ROOT, '..', '..', 'packages');
 
 // Patterns that break MDX parsing in RemoteRuleDoc
 const PROBLEMATIC_PATTERNS = [
@@ -179,14 +183,14 @@ describe('Rule Documentation - MDX Compatibility', () => {
         const lines = content.split('\n');
         
         let inTable = false;
-        let tableStartLine = 0;
-        
+        let _tableStartLine = 0;
+
         lines.forEach((line, index) => {
           // Detect table rows
           if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
             if (!inTable) {
               inTable = true;
-              tableStartLine = index + 1;
+              _tableStartLine = index + 1;
             }
             
             // Check for unbalanced pipes (rough check)

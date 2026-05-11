@@ -146,7 +146,7 @@ function renderMd(report) {
   lines.push('');
   lines.push('| Practice | Rules covering |');
   lines.push('|---|---:|');
-  for (const [practice, n] of [...ssdfCounts.entries()].sort((a, b) => b[1] - a[1])) {
+  for (const [practice, n] of [...ssdfCounts.entries()].toSorted((a, b) => b[1] - a[1])) {
     const desc = SSDF.practices[practice]?.name ?? '';
     lines.push(`| **${practice}** ${desc} | ${n} |`);
   }
@@ -158,7 +158,7 @@ function renderMd(report) {
   lines.push('');
   lines.push('| Section | Name | Rules covering |');
   lines.push('|---|---|---:|');
-  for (const [section, n] of [...asvsCounts.entries()].sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1)))) {
+  for (const [section, n] of [...asvsCounts.entries()].toSorted((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1)))) {
     const name = ASVS.sections[section]?.name ?? '';
     lines.push(`| **${section}** | ${name} | ${n} |`);
   }
@@ -167,12 +167,12 @@ function renderMd(report) {
   // Per-plugin breakdown
   lines.push('## Per-plugin mappings');
   lines.push('');
-  for (const [plugin, pluginRules] of [...byPlugin.entries()].sort()) {
+  for (const [plugin, pluginRules] of [...byPlugin.entries()].toSorted()) {
     lines.push(`### ${plugin}`);
     lines.push('');
     lines.push('| Rule | CWE | SSDF | ASVS | CAPEC |');
     lines.push('|---|---|---|---|---|');
-    for (const r of pluginRules.sort((a, b) => a.ruleId.localeCompare(b.ruleId))) {
+    for (const r of pluginRules.toSorted((a, b) => a.ruleId.localeCompare(b.ruleId))) {
       lines.push(`| \`${r.ruleId.split('/').slice(1).join('/')}\` | ${r.cwes.join(', ') || '—'} | ${r.derivedSsdf.join(', ') || '—'} | ${r.derivedAsvs.join(', ') || '—'} | ${r.derivedCapec.join(', ') || '—'} |`);
     }
     lines.push('');

@@ -108,7 +108,7 @@ export function filterAndSortArticles(
     return matchesSearch && matchesTags;
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...filtered].toSorted((a, b) => {
     let comparison = 0;
     switch (params.sort) {
       case 'date':
@@ -140,7 +140,7 @@ export function getFeaturedArticle(
 ): DevToArticle | null {
   if (params.page !== 1) return null;
   if (hasActiveFilters(params)) return filtered[0] ?? null;
-  return [...articles].sort(
+  return [...articles].toSorted(
     (a, b) => b.positive_reactions_count - a.positive_reactions_count,
   )[0] ?? null;
 }
@@ -173,7 +173,7 @@ export function computeTagCounts(
     }
   }
   return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
+    .toSorted((a, b) => b[1] - a[1])
     .slice(0, topN);
 }
 

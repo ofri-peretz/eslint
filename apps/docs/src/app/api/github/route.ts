@@ -242,7 +242,7 @@ export async function POST(request: Request) {
         total: paths.length,
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Invalid request body' },
       { status: 400 }

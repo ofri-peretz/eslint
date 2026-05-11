@@ -43,8 +43,15 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
 
   // `throw error;` — re-throwing a caught/named identifier. The original
   // error already carries its own message + stack; demanding context on the
-  // re-throw is an FP. Same for `throw err`, `throw cause`, etc.
-  if (node.argument.type === 'Identifier') {
+  // re-throw is an FP. Same for `throw err`, `throw cause`, etc. Excludes
+  // the literal-like `undefined` / `NaN` / `Infinity` identifiers, which
+  // are typed as global constants but carry no diagnostic value.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
     return true;
   }
 
@@ -100,6 +107,18 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
 function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
   if (!node.argument) {
     return false;
+  }
+
+  // `throw error;` — caught/named identifier already has a stack from the
+  // place where it was first thrown. Re-throws preserve the stack. Excludes
+  // `undefined` / `NaN` / `Infinity` global-constant identifiers.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
+    return true;
   }
 
   // Check if it's a new Error() instance

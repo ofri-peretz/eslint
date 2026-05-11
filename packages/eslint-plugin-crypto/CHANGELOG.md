@@ -1,3 +1,11 @@
+## [Deprecated] - 2026-05-10
+
+### ⛔ Package Deprecated
+
+`eslint-plugin-crypto` is now deprecated. All cryptography rules have been redistributed into [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security), which is the canonical home for Node.js core-module security (including cryptography).
+
+**Migration**: replace this package with `eslint-plugin-node-security` and rename rule keys from `crypto/*` → `node-security/*`. Already-pinned consumers will continue to resolve; no new releases will ship from this package.
+
 ## [2.2.3] - 2026-02-08
 
 ### Bug Fixes

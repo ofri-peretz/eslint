@@ -47,7 +47,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { promisify } from 'node:util';
 
 const PORT                  = Number.parseInt(process.env.PORT ?? '4317', 10);
 const STORAGE_PATH          = path.resolve(process.env.STORAGE_PATH ?? './telemetry-events.ndjson');

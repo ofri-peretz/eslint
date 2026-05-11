@@ -63,7 +63,7 @@
     "stats:eslint-versions:json": "tsx scripts/fetch-eslint-version-stats.ts --json --out=benchmark-results/eslint-version-stats.json",
     "devto:publish": "tsx scripts/devto-publish.ts",
     "devto:update-tags": "tsx scripts/devto-update-tags.ts",
-    "oxlint": "oxlint --config .oxlintrc.json packages/",
+    "oxlint": "oxlint --config .oxlintrc.json apps/ packages/ scripts/ tools/",
     "oxlint:interlace": "oxlint --config .oxlintrc.experimental.json packages/",
     "lint:md": "markdownlint-cli2 '**/*.md' '#node_modules' '#packages/*/node_modules' '#**/dist'",
     "audit:portability": "tsx scripts/audit-rule-portability.ts",
@@ -156,7 +156,8 @@
     "fix:shallow": "tsx scripts/fix-shallow-tests.ts",
     "ilb:flagship": "tsx benchmarks/suites/ilb-flagship/run.ts",
     "ilb:flagship:scorecard": "tsx benchmarks/suites/ilb-flagship/scorecard.ts",
-    "ilb:flagship:smoke": "tsx benchmarks/suites/ilb-flagship/smoke.ts"
+    "ilb:flagship:smoke": "tsx benchmarks/suites/ilb-flagship/smoke.ts",
+    "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
   },
   "keywords": [
     "eslint",

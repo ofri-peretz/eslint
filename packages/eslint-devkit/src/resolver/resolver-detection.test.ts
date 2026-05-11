@@ -296,7 +296,7 @@ describe('resolver-detection', () => {
 
       // Apply the same sorting logic as in generateRecommendedConfig
       const priorityOrder = ['typescript', 'webpack', 'vite', 'rollup', 'css'];
-      const sorted = mockResolvers.sort((a, b) => {
+      const sorted = mockResolvers.toSorted((a, b) => {
         const aIndex = priorityOrder.indexOf(a.name);
         const bIndex = priorityOrder.indexOf(b.name);
         // This is the exact line 105 from the source code

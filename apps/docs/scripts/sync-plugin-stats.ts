@@ -97,12 +97,12 @@ async function main() {
   const stats = [];
   let totalRules = 0;
 
-  const UNPUBLISHED_PLUGINS = [
+  const UNPUBLISHED_PLUGINS = new Set([
     'eslint-plugin-react-features',
     'eslint-plugin-react-a11y',
     'eslint-plugin-architecture',
     'eslint-plugin-quality'
-  ];
+  ]);
 
   for (const packagePath of packages) {
     const metadata = getPackageMetadata(packagePath);
@@ -115,7 +115,7 @@ async function main() {
       published = true;
     } else if (metadata.interlace?.docs === false) {
       published = false;
-    } else if (UNPUBLISHED_PLUGINS.includes(metadata.name)) {
+    } else if (UNPUBLISHED_PLUGINS.has(metadata.name)) {
       published = false;
     } else if (metadata.private === true) {
       published = false;

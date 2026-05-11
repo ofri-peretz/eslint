@@ -1,6 +1,6 @@
 {
     "title": "Plugin: crypto",
-    "icon": "Lock",
+    "icon": "KeyRound",
     "defaultOpen": false,
     "pages": [
         "index",

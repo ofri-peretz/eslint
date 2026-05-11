@@ -1,6 +1,6 @@
 ---
 title: prefer-dependency-version-strategy
-description: "Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies"
+description: Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. Pairs with a lockfile-alignment check to give complete dependency validation.
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
@@ -13,8 +13,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, yarn, auto-fix, LLM-optimized, code quality
-
-Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. Pairs with a lockfile-alignment check to give complete dependency validation.
 
 Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any) for `package.json` dependencies. Pairs with a lockfile-alignment check (e.g. `npm ci`, or this repo's [`scripts/check-version-alignment.ts`](../../../../scripts/check-version-alignment.ts) via `npm run check-versions`) so format consistency *and* lockfile parity are both enforced.
 

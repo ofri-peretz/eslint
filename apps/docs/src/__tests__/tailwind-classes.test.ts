@@ -150,7 +150,7 @@ describe('Tailwind CSS Compilation', () => {
           stdio: 'pipe',
           timeout: 120000 
         });
-      } catch (error) {
+      } catch {
         console.warn('Build failed or skipped - checking dev mode output');
       }
     }
@@ -340,7 +340,7 @@ function findCompiledCSS(buildDir: string): string {
   cssFiles.forEach(file => {
     try {
       allCSS += readFileSync(file, 'utf-8');
-    } catch (e) {
+    } catch {
       // Ignore read errors
     }
   });

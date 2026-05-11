@@ -33,6 +33,11 @@ paths-ignore:
   - "**/dist/**"
   - "**/.next/**"
   - "**/.turbo/**"
+  # Storybook static build output — generated, minified third-party bundles
+  # (sb-manager/globals-runtime.js, etc.). Already in .gitignore; this is the
+  # belt-and-braces guard for CodeQL even if a build artifact ends up checked
+  # out (e.g. local accidental commit, future workflow that builds-then-scans).
+  - "**/storybook-static/**"
 
 queries:
   - uses: security-extended

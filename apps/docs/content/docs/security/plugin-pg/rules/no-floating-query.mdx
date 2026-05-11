@@ -1,6 +1,6 @@
 ---
 title: no-floating-query
-description: "Ensure all queries are awaited or returned to prevent unhandled promise rejections."
+description: Ensures query promises are awaited or handled.
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -17,8 +17,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 > **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
-
-Ensures query promises are awaited or handled.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

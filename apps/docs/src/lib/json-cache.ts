@@ -130,10 +130,14 @@ function matchPattern(filePath: string, pattern: string): boolean {
   
   // Replace glob patterns with regex equivalents
   // Use placeholders to avoid double-replacement
+  // NUL byte is used as a non-occurring placeholder while we swap globs to
+  // regex tokens; the input is user-side glob, never the byte itself.
+  // eslint-disable-next-line no-control-regex
   regexPattern = regexPattern
     .replace(/\*\*\//g, '\x00') // Placeholder for **/
     .replace(/\*/g, '[^/]*') // * matches any filename segment (non-slash)
     .replace(/\?/g, '.') // ? matches single character
+    // eslint-disable-next-line no-control-regex
     .replace(/\x00/g, '(?:.*/)?'); // **/ matches any path prefix or nothing
   
   const regex = new RegExp(`^${regexPattern}$`);

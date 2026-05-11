@@ -18,7 +18,7 @@ const API_BASE_URL = 'https://dev.to/api';
 const RATE_LIMIT_DELAY_MS = 1000;
 
 // Plugin tag mapping - these are the tags that should be added for related articles
-const PLUGIN_TAGS = [
+const _PLUGIN_TAGS = [
   'eslint',        // Core - MUST be on all ESLint articles
   'jwt',           // eslint-plugin-jwt
   'crypto',        // Cryptography topics (covered by eslint-plugin-node-security)
@@ -330,7 +330,7 @@ async function main() {
     // Fetch full article content for better analysis
     const fullArticle = await fetchArticleContent(apiKey, article.id);
     const requiredTags = detectRequiredTags(fullArticle);
-    const { newTags, removedTag } = calculateNewTags(article.tag_list, requiredTags);
+    const { newTags, removedTag: _removedTag } = calculateNewTags(article.tag_list, requiredTags);
 
     const currentTagsLower = article.tag_list.map(t => t.toLowerCase());
     const newTagsLower = newTags.map(t => t.toLowerCase());

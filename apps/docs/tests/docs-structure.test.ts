@@ -99,7 +99,7 @@ describe('Documentation Page Structure', () => {
 
     it('should not import non-existent components', () => {
       const mdxFiles = globSync('content/**/*.mdx', { nodir: true });
-      const violations: string[] = [];
+      const _violations: string[] = [];
 
       // Known component paths that should exist
       const validComponentPaths = [
@@ -164,7 +164,7 @@ describe('Documentation Page Structure', () => {
         try {
           const content = readFileSync(file, 'utf-8');
           JSON.parse(content);
-        } catch (e) {
+        } catch {
           invalidFiles.push(file);
         }
       }

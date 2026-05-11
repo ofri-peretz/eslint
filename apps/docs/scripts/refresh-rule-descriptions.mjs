@@ -179,7 +179,7 @@ function stripBoilerplateLeads(src) {
     // on plain-prose paragraph leads.
     if (
       /^(?:import\s|<|>|\s*[-*+]\s|\|)/.test(line) ||
-      /^```/.test(line)
+      line.startsWith('```')
     ) {
       // Advance past this paragraph block.
       while (i < lines.length && lines[i].trim() !== '') i++;

@@ -236,7 +236,7 @@ describe('no-process-exit', () => {
         },
         // process.exit in template literals
         {
-          code: 'const message = `Exiting with code ${process.exit(1)}`;',
+          code: `const message = \`Exiting with code \${process.exit(1)}\`;`,
           errors: [
             {
               messageId: 'noProcessExit',

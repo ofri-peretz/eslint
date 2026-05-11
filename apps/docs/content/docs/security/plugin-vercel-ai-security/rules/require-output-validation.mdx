@@ -1,6 +1,6 @@
 ---
 title: require-output-validation
-description: "Require validation of AI output before displaying to users"
+description: This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -28,8 +28,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | **Config Default** | `off` (recommended), `error` (strict)                                                                |
 
 ## 🔍 What This Rule Detects
-
-This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
 
 ## ❌ Incorrect Code
 

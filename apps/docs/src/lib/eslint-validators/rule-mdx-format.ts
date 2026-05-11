@@ -197,7 +197,7 @@ export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
 
     const files = readdirSync(mdxDir)
       .filter((f) => f.endsWith('.mdx') && f !== 'index.mdx')
-      .sort();
+      .toSorted();
 
     for (const f of files) {
       const rule = f.replace(/\.mdx$/, '');

@@ -70,7 +70,7 @@ This enables the "Change from Previous" calculations in the new review.
 Run the monthly summary command:
 
 ```bash
-curl -s "https://api.npmjs.org/downloads/point/last-month/eslint-plugin-secure-coding,eslint-plugin-import-next,eslint-plugin-pg,eslint-plugin-jwt,eslint-plugin-crypto,eslint-plugin-browser-security,eslint-plugin-vercel-ai-security,eslint-plugin-express-security,eslint-plugin-lambda-security,eslint-plugin-nestjs-security" | jq
+curl -s "https://api.npmjs.org/downloads/point/last-month/eslint-plugin-secure-coding,eslint-plugin-import-next,eslint-plugin-pg,eslint-plugin-jwt,eslint-plugin-node-security,eslint-plugin-browser-security,eslint-plugin-vercel-ai-security,eslint-plugin-express-security,eslint-plugin-lambda-security,eslint-plugin-nestjs-security" | jq
 ```
 
 ### 2. Collect Daily Breakdown for Top Packages

@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-eval-csp
-description: "Refactor code to avoid eval() and remove unsafe-eval from CSP"
+description: "Disallow 'unsafe-eval' in Content Security Policy directives."
 tags: ['security', 'browser']
 category: security
 severity: critical
@@ -16,8 +16,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > No Unsafe Eval Csp
-
-Disallow 'unsafe-eval' in Content Security Policy directives.
 
 ## ⚠️ Security Issue
 

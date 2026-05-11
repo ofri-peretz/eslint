@@ -363,7 +363,7 @@ export const Meteors: React.FC<MeteorsProps> = ({
   minDuration = 12,
   maxDuration = 30,
   meteorColor = "#e9d5ff",
-  trailColor = "transparent",
+  trailColor: _trailColor = "transparent",
   className,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-10T19:18:48.328Z",
+  "generatedAt": "2026-05-11T06:42:35.464Z",
   "totals": {
     "cases": 51,
     "matched": 51,
@@ -90,7 +90,7 @@
       "expected": "fire",
       "actual": "fire",
       "match": true,
-      "details": "2:26 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: U"
+      "details": "2:26 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n"
     },
     {
       "rule": "secure-coding/no-hardcoded-credentials",
@@ -115,7 +115,7 @@
       "expected": "fire",
       "actual": "fire",
       "match": true,
-      "details": "2:27 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n | 2:67 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n"
+      "details": "2:27 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n | 2:73 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n"
     },
     {
       "rule": "secure-coding/no-redos-vulnerable-regex",

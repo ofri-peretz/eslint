@@ -40,7 +40,7 @@ Must be one of the following **lowercase** types:
 
 - Wrap in parentheses: `feat(eslint-plugin-pg): ...`
 - **MUST match Nx project name** exactly (if provided)
-- Valid package scopes: `eslint-devkit`, `eslint-plugin-pg`, `eslint-plugin-jwt`, `eslint-plugin-crypto`, etc.
+- Valid package scopes: `eslint-devkit`, `eslint-plugin-pg`, `eslint-plugin-jwt`, `eslint-plugin-node-security`, etc.
 - Special scopes: `ci`, `deps`, `release`, `docs`, `workspace`
 - Can be omitted for workspace-wide changes: `chore: update dependencies`
 

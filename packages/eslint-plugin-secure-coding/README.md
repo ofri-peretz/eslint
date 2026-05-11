@@ -35,6 +35,18 @@ This plugin provides General secure coding practices and OWASP compliance for Ja
 npm install eslint-plugin-secure-coding --save-dev
 ```
 
+## Benchmarks vs competitors (CWE-798 ground truth)
+`no-hardcoded-credentials` is part of the [ILB-Flagship benchmark suite](../../benchmarks/suites/ilb-flagship). On the labeled CWE-798 fixture set (Juliet-style: 2 vulnerable + 2 safe files, ground-truthed):
+
+| Rule | Precision | Recall | F1 |
+| :--- | ---: | ---: | ---: |
+| **`secure-coding/no-hardcoded-credentials`** (ours) | **100%** | **100%** | **1.00** |
+| `eslint-plugin-no-secrets/no-secrets` | 100% | 50% | 0.67 |
+
+The competitor's entropy-only detection catches the high-entropy API-key shape but misses the 15-character literal password assigned to `password:`. Our context-gated detection (structural patterns + credential-named-variable check + context-positive path) catches both for the right reasons.
+
+**On real OSS (vercel/ai), the competitor reports ~380 more findings than us.** Those 380 are not catches we missed — they're entropy false-positives on TypeScript type literals (`'experimental_onLanguageModelCallStart'`), error class names (`'AI_ToolCallNotFoundForApprovalError'`), and documentation URLs. Sampling confirmed zero are actual credentials. The corpus number is the right one to weigh; the OSS finding-count is a noise metric.
+
 ## ⚙️ Configuration Presets
 | Preset                | Description                                                     |
 | :-------------------- | :-------------------------------------------------------------- |

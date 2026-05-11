@@ -86,7 +86,7 @@ export function extractCanonicalRuleNames(indexSrc: string): string[] {
     const bare = line.match(/^([a-z][a-zA-Z0-9_]*)\s*:/);
     if (bare) names.add(bare[1]);
   }
-  return [...names].sort();
+  return [...names].toSorted();
 }
 
 /**
@@ -107,7 +107,7 @@ export function extractReadmeRuleNames(readme: string): { found: string[]; hasMa
   for (const m of block.matchAll(/\|\s*\[([a-z][a-z0-9-]*)\]/g)) {
     names.push(m[1]);
   }
-  return { found: [...new Set(names)].sort(), hasMarkers: true };
+  return { found: [...new Set(names)].toSorted(), hasMarkers: true };
 }
 
 function diff(canonical: string[], actual: string[]) {
@@ -145,7 +145,7 @@ export function validatePluginRuleSourceDrift(
       ? readdirSync(docsRulesDir)
           .filter((f) => f.endsWith('.md'))
           .map((f) => f.replace(/\.md$/, ''))
-          .sort()
+          .toSorted()
       : [];
     if (documentedRules.length === 0) {
       findings.push({
@@ -232,7 +232,7 @@ export function validatePluginRuleSourceDrift(
       ? readdirSync(mdxDir)
           .filter((f) => f.endsWith('.mdx') && f !== 'index.mdx')
           .map((f) => f.replace(/\.mdx$/, ''))
-          .sort()
+          .toSorted()
       : [];
     const mdxDiff = diff(canonical, mdxNames);
     for (const m of mdxDiff.missing) {
@@ -260,7 +260,7 @@ export function validatePluginRuleSourceDrift(
       try {
         const meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
         const pages = Array.isArray(meta.pages) ? (meta.pages as string[]) : [];
-        const metaNames = pages.filter((p) => p !== 'index').sort();
+        const metaNames = pages.filter((p) => p !== 'index').toSorted();
         const metaDiff = diff(canonical, metaNames);
         for (const m of metaDiff.missing) {
           if (allowed.meta?.includes(m)) continue;

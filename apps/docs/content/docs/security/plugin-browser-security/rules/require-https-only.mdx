@@ -1,6 +1,6 @@
 ---
 title: require-https-only
-description: "Enforce HTTPS for all external requests"
+description: This rule detects HTTP (unencrypted) URLs in fetch() and axios requests
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -15,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Enforces HTTPS for all external requests
-
-This rule detects HTTP (unencrypted) URLs in fetch() and axios requests
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
