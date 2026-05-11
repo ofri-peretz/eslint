@@ -38,7 +38,7 @@ import {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SUITE_NAME = 'ilb-formatter';
-const METHODOLOGY_VERSION = 'v1.2';
+const METHODOLOGY_VERSION = 'v1.3';
 
 const require_ = createRequire(import.meta.url);
 
@@ -415,16 +415,22 @@ interface Measurement {
   // Effectiveness (context).
   signal: SignalProbe;
   groupCollapse: number;
-  // Latency (speed) — median of LATENCY_RUNS, after one warm-up render.
+  // Latency (speed) — sampled LATENCY_RUNS times after one warm-up render.
+  // The regression gate compares `latencyMsTrimmedMean` (mean of the middle
+  // 60% after sorting); P50/P95/min/max are kept for human-readable diffs.
   latencyMsP50: number;
   latencyMsP95: number;
   latencyMsMin: number;
   latencyMsMax: number;
+  latencyMsTrimmedMean: number;
 }
 
-/** Per-cell latency sampling. Median-of-5 keeps the cost bounded while
- *  still giving us a stable P50 + a P95 ceiling for the fast scales. */
-const LATENCY_RUNS = 5;
+/** Per-cell latency sampling. N=25 trades ~1.4s of extra wall-time per
+ *  full run for a stable trimmed-mean on sub-millisecond renders — at
+ *  median baseline 56µs, a single scheduler preemption (~0.5ms) used to
+ *  double a 5-sample median. With 25 samples and 20%-trim we drop the
+ *  five lowest and five highest before averaging the middle fifteen. */
+const LATENCY_RUNS = 25;
 
 /**
  * Regression-check tolerances per axis. Generous enough to absorb
@@ -443,14 +449,18 @@ const REGRESSION_TOLERANCE = {
    * ceiling is `max(baseline × 1.05, baseline + 10)`.
    */
   tokensAbsoluteFloor: 10,
-  /** Latency P50 may grow up to +50 % per cell — wall-clock is noisy at sub-millisecond scale. */
-  latencyP50Relative: 0.5,
+  /** Latency trimmed-mean may grow up to +50 % per cell — wall-clock is noisy at sub-millisecond scale. */
+  latencyTrimmedMeanRelative: 0.5,
   /**
    * Plus a +0.5 ms absolute floor — so tiny baselines (e.g. 0.02 ms)
    * aren't tripped by a 0.04 ms observation, which is +100 % relative
    * but well within hrtime measurement jitter.
+   *
+   * Note: the regression check is applied *after* subtracting the parallel
+   * comparator-drift canary (see `regressionCheck`), so this absolute
+   * floor reflects subject-side noise only, not whole-machine noise.
    */
-  latencyP50AbsoluteFloorMs: 0.5,
+  latencyTrimmedMeanAbsoluteFloorMs: 0.5,
   /** Signal score must stay ≥ baseline (no relaxation). */
   signalScoreFloor: 0,
 };
@@ -482,9 +492,14 @@ function measureCell(
   samplesNs.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const samplesMs = samplesNs.map(n => Number(n) / 1_000_000);
   const p50 = samplesMs[Math.floor(LATENCY_RUNS / 2)]!;
-  // For 5 samples: P95 ≈ max — small-N statistics. We expose min/max
-  // alongside so a reader can see the spread without recomputing.
   const p95 = samplesMs[Math.min(LATENCY_RUNS - 1, Math.floor(LATENCY_RUNS * 0.95))]!;
+  // Trimmed mean: drop the lowest 20% and the highest 20% (so for N=25,
+  // indices 5..19), then average the middle 60%. This rejects both
+  // hrtime-resolution undershoots and scheduler-preemption spikes —
+  // the latter being the dominant noise source on shared CI runners.
+  const trimSize = Math.floor(LATENCY_RUNS * 0.2);
+  const trimmedSlice = samplesMs.slice(trimSize, LATENCY_RUNS - trimSize);
+  const trimmedMean = trimmedSlice.reduce((s, n) => s + n, 0) / trimmedSlice.length;
 
   return {
     shape: fixture.shape,
@@ -500,6 +515,7 @@ function measureCell(
     latencyMsP95: round3(p95),
     latencyMsMin: round3(samplesMs[0]!),
     latencyMsMax: round3(samplesMs[samplesMs.length - 1]!),
+    latencyMsTrimmedMean: round3(trimmedMean),
   };
 }
 
@@ -637,6 +653,7 @@ interface BaselineCell {
   format: FormatId;
   tokensO200k: number;
   latencyMsP50: number;
+  latencyMsTrimmedMean: number;
   signalScore: number;
 }
 
@@ -644,10 +661,14 @@ interface RegressionFailure {
   shape: Shape;
   scale: Scale;
   format: FormatId;
-  axis: 'tokens' | 'latencyP50' | 'signalScore';
+  axis: 'tokens' | 'latency' | 'signalScore';
   baseline: number;
   observed: number;
   delta: number;
+  /** Comparator-derived machine-speed drift at this fixture in ms. Only
+   *  populated for axis='latency'; positive means the runner was slow
+   *  today and the gate subtracted that drift before deciding. */
+  machineDriftMs?: number;
   reason: string;
 }
 
@@ -660,6 +681,10 @@ interface BaselineFile {
     format: FormatId;
     tokensO200k: number;
     latencyMsP50: number;
+    /** Added in methodology v1.3. Older baselines won't have this field —
+     *  loadBaseline falls back to latencyMsP50 to stay forward-compatible
+     *  for one release; the next baseline refresh fills it in. */
+    latencyMsTrimmedMean?: number;
     signal: { score: number };
   }>;
 }
@@ -679,6 +704,7 @@ function loadBaseline(): Map<string, BaselineCell> | null {
       format: m.format,
       tokensO200k: m.tokensO200k,
       latencyMsP50: m.latencyMsP50,
+      latencyMsTrimmedMean: m.latencyMsTrimmedMean ?? m.latencyMsP50,
       signalScore: m.signal.score,
     });
   }
@@ -687,6 +713,41 @@ function loadBaseline(): Map<string, BaselineCell> | null {
 
 function isSubjectUnderTest(format: FormatId): boolean {
   return format.startsWith('interlace-');
+}
+
+/**
+ * Comparator-as-control machine-speed canary.
+ *
+ * For each (shape, scale) fixture, compute the mean trimmed-mean drift
+ * across the 4 eslint-* comparator formats (which we do not own — their
+ * source is fixed across runs). A positive value means today's runner is
+ * slower than the baseline runner at this fixture. We subtract that drift
+ * from subject latency before applying the regression ceiling, so a
+ * universally-slow CI host doesn't fail subjects for noise we can see is
+ * not theirs. Only positive drift is subtracted — when the machine is
+ * faster than baseline, we never inflate subject latency.
+ */
+function machineDriftByFixture(
+  measurements: Measurement[],
+  baseline: Map<string, BaselineCell>,
+): Map<string, number> {
+  const accum = new Map<string, { sum: number; n: number }>();
+  for (const m of measurements) {
+    if (isSubjectUnderTest(m.format)) continue;
+    const b = baseline.get(`${m.shape}::${m.scale}::${m.format}`);
+    if (!b) continue;
+    const drift = m.latencyMsTrimmedMean - b.latencyMsTrimmedMean;
+    const key = `${m.shape}::${m.scale}`;
+    const cur = accum.get(key) ?? { sum: 0, n: 0 };
+    cur.sum += drift;
+    cur.n += 1;
+    accum.set(key, cur);
+  }
+  const out = new Map<string, number>();
+  for (const [k, v] of accum) {
+    out.set(k, v.n > 0 ? v.sum / v.n : 0);
+  }
+  return out;
 }
 
 function regressionCheck(measurements: Measurement[], baseline: Map<string, BaselineCell> | null): {
@@ -700,6 +761,9 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
   /** Drift on `eslint-*` (comparators) — informational; don't fail the gate.
    *  Wall-clock noise on third-party formatters isn't a regression in our code. */
   comparatorDrift: RegressionFailure[];
+  /** Per-fixture machine-speed drift in ms (mean across comparator formats,
+   *  positive=slow runner). Surfaced for transparency and post-hoc analysis. */
+  machineDriftByFixtureMs: Record<string, number>;
   passing: boolean;
 } {
   if (!baseline) {
@@ -711,9 +775,11 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
       newCells: measurements.length,
       subjectFailures: [],
       comparatorDrift: [],
+      machineDriftByFixtureMs: {},
       passing: true,
     };
   }
+  const driftMap = machineDriftByFixture(measurements, baseline);
   const subjectFailures: RegressionFailure[] = [];
   const comparatorDrift: RegressionFailure[] = [];
   let compared = 0;
@@ -723,7 +789,8 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
     const b = baseline.get(key);
     if (!b) { added++; continue; }
     compared++;
-    const sink = isSubjectUnderTest(m.format) ? subjectFailures : comparatorDrift;
+    const isSubject = isSubjectUnderTest(m.format);
+    const sink = isSubject ? subjectFailures : comparatorDrift;
 
     // Tokens: max(relative, absolute) ceiling. The absolute floor
     // protects tiny baselines (≈100 tokens) from being tripped by
@@ -744,20 +811,30 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
       });
     }
 
-    // Latency: relative + absolute floor.
-    const relCeiling = b.latencyMsP50 * (1 + REGRESSION_TOLERANCE.latencyP50Relative);
-    const absCeiling = b.latencyMsP50 + REGRESSION_TOLERANCE.latencyP50AbsoluteFloorMs;
+    // Latency: relative + absolute floor, applied to trimmed-mean.
+    // For subjects, subtract any positive comparator-derived machine
+    // drift at this fixture first (canary); comparators themselves get
+    // the raw comparison since they ARE the canary signal.
+    const machineDrift = isSubject ? Math.max(0, driftMap.get(`${m.shape}::${m.scale}`) ?? 0) : 0;
+    const adjustedObserved = Math.max(0, m.latencyMsTrimmedMean - machineDrift);
+    const relCeiling = b.latencyMsTrimmedMean * (1 + REGRESSION_TOLERANCE.latencyTrimmedMeanRelative);
+    const absCeiling = b.latencyMsTrimmedMean + REGRESSION_TOLERANCE.latencyTrimmedMeanAbsoluteFloorMs;
     const latCeiling = Math.max(relCeiling, absCeiling);
-    if (m.latencyMsP50 > latCeiling) {
+    if (adjustedObserved > latCeiling) {
+      const reasonBase = `${m.latencyMsTrimmedMean}ms (trimmed) vs baseline ${b.latencyMsTrimmedMean}ms (ceiling ${round3(latCeiling)}ms; tolerance max(+${REGRESSION_TOLERANCE.latencyTrimmedMeanRelative * 100}%, +${REGRESSION_TOLERANCE.latencyTrimmedMeanAbsoluteFloorMs}ms abs))`;
+      const reasonCanary = isSubject && machineDrift > 0
+        ? `${reasonBase} — canary-adjusted observed ${round3(adjustedObserved)}ms after subtracting ${round3(machineDrift)}ms parallel comparator drift`
+        : reasonBase;
       sink.push({
         shape: m.shape,
         scale: m.scale,
         format: m.format,
-        axis: 'latencyP50',
-        baseline: b.latencyMsP50,
-        observed: m.latencyMsP50,
-        delta: round3(m.latencyMsP50 - b.latencyMsP50),
-        reason: `${m.latencyMsP50}ms vs baseline ${b.latencyMsP50}ms (ceiling ${round3(latCeiling)}ms; tolerance max(+${REGRESSION_TOLERANCE.latencyP50Relative * 100}%, +${REGRESSION_TOLERANCE.latencyP50AbsoluteFloorMs}ms abs))`,
+        axis: 'latency',
+        baseline: b.latencyMsTrimmedMean,
+        observed: m.latencyMsTrimmedMean,
+        delta: round3(m.latencyMsTrimmedMean - b.latencyMsTrimmedMean),
+        ...(isSubject ? { machineDriftMs: round3(machineDrift) } : {}),
+        reason: reasonCanary,
       });
     }
 
@@ -775,6 +852,8 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
       });
     }
   }
+  const driftRecord: Record<string, number> = {};
+  for (const [k, v] of driftMap) driftRecord[k] = round3(v);
   return {
     baselinePath: BASELINE_PATH,
     baselinePresent: true,
@@ -783,6 +862,7 @@ function regressionCheck(measurements: Measurement[], baseline: Map<string, Base
     newCells: added,
     subjectFailures,
     comparatorDrift,
+    machineDriftByFixtureMs: driftRecord,
     passing: subjectFailures.length === 0,
   };
 }
@@ -1016,7 +1096,7 @@ async function main(): Promise<void> {
       aspects: {
         cost: { fields: ['tokensO200k', 'tokensCl100k', 'meanTokensO200k'], slo: 'interlace-compact ≤ eslint-stylish (mean delta ≤ 0%)' },
         effectiveness: { fields: ['signal.score', 'meanSignalScore', 'groupCollapse', 'meanGroupCollapse'], slo: 'structured formats (interlace-json, eslint-json, eslint-json-with-metadata) score 4.0/4 on every fixture' },
-        latency: { fields: ['latencyMsP50', 'latencyMsP95', 'meanLatencyMs', 'worstLatencyMsP95'], slo: 'interlace-* P50 ≤ {tiny:5, small:10, medium:25, large:50, extreme:250} ms' },
+        latency: { fields: ['latencyMsP50', 'latencyMsP95', 'latencyMsTrimmedMean', 'meanLatencyMs', 'worstLatencyMsP95'], slo: 'interlace-* P50 ≤ {tiny:5, small:10, medium:25, large:50, extreme:250} ms; per-cell regression gate compares trimmedMean with comparator-canary adjustment' },
       },
       sloHeadline: 'interlace-compact ≤ eslint-stylish on token cost; structured formats signalScore = 4.0 on every fixture; interlace-* P50 latency under per-scale ceiling.',
     },

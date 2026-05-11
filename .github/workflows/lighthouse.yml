@@ -75,8 +75,7 @@ jobs:
           next-cache: "true"
 
       - name: Build docs site
-        working-directory: apps/docs
-        run: npm run build
+        run: npx turbo run build --filter=docs
         env:
           NODE_ENV: production
           # Disable telemetry during CI builds.

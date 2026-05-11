@@ -3,16 +3,16 @@
   "version": "4.0.7",
   "description": "ESLint rules for team-specific disciplinary patterns and code conventions.",
   "type": "commonjs",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "default": "./dist/src/index.js"
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
     },
     "./oxlint": {
-      "types": "./dist/src/oxlint.d.ts",
-      "default": "./dist/src/oxlint.js"
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",

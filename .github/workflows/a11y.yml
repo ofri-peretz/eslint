@@ -45,6 +45,13 @@ jobs:
       - name: Build @interlace/ui
         run: npm run build --workspace=@interlace/ui
 
+      # Playwright's webServer runs `npm run start` in CI (next start), which
+      # requires `.next/` from a production build. Build the docs app once
+      # before invoking the spec so playwright doesn't crash with
+      # "Could not find a production build in the '.next' directory".
+      - name: Build docs (production)
+        run: npm run build --workspace=docs
+
       - name: Run strict a11y scan (Playwright + axe)
         run: npm run test:a11y
         working-directory: apps/docs
