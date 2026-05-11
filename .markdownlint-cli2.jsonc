@@ -4,10 +4,27 @@
     "MD034": false,
     "MD033": {
       "allowed_elements": [
-        "p", "a", "img", "br", "b", "i", "em", "strong",
-        "details", "summary", "sub", "sup",
-        "table", "thead", "tbody", "tr", "th", "td",
-        "kbd", "picture", "source"
+        "p",
+        "a",
+        "img",
+        "br",
+        "b",
+        "i",
+        "em",
+        "strong",
+        "details",
+        "summary",
+        "sub",
+        "sup",
+        "table",
+        "thead",
+        "tbody",
+        "tr",
+        "th",
+        "td",
+        "kbd",
+        "picture",
+        "source"
       ]
     },
     "MD041": false,
@@ -45,6 +62,10 @@
     "**/.source",
     "**/coverage",
     "**/build",
-    "build"
+    "build",
+    "**/test-results",
+    "test-results",
+    "**/playwright-report",
+    "playwright-report"
   ]
 }

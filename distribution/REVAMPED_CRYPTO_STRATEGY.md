@@ -1,12 +1,12 @@
-# 🔐 Revamped Crypto Series: Node Security Edition
+# 🔐 Node.js Crypto Series — Powered by eslint-plugin-node-security
 
-> **Strategy Shift:** Moving from the deprecated `eslint-plugin-crypto` and generalized `secure-coding` rules to the active, high-performance `eslint-plugin-node-security`.
+> **Canonical home for cryptography rules:** `eslint-plugin-node-security`. All cryptography-related cross-cutting articles route here, replacing earlier dedicated cryptography-plugin content (now consolidated).
 > **Target Audience:** Node.js Backend Engineers
 > **Focus:** Native Node.js `crypto` module best practices.
 
-## 📚 The New "Node.js Crypto" Series
+## 📚 The "Node.js Crypto" Series
 
-This series replaces the previous "Cryptography" section. It focuses entirely on `eslint-plugin-node-security` and the `crypto` module.
+This series focuses entirely on `eslint-plugin-node-security` and the `crypto` module.
 
 | # | Title | Target Rule | Angle |
 |---|---|---|---|
