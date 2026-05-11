@@ -35,13 +35,21 @@ const MANIFEST_PATH = path.join(ROOT, '.agent', 'oxlint-jsplugins-manifest.json'
 const args = new Set(process.argv.slice(2));
 const UPDATE = args.has('--update');
 
-if (!fs.existsSync(MANIFEST_PATH)) {
-  console.error(`✗ manifest missing: ${path.relative(ROOT, MANIFEST_PATH)}`);
-  console.error('  run: npm run oxlint:shims');
-  process.exit(2);
+// Try/catch read closes the existsSync → readFileSync → writeFileSync TOCTOU
+// window CodeQL flagged on the snapshot update further down
+// (`js/file-system-race`).
+let manifestRaw: string;
+try {
+  manifestRaw = fs.readFileSync(MANIFEST_PATH, 'utf-8');
+} catch (e) {
+  if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
+    console.error(`✗ manifest missing: ${path.relative(ROOT, MANIFEST_PATH)}`);
+    console.error('  run: npm run oxlint:shims');
+    process.exit(2);
+  }
+  throw e;
 }
-
-const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
+const manifest = JSON.parse(manifestRaw);
 
 const failures = [];
 const updatedRuntime = {};

@@ -23,7 +23,7 @@
  *   --quiet                   suppress per-package log lines
  */
 
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -70,20 +70,27 @@ if (CLEANUP && !CONFIRM) {
   process.exit(2);
 }
 
-function sh(cmd: string): string {
-  return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+// `sh*` helpers now run via `execFileSync` (array args, no shell) so user-
+// derived inputs (tag names, package names, refspecs) can't influence command
+// parsing. Closes CodeQL's `js/shell-command-injection-from-environment`
+// finding on the previous `execSync(template-string)` form.
+function sh(cmd: string, args: string[], silenceStderr = false): string {
+  return execFileSync(cmd, args, {
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', silenceStderr ? 'ignore' : 'pipe'],
+  }).trim();
 }
-function shOk(cmd: string): boolean {
+function shOk(cmd: string, args: string[]): boolean {
   try {
-    sh(cmd);
+    execFileSync(cmd, args, { stdio: ['pipe', 'pipe', 'ignore'] });
     return true;
   } catch {
     return false;
   }
 }
-function shOpt(cmd: string): string {
+function shOpt(cmd: string, args: string[]): string {
   try {
-    return sh(cmd);
+    return sh(cmd, args, true);
   } catch {
     return '';
   }
@@ -115,7 +122,7 @@ function shortName(pkgName: string): string {
 }
 
 function gitTagsFor(short: string): Set<string> {
-  const out = shOpt(`git tag --list "${short}@*"`);
+  const out = shOpt('git', ['tag', '--list', `${short}@*`]);
   return new Set(
     out
       .split('\n')
@@ -125,7 +132,7 @@ function gitTagsFor(short: string): Set<string> {
 }
 
 function npmVersionsFor(name: string): Set<string> {
-  const raw = shOpt(`npm view "${name}" versions --json 2>/dev/null`);
+  const raw = shOpt('npm', ['view', name, 'versions', '--json']);
   if (!raw) return new Set();
   try {
     const parsed = JSON.parse(raw);
@@ -136,9 +143,9 @@ function npmVersionsFor(name: string): Set<string> {
 }
 
 function findCommitForVersion(pkgPath: string, version: string): string | null {
-  const log = shOpt(`git log --reverse --format=%H -- "${pkgPath}/package.json"`);
+  const log = shOpt('git', ['log', '--reverse', '--format=%H', '--', `${pkgPath}/package.json`]);
   for (const sha of log.split('\n').filter(Boolean)) {
-    const blob = shOpt(`git show "${sha}:${pkgPath}/package.json" 2>/dev/null`);
+    const blob = shOpt('git', ['show', `${sha}:${pkgPath}/package.json`]);
     if (!blob) continue;
     try {
       const ver = JSON.parse(blob).version as string;
@@ -151,7 +158,7 @@ function findCommitForVersion(pkgPath: string, version: string): string | null {
 }
 
 function ghReleaseExists(tag: string): boolean {
-  return shOk(`gh release view "${tag}" --json tagName 2>/dev/null`);
+  return shOk('gh', ['release', 'view', tag, '--json', 'tagName']);
 }
 
 function diffSets(a: Set<string>, b: Set<string>): string[] {
@@ -249,13 +256,13 @@ if (BACKFILL) {
         log(`  ⚠ ${tag}: could not find commit for version ${ver} (skipped).`);
         continue;
       }
-      if (shOk(`git rev-parse -q --verify "refs/tags/${tag}"`)) {
+      if (shOk('git', ['rev-parse', '-q', '--verify', `refs/tags/${tag}`])) {
         log(`  ↻ ${tag} already exists locally — re-pushing only.`);
       } else {
-        sh(`git tag -a "${tag}" -m "Backfill release ${tag}" "${targetSha}"`);
+        sh('git', ['tag', '-a', tag, '-m', `Backfill release ${tag}`, targetSha]);
         log(`  + ${tag} → ${targetSha.slice(0, 7)}`);
       }
-      shOk(`git push origin "${tag}"`);
+      shOk('git', ['push', 'origin', tag]);
     }
   }
 }
@@ -264,8 +271,8 @@ if (CLEANUP) {
   for (const f of findings) {
     for (const ver of f.orphan) {
       const tag = `${f.short}@${ver}`;
-      shOk(`git tag -d "${tag}"`);
-      shOk(`git push --delete origin "${tag}"`);
+      shOk('git', ['tag', '-d', tag]);
+      shOk('git', ['push', '--delete', 'origin', tag]);
       log(`  − ${tag} (orphan: no npm version)`);
     }
   }

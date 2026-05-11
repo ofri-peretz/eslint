@@ -42,3 +42,26 @@ paths-ignore:
 queries:
   - uses: security-extended
   - uses: security-and-quality
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Query exclusions — explicit "won't fix" with rationale per query.
+#
+# These are NOT blanket suppressions. Each entry below documents a CodeQL
+# query whose default threat model does not apply to our context. We disable
+# them by `id` so they stop generating noise across the repo while leaving
+# the rest of `security-extended` + `security-and-quality` fully active.
+# ─────────────────────────────────────────────────────────────────────────────
+query-filters:
+  # `js/file-from-untrusted-data` ("Network data written to file") fires on
+  # the entire purpose of three scripts:
+  #   - scripts/ilb-cve-synthesize.ts: caches NVD CVE responses + writes
+  #     auto-drafted rule skeletons. Persisting that data is the script.
+  #   - scripts/ilb-fuzz.ts: writes LLM-fuzzed candidate fixtures by design.
+  #     The Claude API response IS the desired output.
+  #   - scripts/fetch-eslint-version-stats.ts: writes the npm registry
+  #     download-counts snapshot we explicitly fetched and aggregated.
+  # All three already validate response shape before persisting (CVE_ID_RE,
+  # SEMVER_RE, normalizeFuzzReply). The "untrusted data → file" pattern is
+  # the script's intent, not a vulnerability.
+  - exclude:
+      id: js/file-from-untrusted-data

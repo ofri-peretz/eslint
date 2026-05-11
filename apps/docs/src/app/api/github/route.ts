@@ -110,12 +110,13 @@ async function fetchGitHubContent(
   if (!isAllowedPath(path)) {
     return { success: false, error: 'Path not allowed' };
   }
-  // Re-validate every segment in `path` against a literal character-class
-  // regex, then reassemble. `isAllowedPath` above already guarantees the
-  // string-level property, but expressing the check per-segment + reassemble
-  // gives CodeQL's `js/request-forgery` query a structural sanitizer it can
-  // follow from input → `fetch` sink. Without this, the analyzer can't see
-  // ALLOWED_PATH_RE as a sanitizer and reports a critical SSRF here.
+  // Validate every segment against a literal character-class regex, then
+  // pipe each through `encodeURIComponent` before assembly. After the regex
+  // check the segments only contain `[a-zA-Z0-9._-]` (no chars that need
+  // encoding), so this is functionally a no-op — but `encodeURIComponent`
+  // is the canonical sanitizer CodeQL's `js/request-forgery` query
+  // recognizes. Combined with the hardcoded host prefix, this breaks the
+  // tainted-data flow from `path` → `fetch` sink that the analyzer tracks.
   const SAFE_SEGMENT_RE = /^[a-zA-Z0-9._-]+$/;
   const segments = path.split('/').filter((s) => s.length > 0);
   for (const seg of segments) {
@@ -123,12 +124,9 @@ async function fetchGitHubContent(
       return { success: false, error: 'Path not allowed' };
     }
   }
-  // Build the URL as a template literal from validated fragments only. No
-  // `new URL(userInput, base)` — that pattern lets `userInput` smuggle an
-  // absolute URL and override the base, and even after an origin recheck,
-  // the dataflow into `fetch()` still reads as tainted to static analysis.
+  const encodedPath = segments.map((s) => encodeURIComponent(s)).join('/');
   const requestUrl =
-    `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${segments.join('/')}`;
+    `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedPath}`;
 
   const extension = path.split('.').pop() || 'txt';
   const contentType = CONTENT_TYPES[extension as keyof typeof CONTENT_TYPES] || CONTENT_TYPES.txt;
