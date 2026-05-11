@@ -36,6 +36,15 @@
     "**/dist",
     "coverage",
     "**/CHANGELOG.md",
-    ".gemini"
+    ".gemini",
+    ".next",
+    "**/.next",
+    ".turbo",
+    "**/.turbo",
+    ".source",
+    "**/.source",
+    "**/coverage",
+    "**/build",
+    "build"
   ]
 }

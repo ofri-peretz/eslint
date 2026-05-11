@@ -2634,7 +2634,8 @@
       "no-json-schema-tags",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
-      "prefer-dom-node-text-content"
+      "prefer-dom-node-text-content",
+      "require-data-testid"
     ],
     "crypto": [
       "no-hardcoded-crypto-key",
