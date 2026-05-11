@@ -252,6 +252,7 @@ const CASES: RuleSpec[] = [
       },
       {
         label: 'FN: ReDoS in dynamically constructed RegExp',
+        // eslint-disable-next-line no-template-curly-in-string -- string is a description of buggy code, not an interpolated template
         hypothesis: 'new RegExp(`(${pattern})+`) hides the catastrophic shape',
         expected: 'fire',
         code: `

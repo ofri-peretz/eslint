@@ -12,16 +12,31 @@
   "rules": {
     "no-debugger": "error",
     "no-console": "off",
-    "eqeqeq": "warn",
-    "no-empty": "warn",
     "no-constant-binary-expression": "error",
     "no-self-compare": "error",
-    "no-template-curly-in-string": "warn",
     "no-unsafe-finally": "error",
     "no-unsafe-optional-chaining": "error",
     "no-useless-rename": "warn",
-    "prefer-const": "warn"
+    "prefer-const": "warn",
+    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "eqeqeq": ["warn", "smart"],
+    "no-underscore-dangle": "off",
+    "no-shadow": "off",
+    "no-await-in-loop": "off",
+    "preserve-caught-error": "off",
+    "no-template-curly-in-string": "warn",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off"
   },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "**/__tests__/**", "**/tests/**"],
+      "rules": {
+        "no-template-curly-in-string": "off"
+      }
+    }
+  ],
   "ignorePatterns": [
     "node_modules",
     "dist",
