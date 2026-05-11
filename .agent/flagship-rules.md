@@ -244,6 +244,24 @@ All 10 rules MUST stay oxlint-compatible (`js-plugin-syntactic` or better). Conc
 - **Selectors and `context.report` only** — APIs the oxlint JS-plugin host doesn't yet implement are forbidden.
 - **CI gate.** Add `npm run oxlint:flagship` to `quality` — runs the 10 rules through the oxlint JS-plugin shim against `benchmarks/corpus/`. Any rule that errors at oxlint load fails the gate.
 
+### Measured JS-plugin tier speedup (2026-05-11)
+
+Both stacks ran the same 10 flagship rules over our own monorepo
+(`apps/ packages/ scripts/ tools/`), oxlint via [`.oxlintrc.flagship.json`](../.oxlintrc.flagship.json)
+and ESLint via [`eslint.flagship.config.mjs`](../eslint.flagship.config.mjs).
+
+| Stack | Median wall-time | Findings |
+| :--- | ---: | ---: |
+| ESLint host | ~25.0s | 1682 errors + 45 warnings |
+| Oxlint JS-plugin tier | ~1.8s | 221 errors |
+
+**~13–22× wall-time speedup, no native port required.** Full detail in
+[`benchmark-results/oxlint-jstier-vs-eslint.md`](../benchmark-results/oxlint-jstier-vs-eslint.md).
+
+Finding-count delta is parser-error scope — ESLint counts parse errors as
+findings, oxlint silently skips files it can't parse. Rule-output findings
+agree once parse errors are excluded.
+
 ### Native Rust port priority (upstream into oxlint)
 
 1. `pg/no-unsafe-query` — highest CVSS, pure pattern matching, smallest AST surface.
