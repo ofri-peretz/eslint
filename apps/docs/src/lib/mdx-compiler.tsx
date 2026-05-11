@@ -141,9 +141,18 @@ export async function compileRemoteMDX(
   source: string,
   options: CompileOptions = {}
 ): Promise<CompiledContent> {
+  // Strip HTML comments BEFORE MDX parsing. The plugin READMEs use
+  // `<!-- AUTO-GENERATED:RULES_TABLE:START -->` etc. as splice markers for
+  // scripts/sync-readme-rules.ts. These are valid GFM (and render invisibly
+  // on GitHub) but MDX 3 / Next.js 16 Turbopack reject them with
+  // "Unexpected character `!` (U+0021) before name" — the `<` triggers JSX
+  // parsing, which expects an identifier, not `!`.
+  // We strip them here so the rest of the toolchain stays untouched.
+  const stripped = source.replace(/<!--[\s\S]*?-->/g, '');
+
   // ```mermaid blocks are dispatched on the React side by the `pre`
   // override in `src/mdx-components.tsx` — no remark transform needed.
-  const processedSource = source;
+  const processedSource = stripped;
 
   const remarkPlugins: PluggableList = [];
   
