@@ -163,8 +163,13 @@ jobs:
           fetch-tags: true
       - uses: ./.github/actions/setup
 
-      - name: Build affected packages
-        run: npx turbo run build --affected
+      - name: Build packages
+        # `--affected` is wrong here: on a workflow_dispatch from main there's
+        # no diff base, so turbo computes 0 affected and the dist upload below
+        # fails with "no files matched". Build all workspace packages instead
+        # (apps/* are intentionally excluded — they're not published to npm).
+        # `^build` still ensures deps like @interlace/eslint-devkit build first.
+        run: npx turbo run build --filter='./packages/*'
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v7
