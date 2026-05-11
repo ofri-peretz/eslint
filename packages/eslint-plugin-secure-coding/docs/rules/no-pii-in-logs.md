@@ -8,7 +8,6 @@ autofix: suggestions
 ---
 
 > **Keywords:** no-pii-in-logs, PII, GDPR, HIPAA, CCPA, console.log, logger, email, SSN, credit card, phone number, CWE-359, ESLint rule
-
 > **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)
 
 <!-- @rule-summary -->

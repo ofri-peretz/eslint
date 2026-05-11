@@ -53,6 +53,7 @@
       "outputs": ["coverage/**"]
     },
     "lint": {
+      "dependsOn": ["^build"],
       "inputs": ["src/**", ".oxlintrc.json", ".eslintrc.*", "eslint.config.*", "package.json"],
       "outputs": []
     },

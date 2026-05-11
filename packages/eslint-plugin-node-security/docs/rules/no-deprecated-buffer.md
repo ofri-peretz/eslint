@@ -8,7 +8,6 @@ autofix: suggestions
 ---
 
 > **Keywords:** no-deprecated-buffer, Buffer, Node.js, uninitialized memory, CVE-2018-7166, CWE-676, Buffer.alloc, Buffer.from, ESLint rule
-
 > **CWE:** [CWE-676: Use of Potentially Dangerous Function](https://cwe.mitre.org/data/definitions/676.html)
 
 <!-- @rule-summary -->

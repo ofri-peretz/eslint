@@ -8,7 +8,6 @@ autofix: suggestions
 ---
 
 > **Keywords:** alt-text, accessibility, a11y, WCAG, screen reader, img alt, role=presentation, aria-label, object alt, area alt, ESLint rule
-
 > **WCAG:** [1.1.1 Non-text Content (Level A)](https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html)
 
 <!-- @rule-summary -->

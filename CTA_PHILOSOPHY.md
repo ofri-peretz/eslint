@@ -65,9 +65,9 @@ button appears in any single viewport on a marketing surface.
 
 ## 3. Sibling CTAs share a contract
 
-When two CTAs sit in the same row — hero primary + secondary, dialog confirm
-+ cancel, card "Install" + "Read docs" — they must be visually
-indistinguishable except for fill. **Different geometry between siblings is
+When two CTAs sit in the same row — hero primary + secondary,
+dialog confirm + cancel, card "Install" + "Read docs" — they must be
+visually indistinguishable except for fill. **Different geometry between siblings is
 the most damaging visual bug we ship**, because it reads as a system that
 doesn't have its own rules.
 

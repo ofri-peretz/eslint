@@ -1,10 +1,10 @@
 # Motion & Animation Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](./UX_PHILOSOPHY.md),
-expanding Principle #6 ("Ease of use is performance") and Principle
-#1 ("Adoption is friction subtraction"). Motion is the part of the
-UI that, when wrong, hurts both at once: it harms perceived
-performance (CLS, INP) *and* increases the friction between a reader
+A focused sub-philosophy of [UX_PHILOSOPHY.md](./UX_PHILOSOPHY.md), expanding
+Principle #6 ("Ease of use is performance") and Principle #1 ("Adoption is
+friction subtraction"). Motion is the part of the UI that, when wrong, hurts
+both at once: it harms perceived performance (CLS, INP) *and* increases the
+friction between a reader
 and what they came for.
 
 This document binds motion decisions. It exists because every

@@ -185,7 +185,7 @@ Three explicit states with designed copy:
 
 ### Many results
 
-- Show top 8 by default, with "Show all <N>" if there are more.
+- Show top 8 by default, with "Show all N" (replace N with the count) if there are more.
 - Show a result count at the top: "12 rules · 4 articles · 7 headings."
 - Group by type when the type counts differ; flat list when
   ratios are similar.
@@ -263,7 +263,7 @@ No PII, no IP collection. Aggregated, daily.
 Hard bans.
 
 - **Search that fetches per keystroke from an API.** Index is static
-  + client-side; latency budget is < 100ms. No round trips.
+  and client-side; latency budget is < 100ms. No round trips.
 - **Search results without metadata.** A list of titles is not
   enough. The reader must see *why* a result is the right one before
   clicking.
