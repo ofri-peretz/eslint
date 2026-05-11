@@ -36,11 +36,14 @@ type RuleOptions = [Options?];
  * Check if a node is in a React component render context
  */
 function isInReactRenderContext(node: TSESTree.Node): boolean {
-  let current: TSESTree.Node | null = node;
+  // `current` is `node` on entry and only ever reassigned from `parent` after
+  // an explicit `if (!parent) break;`, so it's never null at the loop check
+  // (CodeQL: `js/useless-conditional` on the `current &&` test).
+  let current: TSESTree.Node = node;
   let depth = 0;
   const maxDepth = 15;
 
-  while (current && depth < maxDepth) {
+  while (depth < maxDepth) {
     const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
     if (!parent) break;
 

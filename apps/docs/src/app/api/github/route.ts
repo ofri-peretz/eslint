@@ -48,14 +48,18 @@ const CONTENT_PATHS = {
  * Pre-condition for any path that flows into `fetch(url)` below: must match
  * this pattern. Without this gate the request URL is fully user-controlled
  * (CodeQL: critical "Server-side request forgery"), and the log statements
- * downstream become log-injection sinks (CodeQL: "Use of externally-
- * controlled format string"). The pattern enforces:
+ * downstream become log-injection sinks. The pattern enforces:
  *   - lowercase ASCII, digits, dot, hyphen, slash, underscore only
  *   - no parent-directory segments (`..`)
  *   - no leading slash
  *   - first segment is one of the four monorepo content roots
+ *
+ * Each `/` is a structural separator between fixed-width character-class
+ * segments — there is no overlap between the inner and outer quantifiers,
+ * so this regex is not vulnerable to catastrophic backtracking (CodeQL:
+ * "Inefficient regular expression").
  */
-const ALLOWED_PATH_RE = /^(?:packages|apps|generated|tools)\/(?!\.\.\/)(?:[a-zA-Z0-9._-]+\/?)+$/;
+const ALLOWED_PATH_RE = /^(?:packages|apps|generated|tools)(?:\/[a-zA-Z0-9._-]+)+\/?$/;
 function isAllowedPath(p: string): boolean {
   if (!ALLOWED_PATH_RE.test(p)) return false;
   if (p.includes('..')) return false;
@@ -106,18 +110,26 @@ async function fetchGitHubContent(
   if (!isAllowedPath(path)) {
     return { success: false, error: 'Path not allowed' };
   }
-  // Build the request URL via the URL constructor with the GitHub raw CDN as
-  // the base. The constructor normalizes any `..` segments inside `path` and
-  // — crucially for CodeQL's SSRF analysis — refuses to leave the base origin
-  // unless `path` is itself an absolute URL. The origin re-check below is
-  // belt-and-braces: if `path` ever smuggles an absolute URL through
-  // `isAllowedPath` (it shouldn't), the constructed `URL` would have a
-  // different `.origin` and we bail.
-  const base = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
-  const requestUrl = new URL(path, base);
-  if (requestUrl.origin !== 'https://raw.githubusercontent.com') {
-    return { success: false, error: 'Path not allowed' };
+  // Re-validate every segment in `path` against a literal character-class
+  // regex, then reassemble. `isAllowedPath` above already guarantees the
+  // string-level property, but expressing the check per-segment + reassemble
+  // gives CodeQL's `js/request-forgery` query a structural sanitizer it can
+  // follow from input → `fetch` sink. Without this, the analyzer can't see
+  // ALLOWED_PATH_RE as a sanitizer and reports a critical SSRF here.
+  const SAFE_SEGMENT_RE = /^[a-zA-Z0-9._-]+$/;
+  const segments = path.split('/').filter((s) => s.length > 0);
+  for (const seg of segments) {
+    if (!SAFE_SEGMENT_RE.test(seg)) {
+      return { success: false, error: 'Path not allowed' };
+    }
   }
+  // Build the URL as a template literal from validated fragments only. No
+  // `new URL(userInput, base)` — that pattern lets `userInput` smuggle an
+  // absolute URL and override the base, and even after an origin recheck,
+  // the dataflow into `fetch()` still reads as tainted to static analysis.
+  const requestUrl =
+    `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${segments.join('/')}`;
+
   const extension = path.split('.').pop() || 'txt';
   const contentType = CONTENT_TYPES[extension as keyof typeof CONTENT_TYPES] || CONTENT_TYPES.txt;
   const ttl = getTTLForPath(path);
@@ -168,11 +180,12 @@ async function fetchGitHubContent(
       },
     };
   } catch (error) {
-    // Pass `path` as a separate argument rather than interpolating into the
-    // format string — the boundary validators already prove it's an allow-
-    // listed path, but separating the args silences CodeQL's "Use of
-    // externally-controlled format string" finding without an inline disable.
-    console.error('[GitHub Content] Failed to fetch', path, error);
+    // `JSON.stringify` is the canonical sanitizer for CodeQL's log-injection
+    // query: it produces a quoted literal where any CR/LF in the input would
+    // be encoded as `\r` / `\n` rather than ending the log line. The boundary
+    // validators above also make CR/LF impossible (segment regex excludes
+    // them), so this is belt-and-braces.
+    console.error('[GitHub Content] Failed to fetch', JSON.stringify(path), error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

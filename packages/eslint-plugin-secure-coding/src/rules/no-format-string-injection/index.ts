@@ -597,8 +597,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         let current: TSESTree.Node | undefined = node;
         let isFromUserInput = false;
 
-        // Walk up to find if this literal is part of a concatenation or template with user input
-        while (current && !isFromUserInput) {
+        // Walk up to find if this literal is part of a concatenation or template with user input.
+        // Every path that sets `isFromUserInput = true` is immediately followed by `break`,
+        // so the negation in the loop condition is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'BinaryExpression' &&
               current.operator === '+' &&
               (current.left === node || current.right === node)) {
@@ -633,8 +635,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         current = node;
         let isInDangerousContext = false;
 
-        // Walk up to find if this is passed to a format function
-        while (current && !isInDangerousContext) {
+        // Walk up to find if this is passed to a format function. Every path that sets
+        // `isInDangerousContext = true` is followed by `break`, so the negation in the
+        // condition is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'CallExpression' && isFormatFunctionCall(current)) {
             // Check if this is the first argument (format string position)
             const args = current.arguments;

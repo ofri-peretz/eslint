@@ -88,12 +88,15 @@ function isEscaped(
     }
   }
 
-  // Also check if it's wrapped in a trusted function call (for complex cases)
-  let current: TSESTree.Node | null = node;
+  // Also check if it's wrapped in a trusted function call (for complex cases).
+  // `current` is only assigned from `node` (truthy on entry) or `parent` after
+  // an explicit `if (!parent) break;`, so it's never null at the loop check
+  // (CodeQL: `js/useless-conditional` on the `current &&` test).
+  let current: TSESTree.Node = node;
   let depth = 0;
   const maxDepth = 5; // Prevent infinite loops
-  
-  while (current && depth < maxDepth) {
+
+  while (depth < maxDepth) {
     const parent = sourceCode.getNodeByRangeIndex?.(current.range[0] - 1) || 
                    (current as TSESTree.Node).parent;
     

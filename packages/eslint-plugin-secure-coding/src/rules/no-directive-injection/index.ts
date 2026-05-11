@@ -503,7 +503,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
 
-        while (current && !isInDangerousContext) {
+        // Every assignment of `isInDangerousContext = true` is followed by `break`,
+        // so the negation is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'JSXExpressionContainer') {
             // Check if we are inside dangerouslySetInnerHTML attribute
             if (current.parent?.type === 'JSXAttribute' &&

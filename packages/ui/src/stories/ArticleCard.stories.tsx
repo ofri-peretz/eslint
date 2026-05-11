@@ -259,6 +259,82 @@ export const OverlayWithoutCover: Story = {
   },
 };
 
+// -----------------------------------------------------------------------------
+// LCP priority — locks the loading + fetchpriority attributes on the cover
+// image. The articles page uses this on the featured/overlay slot so the
+// hero cover lands inside the Lighthouse LCP budget.
+// -----------------------------------------------------------------------------
+
+/**
+ * Overlay variant with `priority` enabled. The cover image is eager-loaded
+ * and tagged with `fetchpriority="high"`. This is the configuration the
+ * `/articles` page uses for the featured slot to keep LCP under budget.
+ */
+export const OverlayPriority: Story = {
+  args: { ...baseArgs, variant: 'overlay', priority: true },
+  render: (args) => (
+    <div style={{ width: 760 }}>
+      <ArticleCard {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Cover <img> opts into eager loading + high fetch priority', async () => {
+      const link = canvas.getByRole('link');
+      const img = link.querySelector('img');
+      expect(img).not.toBeNull();
+      expect(img).toHaveAttribute('loading', 'eager');
+      expect(img).toHaveAttribute('fetchpriority', 'high');
+    });
+  },
+};
+
+/**
+ * Default overlay (no `priority` prop). Cover stays lazy + auto-priority —
+ * use this for overlay cards that sit below the fold or off-route.
+ */
+export const OverlayLazy: Story = {
+  args: { ...baseArgs, variant: 'overlay' },
+  render: (args) => (
+    <div style={{ width: 760 }}>
+      <ArticleCard {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Cover <img> defaults to lazy loading + auto fetch priority', async () => {
+      const link = canvas.getByRole('link');
+      const img = link.querySelector('img');
+      expect(img).not.toBeNull();
+      expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('fetchpriority', 'auto');
+    });
+  },
+};
+
+/** Stack variant with `priority` — grid card eager-loads its top image. */
+export const StackPriority: Story = {
+  args: { ...baseArgs, variant: 'stack', priority: true },
+  render: (args) => (
+    <div style={{ width: 360 }}>
+      <ArticleCard {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Stack cover <img> respects the priority hint', async () => {
+      const link = canvas.getByRole('link');
+      const img = link.querySelector('img');
+      expect(img).not.toBeNull();
+      expect(img).toHaveAttribute('loading', 'eager');
+      expect(img).toHaveAttribute('fetchpriority', 'high');
+    });
+  },
+};
+
 /**
  * Both variants side by side — visual diff guard. If you change either
  * layout in a way that breaks parity-of-anatomy, this story will look wrong.

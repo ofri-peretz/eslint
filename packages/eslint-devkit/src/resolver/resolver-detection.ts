@@ -156,12 +156,13 @@ export function migrateFromEslintImport(oldConfig: Record<string, unknown>): {
   const warnings: string[] = [];
   const suggestions: string[] = [];
 
-  // Migrate settings
+  // Migrate settings. The leading truthy check (`oldSettings &&`) already
+  // excludes null/undefined, so the later `!== null` was redundant
+  // (CodeQL: `js/comparison-between-incompatible-types`).
   const oldSettings = oldConfig['settings'];
   if (
     oldSettings &&
     typeof oldSettings === 'object' &&
-    oldSettings !== null &&
     'import/resolver' in oldSettings
   ) {
     migrated['settings'] = {
@@ -171,9 +172,10 @@ export function migrateFromEslintImport(oldConfig: Record<string, unknown>): {
     suggestions.push('Resolver settings preserved - no changes needed');
   }
 
-  // Migrate rules
+  // Migrate rules. `oldRules &&` already excludes null/undefined; the
+  // `!== null` was redundant (CodeQL: `js/comparison-between-incompatible-types`).
   const oldRules = oldConfig['rules'];
-  if (oldRules && typeof oldRules === 'object' && oldRules !== null) {
+  if (oldRules && typeof oldRules === 'object') {
     const newRules: Record<string, unknown> = {};
 
     Object.entries(oldRules as Record<string, unknown>).forEach(

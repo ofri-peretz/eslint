@@ -55,6 +55,31 @@ export interface EnforceTeamBoundariesOptions {
 type RuleOptions = [EnforceTeamBoundariesOptions];
 
 /**
+ * Translate a user-supplied glob (`foo/**\/*.ts`) into a RegExp.
+ *
+ * Important: regex metacharacters in the input must be escaped BEFORE the
+ * glob tokens are translated. Without escaping, a pattern like `lib\foo` is
+ * interpreted as `\f` (form feed) and `lib.foo` matches `libXfoo` rather
+ * than the literal dot the user wrote. CodeQL flags the un-escaped backslash
+ * specifically (`js/incomplete-sanitization`).
+ *
+ * Algorithm: escape all regex metas (including `\`), then unescape and
+ * translate just the glob tokens `**` and `*` back to their regex form.
+ */
+function globToRegex(pattern: string): RegExp {
+  // Escape regex metacharacters INCLUDING `*`, so the subsequent replaces
+  // can find the now-escaped `\*\*` / `\*` and translate them back to their
+  // glob meanings. Without escaping `*`, the `**` in `src/platform/**`
+  // reaches `new RegExp()` raw and throws "Nothing to repeat".
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\*]/g, '\\$&');
+  return new RegExp(
+    escaped
+      .replace(/\\\*\\\*/g, '.*')
+      .replace(/\\\*/g, '[^/]*'),
+  );
+}
+
+/**
  * Determine which team owns this file based on path patterns
  */
 function getFileTeam(
@@ -63,14 +88,7 @@ function getFileTeam(
 ): TeamBoundary | null {
   for (const team of teams) {
     for (const pattern of team.paths) {
-      // Support glob patterns (simplified)
-      const regex = new RegExp(
-        pattern
-          .replace(/\*\*/g, '.*')
-          .replace(/\*/g, '[^/]*')
-          .replace(/\//g, '\\/'),
-      );
-      if (regex.test(filePath)) {
+      if (globToRegex(pattern).test(filePath)) {
         return team;
       }
     }
@@ -87,13 +105,7 @@ function getImportTeam(
 ): TeamBoundary | null {
   for (const team of teams) {
     for (const pattern of team.paths) {
-      const regex = new RegExp(
-        pattern
-          .replace(/\*\*/g, '.*')
-          .replace(/\*/g, '[^/]*')
-          .replace(/\//g, '\\/'),
-      );
-      if (regex.test(importPath)) {
+      if (globToRegex(pattern).test(importPath)) {
         return team;
       }
     }
@@ -139,13 +151,7 @@ function isExternalImport(importPath: string): boolean {
  */
 function isSharedPath(importPath: string, sharedPaths: string[]): boolean {
   for (const shared of sharedPaths) {
-    const regex = new RegExp(
-      shared
-        .replace(/\*\*/g, '.*')
-        .replace(/\*/g, '[^/]*')
-        .replace(/\//g, '\\/'),
-    );
-    if (regex.test(importPath)) {
+    if (globToRegex(shared).test(importPath)) {
       return true;
     }
   }

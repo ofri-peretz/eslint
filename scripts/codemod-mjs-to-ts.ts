@@ -153,22 +153,40 @@ function main(): void {
   for (const mjs of files) {
     const ts = tsPathFor(mjs);
     const rel = relative(REPO_ROOT, mjs);
-    try {
-      statSync(ts);
-      console.log(`  SKIP (target exists)  ${rel}`);
-      skippedExists++;
-      continue;
-    } catch {
-      // Doesn't exist — proceed.
-    }
     const source = readFileSync(mjs, 'utf8');
     const transformed = transformContent(source);
     if (APPLY) {
-      writeFileSync(ts, transformed, 'utf8');
+      // Atomic create-or-fail: `wx` ensures we never clobber an existing
+      // target. Replacing the prior `statSync(ts)` precheck with this atomic
+      // write closes the TOCTOU window the analyzer flagged
+      // (CodeQL: `js/file-system-race`).
+      try {
+        writeFileSync(ts, transformed, { encoding: 'utf8', flag: 'wx' });
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code === 'EEXIST') {
+          console.log(`  SKIP (target exists)  ${rel}`);
+          skippedExists++;
+          continue;
+        }
+        throw e;
+      }
       rmSync(mjs);
+      console.log(`  CONVERT  ${rel} → ${relative(REPO_ROOT, ts)}`);
+      converted++;
+    } else {
+      // Dry-run: report what would happen, but skip if target already exists
+      // so the count matches what an `--apply` pass would see.
+      try {
+        statSync(ts);
+        console.log(`  SKIP (target exists)  ${rel}`);
+        skippedExists++;
+        continue;
+      } catch {
+        // Doesn't exist — would convert.
+      }
+      console.log(`  WOULD  ${rel} → ${relative(REPO_ROOT, ts)}`);
+      converted++;
     }
-    console.log(`  ${APPLY ? 'CONVERT' : 'WOULD'}  ${rel} → ${relative(REPO_ROOT, ts)}`);
-    converted++;
   }
   console.log('');
   console.log(`  converted:        ${converted}`);

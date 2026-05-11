@@ -66,13 +66,17 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
 
     function isIgnored(source: string): boolean {
       return ignorePatterns.some((pattern: string) => {
-        // Simple glob matching
+        // Escape ALL regex metacharacters — including `*`, `?`, and `\` — so
+        // the subsequent replaces can find the now-escaped `\*` and `\?` and
+        // translate them back to glob meanings. Without escaping `*` and `?`,
+        // the inner replaces don't match anything and raw `*` / `?` reach
+        // `new RegExp()` (CodeQL: `js/incomplete-sanitization`).
+        const escaped = pattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
         const regex = new RegExp(
           '^' +
-            pattern
-              .replace(/\*/g, '.*')
-              .replace(/\?/g, '.')
-              .replace(/\//g, '\\/') +
+            escaped
+              .replace(/\\\*/g, '.*')
+              .replace(/\\\?/g, '.') +
             '$',
         );
         return regex.test(source);

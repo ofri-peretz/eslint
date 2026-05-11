@@ -359,8 +359,11 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
             let current: TSESTree.Node | undefined = node;
             let isFrameManipulation = false;
 
-            // Walk up to see if this is an assignment or comparison
-            while (current && !isFrameManipulation) {
+            // Walk up to see if this is an assignment or comparison. Every
+            // path that sets `isFrameManipulation = true` is followed by
+            // `break`, so the negation in the loop condition is redundant
+            // (CodeQL: `js/useless-conditional`).
+            while (current) {
               if (current.type === 'AssignmentExpression' &&
                   current.left === node) {
                 isFrameManipulation = true;

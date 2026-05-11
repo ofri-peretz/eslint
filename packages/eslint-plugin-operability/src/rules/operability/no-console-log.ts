@@ -296,11 +296,20 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         /** Directory match */
         if (normalizedPath.startsWith(normalizedPattern + '/')) return true;
 
-        /** Glob-like pattern support */
-        const regexPattern = normalizedPattern
-          .replace(/\./g, '\\.')
-          .replace(/\*/g, '.*')
-          .replace(/\?/g, '.');
+        /**
+         * Glob-like pattern support. Escape ALL regex metacharacters (the
+         * previous logic only escaped `.`, so `(`, `)`, `+`, `[`, `]`, `\`
+         * etc. were interpreted as regex syntax). CodeQL specifically flagged
+         * the unescaped backslash as `js/incomplete-sanitization`. The escape
+         * set MUST include `*` and `?` so the subsequent replaces can find
+         * the escaped tokens and translate them to glob equivalents — without
+         * that, raw `*` / `?` reach `new RegExp()` and the pattern matching
+         * is silently broken.
+         */
+        const escaped = normalizedPattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
+        const regexPattern = escaped
+          .replace(/\\\*/g, '.*')
+          .replace(/\\\?/g, '.');
 
         return new RegExp(regexPattern).test(normalizedPath);
       });

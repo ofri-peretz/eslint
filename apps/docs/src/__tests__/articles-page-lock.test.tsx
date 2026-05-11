@@ -249,6 +249,15 @@ describe('ArticlesClient: Article Cards Lock', () => {
     expect(articlesSource).toContain('isFeatured');
   });
 
+  it('marks the featured slot as the LCP element via the `priority` prop', () => {
+    // Regression lock for the Lighthouse LCP budget on `/articles`. The
+    // featured overlay card is above the fold and must opt its cover into
+    // eager loading + high fetch priority. If this assertion fails, the
+    // grid wrapper is forwarding `priority={false}` (or omitting it) and
+    // Lighthouse will start failing the LCP budget again.
+    expect(articlesSource).toMatch(/priority=\{isFeatured\}/);
+  });
+
   it('uses CSS animation classes (motion-safe gated)', () => {
     expect(articlesSource).toContain('motion-safe:animate-fade-in-up');
   });

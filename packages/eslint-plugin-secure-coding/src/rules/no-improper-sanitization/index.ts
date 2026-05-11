@@ -487,7 +487,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
 
-        while (current && !isInDangerousContext) {
+        // Every path that sets `isInDangerousContext = true` is followed by `break`,
+        // so the negation in the condition is dead (CodeQL: `js/useless-conditional`).
+        while (current) {
           if (current.type === 'AssignmentExpression') {
             const left = current.left;
             if (left.type === 'MemberExpression' &&

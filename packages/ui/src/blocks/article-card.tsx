@@ -71,6 +71,12 @@ export interface ArticleCardProps {
   external?: boolean;
   /** Visual layout. See `ArticleCardVariant`. Default: `'stack'`. */
   variant?: ArticleCardVariant;
+  /**
+   * Hint the cover image is the LCP element on this route. Eager-loads it
+   * with `fetchpriority="high"`. Set on the single featured/overlay card
+   * above the fold; leave default (`false`) on every grid tile.
+   */
+  priority?: boolean;
   /** Class on the outer anchor wrapper. */
   className?: string;
 }
@@ -106,6 +112,7 @@ export function ArticleCard({
   sourceLabel,
   external = true,
   variant = 'stack',
+  priority = false,
   className,
 }: ArticleCardProps) {
   const visibleTags = tags?.slice(0, 3) ?? [];
@@ -146,6 +153,7 @@ export function ArticleCard({
             publishedAt={publishedAt}
             meta={meta}
             sourceLabel={sourceLabel}
+            priority={priority}
           />
         ) : (
           <StackBody
@@ -158,6 +166,7 @@ export function ArticleCard({
             publishedAt={publishedAt}
             meta={meta}
             sourceLabel={sourceLabel}
+            priority={priority}
           />
         )}
       </Card>
@@ -175,6 +184,8 @@ interface BodyProps {
   publishedAt?: string | number | Date;
   meta?: ArticleCardMeta;
   sourceLabel?: string;
+  /** Forwarded from `ArticleCardProps.priority`. */
+  priority?: boolean;
 }
 
 /** Top-right chip used to attribute the source of the article (e.g., "Dev.to"). */
@@ -207,11 +218,19 @@ function CoverImage({
   title,
   className,
   fallbackTextClassName,
+  priority = false,
 }: {
   imageUrl?: string;
   title: string;
   className?: string;
   fallbackTextClassName?: string;
+  /**
+   * When true, eager-load the cover image and hint the browser to fetch
+   * it with high priority. Use on the LCP element of a route — typically
+   * the featured/overlay slot on the articles index. Default: false
+   * (lazy-loaded, fine for grid tiles below the fold).
+   */
+  priority?: boolean;
 }) {
   if (imageUrl) {
     return (
@@ -220,7 +239,11 @@ function CoverImage({
         alt=""
         width={1000}
         height={420}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        // `fetchpriority` is the lowercase DOM attr name; React 19 normalizes
+        // either casing, but lowercase is the canonical HTML form and avoids
+        // hydration mismatches across SSR/CSR.
+        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         className={cn(
           'h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105',
@@ -313,12 +336,13 @@ function StackBody({
   publishedAt,
   meta,
   sourceLabel,
+  priority = false,
 }: BodyProps) {
   return (
     <>
       {/* Cover (or gradient title fallback) — edge-to-edge top of the card. */}
       <div className="relative h-44 w-full shrink-0 overflow-hidden">
-        <CoverImage imageUrl={imageUrl} title={title} />
+        <CoverImage imageUrl={imageUrl} title={title} priority={priority} />
         {sourceLabel ? <SourceChip label={sourceLabel} /> : null}
       </div>
 
@@ -422,6 +446,7 @@ function OverlayBody({
   publishedAt,
   meta,
   sourceLabel,
+  priority = false,
 }: BodyProps) {
   return (
     <>
@@ -433,6 +458,7 @@ function OverlayBody({
           imageUrl={imageUrl}
           title={title}
           fallbackTextClassName="text-2xl"
+          priority={priority}
         />
       </div>
       {/* Scrim — opacity stack tuned so titles + meta on top read clean over

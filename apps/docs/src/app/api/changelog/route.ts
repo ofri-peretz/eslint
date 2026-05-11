@@ -87,7 +87,12 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
     });
 
     if (!response.ok) {
-      console.warn(`[Changelog] No CHANGELOG.md for ${plugin}: ${response.status}`);
+      // `JSON.stringify(plugin)` quotes the value as a JSON literal — CR/LF in
+      // the input would be encoded as `\r` / `\n` rather than terminating the
+      // log line. `plugin` is also restricted to PLUGIN_PATHS keys at the API
+      // boundary, but the explicit sanitizer is what CodeQL's `js/log-injection`
+      // query recognizes.
+      console.warn('[Changelog] No CHANGELOG.md for', JSON.stringify(plugin), 'status', response.status);
       return null;
     }
 
@@ -102,12 +107,11 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {
-    // Pass `plugin` as a separate argument rather than interpolating it into
-    // the format string. `plugin` is already guaranteed to be a key of
-    // PLUGIN_PATHS (validated at the API boundary and re-checked above), but
-    // separating the args silences CodeQL's "Use of externally-controlled
-    // format string" finding without an inline disable.
-    console.error('[Changelog] Failed to fetch', plugin, error);
+    // `JSON.stringify(plugin)` is the sanitizer CodeQL's `js/log-injection`
+    // query recognizes — CR/LF in the value would be encoded rather than
+    // terminating the log line. `plugin` is also restricted to PLUGIN_PATHS
+    // keys at the API boundary above, so this is defense-in-depth.
+    console.error('[Changelog] Failed to fetch', JSON.stringify(plugin), error);
     return null;
   }
 }

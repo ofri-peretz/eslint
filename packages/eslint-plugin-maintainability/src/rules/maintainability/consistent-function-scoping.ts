@@ -175,7 +175,9 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
                     collectReferences(item, depth + 1, visited);
                   }
                 });
-              } else if ('type' in child && typeof child === 'object' && child !== null) {
+              } else if ('type' in child) {
+                // Outer `child && typeof child === 'object'` already guarantees
+                // a non-null object here (CodeQL: `js/comparison-between-incompatible-types`).
                 collectReferences(child as TSESTree.Node, depth + 1, visited);
               }
             }

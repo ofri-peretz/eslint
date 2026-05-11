@@ -103,6 +103,11 @@ function ArticleCard({
           views: article.page_views_count,
         }}
         sourceLabel="Dev.to"
+        // The featured overlay card sits above the fold and is the LCP
+        // element on `/articles` page 1 — eager-load its cover and hint
+        // high fetch priority so it lands inside the 2.5s budget. Grid
+        // tiles below the fold keep the default lazy behaviour.
+        priority={isFeatured}
       />
     </div>
   );

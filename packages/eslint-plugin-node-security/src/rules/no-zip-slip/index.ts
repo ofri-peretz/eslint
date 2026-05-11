@@ -490,7 +490,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           let current: TSESTree.Node | undefined = node;
           let isArchiveContext = false;
 
-          while (current && !isArchiveContext) {
+          // Every assignment of `isArchiveContext = true` is followed by `break`,
+          // so the negation is dead (CodeQL: `js/useless-conditional`).
+          while (current) {
             if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
               isArchiveContext = true;
               break;
