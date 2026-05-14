@@ -238,3 +238,92 @@ export function getSnippetBySlug(slug: string | undefined): PlaygroundSnippet {
   if (!slug) return PLAYGROUND_SNIPPETS[0];
   return PLAYGROUND_SNIPPETS.find((s) => s.slug === slug) ?? PLAYGROUND_SNIPPETS[0];
 }
+
+/**
+ * Extract the plugin prefix from a ruleId — `<plugin-prefix>/<rule-name>`.
+ * Returns the part before the first `/`. Used by the plugin-toggle strip
+ * and copy-config button.
+ */
+export function getPluginPrefix(ruleId: string): string {
+  const slash = ruleId.indexOf('/');
+  return slash >= 0 ? ruleId.slice(0, slash) : ruleId;
+}
+
+/**
+ * The full set of plugin prefixes referenced by a snippet's findings.
+ * Used to render the toggle strip and to seed the default "all enabled"
+ * state. Order is preserved from first-occurrence in the snippet so the
+ * primary-rule plugin shows first.
+ */
+export function pluginsInSnippet(snippet: PlaygroundSnippet): string[] {
+  const seen: string[] = [];
+  for (const f of snippet.findings) {
+    const prefix = getPluginPrefix(f.ruleId);
+    if (!seen.includes(prefix)) seen.push(prefix);
+  }
+  return seen;
+}
+
+/**
+ * Map a plugin prefix to its `@interlace/...` package name. Used by the
+ * copy-config emitter so the generated snippet imports are accurate.
+ *
+ * The keys here cover every flagship plugin that any snippet references.
+ * If a new snippet introduces a new plugin, add the row here. (Lock test
+ * will catch this drift in Phase 3.)
+ */
+export const PLUGIN_PREFIX_TO_PACKAGE: Record<string, string> = {
+  'jwt': '@interlace/eslint-plugin-jwt',
+  'secure-coding': '@interlace/eslint-plugin-secure-coding',
+  'pg': '@interlace/eslint-plugin-pg',
+  'mongodb-security': '@interlace/eslint-plugin-mongodb-security',
+  'browser-security': '@interlace/eslint-plugin-browser-security',
+  'react-a11y': '@interlace/eslint-plugin-react-a11y',
+  // Add additional flagship plugins here as snippets reference them.
+  'node-security': '@interlace/eslint-plugin-node-security',
+  'react-features': '@interlace/eslint-plugin-react-features',
+  'import-next': '@interlace/eslint-plugin-import-next',
+  'vercel-ai-security': '@interlace/eslint-plugin-vercel-ai-security',
+};
+
+/**
+ * Map a plugin prefix to the JS identifier we use in the generated config
+ * snippet. Convention: lower-camelCase, hyphens dropped. (E.g.
+ * `secure-coding` → `secureCoding`, `mongodb-security` → `mongodbSecurity`.)
+ */
+export function pluginPrefixToIdentifier(prefix: string): string {
+  return prefix
+    .split('-')
+    .map((part, i) => (i === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join('');
+}
+
+/**
+ * Emit an `eslint.config.js` snippet that pulls each enabled plugin's
+ * `configs.flagship` (the composable flagship-preset documented in
+ * `.agent/flagship-rules.md` § "Using the flagship preset"). Returns the
+ * snippet as a single string; the playground's copy-button puts this on
+ * the clipboard.
+ */
+export function buildConfigSnippet(enabledPrefixes: readonly string[]): string {
+  if (enabledPrefixes.length === 0) {
+    return '// Enable at least one plugin to generate an eslint.config.js snippet.\n';
+  }
+  const imports = enabledPrefixes
+    .map((prefix) => {
+      const id = pluginPrefixToIdentifier(prefix);
+      const pkg = PLUGIN_PREFIX_TO_PACKAGE[prefix] ?? `@interlace/eslint-plugin-${prefix}`;
+      return `import ${id} from '${pkg}';`;
+    })
+    .join('\n');
+  const presetSpreads = enabledPrefixes
+    .map((prefix) => `  ...${pluginPrefixToIdentifier(prefix)}.configs.flagship,`)
+    .join('\n');
+  return `${imports}
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+${presetSpreads}
+];
+`;
+}

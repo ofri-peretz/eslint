@@ -46,7 +46,7 @@ export default async function PlaygroundPage({
         <SectionHeader
           eyebrow="Try it"
           title="Playground"
-          tagline="Pick a flagship rule, edit the code, see the finding. Phase 1b — editable Monaco editor with verified static findings; live in-browser linting arrives in Phase 2."
+          tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Phase 1c — Monaco editor + plugin toggle strip + verified static findings; live in-browser linting (oxlint WASM) arrives in Phase 2."
         />
       </Section>
 

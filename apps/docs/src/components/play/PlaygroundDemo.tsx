@@ -4,10 +4,13 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, Copy, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
 import {
   PLAYGROUND_SNIPPETS,
   getSnippetBySlug,
+  getPluginPrefix,
+  pluginsInSnippet,
+  buildConfigSnippet,
   type PlaygroundSnippet,
 } from './snippets';
 
@@ -37,6 +40,15 @@ const PlaygroundEditor = dynamic(
  * Phase 2 will replace the "edited, not yet linted" placeholder with
  * live findings from `eslint-linter-browserify`. See PLAYGROUND_SPEC.md.
  */
+/**
+ * Parse the `?plugins=` query param. Empty / missing = all plugins enabled.
+ * Format: comma-separated prefix slugs, e.g. `?plugins=jwt,pg`.
+ */
+function parsePluginsParam(raw: string | null | undefined): Set<string> | null {
+  if (!raw) return null;
+  return new Set(raw.split(',').map((s) => s.trim()).filter(Boolean));
+}
+
 export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -44,26 +56,98 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
   const snippet = useMemo<PlaygroundSnippet>(() => getSnippetBySlug(currentSlug), [currentSlug]);
   const [editorValue, setEditorValue] = useState<string>(snippet.code);
 
-  // Reset editor contents whenever the picked snippet changes.
+  // Plugin-toggle state. `null` means "no override — every plugin enabled."
+  // Tracking as Set<string> rather than Map<prefix, bool> because the strip
+  // only needs membership semantics; un-toggled = enabled.
+  const snippetPlugins = useMemo(() => pluginsInSnippet(snippet), [snippet]);
+  const [enabledPlugins, setEnabledPlugins] = useState<Set<string> | null>(
+    () => parsePluginsParam(params?.get('plugins')),
+  );
+
+  // Reset editor + plugin selection whenever the picked snippet changes.
   useEffect(() => {
     setEditorValue(snippet.code);
   }, [snippet.code]);
 
   const isEdited = editorValue !== snippet.code;
 
-  const selectSnippet = useCallback(
-    (slug: string) => {
-      setCurrentSlug(slug);
+  // Effective enabled set: null override → all of snippet's plugins.
+  const effectiveEnabled = useMemo(
+    () => enabledPlugins ?? new Set(snippetPlugins),
+    [enabledPlugins, snippetPlugins],
+  );
+
+  const visibleFindings = useMemo(
+    () => snippet.findings.filter((f) => effectiveEnabled.has(getPluginPrefix(f.ruleId))),
+    [snippet.findings, effectiveEnabled],
+  );
+
+  const writeUrl = useCallback(
+    (mutate: (p: URLSearchParams) => void) => {
       const next = new URLSearchParams(params?.toString() ?? '');
-      next.set('example', slug);
+      mutate(next);
       router.replace(`/play?${next.toString()}`, { scroll: false });
     },
     [params, router],
   );
 
+  const selectSnippet = useCallback(
+    (slug: string) => {
+      setCurrentSlug(slug);
+      // When the snippet changes, clear the plugin filter — every snippet
+      // has its own plugin set, and stale filters would be confusing.
+      setEnabledPlugins(null);
+      writeUrl((p) => {
+        p.set('example', slug);
+        p.delete('plugins');
+      });
+    },
+    [writeUrl],
+  );
+
+  const togglePlugin = useCallback(
+    (prefix: string) => {
+      setEnabledPlugins((prev) => {
+        const base = prev ?? new Set(snippetPlugins);
+        const next = new Set(base);
+        if (next.has(prefix)) {
+          next.delete(prefix);
+        } else {
+          next.add(prefix);
+        }
+        // Sync URL.
+        if (next.size === snippetPlugins.length) {
+          writeUrl((p) => p.delete('plugins'));
+          return null;
+        }
+        writeUrl((p) => p.set('plugins', [...next].join(',')));
+        return next;
+      });
+    },
+    [snippetPlugins, writeUrl],
+  );
+
   const resetSnippet = useCallback(() => {
     setEditorValue(snippet.code);
   }, [snippet.code]);
+
+  // Copy-config button state.
+  const [copied, setCopied] = useState(false);
+  const configSnippet = useMemo(
+    () => buildConfigSnippet(snippetPlugins.filter((p) => effectiveEnabled.has(p))),
+    [snippetPlugins, effectiveEnabled],
+  );
+  const copyConfig = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(configSnippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard write failed (permissions, insecure origin, etc.) — leave
+      // `copied` false so the button doesn't lie. A future iteration can
+      // fall back to a textarea selection trick.
+    }
+  }, [configSnippet]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -127,6 +211,67 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         <p className="text-sm text-fd-muted-foreground">{snippet.description}</p>
       </div>
 
+      {/* Plugin toggle strip — filters which plugin's findings are visible.
+          Phase 1c (static): toggles only filter the right-pane display.
+          Phase 2: toggles will gate which rules actually run under the
+          in-browser linter. Pattern lifted from OXC Playground's settings
+          panel + Babel REPL's plugin toggles. */}
+      {snippetPlugins.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
+              Plugins enabled · {effectiveEnabled.size}/{snippetPlugins.length}
+            </p>
+            <button
+              type="button"
+              onClick={copyConfig}
+              aria-live="polite"
+              className="inline-flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-card px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-fd-foreground transition-colors hover:bg-fd-accent disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={effectiveEnabled.size === 0}
+            >
+              {copied ? (
+                <>
+                  <Check aria-hidden className="size-3.5" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy aria-hidden className="size-3.5" />
+                  Copy eslint.config.js
+                </>
+              )}
+            </button>
+          </div>
+          <ul className="flex flex-wrap gap-2" aria-label="Plugin toggle strip">
+            {snippetPlugins.map((prefix) => {
+              const enabled = effectiveEnabled.has(prefix);
+              return (
+                <li key={prefix}>
+                  <button
+                    type="button"
+                    onClick={() => togglePlugin(prefix)}
+                    aria-pressed={enabled}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
+                      enabled
+                        ? 'border-fd-primary bg-fd-primary/10 text-fd-foreground'
+                        : 'border-fd-border bg-fd-card/50 text-fd-muted-foreground line-through opacity-60'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`inline-block size-2 rounded-full ${
+                        enabled ? 'bg-fd-primary' : 'bg-fd-muted-foreground/40'
+                      }`}
+                    />
+                    {prefix}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {/* Two-pane: code + findings */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Left pane — editor */}
@@ -152,7 +297,12 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         {/* Right pane — findings */}
         <div className="flex flex-col gap-2">
           <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-            Findings {isEdited ? '· paused' : `· ${snippet.findings.length}`}
+            Findings {isEdited ? '· paused' : `· ${visibleFindings.length}`}
+            {!isEdited && visibleFindings.length !== snippet.findings.length && (
+              <span className="ml-1 normal-case tracking-normal text-fd-muted-foreground/70">
+                ({snippet.findings.length - visibleFindings.length} hidden by plugin filter)
+              </span>
+            )}
           </p>
           {isEdited ? (
             <div className="flex flex-col items-start gap-2 rounded-md border border-dashed border-fd-border bg-fd-card/50 p-4 text-sm text-fd-muted-foreground">
@@ -169,14 +319,16 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
                 see the canonical findings.
               </p>
             </div>
-          ) : snippet.findings.length === 0 ? (
+          ) : visibleFindings.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-fd-border bg-fd-card/50 p-6 text-center text-sm text-fd-muted-foreground">
               <Sparkles aria-hidden className="size-5 opacity-50" />
-              No findings yet — paste code or pick an example.
+              {snippet.findings.length === 0
+                ? 'No findings yet — paste code or pick an example.'
+                : 'All plugins disabled for this example — toggle one back on to see its findings.'}
             </div>
           ) : (
             <ol className="flex flex-col gap-2" aria-label="ESLint findings for this snippet">
-              {snippet.findings.map((f, i) => (
+              {visibleFindings.map((f, i) => (
                 <li
                   key={`${f.ruleId}-${f.line}-${f.column}-${i}`}
                   className="flex flex-col gap-2 rounded-md border border-fd-border bg-fd-card p-3"
@@ -217,14 +369,16 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         </div>
       </div>
 
-      {/* Footer caveat — Phase 1b honesty */}
+      {/* Footer caveat — Phase 1c honesty */}
       <p className="rounded-md border border-fd-border bg-fd-card/50 p-3 text-xs text-fd-muted-foreground">
-        <strong className="text-fd-foreground">Phase 1b:</strong> the editor is
-        live; the findings are the verified output of running the rule on the
-        canonical snippet. Edit the code and the findings pause until Phase 2
-        wires{' '}
-        <code className="font-mono">eslint-linter-browserify</code> for live
-        in-browser linting. Tracking in{' '}
+        <strong className="text-fd-foreground">Phase 1c:</strong> editable
+        Monaco editor + plugin toggle strip + Copy-eslint.config.js. Findings
+        are the verified output for the canonical snippet; toggling a plugin
+        filters which plugin's findings appear and rewrites the generated
+        config snippet. Editing the code pauses findings until Phase 2 wires a
+        live in-browser linter (currently scoped to{' '}
+        <strong className="text-fd-foreground">oxlint WASM + our rules as JS
+        plugins</strong>, per PLAYGROUND_SPEC.md § Architecture #2). Tracking in{' '}
         <Link href="https://github.com/ofri-peretz/eslint/blob/main/PLAYGROUND_SPEC.md" className="underline">
           PLAYGROUND_SPEC.md
         </Link>
