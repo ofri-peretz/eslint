@@ -27,7 +27,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const BENCH_FROM_DIRNAME = {
   'ilb-arena': 'ILB-Arena',
   'ilb-arena-quality': 'ILB-Arena-Quality',
-  'ilb-juliet': 'ILB-Juliet',
+  'ilb-cwe-corpus': 'ILB-CWE-Corpus',
   'ilb-wild': 'ILB-Wild',
   'ilb-edge': 'ILB-Edge',
   'ilb-cov': 'ILB-Cov',

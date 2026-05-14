@@ -19,7 +19,7 @@
  *  3. **Coverage breadth**. Per-CWE: count of vulnerable fixtures, count
  *     of safe fixtures. Flags CWEs that don't have ≥ 2 fixtures of each.
  *
- * Inputs are the latest ILB-Arena and ILB-Juliet result files. Output is
+ * Inputs are the latest ILB-Arena and ILB-CWE-Corpus result files. Output is
  * JSON at benchmark-results/coverage.json — consumed by `ilb:scorecard`
  * which renders the Trust Signals section directly into scorecard.md.
  *
@@ -51,16 +51,16 @@ function latestDated(dir) {
 }
 
 const arenaPath = latestDated(path.join(BENCH_RESULTS, 'ilb-arena'));
-const julietPath = latestDated(path.join(BENCH_RESULTS, 'ilb-juliet'));
+const julietPath = latestDated(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
 
 if (!arenaPath || !julietPath) {
-  console.error('Need latest ilb-arena and ilb-juliet results. Run those benches first.');
+  console.error('Need latest ilb-arena and ilb-cwe-corpus results. Run those benches first.');
   process.exit(2);
 }
 const arena = JSON.parse(fs.readFileSync(arenaPath, 'utf-8'));
 const juliet = JSON.parse(fs.readFileSync(julietPath, 'utf-8'));
 
-// ── Inter-rater agreement on Juliet (per-fixture, per-tool) ────────
+// ── Inter-rater agreement on CWE-Corpus (per-fixture, per-tool) ────────
 
 function julietAgreement() {
   // Build a fixture × tool matrix:
@@ -100,7 +100,7 @@ function julietAgreement() {
   const fixtures3PlusAgree = perFixture.filter((r) => r.agreementCount >= 3).length;
   const fixturesAllAgree = perFixture.filter((r) => r.agreementCount === r.totalTools).length;
 
-  // Cohen's kappa for Interlace vs each competitor on Juliet
+  // Cohen's kappa for Interlace vs each competitor on CWE-Corpus
   const kappas = {};
   for (const tool of tools) {
     if (tool === 'interlace') continue;
@@ -217,7 +217,7 @@ function arenaAgreement() {
   };
 }
 
-// ── Coverage breadth (Juliet only) ─────────────────────────────────
+// ── Coverage breadth (CWE-Corpus only) ─────────────────────────────────
 
 function coverageBreadth() {
   if (!fs.existsSync(CORPUS_DIR)) return { cwes: [], gaps: [] };

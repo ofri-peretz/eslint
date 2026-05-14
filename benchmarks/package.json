@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
-    "ilb:juliet": "tsx suites/ilb-juliet/run.ts",
+    "ilb:cwe-corpus": "tsx suites/ilb-cwe-corpus/run.ts",
     "ilb:arena": "tsx suites/ilb-arena/run.js",
     "ilb:arena-quality": "tsx suites/ilb-arena-quality/run.js",
     "ilb:ai": "tsx suites/ilb-ai/run.js",

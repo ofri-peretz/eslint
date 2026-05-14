@@ -1,6 +1,6 @@
 name: ILB Cross-Version Matrix
 
-# Runs the cheap synthetic benches (ILB-Arena + ILB-Juliet) across a
+# Runs the cheap synthetic benches (ILB-Arena + ILB-CWE-Corpus) across a
 # matrix of Node and ESLint major versions to catch silent FN drift
 # from upstream AST changes before users hit it.
 #
@@ -142,9 +142,9 @@ jobs:
         if: matrix.bench == 'arena'
         run: npm run ilb:arena
 
-      - name: Run ILB-Juliet
+      - name: Run ILB-CWE-Corpus
         if: matrix.bench == 'juliet'
-        run: npm run ilb:juliet
+        run: npm run ilb:cwe-corpus
 
       - name: Upload result
         if: always()

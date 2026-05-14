@@ -92,7 +92,7 @@
     "ilb:wild:list": "tsx scripts/ilb-wild.ts --list",
     "ilb:wild:results": "tsx scripts/ilb-wild.ts --results",
     "ilb:edge": "tsx scripts/ilb-wild.ts --fp-corpus",
-    "ilb:juliet": "npm run ilb:juliet -w @interlace/benchmarks",
+    "ilb:cwe-corpus": "npm run ilb:cwe-corpus -w @interlace/benchmarks",
     "ilb:arena": "npm run ilb:arena -w @interlace/benchmarks",
     "ilb:arena:quality": "npm run ilb:arena-quality -w @interlace/benchmarks",
     "ilb:perf:import": "npm run ilb:perf-import -w @interlace/benchmarks",

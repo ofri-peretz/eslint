@@ -28,7 +28,7 @@
  *   benchmark-results/<latest>/per-repo/<repo>/per-rule.json (per-rule samples with severity)
  *   benchmark-results/<latest>/summary.json (fpEdge flags per repo)
  *   benchmarks/results/ilb-arena/<latest>.json (rule names appearing in Arena)
- *   benchmarks/results/ilb-juliet/<latest>.json (rule names appearing in Juliet)
+ *   benchmarks/results/ilb-cwe-corpus/<latest>.json (rule names appearing in Juliet)
  *
  * Output: benchmark-results/severity-audit.json + a printed summary.
  * Exit non-zero only if an `error`-level rule has a high-risk indicator.
@@ -93,7 +93,7 @@ const fpEdgeRepos = new Set(
 );
 
 const arenaRules = extractRuleNames(latestBenchFile('ilb-arena'));
-const julietRules = extractRuleNames(latestBenchFile('ilb-juliet'));
+const julietRules = extractRuleNames(latestBenchFile('ilb-cwe-corpus'));
 
 // Aggregate per-rule across Wild repos
 const perRule = new Map();

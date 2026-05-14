@@ -96,7 +96,7 @@ ofri-peretz/eslint
 │   ├── audits/                    dated outreach + readiness packets (see audits/INDEX.md)
 │   ├── corpus/                    CWE-mapped fixtures
 │   ├── lib/                       shared helpers (toolchain, history, stats, schema)
-│   └── suites/                    per-bench runners (ilb-arena, ilb-juliet, ilb-wild, …)
+│   └── suites/                    per-bench runners (ilb-arena, ilb-cwe-corpus, ilb-wild, …)
 ├── benchmark-results/           live numbers (regenerated; do not paste into static docs)
 ├── cicd-impact/                 CI/CD Impact framework — economics
 │   ├── README.md                  start here for org-economic questions

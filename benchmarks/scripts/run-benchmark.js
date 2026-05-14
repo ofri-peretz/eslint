@@ -42,9 +42,9 @@ const BENCHMARKS = {
     ],
     fixtureSizes: [1000, 5000, 10000],
   },
-  'ilb-juliet': {
-    name: 'ILB-Juliet — Synthetic CWE Corpus',
-    baseDir: 'ilb-juliet',
+  'ilb-cwe-corpus': {
+    name: 'ILB-CWE-Corpus — Synthetic CWE Corpus',
+    baseDir: 'ilb-cwe-corpus',
     plugins: [
       { name: 'eslint-plugin-security', config: 'security.config.js' },
       { name: 'eslint-plugin-secure-coding', config: 'secure-coding.config.js' },

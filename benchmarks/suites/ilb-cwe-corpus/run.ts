@@ -1,17 +1,24 @@
 #!/usr/bin/env -S npx tsx
 
-// ILB-Juliet — CWE-mapped synthetic accuracy bench (v1.0)
+// ILB-CWE-Corpus — CWE-mapped synthetic accuracy bench (v1.0)
 //
 // Walks benchmarks/corpus/CWE-NNN/{vulnerable,safe}/, lints every
 // fixture with each registered plugin, scores TP / FP / FN per CWE, and
 // emits per-CWE + aggregate F1 + OWASP Benchmark Accuracy Score
-// (BAS = TPR − FPR). Results land at results/ilb-juliet/<date>.json.
+// (BAS = TPR − FPR). Results land at results/ilb-cwe-corpus/<date>.json.
+//
+// NOTE (2026-05-13): this suite was previously named "ILB-Juliet." The
+// rename is part of the Tier 0 claims audit — our corpus is CWE-organized
+// and inspired by the layout conventions of NIST SARD / Juliet, but it is
+// NOT the NIST Juliet test suite (22 vulnerable + 22 safe fixtures across
+// 10 CWEs vs Juliet's thousands per CWE). Calling it "Juliet" implied an
+// external corpus we don't actually score on. See `CLAIMS.md` § Provenance.
 //
 // Usage (from benchmarks/ workspace):
-//   npm run ilb:juliet                       # full ecosystem
-//   npm run ilb:juliet -- --plugin=interlace # single
-//   npm run ilb:juliet -- --cwe=CWE-089      # single CWE
-//   npm run ilb:juliet -- --json             # JSON only
+//   npm run ilb:cwe-corpus                       # full ecosystem
+//   npm run ilb:cwe-corpus -- --plugin=interlace # single
+//   npm run ilb:cwe-corpus -- --cwe=CWE-089      # single CWE
+//   npm run ilb:cwe-corpus -- --json             # JSON only
 
 import fs from "fs";
 import path from "path";
@@ -21,7 +28,7 @@ import { ESLint } from "eslint";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = path.resolve(__dirname, "..", "..");
 const CORPUS_DIR = path.join(BENCH_ROOT, "corpus");
-const RESULTS_DIR = path.join(BENCH_ROOT, "results", "ilb-juliet");
+const RESULTS_DIR = path.join(BENCH_ROOT, "results", "ilb-cwe-corpus");
 
 // ── Plugin matrix (mirrors ILB-Arena) ─────────────────────────────────
 
@@ -190,7 +197,7 @@ function scoreCWE(perFixture) {
 async function main() {
   const corpus = discoverCorpus();
   if (corpus.length === 0) {
-    console.error("ILB-Juliet corpus is empty. Expected corpus/CWE-NNN/ dirs.");
+    console.error("ILB-CWE-Corpus is empty. Expected corpus/CWE-NNN/ dirs.");
     process.exit(2);
   }
   const plugins = pluginFilter
@@ -202,7 +209,7 @@ async function main() {
   }
 
   if (!EMIT_JSON) {
-    console.log(`\n🧪 ILB-Juliet v1.0 — ${corpus.length} CWE${corpus.length === 1 ? "" : "s"} × ${plugins.length} plugin${plugins.length === 1 ? "" : "s"}\n`);
+    console.log(`\n🧪 ILB-CWE-Corpus v1.0 — ${corpus.length} CWE${corpus.length === 1 ? "" : "s"} × ${plugins.length} plugin${plugins.length === 1 ? "" : "s"}\n`);
     for (const c of corpus) {
       console.log(
         `  ${c.cwe}: ${c.manifest.name || "(unknown)"} — ${c.vulnerable.length} vulnerable + ${c.safe.length} safe`,
@@ -212,7 +219,7 @@ async function main() {
   }
 
   const data = {
-    bench: "ILB-Juliet",
+    bench: "ILB-CWE-Corpus",
     version: "1.0",
     timestamp: new Date().toISOString(),
     environment: {
@@ -327,6 +334,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("ilb-juliet fatal error:", e);
+  console.error("ilb-cwe-corpus fatal error:", e);
   process.exit(1);
 });

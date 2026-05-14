@@ -133,8 +133,8 @@ Each flagship rule MUST have a per-rule entry in `benchmarks/results/ilb-flagshi
 | Flagship rule | Existing bench | Action |
 | :--- | :--- | :--- |
 | `no-cycle` | `ilb-perf-import` | Already isolated. Promote into flagship dashboard. |
-| `pg/no-unsafe-query` | ilb-juliet CWE-89 | Carve single-rule subset; isolated runner. |
-| `secure-coding/no-hardcoded-credentials` | ilb-juliet CWE-798 | Carve subset. |
+| `pg/no-unsafe-query` | ilb-cwe-corpus CWE-89 | Carve single-rule subset; isolated runner. |
+| `secure-coding/no-hardcoded-credentials` | ilb-cwe-corpus CWE-798 | Carve subset. |
 | `secure-coding/no-redos-vulnerable-regex` | — | New ReDoS fixture pack; head-to-head vs `regexp/no-super-linear-backtracking`. |
 | `mongodb-security/no-unsafe-query` | ilb-arena | Add Mongo-specific fixture set ($where, $expr, allowDiskUse). |
 | `jwt/no-algorithm-none` | ilb-arena | Add CVE-2015-9235 reproduction fixtures. |

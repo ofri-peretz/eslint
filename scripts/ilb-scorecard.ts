@@ -10,7 +10,7 @@
  * Sources:
  *   ILB-Wild        → benchmark-results/<latest>/summary.json
  *   ILB-Arena       → benchmarks/results/ilb-arena/<latest>.json
- *   ILB-Juliet      → benchmarks/results/ilb-juliet/<latest>.json
+ *   ILB-CWE-Corpus → benchmarks/results/ilb-cwe-corpus/<latest>.json
  *   ILB-AI          → benchmarks/results/ilb-ai/<latest>.json
  *   ILB-Perf        → benchmarks/results/ilb-perf-import/<latest>.json
  *   ILB-Cov         → derived from ILB-Wild's pluginRollup
@@ -179,8 +179,8 @@ function readArena(): BenchScore {
 }
 
 function readJuliet(): BenchScore {
-  const f = latestFile(path.join(BENCH_RESULTS, 'ilb-juliet'));
-  if (!f) return missing('benchmarks/results/ilb-juliet/');
+  const f = latestFile(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
+  if (!f) return missing('benchmarks/results/ilb-cwe-corpus/');
   const d = readJson<{
     plugins?: Record<string, { aggregate?: { TP: number; FP: number; FN: number; f1: number; bas: number } }>;
     corpus?: unknown[];
@@ -477,7 +477,7 @@ function aggregatePerRule(): PerRuleAgg[] {
   }
 
   const measuredArena = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-arena'));
-  const measuredJuliet = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-juliet'));
+  const measuredJuliet = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
 
   return [...acc.entries()]
     .map(([rule, a]) => ({
@@ -565,7 +565,7 @@ const coverage = readCoverageSignals();
 const perRuleAgg = aggregatePerRule();
 
 const benches: BenchRow[] = [
-  { name: 'ILB-Juliet', dimension: 'Synthetic CWE accuracy', industry: 'NIST Juliet / OWASP Bench', target: 'F1 ≥ 80%', ...readJuliet() },
+  { name: 'ILB-CWE-Corpus', dimension: 'Synthetic CWE accuracy (self-authored)', industry: 'Internal — not an external corpus', target: 'F1 ≥ 80%', ...readJuliet() },
   { name: 'ILB-Arena', dimension: 'Head-to-head vs competitors', industry: 'OWASP Benchmark', target: 'Rank ≤ 3', ...readArena() },
   { name: 'ILB-Wild', dimension: 'Findings on popular OSS', industry: '(we define this)', target: '—', ...wild },
   { name: 'ILB-Edge', dimension: 'FP resilience on adversarial-real code', industry: 'Adversarial GLUE / CheckList', target: 'FP rate ≤ 2%', ...readEdge(wildData) },
@@ -700,9 +700,9 @@ ${pluginRows}
 
 For each fixture, count how many tools' verdicts match the label.
 
-**ILB-Juliet** — ${coverage.juliet.tools.length} tools rated · ${coverage.juliet.totalFixtures} fixtures · **${coverage.juliet.fixtures3PlusAgree} (${coverage.juliet.pctFixtures3PlusAgree}%)** with ≥ 3 tools agreeing · ${coverage.juliet.fixturesAllAgree} (${coverage.juliet.pctFixturesAllAgree}%) with all agreeing.
+**ILB-CWE-Corpus** — ${coverage.juliet.tools.length} tools rated · ${coverage.juliet.totalFixtures} fixtures · **${coverage.juliet.fixtures3PlusAgree} (${coverage.juliet.pctFixtures3PlusAgree}%)** with ≥ 3 tools agreeing · ${coverage.juliet.fixturesAllAgree} (${coverage.juliet.pctFixturesAllAgree}%) with all agreeing.
 
-Cohen's κ — Interlace vs each competitor (Juliet) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
+Cohen's κ — Interlace vs each competitor (CWE-Corpus) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
 
 | Competitor | κ | Interpretation |
 |---|---|---|
@@ -720,7 +720,7 @@ ${renderKappas(coverage.arena.kappas)}
 
 Vulnerable fixtures only Interlace caught are either a real coverage advantage *or* a fixture written to match our rule. Triage manually.
 
-**Juliet:**
+**CWE-Corpus:**
 
 ${onlyJuliet}
 
@@ -769,7 +769,7 @@ ${coverage.coverageBreadth.gaps.length === 0 ? '✅ Every CWE meets the ≥ 2 fi
 
 ## Per-rule observability (Gap G + Gap L)
 
-> Aggregated from \`benchmark-results/<latest>/per-repo/*/per-rule.json\`. The **Measured** column shows where this rule has fixture coverage: \`A\` = appears in ILB-Arena results, \`J\` = appears in ILB-Juliet results, \`⚠️ none\` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
+> Aggregated from \`benchmark-results/<latest>/per-repo/*/per-rule.json\`. The **Measured** column shows where this rule has fixture coverage: \`A\` = appears in ILB-Arena results, \`J\` = appears in ILB-CWE-Corpus results, \`⚠️ none\` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
 
 ### Top 15 most-firing rules across the Wild corpus
 
@@ -779,7 +779,7 @@ ${topRows}
 
 ### Unmeasured rules — fire on Wild but no fixture coverage (≥ 50 hits)
 
-${unmeasured.length === 0 ? '✅ Every rule that fires ≥ 50 times on Wild has fixture coverage in Arena or Juliet.' : `⚠️ ${unmeasured.length} rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
+${unmeasured.length === 0 ? '✅ Every rule that fires ≥ 50 times on Wild has fixture coverage in Arena or CWE-Corpus.' : `⚠️ ${unmeasured.length} rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
 
 | Rule | Wild hits | Repos | Avg ms / hit |
 |---|---:|---:|---:|
@@ -810,7 +810,7 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 
 | Bench | Parallel |
 |---|---|
-| ILB-Juliet | NIST SARD / Juliet Test Suite, OWASP Benchmark v1.2 |
+| ILB-CWE-Corpus | Self-authored CWE corpus (Juliet-style organization; **not** NIST SARD or OWASP Benchmark) |
 | ILB-Arena | OWASP Benchmark Accuracy Score (BAS = TPR − FPR) |
 | ILB-Wild | (none — we define the JS standard) |
 | ILB-Edge | Adversarial GLUE / CheckList |
@@ -826,7 +826,7 @@ ${wildSection}${perRuleSection}${trustSection}
 \`\`\`bash
 npm run ilb:wild              # repopulates ILB-Wild, ILB-Edge, ILB-Cov, ILB-Perf
 npm run ilb:arena             # ILB-Arena (head-to-head)
-npm run ilb:juliet            # ILB-Juliet (synthetic CWE)
+npm run ilb:cwe-corpus            # ILB-CWE-Corpus (self-authored synthetic CWE)
 npm run ilb:ai                # ILB-AI
 npm run ilb:llm:tokens        # ILB-LLM-Tokens (no API calls)
 npm run ilb:llm:fix           # ILB-LLM-Fix (calls Claude CLI; opt-in)
