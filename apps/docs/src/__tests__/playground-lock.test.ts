@@ -250,6 +250,17 @@ describe('ExamplePicker', () => {
     expect(src).toContain('<select');
     expect(src).toContain('md:hidden');
   });
+
+  it('supports Cmd+K / Ctrl+K to focus the active tab', () => {
+    expect(src).toContain('useCmdKShortcut');
+    expect(src).toMatch(/metaKey|ctrlKey/);
+    expect(src).toMatch(/['"`]k['"`]/);
+  });
+
+  it('shows the Cmd+K shortcut hint on desktop', () => {
+    expect(src).toContain('⌘K');
+    expect(src).toContain('Ctrl+K');
+  });
 });
 
 describe('PluginToggleStrip', () => {

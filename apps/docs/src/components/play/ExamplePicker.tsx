@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, type KeyboardEvent } from 'react';
+import { useRef, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { Button } from '@interlace/ui/button';
 import type { PlaygroundSnippet } from './snippets';
 
@@ -8,6 +8,31 @@ export interface ExamplePickerProps {
   snippets: readonly PlaygroundSnippet[];
   currentSlug: string;
   onSelect: (slug: string) => void;
+}
+
+/**
+ * Cmd+K / Ctrl+K — focus the example picker and select the current tab.
+ * Matches the global "command palette" idiom users carry over from
+ * Linear, Vercel, Stripe Dashboard, GitHub. Doesn't open a modal — just
+ * jumps focus to the active picker so arrow keys take over immediately.
+ */
+function useCmdKShortcut(focusActiveTab: () => void) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent | globalThis.KeyboardEvent) => {
+      // Don't fire while typing in an input — but DO fire from the editor
+      // because cmd+k is a known "global" shortcut, not an editor shortcut.
+      const target = e.target as HTMLElement | null;
+      const isFormInput =
+        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      if (isCmdK && !isFormInput) {
+        e.preventDefault();
+        focusActiveTab();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown as EventListener);
+    return () => window.removeEventListener('keydown', onKeyDown as EventListener);
+  }, [focusActiveTab]);
 }
 
 /**
@@ -24,6 +49,15 @@ export interface ExamplePickerProps {
  */
 export function ExamplePicker({ snippets, currentSlug, onSelect }: ExamplePickerProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  const focusActiveTab = useCallback(() => {
+    const active = listRef.current?.querySelector<HTMLButtonElement>(
+      'button[role="tab"][aria-selected="true"]',
+    );
+    active?.focus();
+  }, []);
+
+  useCmdKShortcut(focusActiveTab);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
@@ -62,9 +96,22 @@ export function ExamplePicker({ snippets, currentSlug, onSelect }: ExamplePicker
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-        Pick an example
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
+          Pick an example
+        </p>
+        <p
+          className="hidden font-mono text-[10px] uppercase tracking-wider text-fd-muted-foreground md:inline-flex"
+          aria-hidden
+        >
+          <kbd className="rounded border border-fd-border bg-fd-card px-1.5 py-0.5">⌘K</kbd>
+          <span className="px-1 opacity-60">/</span>
+          <kbd className="rounded border border-fd-border bg-fd-card px-1.5 py-0.5">Ctrl+K</kbd>
+          <span className="ml-1.5 normal-case tracking-normal text-fd-muted-foreground/70">
+            to focus the picker
+          </span>
+        </p>
+      </div>
 
       {/* Desktop: button strip with arrow-key roving-tabindex */}
       <div
