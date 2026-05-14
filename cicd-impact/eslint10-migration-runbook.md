@@ -4,7 +4,7 @@
 >
 > **Why a runbook, not an automatic fix.** A 141-file mass `sed` refactor across 11 plugin packages is a scope escalation beyond a documentation session. This runbook captures the exact commands, audit, verification, and rollback steps so a maintainer (or AI agent with explicit authorization) can execute the fix with one command and have full reversibility.
 >
-> **Status:** ⏸️ Awaiting authorization. Verified against the source as of 2026-05-10. The runbook should be re-verified if the source changes materially before execution.
+> **Status:** ✅ **Closed 2026-05-13.** Re-verification on 2026-05-13 found **zero remaining `context.getFilename()` / `getSourceCode()` / `getCwd()` calls** under `packages/eslint-plugin-*/src/rules` (one harmless code-comment reference remains in `packages/eslint-plugin-maintainability/src/tests/maintainability/cognitive-complexity.test.ts:395`). The source-level migration was effectively absorbed by intervening rule rewrites between 2026-05-10 and 2026-05-13 rather than executed as a single sed pass — so the two-phase sed below was **not run**, but the post-state matches the intended end state. `cicd-impact/scripts/eslint10-compat-test.mjs` runs cleanly on the lodash 1,046-file corpus under ESLint 10.3.0 (0 parse errors, 875 issues, 0.76 ms/file, ~800 ms median over 3 runs). Runbook kept as reference for the next removed-API migration. Original status: ⏸️ Awaiting authorization (2026-05-10).
 
 ## Why this needs to happen
 
