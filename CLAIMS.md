@@ -6,15 +6,20 @@
 >
 > Sister registry: [`serverless/CLAIMS.md`](https://github.com/ofri-peretz/serverless/blob/main/CLAIMS.md).
 
+## Provenance disclosure (2026-05-13)
+
+A 2026-05-10 schema-backfill pass (`scripts/ilb-result-schema-backfill.ts`) re-wrote every pre-existing dated result JSON in `benchmarks/results/` to add `toolchain` / `schemaVersion` / `environment` fields. The backfill could not recover the **original** Node / ESLint / TypeScript / platform values, so every pre-2026-05-10 result now reports `toolchain.backfilled: true` with those fields set to `"unknown"`. **Practical consequence:** for any pre-2026-05-10 dated result file, the headline numbers can still be read off the JSON, but you cannot pin a reproducible run to the toolchain that produced them. The "reproducible via `npm install` + `npm run ilb:diff`" assertion stands going forward — every new dated result must carry real toolchain fields — but is **not** retroactively true. Rows below citing pre-2026-05-10 files inherit this caveat; rows verified on or after 2026-05-13 do not.
+
+A 2026-05-13 audit (see plan file `please-review-our-repository-parsed-catmull.md` § Tier 0.1) also surfaced that the suite called **`ilb-juliet`** is not NIST's Juliet test suite — it is our own self-authored CWE corpus (`benchmarks/corpus/CWE-*`, 22 vulnerable + 22 safe across 10 CWEs, 2–3 fixtures per side per CWE). Rename to `ilb-cwe-corpus` is tracked in the plan file's Tier 0.8. Until renamed, claims sourced from `ilb-juliet/*.json` should be read as "on our self-authored CWE corpus" rather than "on the NIST Juliet corpus." This affects no current row in this registry (no row is sourced from `ilb-juliet`), but rolls a public-marketing landmine into the open.
+
 ## Verified claims
 
 ### Security detection (ilb-arena suite)
 
 | Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
 | --- | --- | --- | --- |
-| "97.6% precision, 100% recall, 98.8% F1 on 40-vuln corpus" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
-| "1st place vs 17 ecosystem plugins" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
-| "Next-best plugin scores 66.1% F1 (eslint-plugin-jsdoc)" | ilb-arena (relative ranking) | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) | 2026-05-03 |
+| "Top of leaderboard on the ILB-Arena 40-vuln / 38-safe corpus (1st of 18 plugins tested, 17 security-relevant)" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) `summary.leaderboard[0].rank == 1` | 2026-05-13 (re-verified against cited file) |
+| "Next-best plugin scores 66.1% F1 (eslint-plugin-jsdoc)" | ilb-arena (relative ranking) | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) `summary.leaderboard[1].f1Score == "66.1%"` | 2026-05-13 (re-verified against cited file) |
 
 ### ESLint version support
 
@@ -74,6 +79,14 @@ These are measured outcomes where Interlace lost or didn't yet meet a goal. Per 
 | --- | --- | --- |
 | "import-next is still 3.6x slower than the inline naive-DFS custom rule" | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) `kpiStatus.vsNaiveDFS` | Reported. Naive DFS is structural floor; closing the gap is roadmap Phase 7+ |
 | "es-module-lexer Phase 5 ABANDONED — can't parse JSX" | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) `phases[4].status: "abandoned"` | Decision documented; no silent drop |
+
+## Withdrawn claims (audit-driven, do not market)
+
+These rows used to live under "Verified claims" but were removed during an audit because the cited evidence didn't support the headline number, or because the underlying corpus is self-authored in a way that doesn't survive an adversarial reading. Kept here as an audit trail — silently deleting a claim is worse than keeping the receipt.
+
+| Withdrawn claim (do not use in marketing) | Cited evidence | Why withdrawn | Withdrawn on |
+| --- | --- | --- | --- |
+| "97.6% precision, 100% recall, 98.8% F1 on 40-vuln corpus" | [`benchmarks/results/ilb-arena/2026-05-03.json`](benchmarks/results/ilb-arena/2026-05-03.json) | The cited file's `summary.leaderboard[0]` reports Interlace at **100% precision / 100% recall / 100% F1** (40 TP / 0 FP / 0 FN). The 97.6 / 100 / 98.8 figures appear nowhere in the cited JSON, so the registry was asserting numbers neither it nor the evidence supports. The audit chose to withdraw rather than substitute 100% / 100% / 100% — a perfect score on a 40-fixture self-authored corpus is the textbook "regression test, not benchmark" failure mode and would not survive an adversarial reading. **The ordinal claim ("1st of 18 plugins tested, 17 security-relevant") is preserved above** — *relative* ranking on the same fixtures still informs a buyer even when absolute scores don't. | 2026-05-13 |
 
 ## Pending claims (require new suites)
 
