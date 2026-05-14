@@ -5,7 +5,8 @@
  * Local edits will be overwritten on next sync (or refused without --force).
  */
 "use client";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface StarProps {
@@ -36,18 +37,19 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
   const [stars, setStars] = useState<StarProps[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(true);
+  const reduceMotion = useReducedMotion();
 
   // Pause animations when not visible (performance optimization)
   useEffect(() => {
     if (!canvasRef.current) return;
-    
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
       { threshold: 0.1 }
     );
-    
+
     observer.observe(canvasRef.current);
     return () => observer.disconnect();
   }, []);
@@ -83,7 +85,7 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
   useEffect(() => {
     // Copy ref to local variable to avoid stale ref in cleanup
     const canvas = canvasRef.current;
-    
+
     const updateStars = () => {
       if (canvas) {
         const ctx = canvas.getContext("2d");
@@ -126,13 +128,29 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
 
     let animationFrameId: number;
 
+    const drawStatic = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach((star) => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.fill();
+      });
+    };
+
+    // Reduced-motion: paint stars once, no twinkle loop.
+    if (reduceMotion) {
+      drawStatic();
+      return;
+    }
+
     const render = () => {
       // Only render when visible (performance optimization)
       if (!isVisible) {
         animationFrameId = requestAnimationFrame(render);
         return;
       }
-      
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Performance: Calculate time once per frame, not per star
       const time = performance.now() * 0.001;
@@ -157,7 +175,7 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [stars, isVisible]);
+  }, [stars, isVisible, reduceMotion]);
 
   return (
     <canvas
@@ -202,6 +220,7 @@ export const ShootingStars: React.FC<ShootingStarProps> = ({
   } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [isVisible, setIsVisible] = useState(true);
+  const reduceMotion = useReducedMotion();
 
   // Performance: Pre-compute trig values for fixed 215° angle
   const angleRad = (215 * Math.PI) / 180;
@@ -211,14 +230,14 @@ export const ShootingStars: React.FC<ShootingStarProps> = ({
   // Pause animations when not visible (performance optimization)
   useEffect(() => {
     if (!svgRef.current) return;
-    
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
       { threshold: 0.1 }
     );
-    
+
     observer.observe(svgRef.current);
     return () => observer.disconnect();
   }, []);
@@ -294,6 +313,9 @@ export const ShootingStars: React.FC<ShootingStarProps> = ({
     };
   }, [star, cosAngle, sinAngle]);
 
+  // Reduced-motion: shooting stars are pure motion — emit nothing.
+  if (reduceMotion) return null;
+
   return (
     <svg ref={svgRef} aria-hidden="true" className={cn("w-full h-full absolute inset-0 pointer-events-none", className)}>
       {star && (
@@ -340,7 +362,7 @@ interface MeteorsProps {
  * Meteors component - Aceternity-inspired falling meteor effect
  * Uses pure CSS animations for optimal performance (no Framer Motion)
  * Follows the project's CSS Animation Shift pattern
- * 
+ *
  * Note: Meteors only render after client-side mount to prevent hydration mismatches
  */
 export const Meteors: React.FC<MeteorsProps> = ({
@@ -354,6 +376,7 @@ export const Meteors: React.FC<MeteorsProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Only render meteors after client-side mount to prevent hydration mismatch
   useEffect(() => {
@@ -416,6 +439,9 @@ export const Meteors: React.FC<MeteorsProps> = ({
       animation-delay: var(--meteor-delay, 0s);
     }
   `;
+
+  // Reduced-motion: meteors are pure motion — emit nothing.
+  if (reduceMotion) return null;
 
   return (
     <div
