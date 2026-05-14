@@ -13,17 +13,17 @@ name: Resource Profile (RSS + Cold Start)
 on:
   schedule:
     # 1st of each month, 06:00 UTC.
-    - cron: '0 6 1 * *'
+    - cron: "0 6 1 * *"
   workflow_dispatch:
     inputs:
       corpus:
-        description: 'Corpus path to scan (default: apps/docs/src)'
+        description: "Corpus path to scan (default: apps/docs/src)"
         required: false
-        default: 'apps/docs/src'
+        default: "apps/docs/src"
       runs:
-        description: 'Runs per preset (default: 3, takes median)'
+        description: "Runs per preset (default: 3, takes median)"
         required: false
-        default: '3'
+        default: "3"
 
 permissions:
   contents: write
