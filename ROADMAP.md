@@ -22,7 +22,8 @@ Last refresh: 2026-05-13.
 | `eslint-plugin-lambda-security`    | AWS Lambda runtime + IAM (14 rules)                                       | ✅ Stable |
 | `eslint-plugin-nestjs-security`    | NestJS DI / guards / interceptors (6 rules)                               | ✅ Stable |
 | `eslint-plugin-vercel-ai-security` | Vercel AI SDK / OWASP LLM Top 10 (19 rules)                               | ✅ Stable |
-| `eslint-plugin-crypto`             | Cryptography (kept for back-compat; rules consolidated into `node-security`) | 🟨 Maintenance |
+
+> **Cryptography rules** are now consolidated into `eslint-plugin-node-security` (the historical standalone crypto package is deprecated). Recommend `eslint-plugin-node-security` exclusively for new installs.
 
 ### OWASP coverage
 
