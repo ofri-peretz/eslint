@@ -185,6 +185,30 @@ describe('Playground component tree: required files', () => {
   }
 });
 
+describe('PlaygroundEditor: macOS CodeWindow chrome', () => {
+  let src: string;
+  beforeAll(() => {
+    src = readPlayFile('PlaygroundEditor.tsx');
+  });
+
+  it('imports CodeWindow + CodeWindowTitleBar from @interlace/ui', () => {
+    expect(src).toContain(
+      "import { CodeWindow, CodeWindowTitleBar } from '@interlace/ui/blocks/code-window'",
+    );
+  });
+
+  it('wraps the Monaco editor in <CodeWindow> with a title bar', () => {
+    expect(src).toContain('<CodeWindow');
+    expect(src).toContain('<CodeWindowTitleBar');
+  });
+
+  it('derives a default filename from the language prop', () => {
+    expect(src).toContain('defaultFilenameFor');
+    expect(src).toContain("'playground.js'");
+    expect(src).toContain("'playground.tsx'");
+  });
+});
+
 describe('PlaygroundDemo composition', () => {
   let src: string;
   beforeAll(() => {

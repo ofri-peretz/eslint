@@ -3,18 +3,25 @@
 import Editor, { type OnMount } from '@monaco-editor/react';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
+import { CodeWindow, CodeWindowTitleBar } from '@interlace/ui/blocks/code-window';
 
 /**
  * PlaygroundEditor — Monaco wrapper for the playground left pane.
  *
- * Phase 1b: replaces the read-only `<DynamicCodeBlock>` with an editable
- * Monaco editor. Live linting is not wired yet (Phase 2 work) — when the
- * user edits, the parent component switches the right pane into an
- * "edited, not yet linted" state.
+ * Wrapped in a `<CodeWindow>` chrome (macOS traffic-light dots + title
+ * bar) so the surface reads as a real code-editor demo rather than a
+ * generic textbox. The chrome is decorative: the dots are
+ * `aria-hidden`, and the editor itself owns the accessible name via
+ * Monaco's `ariaLabel` option.
  *
- * The component is dynamic-imported from `PlaygroundDemo` (Monaco's
- * bundle is too big for SSR / first paint per PLAYGROUND_SPEC.md
- * § Performance budget).
+ * Phase 1b: replaces the read-only `<DynamicCodeBlock>` with an
+ * editable Monaco editor. Live linting is not wired yet (Phase 2
+ * work) — when the user edits, the parent component switches the
+ * right pane into an "edited, not yet linted" state.
+ *
+ * The component is dynamic-imported from `PlaygroundDemo` because
+ * Monaco's bundle is too big for SSR / first paint per
+ * PLAYGROUND_SPEC.md § Performance budget.
  */
 /**
  * Editor height is fixed (not prop-driven) so the wrapper can express it
@@ -33,12 +40,24 @@ export interface PlaygroundEditorProps {
   onChange: (next: string) => void;
   /** Editor language — defaults to TypeScript (matches our `.tsx` snippets). */
   language?: 'typescript' | 'javascript';
+  /**
+   * Optional filename shown in the window title bar. Defaults to a
+   * generic `playground.tsx` (or `.js`) based on the language. Pass an
+   * explicit value when you want the title to reflect a specific
+   * snippet's filename.
+   */
+  filename?: string;
+}
+
+function defaultFilenameFor(language: 'typescript' | 'javascript') {
+  return language === 'javascript' ? 'playground.js' : 'playground.tsx';
 }
 
 export function PlaygroundEditor({
   value,
   onChange,
   language = 'typescript',
+  filename,
 }: PlaygroundEditorProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -54,9 +73,11 @@ export function PlaygroundEditor({
   }, []);
 
   const monacoTheme = mounted && resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+  const title = filename ?? defaultFilenameFor(language);
 
   return (
-    <div className="min-h-[360px] overflow-hidden rounded-md border border-fd-border bg-fd-card">
+    <CodeWindow className="min-h-[360px]">
+      <CodeWindowTitleBar title={title} />
       <Editor
         value={value}
         defaultLanguage={language}
@@ -83,6 +104,6 @@ export function PlaygroundEditor({
           </div>
         }
       />
-    </div>
+    </CodeWindow>
   );
 }

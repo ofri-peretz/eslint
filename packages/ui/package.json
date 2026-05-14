@@ -124,6 +124,10 @@
       "types": "./dist/blocks/article-card.d.ts",
       "default": "./dist/blocks/article-card.js"
     },
+    "./blocks/code-window": {
+      "types": "./dist/blocks/code-window.d.ts",
+      "default": "./dist/blocks/code-window.js"
+    },
     "./blocks/section-header": {
       "types": "./dist/blocks/section-header.d.ts",
       "default": "./dist/blocks/section-header.js"
