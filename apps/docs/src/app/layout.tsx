@@ -104,7 +104,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         {/* Dark is the default theme — branded cosmic hero looks best on a dark
             canvas, and the rest of the surface is AAA-tuned for near-black. */}
         <RootProvider theme={{ defaultTheme: 'dark' }}>
-          <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
+          <TooltipProvider delay={250}>{children}</TooltipProvider>
           <CodeBlockLabeller />
         </RootProvider>
       </body>
