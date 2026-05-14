@@ -1,0 +1,90 @@
+---
+title: Learn
+description: How ESLint plugins, AST traversal, taint analysis, and oxlint compatibility work — from the inside
+icon: BookOpen
+---
+
+> A track for the curious. Reference docs tell you **what each rule does**;
+> these chapters explain **how the machinery underneath actually works** —
+> the lexer, the AST, how a rule's visitor functions interact with the
+> traversal, how oxlint's JS-plugin tier reuses the same authoring contract
+> ESLint pioneered. I've struggled to learn these technologies in pieces
+> from a dozen different posts; this is the consolidated narrative I wish
+> I'd had.
+>
+> It's not a beginner book. It assumes you write JavaScript daily and
+> know what an AST is in concept. From there, every chapter pulls a thread
+> and shows where the source code lives so you can read past my words.
+
+---
+
+## Who this is for
+
+You should read this if any of these sound like you:
+
+- You use Interlace (or any ESLint plugin) and want to understand the
+  mechanism, not just configure it.
+- You're considering writing your own ESLint rule and want a worked
+  example end-to-end, source-code links included.
+- You're evaluating oxlint and want to know how the same authoring
+  contract serves two engines.
+- You write rules at work and the precision-vs-recall tradeoff has bitten
+  you and you want the framing we use to manage it.
+
+If you're new to JavaScript itself, the Reference section
+([`/docs/getting-started`](/docs/getting-started)) is the better entry
+point. Come back here when you've installed a plugin and want to know
+*how it sees your code*.
+
+---
+
+## The shape of the track
+
+Each chapter is **self-contained**. Read them in any order; the sidebar
+lists them as a recommended path but no chapter assumes the previous one
+finished. Where a chapter references a concept introduced elsewhere, the
+link is inline.
+
+Every chapter ends with **"Where to read past my words"** — a list of
+exact source-file links (ours, ESLint's, oxlint's) so you can verify the
+explanation against the implementation. The interpretation is mine; the
+code is the truth.
+
+```
+docs/learn/
+├── index.mdx                       (you are here)
+├── how-eslint-plugins-work/        chapter 1 — pipeline, visitor, fixer
+├── (more chapters — see ROADMAP.md)
+```
+
+---
+
+## What this track will eventually cover
+
+The chapters below the introduction are landing in order of usefulness,
+not order of importance. Today only the first is published.
+
+| Chapter | Status | Topic |
+| :--- | :--- | :--- |
+| [How ESLint plugins work](/docs/learn/how-eslint-plugins-work) | ✅ Live | Source text → lexer → AST → visitor → finding → fixer. The full pipeline. |
+| Designing a flagship rule | 📅 Planned | The 5 selection criteria from `.agent/flagship-rules.md` with `pg/no-unsafe-query` as the worked example end-to-end. |
+| The taint-analysis primitives in `eslint-devkit` | 📅 Planned | What "taint flow" means in practice, and how our shared helpers detect it without a type-checker. |
+| Writing a type-unaware rule that runs under oxlint | 📅 Planned | The 33-API contract our `probe-oxlint-runtime.cjs` checks, why we keep flagship rules out of the type-aware tier, what runs under oxlint's JS-plugin alpha. |
+| Why we measure F1 with Wilson confidence intervals | 📅 Planned | The math behind the bench-result envelopes; why a single-shot timing isn't a signal. |
+
+If you want a chapter prioritized, [open a discussion](https://github.com/ofri-peretz/eslint/discussions).
+
+---
+
+## A note on voice
+
+These chapters are first-person and direct. I'd rather you feel like
+you're reading over my shoulder than scanning a wiki. When I've gotten
+something wrong in the past, that's in here. When a competitor solves
+something better, that's in here too. The goal is for you to leave with
+the mental model, not a list of definitions.
+
+If a paragraph isn't earning its keep — tell me. Suggestions go to the
+[discussion thread](https://github.com/ofri-peretz/eslint/discussions)
+or as a PR with a one-line change. The "Suggest changes" link at the
+bottom of each chapter goes straight to the source.
