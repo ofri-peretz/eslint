@@ -1,77 +1,130 @@
 # 🗺️ Project Roadmap
 
-This document tracks the current focus areas and future plans for the ESLint monorepo.
+This document tracks current focus areas and forward-looking plans for the Interlace ESLint ecosystem. Authoritative sources for measured claims live in [`CLAIMS.md`](./CLAIMS.md); this file is the narrative.
+
+Last refresh: 2026-05-13.
 
 ---
 
-## 🔒 Security Rules
+## 🔒 Security Plugins
 
-### Current State
+11 security plugins covering ~250 rules across distinct domains.
 
-We have implemented comprehensive security coverage across multiple domains:
+| Plugin                             | Focus Area                                                                | Status    |
+| ---------------------------------- | ------------------------------------------------------------------------- | --------- |
+| `eslint-plugin-secure-coding`      | General application security (27 rules)                                   | ✅ Stable |
+| `eslint-plugin-node-security`      | Node.js core modules (fs, child_process, vm, crypto, Buffer) (33 rules)   | ✅ Stable |
+| `eslint-plugin-browser-security`   | Browser / DOM / postMessage / iframe (45 rules)                           | ✅ Stable |
+| `eslint-plugin-jwt`                | JWT best practices and algorithm hygiene (13 rules)                       | ✅ Stable |
+| `eslint-plugin-pg`                 | PostgreSQL / SQL injection (13 rules)                                     | ✅ Stable |
+| `eslint-plugin-mongodb-security`   | MongoDB / NoSQL query injection (16 rules)                                | ✅ Stable |
+| `eslint-plugin-express-security`   | Express.js middleware hygiene (10 rules)                                  | ✅ Stable |
+| `eslint-plugin-lambda-security`    | AWS Lambda runtime + IAM (14 rules)                                       | ✅ Stable |
+| `eslint-plugin-nestjs-security`    | NestJS DI / guards / interceptors (6 rules)                               | ✅ Stable |
+| `eslint-plugin-vercel-ai-security` | Vercel AI SDK / OWASP LLM Top 10 (19 rules)                               | ✅ Stable |
+| `eslint-plugin-crypto`             | Cryptography (kept for back-compat; rules consolidated into `node-security`) | 🟨 Maintenance |
 
-| Plugin                             | Focus Area             | Status    |
-| ---------------------------------- | ---------------------- | --------- |
-| `eslint-plugin-secure-coding`      | General security       | ✅ Stable |
-| `eslint-plugin-node-security`      | Node.js core modules (fs, child_process, vm, crypto, Buffer) | ✅ Stable |
-| `eslint-plugin-jwt`                | JWT best practices     | ✅ Stable |
-| `eslint-plugin-pg`                 | PostgreSQL security    | ✅ Stable |
-| `eslint-plugin-browser-security`   | Browser/DOM security   | ✅ Stable |
-| `eslint-plugin-express-security`   | Express.js security    | ✅ Stable |
-| `eslint-plugin-nestjs-security`    | NestJS security        | ✅ Stable |
-| `eslint-plugin-lambda-security`    | AWS Lambda security    | ✅ Stable |
-| `eslint-plugin-vercel-ai-security` | Vercel AI SDK security | ✅ Stable |
+### OWASP coverage
 
-### OWASP Coverage
-
-- **OWASP Web Top 10 2021**: Comprehensive coverage via `eslint-plugin-secure-coding`
-- **OWASP LLM Top 10 2025**: Partial coverage via AI SDK plugins
-- **OWASP Mobile Top 10**: Framework-agnostic rules in `eslint-plugin-secure-coding`
-
----
-
-## 🏗️ Code Quality Rules
-
-| Plugin                         | Focus Area               | Status    |
-| ------------------------------ | ------------------------ | --------- |
-| `eslint-plugin-architecture`   | Structure and boundaries | ✅ Stable |
-| `eslint-plugin-quality`        | Code quality metrics     | ✅ Stable |
-| `eslint-plugin-import-next`    | Import/export analysis   | ✅ Stable |
-| `eslint-plugin-react-features` | React best practices     | ✅ Stable |
-| `eslint-plugin-react-a11y`     | React accessibility      | ✅ Stable |
+- **OWASP Web Top 10 2021** — comprehensive coverage via `secure-coding` + domain-specific plugins
+- **OWASP LLM Top 10 2025** — partial coverage via `vercel-ai-security`
+- **OWASP Mobile Top 10** — framework-agnostic rules in `secure-coding` apply
 
 ---
 
-## 📅 Future Plans
+## 🏗️ Code Quality & Reliability Plugins
 
-### Short Term
+10 plugins covering ~180 rules.
 
-- Improve rule documentation with more examples
-- Add auto-fix capabilities to more rules
-- Expand test coverage
+| Plugin                         | Focus Area                                                | Status    |
+| ------------------------------ | --------------------------------------------------------- | --------- |
+| `eslint-plugin-import-next`    | Modern import/export analysis, cycle detection (57 rules) | ✅ Stable |
+| `eslint-plugin-react-features` | React patterns, hooks, performance, migration (53 rules)  | ✅ Stable |
+| `eslint-plugin-react-a11y`     | React accessibility (38 rules)                            | ✅ Stable |
+| `eslint-plugin-conventions`    | Naming / shape conventions (12 rules)                     | ✅ Stable |
+| `eslint-plugin-maintainability`| Complexity, duplication, error-handling (13 rules)        | ✅ Stable |
+| `eslint-plugin-reliability`    | Runtime reliability, error-handling (10 rules)            | ✅ Stable |
+| `eslint-plugin-operability`    | Operational best practices (7 rules)                      | 🟨 Growing |
+| `eslint-plugin-modularity`     | Module architecture / boundaries (6 rules)                | 🟨 Growing |
+| `eslint-plugin-modernization`  | Modernization toward current JS/TS idioms (4 rules)       | 🟨 Growing |
 
-### Long Term
+### Coverage gap (tracked)
 
-- Additional framework-specific security plugins
-- Advanced circular dependency detection
-- Performance profiling tools
+Combined code-quality rule count (~52) trails `eslint-plugin-unicorn` (100+) and `eslint-plugin-sonarjs` (~60). Expansion is on the roadmap (see § Future Plans below), prioritized by precision/recall meeting the per-rule SLO in [`.agent/flagship-rules.md`](./.agent/flagship-rules.md).
 
 ---
 
-## 🛟 ESLint Compatibility
+## ⭐ Flagship rules
 
-We currently support **ESLint v8, v9, and v10** (v10 included as the forward-looking exception per our [support policy](./docs/ESLINT_VERSION_SUPPORT.md)).
+10 rules selected as the strategic moat — each has a narrow defensible firing signature, is type-unaware (so it runs in oxlint's JS-plugin tier), and ships with per-rule benchmarks. Authoritative spec at [`.agent/flagship-rules.md`](./.agent/flagship-rules.md).
 
-**Tracked transitions** — re-evaluated each time we run `npm run stats:eslint-versions`:
+| Rule                                                | Anchors                                                  |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| `import-next/no-cycle`                              | Modern replacement for `eslint-plugin-import/no-cycle`   |
+| `pg/no-unsafe-query`                                | SQL injection (CWE-89)                                   |
+| `secure-coding/no-hardcoded-credentials`            | Credentials with entropy + context gating (CWE-798)      |
+| `secure-coding/no-redos-vulnerable-regex`           | Catastrophic backtracking via scslre NFA (CWE-1333)      |
+| `mongodb-security/no-unsafe-query`                  | NoSQL operator injection (CWE-943)                       |
+| `jwt/no-algorithm-none`                             | JWT algorithm confusion (CWE-327)                        |
+| `browser-security/no-postmessage-wildcard-origin`   | Iframe origin spoofing (CWE-346)                         |
+| `react-features/hooks-exhaustive-deps`              | Head-to-head vs `react-hooks/exhaustive-deps`            |
+| `react-a11y/alt-text`                               | Head-to-head vs `jsx-a11y/alt-text`                      |
+| `vercel-ai-security/no-unsafe-output-handling`      | OWASP LLM02                                              |
+
+Flagship preset is composable: `[importNext, pg, secureCoding, mongodb, jwt, browserSecurity, reactFeatures, reactA11y, vercelAi].map(p => p.configs.flagship)`.
+
+---
+
+## 🧰 Tooling & integrations
+
+| Component                       | Purpose                                                        | Status         |
+| ------------------------------- | -------------------------------------------------------------- | -------------- |
+| `interlace-cli`                 | One-command init, lint, MCP-server launch                      | ✅ Stable      |
+| `eslint-formatter` / `-sarif`   | Compact and SARIF output formats for CI / LLM consumers        | ✅ Stable      |
+| `interlace-vscode`              | VS Code extension — squiggles, audit-on-save, MCP launcher     | 🟨 Internal / dogfooding (not on Marketplace yet) |
+| `interlace-telemetry` (+ collector) | Opt-in usage telemetry for which rules fire in the wild    | 🟨 Internal    |
+| `eslint-devkit`                 | Shared rule helpers, AST utilities, taint-analysis primitives  | ✅ Stable      |
+
+### Engine portability
+
+All 398 rules in the ecosystem have an oxlint-portable manifest in [`.agent/oxlint-jsplugins-manifest.json`](./.agent/oxlint-jsplugins-manifest.json) (currently `398/398 compatible`). The portability contract is described in [`INTEROP_PHILOSOPHY.md`](./INTEROP_PHILOSOPHY.md).
+
+---
+
+## 🛟 ESLint compatibility
+
+We support **ESLint v8, v9, and v10** (v10 included per our forward-looking [support policy](./docs/ESLINT_VERSION_SUPPORT.md)). v10's removed `context.getFilename()` / `getSourceCode()` / `getCwd()` APIs do not appear in our rule code (verified 2026-05-13; see [`CLAIMS.md`](./CLAIMS.md) § "Supports ESLint 8, 9, and 10"). CI gate: [`.github/workflows/eslint-version-matrix.yml`](./.github/workflows/eslint-version-matrix.yml) runs the cross-version matrix on every PR.
+
+**Tracked transitions** — re-evaluated each time `npm run stats:eslint-versions` refreshes:
 
 - **v8 → deprecation candidate** when v10 crosses the 20% gate AND v8 falls below it on two consecutive refreshes
 - **v11 → support window opens** as soon as v11.0.0 ships (forward-looking rule), without waiting for share data
-- **EOL milestones** — track upstream ESLint EOL announcements and align removals with the next major release
+- **EOL milestones** — track upstream ESLint EOL announcements; align removals with the next major release
 
 Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
 
 ---
 
+## 📅 Future plans
+
+### Active (next 90 days)
+
+- **`/play` playground** — in-browser Monaco editor + ESLint, 6 canonical flagship-rule snippets, deep links to rule docs. Hero CTA on the docs homepage. Spec at [`PLAYGROUND_SPEC.md`](./PLAYGROUND_SPEC.md).
+- **Public scorecard page** (`/scorecard`) — auto-rendered from the dated JSONs in `benchmarks/results/`, gated on a benchmark-claims audit (see [`CLAIMS.md`](./CLAIMS.md) § Provenance and § Withdrawn claims).
+- **Real external corpus integration** — today's `ilb-cwe-corpus` is self-authored. A real NIST Juliet adaptation (or OWASP Benchmark JS port, or extended real-OSS-corpus replay) is the path to defensible F1 numbers.
+- **Statistical rigor in benches** — `--repeat=N`, median + 95% Wilson CIs on every cited number (known limitation per `ilb-flagship` suite).
+- **`@interlace/eslint-config` meta-package** — one install + one `extends` for the flagship preset, replacing today's 11-plugin compose.
+
+### Backlog
+
+- **Code-quality coverage** — close the rule-count gap vs `eslint-plugin-unicorn` / `eslint-plugin-sonarjs`. Prioritized by per-rule SLO compliance.
+- **`no-cycle` rebuild on SCC** — current cache-poisoning fix is shipped; SCC is the structural floor (matches `eslint-plugin-import`'s algorithm). Quarterly review item.
+- **V2 formatter** — first-fix accuracy improvement + compact-mode token cost. Pending claims tracked in [`CLAIMS.md`](./CLAIMS.md).
+- **VS Code Marketplace publish** — gated on internal dogfooding maturity; 0.1.0 does not ship publicly.
+- **Additional framework-specific security plugins** — only when distribution / signal demands it. Moat is already broad.
+
+---
+
 ## 📞 Feedback
 
-Have suggestions for the roadmap? [Open a discussion](https://github.com/ofri-peretz/eslint/discussions).
+Suggestions and corrections: [open a discussion](https://github.com/ofri-peretz/eslint/discussions). Public-marketing-grade claims must trace to a row in [`CLAIMS.md`](./CLAIMS.md) — if a claim is missing, route the suggestion to "Pending claims" rather than asserting it directly.
