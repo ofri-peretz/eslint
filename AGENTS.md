@@ -131,6 +131,36 @@ glance.
 
 ---
 
+## Evaluation infrastructure (gap-closure)
+
+Every measurable claim about Interlace or peers reduces to a row in
+[`distribution/EVALUATION_METRICS.md`](./distribution/EVALUATION_METRICS.md).
+Each row points at one of these scripts; outputs land under
+`benchmark-results/`. CI workflows under `.github/workflows/` enforce
+the gates.
+
+| Script | npm script | Output | CI workflow |
+| :--- | :--- | :--- | :--- |
+| `scripts/ilb-resource-profile.ts` | `npm run ilb:resource-profile` | `benchmark-results/resource-profile.{json,md}` | (manual / scheduled) |
+| `scripts/fetch-peer-health.ts` | `npm run peer-health` | `benchmark-results/peer-health.{json,md}` | `peer-health.yml` (weekly Monday cron) |
+| `scripts/audit-cve-rule-latency.ts` | `npm run audit:cve-latency[:strict]` | `benchmark-results/cve-rule-latency.{json,md}` | `cve-latency.yml` (PR + nightly) |
+| `scripts/audit-api-surface.ts` | `npm run audit:api-surface[:strict]` | `.agent/api-surface-manifest.json` + `benchmark-results/api-surface-coverage.md` | `api-surface.yml` (PR gate) |
+| `scripts/check-per-rule-budget.ts` | `npm run check:per-rule-budget[:soft]` | `benchmarks/budgets/per-rule-p95.json` + `benchmark-results/per-rule-budget-check.md` | `per-rule-budget.yml` (PR gate) |
+
+Schemas for the three JSON artifacts live at
+`scripts/schemas/{cve-rule-latency,api-surface-manifest,per-rule-budget}.schema.json`.
+Unit tests at `scripts/__tests__/gap-closure.test.ts` (`npx vitest run scripts/__tests__/`).
+
+**Repo invariant:** never reintroduce `(gap)` markers into
+EVALUATION_METRICS.md. Adding a metric without a measurement is a
+documentation regression — write the script, wire the npm command,
+add the workflow, then update the metrics table.
+
+The public-facing surface for this whole system is
+[`/docs/getting-started/concepts/transparency`](apps/docs/content/docs/getting-started/concepts/transparency.mdx).
+
+---
+
 ## Plugin Scope Rules
 
 When creating or reviewing rules, ensure they're in the correct plugin:

@@ -1,0 +1,67 @@
+name: Per-Rule p95 Budget Gate
+
+# Compares the latest committed `benchmarks/results/ilb-flagship/<date>.json`
+# against the per-rule p50/p95 budgets in
+# `benchmarks/budgets/per-rule-p95.json`. Fails CI if any rule exceeds the
+# budget by more than the policy's `tolerance_pct`, or if any rule crosses
+# the hard ceiling.
+#
+# Triggers on PR-touch of:
+#   - the budget file (someone raising a budget needs justification),
+#   - a new flagship result (the measurement that drives the gate),
+#   - the gate script itself.
+#
+# Closes the §3 "Per-rule p95 budget enforcement" top-priority gate in
+# `distribution/EVALUATION_METRICS.md`.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'benchmarks/budgets/per-rule-p95.json'
+      - 'benchmarks/results/ilb-flagship/**'
+      - 'scripts/check-per-rule-budget.ts'
+      - '.github/workflows/per-rule-budget.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: per-rule-budget-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    name: Per-rule p50/p95 budget check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Check per-rule budget against latest flagship result
+        run: npm run check:per-rule-budget
+
+      # The check script always writes the .md before exiting (pass or
+      # fail), so the sticky comment reflects the same state the gate did.
+      - name: Post audit report as sticky PR comment
+        if: always()
+        uses: ./.github/actions/post-audit-comment
+        with:
+          report-path: benchmark-results/per-rule-budget-check.md
+
+      - name: Upload budget report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-rule-budget-check
+          path: benchmark-results/per-rule-budget-check.md
+          retention-days: 14

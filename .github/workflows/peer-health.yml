@@ -1,0 +1,64 @@
+name: Peer health snapshot
+
+# Captures maintenance-health metrics for the ESLint plugin peers named
+# in `distribution/ECOSYSTEM_LANDSCAPE.md`. Closes the §9 (Adoption &
+# maintenance health) gaps documented in `distribution/EVALUATION_METRICS.md`.
+#
+# Trigger: weekly on Mondays. No PR trigger — this is monitoring, not
+# pre-merge gating; failures here should not block development.
+
+on:
+  schedule:
+    # Mondays 08:00 UTC — early enough to be ready for weekly planning
+    # but well outside business-hours rate windows.
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fetch:
+    name: Fetch and commit peer-health snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install (no audit / fund — we only need tsx)
+        run: npm ci --no-audit --no-fund
+
+      - name: Authenticate gh CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The default GITHUB_TOKEN scope is enough for repos/* reads.
+          echo "gh auth uses GITHUB_TOKEN env var (already authenticated)."
+          gh auth status || true
+
+      - name: Run peer-health fetcher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run peer-health
+
+      - name: Commit snapshot if changed
+        run: |
+          if [ -n "$(git status --porcelain benchmark-results/peer-health.json benchmark-results/peer-health.md)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add benchmark-results/peer-health.json benchmark-results/peer-health.md
+            git commit -m "chore(bench): refresh peer-health snapshot
+
+            Automated weekly refresh of the peer-plugin health metrics
+            named in distribution/ECOSYSTEM_LANDSCAPE.md. Source data
+            from npm registry + GitHub API."
+            git push
+          else
+            echo "No peer-health changes detected."
+          fi

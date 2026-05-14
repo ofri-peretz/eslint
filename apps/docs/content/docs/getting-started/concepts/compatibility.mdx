@@ -1,6 +1,6 @@
 ---
 title: Compatibility
-description: Which ESLint and Node.js versions Interlace supports — and the policy that decides what stays in the matrix.
+description: Which lint engines, ESLint majors, and Node.js versions Interlace supports — and the policy that decides what stays in the matrix.
 icon: GitFork
 ---
 
@@ -9,6 +9,8 @@ import { GitFork, Package, Activity, Shield, ExternalLink } from 'lucide-react';
 ## What you can install Interlace on
 
 Interlace is published as ~37 npm packages (20 ESLint plugins + 11 MCP servers + 6 supporting tools). Every published package declares the same compatibility surface so a viewer can answer "will this work in my repo?" in one read.
+
+Compatibility here covers three axes: **which lint engine** runs your rules (ESLint floor, Oxlint automated peer, Biome + TSC native on the roadmap), **which ESLint major** you're on, and **which Node version** the host requires.
 
 <Callout type="info" title="Last data refresh">
   **2026-05-09** — npm download share refreshed weekly via `npm run stats:eslint-versions`. The numbers below come from a live npm-registry pull, not a marketing claim.
@@ -44,6 +46,26 @@ Interlace is published as ~37 npm packages (20 ESLint plugins + 11 MCP servers +
 | ≤ 17 | ❌ Unsupported | EOL upstream |
 
 The 18.x floor is set by every package's `engines.node: ">=18.0.0"`. Bumping the floor uses the same gate logic as ESLint majors — a deliberate decision, not silent drift.
+
+---
+
+## Lint engine matrix
+
+Interlace is engine-portable by design. The same rule library runs under multiple linters with a CI-enforced parity contract — drift fails the build. Statuses match the canonical support matrix in [`INTEROP_PHILOSOPHY.md`](https://github.com/ofri-peretz/eslint/blob/main/INTEROP_PHILOSOPHY.md).
+
+| Engine | Status | What this means |
+| :--- | :--- | :--- |
+| **ESLint v8 / v9 / v10** | ✅ Floor | Every rule runs here. Every rule's tests are authored against this engine. |
+| **Oxlint** (Rust) | ✅ Automated peer | Shared rules have CI-enforced diagnostic parity via [`oxlint-parity.yml`](https://github.com/ofri-peretz/eslint/blob/main/.github/workflows/oxlint-parity.yml). The gate flips advisory → blocker once Oxlint ships 1.0 and the shared-rule count reaches ≥ 20. |
+| **Biome** (Rust) | 🟡 Reserved peer | First-class portability target. Parity adapter on the roadmap; until it ships, support is best-effort. |
+| **TSC native plugin host** (Go) | 🔭 Watching | The Go port of the TypeScript compiler (`tsgo`) is the inevitable second runtime for deep-tier rules once stable. Re-evaluated when it ships; deep-tier rules port without API change. |
+| swc / deno_lint | ❌ Not a target | Out of scope. swc is a compiler, not a lint host. deno_lint is forked from a separate rule corpus. |
+
+<Callout type="info" title="The re-platforming wave runs on two languages">
+  The Rust/Go rewrite of JavaScript tooling has two camps: Oxlint and Biome are Rust-based linters; the TypeScript native compiler port (`tsgo`, tracking toward TSC 7) is Go-based. Interlace targets all four engines from one rule library — rules are portable, runtimes are commodity.
+</Callout>
+
+The parity contract, how drift is detected, and the TSC 7 vision are documented on the [Runtime Portability](/docs/getting-started/concepts/runtime-portability) page.
 
 ---
 

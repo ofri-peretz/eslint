@@ -34,11 +34,11 @@ const VALID_LUCIDE_ICONS = new Set([
   // ========================================
   // CURRENTLY USED IN MDX CONTENT
   // ========================================
-  'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Brain',
-  'Cloud', 'Database', 'Download',
+  'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Boxes', 'Brain',
+  'Cloud', 'Code2', 'Database', 'Download',
   'FileCode', 'FileText', 'Gauge', 'GitBranch', 'GitFork', 'Globe',
   'History', 'Key', 'KeyRound', 'Layers', 'Lightbulb', 'Map', 'Monitor',
-  'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
+  'Network', 'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
   'Shield', 'Terminal', 'TreeDeciduous', 'Users', 'Workflow',
   'Wrench',
   

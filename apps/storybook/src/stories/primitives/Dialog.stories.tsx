@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within, waitFor } from 'storybook/test';
 import {
   Dialog,
   DialogTrigger,
@@ -38,4 +39,47 @@ export const Default: Story = {
       </DialogContent>
     </Dialog>
   ),
+};
+
+/**
+ * Interactive test: dialog opens on trigger click, exposes title +
+ * description as ARIA, closes on Escape.
+ */
+export const OpenCloseFlow: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger render={<Button>Open</Button>} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirm</DialogTitle>
+          <DialogDescription>
+            Verifying open/close + focus return.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose render={<Button>OK</Button>} />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: /open/i });
+
+    await step('Open dialog by clicking trigger', async () => {
+      await userEvent.click(trigger);
+      await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeTruthy());
+    });
+
+    await step('Dialog has accessible name + description', async () => {
+      const dlg = document.querySelector('[role="dialog"]') as HTMLElement;
+      expect(dlg.getAttribute('aria-labelledby')).toBeTruthy();
+      expect(dlg.getAttribute('aria-describedby')).toBeTruthy();
+    });
+
+    await step('Escape closes dialog', async () => {
+      await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeFalsy());
+    });
+  },
 };

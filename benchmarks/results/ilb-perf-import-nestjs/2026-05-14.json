@@ -1,0 +1,244 @@
+{
+  "suite": "ilb-perf-import-nestjs",
+  "timestamp": "2026-05-14T04:37:01.326Z",
+  "environment": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "corpus": {
+    "name": "nestjs",
+    "repo": "https://github.com/nestjs/nest.git",
+    "commit": "master",
+    "srcGlob": "packages/**/*.ts",
+    "fileCount": 600,
+    "loc": 43091
+  },
+  "competitors": [
+    {
+      "id": "import-official",
+      "displayName": "eslint-plugin-import (official)",
+      "host": "eslint",
+      "package": "eslint-plugin-import",
+      "version": "2.32.0",
+      "timing": {
+        "runsMs": [
+          3493,
+          3591,
+          3510
+        ],
+        "medianMs": 3510,
+        "meanMs": 3531,
+        "stddevMs": 43,
+        "cv": 0.012,
+        "msPerFile": 5.85
+      },
+      "perRuleMs": {
+        "import/no-cycle": 2286.93
+      },
+      "peakRssMb": 627,
+      "findings": {
+        "total": 194,
+        "parseErrors": 0,
+        "filesWithFindings": 164
+      }
+    },
+    {
+      "id": "oxlint-builtin",
+      "displayName": "oxlint built-in (import plugin, Rust)",
+      "host": "oxlint",
+      "package": "oxlint",
+      "version": "1.62.0",
+      "timing": {
+        "runsMs": [
+          85,
+          81,
+          80
+        ],
+        "medianMs": 81,
+        "meanMs": 82,
+        "stddevMs": 2,
+        "cv": 0.026,
+        "msPerFile": 0.14
+      },
+      "perRuleMs": {},
+      "peakRssMb": 116,
+      "findings": {
+        "total": 417,
+        "parseErrors": 0,
+        "filesWithFindings": 0
+      }
+    },
+    {
+      "id": "oxlint-import",
+      "displayName": "eslint-plugin-import via oxlint (JS plugin)",
+      "host": "oxlint",
+      "package": "eslint-plugin-import + oxlint",
+      "version": "2.32.0 / 1.62.0",
+      "timing": {
+        "runsMs": [
+          609,
+          626,
+          615
+        ],
+        "medianMs": 615,
+        "meanMs": 617,
+        "stddevMs": 7,
+        "cv": 0.011,
+        "msPerFile": 1.02
+      },
+      "perRuleMs": {},
+      "peakRssMb": 194,
+      "findings": {
+        "total": 0,
+        "parseErrors": 0,
+        "filesWithFindings": 0
+      }
+    },
+    {
+      "id": "oxlint-import-x",
+      "displayName": "eslint-plugin-import-x via oxlint (JS plugin)",
+      "host": "oxlint",
+      "package": "eslint-plugin-import-x + oxlint",
+      "version": "4.16.2 / 1.62.0",
+      "timing": {
+        "runsMs": [
+          582,
+          550,
+          535
+        ],
+        "medianMs": 550,
+        "meanMs": 556,
+        "stddevMs": 20,
+        "cv": 0.035,
+        "msPerFile": 0.92
+      },
+      "perRuleMs": {},
+      "peakRssMb": 248,
+      "findings": {
+        "total": 0,
+        "parseErrors": 0,
+        "filesWithFindings": 0
+      }
+    },
+    {
+      "id": "oxlint-import-next",
+      "displayName": "eslint-plugin-import-next via oxlint (JS plugin)",
+      "host": "oxlint",
+      "package": "eslint-plugin-import-next + oxlint",
+      "version": "2.3.6 / 1.62.0",
+      "timing": {
+        "runsMs": [
+          485,
+          474,
+          455
+        ],
+        "medianMs": 474,
+        "meanMs": 471,
+        "stddevMs": 12,
+        "cv": 0.026,
+        "msPerFile": 0.79
+      },
+      "perRuleMs": {},
+      "peakRssMb": 199,
+      "findings": {
+        "total": 736,
+        "parseErrors": 0,
+        "filesWithFindings": 0
+      }
+    },
+    {
+      "id": "import-x",
+      "displayName": "eslint-plugin-import-x (un-ts fork)",
+      "host": "eslint",
+      "package": "eslint-plugin-import-x",
+      "version": "4.16.2",
+      "timing": {
+        "runsMs": [
+          3874,
+          3967,
+          4053
+        ],
+        "medianMs": 3967,
+        "meanMs": 3965,
+        "stddevMs": 73,
+        "cv": 0.018,
+        "msPerFile": 6.61
+      },
+      "perRuleMs": {
+        "import-x/no-cycle": 2713.33
+      },
+      "peakRssMb": 994,
+      "findings": {
+        "total": 0,
+        "parseErrors": 0,
+        "filesWithFindings": 0
+      }
+    },
+    {
+      "id": "import-next",
+      "displayName": "eslint-plugin-import-next (ESLint host)",
+      "host": "eslint",
+      "package": "eslint-plugin-import-next",
+      "version": "2.3.6",
+      "timing": {
+        "runsMs": [
+          1411,
+          1396,
+          1408
+        ],
+        "medianMs": 1408,
+        "meanMs": 1405,
+        "stddevMs": 6,
+        "cv": 0.005,
+        "msPerFile": 2.35
+      },
+      "perRuleMs": {
+        "import-next/no-cycle": 124.16
+      },
+      "peakRssMb": 553,
+      "findings": {
+        "total": 627,
+        "parseErrors": 0,
+        "filesWithFindings": 122
+      }
+    }
+  ],
+  "comparison": {
+    "eslint": {
+      "baseline": "import-official",
+      "vs": {
+        "import-x": {
+          "speedup": 0.88,
+          "findingsDiffPct": 100,
+          "parityWarning": true
+        },
+        "import-next": {
+          "speedup": 2.49,
+          "findingsDiffPct": 69.06,
+          "parityWarning": true
+        }
+      }
+    },
+    "oxlint": {
+      "baseline": "oxlint-builtin",
+      "vs": {
+        "oxlint-import": {
+          "speedup": 0.13,
+          "findingsDiffPct": 100,
+          "parityWarning": true
+        },
+        "oxlint-import-x": {
+          "speedup": 0.15,
+          "findingsDiffPct": 100,
+          "parityWarning": true
+        },
+        "oxlint-import-next": {
+          "speedup": 0.17,
+          "findingsDiffPct": 43.34,
+          "parityWarning": true
+        }
+      }
+    }
+  }
+}

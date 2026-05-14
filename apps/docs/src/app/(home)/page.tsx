@@ -58,6 +58,56 @@ export default async function HomePage() {
       {/* HERO — full-bleed; not subject to container rules (LAYOUT §2 `full`) */}
       <HeroSection />
 
+      {/* RUNTIME STRIP — engine portability sits adjacent to the hero so the
+          "rules portable, runtimes commodity" position (INTEROP_PHILOSOPHY.md)
+          gets a first-paint signal without disturbing the locked hero CTAs.
+          Statuses must match the canonical support matrix in
+          INTEROP_PHILOSOPHY.md (#L229) — floor / automated peer / reserved
+          peer / watching. */}
+      <Section
+        spacing="tight"
+        tone="muted"
+        divider="bottom"
+        container="content"
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-xs font-mono uppercase tracking-wider text-fd-muted-foreground">
+            Runs under
+          </p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm md:text-base">
+            <li className="inline-flex items-center gap-1.5 rounded-full border border-fd-border bg-fd-card px-3 py-1 font-medium text-fd-foreground">
+              ESLint
+              <span className="text-xs text-fd-muted-foreground">floor</span>
+            </li>
+            <li aria-hidden className="text-fd-muted-foreground">·</li>
+            <li className="inline-flex items-center gap-1.5 rounded-full border border-fd-border bg-fd-card px-3 py-1 font-medium text-fd-foreground">
+              Oxlint
+              <span className="text-xs text-fd-muted-foreground">automated peer</span>
+            </li>
+            <li aria-hidden className="text-fd-muted-foreground">·</li>
+            <li className="inline-flex items-center gap-1.5 rounded-full border border-fd-border bg-fd-card px-3 py-1 font-medium text-fd-foreground">
+              Biome
+              <span className="text-xs text-fd-muted-foreground">reserved peer</span>
+            </li>
+            <li aria-hidden className="text-fd-muted-foreground">·</li>
+            <li className="inline-flex items-center gap-1.5 rounded-full border border-fd-border bg-fd-card px-3 py-1 font-medium text-fd-foreground">
+              TSC native (Go)
+              <span className="text-xs text-fd-muted-foreground">watching</span>
+            </li>
+          </ul>
+          <p className="text-sm text-fd-muted-foreground max-w-prose">
+            Pick the engine your team picks — your rules come along, with
+            CI-enforced diagnostic parity.{' '}
+            <Link
+              href="/docs/getting-started/concepts/runtime-portability"
+              className="font-medium text-fd-foreground hover:underline"
+            >
+              How it works →
+            </Link>
+          </p>
+        </div>
+      </Section>
+
       {/* STATS BAR */}
       <Section
         spacing="tight"
@@ -357,7 +407,7 @@ export default async function HomePage() {
           <Card
             icon={<Repeat className="size-6" />}
             title="Runtime Portability"
-            description="One rule, multiple engines. Oxlint for the fast tier, ESLint for the deep tier — same diagnostics, CI-enforced parity. Your investment survives the runtime swap."
+            description="One rule library, multiple engines. Runs under ESLint and Oxlint today with CI-enforced parity. Biome and the TSC native plugin host (Go) on the roadmap — switch engines without rewriting rules."
             href="/docs/getting-started/concepts/runtime-portability"
           />
           <Card

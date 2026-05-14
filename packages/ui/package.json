@@ -174,10 +174,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.lib.json && node scripts/preserve-use-client.mjs",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist tsconfig.lib.tsbuildinfo",
-    "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build",
-    "storybook:test": "test-storybook --config-dir .storybook"
+    "clean": "rm -rf dist tsconfig.lib.tsbuildinfo"
   },
   "peerDependencies": {
     "@base-ui-components/react": "^1.0.0-beta.6",
@@ -202,17 +199,8 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "^10.3.6",
-    "@storybook/addon-docs": "^10.3.6",
-    "@storybook/addon-vitest": "^10.3.6",
-    "@storybook/react-vite": "^10.3.6",
-    "@storybook/test-runner": "^0.24.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "axe-playwright": "^2.2.2",
-    "storybook": "^10.3.6",
-    "typescript": "^5.7.0",
-    "vite": "^8.0.11"
+    "typescript": "^5.7.0"
   }
 }

@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --update-snapshots",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
     "test:css": "vitest run src/__tests__/tailwind-classes.test.ts",
     "test:a11y": "playwright test e2e/a11y.spec.ts e2e/a11y-tree.spec.ts --project=chromium --reporter=list",
     "a11y:report": "tsx scripts/a11y-summary.ts",

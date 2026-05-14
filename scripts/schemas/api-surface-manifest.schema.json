@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ofri-peretz/eslint/scripts/schemas/api-surface-manifest.schema.json",
+  "title": "API-Surface Coverage Manifest",
+  "description": "Per-plugin manifest of how much of each target SDK / runtime API surface has at least one Interlace rule covering it. Source of truth for the §2 'API-surface coverage' metric in distribution/EVALUATION_METRICS.md.",
+  "type": "object",
+  "required": ["description", "method", "generatedAt", "target_floor_pct", "plugins", "summary"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "method": { "type": "string" },
+    "generatedAt": {
+      "type": "string",
+      "format": "date",
+      "description": "Last hand-audit date. Refresh when a plugin gains or loses rules."
+    },
+    "target_floor_pct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Coverage floor below which a plugin's row fails the strict audit. Default 60."
+    },
+    "plugins": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/plugin" }
+    },
+    "summary": { "$ref": "#/$defs/summary" }
+  },
+  "$defs": {
+    "plugin": {
+      "type": "object",
+      "required": [
+        "plugin",
+        "surface",
+        "surfaceVersion",
+        "callableApis_total",
+        "callableApis_covered",
+        "coverage_pct",
+        "ruleCount",
+        "uncovered_examples",
+        "notes"
+      ],
+      "properties": {
+        "plugin": {
+          "type": "string",
+          "pattern": "^eslint-plugin-"
+        },
+        "surface": { "type": "string" },
+        "surfaceVersion": { "type": "string" },
+        "callableApis_total": { "type": "integer", "minimum": 0 },
+        "callableApis_covered": { "type": "integer", "minimum": 0 },
+        "coverage_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Must equal round(callableApis_covered / callableApis_total * 100) within ±1."
+        },
+        "ruleCount": { "type": "integer", "minimum": 0 },
+        "uncovered_examples": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "aggregateCoverage_pct",
+        "pluginsAtOrAboveFloor",
+        "pluginsBelowFloor",
+        "criticalGaps",
+        "note"
+      ],
+      "properties": {
+        "aggregateCoverage_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "pluginsAtOrAboveFloor": { "type": "integer", "minimum": 0 },
+        "pluginsBelowFloor": { "type": "integer", "minimum": 0 },
+        "criticalGaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

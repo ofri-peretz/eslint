@@ -2,18 +2,18 @@
     "title": "Concepts",
     "description": "Core concepts and ecosystem transparency",
     "pages": [
-        "---Core Concepts---",
         "philosophy",
+        "detect-understand-fix",
         "ai-integration",
         "ast-fundamentals",
         "security-metadata",
-        "detect-understand-fix",
-        "---Ecosystem---",
-        "compatibility",
         "runtime-portability",
+        "ecosystem",
+        "compatibility",
+        "compare",
         "coverage",
         "benchmarks",
-        "compare",
+        "transparency",
         "cwe-compatibility"
     ]
 }

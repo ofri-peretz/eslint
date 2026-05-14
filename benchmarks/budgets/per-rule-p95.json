@@ -1,0 +1,30 @@
+{
+  "$schema": "../../scripts/schemas/per-rule-budget.schema.json",
+  "description": "Per-rule latency budgets. Closes the §3 'Per-rule p95 budget enforcement' top-priority gap in distribution/EVALUATION_METRICS.md. Source of latency data: benchmark-results/ilb-flagship-scorecard.md (or its JSON sibling at benchmarks/results/ilb-flagship/<date>.json). The CI gate at scripts/check-per-rule-budget.ts loads the latest flagship results and compares each rule's p95 against the budget here. Going over budget fails CI.",
+  "policy": {
+    "p50_default_ms": 50,
+    "p95_default_ms": 250,
+    "p95_hard_ceiling_ms": 1000,
+    "tolerance_pct": 10,
+    "note": "p50 ≤ 50ms keeps the editor-on-save UX. p95 ≤ 250ms keeps pre-commit feasible on a 100-file staged set. p95 hard ceiling 1000ms means no single rule can blow the whole CI lint budget on a pathological input. Tolerance: 10% slack before failing (a 11% regression is the trigger). All numbers are wall-clock on a single rule, single fixture; ILB-Flagship is the canonical bench."
+  },
+  "rules": {
+    "import-next/no-cycle": { "p50_ms": 120, "p95_ms": 480, "note": "Cross-file traversal; tier=deep. Higher budget by design. See competitor_study_2026-05-09 — our DFS-with-cache rewrite halved the latency vs eslint-plugin-import." },
+    "pg/no-unsafe-query": { "p50_ms": 80, "p95_ms": 320, "note": "Type-aware taint tracker; tier=deep." },
+    "secure-coding/no-hardcoded-credentials": { "p50_ms": 30, "p95_ms": 140, "note": "Context-tier classifier; tier=fast. See competitor_study_2026-05-09 fix 3." },
+    "secure-coding/no-redos-vulnerable-regex": { "p50_ms": 60, "p95_ms": 260, "note": "NFA analyzer via scslre; tier=fast. p95 reflects the 1% of regexes with high state-space explosion." },
+    "mongodb-security/no-unsafe-query": { "p50_ms": 70, "p95_ms": 280, "note": "Type-aware taint; tier=deep." },
+    "jwt/no-algorithm-none": { "p50_ms": 25, "p95_ms": 110, "note": "AST shape; tier=fast." },
+    "browser-security/no-postmessage-wildcard-origin": { "p50_ms": 20, "p95_ms": 90, "note": "AST shape; tier=fast." },
+    "react-features/hooks-exhaustive-deps": { "p50_ms": 100, "p95_ms": 420, "note": "Cross-component scope walk; tier=fast (no type info). See competitor_study_2026-05-09 fix 1 — non-array-deps reporting added." },
+    "react-a11y/alt-text": { "p50_ms": 30, "p95_ms": 130, "note": "Multi-element-type check; tier=fast." },
+    "vercel-ai-security/no-unsafe-output-handling": { "p50_ms": 40, "p95_ms": 170, "note": "AST + SDK shape; tier=fast." }
+  },
+  "lastValidated": "2026-05-09",
+  "source": "benchmark-results/ilb-flagship-scorecard.md (ESLint 9.39.4 + oxlint 1.63.0 + Node 24.13.0)",
+  "process": {
+    "addRule": "Add the rule to `rules` with sensible p50 / p95 from the latest ILB-Flagship run. p50 ≤ p50_default_ms and p95 ≤ p95_default_ms unless documented in the rule's `note`.",
+    "increaseBudget": "Allowed only if (a) the rule's correctness genuinely improved (write a note pointing at the change), or (b) the increase has been approved in PR review with a justification.",
+    "ciGate": "`npm run check:per-rule-budget` runs the gate. Loads the latest ILB-Flagship results, joins on rule id, asserts each rule's measured p50/p95 ≤ budget × (1 + tolerance_pct/100)."
+  }
+}

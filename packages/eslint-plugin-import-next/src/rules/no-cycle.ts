@@ -371,6 +371,25 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    // Reset analysis-state caches per-file for determinism. With oxlint's
+    // parallel file walk, file ordering is non-deterministic — a stale
+    // `nonCyclicFiles` entry from a sibling worker's DFS made the second
+    // (or third) lint run skip files the first run had analyzed, producing
+    // 218/277/301-range variance across back-to-back runs. We pay one
+    // re-walk per file to get deterministic findings, which is what
+    // FP/FN benchmarking needs. Cross-run perf optimization can be
+    // reintroduced behind a lint-run-id keyed cache later.
+    sharedCache.nonCyclicFiles.clear();
+    sharedCache.pendingCycleReports.clear();
+    sharedCache.sccComputed = false;
+    sharedCache.sccIndex.clear();
+    sharedCache.sccs.length = 0;
+    sharedCache.graphHash = '';
+
+    // Per-file dedup. Two import statements in this file pointing at the
+    // same cycle target should report once.
+    const reportedCyclesThisFile = new Set<string>();
+
     /**
      * Select fix strategy based on cycle characteristics
      */
@@ -597,16 +616,11 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             ...minimalCycle.slice(cycleStart),
             ...minimalCycle.slice(0, cycleStart),
           ];
-          // Dedupe by (file, cycle) instead of cycle alone. Without the
-          // file in the key, the cycle [A, B] reports only on whichever
-          // of A or B is linted first; the other gets silently skipped.
+          // Dedupe within this file's lint pass. The cycle hash captures
+          // the cycle members; we only need to suppress the case where two
+          // import statements in the same file point at the same cycle.
           // Per-file keying matches oxlint's behavior — every file in a
-          // cycle gets its own diagnostic. The user can navigate from any
-          // entry point in the cycle and see the report there.
-          const cycleHash = `${filename}::${getCycleHash(relevantCycle)}`;
-
-          // Skip only if THIS file already reported THIS cycle (e.g. the
-          // same import statement appearing twice in the same file).
+          // cycle gets its own diagnostic on its own entry point.
           // (Earlier we experimented with a `pendingCycleReports` fan-out
           // that emits on every cycle member regardless of which one's
           // DFS discovered it — closes the with-router.tsx presentational
@@ -614,10 +628,11 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           // because each cycle member iterates every other member of every
           // cycle it touches. The cycle IS still reported on its other
           // end; the one-finding loss isn't worth the perf hit.)
-          if (sharedCache.reportedCycles.has(cycleHash)) {
+          const cycleHash = getCycleHash(relevantCycle);
+          if (reportedCyclesThisFile.has(cycleHash)) {
             continue;
           }
-          sharedCache.reportedCycles.add(cycleHash);
+          reportedCyclesThisFile.add(cycleHash);
 
           // Select the appropriate fix strategy
           const strategy = selectFixStrategy(relevantCycle, fixStrategy);

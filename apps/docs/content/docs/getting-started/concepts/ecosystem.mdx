@@ -1,0 +1,165 @@
+---
+title: Ecosystem Landscape
+description: Where each Interlace plugin sits in the JavaScript / TypeScript lint ecosystem — neighbors doing strong work, where we specialize, and how we measure ourselves against the field.
+icon: Network
+---
+
+import { Network, Shield, Code2, Sparkles, Boxes, GitFork } from 'lucide-react';
+
+## Good competition is great
+
+The JavaScript / TypeScript lint ecosystem is healthy. ESLint, Oxlint, Biome, typescript-eslint, and the long tail of community plugins each contribute something the others don't, and Interlace's place in that picture is *as a specialist* — a deep rule library for security verticals and domain code, designed to be portable across engines.
+
+This page is **the landscape we find our path through**, not a battle board. Every entry leads with what neighbors do well, then names where Interlace adds depth.
+
+> If you came here from the **Compare** page (which covers Interlace vs SAST tools like CodeQL / Semgrep / Snyk Code), this is the sibling for the **lint** layer.
+
+---
+
+## How the lint ecosystem stacks up
+
+The lint ecosystem has three layers. Interlace lives in layer three.
+
+<Cards>
+  <Card
+    icon={<GitFork />}
+    title="Layer 1 — Engines"
+    href="/docs/getting-started/concepts/runtime-portability"
+  >
+    ESLint, Oxlint, Biome, TSC native plugin host. Substrates we ship to. Not competitors — they're our runtimes.
+  </Card>
+  <Card
+    icon={<Boxes />}
+    title="Layer 2 — Stock rule corpora"
+    href="/docs/getting-started/concepts/compatibility"
+  >
+    Rules built into the engines themselves (Oxlint ships 790 across 15 namespaces, Biome ~400 across functional groups). Real overlap with our general-purpose plugins; effectively zero overlap with our security verticals — Oxlint has no `security` namespace.
+  </Card>
+  <Card
+    icon={<Network />}
+    title="Layer 3 — Plugins (this page)"
+    href="#per-plugin-landscape"
+  >
+    Fellow rule libraries: eslint-plugin-import, eslint-plugin-react-hooks, typescript-eslint, eslint-plugin-jsx-a11y, and the long tail.
+  </Card>
+</Cards>
+
+---
+
+## Where Interlace is positioned
+
+Three places where the path to community leadership is clearest:
+
+<Cards>
+  <Card icon={<Shield />} title="Domain-security depth">
+    Ten dedicated security plugins covering JWT, MongoDB, PostgreSQL, Express, NestJS, AWS Lambda, Vercel AI SDK, browser, Node, plus a generic OWASP-mapped baseline. **221 rules across these 10 plugins** — zero overlap with Oxlint or Biome stock corpora.
+  </Card>
+  <Card icon={<GitFork />} title="Engine-portability contract">
+    The only rule library shipping today with CI-enforced diagnostic parity across two engines (ESLint + Oxlint). Biome and the TSC native plugin host (Go) on the roadmap. See [Runtime Portability](/docs/getting-started/concepts/runtime-portability).
+  </Card>
+  <Card icon={<Sparkles />} title="AI / agent readiness">
+    Per-rule CWE / CVSS / OWASP metadata, 11 MCP servers, SARIF output with full structured findings. The only library shipping this systematically.
+  </Card>
+</Cards>
+
+---
+
+## Where each layer-1 engine fits
+
+| Engine | Language | Where it shines | Our story |
+| :--- | :--- | :--- | :--- |
+| **ESLint** | JS | The most mature plugin ecosystem, deepest type-aware tier via typescript-eslint, broadest editor integration. | Our **floor** — every rule runs here, every rule's tests are authored here. |
+| **Oxlint** | Rust | Sub-second linting on large repos. 790 stock rules across 15 namespaces (`eslint` 178, `unicorn` 129, `typescript` 109, `vitest` 71, `jest` 60, `react` 59, `jsx_a11y` 36, `import` 32, `oxc` 26, `vue` 23, `nextjs` 21, `jsdoc` 20, `promise` 16, `node` 6, `react_perf` 4). No `security` namespace. | **Automated peer.** Our rules run here via the JS-plugin tier with CI-enforced parity — typically 13–22× wall-time speedup. |
+| **Biome** | Rust | All-in-one linter + formatter, zero-config, ~300 built-in rules grouped by function (a11y, complexity, correctness, performance, security, style, suspicious). | **Reserved peer.** First-class portability target; parity adapter on the roadmap. |
+| **TSC native plugin host** | Go | The Go port of the TypeScript compiler (`tsgo`, tracking toward TSC 7) — once stable, makes type-aware analysis cheap enough to be the default. | **Watching.** Long-horizon home for our deep-tier type-aware rules. |
+| **typescript-eslint** | JS | The parser stack every TS-aware ESLint plugin depends on, plus ~150 type-aware rules (`no-unsafe-*`, `no-misused-promises`, etc.). | **Complement, not competitor.** Our domain plugins sit on top of the type information typescript-eslint surfaces. |
+
+---
+
+## Per-plugin landscape
+
+A compact view. The authoritative per-plugin map with neighbor download counts and overlap details lives in [`distribution/ECOSYSTEM_LANDSCAPE.md`](https://github.com/ofri-peretz/eslint/blob/main/distribution/ECOSYSTEM_LANDSCAPE.md).
+
+### Security verticals — open neighborhoods, depth-first
+
+| Plugin | Rules | Where it lives in the landscape |
+| :--- | ---: | :--- |
+| `secure-coding` | 27 | Sits alongside `eslint-plugin-security` (~1.6M weekly, generic) and `eslint-plugin-no-secrets`. We extend with CWE / CVSS metadata + MCP integration. |
+| `browser-security` | 45 | Adjacent to `eslint-plugin-no-unsanitized` (Mozilla, narrow). Wider sink coverage; structured postMessage / websocket rules. |
+| `node-security` | 33 | Different scope from `eslint-plugin-n` (~5.4M weekly, general Node best practices). Security-focused, includes crypto. |
+| `jwt` | 13 | No dedicated peer. Open community-leadership space. |
+| `express-security` | 10 | Lint-tier complement to `helmet` (runtime middleware). Open space. |
+| `lambda-security` | 14 | Lint-tier complement to `cfn-lint` / `checkov` (operate on IaC). Open space. |
+| `mongodb-security` | 16 | No lint-time peer. Open space. |
+| `nestjs-security` | 6 | `eslint-plugin-nestjs` covers general best practices, not security. Open space. |
+| `vercel-ai-security` | 19 | Emerging neighborhood. First lint-time AI-SDK safety library. |
+| `pg` | 13 | No lint-time peer. SAST tools cover deeper but slower. Open lint-tier space. |
+
+### Code quality — crowded neighborhoods, we contribute
+
+| Plugin | Rules | Where it lives in the landscape |
+| :--- | ---: | :--- |
+| `maintainability` | 12 | Alongside `eslint-plugin-sonarjs` (~1.9M weekly, cognitive complexity), ESLint core complexity rules. We contribute, not replace. |
+| `reliability` | 9 | Alongside `eslint-plugin-promise` (~5.6M weekly). Defensive-programming framing across paradigms. |
+| `modernization` | 3 | Curated subset where `eslint-plugin-unicorn` (~5.5M weekly) is silent or wrong. **Intentionally narrow.** |
+| `conventions` | 11 | Alongside `eslint-plugin-perfectionist` (~3M+ weekly, growing). Project-level conventions across files. |
+| `modularity` | 5 | Alongside `eslint-plugin-import` (~38.2M weekly, includes cycle detection). Faster cycle detection. |
+| `operability` | 6 | Almost-empty neighborhood. Opportunity to grow into a recognized standard. |
+
+### React — strong neighbors, focused additions
+
+| Plugin | Rules | Where it lives in the landscape |
+| :--- | ---: | :--- |
+| `react-a11y` | 37 | Alongside `eslint-plugin-jsx-a11y` (~23.7M weekly, dominant). Wider element-type coverage on rules where we've audited gaps. |
+| `react-features` | 53 | Alongside `eslint-plugin-react-hooks` (~52.9M weekly, official React team) and `eslint-plugin-react` (~34M). Patterns the upstream doesn't cover (concurrent-rendering pitfalls, performance anti-patterns). |
+
+### Imports — one giant, one focused alternative
+
+| Plugin | Rules | Where it lives in the landscape |
+| :--- | ---: | :--- |
+| `import-next` | 55 | Alongside `eslint-plugin-import` (~38.2M weekly, dominant), `eslint-plugin-unused-imports` (~5.6M), `eslint-plugin-simple-import-sort` (~3.9M), `eslint-plugin-perfectionist` (~3M+, growing). Faster cycle detection on monorepos, flat-config native, Oxlint-host native. |
+
+---
+
+## Adjacent tooling
+
+Some tools sit at a different tier but cover overlapping use cases. Worth knowing.
+
+- **`knip`** — unused files / exports / deps at the project graph level. Complements `import-next/no-unused-imports` (file-local).
+- **`dependency-cruiser`** — architecture rules at the module-graph level. Complements `modularity` for full-project audits.
+- **`trunk check`**, **`megalinter`** — linting aggregators that ship plugins like ours. Not competitors; potential distribution channels.
+- **`helmet`** — Express runtime security headers. Complements `express-security` (lint-time).
+- **`gitleaks`**, **`trufflehog`** — git-history secret scanning. Complements `secure-coding/no-hardcoded-credentials` (source-tree lint).
+
+---
+
+## How we measure ourselves (and how we measure peers)
+
+Every claim on this page reduces to a row in the comprehensive evaluation-metrics catalog. Twelve categories, ~50 metrics:
+
+1. **Correctness** — Precision, Recall, F1, false-positive rate, severity calibration, evasion resilience, mutation kill-rate
+2. **Coverage** — Rule count, CWE / OWASP / ISO 25010 / CAPEC / NIST SSDF / ASVS coverage, API-surface depth
+3. **Performance** — Cold and warm lint time, per-rule p50 / p95 cost, peak memory, Oxlint speedup
+4. **Engine portability** — Supported engines, parity drift, shared-rule count
+5. **Determinism & stability** — Run-to-run determinism, autofix idempotence, cross-engine byte-equality
+6. **Compatibility matrix** — ESLint / Node / TS / parser versions
+7. **AI / agent readiness** — MCP, SARIF, LLM-fix success, token cost, autofix coverage
+8. **Documentation & DX** — Rules with docs / examples / autofix demos, search discoverability
+9. **Adoption & health** — Weekly downloads, release cadence, contributor signal
+10. **Security-specific** — CVE-disclosure-to-rule latency, zero-day class coverage, taint depth
+11. **Cross-tool differential** — Agreement matrix vs CodeQL / Semgrep / Snyk Code
+12. **Operational / pipeline** — PR-time runtime, pre-commit eligibility, CI memory profile
+
+Authoritative source: [`distribution/EVALUATION_METRICS.md`](https://github.com/ofri-peretz/eslint/blob/main/distribution/EVALUATION_METRICS.md). Live measurements: [`benchmark-results/scorecard.md`](https://github.com/ofri-peretz/eslint/blob/main/benchmark-results/scorecard.md), refreshed weekly.
+
+If a claim about Interlace or a neighbor plugin can't reduce to a row in that catalog, it's a feeling, not a measurement.
+
+---
+
+## Further reading
+
+- [Compare vs SAST tools (CodeQL, Semgrep, Snyk Code)](/docs/getting-started/concepts/compare)
+- [Compatibility — engine + ESLint + Node matrices](/docs/getting-started/concepts/compatibility)
+- [Runtime Portability — the parity contract](/docs/getting-started/concepts/runtime-portability)
+- [Benchmarks — live performance numbers](/docs/getting-started/concepts/benchmarks)
+- [CWE Coverage matrix](/docs/getting-started/concepts/cwe-compatibility)

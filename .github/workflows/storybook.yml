@@ -20,6 +20,7 @@ on:
     types: [ready_for_review, labeled, synchronize]
     paths:
       - 'packages/ui/**'
+      - 'apps/storybook/**'
       - 'apps/docs/**'
       - '.github/workflows/storybook.yml'
   workflow_dispatch:
@@ -74,7 +75,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        working-directory: packages/ui
+        working-directory: apps/storybook
 
       - name: Build @interlace/ui
         run: npm run build --workspace=@interlace/ui
@@ -82,18 +83,18 @@ jobs:
       # Static-build the storybook + run the test-runner against it via
       # `start-server-and-test`. Avoids racing a dev-mode server.
       - name: Build storybook
-        run: npm run storybook:build --workspace=@interlace/ui
+        run: npm run build-storybook --workspace=@interlace/storybook
 
       - name: Run Storybook tests (axe + play functions)
         run: |
           npx concurrently --kill-others --success first --names "storybook,test-runner" \
-            "npx http-server packages/ui/storybook-static --port 6006 --silent" \
-            "npx wait-on tcp:6006 && npm run storybook:test --workspace=@interlace/ui -- --url http://localhost:6006"
+            "npx http-server apps/storybook/storybook-static --port 6006 --silent" \
+            "npx wait-on tcp:6006 && npm run test-storybook --workspace=@interlace/storybook -- --url http://localhost:6006"
 
       - name: Upload storybook-static on failure
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: storybook-static
-          path: packages/ui/storybook-static
+          path: apps/storybook/storybook-static
           retention-days: 14
