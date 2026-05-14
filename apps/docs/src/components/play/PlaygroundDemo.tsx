@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { AlertTriangle, Check, Copy, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, Copy, ExternalLink, Play, RotateCcw, Sparkles } from 'lucide-react';
 import {
   PLAYGROUND_SNIPPETS,
   getSnippetBySlug,
@@ -202,11 +202,21 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         </label>
       </div>
 
-      {/* Headline */}
+      {/* Headline + phase status pill — OXC Playground aesthetic: minimal
+          chrome, signal-only color, the editor and findings are the focus.
+          The Phase-1c disclaimer is demoted from a paragraph footer to a
+          small status pill here so the main two-pane layout below has
+          maximum breathing room. */}
       <div className="flex flex-col gap-2 border-l-2 border-fd-primary/60 pl-4">
-        <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-          {snippet.tag}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
+            {snippet.tag}
+          </p>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-fd-border bg-fd-card px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-fd-muted-foreground">
+            <span aria-hidden className="size-1.5 rounded-full bg-yellow-500/70" />
+            Phase 1c · live linting in Phase 2
+          </span>
+        </div>
         <h2 className="font-mono text-lg text-fd-foreground">{snippet.title}</h2>
         <p className="text-sm text-fd-muted-foreground">{snippet.description}</p>
       </div>
@@ -276,20 +286,36 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Left pane — editor */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
               Code · editable
             </p>
-            {isEdited && (
+            <div className="flex items-center gap-1.5">
+              {isEdited && (
+                <button
+                  type="button"
+                  onClick={resetSnippet}
+                  className="inline-flex items-center gap-1 rounded-md border border-fd-border bg-fd-card px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fd-foreground transition-colors hover:bg-fd-accent"
+                >
+                  <RotateCcw aria-hidden className="size-3" />
+                  Reset
+                </button>
+              )}
+              {/* Disabled "Run" placeholder — signals the Phase 2 affordance.
+                  OXC Playground's Run-on-edit is the model; ours is offline
+                  until Phase 2 wires oxlint WASM. Disabled state is honest:
+                  the button is in the layout where the live affordance will
+                  be, not falsely interactive. */}
               <button
                 type="button"
-                onClick={resetSnippet}
-                className="inline-flex items-center gap-1 rounded-md border border-fd-border bg-fd-card px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fd-foreground transition-colors hover:bg-fd-accent"
+                disabled
+                title="Live linting arrives in Phase 2 (oxlint WASM + our rules as JS plugins). For now the right pane shows the verified static findings."
+                className="inline-flex cursor-not-allowed items-center gap-1 rounded-md border border-fd-border bg-fd-card/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fd-muted-foreground opacity-60"
               >
-                <RotateCcw aria-hidden className="size-3" />
-                Reset
+                <Play aria-hidden className="size-3" />
+                Run · Phase 2
               </button>
-            )}
+            </div>
           </div>
           <PlaygroundEditor value={editorValue} onChange={setEditorValue} />
         </div>
@@ -369,18 +395,19 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         </div>
       </div>
 
-      {/* Footer caveat — Phase 1c honesty */}
-      <p className="rounded-md border border-fd-border bg-fd-card/50 p-3 text-xs text-fd-muted-foreground">
-        <strong className="text-fd-foreground">Phase 1c:</strong> editable
-        Monaco editor + plugin toggle strip + Copy-eslint.config.js. Findings
-        are the verified output for the canonical snippet; toggling a plugin
-        filters which plugin's findings appear and rewrites the generated
-        config snippet. Editing the code pauses findings until Phase 2 wires a
-        live in-browser linter (currently scoped to{' '}
-        <strong className="text-fd-foreground">oxlint WASM + our rules as JS
-        plugins</strong>, per PLAYGROUND_SPEC.md § Architecture #2). Tracking in{' '}
-        <Link href="https://github.com/ofri-peretz/eslint/blob/main/PLAYGROUND_SPEC.md" className="underline">
+      {/* Minimal footer — single line. The heavier Phase-1c explanation
+          previously lived here; demoted to the status pill near the
+          headline so the editor and findings dominate the viewport (OXC
+          Playground aesthetic — editor + output as equal partners, no
+          chrome competing for attention). */}
+      <p className="text-xs text-fd-muted-foreground">
+        Built for the{' '}
+        <Link href="https://github.com/ofri-peretz/eslint/blob/main/PLAYGROUND_SPEC.md" className="font-mono text-fd-foreground underline-offset-2 hover:underline">
           PLAYGROUND_SPEC.md
+        </Link>{' '}
+        roadmap · inspired by{' '}
+        <Link href="https://playground.oxc.rs/" className="font-mono text-fd-foreground underline-offset-2 hover:underline">
+          OXC Playground
         </Link>
         .
       </p>
