@@ -1,33 +1,55 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
-import { AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
+import { AlertTriangle, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
 import {
   PLAYGROUND_SNIPPETS,
   getSnippetBySlug,
   type PlaygroundSnippet,
 } from './snippets';
 
+// Monaco bundle is ~600KB compressed — too big for first paint. Load it
+// only on the client (SSR shows the placeholder).
+const PlaygroundEditor = dynamic(
+  () => import('./PlaygroundEditor').then((m) => m.PlaygroundEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[360px] items-center justify-center rounded-md border border-fd-border bg-fd-card p-6 text-sm text-fd-muted-foreground">
+        Loading editor…
+      </div>
+    ),
+  },
+);
+
 /**
- * PlaygroundDemo — Phase 1a (static demo).
+ * PlaygroundDemo — Phase 1b (Monaco editor + honest edited-state).
  *
- * Renders the playground chrome (left pane = read-only highlighted code,
- * right pane = hardcoded findings list) for the 6 canonical flagship-rule
- * snippets. The example selection is URL-synced via `?example=<slug>` so
- * links are shareable.
+ * Renders the playground chrome for the 6 canonical flagship-rule
+ * snippets. Left pane = editable Monaco editor. Right pane = either the
+ * verified static findings (when the code matches the canonical snippet)
+ * or an "edited, not yet linted" placeholder (when the user has changed
+ * the code). The example selection is URL-synced via `?example=<slug>`.
  *
- * Phase 1b will swap `<DynamicCodeBlock>` for a Monaco editor (live edits).
- * Phase 2 will swap the hardcoded findings list for live in-browser ESLint
- * output via `eslint-linter-browserify`. See PLAYGROUND_SPEC.md.
+ * Phase 2 will replace the "edited, not yet linted" placeholder with
+ * live findings from `eslint-linter-browserify`. See PLAYGROUND_SPEC.md.
  */
 export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const [currentSlug, setCurrentSlug] = useState<string>(initialSlug);
   const snippet = useMemo<PlaygroundSnippet>(() => getSnippetBySlug(currentSlug), [currentSlug]);
+  const [editorValue, setEditorValue] = useState<string>(snippet.code);
+
+  // Reset editor contents whenever the picked snippet changes.
+  useEffect(() => {
+    setEditorValue(snippet.code);
+  }, [snippet.code]);
+
+  const isEdited = editorValue !== snippet.code;
 
   const selectSnippet = useCallback(
     (slug: string) => {
@@ -38,6 +60,10 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
     },
     [params, router],
   );
+
+  const resetSnippet = useCallback(() => {
+    setEditorValue(snippet.code);
+  }, [snippet.code]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,25 +129,47 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
 
       {/* Two-pane: code + findings */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
-        {/* Left pane — code */}
+        {/* Left pane — editor */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-              Code
+              Code · editable
             </p>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-fd-muted-foreground">
-              Read-only · live editor in Phase 1b
-            </p>
+            {isEdited && (
+              <button
+                type="button"
+                onClick={resetSnippet}
+                className="inline-flex items-center gap-1 rounded-md border border-fd-border bg-fd-card px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fd-foreground transition-colors hover:bg-fd-accent"
+              >
+                <RotateCcw aria-hidden className="size-3" />
+                Reset
+              </button>
+            )}
           </div>
-          <DynamicCodeBlock lang="tsx" code={snippet.code} />
+          <PlaygroundEditor value={editorValue} onChange={setEditorValue} />
         </div>
 
         {/* Right pane — findings */}
         <div className="flex flex-col gap-2">
           <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-            Findings · {snippet.findings.length}
+            Findings {isEdited ? '· paused' : `· ${snippet.findings.length}`}
           </p>
-          {snippet.findings.length === 0 ? (
+          {isEdited ? (
+            <div className="flex flex-col items-start gap-2 rounded-md border border-dashed border-fd-border bg-fd-card/50 p-4 text-sm text-fd-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Sparkles aria-hidden className="size-4 opacity-60" />
+                <span className="font-mono text-xs uppercase tracking-wider">
+                  Code edited — live linting pending
+                </span>
+              </div>
+              <p>
+                The findings list shows the verified output for the canonical
+                snippet only. Live in-browser ESLint arrives in Phase 2 —
+                until then, click <em>Reset</em> to restore the snippet and
+                see the canonical findings.
+              </p>
+            </div>
+          ) : snippet.findings.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-fd-border bg-fd-card/50 p-6 text-center text-sm text-fd-muted-foreground">
               <Sparkles aria-hidden className="size-5 opacity-50" />
               No findings yet — paste code or pick an example.
@@ -169,14 +217,14 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         </div>
       </div>
 
-      {/* Footer caveat — Phase 1a honesty */}
+      {/* Footer caveat — Phase 1b honesty */}
       <p className="rounded-md border border-fd-border bg-fd-card/50 p-3 text-xs text-fd-muted-foreground">
-        <strong className="text-fd-foreground">Phase 1a:</strong> the findings
-        list above is the verified output of running the rule on this exact
-        snippet — captured by hand for the static demo. Phase 1b adds an
-        editable Monaco editor; Phase 2 swaps in a live in-browser ESLint via{' '}
-        <code className="font-mono">eslint-linter-browserify</code> so changes
-        you make re-lint live. Tracking in{' '}
+        <strong className="text-fd-foreground">Phase 1b:</strong> the editor is
+        live; the findings are the verified output of running the rule on the
+        canonical snippet. Edit the code and the findings pause until Phase 2
+        wires{' '}
+        <code className="font-mono">eslint-linter-browserify</code> for live
+        in-browser linting. Tracking in{' '}
         <Link href="https://github.com/ofri-peretz/eslint/blob/main/PLAYGROUND_SPEC.md" className="underline">
           PLAYGROUND_SPEC.md
         </Link>

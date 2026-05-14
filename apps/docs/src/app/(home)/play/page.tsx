@@ -19,13 +19,13 @@ export const metadata: Metadata = {
 /**
  * /play — the interactive playground.
  *
- * Phase 1a (this version): renders 6 canonical flagship-rule snippets with
- * a hardcoded findings list per example. Read-only code display via
- * Fumadocs `<DynamicCodeBlock>`. URL state contract is wired (`?example=`)
- * so links are shareable today even before Monaco + live linting ship.
+ * Phase 1b (this version): renders 6 canonical flagship-rule snippets in
+ * an editable Monaco editor with verified static findings per snippet.
+ * When the user edits the code, the right pane switches to an honest
+ * "edited, live linting pending" placeholder until Phase 2 ships.
+ * URL state contract is wired (`?example=`) so links are shareable.
  *
- * Phase 1b: swap the code display for a Monaco editor.
- * Phase 2: swap the hardcoded findings for live in-browser ESLint output
+ * Phase 2: swap the static findings for live in-browser ESLint output
  *          via `eslint-linter-browserify`.
  * Phase 3: plugin-toggle strip + "copy config" button.
  *
@@ -46,7 +46,7 @@ export default async function PlaygroundPage({
         <SectionHeader
           eyebrow="Try it"
           title="Playground"
-          tagline="Pick a flagship rule, read the code, see the finding. Phase 1a — static demo with verified findings; live editing arrives in Phase 1b."
+          tagline="Pick a flagship rule, edit the code, see the finding. Phase 1b — editable Monaco editor with verified static findings; live in-browser linting arrives in Phase 2."
         />
       </Section>
 
