@@ -2,7 +2,20 @@
 
 > **Purpose**: Designate the 10 rules that represent the ecosystem's competitive edge. These get **dedicated independent benchmarks**, **oxlint-compatibility guarantees**, **type-awareness disclosure**, and **per-rule precision/recall SLOs**.
 
-_Last updated: 2026-05-09_
+_Last updated: 2026-05-16_
+
+> **Naming-drift notice (2026-05-16).** The 10 rule identifiers in the table
+> below are the **canonical short forms** we want to publish. Three plugins
+> currently register under scoped keys at runtime, so the rule strings ESLint
+> actually emits differ:
+>
+> | Canonical (this doc) | Actual ESLint identifier today |
+> | :--- | :--- |
+> | `react-features/hooks-exhaustive-deps` | `@eslint/react-features/react/hooks-exhaustive-deps` |
+> | (`@interlace/maintainability/*` rules) | `@interlace/maintainability/...` |
+> | (`@interlace/operability/*` rules) | `@interlace/operability/...` |
+>
+> The meta-config at [`packages/eslint-config-interlace`](../packages/eslint-config-interlace) composes whatever each plugin emits, so consumers using `@interlace/eslint-config` are unaffected. Direct rule-override users should grep `packages/eslint-plugin-*/src/index.ts` for the live string until the cleanup ships. Tracking lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) (intentionally pinned to today's actual identifiers — when plugin keys are normalized, BOTH that lock AND this notice must be removed in the same PR).
 
 ---
 
@@ -89,7 +102,24 @@ Deliberate gaps: no flagship from `node-security`, `lambda-security`, `nestjs-se
 
 ## Using the flagship preset
 
-Every plugin that hosts a flagship rule exports a `flagship` config that enables exactly that rule (or, for `secure-coding`, the two rules) at error level. Compose them yourself for a CI gate that checks only the 10:
+The canonical way to consume the 10 flagship rules is the meta-config package — one install, one import:
+
+```js
+// eslint.config.mjs
+import { flagship } from '@interlace/eslint-config';
+
+export default [
+  ...flagship,
+];
+```
+
+See [`packages/eslint-config-interlace/README.md`](../packages/eslint-config-interlace/README.md) for the full preset matrix (`flagship`, `security`, `quality`, `react`, `recommended`).
+
+Structural lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI).
+
+### Manual compose (escape hatch)
+
+If you can't or don't want to take the meta-package dependency, every plugin that hosts a flagship rule still exports a `flagship` config that enables exactly that rule (or, for `secure-coding`, the two rules) at error level:
 
 ```js
 // eslint.config.mjs
@@ -116,7 +146,7 @@ export default [
 ];
 ```
 
-The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's `recommended` preset.
+The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's `recommended` preset (or use `@interlace/eslint-config`'s `recommended` preset which already does this).
 
 ## Independent benchmarking
 

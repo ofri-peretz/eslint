@@ -24,7 +24,11 @@ describe('eslint-plugin-react-features plugin interface', () => {
     expect(ruleKeys).toContain('performance/no-unnecessary-rerenders');
     expect(ruleKeys).toContain('react/no-direct-mutation-state');
 
-    expect(ruleKeys.length).toBe(106);
+    // Bumped from 106 → 122 on 2026-05-16 when 8 component-api rules
+    // (R5/R6/R8/R18/R19 + no-default-test-id, no-wrapper-sub-component,
+    // no-kind-prop-discriminator) were added and registered under both
+    // flat and `component-api/` namespaces.
+    expect(ruleKeys.length).toBe(122);
   });
 
   it('should export rules matching plugin.rules', () => {

@@ -114,7 +114,7 @@ Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
 - **Public scorecard page** (`/scorecard`) — auto-rendered from the dated JSONs in `benchmarks/results/`, gated on a benchmark-claims audit (see [`CLAIMS.md`](./CLAIMS.md) § Provenance and § Withdrawn claims).
 - **Real external corpus integration** — today's `ilb-cwe-corpus` is self-authored. A real NIST Juliet adaptation (or OWASP Benchmark JS port, or extended real-OSS-corpus replay) is the path to defensible F1 numbers.
 - **Statistical rigor in benches** — `--repeat=N`, median + 95% Wilson CIs on every cited number (known limitation per `ilb-flagship` suite).
-- **`@interlace/eslint-config` meta-package** — one install + one `extends` for the flagship preset, replacing today's 11-plugin compose.
+- ~~**`@interlace/eslint-config` meta-package**~~ — ✅ shipped 2026-05-16. One install + one import for `flagship`, `security`, `quality`, `react`, or full `recommended` (19 plugins). See [`packages/eslint-config-interlace`](./packages/eslint-config-interlace/README.md). Structural locks at [`packages/eslint-config-interlace/src/index.test.ts`](./packages/eslint-config-interlace/src/index.test.ts) pin the flagship preset to `.agent/flagship-rules.md` and fail closed if any plugin drops its `recommended` / `flagship` export.
 
 ### Backlog
 
