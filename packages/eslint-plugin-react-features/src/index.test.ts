@@ -42,15 +42,15 @@ describe('eslint-plugin-react-features plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs.recommended).toBeDefined();
-      expect(configs.recommended.plugins?.['@eslint/react-features']).toBeDefined();
-      
+      expect(configs.recommended.plugins?.['react-features']).toBeDefined();
+
       const recommendedRules = configs.recommended.rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^@eslint\/react-features\//);
+        expect(ruleName).toMatch(/^react-features\//);
       });
-      
-      expect(recommendedRules['@eslint/react-features/react/jsx-key']).toBe('error');
-      
+
+      expect(recommendedRules['react-features/jsx-key']).toBe('error');
+
       // Verify at least one rule is configured
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
@@ -58,9 +58,9 @@ describe('eslint-plugin-react-features plugin interface', () => {
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs.recommended.rules || {});
       const pluginRules = Object.keys(plugin.rules || {});
-      
+
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@eslint/react-features/', '');
+        const shortName = ruleName.replace('react-features/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

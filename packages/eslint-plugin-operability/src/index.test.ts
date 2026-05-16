@@ -42,13 +42,13 @@ describe('eslint-plugin-operability plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
-      expect(configs['recommended'].plugins?.['@interlace/operability']).toBeDefined();
-      
+      expect(configs['recommended'].plugins?.['operability']).toBeDefined();
+
       const recommendedRules = configs['recommended'].rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^@interlace\/operability\//);
+        expect(ruleName).toMatch(/^operability\//);
       });
-      
+
       // Verify at least one rule is configured
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
@@ -56,9 +56,9 @@ describe('eslint-plugin-operability plugin interface', () => {
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs['recommended'].rules || {});
       const pluginRules = Object.keys(plugin.rules || {});
-      
+
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@interlace/operability/', '');
+        const shortName = ruleName.replace('operability/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

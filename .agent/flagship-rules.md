@@ -2,20 +2,7 @@
 
 > **Purpose**: Designate the 10 rules that represent the ecosystem's competitive edge. These get **dedicated independent benchmarks**, **oxlint-compatibility guarantees**, **type-awareness disclosure**, and **per-rule precision/recall SLOs**.
 
-_Last updated: 2026-05-16_
-
-> **Naming-drift notice (2026-05-16).** The 10 rule identifiers in the table
-> below are the **canonical short forms** we want to publish. Three plugins
-> currently register under scoped keys at runtime, so the rule strings ESLint
-> actually emits differ:
->
-> | Canonical (this doc) | Actual ESLint identifier today |
-> | :--- | :--- |
-> | `react-features/hooks-exhaustive-deps` | `@eslint/react-features/react/hooks-exhaustive-deps` |
-> | (`@interlace/maintainability/*` rules) | `@interlace/maintainability/...` |
-> | (`@interlace/operability/*` rules) | `@interlace/operability/...` |
->
-> The meta-config at [`packages/eslint-config-interlace`](../packages/eslint-config-interlace) composes whatever each plugin emits, so consumers using `@interlace/eslint-config` are unaffected. Direct rule-override users should grep `packages/eslint-plugin-*/src/index.ts` for the live string until the cleanup ships. Tracking lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) (intentionally pinned to today's actual identifiers — when plugin keys are normalized, BOTH that lock AND this notice must be removed in the same PR).
+_Last updated: 2026-05-16 (naming-drift cleanup landed; canonical short forms in the table below are now also the runtime rule identifiers ESLint emits)._
 
 ---
 

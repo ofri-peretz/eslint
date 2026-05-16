@@ -37,15 +37,11 @@ const allRuleEntriesOf = (configs: readonly FlatConfig[]): readonly [string, unk
 // ---------------------------------------------------------------------------
 
 describe('flagship preset', () => {
-  // These match what the plugin's own `configs.flagship` emits TODAY, which
-  // is what consumers will actually see in ESLint output. The published spec
-  // at `.agent/flagship-rules.md` § "The 10" uses bare names (e.g.
-  // `react-features/hooks-exhaustive-deps`) — that's a documented divergence
-  // tracked for normalization in a follow-up: three plugins register under
-  // scoped keys (`@eslint/react-features`, `@interlace/maintainability`,
-  // `@interlace/operability`), and react-features doubly-namespaces the
-  // hooks rule as `react/hooks-exhaustive-deps`. When that cleanup ships,
-  // update this lock and the spec doc together.
+  // The canonical 10 rules from .agent/flagship-rules.md, all at error level.
+  // Plugin keys are bare (no `@eslint/` or `@interlace/` scoping) — the
+  // 2026-05-16 cleanup normalized the three drifted plugins (react-features,
+  // maintainability, operability) and dropped the doubly-namespaced
+  // `react/hooks-exhaustive-deps` form. Spec + code are now in lockstep.
   const EXPECTED_FLAGSHIP_RULES = [
     'import-next/no-cycle',
     'pg/no-unsafe-query',
@@ -54,7 +50,7 @@ describe('flagship preset', () => {
     'mongodb-security/no-unsafe-query',
     'jwt/no-algorithm-none',
     'browser-security/no-postmessage-wildcard-origin',
-    '@eslint/react-features/react/hooks-exhaustive-deps',
+    'react-features/hooks-exhaustive-deps',
     'react-a11y/alt-text',
     'vercel-ai-security/no-unsafe-output-handling',
   ] as const;
@@ -66,7 +62,7 @@ describe('flagship preset', () => {
     'mongodb-security',
     'jwt',
     'browser-security',
-    '@eslint/react-features',
+    'react-features',
     'react-a11y',
     'vercel-ai-security',
   ] as const;
@@ -144,15 +140,12 @@ describe('security preset', () => {
 // ---------------------------------------------------------------------------
 
 describe('quality preset', () => {
-  // See flagship-preset comment above re: scoped key inconsistency. The
-  // two `@interlace/`-prefixed entries here will become bare names when
-  // the cleanup ships.
   const EXPECTED_QUALITY_PLUGINS = [
     'import-next',
     'conventions',
-    '@interlace/maintainability',
+    'maintainability',
     'reliability',
-    '@interlace/operability',
+    'operability',
     'modularity',
     'modernization',
   ] as const;
@@ -180,8 +173,7 @@ describe('quality preset', () => {
 describe('react preset', () => {
   it('composes recommended preset from react-features and react-a11y', () => {
     const keys = allPluginKeysOf(react).sort();
-    // See flagship-preset comment re: scoped key inconsistency.
-    expect(keys).toEqual(['@eslint/react-features', 'react-a11y']);
+    expect(keys).toEqual(['react-a11y', 'react-features']);
   });
 });
 
@@ -211,20 +203,20 @@ describe('componentApi preset', () => {
   // during migration. Drift here means consumer apps either start failing
   // unexpectedly or stop catching real violations.
   const EXPECTED_COMPONENT_API_RULES = {
-    '@eslint/react-features/component-api/no-default-test-id': 'error',
-    '@eslint/react-features/component-api/require-data-slot': 'warn',
-    '@eslint/react-features/component-api/no-is-prefix-prop': 'warn',
-    '@eslint/react-features/component-api/no-inline-style': 'warn',
-    '@eslint/react-features/component-api/no-raw-color-literal': 'warn',
-    '@eslint/react-features/component-api/no-arbitrary-token-class': 'warn',
-    '@eslint/react-features/component-api/no-kind-prop-discriminator': 'warn',
-    '@eslint/react-features/component-api/no-wrapper-sub-component': 'warn',
+    'react-features/component-api/no-default-test-id': 'error',
+    'react-features/component-api/require-data-slot': 'warn',
+    'react-features/component-api/no-is-prefix-prop': 'warn',
+    'react-features/component-api/no-inline-style': 'warn',
+    'react-features/component-api/no-raw-color-literal': 'warn',
+    'react-features/component-api/no-arbitrary-token-class': 'warn',
+    'react-features/component-api/no-kind-prop-discriminator': 'warn',
+    'react-features/component-api/no-wrapper-sub-component': 'warn',
   } as const;
 
   it('is an array with the react-features plugin only', () => {
     expect(Array.isArray(componentApi)).toBe(true);
     expect(componentApi).toHaveLength(1);
-    expect(pluginKeysOf(componentApi[0]!)).toEqual(['@eslint/react-features']);
+    expect(pluginKeysOf(componentApi[0]!)).toEqual(['react-features']);
   });
 
   it('enables every component-api rule at its locked severity', () => {

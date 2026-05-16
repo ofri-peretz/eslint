@@ -42,12 +42,12 @@ export const plugin = {
 export const configs = {
   recommended: {
     plugins: {
-      '@interlace/operability': plugin,
+      'operability': plugin,
     },
     rules: {
-      '@interlace/operability/operability/no-console-log': 'warn',
-      '@interlace/operability/operability/no-debug-code-in-production': 'error',
-      '@interlace/operability/operability/no-verbose-error-messages': 'warn',
+      'operability/no-console-log': 'warn',
+      'operability/no-debug-code-in-production': 'error',
+      'operability/no-verbose-error-messages': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
