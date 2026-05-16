@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-11",
+  "generatedAt": "2026-05-16",
   "totalPlugins": 20,
   "totalRules": 398,
   "oxlintCompatible": 398,
