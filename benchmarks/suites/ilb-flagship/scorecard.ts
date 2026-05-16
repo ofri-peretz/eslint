@@ -9,32 +9,42 @@
  *   - Sample findings — top 5 of each category, with file:line and message
  *   - Where competitors beat us — explicit theirs-only listings
  */
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import {
+  computeCacheBenefit,
+  computeStackMedians,
+  formatCount,
+  formatMs,
+  loadLatestFlagshipSnapshot,
+} from '../../lib/flagship-snapshot.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../..');
 const RESULTS_DIR = resolve(REPO_ROOT, 'benchmarks/results/ilb-flagship');
 const OUT = resolve(REPO_ROOT, 'benchmark-results/ilb-flagship-scorecard.md');
 
-const files = readdirSync(RESULTS_DIR).filter((f) => f.endsWith('.json')).sort();
-if (files.length === 0) { console.error('No flagship results yet.'); process.exit(1); }
-const latest = files[files.length - 1];
-const data = JSON.parse(readFileSync(join(RESULTS_DIR, latest), 'utf8'));
+const snapshot = loadLatestFlagshipSnapshot(RESULTS_DIR);
+if (!snapshot) {
+  console.error('No flagship snapshot covering all 10 rules yet.');
+  process.exit(1);
+}
+// Sections 3-7 reach into corpus/overlap/findings fields not modelled by
+// the shared FlagshipResultRow type; keep the raw JSON around for them.
+const data = JSON.parse(readFileSync(resolve(RESULTS_DIR, snapshot.filename), 'utf8'));
 
-const ms = (n) => (n == null ? '—' : `${n} ms`);
-const f = (n) => (n == null ? '—' : String(n));
 const pct = (n) => (n == null ? '—' : `${(n * 100).toFixed(0)}%`);
 
 const lines = [];
 lines.push('# ILB-Flagship Scorecard');
 lines.push('');
-lines.push(`> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from \`${latest}\`.`);
+lines.push(`> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from \`${snapshot.filename}\`.`);
 lines.push('');
-lines.push(`- **Generated**: ${data.runAt} · **Schema**: ${data.schema || 'v1'}`);
-lines.push(`- **ESLint**: ${data.eslintVersion} · **oxlint**: ${data.oxlintVersion} · **Node**: ${data.nodeVersion}`);
-lines.push(`- **OOS root**: \`${data.oosDir}\``);
+lines.push(`- **Generated**: ${snapshot.runAt} · **Schema**: ${snapshot.schema || 'v1'}`);
+lines.push(`- **ESLint**: ${snapshot.eslintVersion} · **oxlint**: ${snapshot.oxlintVersion} · **Node**: ${snapshot.nodeVersion}`);
+lines.push(`- **OOS root**: \`${snapshot.oosDir ?? ''}\``);
 lines.push('');
 
 // ── Section 1: Latency ──────────────────────────────────────────────────
@@ -43,7 +53,7 @@ lines.push('');
 lines.push('| Rule | Repo | ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |');
 lines.push('| :--- | :--- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
 
-for (const r of data.results) {
+for (const r of snapshot.results) {
   if (r.skipped) {
     lines.push(`| \`${r.rule}\` | ${r.repo} | — | — | — | — | _${r.skipped}_ | — | — | — | — | — | — |`);
     continue;
@@ -51,7 +61,7 @@ for (const r of data.results) {
   const o = r.runs?.oursEslint;
   const c = r.runs?.competitorEslint;
   const x = r.runs?.oxlintNative;
-  lines.push(`| \`${r.rule}\` | ${r.repo} | ${r.starsK}K | ${r.tier} | ${ms(o?.cold?.ms)} | ${ms(o?.warm?.ms)} | ${f(o?.cold?.findingsCount)} | ${ms(c?.cold?.ms)} | ${ms(c?.warm?.ms)} | ${f(c?.cold?.findingsCount)} | ${ms(x?.cold?.ms)} | ${ms(x?.warm?.ms)} | ${f(x?.cold?.findingsCount)} |`);
+  lines.push(`| \`${r.rule}\` | ${r.repo} | ${r.starsK}K | ${r.tier} | ${formatMs(o?.cold?.ms)} | ${formatMs(o?.warm?.ms)} | ${formatCount(o?.cold?.findingsCount)} | ${formatMs(c?.cold?.ms)} | ${formatMs(c?.warm?.ms)} | ${formatCount(c?.cold?.findingsCount)} | ${formatMs(x?.cold?.ms)} | ${formatMs(x?.warm?.ms)} | ${formatCount(x?.cold?.findingsCount)} |`);
 }
 
 // ── Section 2: Cache effectiveness ──────────────────────────────────────
@@ -61,23 +71,9 @@ lines.push('');
 lines.push('| Stack | Median cold | Median warm | Δ | Cache benefit |');
 lines.push('| :--- | ---: | ---: | ---: | ---: |');
 
-const median = (arr) => {
-  if (arr.length === 0) return null;
-  const s = [...arr].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
-};
-const stacks = {
-  'Ours (ESLint)': data.results.map((r) => r.runs?.oursEslint).filter(Boolean),
-  'Competitor (ESLint)': data.results.map((r) => r.runs?.competitorEslint).filter(Boolean),
-  'oxlint native (competitor)': data.results.map((r) => r.runs?.oxlintNative).filter(Boolean),
-};
-for (const [name, runs] of Object.entries(stacks)) {
-  const cold = median(runs.map((r) => r.cold?.ms).filter(Number.isFinite));
-  const warm = median(runs.map((r) => r.warm?.ms).filter(Number.isFinite));
-  if (cold == null) { lines.push(`| ${name} | — | — | — | — |`); continue; }
-  const benefit = cold ? Math.round(((cold - warm) / cold) * 100) : 0;
-  lines.push(`| ${name} | ${cold} ms | ${warm} ms | ${cold - warm} ms | ${benefit}% |`);
+for (const m of computeStackMedians(snapshot)) {
+  const { delta, pct: benefit } = computeCacheBenefit(m);
+  lines.push(`| ${m.label} | ${formatMs(m.medianCold)} | ${formatMs(m.medianWarm)} | ${formatMs(delta)} | ${benefit !== null ? `${benefit}%` : '—'} |`);
 }
 
 // ── Section 3: Synthetic corpus P/R/F1 ──────────────────────────────────

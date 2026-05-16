@@ -4,6 +4,10 @@
   "private": true,
   "description": "Reproducible benchmarks for ESLint plugins — performance, FN/FP accuracy, and AI security",
   "type": "module",
+  "exports": {
+    "./lib/flagship-snapshot": "./lib/flagship-snapshot.ts",
+    "./lib/median": "./lib/median.ts"
+  },
   "scripts": {
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
     "ilb:perf-import-nestjs": "tsx suites/ilb-perf-import-nestjs/run.ts",

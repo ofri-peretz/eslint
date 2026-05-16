@@ -215,3 +215,7 @@ export function accuracyReport(observations, opts = {}) {
     wilson: { precision: precisionCI, recall: recallCI },
   };
 }
+
+// Lifted to its own file so strict-tsconfig consumers (apps/docs) can
+// import it without pulling in this whole loosely-typed module.
+export { median } from './median.js';
