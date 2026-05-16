@@ -4,13 +4,19 @@ import Link from 'next/link';
 
 import {
   FLAGSHIP_RULES,
+  computeCacheBenefit,
   computeStackMedians,
-  findLatestFlagshipSnapshotPath,
   formatCount,
   formatMs,
-  loadFlagshipSnapshot,
+  formatRunAt,
+  loadLatestFlagshipSnapshot,
   orderResultsByFlagshipSpec,
 } from '@/lib/scorecard';
+
+// The page reads a JSON snapshot committed to the repo — pre-render once at
+// build time. Without this, Next treats the readFileSync as a dynamic input
+// and re-evaluates the loader on every request.
+export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'Flagship Scorecard',
@@ -29,29 +35,14 @@ export const metadata: Metadata = {
 const GITHUB_RAW_BASE =
   'https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-flagship';
 
-const NO_DATA_MESSAGE =
-  'No complete flagship snapshot is committed yet. Run `npm run ilb:flagship` to generate one.';
-
 /**
- * /scorecard — Server Component.
- *
- * Reads the most recent dated snapshot under
- * `benchmarks/results/ilb-flagship/` that covers all 10 flagship rules,
- * and renders three things:
- *
- *   1. A provenance block (versions + run date + JSON link)
- *   2. A per-rule table (latency cold/warm + findings) for ours vs
- *      competitor vs oxlint native
- *   3. The cache-effectiveness median row (matches §2 of the markdown
- *      report at `benchmark-results/ilb-flagship-scorecard.md`)
- *
  * Structural lock: `src/__tests__/scorecard-lock.test.ts` pins required
  * imports, headings, every flagship rule identifier, and forbids ad-hoc
  * `max-w-*` widths per LAYOUT_PHILOSOPHY.md.
  */
 export default function ScorecardPage() {
-  const path = findLatestFlagshipSnapshotPath();
-  if (!path) {
+  const snapshot = loadLatestFlagshipSnapshot();
+  if (!snapshot) {
     return (
       <Container
         size="wide"
@@ -61,12 +52,12 @@ export default function ScorecardPage() {
       >
         <Header />
         <p className="mt-6 rounded-lg border border-dashed border-fd-border bg-fd-card/50 px-4 py-3 text-sm text-fd-muted-foreground">
-          {NO_DATA_MESSAGE}
+          No complete flagship snapshot is committed yet. Run{' '}
+          <code className="font-mono">npm run ilb:flagship</code> to generate one.
         </p>
       </Container>
     );
   }
-  const snapshot = loadFlagshipSnapshot(path);
   const rows = orderResultsByFlagshipSpec(snapshot);
   const medians = computeStackMedians(snapshot);
 
@@ -185,14 +176,7 @@ export default function ScorecardPage() {
             </thead>
             <tbody>
               {medians.map((m) => {
-                const delta =
-                  m.medianCold !== null && m.medianWarm !== null
-                    ? m.medianCold - m.medianWarm
-                    : null;
-                const pct =
-                  m.medianCold !== null && delta !== null && m.medianCold > 0
-                    ? Math.round((delta / m.medianCold) * 100)
-                    : null;
+                const { delta, pct } = computeCacheBenefit(m);
                 return (
                   <tr key={m.stack} className="border-t border-fd-border">
                     <td className="px-3 py-2">{m.label}</td>
@@ -283,13 +267,4 @@ function ProvenanceItem({ label, value }: { label: string; value: string }) {
       <dd className="mt-0.5 font-mono text-sm">{value}</dd>
     </div>
   );
-}
-
-function formatRunAt(iso: string): string {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
-  } catch {
-    return iso;
-  }
 }

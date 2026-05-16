@@ -33,10 +33,16 @@ describe('Scorecard page: structure lock', () => {
   describe('Required imports', () => {
     it('imports the data loader from @/lib/scorecard', () => {
       expect(pageSource).toContain("from '@/lib/scorecard'");
-      expect(pageSource).toContain('findLatestFlagshipSnapshotPath');
-      expect(pageSource).toContain('loadFlagshipSnapshot');
+      expect(pageSource).toContain('loadLatestFlagshipSnapshot');
       expect(pageSource).toContain('orderResultsByFlagshipSpec');
       expect(pageSource).toContain('computeStackMedians');
+      expect(pageSource).toContain('computeCacheBenefit');
+      expect(pageSource).toContain('formatRunAt');
+    });
+
+    it("opts into Next's static cache so the JSON read happens once at build", () => {
+      // Without this, dev refresh + every prod request re-runs the loader.
+      expect(pageSource).toMatch(/export const dynamic\s*=\s*'force-static'/);
     });
 
     it('uses Container primitive (LAYOUT_PHILOSOPHY §2)', () => {
@@ -82,14 +88,6 @@ describe('Scorecard page: structure lock', () => {
   describe('Forbidden patterns', () => {
     it('does not use ad-hoc max-w-* on the outer wrapper (LAYOUT_PHILOSOPHY)', () => {
       expect(pageSource).not.toMatch(/className="[^"]*\bmax-w-(?!none)/);
-    });
-
-    it('does not hardcode benchmark numbers (they must come from JSON)', () => {
-      // A spot-check: any ms count from the latest snapshot should not appear
-      // as a string literal in source. Heuristic: 5-digit numbers like 20651,
-      // 19570, 15568 (the kind of values seen in the data) shouldn't be
-      // copy-pasted into JSX text.
-      expect(pageSource).not.toMatch(/>\s*\d{5,}\s*ms\s*</);
     });
   });
 

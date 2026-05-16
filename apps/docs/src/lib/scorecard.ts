@@ -1,15 +1,9 @@
 /**
  * Scorecard data loader for /scorecard.
  *
- * The ground-truth lives in `benchmarks/results/ilb-flagship/<date>.json` —
- * dated snapshots emitted by `npm run ilb:flagship`. This module finds the
- * latest snapshot that covers all 10 flagship rules and returns a typed
- * view shaped for rendering, plus a couple of derived summaries (median
- * cold/warm) that the markdown report at
- * `benchmark-results/ilb-flagship-scorecard.md` already publishes.
- *
- * Pure functions only — no React. Imported by the Server Component at
- * `src/app/scorecard/page.tsx` and locked by
+ * Pure functions only — no React. The ground-truth lives in dated
+ * `benchmarks/results/ilb-flagship/<date>.json` snapshots emitted by
+ * `npm run ilb:flagship`. Locked by
  * `src/__tests__/scorecard-source-integrity.test.ts`.
  */
 
@@ -21,11 +15,6 @@ const FLAGSHIP_RESULTS_DIR = resolve(
   '../../benchmarks/results/ilb-flagship',
 );
 
-/**
- * The 10 flagship rule identifiers per .agent/flagship-rules.md.
- * Pinned here so the loader fails closed if a snapshot's `results[]`
- * doesn't cover the full list (e.g. someone re-ran a subset).
- */
 export const FLAGSHIP_RULES = [
   'import-next/no-cycle',
   'pg/no-unsafe-query',
@@ -41,7 +30,14 @@ export const FLAGSHIP_RULES = [
 
 export type FlagshipRuleId = (typeof FLAGSHIP_RULES)[number];
 
-export type Stack = 'oursEslint' | 'competitorEslint' | 'oxlintNative';
+const STACK_LABELS = {
+  oursEslint: 'Ours (ESLint)',
+  competitorEslint: 'Competitor (ESLint)',
+  oxlintNative: 'oxlint native (competitor)',
+} as const;
+
+export type Stack = keyof typeof STACK_LABELS;
+const STACKS = Object.keys(STACK_LABELS) as Stack[];
 
 interface RawRun {
   cold?: { ms: number; findingsCount: number };
@@ -73,20 +69,36 @@ export interface StackMedian {
   medianWarm: number | null;
 }
 
-const STACK_LABELS: Record<Stack, string> = {
-  oursEslint: 'Ours (ESLint)',
-  competitorEslint: 'Competitor (ESLint)',
-  oxlintNative: 'oxlint native (competitor)',
+export interface CacheBenefit {
+  delta: number | null;
+  pct: number | null;
+}
+
+const parseSnapshot = (path: string): FlagshipSnapshot => {
+  const raw = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+  return {
+    runAt: String(raw['runAt'] ?? ''),
+    eslintVersion: String(raw['eslintVersion'] ?? ''),
+    // Upstream emits "Version: 1.63.0"; strip the prefix for display parity
+    // with eslintVersion which is already bare ("v9.39.4").
+    oxlintVersion: String(raw['oxlintVersion'] ?? '').replace(/^Version:\s*/, ''),
+    nodeVersion: String(raw['nodeVersion'] ?? ''),
+    schema: String(raw['schema'] ?? ''),
+    filename: path.split('/').pop() ?? path,
+    results: (raw['results'] as FlagshipResultRow[] | undefined) ?? [],
+  };
 };
 
 /**
- * Find the newest dated snapshot covering all 10 flagship rules.
+ * Returns the newest dated snapshot covering all 10 flagship rules.
  *
  * Sub-10 snapshots are emitted when a developer reruns a single rule
- * (e.g. 2026-05-11.json is a no-cycle-only retry). Those would render
- * a half-empty page if naively picked, so we skip them.
+ * (e.g. 2026-05-11.json is a no-cycle-only retry). Picking one of those
+ * naively would render a half-empty page, so we skip them.
  */
-export function findLatestFlagshipSnapshotPath(dir = FLAGSHIP_RESULTS_DIR): string | null {
+export function loadLatestFlagshipSnapshot(
+  dir = FLAGSHIP_RESULTS_DIR,
+): FlagshipSnapshot | null {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -98,33 +110,14 @@ export function findLatestFlagshipSnapshotPath(dir = FLAGSHIP_RESULTS_DIR): stri
     .sort()
     .reverse();
   for (const name of dated) {
-    const path = join(dir, name);
     try {
-      const json = JSON.parse(readFileSync(path, 'utf8')) as { results?: unknown[] };
-      if (Array.isArray(json.results) && json.results.length >= FLAGSHIP_RULES.length) {
-        return path;
-      }
+      const snapshot = parseSnapshot(join(dir, name));
+      if (snapshot.results.length >= FLAGSHIP_RULES.length) return snapshot;
     } catch {
       // skip malformed
     }
   }
   return null;
-}
-
-export function loadFlagshipSnapshot(path: string): FlagshipSnapshot {
-  const raw = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-  const filename = path.split('/').pop() ?? path;
-  return {
-    runAt: String(raw['runAt'] ?? ''),
-    eslintVersion: String(raw['eslintVersion'] ?? ''),
-    // Upstream emits "Version: 1.63.0"; strip the prefix for display parity
-    // with the eslint version, which is already bare ("v9.39.4").
-    oxlintVersion: String(raw['oxlintVersion'] ?? '').replace(/^Version:\s*/, ''),
-    nodeVersion: String(raw['nodeVersion'] ?? ''),
-    schema: String(raw['schema'] ?? ''),
-    filename,
-    results: (raw['results'] as FlagshipResultRow[] | undefined) ?? [],
-  };
 }
 
 const median = (xs: number[]): number | null => {
@@ -138,18 +131,19 @@ const median = (xs: number[]): number | null => {
 
 /**
  * Per-stack median cold/warm across the snapshot's results. Matches the
- * "Cache effectiveness (median across rules)" table in the markdown
- * report — same formula, same units (ms).
+ * "Cache effectiveness (median across rules)" table in the markdown report
+ * at benchmark-results/ilb-flagship-scorecard.md — same formula, same units.
  */
 export function computeStackMedians(snapshot: FlagshipSnapshot): StackMedian[] {
-  const stacks: Stack[] = ['oursEslint', 'competitorEslint', 'oxlintNative'];
-  return stacks.map((stack) => {
-    const colds = snapshot.results
-      .map((r) => r.runs[stack]?.cold?.ms)
-      .filter((ms): ms is number => typeof ms === 'number');
-    const warms = snapshot.results
-      .map((r) => r.runs[stack]?.warm?.ms)
-      .filter((ms): ms is number => typeof ms === 'number');
+  return STACKS.map((stack) => {
+    const colds: number[] = [];
+    const warms: number[] = [];
+    for (const result of snapshot.results) {
+      const cold = result.runs[stack]?.cold?.ms;
+      const warm = result.runs[stack]?.warm?.ms;
+      if (typeof cold === 'number') colds.push(cold);
+      if (typeof warm === 'number') warms.push(warm);
+    }
     return {
       stack,
       label: STACK_LABELS[stack],
@@ -159,8 +153,16 @@ export function computeStackMedians(snapshot: FlagshipSnapshot): StackMedian[] {
   });
 }
 
+export function computeCacheBenefit(m: StackMedian): CacheBenefit {
+  if (m.medianCold === null || m.medianWarm === null || m.medianCold === 0) {
+    return { delta: null, pct: null };
+  }
+  const delta = m.medianCold - m.medianWarm;
+  return { delta, pct: Math.round((delta / m.medianCold) * 100) };
+}
+
 /**
- * Returns the rule row keyed by canonical FLAGSHIP_RULES order, so the
+ * Returns the rule rows keyed by canonical FLAGSHIP_RULES order, so the
  * table renders in the documented order regardless of how the snapshot
  * happened to serialise the results.
  */
@@ -178,3 +180,14 @@ export const formatMs = (ms: number | null | undefined): string =>
 
 export const formatCount = (n: number | null | undefined): string =>
   typeof n === 'number' ? n.toLocaleString() : '—';
+
+export function formatRunAt(iso: string): string {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  } catch {
+    // Date() never throws but toISOString() does on Invalid Date — preserve
+    // whatever the snapshot emitted rather than crash the page.
+    return iso;
+  }
+}

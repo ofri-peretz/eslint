@@ -11,15 +11,26 @@
  * Companion to scorecard-lock.test.ts, which locks the page surface.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 
 import {
   FLAGSHIP_RULES,
   computeStackMedians,
-  findLatestFlagshipSnapshotPath,
-  loadFlagshipSnapshot,
+  loadLatestFlagshipSnapshot,
   orderResultsByFlagshipSpec,
+  type FlagshipSnapshot,
 } from '../lib/scorecard';
+
+// Load the snapshot once for the whole suite — every test case used to
+// re-discover + re-parse it, an N+1 hidden inside `findLatestFlagshipSnapshotPath`
+// before the combined loader landed. `null` means the bench results aren't
+// populated in this checkout (e.g. shallow clones for docs-only deploys);
+// the page falls back to its "no data" message in that case, exercised by
+// the lock test rather than here.
+let snapshot: FlagshipSnapshot | null;
+beforeAll(() => {
+  snapshot = loadLatestFlagshipSnapshot();
+});
 
 describe('FLAGSHIP_RULES', () => {
   it('lists exactly 10 rules (the documented flagship count)', () => {
@@ -34,53 +45,37 @@ describe('FLAGSHIP_RULES', () => {
   });
 });
 
-describe('findLatestFlagshipSnapshotPath', () => {
-  it('returns a path that exists on disk', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    // Skip if benchmarks/results/ilb-flagship/ isn't populated in this
-    // checkout (e.g. shallow clones for docs-only deploys). The page
-    // falls back to the "no data" message in that case — that path is
-    // exercised by the lock test, not here.
-    if (!path) return;
-    expect(path).toMatch(/benchmarks\/results\/ilb-flagship\/\d{4}-\d{2}-\d{2}\.json$/);
-  });
-
+describe('loadLatestFlagshipSnapshot', () => {
   it('picks a snapshot covering all 10 flagship rules (skips re-runs of a subset)', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
+    if (!snapshot) return;
     expect(snapshot.results.length).toBeGreaterThanOrEqual(FLAGSHIP_RULES.length);
   });
-});
 
-describe('loadFlagshipSnapshot', () => {
   it('strips the "Version: " prefix from oxlintVersion for display parity', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
+    if (!snapshot) return;
     expect(snapshot.oxlintVersion).not.toMatch(/^Version:/);
   });
 
   it('populates the four provenance fields the page renders', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
+    if (!snapshot) return;
     expect(snapshot.runAt).toBeTruthy();
     expect(snapshot.eslintVersion).toBeTruthy();
     expect(snapshot.oxlintVersion).toBeTruthy();
     expect(snapshot.nodeVersion).toBeTruthy();
   });
+
+  it('reports a filename matching the dated snapshot convention', () => {
+    if (!snapshot) return;
+    expect(snapshot.filename).toMatch(/^\d{4}-\d{2}-\d{2}\.json$/);
+  });
 });
 
 describe('orderResultsByFlagshipSpec', () => {
   it('returns rules in the canonical FLAGSHIP_RULES order', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
-    const ordered = orderResultsByFlagshipSpec(snapshot);
-    const orderedRuleIds = ordered.map((r) => r.rule);
+    if (!snapshot) return;
+    const orderedRuleIds = orderResultsByFlagshipSpec(snapshot).map((r) => r.rule);
     const expected = FLAGSHIP_RULES.filter((rule) =>
-      snapshot.results.some((r) => r.rule === rule),
+      snapshot!.results.some((r) => r.rule === rule),
     );
     expect(orderedRuleIds).toEqual(expected);
   });
@@ -88,22 +83,14 @@ describe('orderResultsByFlagshipSpec', () => {
 
 describe('computeStackMedians', () => {
   it('produces medians for the three stacks the page renders', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
-    const medians = computeStackMedians(snapshot);
-    const labels = medians.map((m) => m.stack);
+    if (!snapshot) return;
+    const labels = computeStackMedians(snapshot).map((m) => m.stack);
     expect(labels).toEqual(['oursEslint', 'competitorEslint', 'oxlintNative']);
   });
 
   it('returns numeric medians for stacks that have any data', () => {
-    const path = findLatestFlagshipSnapshotPath();
-    if (!path) return;
-    const snapshot = loadFlagshipSnapshot(path);
-    const medians = computeStackMedians(snapshot);
-    const ours = medians.find((m) => m.stack === 'oursEslint')!;
-    // Our stack runs on every flagship rule, so both cold + warm must be
-    // populated.
+    if (!snapshot) return;
+    const ours = computeStackMedians(snapshot).find((m) => m.stack === 'oursEslint')!;
     expect(typeof ours.medianCold).toBe('number');
     expect(typeof ours.medianWarm).toBe('number');
   });
