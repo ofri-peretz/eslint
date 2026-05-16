@@ -28,6 +28,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { latestDatedFile } from './lib/latest-dated-file.js';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const BENCH_RESULTS = path.join(ROOT, 'benchmarks/results');
@@ -93,15 +95,7 @@ interface WildResult {
 // HELPERS
 // ---------------------------------------------------------------------------
 
-function latestFile(dir: string, suffix = '.json'): string | null {
-  if (!fs.existsSync(dir)) return null;
-  const entries = fs.readdirSync(dir).filter((e) => e.endsWith(suffix));
-  if (entries.length === 0) return null;
-  // Filter for date-stamped files (YYYY-MM-DD.json) before fancy variants.
-  const dated = entries.filter((e) => /^\d{4}-\d{2}-\d{2}\b/.test(e)).toSorted().toReversed();
-  if (dated.length > 0) return path.join(dir, dated[0]);
-  return path.join(dir, entries.toSorted().toReversed()[0]);
-}
+const latestFile = latestDatedFile;
 
 function latestWildSummary(): WildResult | null {
   if (!fs.existsSync(WILD_RESULTS)) return null;

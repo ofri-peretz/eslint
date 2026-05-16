@@ -15,35 +15,15 @@
  */
 
 import { readdirSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
+import { walkFiles } from './lib/walk.js';
+
 const REPO_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
-
 const STALE_EXTENSIONS = ['.js', '.d.ts', '.js.map'] as const;
-
-const isStaleArtifact = (name: string): boolean =>
-  STALE_EXTENSIONS.some((ext) => name.endsWith(ext));
-
-function* walkStale(dir: string, root: string): Generator<string> {
-  let entries;
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name === 'dist') continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      yield* walkStale(full, root);
-    } else if (entry.isFile() && isStaleArtifact(entry.name)) {
-      yield relative(root, full);
-    }
-  }
-}
 
 let packageDirs: string[];
 try {
@@ -51,14 +31,17 @@ try {
     .filter((d) => d.isDirectory())
     .map((d) => join(PACKAGES_DIR, d.name));
 } catch {
-  // A checkout without packages/ is not a failure mode for this gate.
+  // A checkout without packages/ is not this gate's failure mode.
   process.exit(0);
 }
 
 const offenders: string[] = [];
 for (const pkgDir of packageDirs) {
-  for (const stale of walkStale(join(pkgDir, 'src'), REPO_ROOT)) {
-    offenders.push(stale);
+  for (const file of walkFiles(join(pkgDir, 'src'), {
+    relativeTo: REPO_ROOT,
+    extensions: STALE_EXTENSIONS,
+  })) {
+    offenders.push(file);
   }
 }
 
