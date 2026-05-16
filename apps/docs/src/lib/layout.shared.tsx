@@ -57,6 +57,10 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
+        text: 'Scorecard',
+        url: '/scorecard',
+      },
+      {
         text: 'Articles',
         url: '/articles',
       },
