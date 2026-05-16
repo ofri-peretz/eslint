@@ -57,6 +57,7 @@
     "check-links": "tsx scripts/check-markdown-links.ts",
     "check-versions": "tsx scripts/check-version-alignment.ts",
     "check-source-versions": "tsx scripts/check-source-version-sync.ts",
+    "check-stale-artifacts": "tsx scripts/check-stale-build-artifacts.ts",
     "sync-source-versions": "tsx scripts/sync-source-versions.ts",
     "setup-branch-protection": "bash scripts/setup-branch-protection.sh",
     "benchmark": "tsx scripts/benchmark-plugin.ts",

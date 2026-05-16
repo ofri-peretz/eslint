@@ -13,6 +13,13 @@ pre-commit:
       run: npx --no markdownlint-cli2 {staged_files}
     shim-drift:
       run: npm run --silent oxlint:shims:check
+    stale-build-artifacts:
+      # Fails closed if any .js/.d.ts/.js.map files exist alongside .ts source
+      # in packages/<pkg>/src/. These shadow current .ts at workspace runtime
+      # (node + vitest both prefer .js when package.json#main points at it),
+      # which is how the import-next/no-cycle regression hid for weeks before
+      # the 2026-05-16 sweep. See scripts/check-stale-build-artifacts.ts.
+      run: npm run --silent check-stale-artifacts
     tests-affected:
       run: |
         if git rev-parse --verify --quiet origin/main >/dev/null; then
