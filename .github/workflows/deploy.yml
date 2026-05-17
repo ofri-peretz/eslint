@@ -65,14 +65,43 @@ jobs:
           ORG_ID=$(jq -r '.orgId' .github/vercel-apps.json)
           PROJECT_ID=$(jq -r --arg app "${{ inputs.app }}" '.apps[$app].projectId' .github/vercel-apps.json)
           PROD_URL=$(jq -r --arg app "${{ inputs.app }}" '.apps[$app].productionUrl // ""' .github/vercel-apps.json)
+          ROOT_DIR=$(jq -r --arg app "${{ inputs.app }}" '.apps[$app].rootDirectory // ""' .github/vercel-apps.json)
           if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
             echo "::error::No Vercel project mapped for app '${{ inputs.app }}' in .github/vercel-apps.json"
+            exit 1
+          fi
+          if [ -z "$ROOT_DIR" ]; then
+            echo "::error::No rootDirectory mapped for app '${{ inputs.app }}' in .github/vercel-apps.json"
             exit 1
           fi
           echo "VERCEL_ORG_ID=$ORG_ID" >> "$GITHUB_ENV"
           echo "VERCEL_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
           echo "PRODUCTION_URL=$PROD_URL" >> "$GITHUB_ENV"
-          echo "Resolved: $PROJECT_ID (${{ inputs.app }})"
+          echo "ROOT_DIRECTORY=$ROOT_DIR" >> "$GITHUB_ENV"
+          echo "Resolved: $PROJECT_ID rootDir=$ROOT_DIR (${{ inputs.app }})"
+
+      # Self-heal the Vercel project's dashboard config every deploy so it
+      # can't drift from vercel-apps.json. Resets rootDirectory and nulls
+      # out the Build/Output/Install Command overrides so the app's local
+      # `vercel.json` is the single source of truth for build settings.
+      #
+      # Why this exists: the registry project drifted to rootDirectory=`.`
+      # + buildCommand=`cd ../.. && npx turbo run build --filter=docs`,
+      # which made every prebuilt deploy ship docs content to the registry
+      # domain (404s on /r/*.json). Codifying the heal step here means a
+      # future drift can't break a deploy silently — the next run snaps it
+      # back to what this repo says it should be.
+      - name: Self-heal Vercel project config (rootDirectory + build cmds)
+        run: |
+          set -euo pipefail
+          curl -sf -X PATCH \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -nc --arg root "$ROOT_DIRECTORY" \
+              '{rootDirectory: $root, buildCommand: null, outputDirectory: null, installCommand: null, framework: null}')" \
+            -o /dev/null
+          echo "✓ Project config reset: rootDirectory=$ROOT_DIRECTORY, build/output/install/framework → null (use local vercel.json)"
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
