@@ -502,9 +502,9 @@ Create a validation checklist that answers:
 
 ## Related Documentation
 
-- [Mermaid Syntax Audit](./mermaid-syntax-audit.md)
-- [Error Mapping Report](./error-mapping-report.md)
-- [Deployment Debug Log](./deployment-debug.md)
+- Mermaid Syntax Audit (planned)
+- Error Mapping Report (planned)
+- Deployment Debug Log (planned)
 
 ---
 

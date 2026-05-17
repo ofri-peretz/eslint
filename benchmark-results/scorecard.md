@@ -1,20 +1,20 @@
 # Interlace Bench Scorecard
 
-> Generated: 2026-05-11 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
+> Generated: 2026-05-17 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
 
 ## Top-line scorecard
 
 | Bench | Dimension | Score | Trend | Detail | SLO | As of |
 |---|---|---|---|---|---|---|
-| **ILB-Juliet** | Synthetic CWE accuracy | **F1 100% (rank 1/6)** | `▁▁` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
-| **ILB-Arena** | Head-to-head vs competitors | **F1 97.5% (rank 1/18)** | `▁▁` | TP 40/40 · FP 2 · FN 0 · precision 95.2% · recall 100.0% | Rank ≤ 3 | 2026-05-11 |
-| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `▁▁` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
-| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `▁▁` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
-| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `▁▁` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
-| **ILB-Cov** | Rule activation rate | **19% rules fired** | `▁▁` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
-| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `▁▁` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
-| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `▁▁` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
-| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `▁▁` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
+| **ILB-CWE-Corpus** | Synthetic CWE accuracy (self-authored) | **F1 100% (rank 1/6)** | `▁▁` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
+| **ILB-Arena** | Head-to-head vs competitors | **F1 97.5% (rank 1/18)** | `▁▁▁▁` | TP 40/40 · FP 2 · FN 0 · precision 95.2% · recall 100.0% | Rank ≤ 3 | 2026-05-11 |
+| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `▁▁▁▁` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
+| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `▁▁▁▁` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
+| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `▁▁▁▁` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
+| **ILB-Cov** | Rule activation rate | **19% rules fired** | `▁▁▁▁` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
+| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `▁▁▁▁` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
+| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `▁▁▁▁` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
+| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `▁▁▁▁` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
 
 The **Trend** column shows the last ≤ 12 recorded scores per bench (one per recording day). `▁` = lowest in window, `█` = highest. Source: [`benchmark-results/history.ndjson`](history.ndjson).
 
@@ -29,7 +29,7 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 
 | Bench | Parallel |
 |---|---|
-| ILB-Juliet | NIST SARD / Juliet Test Suite, OWASP Benchmark v1.2 |
+| ILB-CWE-Corpus | Self-authored CWE corpus (Juliet-style organization; **not** NIST SARD or OWASP Benchmark) |
 | ILB-Arena | OWASP Benchmark Accuracy Score (BAS = TPR − FPR) |
 | ILB-Wild | (none — we define the JS standard) |
 | ILB-Edge | Adversarial GLUE / CheckList |
@@ -90,7 +90,7 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 
 ## Per-rule observability (Gap G + Gap L)
 
-> Aggregated from `benchmark-results/<latest>/per-repo/*/per-rule.json`. The **Measured** column shows where this rule has fixture coverage: `A` = appears in ILB-Arena results, `J` = appears in ILB-Juliet results, `⚠️ none` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
+> Aggregated from `benchmark-results/<latest>/per-repo/*/per-rule.json`. The **Measured** column shows where this rule has fixture coverage: `A` = appears in ILB-Arena results, `J` = appears in ILB-CWE-Corpus results, `⚠️ none` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
 
 ### Top 15 most-firing rules across the Wild corpus
 
@@ -132,9 +132,9 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 
 For each fixture, count how many tools' verdicts match the label.
 
-**ILB-Juliet** — 6 tools rated · 26 fixtures · **15 (57.7%)** with ≥ 3 tools agreeing · 9 (34.6%) with all agreeing.
+**ILB-CWE-Corpus** — 6 tools rated · 26 fixtures · **15 (57.7%)** with ≥ 3 tools agreeing · 9 (34.6%) with all agreeing.
 
-Cohen's κ — Interlace vs each competitor (Juliet) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
+Cohen's κ — Interlace vs each competitor (CWE-Corpus) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
 
 | Competitor | κ | Interpretation |
 |---|---|---|
@@ -172,7 +172,7 @@ Cohen's κ — Interlace vs each competitor (Arena):
 
 Vulnerable fixtures only Interlace caught are either a real coverage advantage *or* a fixture written to match our rule. Triage manually.
 
-**Juliet:**
+**CWE-Corpus:**
 
 - CWE-022 / path-join-user.js
 - CWE-022 / readfile-concat.js
@@ -209,7 +209,7 @@ A CWE with fewer than 2 vulnerable + 2 safe fixtures is too thin for its F1 to b
 ```bash
 npm run ilb:wild              # repopulates ILB-Wild, ILB-Edge, ILB-Cov, ILB-Perf
 npm run ilb:arena             # ILB-Arena (head-to-head)
-npm run ilb:juliet            # ILB-Juliet (synthetic CWE)
+npm run ilb:cwe-corpus            # ILB-CWE-Corpus (self-authored synthetic CWE)
 npm run ilb:ai                # ILB-AI
 npm run ilb:llm:tokens        # ILB-LLM-Tokens (no API calls)
 npm run ilb:llm:fix           # ILB-LLM-Fix (calls Claude CLI; opt-in)

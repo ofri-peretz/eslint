@@ -60,7 +60,7 @@ Corpora are versioned. Bumping any pinned commit / fixture / scoring formula bum
 
 For each submission:
 
-- **F1 weighted by CVSS** (headline, see [stats.mjs#weightedF1](../lib/stats.mjs))
+- **F1 weighted by CVSS** (headline, see [stats.mjs#weightedF1](../lib/stats.ts))
 - F1 plain + bootstrap CI
 - Precision · Recall · per-CWE breakdown
 - Latency: `meanLatencyMs` · `msPerFile` · `peakRssMb`

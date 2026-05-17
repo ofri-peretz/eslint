@@ -19,7 +19,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { median } from './median.js';
+import { median } from './median.ts';
 
 export const FLAGSHIP_RULES = [
   'import-next/no-cycle',

@@ -621,6 +621,58 @@ describe('Homepage: Visual Identity Lock', () => {
 // regression.
 // ============================================================
 
+// ============================================================
+// R19 — no raw color literals in JSX attributes
+// ----------------------------------------------------------------
+// The `react-features/component-api/no-raw-color-literal` rule forbids
+// hex / rgb / hsl / oklch strings inside JSX attribute values on this
+// surface — colors must come from CSS tokens (`var(--cta-*)` etc.)
+// defined in `apps/docs/src/app/global.css`. The lint rule catches new
+// drift; this lock catches re-introductions during refactors that
+// might run before lint (and is faster to read in a PR review).
+// ============================================================
+
+describe('Homepage: no raw color literals in JSX attributes (R19)', () => {
+  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
+  let homepageSource: string;
+  let heroSource: string;
+
+  beforeAll(() => {
+    homepageSource = readFileSync(homepagePath, 'utf-8');
+    heroSource = readFileSync(heroPath, 'utf-8');
+  });
+
+  // The rule pattern is `JSXAttribute > Literal` with the value matching
+  // `/(#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\s*\()/`. The lock
+  // mirrors that — any JSX attribute (`name="…"` or `name={"…"}`) whose
+  // string value contains a hex/rgb/hsl/oklch color is forbidden.
+  const RAW_COLOR_IN_JSX_ATTR =
+    /=\s*\{?\s*"[^"]*(?:#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\s*\()/;
+
+  it('homepage page.tsx contains NO raw hex/rgb/hsl/oklch literals in JSX attributes', () => {
+    expect(homepageSource).not.toMatch(RAW_COLOR_IN_JSX_ATTR);
+  });
+
+  it('hero-section.tsx contains NO raw hex/rgb/hsl/oklch literals in JSX attributes', () => {
+    // The hero owns two ShimmerButton CTAs (primary + secondary GitHub).
+    // Both used to inline `#c084fc` / `#6d28d9` / `rgba(255,255,255,0.12)`;
+    // they now read from `var(--cta-*)` in global.css. If this assertion
+    // fails the migration regressed — restore the var(...) refs.
+    expect(heroSource).not.toMatch(RAW_COLOR_IN_JSX_ATTR);
+  });
+
+  it('homepage references the CTA tokens (BorderBeam + ShimmerButton flow through global.css)', () => {
+    expect(homepageSource).toMatch(/var\(--cta-beam-(?:from|to)\)/);
+    expect(homepageSource).toMatch(/var\(--cta-(?:shimmer|bg-gradient)\)/);
+  });
+
+  it('hero references the CTA tokens for both primary and secondary CTAs', () => {
+    expect(heroSource).toMatch(/var\(--cta-(?:shimmer|bg-gradient)\)/);
+    expect(heroSource).toMatch(/var\(--cta-secondary-bg\)/);
+  });
+});
+
 describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
   let homepageSource: string;
   const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');

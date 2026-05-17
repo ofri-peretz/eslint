@@ -57,7 +57,19 @@ export default defineConfig({
       'src/**/*.test.ts',
       'src/**/*.spec.ts',
     ],
-    exclude: [],
+    // Setting `exclude` replaces vitest's defaults — spread them back in and
+    // add build-artifact dirs so stale outputs can never shadow real tests.
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      '**/.next/**',
+      '**/.turbo/**',
+      '**/storybook-static/**',
+      '**/coverage/**',
+    ],
     passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'eslint-config', color: 'magenta' },

@@ -22,7 +22,7 @@ ILB measures **rule quality**. CI/CD Impact measures **org-economic value**. Tog
 | **AI agent (Claude Code, Cursor) asking what to read** | [`.agent/rules/bench-context.md`](.agent/rules/bench-context.md) — single ~250-line digest |
 | **Reviewer / researcher** evaluating the bench methodology | [`benchmarks/README.md`](benchmarks/README.md) — 10 principles, vocabulary contract, the 10 benches |
 | **Finance / engineering manager** asking what the bench is worth | [`cicd-impact/README.md`](cicd-impact/README.md) — `$/CI minute` derivation |
-| **Contributor opening a PR** | [`CONTRIBUTING.md`](CONTRIBUTING.md) — gates, severity contract, vocabulary contract |
+| **Contributor opening a PR** | `CONTRIBUTING.md` (planned) — gates, severity contract, vocabulary contract |
 | **Auditor reviewing project governance** | [`GOVERNANCE.md`](GOVERNANCE.md) — roles, decision rules, conflict policy |
 | **MITRE / OWASP submitter** | [`benchmarks/audits/INDEX.md`](benchmarks/audits/INDEX.md) — the submission packets |
 | **Agent / MCP integration** | We retired per-plugin MCP servers. Use the official [`@eslint/mcp`](https://github.com/eslint/mcp) — it auto-discovers every plugin. See [docs/integrations/claude-code](apps/docs/content/docs/integrations/claude-code.mdx). |
@@ -37,7 +37,7 @@ ILB measures **rule quality**. CI/CD Impact measures **org-economic value**. Tog
 | [`benchmarks/lib/result-schema.json`](benchmarks/lib/result-schema.json) | Vocabulary contract (every result file's allowed fields) |
 | [`benchmarks/README.md`](benchmarks/README.md) | Bench philosophy + 10 principles + 10 benches |
 | [`cicd-impact/methodology.md`](cicd-impact/methodology.md) | `$/CI minute` formula derivation |
-| [`scripts/ilb-wild.mjs`](scripts/ilb-wild.mjs) (`BENCHMARK_REPOS` array) | Which OSS repos are in the wild corpus |
+| [`scripts/ilb-wild.mjs`](scripts/ilb-wild.ts) (`BENCHMARK_REPOS` array) | Which OSS repos are in the wild corpus |
 | Per-rule `meta.docs` | The CWE / CVSS / confidence / severity for that rule |
 
 ## Three frameworks of "philosophy"

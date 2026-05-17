@@ -1,0 +1,157 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "interlace-ui",
+  "homepage": "https://ds.interlace.tools",
+  "items": [
+    {
+      "name": "accordion",
+      "type": "registry:ui",
+      "title": "Accordion",
+      "description": "@interlace/ui — accordion primitive (shadcn-compatible)."
+    },
+    {
+      "name": "alert",
+      "type": "registry:ui",
+      "title": "Alert",
+      "description": "@interlace/ui — alert primitive (shadcn-compatible)."
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "@interlace/ui — avatar primitive (shadcn-compatible)."
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "@interlace/ui — badge primitive (shadcn-compatible)."
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "@interlace/ui — button primitive (shadcn-compatible)."
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "@interlace/ui — card primitive (shadcn-compatible)."
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "@interlace/ui — checkbox primitive (shadcn-compatible)."
+    },
+    {
+      "name": "container",
+      "type": "registry:ui",
+      "title": "Container",
+      "description": "@interlace/ui — container primitive (shadcn-compatible)."
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "@interlace/ui — dialog primitive (shadcn-compatible)."
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "Dropdown Menu",
+      "description": "@interlace/ui — dropdown-menu primitive (shadcn-compatible)."
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "@interlace/ui — input primitive (shadcn-compatible)."
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "@interlace/ui — label primitive (shadcn-compatible)."
+    },
+    {
+      "name": "pagination",
+      "type": "registry:ui",
+      "title": "Pagination",
+      "description": "@interlace/ui — pagination primitive (shadcn-compatible)."
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "@interlace/ui — popover primitive (shadcn-compatible)."
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio Group",
+      "description": "@interlace/ui — radio-group primitive (shadcn-compatible)."
+    },
+    {
+      "name": "scroll-area",
+      "type": "registry:ui",
+      "title": "Scroll Area",
+      "description": "@interlace/ui — scroll-area primitive (shadcn-compatible)."
+    },
+    {
+      "name": "section",
+      "type": "registry:ui",
+      "title": "Section",
+      "description": "@interlace/ui — section primitive (shadcn-compatible)."
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "@interlace/ui — select primitive (shadcn-compatible)."
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "@interlace/ui — separator primitive (shadcn-compatible)."
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "@interlace/ui — sheet primitive (shadcn-compatible)."
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "@interlace/ui — skeleton primitive (shadcn-compatible)."
+    },
+    {
+      "name": "stack",
+      "type": "registry:ui",
+      "title": "Stack",
+      "description": "@interlace/ui — stack primitive (shadcn-compatible)."
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "@interlace/ui — switch primitive (shadcn-compatible)."
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "@interlace/ui — tabs primitive (shadcn-compatible)."
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "@interlace/ui — tooltip primitive (shadcn-compatible)."
+    }
+  ]
+}

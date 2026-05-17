@@ -133,7 +133,7 @@ For more examples and patterns, see the [package README](../../README.md).
 
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - Migration to hooks
 - [`required-attributes`](./required-attributes.md) - React attribute enforcement
-- [`img-requires-alt`](./img-requires-alt.md) - Image accessibility
+- `img-requires-alt` (planned) - Image accessibility
 
 ## Further Reading
 

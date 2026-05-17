@@ -4,6 +4,9 @@ node_modules/
 .pnp.js
 .pnpm-debug.log*
 
+# Runtime state from scheduled-tasks framework (per-session lock)
+.claude/scheduled_tasks.lock
+
 # Build outputs
 dist/
 build/

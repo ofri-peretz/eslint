@@ -61,6 +61,10 @@ export function baseOptions(): BaseLayoutProps {
         url: '/scorecard',
       },
       {
+        text: 'Stats',
+        url: '/stats',
+      },
+      {
         text: 'Articles',
         url: '/articles',
       },

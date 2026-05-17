@@ -8,6 +8,7 @@ import {
   paginateArticles,
   parseArticleParams,
 } from '@/lib/articles.filter';
+import { Container } from '@interlace/ui/container';
 import type { Metadata } from 'next';
 
 import articlesData from '@/data/articles.json';
@@ -16,11 +17,16 @@ export const metadata: Metadata = {
   title: 'Technical Articles',
   description:
     'Deep dives into ESLint internals, security patterns, and high-performance JavaScript engineering by the Interlace team.',
+  // Canonical pinned per SEO_PHILOSOPHY §1 — the page is URL-state-driven
+  // (q, tag, page params), so search engines must index the bare /articles
+  // form rather than the cartesian product of facets (PAGINATION_PHILOSOPHY).
+  alternates: { canonical: '/articles' },
   openGraph: {
     title: 'Technical Articles | ESLint Interlace',
     description:
       'Deep dives into ESLint internals, security patterns, and high-performance JavaScript engineering.',
     type: 'website',
+    url: '/articles',
   },
 };
 
@@ -59,11 +65,17 @@ export default async function ArticlesPage({
   // `id="main-content"` + `tabIndex={-1}` is the focusable target for the
   // root layout's skip link (KEYBOARD_PHILOSOPHY.md #1) so keyboard users
   // can bypass fumadocs's nav and land directly on the articles list.
+  //
+  // <Container size="wide"> owns the max-width + horizontal padding
+  // (LAYOUT_PHILOSOPHY.md §2): articles is a card-grid surface and `wide`
+  // (1280px) is the contract width. The previous `max-w-6xl` (1152px) was
+  // ad-hoc and forbidden by the layout philosophy lock.
   return (
-    <div
+    <Container
+      size="wide"
       id="main-content"
       tabIndex={-1}
-      className="container max-w-6xl mx-auto px-4 py-8 outline-hidden"
+      className="py-8 outline-hidden"
     >
       <ArticlesClient
         totalArticles={articles.length}
@@ -76,6 +88,6 @@ export default async function ArticlesPage({
         hasFilters={hasActiveFilters(params)}
         lastUpdated={lastUpdated}
       />
-    </div>
+    </Container>
   );
 }

@@ -26,7 +26,7 @@ Internal repository documentation. User-facing rule docs live under `apps/docs/`
 ## Cross-references
 
 - Repository orientation: [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../AGENTS.md`](../AGENTS.md)
-- Contribution guide: [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
+- Contribution guide: `../CONTRIBUTING.md` (planned)
 - Phased delivery plan: [`../ROADMAP.md`](../ROADMAP.md)
 - Marketing-claim evidence registry: [`../CLAIMS.md`](../CLAIMS.md)
 - Benchmark suite philosophy: [`../benchmarks/README.md`](../benchmarks/README.md)

@@ -6,7 +6,7 @@
  */
 import React, { ComponentPropsWithoutRef, CSSProperties } from "react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 export interface ShimmerButtonProps extends ComponentPropsWithoutRef<"button"> {
   shimmerColor?: string
@@ -24,7 +24,8 @@ export interface ShimmerButtonProps extends ComponentPropsWithoutRef<"button"> {
   shimmer?: boolean
   /**
    * Render the inset white highlight at the bottom edge (a `box-shadow:
-   * inset 0 -8px 10px #ffffff1f` glow). Defaults to `true`. Pass `false`
+   * inset 0 -8px 10px var(--color-shadow-card-inset)` glow). Defaults to
+   * `true`. Pass `false`
    * for a darker, flatter look that pairs cleanly with non-white fills.
    * Independent of `shimmer` — the two effects can be toggled separately
    * (e.g. shimmer on + highlight off = animated dark sibling).
@@ -39,11 +40,13 @@ export const ShimmerButton = React.forwardRef<
 >(
   (
     {
-      shimmerColor = "#ffffff",
+      // Defaults resolve to `--color-shimmer` / `--color-shimmer-bg` tokens
+      // in `css/brand.css`. Consumers re-skin by redefining the tokens.
+      shimmerColor = "var(--color-shimmer)",
       shimmerSize = "0.05em",
       shimmerDuration = "3s",
       borderRadius = "100px",
-      background = "rgba(0, 0, 0, 1)",
+      background = "var(--color-shimmer-bg)",
       shimmer = true,
       highlight = true,
       className,
@@ -105,16 +108,16 @@ export const ShimmerButton = React.forwardRef<
             className={cn(
               "absolute inset-0 size-full",
 
-              "rounded-2xl px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_#ffffff1f]",
+              "rounded-2xl px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_var(--color-shadow-card-inset)]",
 
               // transition
               "transform-gpu transition-all duration-300 ease-in-out",
 
               // on hover
-              "group-hover:shadow-[inset_0_-6px_10px_#ffffff3f]",
+              "group-hover:shadow-[inset_0_-6px_10px_var(--color-shadow-card-inset)]",
 
               // on click
-              "group-active:shadow-[inset_0_-10px_10px_#ffffff3f]"
+              "group-active:shadow-[inset_0_-10px_10px_var(--color-shadow-card-inset)]"
             )}
           />
         )}

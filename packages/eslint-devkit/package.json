@@ -3,18 +3,18 @@
   "version": "1.4.0",
   "description": "TypeScript utilities for building LLM-optimized ESLint plugins - AST helpers, type utilities, security benchmarks, and SARIF output",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "require": "./src/index.js",
-      "import": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "require": "./dist/src/index.js",
+      "import": "./dist/src/index.js"
     },
     "./resolver": {
-      "types": "./src/resolver.d.ts",
-      "require": "./src/resolver.js",
-      "import": "./src/resolver.js"
+      "types": "./dist/src/resolver.d.ts",
+      "require": "./dist/src/resolver.js",
+      "import": "./dist/src/resolver.js"
     },
     "./package.json": "./package.json"
   },

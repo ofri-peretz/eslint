@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "separator",
+  "type": "registry:ui",
+  "title": "Separator",
+  "description": "@interlace/ui — separator primitive (shadcn-compatible).",
+  "dependencies": [
+    "@base-ui-components/react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/interlace-ui/separator.tsx",
+      "target": "components/ui/separator.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from 'react';\nimport { Separator as BaseSeparator } from '@base-ui-components/react/separator';\n\nimport { cn } from '../lib/cn.js';\n\ntype SeparatorProps = React.ComponentProps<typeof BaseSeparator> & {\n  orientation?: 'horizontal' | 'vertical';\n};\n\nfunction Separator({\n  className,\n  orientation = 'horizontal',\n  ...props\n}: SeparatorProps) {\n  return (\n    <BaseSeparator\n      data-slot=\"separator\"\n      orientation={orientation}\n      className={cn(\n        'bg-border shrink-0',\n        orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nexport { Separator };\nexport type { SeparatorProps };\n"
+    }
+  ]
+}

@@ -85,6 +85,20 @@ export interface ArticleCardProps {
   priority?: boolean;
   /** Class on the outer anchor wrapper. */
   className?: string;
+  /**
+   * Stable selector base for E2E tests. **Required — no runtime default
+   * (R5).** Sub-elements derive their selector by suffixing the base, e.g.
+   * `<root data-testid="article">` produces `article-source`,
+   * `article-meta-reactions`, `article-title`, `article-tags`, etc.
+   * Omit and no `data-testid` is emitted.
+   */
+  'data-testid'?: string;
+}
+
+/** Derive a sub-element's `data-testid` from a base prefix. Returns
+ *  `undefined` when the consumer did not provide one — never default. */
+function subTestId(base: string | undefined, part: string): string | undefined {
+  return base ? `${base}-${part}` : undefined;
 }
 
 function formatDate(value: ArticleCardProps['publishedAt']): string {
@@ -120,6 +134,7 @@ export function ArticleCard({
   variant = 'stack',
   priority = false,
   className,
+  'data-testid': testId,
 }: ArticleCardProps) {
   const visibleTags = tags?.slice(0, 3) ?? [];
   const overflowTags = tags && tags.length > 3 ? tags.length - 3 : 0;
@@ -132,6 +147,7 @@ export function ArticleCard({
       rel={external ? 'noopener noreferrer' : undefined}
       data-slot="article-card"
       data-variant={variant}
+      data-testid={testId}
       className={cn(
         'group focus-visible:ring-ring block h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         className,
@@ -160,6 +176,7 @@ export function ArticleCard({
             meta={meta}
             sourceLabel={sourceLabel}
             priority={priority}
+            testId={testId}
           />
         ) : (
           <StackBody
@@ -173,6 +190,7 @@ export function ArticleCard({
             meta={meta}
             sourceLabel={sourceLabel}
             priority={priority}
+            testId={testId}
           />
         )}
       </Card>
@@ -192,13 +210,16 @@ interface BodyProps {
   sourceLabel?: string;
   /** Forwarded from `ArticleCardProps.priority`. */
   priority?: boolean;
+  /** Base `data-testid` forwarded from the root. Sub-elements derive their
+   * selectors via `subTestId(testId, "...")`. R5: never default at runtime. */
+  testId?: string;
 }
 
 /** Top-right chip used to attribute the source of the article (e.g., "Dev.to"). */
-function SourceChip({ label }: { label: string }) {
+function SourceChip({ label, testId }: { label: string; testId?: string }) {
   return (
     <div
-      data-testid="article-card-source"
+      data-testid={subTestId(testId, 'source')}
       className="absolute top-3 right-3 z-10 rounded-md bg-black/70 px-2 py-1 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm"
     >
       {label}
@@ -207,10 +228,10 @@ function SourceChip({ label }: { label: string }) {
 }
 
 /** Top-left chip shown only on the `overlay` variant. */
-function FeaturedChip() {
+function FeaturedChip({ testId }: { testId?: string }) {
   return (
     <div
-      data-testid="article-card-featured-chip"
+      data-testid={subTestId(testId, 'featured-chip')}
       className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm"
     >
       <Sparkles className="h-3 w-3" aria-hidden />
@@ -275,9 +296,11 @@ function CoverImage({
 function MetaChips({
   meta,
   tone,
+  testId,
 }: {
   meta: ArticleCardMeta;
   tone: 'muted' | 'overlay';
+  testId?: string;
 }) {
   const baseChip = 'flex items-center gap-1.5 text-xs tabular-nums';
   const colorClass =
@@ -286,7 +309,7 @@ function MetaChips({
     <>
       {meta.reactions !== undefined ? (
         <span
-          data-testid="article-card-meta-reactions"
+          data-testid={subTestId(testId, 'meta-reactions')}
           className={cn(baseChip, colorClass, 'transition-colors group-hover:text-red-400')}
           title="Reactions"
         >
@@ -296,7 +319,7 @@ function MetaChips({
       ) : null}
       {meta.comments !== undefined ? (
         <span
-          data-testid="article-card-meta-comments"
+          data-testid={subTestId(testId, 'meta-comments')}
           className={cn(baseChip, colorClass, 'transition-colors group-hover:text-blue-400')}
           title="Comments"
         >
@@ -306,7 +329,7 @@ function MetaChips({
       ) : null}
       {meta.readingTimeMinutes !== undefined ? (
         <span
-          data-testid="article-card-meta-reading-time"
+          data-testid={subTestId(testId, 'meta-reading-time')}
           className={cn(baseChip, colorClass, 'transition-colors group-hover:text-amber-400')}
           title="Reading time"
         >
@@ -316,7 +339,7 @@ function MetaChips({
       ) : null}
       {meta.views !== undefined ? (
         <span
-          data-testid="article-card-meta-views"
+          data-testid={subTestId(testId, 'meta-views')}
           className={cn(
             baseChip,
             'font-medium',
@@ -343,13 +366,14 @@ function StackBody({
   meta,
   sourceLabel,
   priority = false,
+  testId,
 }: BodyProps) {
   return (
     <>
       {/* Cover (or gradient title fallback) — edge-to-edge top of the card. */}
       <div className="relative h-44 w-full shrink-0 overflow-hidden">
         <CoverImage imageUrl={imageUrl} title={title} priority={priority} />
-        {sourceLabel ? <SourceChip label={sourceLabel} /> : null}
+        {sourceLabel ? <SourceChip label={sourceLabel} testId={testId} /> : null}
       </div>
 
       {(author || publishedAt) && (
@@ -389,7 +413,7 @@ function StackBody({
           reader's eye lands on the headline first, not on metadata. */}
       <CardContent className="flex grow flex-col gap-2 pt-0">
         <CardTitle
-          data-testid="article-card-title"
+          data-testid={subTestId(testId, 'title')}
           className="group-hover:text-primary line-clamp-2 text-base font-semibold leading-snug transition-colors"
         >
           {title}
@@ -397,7 +421,7 @@ function StackBody({
 
         {description ? (
           <CardDescription
-            data-testid="article-card-description"
+            data-testid={subTestId(testId, 'description')}
             className="line-clamp-2 text-sm leading-relaxed"
           >
             {description}
@@ -406,7 +430,7 @@ function StackBody({
 
         {visibleTags.length > 0 ? (
           <div
-            data-testid="article-card-tags"
+            data-testid={subTestId(testId, 'tags')}
             className="mt-auto flex flex-wrap gap-1.5 pt-2"
           >
             {visibleTags.map((tag) => (
@@ -432,7 +456,7 @@ function StackBody({
 
       {meta ? (
         <CardFooter className="text-muted-foreground mt-2 gap-4 border-t border-fd-border pt-3">
-          <MetaChips meta={meta} tone="muted" />
+          <MetaChips meta={meta} tone="muted" testId={testId} />
           <span className="ml-auto opacity-0 transition-opacity group-hover:opacity-100">
             <ExternalLink className="text-primary h-4 w-4" aria-hidden />
           </span>
@@ -453,6 +477,7 @@ function OverlayBody({
   meta,
   sourceLabel,
   priority = false,
+  testId,
 }: BodyProps) {
   return (
     <>
@@ -474,13 +499,13 @@ function OverlayBody({
         className="absolute inset-0 bg-linear-to-t from-black/85 via-black/55 to-black/15"
       />
 
-      <FeaturedChip />
-      {sourceLabel ? <SourceChip label={sourceLabel} /> : null}
+      <FeaturedChip testId={testId} />
+      {sourceLabel ? <SourceChip label={sourceLabel} testId={testId} /> : null}
 
       <div className="absolute inset-x-0 bottom-0 z-10 p-6 md:p-8">
         {visibleTags.length > 0 ? (
           <div
-            data-testid="article-card-tags"
+            data-testid={subTestId(testId, 'tags')}
             className="mb-4 flex flex-wrap gap-1.5"
           >
             {visibleTags.map((tag) => (
@@ -509,7 +534,7 @@ function OverlayBody({
             and in isolated Storybook scans. The visual size (text-2xl/3xl)
             is preserved via class names, decoupled from semantic level. */}
         <h2
-          data-testid="article-card-title"
+          data-testid={subTestId(testId, 'title')}
           className="line-clamp-2 text-2xl md:text-3xl font-bold leading-tight text-white mb-2 drop-shadow"
         >
           {title}
@@ -517,7 +542,7 @@ function OverlayBody({
 
         {description ? (
           <p
-            data-testid="article-card-description"
+            data-testid={subTestId(testId, 'description')}
             className="line-clamp-2 text-sm md:text-base text-white/90 mb-4 max-w-3xl drop-shadow"
           >
             {description}
@@ -555,7 +580,7 @@ function OverlayBody({
             <>
               <span aria-hidden className="hidden sm:inline text-white/40">•</span>
               <div className="hidden sm:flex items-center gap-3 md:gap-4">
-                <MetaChips meta={meta} tone="overlay" />
+                <MetaChips meta={meta} tone="overlay" testId={testId} />
               </div>
             </>
           ) : null}

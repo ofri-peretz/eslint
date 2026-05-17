@@ -9,7 +9,7 @@
 import { ComponentPropsWithoutRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 // Self-reference through `#interlace` so consumer apps resolve to their
 // own synced `.interlace/lib/use-reduced-motion`. Using `@/` would require
 // every consumer to maintain a duplicate shim under `src/lib/`.

@@ -69,7 +69,7 @@ npx turbo run lint --filter=eslint-plugin-X
 npx turbo run test --filter=eslint-plugin-X -- --coverage 2>&1 | grep -E 'Lines|Branches|Functions'
 ```
 
-See [CICD.md](./CICD.md) for pipeline details and [QUALITY_STANDARDS.md](./QUALITY_STANDARDS.md) for thresholds.
+See CICD.md (planned) for pipeline details and [QUALITY_STANDARDS.md](./QUALITY_STANDARDS.md) for thresholds.
 
 ---
 
@@ -347,6 +347,6 @@ npm eslint src/ --format json | jq '.[] | {filePath, messages: .messages | lengt
 ## Related Documentation
 
 - [Quality Standards](./QUALITY_STANDARDS.md) - Detailed quality checklist and thresholds
-- [Coverage Limitations](./RULETESTER-COVERAGE-LIMITATIONS.md) - c8 ignore patterns and rationale
-- [CI/CD Pipeline](./CICD.md) - Automated quality gates and workflows
-- [Contributing Guide](./CONTRIBUTING.md) - Release process and versioning
+- Coverage Limitations (planned) - c8 ignore patterns and rationale
+- CI/CD Pipeline (planned) - Automated quality gates and workflows
+- Contributing Guide (planned) - Release process and versioning

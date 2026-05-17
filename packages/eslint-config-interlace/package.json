@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "description": "One-extends meta-config for the Interlace ESLint ecosystem. Composes the 9 flagship-hosting plugins (10 rules) and the full 19-plugin recommended preset (security + code-quality + React) into a single import. Replaces the manual 11-plugin compose documented in .agent/flagship-rules.md.",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",

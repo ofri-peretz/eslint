@@ -9,6 +9,30 @@ import { cn } from "../../lib/utils";
 import { motion } from "motion/react";
 import React, { useState, useEffect, useRef, useMemo, memo } from "react";
 
+// Fallback palette — used only during SSR or if `--background-lines-palette`
+// resolves empty. Token in `css/brand.css` is the canonical place to override.
+// eslint-disable-next-line no-raw-color-literal -- documented SSR fallback
+const FALLBACK_LINES_PALETTE = [
+  "#46A5CA", "#8C2F2F", "#4FAE4D", "#D6590C", "#811010", "#247AFB",
+  "#A534A0", "#A8A438", "#D6590C", "#46A29C", "#670F6D", "#D7C200",
+];
+
+function useBackgroundLinesPalette(): string[] {
+  const [palette, setPalette] = useState<string[]>(FALLBACK_LINES_PALETTE);
+  useEffect(() => {
+    const v = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background-lines-palette")
+      .trim();
+    if (!v) return;
+    const parsed = v
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (parsed.length > 0) setPalette(parsed);
+  }, []);
+  return palette;
+}
+
 export const BackgroundLines = memo(({
   children,
   className,
@@ -94,10 +118,10 @@ const SVG = memo(({
     "M720 450C720 450 743.97 465.061 754.884 490.648C765.798 516.235 781.032 501.34 791.376 525.115C801.72 548.889 808.417 538.333 829.306 564.807C850.195 591.281 852.336 582.531 865.086 601.843C877.835 621.155 874.512 621.773 902.383 643.857C930.255 665.94 921.885 655.976 938.025 681.74C954.164 707.505 959.384 709.719 977.273 720.525C995.162 731.33 994.233 731.096 1015.92 757.676C1037.61 784.257 1025.74 768.848 1047.82 795.343C1069.91 821.837 1065.95 815.45 1085.93 834.73C1105.91 854.009 1110.53 848.089 1124.97 869.759C1139.4 891.428 1140.57 881.585 1158.53 911.499C1176.5 941.414 1184.96 933.829 1194.53 948.792C1204.09 963.755 1221.35 973.711 1232.08 986.224C1242.8 998.738 1257.34 1015.61 1269.99 1026.53C1282.63 1037.45 1293.81 1040.91 1307.21 1064.56",
   ], []);
 
-  const colors = useMemo(() => [
-    "#46A5CA", "#8C2F2F", "#4FAE4D", "#D6590C", "#811010", "#247AFB",
-    "#A534A0", "#A8A438", "#D6590C", "#46A29C", "#670F6D", "#D7C200",
-  ], []);
+  // Palette resolves from the `--background-lines-palette` CSS custom
+  // property at mount (comma-separated list). Consumers override the token
+  // to re-skin the background lines; no hex literals in source.
+  const colors = useBackgroundLinesPalette();
 
   const duration = svgOptions?.duration || 10;
 
@@ -109,8 +133,7 @@ const SVG = memo(({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ clipPath: 'inset(0)', opacity: 0.4, willChange: 'opacity' }}
+      className="absolute inset-0 w-full h-full pointer-events-none opacity-40 will-change-[opacity] [clip-path:inset(0)]"
     >
       {/* Reduced from 42 paths to 12 - sufficient for visual effect with 70% less DOM nodes */}
       {paths.slice(0, 12).map((path, idx) => (

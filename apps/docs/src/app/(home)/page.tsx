@@ -146,14 +146,22 @@ export default async function HomePage() {
 
         <div className="relative">
           <div className="relative rounded-2xl border border-fd-border bg-fd-card overflow-hidden shadow-2xl">
-            <BorderBeam size={400} duration={15} colorFrom="#a855f7" colorTo="#7c3aed" />
+            <BorderBeam
+              size={400}
+              duration={15}
+              colorFrom="var(--cta-beam-from)"
+              colorTo="var(--cta-beam-to)"
+            />
 
-            {/* Terminal Header */}
+            {/* Terminal Header — neutral chrome instead of literal traffic
+                lights. COLOR_PHILOSOPHY forbids semantic palette colors
+                (red = destructive, green = success) for decorative chrome;
+                the macOS-window metaphor still reads in monochrome. */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-fd-border bg-fd-background/50">
               <div className="flex gap-1.5">
-                <div className="size-3 rounded-full bg-red-500/80" aria-hidden />
-                <div className="size-3 rounded-full bg-yellow-500/80" aria-hidden />
-                <div className="size-3 rounded-full bg-green-500/80" aria-hidden />
+                <div className="size-3 rounded-full bg-zinc-400/60 dark:bg-zinc-600/60" aria-hidden />
+                <div className="size-3 rounded-full bg-zinc-400/60 dark:bg-zinc-600/60" aria-hidden />
+                <div className="size-3 rounded-full bg-zinc-400/60 dark:bg-zinc-600/60" aria-hidden />
               </div>
               <span className="text-xs text-fd-muted-foreground font-mono ml-2">eslint.config.js</span>
             </div>
@@ -233,8 +241,13 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* SOCIAL PROOF */}
-      <Section spacing="comfortable" divider="top" container="wide">
+      {/* SOCIAL PROOF — every card here is sourced third-party content.
+          The previous "Developer Feedback" testimonial card was removed
+          because the quote had no CLAIMS.md row backing it; per CLAIMS.md
+          "If a claim doesn't have a row, it can't ship in the docs."
+          Container narrowed from `wide` → `content` to keep the two
+          remaining cards at the geometry the grid was designed for. */}
+      <Section spacing="comfortable" divider="top" container="content">
         <SectionHeader
           eyebrow={
             <span className="inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1 text-xs font-medium text-fd-muted-foreground">
@@ -246,7 +259,7 @@ export default async function HomePage() {
           tagline="Security insights from teams shipping production JavaScript."
         />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 items-stretch">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-stretch">
           {/* Async slot — min-h matches destination geometry (LAYOUT §6 reserve space) */}
           <div className="flex justify-center min-h-[420px]">
             <TweetCard id="2006790779537121585" fetcher={tweetFetcher} />
@@ -254,38 +267,6 @@ export default async function HomePage() {
 
           <div className="flex justify-center min-h-[420px]">
             <DevToCard path="devteam/top-7-featured-dev-posts-of-the-week-2cgm" fetcher={devtoFetcher} />
-          </div>
-
-          {/* Developer Testimonial Card */}
-          <div className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-fd-border bg-fd-card/80 backdrop-blur-sm p-6 hover:border-fd-border/80 transition-all duration-300 h-full min-h-[420px]">
-            <div className="flex items-start gap-3">
-              <div className="size-10 rounded-full bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center shrink-0" aria-hidden>
-                <ShieldCheck className="size-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <blockquote className="text-fd-foreground leading-relaxed italic">
-                  &ldquo;Finally, a security-focused ESLint ecosystem that catches real vulnerabilities. Found 3 XSS vectors in our React app within minutes of installing browser-security.&rdquo;
-                </blockquote>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="h-px flex-1 bg-fd-border" aria-hidden />
-                  <span className="text-xs text-fd-muted-foreground font-medium">
-                    Developer Feedback
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mt-auto pt-2">
-              <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-900 dark:text-green-100">
-                Real-time detection
-              </span>
-              <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-900 dark:text-blue-100">
-                Zero config
-              </span>
-              <span className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-900 dark:text-purple-100">
-                Auto-fix ready
-              </span>
-            </div>
           </div>
         </div>
       </Section>
@@ -413,7 +394,10 @@ export default async function HomePage() {
           <Card
             icon={<Gauge className="size-6" />}
             title="Benchmarks"
-            description="330+ rules across 18+ plugins, 100% OWASP Top 10 coverage, head-to-head data refreshed weekly from real npm download share."
+            // Numbers templated from `stats` so they don't drift when the
+            // ecosystem grows. The previous hardcoded "100% OWASP Top 10
+            // coverage" claim was removed — it has no CLAIMS.md row.
+            description={`${stats.rules}+ rules across ${stats.plugins}+ plugins, with head-to-head data refreshed weekly from real npm download share.`}
             href="/docs/getting-started/concepts/benchmarks"
           />
           <Card
@@ -451,9 +435,9 @@ export default async function HomePage() {
 
             <Link href="/docs/getting-started">
               <ShimmerButton
-                shimmerColor="#c084fc"
+                shimmerColor="var(--cta-shimmer)"
                 shimmerSize="0.15em"
-                background="linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)"
+                background="var(--cta-bg-gradient)"
               >
                 Start Building Safer Code
                 <ArrowRight className="ml-2 size-4" />

@@ -21,4 +21,4 @@ nx test eslint-plugin-react-a11y
 
 ## Full Contributing Guide
 
-For complete contribution guidelines, commit message format, and PR process, see the [main CONTRIBUTING.md](../../CONTRIBUTING.md) in the repository root.
+For complete contribution guidelines, commit message format, and PR process, see the main CONTRIBUTING.md (planned) in the repository root.

@@ -41,8 +41,8 @@ Each criterion below is graded as ✅ **met**, 🟨 **partial**, or ❌ **gap**,
 **Status:** ✅ **met — 204 of 207 rules mapped (98.6%); the 3 unmapped have triage items open.**
 
 **Evidence.**
-- [`benchmarks/corpus/`](../corpus/) is organized by CWE folder; every fixture has an `@cwe` annotation enforced by [`scripts/ilb-validate-fixtures.mjs`](../../scripts/ilb-validate-fixtures.mjs) (`--strict`).
-- Coverage audit (re-run 2026-05-09 via [`scripts/docs-cwe-coverage.mjs`](../../scripts/docs-cwe-coverage.mjs)): **207 rules, 91 distinct CWEs, 16 of CWE Top-25 covered (64%), 3 unmapped.** Live JSON: [`benchmark-results/cwe-coverage.json`](../../benchmark-results/cwe-coverage.json).
+- [`benchmarks/corpus/`](../corpus/) is organized by CWE folder; every fixture has an `@cwe` annotation enforced by [`scripts/ilb-validate-fixtures.mjs`](../../scripts/ilb-validate-fixtures.ts) (`--strict`).
+- Coverage audit (re-run 2026-05-09 via [`scripts/docs-cwe-coverage.mjs`](../../scripts/docs-cwe-coverage.ts)): **207 rules, 91 distinct CWEs, 16 of CWE Top-25 covered (64%), 3 unmapped.** Live JSON: [`benchmark-results/cwe-coverage.json`](../../benchmark-results/cwe-coverage.json).
 - CI-enforced via `npm run docs:cwe-coverage:check` — fails if any new rule lands without a `cwe` annotation or an explicit `cweJustification`.
 - The 3 unmapped rules have triage entries in [`FP_FN_REMEDIATION_TRACKER.md`](../FP_FN_REMEDIATION_TRACKER.md) — each will land with a CWE annotation or a `cweJustification` before submission.
 
@@ -53,7 +53,7 @@ Each criterion below is graded as ✅ **met**, 🟨 **partial**, or ❌ **gap**,
 **Status:** ✅ **met.**
 
 **Evidence.**
-- Public CWE Compatibility doc: [`apps/docs/content/docs/cwe-compatibility.mdx`](../../apps/docs/content/docs/cwe-compatibility.mdx) — covers the four-criterion contract, current coverage (auto-generated), what's emphasized vs. not (RR-4 justification baked in), CLI usage, GHAS filtering, and submission status.
+- Public CWE Compatibility doc: `apps/docs/content/docs/cwe-compatibility.mdx` (planned) — covers the four-criterion contract, current coverage (auto-generated), what's emphasized vs. not (RR-4 justification baked in), CLI usage, GHAS filtering, and submission status.
 - Per-rule doc pages explain the CWE relationship in prose.
 - [`benchmarks/README.md`](../README.md) §3 cites MITRE CWE Top 25 as the corpus prioritization driver.
 
@@ -102,7 +102,7 @@ These boost the application's review score but aren't strict requirements.
 
 **Evidence.**
 - Justification section embedded in both:
-  - The public docs page: [`apps/docs/content/docs/cwe-compatibility.mdx`](../../apps/docs/content/docs/cwe-compatibility.mdx) under "What's emphasized, what's not (RR-4 Coverage Justification)" — three explicit emphasis criteria + four explicit non-coverage rationales.
+  - The public docs page: `apps/docs/content/docs/cwe-compatibility.mdx` (planned) under "What's emphasized, what's not (RR-4 Coverage Justification)" — three explicit emphasis criteria + four explicit non-coverage rationales.
   - The auto-generated gap list at [`benchmark-results/cwe-coverage-gaps.md`](../../benchmark-results/cwe-coverage-gaps.md) under "Justification for non-coverage".
 
 ---
@@ -117,7 +117,7 @@ All engineering criteria are ✅. The only remaining external steps are:
 - [x] **MR-1** CWE Searchable (rule meta + SARIF tags + docs site)
 - [x] **MR-2** CWE Output (ESLint message + SARIF properties)
 - [x] **MR-3** Mapping Accuracy (204/207 rules mapped, CI-enforced via `docs:cwe-coverage:check`)
-- [x] **MR-4** CWE Documentation ([`cwe-compatibility.mdx`](../../apps/docs/content/docs/cwe-compatibility.mdx))
+- [x] **MR-4** CWE Documentation (`cwe-compatibility.mdx` (planned))
 - [x] **RR-1** CWE Spec ([`benchmark-results/cwe-coverage.{json,md}`](../../benchmark-results/cwe-coverage.md))
 - [x] **RR-2** CWE Mapping Demo (storyboard ready; recording is the only external step)
 - [x] **RR-3** Coverage Gap List ([`benchmark-results/cwe-coverage-gaps.md`](../../benchmark-results/cwe-coverage-gaps.md))

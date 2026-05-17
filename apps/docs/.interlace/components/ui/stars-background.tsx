@@ -5,8 +5,11 @@
  * Local edits will be overwritten on next sync (or refused without --force).
  */
 "use client";
-import { cn } from "@/lib/utils";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { cn } from "../../lib/utils";
+// Self-reference through `#interlace` so consumer apps resolve to their
+// own synced `.interlace/lib/use-reduced-motion` — same convention as
+// marquee/meteors/sunny-background in this directory.
+import { useReducedMotion } from "#interlace/lib/use-reduced-motion";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface StarProps {
@@ -26,6 +29,20 @@ interface StarBackgroundProps {
   className?: string;
 }
 
+// Default RGB triple injected into canvas `fillStyle`. Canvas does NOT accept
+// CSS `var(...)` references, so the primitive reads `--star-rgb` from the
+// document root at mount and falls back to this triple. Consumers theme via
+// the token rather than a hex literal.
+const DEFAULT_STAR_RGB = "255, 255, 255";
+
+function resolveStarRgb(): string {
+  if (typeof window === "undefined") return DEFAULT_STAR_RGB;
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue("--star-rgb")
+    .trim();
+  return v || DEFAULT_STAR_RGB;
+}
+
 export const StarsBackground: React.FC<StarBackgroundProps> = ({
   starDensity = 0.00015,
   allStarsTwinkle = true,
@@ -38,6 +55,11 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const reduceMotion = useReducedMotion();
+  const starRgb = useRef<string>(DEFAULT_STAR_RGB);
+
+  useEffect(() => {
+    starRgb.current = resolveStarRgb();
+  }, []);
 
   // Pause animations when not visible (performance optimization)
   useEffect(() => {
@@ -133,7 +155,7 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
       stars.forEach((star) => {
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.fillStyle = `rgba(${starRgb.current}, ${star.opacity})`;
         ctx.fill();
       });
     };
@@ -157,7 +179,7 @@ export const StarsBackground: React.FC<StarBackgroundProps> = ({
       stars.forEach((star) => {
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.fillStyle = `rgba(${starRgb.current}, ${star.opacity})`;
         ctx.fill();
 
         if (star.twinkleSpeed !== null) {
@@ -204,8 +226,8 @@ export const ShootingStars: React.FC<ShootingStarProps> = ({
   maxSpeed = 30,
   minDelay = 1200,
   maxDelay = 4200,
-  starColor = "#9E00FF",
-  trailColor = "#2EB9DF",
+  starColor = "var(--color-shooting-star)",
+  trailColor = "var(--color-shooting-trail)",
   starWidth = 10,
   starHeight = 1,
   className,
@@ -369,7 +391,7 @@ export const Meteors: React.FC<MeteorsProps> = ({
   number = 3,
   minDuration = 12,
   maxDuration = 30,
-  meteorColor = "#e9d5ff",
+  meteorColor = "var(--color-meteor-tail)",
   trailColor: _trailColor = "transparent",
   className,
 }) => {

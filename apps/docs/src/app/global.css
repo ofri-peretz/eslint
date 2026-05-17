@@ -53,6 +53,20 @@
   /* shadcn-token bridge + Tailwind v4 @theme-side aliases now live in
    * @interlace/ui/styles/theme.css (imported at top). Brand-specific
    * primary tokens stay in this file. */
+
+  /* shadcn chart palette — five hues for `<ChartContainer>` series colors.
+     App-local because the chart primitive lives in `@/components/ui/chart`.
+     Light-mode values pass ≥4.5:1 on `bg-card` (white). */
+  --chart-1: oklch(0.55 0.22 264);
+  --chart-2: oklch(0.55 0.16 162);
+  --chart-3: oklch(0.55 0.16 36);
+  --chart-4: oklch(0.55 0.2 320);
+  --chart-5: oklch(0.55 0.16 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
 /* Dark mode - AAA contrast on near-black */
@@ -77,6 +91,19 @@
 
   /* Ring/focus color */
   --color-fd-ring: hsl(270, 75%, 75%) !important;
+
+  /* Dark-mode chart palette — lifted lightness so each series stays
+     ≥4.5:1 on `bg-card` (near-black). */
+  --chart-1: oklch(0.78 0.16 264);
+  --chart-2: oklch(0.78 0.14 162);
+  --chart-3: oklch(0.78 0.14 36);
+  --chart-4: oklch(0.78 0.16 320);
+  --chart-5: oklch(0.78 0.14 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
 /* =========================================
@@ -92,3 +119,40 @@
 
 /* border-beam keyframes + .animate-border-beam class live in
    @interlace/ui/styles/tokens.css (imported above). */
+
+/* =========================================
+   MARKETING-SURFACE CTA TOKENS
+   --------------------------------------------------------
+   Brand purples used by BorderBeam (homepage code-window) and
+   ShimmerButton (final-CTA + hero secondary). Defined here so JSX
+   call sites read `var(--cta-*)` instead of raw hex/rgba literals —
+   the `react-features/component-api/no-raw-color-literal` rule
+   forbids the literals in JSX attribute values (R19).
+
+   Values are theme-stable: these are brand accents that read against
+   the cosmic dark hero AND the white code-window card. Do not split
+   into `:root` / `.dark` variants unless contrast on a new surface
+   demands it — divergence here means the same CTA looks like a
+   different brand on each theme.
+   ========================================= */
+:root {
+  /* BorderBeam on the homepage code-window (purple-500 → violet-600) */
+  --cta-beam-from: #a855f7;
+  --cta-beam-to: #7c3aed;
+
+  /* ShimmerButton primary — purple-400 spark over a purple-700→800 fill */
+  --cta-shimmer: #c084fc;
+  --cta-bg-start: #6d28d9;
+  --cta-bg-end: #5b21b6;
+  --cta-bg-gradient: linear-gradient(
+    135deg,
+    var(--cta-bg-start) 0%,
+    var(--cta-bg-end) 100%
+  );
+
+  /* ShimmerButton secondary — translucent white pill for the hero's
+     "GitHub" CTA. Sits over the cosmic dark gradient and survives a
+     light-theme flash during hydration (~12% white keeps the boundary
+     legible on either surface). */
+  --cta-secondary-bg: rgba(255, 255, 255, 0.12);
+}

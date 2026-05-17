@@ -3,12 +3,12 @@
   "version": "3.0.3",
   "description": "ESLint rules for reducing cognitive load and ensuring code readability.",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./types": {
       "types": "./src/types/index.d.ts",

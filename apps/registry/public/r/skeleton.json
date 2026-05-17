@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "skeleton",
+  "type": "registry:ui",
+  "title": "Skeleton",
+  "description": "@interlace/ui — skeleton primitive (shadcn-compatible).",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/interlace-ui/skeleton.tsx",
+      "target": "components/ui/skeleton.tsx",
+      "type": "registry:ui",
+      "content": "// Loading-state placeholder. Pure CSS — no headless dep.\n// Mirrors the shadcn canon: https://ui.shadcn.com/docs/components/skeleton\nimport * as React from 'react';\n\nimport { cn } from '../lib/cn.js';\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<'div'>) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn('bg-muted animate-pulse rounded-md', className)}\n      {...props}\n    />\n  );\n}\n\nexport { Skeleton };\n"
+    }
+  ]
+}

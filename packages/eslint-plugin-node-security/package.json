@@ -3,12 +3,12 @@
   "version": "4.1.0",
   "description": "Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, path, Buffer). Detects command injection, path traversal, code execution vulnerabilities with AI-parseable error messages.",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./types": {
       "types": "./src/types/index.d.ts",

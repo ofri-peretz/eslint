@@ -522,7 +522,7 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](https://github.com/ofri-peretz/eslint/blob/main/CONTRIBUTING.md).
+Contributions welcome! See CONTRIBUTING.md (planned).
 
 ---
 

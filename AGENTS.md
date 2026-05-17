@@ -2,7 +2,7 @@
 
 > **Purpose**: Context file for LLMs (Claude, GPT, Gemini, etc.) working on this repository.
 >
-> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`).
+> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`). For the synchronised viewport breakpoint contract shared across `eslint`, `agents`, and `serverless`, see [BREAKPOINTS.md](./BREAKPOINTS.md).
 
 ## Repository Overview
 
@@ -23,16 +23,16 @@ This is a **monorepo** containing ESLint plugins for security-focused static ana
 ### For Code Reviews & Releases
 
 - **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** - Production-ready checklist for ESLint rules
-- **[docs/CICD.md](./docs/CICD.md)** - CI/CD workflow documentation with state diagrams
+- **docs/CICD.md (planned)** - CI/CD workflow documentation with state diagrams
 - **[docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)** - Which ESLint majors we support and why; refresh via `npm run stats:eslint-versions`
 
 ### For Contributing
 
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - How to contribute, commit guidelines, PR process
+- **CONTRIBUTING.md (planned)** - How to contribute, commit guidelines, PR process
 
 ### For Coverage Gaps
 
-- **[packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md](./packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md)** - When `c8 ignore` is acceptable
+- **packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md (planned)** - When `c8 ignore` is acceptable
 
 ---
 

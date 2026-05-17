@@ -17,7 +17,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, copyFileSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import process from 'node:process';
 
@@ -64,12 +64,36 @@ if (tscResult.status !== 0) {
 }
 
 // 3. Copy publish-time assets to the dist root.
-const assets = ['README.md', 'CHANGELOG.md', 'LICENSE', 'AGENTS.md', '.npmignore', 'package.json'];
+//    package.json gets a path-rewrite pass: source main/types/exports point
+//    at `./dist/src/...` so workspace symlinks resolve to the built artifact
+//    without needing in-place .js files (the stale-build-artifacts guardrail
+//    enforces no .js next to .ts in src/). The published tarball's root IS
+//    `dist/`, so we strip the `dist/` prefix on copy.
+const assets = ['README.md', 'CHANGELOG.md', 'LICENSE', 'AGENTS.md', '.npmignore'];
 for (const asset of assets) {
   const src = resolve(pkgDir, asset);
   if (existsSync(src)) {
     copyFileSync(src, join(distDir, asset));
   }
 }
+
+const stripDistPrefix = (value: unknown): unknown => {
+  if (typeof value === 'string') return value.replace(/^\.\/dist\//, './');
+  if (Array.isArray(value)) return value.map(stripDistPrefix);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, stripDistPrefix(v)]),
+    );
+  }
+  return value;
+};
+
+const publishedPkg = {
+  ...pkg,
+  main: stripDistPrefix(pkg.main),
+  types: stripDistPrefix(pkg.types),
+  exports: stripDistPrefix(pkg.exports),
+};
+writeFileSync(join(distDir, 'package.json'), JSON.stringify(publishedPkg, null, 2) + '\n');
 
 console.log(`build-package(${pkg.name}@${pkg.version}): wrote ${distDir}`);

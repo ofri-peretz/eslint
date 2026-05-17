@@ -1,0 +1,151 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Component API Lint
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Enforces the portable component-modeling floor (R5/R6/R8/R11/R12/R18/R19)
+# via the `componentApi` preset in `eslint-plugin-react-features`.
+#
+# Targets every shared-component package — `packages/ui/**/*.tsx`. Mechanical
+# rules: no-default-test-id, require-data-slot, no-is-prefix-prop,
+# no-inline-style, no-raw-color-literal, no-arbitrary-token-class,
+# no-kind-prop-discriminator, no-wrapper-sub-component.
+#
+# See: skills/interlace-component/SKILL.md (agents repo) and
+# packages/eslint-plugin-react-features/docs/rules/component-api/.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'packages/ui/**/*.tsx'
+      - 'packages/eslint-plugin-react-features/**'
+      - '.github/workflows/component-api-lint.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: component-api-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    name: component-api lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+
+      - name: Build eslint-plugin-react-features
+        run: npm run build --workspace=eslint-plugin-react-features
+
+      - name: Run vitest on component-api rules
+        run: npx vitest run src/tests/component-api/
+        working-directory: packages/eslint-plugin-react-features
+
+      - name: Lint packages/ui with componentApi preset
+        id: lint
+        run: |
+          set +e
+          npx eslint \
+            --resolve-plugins-relative-to packages/eslint-plugin-react-features \
+            --rule '@eslint/react-features/component-api/no-default-test-id: error' \
+            --rule '@eslint/react-features/component-api/require-data-slot: warn' \
+            --rule '@eslint/react-features/component-api/no-is-prefix-prop: warn' \
+            --rule '@eslint/react-features/component-api/no-inline-style: warn' \
+            --rule '@eslint/react-features/component-api/no-raw-color-literal: warn' \
+            --rule '@eslint/react-features/component-api/no-arbitrary-token-class: warn' \
+            --rule '@eslint/react-features/component-api/no-kind-prop-discriminator: warn' \
+            --rule '@eslint/react-features/component-api/no-wrapper-sub-component: warn' \
+            --format json \
+            --max-warnings 0 \
+            'packages/ui/src/primitives/**/*.tsx' > /tmp/eslint-report.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Comment violations on PR
+        if: github.event_name == 'pull_request' && steps.lint.outputs.exit_code != '0'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('/tmp/eslint-report.json', 'utf8'));
+            const ruleToSkillId = {
+              'no-default-test-id': 'R5',
+              'require-data-slot': 'R6',
+              'no-is-prefix-prop': 'R8',
+              'no-kind-prop-discriminator': 'R11',
+              'no-wrapper-sub-component': 'R12',
+              'no-inline-style': 'R18',
+              'no-raw-color-literal': 'R19',
+              'no-arbitrary-token-class': 'R19',
+            };
+            const rows = [];
+            for (const file of report) {
+              for (const m of file.messages) {
+                const rule = (m.ruleId || '').split('/').pop();
+                const id = ruleToSkillId[rule] || '—';
+                const path = file.filePath.replace(`${process.env.GITHUB_WORKSPACE}/`, '');
+                rows.push(`| ${id} | \`${rule}\` | \`${path}:${m.line}\` | ${m.message.split('\\n')[0]} |`);
+              }
+            }
+            const body = [
+              '## Component API floor — violations',
+              '',
+              `Found **${rows.length}** violation(s) against the [interlace-component skill](https://github.com/ofri-peretz/agents/blob/main/skills/interlace-component/SKILL.md) (R1–R26).`,
+              '',
+              '| Skill ID | Rule | File:line | Note |',
+              '| -------- | ---- | --------- | ---- |',
+              ...rows.slice(0, 40),
+              rows.length > 40 ? `\n_… and ${rows.length - 40} more._` : '',
+              '',
+              '**Auto-fix:** R5 (`no-default-test-id`) is `eslint --fix`-able. R8 (`no-is-prefix-prop`) has a suggestion (manual confirmation needed).',
+              '',
+              'See [`docs/rules/component-api/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-react-features/docs/rules/component-api) for per-rule docs.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Fail if violations found
+        if: steps.lint.outputs.exit_code != '0'
+        run: |
+          echo "componentApi lint failed — see PR comment for the rule-ID-keyed report."
+          exit 1
+
+      - name: Reference primitive self-test (dialog.tsx must be clean)
+        run: |
+          npx eslint \
+            --resolve-plugins-relative-to packages/eslint-plugin-react-features \
+            --rule '@eslint/react-features/component-api/no-default-test-id: error' \
+            --rule '@eslint/react-features/component-api/require-data-slot: error' \
+            --rule '@eslint/react-features/component-api/no-is-prefix-prop: error' \
+            --rule '@eslint/react-features/component-api/no-inline-style: error' \
+            --rule '@eslint/react-features/component-api/no-raw-color-literal: error' \
+            --rule '@eslint/react-features/component-api/no-arbitrary-token-class: error' \
+            --rule '@eslint/react-features/component-api/no-kind-prop-discriminator: error' \
+            --rule '@eslint/react-features/component-api/no-wrapper-sub-component: error' \
+            packages/ui/src/primitives/dialog.tsx
+
+  registry-drift:
+    name: registry drift check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+
+      - name: Verify shadcn registry is in sync with packages/ui/src/primitives/
+        run: npm run build:check --workspace=registry
+        # Fails if any `apps/registry/public/r/<name>.json` is out of sync with
+        # the corresponding primitive source. Keeps `ds.interlace.tools` from
+        # serving stale JSON when a contributor adds a primitive but forgets to
+        # rebuild the registry.

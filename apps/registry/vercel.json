@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "node scripts/build-registry.mjs && npx next build",
+  "installCommand": "npm install --include=dev --no-audit --no-fund",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+}

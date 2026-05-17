@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion",
+  "type": "registry:ui",
+  "title": "Accordion",
+  "description": "@interlace/ui — accordion primitive (shadcn-compatible).",
+  "dependencies": [
+    "@base-ui-components/react",
+    "lucide-react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/interlace-ui/accordion.tsx",
+      "target": "components/ui/accordion.tsx",
+      "type": "registry:ui",
+      "content": "'use client';\n\nimport * as React from 'react';\nimport { Accordion as BaseAccordion } from '@base-ui-components/react/accordion';\nimport { ChevronDownIcon } from 'lucide-react';\n\nimport { cn } from '../lib/cn.js';\n\nfunction Accordion(\n  props: React.ComponentProps<typeof BaseAccordion.Root>,\n) {\n  return <BaseAccordion.Root data-slot=\"accordion\" {...props} />;\n}\n\nfunction AccordionItem({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAccordion.Item>) {\n  return (\n    <BaseAccordion.Item\n      data-slot=\"accordion-item\"\n      className={cn('border-b last:border-b-0', className)}\n      {...props}\n    />\n  );\n}\n\nfunction AccordionTrigger({\n  className,\n  children,\n  ...props\n}: React.ComponentProps<typeof BaseAccordion.Trigger>) {\n  return (\n    <BaseAccordion.Header className=\"flex\">\n      <BaseAccordion.Trigger\n        data-slot=\"accordion-trigger\"\n        className={cn(\n          'focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-panel-open]>svg]:rotate-180',\n          className,\n        )}\n        {...props}\n      >\n        {children}\n        <ChevronDownIcon className=\"text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200\" />\n      </BaseAccordion.Trigger>\n    </BaseAccordion.Header>\n  );\n}\n\nfunction AccordionContent({\n  className,\n  children,\n  ...props\n}: React.ComponentProps<typeof BaseAccordion.Panel>) {\n  return (\n    <BaseAccordion.Panel\n      data-slot=\"accordion-content\"\n      className=\"data-[open]:animate-accordion-down data-[closed]:animate-accordion-up overflow-hidden text-sm\"\n      {...props}\n    >\n      <div className={cn('pt-0 pb-4', className)}>{children}</div>\n    </BaseAccordion.Panel>\n  );\n}\n\nexport { Accordion, AccordionItem, AccordionTrigger, AccordionContent };\n"
+    }
+  ]
+}

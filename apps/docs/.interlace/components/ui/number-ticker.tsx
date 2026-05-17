@@ -8,8 +8,11 @@
 
 import { ComponentPropsWithoutRef, useCallback, useEffect, useRef, useState } from "react"
 
-import { cn } from "@/lib/utils"
-import { useReducedMotion } from "../../lib/use-reduced-motion"
+import { cn } from "../../lib/utils"
+// Self-reference through `#interlace` so consumer apps resolve to their
+// own synced `.interlace/lib/use-reduced-motion` — same convention as
+// marquee/meteors/sunny-background in this directory.
+import { useReducedMotion } from "#interlace/lib/use-reduced-motion"
 
 interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   value: number

@@ -218,4 +218,4 @@ export function accuracyReport(observations, opts = {}) {
 
 // Lifted to its own file so strict-tsconfig consumers (apps/docs) can
 // import it without pulling in this whole loosely-typed module.
-export { median } from './median.js';
+export { median } from './median.ts';

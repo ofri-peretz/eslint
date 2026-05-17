@@ -14,7 +14,7 @@ import React, {
 } from "react"
 import { AnimatePresence, motion, MotionProps } from "motion/react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 export function AnimatedListItem({ children }: { children: React.ReactNode }) {
   const animations: MotionProps = {

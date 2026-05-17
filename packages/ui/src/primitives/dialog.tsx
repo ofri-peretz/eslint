@@ -1,5 +1,41 @@
 'use client';
 
+/**
+ * @interlace/ui — Dialog (gold-standard reference for the interlace-component skill)
+ *
+ * This file is the canonical example of the portable component-modeling floor.
+ * Every rule R1–R26 from `skills/interlace-component/SKILL.md` that is applicable
+ * to a Dialog primitive is illustrated here.
+ *
+ * | Rule | Concept                          | Where in this file                                            |
+ * | ---- | -------------------------------- | ------------------------------------------------------------- |
+ * | R4   | Extends native el + JSDoc        | `React.ComponentProps<typeof BaseDialog.*>` on every export   |
+ * | R5   | data-testid type-required        | Inherited via consumer-supplied `data-testid` on `...props`   |
+ * | R6   | data-slot on every named part    | `data-slot="dialog"` / `"dialog-trigger"` / `"dialog-portal"` / `"dialog-close"` / `"dialog-overlay"` / `"dialog-popup"` |
+ * | R7   | className merged + ...rest + ref | `cn(...)` merged className; `{...props}` spread to root       |
+ * | R8   | No `isXxx` prefix on booleans    | All boolean props inherited from Base UI use the no-`is` form |
+ * | R11  | Composition over prop-drilling   | DialogContent / DialogHeader / DialogFooter / DialogTitle / DialogDescription compound parts |
+ * | R12  | Reuse primitives — don't wrap    | XIcon from lucide-react is slotted, not wrapped in a `DialogCloseIcon` |
+ * | R13  | Build with the ecosystem         | `@base-ui-components/react/dialog` provides keyboard / focus / portal / ARIA |
+ * | R14  | Controlled + uncontrolled        | Inherited from `BaseDialog.Root` — `open` + `onOpenChange` + `defaultOpen` |
+ * | R16  | No internal coupling             | DialogClose accepts children; consumer slots their own button if needed |
+ * | R17  | API parity with MUI/shadcn       | Shape mirrors shadcn/ui Dialog + Base UI primitives — no deviation |
+ * | R18  | Tailwind only — no inline style  | Every visual class is Tailwind; zero `style={{}}` in this file |
+ * | R19  | Tokens only — no raw hex/rgba    | Visual classes use theme tokens (`bg-background`, `text-foreground`, `border`) |
+ * | R20  | AA contrast                      | Tokens guarantee contrast in light + dark via the theme       |
+ * | R23  | CLS=0                            | Overlay is positioned via `fixed inset-0`; no layout shift     |
+ * | R24  | Product-neutral vocabulary       | All names structural (`Dialog`, `Title`, `Description`, `Footer`) — no domain terms |
+ * | R26  | A11y from headless primitive     | All ARIA / keyboard / focus handled by `@base-ui-components/react/dialog` |
+ *
+ * Out of scope here (rules that don't apply to this primitive):
+ * - R3 / R12 (RFC, wrappers) — this is shipped reference code, not a new RFC.
+ * - R9 / R10 — event shape inherited from Base UI; sub-element access is via slots, not `xxxProps`.
+ * - R21 / R22 — layout primitives (Section/Container) are sibling components, not Dialog concerns.
+ * - R25 — `'use client'` is correct for an interactive dialog; not a server component.
+ *
+ * Consumer-side, this file is the answer to "what does a state-of-the-art primitive look like?"
+ */
+
 import * as React from 'react';
 import { Dialog as BaseDialog } from '@base-ui-components/react/dialog';
 import { XIcon } from 'lucide-react';

@@ -244,9 +244,14 @@ describe('ArticlesClient: Article Cards Lock', () => {
   it('defines a single unified ArticleCard wrapper (featured + grid use one component)', () => {
     // The historical `FeaturedArticle` helper was inlined into `ArticleCard`
     // after the @interlace/ui block became the single source of truth for
-    // both variants — the wrapper differentiates with an `isFeatured` prop.
+    // both variants — the wrapper differentiates with a `featured` boolean
+    // prop (renamed from `isFeatured` per the interlace-component R8 rule
+    // `react-features/component-api/no-is-prefix-prop`).
     expect(articlesSource).toContain('function ArticleCard');
-    expect(articlesSource).toContain('isFeatured');
+    expect(articlesSource).toMatch(/\bfeatured\??:\s*boolean\b/);
+    // Negative lock — the old prefix must not return; the rule reports it as
+    // an interlace-component R8 violation but lock-tests catch it earlier.
+    expect(articlesSource).not.toMatch(/\bisFeatured\b\s*\??:\s*boolean/);
   });
 
   it('marks the featured slot as the LCP element via the `priority` prop', () => {
@@ -255,7 +260,7 @@ describe('ArticlesClient: Article Cards Lock', () => {
     // eager loading + high fetch priority. If this assertion fails, the
     // grid wrapper is forwarding `priority={false}` (or omitting it) and
     // Lighthouse will start failing the LCP budget again.
-    expect(articlesSource).toMatch(/priority=\{isFeatured\}/);
+    expect(articlesSource).toMatch(/priority=\{featured\}/);
   });
 
   it('uses CSS animation classes (motion-safe gated)', () => {
@@ -300,7 +305,7 @@ describe('ArticlesClient: Article Cards Lock', () => {
     // which owns the <img> markup. CLS width/height enforcement is gated by
     // the Storybook a11y workflow against the UI package source, not here.
     expect(articlesSource).toContain('ArticleCard as ArticleCardBlock');
-    expect(articlesSource).toContain("variant={isFeatured ? 'overlay' : 'stack'}");
+    expect(articlesSource).toContain("variant={featured ? 'overlay' : 'stack'}");
   });
 });
 
@@ -371,12 +376,12 @@ describe('ArticlesClient: Test IDs Lock', () => {
   }
   // sort-direction test ID removed alongside the sort UI itself (2026-05).
 
-  // The featured/grid wrapper picks its testid via the `isFeatured` prop,
-  // so the value appears inside a JSX expression with single quotes.
-  it('has featured-article and article-card test ids (chosen by isFeatured prop)', () => {
+  // The featured/grid wrapper picks its testid via the `featured` prop, so
+  // the value appears inside a JSX expression with single quotes.
+  it('has featured-article and article-card test ids (chosen by `featured` prop)', () => {
     expect(articlesSource).toContain("'featured-article'");
     expect(articlesSource).toContain("'article-card'");
-    expect(articlesSource).toMatch(/data-testid=\{isFeatured\s*\?\s*'featured-article'\s*:\s*'article-card'\}/);
+    expect(articlesSource).toMatch(/data-testid=\{featured\s*\?\s*'featured-article'\s*:\s*'article-card'\}/);
   });
 });
 
@@ -475,5 +480,44 @@ describe('ArticlesClient: Accessibility Lock', () => {
 
   it('filter-toggle reports expanded state', () => {
     expect(articlesSource).toContain('aria-expanded=');
+  });
+});
+
+// =========================================
+// LAYOUT_PHILOSOPHY adherence (mirror of the homepage lock)
+// =========================================
+//
+// The server entry `app/articles/page.tsx` is the page-level wrapper and is
+// subject to the same LAYOUT_PHILOSOPHY §1/§2 rules as the homepage: width
+// + horizontal padding belong to <Container>, ad-hoc max-w-* widths are
+// forbidden. The pre-migration wrapper was a hand-rolled `<div
+// className="container max-w-6xl mx-auto px-4 py-8">` — the lock guards
+// against that pattern returning.
+
+describe('Articles Page: LAYOUT_PHILOSOPHY adherence', () => {
+  describe('Server page wrapper', () => {
+    it('imports Container from @interlace/ui (no hand-rolled wrapper)', () => {
+      expect(pageSource).toContain("import { Container } from '@interlace/ui/container'");
+    });
+
+    it('renders <Container size="wide"> as the outer wrapper', () => {
+      expect(pageSource).toMatch(/<Container\b[^>]*\bsize="wide"/);
+    });
+
+    it('preserves the skip-link target on the Container (KEYBOARD_PHILOSOPHY #1)', () => {
+      // The skip link in the root layout focuses `#main-content`; the
+      // Container must keep both the id and `tabIndex={-1}` so the focus
+      // lands without scrolling the page horizontally on small viewports.
+      expect(pageSource).toMatch(/<Container\b[^>]*\bid="main-content"/);
+      expect(pageSource).toMatch(/<Container\b[^>]*\btabIndex=\{-1\}/);
+    });
+
+    it('does NOT open-code `container mx-auto px-*` (Container owns the wrapper)', () => {
+      expect(pageSource).not.toMatch(/className=["'`][^"'`]*\bcontainer\s+mx-auto\b/);
+    });
+
+    it('does NOT use ad-hoc `max-w-3xl/4xl/5xl/6xl/7xl` widths (Container size is the contract)', () => {
+      expect(pageSource).not.toMatch(/className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/);
+    });
   });
 });

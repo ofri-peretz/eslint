@@ -165,7 +165,8 @@
       "default": "./dist/aceternity/*.js"
     },
     "./styles/tokens.css": "./styles/tokens.css",
-    "./styles/theme.css": "./styles/theme.css"
+    "./styles/theme.css": "./styles/theme.css",
+    "./styles/interlace-theme.css": "./styles/interlace-theme.css"
   },
   "files": [
     "dist",
