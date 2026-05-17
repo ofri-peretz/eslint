@@ -7,8 +7,8 @@ Expose the `component-api/*` rule namespace to consumers.
 Eight rules — `no-default-test-id`, `require-data-slot`, `no-is-prefix-prop`,
 `no-inline-style`, `no-raw-color-literal`, `no-arbitrary-token-class`,
 `no-kind-prop-discriminator`, `no-wrapper-sub-component` — already exist in
-`src/rules/component-api/` and are referenced by the plugin's recommended
-config, but they were not previously included in the published `rules` map.
+`src/rules/component-api/`, but they were not previously included in the
+published `rules` map and so could not be registered by consumers.
 This release adds them so downstream apps (e.g. `apps/blog`, `apps/docs`,
 `interlace-landing`) can register the `componentApi` preset via:
 
