@@ -150,6 +150,6 @@ gate. If you add a new aliased plugin, expect `Object.keys(rules).length` to be
 
 - [docs/oxlint-integration.md](../../docs/oxlint-integration.md) — three-tier pipeline, shim mechanics, recipes
 - [.agent/oxlint-jsplugins-manifest.json](../oxlint-jsplugins-manifest.json) — generated map of every plugin's shim path + per-rule classification
-- [scripts/audit-rule-portability.mjs](../../scripts/audit-rule-portability.mjs) — audit + gate (header comment cites oxlint sources)
-- [scripts/generate-oxlint-shims.mjs](../../scripts/generate-oxlint-shims.mjs) — shim/subpath generator
+- [scripts/audit-rule-portability.ts](../../scripts/audit-rule-portability.ts) — audit + gate (header comment cites oxlint sources)
+- [scripts/generate-oxlint-shims.ts](../../scripts/generate-oxlint-shims.ts) — shim/subpath generator
 - [benchmarks/suites/ilb-oxlint-parity/](../../benchmarks/suites/ilb-oxlint-parity/) — empirical parity benchmark

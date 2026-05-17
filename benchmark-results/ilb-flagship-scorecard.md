@@ -3,30 +3,30 @@
 > Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-05-10.json`.
 
 - **Generated**: 2026-05-10T16:50:19.028Z · **Schema**: ilb-flagship/v2
-- **ESLint**: v9.39.4 · **oxlint**: Version: 1.63.0 · **Node**: v24.13.0
+- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.13.0
 - **OOS root**: `/Users/ofri/repos/ofriperetz.dev/oos`
 
 ## 1. Latency (cold → warm) and findings count
 
 | Rule | Repo | ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :--- | :--- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `import-next/no-cycle` | next.js | 131K | T1 | 20651 ms | 470 ms | 5243 | 25866 ms | 410 ms | 0 | 152 ms | 145 ms | 17 |
-| `pg/no-unsafe-query` | supabase | 78K | T1 | 15568 ms | 714 ms | 0 | — | — | — | — | — | — |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 2233 ms | 309 ms | 0 | 2840 ms | 295 ms | 380 | — | — | — |
+| `import-next/no-cycle` | next.js | 131K | T1 | 20,651 ms | 470 ms | 5,243 | 25,866 ms | 410 ms | 0 | 152 ms | 145 ms | 17 |
+| `pg/no-unsafe-query` | supabase | 78K | T1 | 15,568 ms | 714 ms | 0 | — | — | — | — | — | — |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 2,233 ms | 309 ms | 0 | 2,840 ms | 295 ms | 380 | — | — | — |
 | `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 228 ms | 194 ms | 1 | 233 ms | 190 ms | 0 | — | — | — |
-| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 3855 ms | 444 ms | 233 | — | — | — | — | — | — |
-| `jwt/no-algorithm-none` | supabase | 78K | T1 | 15430 ms | 1276 ms | 0 | — | — | — | — | — | — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 19570 ms | 394 ms | 2 | — | — | — | — | — | — |
-| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 20272 ms | 426 ms | 102 | 19696 ms | 410 ms | 44 | 81 ms | 59 ms | 0 |
-| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 4502 ms | 432 ms | 0 | 4843 ms | 488 ms | 0 | 87 ms | 86 ms | 0 |
-| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 2218 ms | 293 ms | 0 | — | — | — | — | — | — |
+| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 3,855 ms | 444 ms | 233 | — | — | — | — | — | — |
+| `jwt/no-algorithm-none` | supabase | 78K | T1 | 15,430 ms | 1,276 ms | 0 | — | — | — | — | — | — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 19,570 ms | 394 ms | 2 | — | — | — | — | — | — |
+| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 20,272 ms | 426 ms | 102 | 19,696 ms | 410 ms | 44 | 81 ms | 59 ms | 0 |
+| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 4,502 ms | 432 ms | 0 | 4,843 ms | 488 ms | 0 | 87 ms | 86 ms | 0 |
+| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 2,218 ms | 293 ms | 0 | — | — | — | — | — | — |
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack | Median cold | Median warm | Δ | Cache benefit |
 | :--- | ---: | ---: | ---: | ---: |
-| Ours (ESLint) | 9966 ms | 429 ms | 9537 ms | 96% |
-| Competitor (ESLint) | 4843 ms | 410 ms | 4433 ms | 92% |
+| Ours (ESLint) | 9,966 ms | 429 ms | 9,537 ms | 96% |
+| Competitor (ESLint) | 4,843 ms | 410 ms | 4,433 ms | 92% |
 | oxlint native (competitor) | 87 ms | 86 ms | 1 ms | 1% |
 
 ## 3. Synthetic corpus — true precision / recall / F1

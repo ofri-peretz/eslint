@@ -20,22 +20,31 @@ const preview: Preview = {
       ],
     },
     a11y: {
-      // Run axe against wcag2a, wcag2aa, wcag21aa, plus best-practice. The CI
-      // gate (test-runner.ts) reuses these tags; keep them in sync.
+      // Strict tag stack — matches apps/docs/e2e/a11y.spec.ts and the
+      // test-runner gate. Keep these in sync: any tag added here must also
+      // be added to apps/storybook/.storybook/test-runner.ts STRICT_TAGS.
       element: '#storybook-root',
       config: {
         rules: [
-          // Skip color-contrast in primitive stories whose Default state is a
-          // disabled control (axe flags 50%-opacity disabled buttons even
-          // though they're spec-compliant). Override per-story when needed.
+          // Per-story overrides go in `parameters.a11y.config.rules`.
         ],
       },
       options: {
         runOnly: {
           type: 'tag',
-          values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice'],
+          values: [
+            'wcag2a',
+            'wcag2aa',
+            'wcag2aaa',
+            'wcag21a',
+            'wcag21aa',
+            'wcag22aa',
+            'best-practice',
+            'ACT',
+          ],
         },
       },
+      test: 'error',
       manual: false,
     },
     layout: 'centered',

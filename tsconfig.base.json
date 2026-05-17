@@ -24,6 +24,9 @@
       "@interlace/eslint-devkit": [
         "packages/eslint-devkit/src/index.ts"
       ],
+      "@interlace/eslint-config": [
+        "packages/eslint-config-interlace/src/index.ts"
+      ],
       "eslint-plugin-secure-coding": [
         "packages/eslint-plugin-secure-coding/src/index.ts"
       ],

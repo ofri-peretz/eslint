@@ -73,6 +73,16 @@ import { noUnnecessaryRerenders } from './rules/performance/no-unnecessary-reren
 import { reactRenderOptimization } from './rules/performance/react-render-optimization';
 import { reactNoInlineFunctions } from './rules/performance/react-no-inline-functions';
 
+// Component-API rules (interlace-component skill R5/R6/R8/R11/R12/R18/R19)
+import { noDefaultTestId } from './rules/component-api/no-default-test-id';
+import { requireDataSlot } from './rules/component-api/require-data-slot';
+import { noIsPrefixProp } from './rules/component-api/no-is-prefix-prop';
+import { noInlineStyle } from './rules/component-api/no-inline-style';
+import { noRawColorLiteral } from './rules/component-api/no-raw-color-literal';
+import { noArbitraryTokenClass } from './rules/component-api/no-arbitrary-token-class';
+import { noKindPropDiscriminator } from './rules/component-api/no-kind-prop-discriminator';
+import { noWrapperSubComponent } from './rules/component-api/no-wrapper-sub-component';
+
 export const rules = {
   // Flat names
   'required-attributes': requiredAttributes,
@@ -134,6 +144,16 @@ export const rules = {
   'react-render-optimization': reactRenderOptimization,
   'react-no-inline-functions': reactNoInlineFunctions,
 
+  // Component-API (flat)
+  'no-default-test-id': noDefaultTestId,
+  'require-data-slot': requireDataSlot,
+  'no-is-prefix-prop': noIsPrefixProp,
+  'no-inline-style': noInlineStyle,
+  'no-raw-color-literal': noRawColorLiteral,
+  'no-arbitrary-token-class': noArbitraryTokenClass,
+  'no-kind-prop-discriminator': noKindPropDiscriminator,
+  'no-wrapper-sub-component': noWrapperSubComponent,
+
   // Categorized names
   'react/required-attributes': requiredAttributes,
   'react/jsx-key': jsxKey,
@@ -193,6 +213,16 @@ export const rules = {
   'performance/no-unnecessary-rerenders': noUnnecessaryRerenders,
   'performance/react-render-optimization': reactRenderOptimization,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
+
+  // Component-API (categorized) — interlace-component skill R5/R6/R8/R11/R12/R18/R19
+  'component-api/no-default-test-id': noDefaultTestId,
+  'component-api/require-data-slot': requireDataSlot,
+  'component-api/no-is-prefix-prop': noIsPrefixProp,
+  'component-api/no-inline-style': noInlineStyle,
+  'component-api/no-raw-color-literal': noRawColorLiteral,
+  'component-api/no-arbitrary-token-class': noArbitraryTokenClass,
+  'component-api/no-kind-prop-discriminator': noKindPropDiscriminator,
+  'component-api/no-wrapper-sub-component': noWrapperSubComponent,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {
@@ -212,33 +242,55 @@ export const configs = {
    */
   flagship: {
     plugins: {
-      '@eslint/react-features': plugin,
+      'react-features': plugin,
     },
     rules: {
-      '@eslint/react-features/react/hooks-exhaustive-deps': 'error',
+      'react-features/hooks-exhaustive-deps': 'error',
     },
   },
 
   recommended: {
     plugins: {
-      '@eslint/react-features': plugin,
+      'react-features': plugin,
     },
     rules: {
-      '@eslint/react-features/react/jsx-key': 'error',
-      '@eslint/react-features/react/no-children-prop': 'warn',
-      '@eslint/react-features/react/no-danger': 'warn',
-      '@eslint/react-features/react/no-string-refs': 'error',
-      '@eslint/react-features/react/no-unknown-property': 'error',
-      '@eslint/react-features/react/hooks-exhaustive-deps': 'warn',
+      'react-features/jsx-key': 'error',
+      'react-features/no-children-prop': 'warn',
+      'react-features/no-danger': 'warn',
+      'react-features/no-string-refs': 'error',
+      'react-features/no-unknown-property': 'error',
+      'react-features/hooks-exhaustive-deps': 'warn',
       // Security rules
-      '@eslint/react-features/react/jsx-no-target-blank': 'error',
-      '@eslint/react-features/react/jsx-no-script-url': 'error',
-      '@eslint/react-features/react/jsx-no-duplicate-props': 'error',
-      '@eslint/react-features/react/no-danger-with-children': 'error',
-      '@eslint/react-features/react/no-deprecated': 'warn',
+      'react-features/jsx-no-target-blank': 'error',
+      'react-features/jsx-no-script-url': 'error',
+      'react-features/jsx-no-duplicate-props': 'error',
+      'react-features/no-danger-with-children': 'error',
+      'react-features/no-deprecated': 'warn',
       // Performance
-      '@eslint/react-features/performance/no-unnecessary-rerenders': 'warn',
-      '@eslint/react-features/performance/react-render-optimization': 'warn',
+      'react-features/no-unnecessary-rerenders': 'warn',
+      'react-features/react-render-optimization': 'warn',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Component-API preset — enforces the mechanical rules from the
+   * `interlace-component` skill (R5/R6/R8/R11/R12/R18/R19). Apply this to any
+   * package that ships shared React components (registry, design-system,
+   * @interlace/ui).
+   */
+  componentApi: {
+    plugins: {
+      'react-features': plugin,
+    },
+    rules: {
+      'react-features/component-api/no-default-test-id': 'error',
+      'react-features/component-api/require-data-slot': 'warn',
+      'react-features/component-api/no-is-prefix-prop': 'warn',
+      'react-features/component-api/no-inline-style': 'warn',
+      'react-features/component-api/no-raw-color-literal': 'warn',
+      'react-features/component-api/no-arbitrary-token-class': 'warn',
+      'react-features/component-api/no-kind-prop-discriminator': 'warn',
+      'react-features/component-api/no-wrapper-sub-component': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

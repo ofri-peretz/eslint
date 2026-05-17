@@ -34,14 +34,14 @@ We collapse those four counts into three published rates:
 
 ### The ten principles
 
-1. **Recall first, precision second.** A missed CWE is worse than a noisy rule. We never regress recall to chase FPs. Today: **100% recall on Arena, Juliet** — guard it.
-2. **Two axes of truth, never one.** Synthetic corpora (Arena, Juliet) prove labels; real OSS (Wild, Edge) proves production fidelity. Neither alone is sufficient — both must be green.
+1. **Recall first, precision second.** A missed CWE is worse than a noisy rule. We never regress recall to chase FPs. Today: **100% recall on Arena, CWE-Corpus** — guard it.
+2. **Two axes of truth, never one.** Synthetic corpora (Arena, CWE-Corpus) prove labels; real OSS (Wild, Edge) proves production fidelity. Neither alone is sufficient — both must be green.
 3. **Adversarial framing is explicit.** FP-edge repos (three.js, webpack, lodash) are *expected* to over-fire. We mark them `fpEdge: true` in the registry and judge them on FP-rate ceilings, not zero-FP.
 4. **Per-rule attribution is mandatory.** No "we have N FPs" without knowing which rule each came from. Every aggregate must drill to a rule + fixture + line. Our tooling enforces this.
 5. **Multi-rater agreement beats single-author labels.** Cohen's κ vs sonarjs / microsoft-sdl is a trust signal. The over-fit detector (only-Interlace TPs) is its dual — both run in `ilb:coverage`.
 6. **Trust through reproducibility.** Every claim has a JSON receipt and a `jq` query that recomputes it. Markdown is a window onto JSON, not a separate source.
 7. **Drift is a bug.** Stale benches are observability failures, not "scheduling issues." The CI gate fails the PR; the audits/ folder timestamps each refresh.
-8. **FPs are weighted by bench severity.** An Arena FP is publication-grade harm; an Edge FP is expected drift. The regression gate weights them: **Arena ×10, Juliet ×5, Quality ×3, Wild ×1, Edge ×0.1**.
+8. **FPs are weighted by bench severity.** An Arena FP is publication-grade harm; an Edge FP is expected drift. The regression gate weights them: **Arena ×10, CWE-Corpus ×5, Quality ×3, Wild ×1, Edge ×0.1**.
 9. **Consistency over time builds credibility.** TP/FP/FN/TN counts must be **comparable across runs**. That requires (a) a frozen corpus per bench version (no silent commit drift — enforced by `npm run ilb:corpus-integrity`), (b) deterministic rule input (no env-dependent behaviour), (c) append-only history in `benchmark-results/history.ndjson` so any number can be plotted across time. Every result publishes the bench *version* so corpus changes invalidate prior numbers explicitly, not silently.
 10. **Severity is a contract, not a label.** Every rule's severity (`error` / `warn`) defines what action a maintainer expects when it fires. The classification is rule-driven, not vibe-driven — see *"Severity classification policy"* below.
 
@@ -56,7 +56,7 @@ A rule's severity must match its real-world consequence and false-positive risk.
 | **`info`** *(reserved)* | Stylistic / informational; no security or reliability impact. | n/a | — *(we don't currently use this tier; reserved for future use)* |
 | **`off`** | Rule is `experimental`, `deprecated`, or specific to a workflow most users don't have. Available but not in `recommended`. | n/a | New rules during the lifecycle gate (Phase 1 day-7 in the audit roadmap) |
 
-**Promotion rule:** A rule cannot ship as `error` until it has ≥ 4 fixtures across Arena + Juliet AND ≥ 90 days of Wild data showing the precision threshold met. New rules ship `warn`. Promotion to `error` is a deliberate decision recorded in the rule's CHANGELOG, not a default. Demotion is mandatory if Wild precision drops below threshold for two consecutive nightly runs.
+**Promotion rule:** A rule cannot ship as `error` until it has ≥ 4 fixtures across Arena + CWE-Corpus AND ≥ 90 days of Wild data showing the precision threshold met. New rules ship `warn`. Promotion to `error` is a deliberate decision recorded in the rule's CHANGELOG, not a default. Demotion is mandatory if Wild precision drops below threshold for two consecutive nightly runs.
 
 **The cost of miscalibration:** every time CI fails on a low-precision `error`-level rule, devs learn that "CI failures don't always mean broken." That habit, once formed, is the most expensive thing in any lint setup. Severity is the only lever we have to keep this contract honest.
 
@@ -67,7 +67,7 @@ Every Interlace bench reports — at minimum — these three aspects so cross-be
 | Aspect | Standard field name(s) | What it answers | SLO framing |
 | :--- | :--- | :--- | :--- |
 | **Cost (tokens)** | `tokensO200k` (headline) · `tokensCl100k` (sanity) · `meanTokensO200k` (aggregate) | Will an LLM consumer choke on this? Is feeding it back into a fix loop cheap enough to do per-PR? | Per-bench ceiling (e.g. `interlace-compact ≤ eslint-stylish` for ILB-Formatter; `≤ V1` for ILB-LLM-Tokens). |
-| **Effectiveness (context)** | `effectiveness` (umbrella) — concrete: `f1` / `precision` / `recall` (rule benches) · `signalScore` 0–4 (formatter) · `passRate` (ILB-LLM-Fix) · `vulnDetectionRate` (ILB-AI) | Does the output preserve the four FP/FN-attribution axes (`ruleId`, `severity`, `count`, `fixable`)? Did the rule classify TP/FP correctly? Did the LLM ship a working fix? | F1 ≥ 95 % (Arena) · F1 ≥ 80 % (Juliet) · structured signalScore = 4.0/4 (Formatter) · pass rate ≥ 80 % (LLM-Fix). |
+| **Effectiveness (context)** | `effectiveness` (umbrella) — concrete: `f1` / `precision` / `recall` (rule benches) · `signalScore` 0–4 (formatter) · `passRate` (ILB-LLM-Fix) · `vulnDetectionRate` (ILB-AI) | Does the output preserve the four FP/FN-attribution axes (`ruleId`, `severity`, `count`, `fixable`)? Did the rule classify TP/FP correctly? Did the LLM ship a working fix? | F1 ≥ 95 % (Arena) · F1 ≥ 80 % (CWE-Corpus) · structured signalScore = 4.0/4 (Formatter) · pass rate ≥ 80 % (LLM-Fix). |
 | **Latency (speed)** | `latencyMsP50` · `latencyMsP95` · `meanLatencyMs` · per-rule `msPerFile` (perf benches) · `peakRssMb` | Can it run in a pre-commit hook? Does CI fit the time budget? Does the formatter still feel instant on a 2k-file run? | ≤ 15 ms/file (ILB-Perf) · ≤ 50 ms/run at `large` scale, ≤ 250 ms at `extreme` (ILB-Formatter). |
 
 The triad is checked **constantly**, not occasionally: every result JSON in `results/<bench>/<date>.json` carries all three aspects (or an explicit `n/a` with reason), and the scorecard surfaces the per-aspect cell so a regression on any one of them fails the gate.
@@ -141,7 +141,7 @@ Each bench is **single-dimension** (one bench, one number), **versioned** (corpu
 | :- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **ILB-Arena** | Vs every other ESLint security plugin on the same fixtures, who wins? | n/a | F1, rank 1–N · SLO: rank ≤ 3, F1 ≥ 95 % | derived from ILB-Perf | `npm run ilb:arena` |
 | 2 | **ILB-Arena-Quality** | Same, for quality plugins | n/a | F1, rank 1–N · SLO: F1 ≥ 75 % | derived from ILB-Perf | `npm run ilb:arena:quality` |
-| 3 | **ILB-Juliet** | On a synthetic CWE-mapped corpus (academic standard), do we detect what we should? | n/a | F1 + OWASP BAS · SLO: F1 ≥ 80 %, BAS ≥ 60 % | derived from ILB-Perf | `npm run ilb:juliet` |
+| 3 | **ILB-CWE-Corpus** | On our self-authored CWE-mapped synthetic corpus (Juliet-style organization, **not** the NIST Juliet corpus), do we detect what we should? | n/a | F1 + OWASP BAS · SLO: F1 ≥ 80 %, BAS ≥ 60 % | derived from ILB-Perf | `npm run ilb:cwe-corpus` |
 | 4 | **ILB-Wild** | What do we find on real popular OSS code (1.8M LoC, 22 repos)? | n/a | findings / kLoC · SLO: ≤ 1/kLoC on non-edge repos | piggy-backs ILB-Perf measurement | `npm run ilb:wild` |
 | 5 | **ILB-Edge** | On adversarial-real code (Three.js's `eval`, etc.), how noisy are we? | n/a | FP rate · SLO: ≤ 2 % | piggy-backs ILB-Perf measurement | `npm run ilb:wild` (subset) |
 | 6 | **ILB-Cov** | Of all our rules, what fraction fires on real code? | n/a | activation rate · SLO: ≥ 70 % | derived from ilb:wild | derived |
@@ -161,8 +161,8 @@ Where standards exist, we mirror them. Where none exist for JavaScript, we say "
 
 | Methodology | Adopted in | What we mirror |
 | :--- | :--- | :--- |
-| **NIST SARD / Juliet Test Suite** | ILB-Juliet | CWE-organized layout (`corpus/CWE-NNN/{vulnerable,safe}/`), per-CWE manifests, F1 scoring |
-| **OWASP Benchmark v1.2** | ILB-Juliet + ILB-Arena | Benchmark Accuracy Score (BAS = TPR − FPR), truth-table-per-CWE, per-tool comparison |
+| **NIST SARD / Juliet Test Suite** | layout inspiration only — **not** adopted as a scored corpus | `corpus/CWE-NNN/{vulnerable,safe}/` directory layout and per-CWE manifests follow Juliet conventions. We do **not** score against the actual NIST Juliet test suite; our `ILB-CWE-Corpus` is a self-authored 22-vuln + 22-safe synthetic set (orders of magnitude smaller than Juliet). Integrating a real NIST Juliet adaptation is tracked as Tier 0.4 in the strategic plan. |
+| **OWASP Benchmark v1.2** | scoring methodology mirrored in ILB-CWE-Corpus + ILB-Arena | We compute BAS (TPR − FPR) and truth-table-per-CWE in the same shape as OWASP Benchmark v1.2 publishes them. **We do not run against the OWASP Benchmark corpus itself** — Benchmark v1.2 is a Java Web App fixture set; the JS adaptation does not exist publicly. Methodology-mirror, not corpus-mirror. |
 | **MITRE CWE Top 25** | corpus prioritization | We expand the CWE corpus prioritizing Top-25 entries |
 | **CVSS 3.1** | per-rule metadata | Every Interlace rule carries a CVSS score; results report findings by CVSS |
 | **Wilson Score Interval** | all accuracy benches | 95% CI on F1 / precision / recall — required for n < 30 |
@@ -193,13 +193,13 @@ ILB-Wild and ILB-Cov have no JavaScript predecessor — we publish the corpus an
 - **Run:** `npm run ilb:arena:quality` (~1 min)
 - **Output:** `results/ilb-arena-quality/<date>.json`
 
-### ILB-Juliet — synthetic CWE accuracy
+### ILB-CWE-Corpus — self-authored synthetic CWE accuracy
 
 - **Corpus:** [`corpus/CWE-022/`](./corpus/CWE-022/) (path traversal), `CWE-078` (cmd injection), `CWE-079` (XSS), `CWE-089` (SQL-i), `CWE-798` (hardcoded creds), `CWE-918` (SSRF) — 2 vulnerable + 2 safe per CWE minimum
 - **Score:** F1 per CWE + aggregate, plus OWASP BAS = TPR − FPR (Youden's J)
 - **Competitors:** 6 — `eslint-plugin-security`, `security-node`, `sonarjs`, `microsoft-sdl`, `no-unsanitized`, **Interlace**
-- **Run:** `npm run ilb:juliet` (~30s) · single CWE: `npm run ilb:juliet -- --cwe=CWE-089`
-- **Output:** `results/ilb-juliet/<date>.json`
+- **Run:** `npm run ilb:cwe-corpus` (~30s) · single CWE: `npm run ilb:cwe-corpus -- --cwe=CWE-089`
+- **Output:** `results/ilb-cwe-corpus/<date>.json`
 
 ### ILB-Wild — real-OSS exposure
 
@@ -256,7 +256,7 @@ ILB-Wild and ILB-Cov have no JavaScript predecessor — we publish the corpus an
 
 | Cadence | What runs | Where it lives |
 | :--- | :--- | :--- |
-| **Per-PR** | Arena, Juliet, Quality, **Formatter** (cheap synthetic benches), `ilb:validate-fixtures:strict`, `ilb:regression` | `.github/workflows/benchmark.yml` posts a sticky scorecard comment, fails on regression. Formatter contract violations (signal score < 4 on a structured format) fail the gate. |
+| **Per-PR** | Arena, CWE-Corpus, Quality, **Formatter** (cheap synthetic benches), `ilb:validate-fixtures:strict`, `ilb:regression` | `.github/workflows/benchmark.yml` posts a sticky scorecard comment, fails on regression. Formatter contract violations (signal score < 4 on a structured format) fail the gate. |
 | **Nightly** | Wild + Edge + Cov + Perf | scheduled workflow → updates `benchmark-results/<date>/` and `scorecard.md` |
 | **Weekly** | `ilb:coverage` (κ + over-fit detector + activation gap), `ilb:llm:tokens`, `ilb:llm:fix` | scheduled workflow |
 | **Quarterly** | `ilb:ai`, CWE corpus expansion review, second-rater sample of 10% of fixtures | manual; tracked in [`FP_FN_REMEDIATION_TRACKER.md`](./FP_FN_REMEDIATION_TRACKER.md) §4 P3 |
@@ -272,9 +272,9 @@ Every claim above is recomputable from a JSON file. Five common questions:
 # 1. "What's the current Arena leaderboard?"
 jq '.summary.leaderboard' benchmarks/results/ilb-arena/$(ls benchmarks/results/ilb-arena/ | tail -1)
 
-# 2. "Which Juliet fixtures FP?" (per CWE + fixture + rule)
+# 2. "Which CWE-Corpus fixtures FP?" (per CWE + fixture + rule)
 jq '.plugins.interlace.perCwe | to_entries[] | {cwe: .key, fps: [.value.fixtures[] | select(.expectedVulnerable==false and .findings>0) | {file, ruleHits}]}' \
-  benchmarks/results/ilb-juliet/$(ls benchmarks/results/ilb-juliet/ | tail -1)
+  benchmarks/results/ilb-cwe-corpus/$(ls benchmarks/results/ilb-cwe-corpus/ | tail -1)
 
 # 3. "Quality FPs broken down by rule"
 jq '.plugins."interlace-quality".cleanAnalysis.byRule' \
@@ -338,7 +338,7 @@ If a result claims "Model A is 5 points better than Model B" and the CIs overlap
 1. `mkdir -p benchmarks/corpus/CWE-NNN/{vulnerable,safe}`
 2. Write `manifest.json` declaring `expectedPlugins`, `coverageGap` (if any), and the fixture list
 3. Add **at least 2 vulnerable + 2 safe** fixtures (Wilson CI gets too wide below this)
-4. Re-run `npm run ilb:juliet` and check the per-CWE F1 is what you expect
+4. Re-run `npm run ilb:cwe-corpus` and check the per-CWE F1 is what you expect
 
 ### Adding a bench
 
@@ -375,13 +375,13 @@ benchmarks/
 │   └── 2026-05-03.md
 ├── package.json                    # @interlace/benchmarks workspace
 │
-├── corpus/                         # ILB-Juliet CWE-mapped fixtures
+├── corpus/                         # ILB-CWE-Corpus CWE-mapped fixtures
 │   └── CWE-NNN/{vulnerable,safe}/
 │
 ├── suites/                         # bench runners (one suite per ILB)
 │   ├── ilb-arena/                  # security head-to-head + 18 competitor configs
 │   ├── ilb-arena-quality/          # quality head-to-head + 8 competitor configs
-│   ├── ilb-juliet/                 # CWE-mapped accuracy scorer
+│   ├── ilb-cwe-corpus/             # CWE-mapped accuracy scorer (self-authored)
 │   ├── ilb-ai/                     # LLM-generated code security
 │   ├── ilb-perf-import/            # import throughput
 │   ├── ilb-llm-tokens/             # per-finding messaging token cost

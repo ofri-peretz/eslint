@@ -51,7 +51,7 @@ When adding a rule, decide which plugin owns it using the **scope rule**:
 | A pattern in a specific SDK / framework | A dedicated SDK plugin (`-pg`, `-mongodb-security`, `-vercel-ai-security`, `-jwt`, `-jwt`, `-react-a11y`, etc.) |
 | Code-quality / maintainability concern (not security) | One of the quality plugins (`-conventions`, `-maintainability`, `-modernization`, `-modularity`, `-operability`, `-reliability`) |
 
-**Why:** SDK-specific rules understand the API surface, reduce false positives, and enable framework-aware remediation. Generic rules produce noisy detections that erode trust. See the philosophy section in [AGENTS.md](AGENTS.md#interlace-eslint--rule-design-philosophy).
+**Why:** SDK-specific rules understand the API surface, reduce false positives, and enable framework-aware remediation. Generic rules produce noisy detections that erode trust. See the philosophy section in [AGENTS.md](AGENTS.md).
 
 ## Build & release
 
@@ -82,8 +82,8 @@ These follow the [llms.txt convention](https://llmstxt.org/) supported by Anthro
 |---|---|
 | [README.md](README.md) | User-facing overview |
 | [AGENTS.md](AGENTS.md) | AI agent instructions (Codex/Claude/Cursor format) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide |
+| CONTRIBUTING.md (planned) | Contribution guide |
 | [docs/QUALITY_STANDARDS.md](docs/QUALITY_STANDARDS.md) | Production-ready rule checklist |
-| [docs/CICD.md](docs/CICD.md) | CI/CD workflow |
+| docs/CICD.md (planned) | CI/CD workflow |
 | [docs/ESLINT_VERSION_SUPPORT.md](docs/ESLINT_VERSION_SUPPORT.md) | Which ESLint majors we support and why |
 | [ROADMAP.md](ROADMAP.md) | Phased delivery plan |

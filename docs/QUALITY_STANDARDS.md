@@ -198,7 +198,7 @@ Is the code covered?
         └── Dead code / unreachable → ❌ REMOVE the code
 ```
 
-> **Reference**: See [RULETESTER-COVERAGE-LIMITATIONS.md](./RULETESTER-COVERAGE-LIMITATIONS.md) for detailed patterns.
+> **Reference**: See RULETESTER-COVERAGE-LIMITATIONS.md (planned) for detailed patterns.
 
 ---
 
@@ -938,7 +938,7 @@ export const rule = createRule({
 
 ## 6. Coverage Limitations Guidelines
 
-> Full documentation: [RULETESTER-COVERAGE-LIMITATIONS.md](./RULETESTER-COVERAGE-LIMITATIONS.md)
+> Full documentation: RULETESTER-COVERAGE-LIMITATIONS.md (planned)
 
 ### When to Use `c8 ignore`
 
@@ -1136,7 +1136,7 @@ Always include the year in OWASP references:
 ## Related Documentation
 
 - [Plugin Review Workflow](./PLUGIN-REVIEW-WORKFLOW.md) - Step-by-step review process
-- [Contributing Guide](./CONTRIBUTING.md) - Release process and versioning
-- [Coverage Limitations](./RULETESTER-COVERAGE-LIMITATIONS.md) - c8 ignore patterns
-- [CI/CD Pipeline](./CICD.md) - Automated quality gates
+- Contributing Guide (planned) - Release process and versioning
+- Coverage Limitations (planned) - c8 ignore patterns
+- CI/CD Pipeline (planned) - Automated quality gates
 - [ESLint Version Support Policy](./ESLINT_VERSION_SUPPORT.md) - Which ESLint majors we support, the 20% gate, and the forward-looking exception

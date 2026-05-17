@@ -56,16 +56,26 @@ export function HeroSection() {
         label: (
           <ShimmerButton
             as="span"
-            shimmerColor="#c084fc"
+            shimmerColor="var(--cta-shimmer)"
             shimmerSize="0.15em"
-            background="linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)"
+            background="var(--cta-bg-gradient)"
           >
             Get Started
             <ArrowRight className="ml-2 size-4" />
           </ShimmerButton>
         ),
         href: '/docs/getting-started',
-        render: <Link href="/docs/getting-started" />,
+        // White focus-ring forced on both CTAs so WCAG 1.4.11 (3:1 non-text
+        // contrast) holds against the *locked* dark cosmic gradient — the
+        // hero is intentionally theme-agnostic (no `dark:` prefix in
+        // hero-cosmic.tsx), but the global `--color-fd-ring` resolves to a
+        // light-theme purple that fails contrast on this surface.
+        render: (
+          <Link
+            href="/docs/getting-started"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/90"
+          />
+        ),
       }}
       secondaryCta={{
         label: (
@@ -73,7 +83,7 @@ export function HeroSection() {
             as="span"
             shimmer={false}
             highlight={false}
-            background="rgba(255, 255, 255, 0.12)"
+            background="var(--cta-secondary-bg)"
             // a11y on BOTH themes: the cosmic hero is hardcoded dark, but a
             // light-theme page can still flash through during hydration and
             // the docs theme can override descendant text-color via cascade
@@ -102,7 +112,18 @@ export function HeroSection() {
           </ShimmerButton>
         ),
         href: 'https://github.com/ofri-peretz/eslint',
-        render: <Link href="https://github.com/ofri-peretz/eslint" />,
+        // External link → new tab + rel="noopener noreferrer" (security
+        // hygiene). Same white focus-ring as the primary so sibling-parity
+        // (CTA_PHILOSOPHY #3) carries to the focus affordance, not just
+        // the visual pill.
+        render: (
+          <Link
+            href="https://github.com/ofri-peretz/eslint"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/90"
+          />
+        ),
       }}
     />
   );

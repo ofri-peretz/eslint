@@ -5,7 +5,7 @@
  * Local edits will be overwritten on next sync (or refused without --force).
  */
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 
 type SpotlightProps = {
   className?: string;

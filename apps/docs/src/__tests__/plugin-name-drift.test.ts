@@ -41,6 +41,15 @@ const ALLOWED_THIRD_PARTY = [
   'eslint-plugin-deprecation',
   'eslint-plugin-naming-convention',
   'eslint-plugin-complexity',
+  // Mentioned in ecosystem.mdx (the per-plugin landscape page).
+  // These are third-party plugins we describe as neighbors in the
+  // landscape — adding them so the doc can cite the real package
+  // names without tripping the canonical-registry guard.
+  'eslint-plugin-no-unsanitized',
+  'eslint-plugin-nestjs',
+  'eslint-plugin-perfectionist',
+  'eslint-plugin-unused-imports',
+  'eslint-plugin-simple-import-sort',
 
   // === Documentation placeholders ===
   // `eslint-config-mycompany` is the "your shared config" example in

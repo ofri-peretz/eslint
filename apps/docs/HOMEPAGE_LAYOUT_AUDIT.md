@@ -1,7 +1,7 @@
 # Homepage Layout Audit
 
 **Date:** 2026-05-10
-**Page:** `/` — [apps/docs/src/app/(home)/page.tsx](src/app/(home)/page.tsx)
+**Page:** `/` — [apps/docs/src/app/(home)/page.tsx](src/app/%28home%29/page.tsx)
 **Status:** Open
 **Audits against:** [LAYOUT_PHILOSOPHY.md](../../LAYOUT_PHILOSOPHY.md)
 **Companion to:** [LAYOUT_AUDIT_REPORT.md](./LAYOUT_AUDIT_REPORT.md) (historical, docs-page-focused, resolved)
@@ -150,7 +150,7 @@ This file is closed when:
 
 1. The four primitives ship (`<Container>`, `<Section>`,
    `<SectionHeader>`, `<Stack>`) under `packages/ui/src/`.
-2. [src/app/(home)/page.tsx](src/app/(home)/page.tsx) is refactored
+2. [src/app/(home)/page.tsx](src/app/%28home%29/page.tsx) is refactored
    to compose them — no `container mx-auto px-*` strings remain in
    the file.
 3. Lighthouse CLS on `/` is 0 at viewport widths 375 / 768 / 1024 /

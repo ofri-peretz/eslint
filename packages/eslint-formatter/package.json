@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "Smart ESLint formatter — groups errors by rule, supports human/compact/JSON output modes, and includes before/after fix examples",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "require": "./src/index.js",
-      "import": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "require": "./dist/src/index.js",
+      "import": "./dist/src/index.js"
     },
     "./schema.json": "./schema.json",
     "./package.json": "./package.json"

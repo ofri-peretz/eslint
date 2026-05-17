@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Deploy app to Vercel
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Manual deploy trigger — pick one app from .github/vercel-apps.json and a
+# target (preview or production). Invoked via `gh workflow run`:
+#
+#   gh -R ofri-peretz/eslint workflow run deploy.yml -f app=storybook -f target=production
+#   gh -R ofri-peretz/eslint workflow run deploy.yml -f app=registry -f target=preview
+#
+# Setup (one-time):
+#   1. Create a Vercel access token at https://vercel.com/account/tokens
+#   2. Add it as a repo secret: gh -R <repo> secret set VERCEL_TOKEN
+#
+# The org ID + per-app project IDs are stored in `.github/vercel-apps.json`
+# (public identifiers; not secrets).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which app to deploy
+        type: choice
+        required: true
+        options:
+          - docs
+          - storybook
+          - registry
+      target:
+        description: Deploy target
+        type: choice
+        required: true
+        default: preview
+        options:
+          - preview
+          - production
+
+concurrency:
+  group: deploy-${{ inputs.app }}-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.app }} → ${{ inputs.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Resolve Vercel project for "${{ inputs.app }}"
+        id: project
+        run: |
+          set -euo pipefail
+          ORG_ID=$(jq -r '.orgId' .github/vercel-apps.json)
+          PROJECT_ID=$(jq -r --arg app "${{ inputs.app }}" '.apps[$app].projectId' .github/vercel-apps.json)
+          PROD_URL=$(jq -r --arg app "${{ inputs.app }}" '.apps[$app].productionUrl // ""' .github/vercel-apps.json)
+          if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
+            echo "::error::No Vercel project mapped for app '${{ inputs.app }}' in .github/vercel-apps.json"
+            exit 1
+          fi
+          echo "VERCEL_ORG_ID=$ORG_ID" >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          echo "PRODUCTION_URL=$PROD_URL" >> "$GITHUB_ENV"
+          echo "Resolved: $PROJECT_ID (${{ inputs.app }})"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment (${{ inputs.target }})
+        run: vercel pull --yes --environment=${{ inputs.target }} --token="$VERCEL_TOKEN"
+
+      - name: Install workspace dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build with Vercel
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            vercel build --token="$VERCEL_TOKEN"
+          fi
+
+      - name: Deploy
+        id: deploy
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.target }}" = "production" ]; then
+            URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          else
+            URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Summarize
+        run: |
+          {
+            echo "## Deployed: \`${{ inputs.app }}\` (${{ inputs.target }})"
+            echo ""
+            echo "**Deployment URL:** ${{ steps.deploy.outputs.url }}"
+            if [ -n "$PRODUCTION_URL" ] && [ "${{ inputs.target }}" = "production" ]; then
+              echo ""
+              echo "**Production alias:** $PRODUCTION_URL"
+            fi
+            echo ""
+            echo "Vercel project: \`$VERCEL_PROJECT_ID\`"
+          } >> "$GITHUB_STEP_SUMMARY"

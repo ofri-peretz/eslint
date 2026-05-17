@@ -213,7 +213,7 @@ We welcome contributions! If you've faced a problem in your organization that co
 
 - **Have an idea?** [Start a discussion](https://github.com/ofri-peretz/eslint/discussions)
 - **Found a bug?** [Open an issue](https://github.com/ofri-peretz/eslint/issues)
-- **Want to contribute code?** See our [Contributing Guide](./CONTRIBUTING.md)
+- **Want to contribute code?** See our Contributing Guide (planned)
 
 ---
 

@@ -39,5 +39,5 @@ export async function walkDirectory(
   }
 
   await visit(root);
-  return results.toSorted();
+  return results.sort();
 }

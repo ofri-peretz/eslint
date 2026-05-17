@@ -1,0 +1,85 @@
+name: Resource Profile (RSS + Cold Start)
+
+# Measures peak RSS + cold-start time per engine × preset on a fixed
+# corpus, and gates on the CI memory budget (80% of 7 GB ubuntu-latest).
+#
+# Scheduled monthly because the measurement is sensitive to runner
+# generation drift; PR-gating would dwarf the bench's value with CI
+# minutes. Also runs on demand via workflow_dispatch.
+#
+# Closes the §3 (Peak memory + Cold start) and §12 (CI memory profile)
+# gates in `distribution/EVALUATION_METRICS.md`.
+
+on:
+  schedule:
+    # 1st of each month, 06:00 UTC.
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      corpus:
+        description: "Corpus path to scan (default: apps/docs/src)"
+        required: false
+        default: "apps/docs/src"
+      runs:
+        description: "Runs per preset (default: 3, takes median)"
+        required: false
+        default: "3"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: resource-profile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  profile:
+    name: Profile peak RSS + cold-start
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build (so eslint can find compiled rule artifacts)
+        run: npm run build
+
+      - name: Run resource profile
+        run: |
+          npm run ilb:resource-profile -- \
+            --corpus "${{ inputs.corpus || 'apps/docs/src' }}" \
+            --runs "${{ inputs.runs || '3' }}"
+
+      - name: Commit snapshot if changed
+        if: success()
+        run: |
+          if [ -n "$(git status --porcelain benchmark-results/resource-profile.json benchmark-results/resource-profile.md)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add benchmark-results/resource-profile.json benchmark-results/resource-profile.md
+            git commit -m "chore(bench): refresh resource profile (peak RSS + cold start)
+
+            Automated monthly refresh of the peak-RSS / cold-start
+            measurements named in distribution/EVALUATION_METRICS.md
+            §3 + §12. Fails CI when any preset crosses 80% of the
+            7 GB ubuntu-latest runner ceiling."
+            git push
+          else
+            echo "No resource-profile changes detected."
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-profile
+          path: |
+            benchmark-results/resource-profile.json
+            benchmark-results/resource-profile.md
+          retention-days: 90

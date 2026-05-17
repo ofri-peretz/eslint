@@ -78,6 +78,60 @@
   --color-popover-foreground: var(--color-fd-popover-foreground);
   --color-card: var(--color-fd-card);
   --color-card-foreground: var(--color-fd-card-foreground);
+
+  /* Brand-accent tokens. The light-mode value clears WCAG AA (4.5:1)
+   * against `#ffffff`. The legacy `#6366F1` was 4.09:1 — axe-flagged.
+   * Darker indigo with same hue/chroma gets ~5.4:1. */
+  --color-brand-snappy: hsl(239, 70%, 58%);
+
+  /* Decorative-primitive tokens — single source of truth for the literal
+   * colors that used to be baked into individual `components/ui/` primitives.
+   * Adding a new decorative primitive? Register its accent here so consumers
+   * can re-theme it without forking the component.
+   *
+   * Reach for these from primitives like `border-beam`, `meteors`,
+   * `particles`, `shimmer-button`, `animated-gradient-text`,
+   * `background-lines`, `background-gradient-animation`,
+   * `background-beams-with-collision`, `stars-background`.
+   *
+   * Each color resolves to the legacy literal in light mode; `.dark`
+   * overrides below preserve the original dark-mode visuals where the
+   * primitive cared. */
+  --color-beam-from: hsl(34, 100%, 63%);  /* legacy `#ffaa40` */
+  --color-beam-to: hsl(269, 100%, 62%);   /* legacy `#9c40ff` */
+  --color-meteor-glow: hsl(0, 0%, 100%, 0.06);
+  --color-particles-default: hsl(0, 0%, 100%);
+  --color-shimmer: hsl(0, 0%, 100%);
+  --color-shimmer-bg: hsl(0, 0%, 0%);
+  --color-gradient-bg-start: hsl(280, 100%, 32%);  /* legacy `rgb(108, 0, 162)` */
+  --color-gradient-bg-end: hsl(225, 100%, 16%);    /* legacy `rgb(0, 17, 82)` */
+  --color-shadow-card: hsl(218, 22%, 17%, 0.06);   /* legacy `rgba(34, 42, 53, 0.06)` */
+  --color-shadow-card-inset: hsl(0, 0%, 100%, 0.1);
+  /* Shooting-stars + twinkle star colors (legacy `#9E00FF`, `#2EB9DF`,
+   * `#e9d5ff` baked into stars-background). */
+  --color-shooting-star: hsl(283, 100%, 50%);
+  --color-shooting-trail: hsl(192, 76%, 51%);
+  --color-meteor-tail: hsl(269, 76%, 88%);
+  /* RGB triple (no `rgb()` wrapper) used by `<canvas fillStyle>` calls in
+   * stars-background — canvas doesn't accept `var(...)` directly, so the
+   * primitive reads this at mount time and concatenates an `rgba(...)`
+   * string. Override here if you want a non-white twinkle. */
+  --star-rgb: 255, 255, 255;
+  /* RGB triples consumed by background-gradient-animation. The primitive
+   * wraps these in `rgb(...)` / `rgba(...)` at use site, so they must
+   * remain bare (no `rgb()` envelope). Mapped from the legacy literal
+   * defaults `18, 113, 255` / `221, 74, 255` / `100, 220, 255` /
+   * `200, 50, 50` / `180, 180, 50` / `140, 100, 255`. */
+  --gradient-first-rgb: 18, 113, 255;
+  --gradient-second-rgb: 221, 74, 255;
+  --gradient-third-rgb: 100, 220, 255;
+  --gradient-fourth-rgb: 200, 50, 50;
+  --gradient-fifth-rgb: 180, 180, 50;
+  --gradient-pointer-rgb: 140, 100, 255;
+  /* Random palette for background-lines paths — exposed as a comma-separated
+   * list so the primitive can split it at runtime. Consumers can override
+   * with any palette length. */
+  --background-lines-palette: hsl(195, 50%, 53%), hsl(0, 47%, 36%), hsl(116, 38%, 49%), hsl(20, 88%, 44%), hsl(0, 78%, 28%), hsl(218, 96%, 57%), hsl(303, 53%, 42%), hsl(57, 50%, 44%), hsl(180, 38%, 47%), hsl(295, 76%, 24%), hsl(48, 100%, 42%), hsl(60, 71%, 20%);
 }
 
 /* Dark-mode overrides — runtime cascade, no token registration needed. */
@@ -98,6 +152,17 @@
   --color-destructive-foreground: hsl(0, 0%, 100%);
   --color-fd-destructive: hsl(0, 65%, 42%);
   --color-fd-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Brand-accent dark-mode lift. */
+  --color-brand-snappy: hsl(239, 80%, 75%);
+
+  /* Decorative-primitive tokens — dark-mode tuning. Lift saturation so the
+   * primitives stay visible against the near-black background. */
+  --color-beam-from: hsl(34, 100%, 70%);
+  --color-beam-to: hsl(269, 100%, 70%);
+  --color-meteor-glow: hsl(0, 0%, 100%, 0.1);
+  --color-shadow-card: hsl(0, 0%, 100%, 0.04);
+  --color-shadow-card-inset: hsl(0, 0%, 100%, 0.12);
 }
 
 /* =========================================

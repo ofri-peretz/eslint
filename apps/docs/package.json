@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --update-snapshots",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
     "test:css": "vitest run src/__tests__/tailwind-classes.test.ts",
     "test:a11y": "playwright test e2e/a11y.spec.ts e2e/a11y-tree.spec.ts --project=chromium --reporter=list",
     "a11y:report": "tsx scripts/a11y-summary.ts",
@@ -27,7 +28,9 @@
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.6",
     "@fumadocs/mdx-remote": "^1.4.10",
+    "@interlace/benchmarks": "*",
     "@interlace/ui": "*",
+    "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/postcss": "^4.2.4",
     "clsx": "^2.1.1",
     "fumadocs-core": "^16.8.7",

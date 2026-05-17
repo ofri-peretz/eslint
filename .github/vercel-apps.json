@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$comment": "Map of deployable apps in this repo → their Vercel project IDs. Consumed by .github/workflows/deploy.yml. orgId is the same across all Interlace projects. projectIds are public identifiers (not secrets); only VERCEL_TOKEN is a secret.",
+  "orgId": "team_sZpUs6MAa1BKXZJY6Hq2nfnh",
+  "apps": {
+    "docs": {
+      "projectId": "prj_DSK82D4vMaxGwSskbRLpT0fnHXps",
+      "productionUrl": "https://interlace.tools"
+    },
+    "storybook": {
+      "projectId": "prj_JyWHBGJ5K3UOeBbRyNIZA6MoRGkf",
+      "productionUrl": "https://storybook.interlace.tools"
+    },
+    "registry": {
+      "projectId": "prj_veNDMyIAMCyi7fSLVo0ebphyaFoe",
+      "productionUrl": "https://ds.interlace.tools"
+    }
+  }
+}

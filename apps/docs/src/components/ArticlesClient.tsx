@@ -61,31 +61,35 @@ interface ArticlesClientProps {
 function ArticleCard({
   article,
   position,
-  isFeatured = false,
+  featured = false,
   sourceParams,
 }: {
   article: DevToArticle;
   position: number;
-  isFeatured?: boolean;
+  // Boolean state without an `is`-prefix per the interlace-component R8 rule
+  // (`react-features/component-api/no-is-prefix-prop`): boolean props describe
+  // the true state directly. `featured` reads naturally where `isFeatured`
+  // would just be noise.
+  featured?: boolean;
   sourceParams: string;
 }) {
   const image = article.cover_image?.trim() || article.social_image?.trim() || undefined;
 
   return (
     <div
-      data-testid={isFeatured ? 'featured-article' : 'article-card'}
+      data-testid={featured ? 'featured-article' : 'article-card'}
       className="motion-safe:animate-fade-in-up"
       onClickCapture={() =>
         track('articles_card_clicked', {
           articleId: article.id,
           position,
-          isFeatured,
+          isFeatured: featured,
           sourceParams,
         })
       }
     >
       <ArticleCardBlock
-        variant={isFeatured ? 'overlay' : 'stack'}
+        variant={featured ? 'overlay' : 'stack'}
         title={article.title}
         description={article.description}
         href={article.url}
@@ -107,7 +111,7 @@ function ArticleCard({
         // element on `/articles` page 1 — eager-load its cover and hint
         // high fetch priority so it lands inside the 2.5s budget. Grid
         // tiles below the fold keep the default lazy behaviour.
-        priority={isFeatured}
+        priority={featured}
       />
     </div>
   );
@@ -368,7 +372,15 @@ export function ArticlesClient({
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    // COLOR_PHILOSOPHY §"semantic token table" — destructive
+                    // role. Uses arbitrary-value Tailwind utilities pointed
+                    // at the shadcn-bridge `--destructive` CSS variable
+                    // (defined in @interlace/ui/styles/theme.css → resolved
+                    // to red-700-ish via the cascade). The `text-fd-*`
+                    // utility set fumadocs ships does not include
+                    // `fd-destructive`; this is the canonical token-backed
+                    // form until a generated utility lands.
+                    className="text-(--destructive) hover:text-(--destructive) hover:bg-[color-mix(in_oklab,var(--destructive)_10%,transparent)]"
                     data-testid="clear-filters"
                   >
                     <X className="size-4 mr-1" aria-hidden />
@@ -442,12 +454,12 @@ export function ArticlesClient({
 
         {/* Featured Article — always rendered on page 1 (PAGINATION_PHILOSOPHY.md).
             Uses the same `ArticleCard` wrapper as the grid; the only difference
-            is `isFeatured` (which sets the block's `variant="overlay"`). */}
+            is the `featured` prop (which sets the block's `variant="overlay"`). */}
         {featured && (
           <ArticleCard
             article={featured}
             position={0}
-            isFeatured
+            featured
             sourceParams={serializeArticleParams(params)}
           />
         )}

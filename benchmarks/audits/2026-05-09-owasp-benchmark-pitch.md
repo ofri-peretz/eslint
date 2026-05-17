@@ -21,9 +21,9 @@ The [OWASP Benchmark Project](https://owasp.org/www-project-benchmark/) is the d
 Interlace is prepared to seed the OWASP Benchmark for JavaScript corpus with:
 
 1. **Existing fixtures.** [`benchmarks/corpus/`](../corpus/) contains CWE-organized vulnerable + safe fixtures across CWE-022, -078, -079, -089, -798, -918. ~80 fixtures today; we expand to 200+ over the OWASP-review window.
-2. **Scoring tooling.** [`benchmarks/score.mjs`](../score.mjs) implements the BAS formula (TPR − FPR) per CWE + aggregate, plus Wilson Score CI and bootstrap CI on F1 — already in use today, output schema matches the existing OWASP Benchmark JSON format.
-3. **Per-tool runners.** Adapters exist for Interlace, CodeQL, Semgrep, Snyk Code (see [`benchmarks/suites/ilb-diff/run.mjs`](../suites/ilb-diff/run.mjs)). These become the basis for tool-vendor self-attestation under the OWASP Benchmark process.
-4. **Reproducibility infrastructure.** Pre-registration via `methodologyCommit`, append-only history in `benchmark-results/history.ndjson`, vocabulary contract enforcement via [`scripts/ilb-validate-results.mjs`](../../scripts/ilb-validate-results.mjs) — all already in production.
+2. **Scoring tooling.** [`benchmarks/score.mjs`](../score.ts) implements the BAS formula (TPR − FPR) per CWE + aggregate, plus Wilson Score CI and bootstrap CI on F1 — already in use today, output schema matches the existing OWASP Benchmark JSON format.
+3. **Per-tool runners.** Adapters exist for Interlace, CodeQL, Semgrep, Snyk Code (see [`benchmarks/suites/ilb-diff/run.mjs`](../suites/ilb-diff/run.ts)). These become the basis for tool-vendor self-attestation under the OWASP Benchmark process.
+4. **Reproducibility infrastructure.** Pre-registration via `methodologyCommit`, append-only history in `benchmark-results/history.ndjson`, vocabulary contract enforcement via [`scripts/ilb-validate-results.mjs`](../../scripts/ilb-validate-results.ts) — all already in production.
 5. **Operating support.** Interlace agrees to handle PR triage, CI maintenance, and corpus expansion under OWASP governance for the first 24 months. Long-term governance belongs to OWASP.
 
 ## 4. What we'd need from OWASP

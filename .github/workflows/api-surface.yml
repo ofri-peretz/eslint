@@ -1,0 +1,69 @@
+name: API Surface Coverage Gate
+
+# Asserts that every domain-security plugin's API-surface coverage stays
+# at or above the 60% floor declared in `.agent/api-surface-manifest.json`.
+# Runs on PRs that touch the security plugins or the manifest itself.
+#
+# Closes the §2 "API-surface coverage" gate in
+# `distribution/EVALUATION_METRICS.md`.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'packages/eslint-plugin-secure-coding/**'
+      - 'packages/eslint-plugin-browser-security/**'
+      - 'packages/eslint-plugin-node-security/**'
+      - 'packages/eslint-plugin-jwt/**'
+      - 'packages/eslint-plugin-express-security/**'
+      - 'packages/eslint-plugin-lambda-security/**'
+      - 'packages/eslint-plugin-mongodb-security/**'
+      - 'packages/eslint-plugin-nestjs-security/**'
+      - 'packages/eslint-plugin-vercel-ai-security/**'
+      - 'packages/eslint-plugin-pg/**'
+      - '.agent/api-surface-manifest.json'
+      - 'scripts/audit-api-surface.ts'
+      - '.github/workflows/api-surface.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: api-surface-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    name: API-surface coverage audit (strict)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Run API-surface audit (fails if any plugin below 60% floor)
+        run: npm run audit:api-surface:strict
+
+      # The audit script always writes the .md before exiting (pass or
+      # fail), so the sticky comment reflects the same state the gate did.
+      - name: Post audit report as sticky PR comment
+        if: always()
+        uses: ./.github/actions/post-audit-comment
+        with:
+          report-path: benchmark-results/api-surface-coverage.md
+
+      - name: Upload generated coverage report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-surface-coverage
+          path: benchmark-results/api-surface-coverage.md
+          retention-days: 14

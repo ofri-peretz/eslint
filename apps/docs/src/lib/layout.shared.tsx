@@ -47,6 +47,24 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
+        text: 'Playground',
+        url: '/play',
+        active: 'nested-url',
+      },
+      {
+        text: 'Learn',
+        url: '/docs/learn',
+        active: 'nested-url',
+      },
+      {
+        text: 'Scorecard',
+        url: '/scorecard',
+      },
+      {
+        text: 'Stats',
+        url: '/stats',
+      },
+      {
         text: 'Articles',
         url: '/articles',
       },

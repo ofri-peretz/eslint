@@ -9,6 +9,8 @@ description: 'Honest comparison of JavaScript / TypeScript static-analysis tools
 
 > A buyer's guide. **The honest answer is "you usually want two of these."** They cover different threat models. This page tells you which combinations make sense and why.
 
+> Looking for the **lint-ecosystem** comparison instead — Interlace vs Oxlint / Biome / typescript-eslint / other ESLint plugins? That story is on the [Ecosystem Landscape](/docs/getting-started/concepts/ecosystem) page. This page covers SAST analyzers; that one covers lint-tier peers.
+
 ## Quick verdict
 
 | If you're… | Pick |
@@ -45,6 +47,7 @@ description: 'Honest comparison of JavaScript / TypeScript static-analysis tools
 | **Public benchmark numbers** | ✅ ILB (live, reproducible) | Self-reported | Self-reported | Self-reported |
 | **Public corpus + scoring methodology** | ✅ open-source | ❌ | Partial (rule registry) | ❌ |
 | **Auto-fix support** | ✅ per-rule, deterministic | Limited (QuickFix subset) | ✅ for many rules | Limited |
+| **Engine portability** (rules run under ≥ 2 engines under a parity contract) | ✅ ESLint + Oxlint (CI-gated); Biome planned; TSC native host on roadmap | ❌ QL engine only | ❌ Semgrep engine only | ❌ proprietary engine |
 | **Confidence / reliability calibration** | ✅ ILB-Confidence bench | ❌ | ❌ | ❌ |
 | **Adversarial-rewrite resilience bench** | ✅ ILB-Evade | ❌ | ❌ | ❌ |
 | **Toolchain matrix coverage** (Node × TS × ESLint × parser × cache) | ✅ all 5 axes | n/a | n/a | n/a |

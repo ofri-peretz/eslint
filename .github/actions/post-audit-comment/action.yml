@@ -1,0 +1,92 @@
+# Composite action: post (or update) a sticky PR comment with a generated
+# audit `.md` report. Extracts the dedup-by-H1 pattern that originated in
+# `.github/workflows/benchmark.yml` so each gating workflow gets a one-liner
+# instead of duplicating 30 lines of `actions/github-script@v9` boilerplate.
+#
+# The comment is keyed by the first line of the report (must start with
+# `# `, which all reports from scripts/lib/report-format.ts produce by
+# contract). On a subsequent run for the same PR, the action updates the
+# existing comment instead of creating a new one.
+#
+# IMPORTANT: callers must grant `pull-requests: write` at the workflow or
+# job level. The artifact-upload-on-failure fallback in each calling
+# workflow stays — the comment is the headline, the artifact is the deep
+# dive.
+
+name: Post audit report as sticky PR comment
+description: >-
+  Read a generated markdown report and post it (or update the existing
+  sticky comment) on the current PR. Sticky dedup is keyed by the
+  report's H1 — re-running the workflow edits the same comment.
+
+inputs:
+  report-path:
+    description: Path (relative to the repo root) of the .md report to post.
+    required: true
+  marker-prefix:
+    description: >-
+      Optional prefix for the comment-body marker. Defaults to the
+      report's first line (its H1). Override only when two workflows
+      post reports that happen to share a title.
+    required: false
+    default: ""
+  github-token:
+    description: "GitHub token with `pull-requests: write`. Defaults to GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Post / update sticky audit-report comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v9
+      env:
+        REPORT_PATH: ${{ inputs.report-path }}
+        MARKER_PREFIX: ${{ inputs.marker-prefix }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('fs');
+          const reportPath = process.env.REPORT_PATH;
+          if (!reportPath || !fs.existsSync(reportPath)) {
+            core.warning(`Report not found at ${reportPath} — skipping comment.`);
+            return;
+          }
+          const body = fs.readFileSync(reportPath, 'utf-8');
+          // Derive the sticky marker from the first non-empty line of the
+          // report. By contract every report from scripts/lib/report-format.ts
+          // starts with `# <Title>`, so this matches the same comment on
+          // re-runs.
+          const firstLine = body.split('\n').find((l) => l.trim().length > 0) ?? '';
+          const marker = process.env.MARKER_PREFIX && process.env.MARKER_PREFIX.length > 0
+            ? process.env.MARKER_PREFIX
+            : firstLine;
+          if (!marker.startsWith('# ')) {
+            core.setFailed(`Report does not start with an H1 — refusing to post (got: ${marker.slice(0, 80)}).`);
+            return;
+          }
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            per_page: 100,
+          });
+          const existing = comments.find((c) => c.body?.startsWith(marker));
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+            core.info(`Updated existing audit comment ${existing.id} (marker: ${marker.slice(0, 60)}).`);
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+            core.info(`Created new audit comment (marker: ${marker.slice(0, 60)}).`);
+          }

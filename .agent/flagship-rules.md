@@ -2,7 +2,7 @@
 
 > **Purpose**: Designate the 10 rules that represent the ecosystem's competitive edge. These get **dedicated independent benchmarks**, **oxlint-compatibility guarantees**, **type-awareness disclosure**, and **per-rule precision/recall SLOs**.
 
-_Last updated: 2026-05-09_
+_Last updated: 2026-05-16 (naming-drift cleanup landed; canonical short forms in the table below are now also the runtime rule identifiers ESLint emits)._
 
 ---
 
@@ -89,7 +89,24 @@ Deliberate gaps: no flagship from `node-security`, `lambda-security`, `nestjs-se
 
 ## Using the flagship preset
 
-Every plugin that hosts a flagship rule exports a `flagship` config that enables exactly that rule (or, for `secure-coding`, the two rules) at error level. Compose them yourself for a CI gate that checks only the 10:
+The canonical way to consume the 10 flagship rules is the meta-config package — one install, one import:
+
+```js
+// eslint.config.mjs
+import { flagship } from '@interlace/eslint-config';
+
+export default [
+  ...flagship,
+];
+```
+
+See [`packages/eslint-config-interlace/README.md`](../packages/eslint-config-interlace/README.md) for the full preset matrix (`flagship`, `security`, `quality`, `react`, `recommended`).
+
+Structural lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI).
+
+### Manual compose (escape hatch)
+
+If you can't or don't want to take the meta-package dependency, every plugin that hosts a flagship rule still exports a `flagship` config that enables exactly that rule (or, for `secure-coding`, the two rules) at error level:
 
 ```js
 // eslint.config.mjs
@@ -116,7 +133,7 @@ export default [
 ];
 ```
 
-The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's `recommended` preset.
+The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's `recommended` preset (or use `@interlace/eslint-config`'s `recommended` preset which already does this).
 
 ## Independent benchmarking
 
@@ -133,8 +150,8 @@ Each flagship rule MUST have a per-rule entry in `benchmarks/results/ilb-flagshi
 | Flagship rule | Existing bench | Action |
 | :--- | :--- | :--- |
 | `no-cycle` | `ilb-perf-import` | Already isolated. Promote into flagship dashboard. |
-| `pg/no-unsafe-query` | ilb-juliet CWE-89 | Carve single-rule subset; isolated runner. |
-| `secure-coding/no-hardcoded-credentials` | ilb-juliet CWE-798 | Carve subset. |
+| `pg/no-unsafe-query` | ilb-cwe-corpus CWE-89 | Carve single-rule subset; isolated runner. |
+| `secure-coding/no-hardcoded-credentials` | ilb-cwe-corpus CWE-798 | Carve subset. |
 | `secure-coding/no-redos-vulnerable-regex` | — | New ReDoS fixture pack; head-to-head vs `regexp/no-super-linear-backtracking`. |
 | `mongodb-security/no-unsafe-query` | ilb-arena | Add Mongo-specific fixture set ($where, $expr, allowDiskUse). |
 | `jwt/no-algorithm-none` | ilb-arena | Add CVE-2015-9235 reproduction fixtures. |

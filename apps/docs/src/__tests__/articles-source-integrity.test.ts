@@ -49,12 +49,14 @@ describe('ArticlesClient Source File Integrity', () => {
   });
 
   describe('Featured Article Section', () => {
-    it('renders the featured slot through the unified ArticleCard wrapper (isFeatured prop)', () => {
+    it('renders the featured slot through the unified ArticleCard wrapper (`featured` prop)', () => {
       // The historical `FeaturedArticle` helper was inlined into the unified
-      // `ArticleCard` wrapper — variant is selected by the `isFeatured` prop
-      // which routes to the @interlace/ui block's `overlay` vs `stack`.
+      // `ArticleCard` wrapper — variant is selected by the `featured` boolean
+      // prop (renamed from `isFeatured` per the interlace-component R8 rule
+      // `react-features/component-api/no-is-prefix-prop`), which routes to
+      // the @interlace/ui block's `overlay` vs `stack`.
       expect(articlesSource).toContain("'featured-article'");
-      expect(articlesSource).toMatch(/data-testid=\{isFeatured\s*\?\s*'featured-article'/);
+      expect(articlesSource).toMatch(/data-testid=\{featured\s*\?\s*'featured-article'/);
     });
 
     it('Featured Article renders conditionally on the resolved server prop', () => {

@@ -19,7 +19,7 @@
  *     - docs:cwe-coverage
  *
  *   Fast benches (<= 30 sec each)
- *     - ilb:juliet (synthetic CWE accuracy)
+ *     - ilb:cwe-corpus (synthetic CWE accuracy)
  *     - ilb:autofix
  *     - ilb:severity-audit
  *     - ilb:determinism (single-fixture, 2 runs)

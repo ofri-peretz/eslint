@@ -4,9 +4,14 @@
   "private": true,
   "description": "Reproducible benchmarks for ESLint plugins — performance, FN/FP accuracy, and AI security",
   "type": "module",
+  "exports": {
+    "./lib/flagship-snapshot": "./lib/flagship-snapshot.ts",
+    "./lib/median": "./lib/median.ts"
+  },
   "scripts": {
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
-    "ilb:juliet": "tsx suites/ilb-juliet/run.ts",
+    "ilb:perf-import-nestjs": "tsx suites/ilb-perf-import-nestjs/run.ts",
+    "ilb:cwe-corpus": "tsx suites/ilb-cwe-corpus/run.ts",
     "ilb:arena": "tsx suites/ilb-arena/run.js",
     "ilb:arena-quality": "tsx suites/ilb-arena-quality/run.js",
     "ilb:ai": "tsx suites/ilb-ai/run.js",
@@ -61,6 +66,7 @@
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "eslint": "^9.17.0",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-jest": "^29.12.2",
     "eslint-plugin-jsdoc": "^62.5.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",

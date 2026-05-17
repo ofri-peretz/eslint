@@ -206,7 +206,7 @@ Web Vitals.
 
 ### 10. Build with the ecosystem
 
-Fumadocs ships `HomeLayout` (used at [apps/docs/src/app/(home)/layout.tsx](apps/docs/src/app/(home)/layout.tsx))
+Fumadocs ships `HomeLayout` (used at [apps/docs/src/app/(home)/layout.tsx](apps/docs/src/app/%28home%29/layout.tsx))
 and `DocsLayout` for the outer chrome — sidebar, search, navbar,
 TOC. Our primitives compose *inside* those layouts; they never
 replace them.

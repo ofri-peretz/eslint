@@ -131,3 +131,21 @@
 {"date":"2026-05-11","bench":"ILB-AI","score":"68% detection","asOf":"2026-02-09"}
 {"date":"2026-05-11","bench":"ILB-LLM-Tokens","score":"sec/compact -8.7% vs V1","asOf":"2026-05-03"}
 {"date":"2026-05-11","bench":"ILB-LLM-Fix","score":"97.22% macro pass","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-CWE-Corpus","score":"F1 100% (rank 1/6)","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-Arena","score":"F1 97.5% (rank 1/18)","asOf":"2026-05-11"}
+{"date":"2026-05-16","bench":"ILB-Wild","score":"3.48 findings/kLoC","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-Edge","score":"3837 FP candidates","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-Perf","score":"5.4 ms/file (median)","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-Cov","score":"19% rules fired","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-AI","score":"68% detection","asOf":"2026-02-09"}
+{"date":"2026-05-16","bench":"ILB-LLM-Tokens","score":"sec/compact -8.7% vs V1","asOf":"2026-05-03"}
+{"date":"2026-05-16","bench":"ILB-LLM-Fix","score":"97.22% macro pass","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-CWE-Corpus","score":"F1 100% (rank 1/6)","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-Arena","score":"F1 97.5% (rank 1/18)","asOf":"2026-05-11"}
+{"date":"2026-05-17","bench":"ILB-Wild","score":"3.48 findings/kLoC","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-Edge","score":"3837 FP candidates","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-Perf","score":"5.4 ms/file (median)","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-Cov","score":"19% rules fired","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-AI","score":"68% detection","asOf":"2026-02-09"}
+{"date":"2026-05-17","bench":"ILB-LLM-Tokens","score":"sec/compact -8.7% vs V1","asOf":"2026-05-03"}
+{"date":"2026-05-17","bench":"ILB-LLM-Fix","score":"97.22% macro pass","asOf":"2026-05-03"}

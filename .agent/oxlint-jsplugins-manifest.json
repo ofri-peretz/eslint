@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-16",
+  "generatedAt": "2026-05-17",
   "totalPlugins": 20,
-  "totalRules": 398,
-  "oxlintCompatible": 398,
+  "totalRules": 406,
+  "oxlintCompatible": 406,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1896,8 +1896,56 @@
       "short": "react-features",
       "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
       "subpath": "eslint-plugin-react-features/oxlint",
-      "ruleCount": 53,
+      "ruleCount": 61,
       "rules": [
+        {
+          "name": "component-api/no-arbitrary-token-class",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-default-test-id",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-inline-style",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-is-prefix-prop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-kind-prop-discriminator",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-raw-color-literal",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/no-wrapper-sub-component",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "component-api/require-data-slot",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "migration/react-class-to-hooks",
           "portability": "compatible",

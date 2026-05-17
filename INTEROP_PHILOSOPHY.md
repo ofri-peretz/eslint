@@ -205,7 +205,7 @@ transition is governed, not blanket.
   metadata is added opportunistically: when a rule is edited for any
   reason, `meta.interop` is populated as part of the same change.
 - **Flagship rules first.** The ten flagship rules
-  (see [flagship_rules.md](/Users/ofri/.claude/projects/-Users-ofri-repos-ofriperetz-dev-eslint/memory/flagship_rules.md)
+  (see flagship_rules.md (planned)
   and `.agent/flagship-rules.md`) get their `meta.interop` populated
   in a single dedicated PR before any opportunistic backfill begins.
   They are the rules whose interop story we cite externally; they
@@ -339,7 +339,7 @@ than oxlint, bigger than Biome, bigger than swc. A type-checker that
 runs ~10× faster does not just make type-checking faster; it makes
 **type-aware static analysis cheap enough to be the default**.
 
-Today, our policy in [feedback_type_awareness_policy.md](/Users/ofri/.claude/projects/-Users-ofri-repos-ofriperetz-dev-eslint/memory/feedback_type_awareness_policy.md)
+Today, our policy in feedback_type_awareness_policy.md (planned)
 is "prefer type-unaware; go type-aware only when quality genuinely
 demands it." This is correct *for 2026*. The cost of a type-aware
 rule today is high enough that the bar must be high.

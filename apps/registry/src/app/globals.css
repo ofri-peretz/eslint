@@ -1,0 +1,81 @@
+/*
+ * Registry app — Tailwind v4 + Interlace brand.
+ *
+ * Layered imports follow the same pattern as `apps/docs/src/app/global.css`:
+ *   1. tailwindcss                      — Tailwind v4 core + utilities
+ *   2. tw-animate-css                   — keyframe utilities (enter/exit/slide)
+ *   3. @interlace/ui/tokens             — animation + motion tokens
+ *   4. @interlace/ui/theme              — bridge: maps shadcn-bare tokens to framework layer
+ *   5. @interlace/ui/interlace-theme    — canonical brand palette (light + dark)
+ */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@interlace/ui/styles/tokens.css';
+@import '@interlace/ui/styles/theme.css';
+@import '@interlace/ui/styles/interlace-theme.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Scan @interlace/ui for class usage in primitives we import here */
+@source "../../../../packages/ui/src";
+
+/* @theme inline — exposes the shadcn-bare CSS variables as Tailwind v4 theme
+ * tokens so utilities like `bg-primary`, `text-foreground`, `border-border`
+ * resolve to the brand colors set by `interlace-theme.css`.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: var(--interlace-radius-sm);
+  --radius-md: var(--interlace-radius-md);
+  --radius-lg: var(--interlace-radius-lg);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
+    monospace;
+}
+
+/* Base resets */
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: 'cv11', 'ss01';
+  min-height: 100vh;
+}
+
+/* Focus-visible ring contract (WCAG 2.2 SC 2.4.13: ≥3:1 contrast, ≥2px thick) */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

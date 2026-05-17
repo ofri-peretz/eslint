@@ -14,7 +14,7 @@ import React, {
 } from "react"
 import { AnimatePresence, motion, MotionProps } from "motion/react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 export function AnimatedListItem({ children }: { children: React.ReactNode }) {
   const animations: MotionProps = {
@@ -55,7 +55,7 @@ export const AnimatedList = React.memo(
     }, [index, delay, childrenArray.length])
 
     const itemsToShow = useMemo(() => {
-      const result = childrenArray.slice(0, index + 1).toReversed()
+      const result = childrenArray.slice(0, index + 1).reverse()
       return result
     }, [index, childrenArray])
 

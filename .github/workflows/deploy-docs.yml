@@ -84,6 +84,34 @@ jobs:
             npx vercel build --token="$VERCEL_TOKEN"
           fi
 
+      # ─── Pre-deploy smoke gate ─────────────────────────────────────────
+      # `vercel build` already populated apps/docs/.next, so `next start`
+      # serves the artifact we're about to ship. The smoke spec checks the
+      # exact failure modes structural vitest locks miss: silently-empty
+      # homepage sections, broken cached image URLs (tweets / dev.to /
+      # CDN rotations), and mobile-only layout collapse at 390px.
+      #
+      # See: apps/docs/e2e/deploy-smoke.spec.ts + CLAUDE.md "Investigate
+      # before claiming 'fixed'".
+      - name: Install Playwright (chromium only)
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/docs
+
+      - name: Pre-deploy smoke
+        run: npm run test:smoke
+        working-directory: apps/docs
+
+      - name: Upload smoke artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-smoke-${{ inputs.environment }}
+          path: |
+            apps/docs/test-results-smoke/
+            apps/docs/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Deploy prebuilt artifact
         id: deploy
         # `--archive=tgz` packs the prebuilt artifact into a tarball before

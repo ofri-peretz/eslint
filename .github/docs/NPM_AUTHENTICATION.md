@@ -2,7 +2,7 @@
 
 > **📚 Part of [CI/CD Pipeline Documentation](../CICD_PIPELINE.md)**
 >
-> Related docs: [Failure Scenarios](./FAILURE_SCENARIOS.md) • [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md#-versioning--releases-changesets)
+> Related docs: [Failure Scenarios](./FAILURE_SCENARIOS.md) • [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 

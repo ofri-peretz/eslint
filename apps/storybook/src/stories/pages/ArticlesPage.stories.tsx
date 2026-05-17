@@ -270,9 +270,9 @@ export const EmptyState: Story = {
             className="text-muted-foreground/50 mb-4 size-12"
             aria-hidden="true"
           />
-          <h3 className="text-foreground mb-2 text-xl font-semibold">
+          <h2 className="text-foreground mb-2 text-xl font-semibold">
             No articles found
-          </h3>
+          </h2>
           <p className="text-muted-foreground mb-4">
             Try adjusting your search or filters
           </p>

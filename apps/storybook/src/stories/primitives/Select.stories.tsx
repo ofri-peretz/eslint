@@ -22,7 +22,7 @@ type Story = StoryObj<typeof Select>;
 export const Default: Story = {
   render: () => (
     <Select defaultValue="date">
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[180px]" aria-label="Sort by">
         <SelectValue placeholder="Sort by" />
       </SelectTrigger>
       <SelectContent>
@@ -38,7 +38,7 @@ export const Default: Story = {
 export const Grouped: Story = {
   render: () => (
     <Select defaultValue="security">
-      <SelectTrigger className="w-[220px]">
+      <SelectTrigger className="w-[220px]" aria-label="Choose plugin">
         <SelectValue placeholder="Choose plugin" />
       </SelectTrigger>
       <SelectContent>
@@ -62,7 +62,7 @@ export const Grouped: Story = {
 export const Disabled: Story = {
   render: () => (
     <Select disabled>
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-[180px]" aria-label="Disabled select">
         <SelectValue placeholder="Disabled" />
       </SelectTrigger>
       <SelectContent>
@@ -78,7 +78,7 @@ export const Dark: Story = {
   render: () => (
     <div className="dark">
       <Select defaultValue="date">
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px]" aria-label="Sort by">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>

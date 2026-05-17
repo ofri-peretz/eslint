@@ -4,12 +4,12 @@
   "deprecated": "eslint-plugin-crypto is deprecated. Use eslint-plugin-node-security instead — it includes all cryptography rules (weak ciphers/hashes, ECB mode, static IVs, insecure key derivation, timing-unsafe compare, CryptoJS, native-crypto preference, and more).",
   "description": "[DEPRECATED — use eslint-plugin-node-security] Security-focused ESLint plugin for cryptographic best practices. All rules redistributed into eslint-plugin-node-security.",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./types": {
       "types": "./src/types/index.d.ts",

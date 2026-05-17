@@ -137,7 +137,7 @@ Ensures React components have required attributes (e.g., accessibility attribute
 
 ## Related Rules
 
-- [`img-requires-alt`](./img-requires-alt.md) - Specific img alt enforcement
+- `img-requires-alt` (planned) - Specific img alt enforcement
 - [`react-no-inline-functions`](./react-no-inline-functions.md) - React performance optimization
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - React modernization
 

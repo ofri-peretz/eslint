@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ofri-peretz/eslint/scripts/schemas/per-rule-budget.schema.json",
+  "title": "Per-Rule Latency Budget",
+  "description": "Per-rule p50/p95 latency budgets. CI gate at scripts/check-per-rule-budget.ts reads the latest ILB-Flagship JSON and compares each rule's measured latency against these budgets, failing on overage beyond tolerance or hard ceiling.",
+  "type": "object",
+  "required": ["policy", "rules", "lastValidated", "source"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "rules": {
+      "type": "object",
+      "description": "Rule id → budget. Rule ids match the ESLint rule id (e.g. 'import-next/no-cycle').",
+      "patternProperties": {
+        "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$": {
+          "$ref": "#/$defs/ruleBudget"
+        }
+      },
+      "additionalProperties": false
+    },
+    "lastValidated": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the budgets were last validated against an ILB-Flagship run."
+    },
+    "source": {
+      "type": "string",
+      "description": "Reference to the bench run that anchored the budgets (e.g. 'benchmark-results/ilb-flagship-scorecard.md (ESLint X / oxlint Y / Node Z)')."
+    },
+    "process": {
+      "type": "object",
+      "description": "Notes on how to add a rule, raise a budget, or trigger the CI gate."
+    }
+  },
+  "$defs": {
+    "policy": {
+      "type": "object",
+      "required": ["p50_default_ms", "p95_default_ms", "p95_hard_ceiling_ms", "tolerance_pct"],
+      "properties": {
+        "p50_default_ms": { "type": "integer", "minimum": 1 },
+        "p95_default_ms": { "type": "integer", "minimum": 1 },
+        "p95_hard_ceiling_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "No single rule may cross this, regardless of per-rule budget."
+        },
+        "tolerance_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Slack percent before failing. 10 means a measurement at 110% of budget still passes."
+        },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ruleBudget": {
+      "type": "object",
+      "required": ["p50_ms", "p95_ms"],
+      "properties": {
+        "p50_ms": { "type": "integer", "minimum": 1 },
+        "p95_ms": { "type": "integer", "minimum": 1 },
+        "note": {
+          "type": "string",
+          "description": "Justification for any deviation from policy defaults."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

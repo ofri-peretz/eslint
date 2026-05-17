@@ -45,3 +45,34 @@ export async function getLLMText(page: InferPageType<typeof source>) {
 
   return `# ${data.title ?? 'Untitled'}`;
 }
+
+/**
+ * Shape consumed by `components/home/devto-articles.tsx`. Locked here so any
+ * future articles wire-up matches the rendered card — see that component
+ * for the full set of fields it reads.
+ */
+export interface BaselineArticle {
+  slug: string;
+  readingTimeMinutes: number;
+  frontmatter: {
+    title: string;
+    description?: string;
+    published_at?: string;
+    reactions?: number;
+    comments?: number;
+  };
+}
+
+/**
+ * Articles index for the landing-page "Latest articles" section.
+ *
+ * Placeholder: returns an empty array. The matching `<DevToArticles>` component
+ * already short-circuits on `articles.length === 0`, so the section is hidden
+ * until a real collection is wired up. To enable, replace this body with a
+ * fumadocs source loader (a sibling collection to `docs`) that yields
+ * `BaselineArticle[]`. Do NOT change the return type — `<DevToArticles>` is
+ * pinned to the shape above.
+ */
+export function getAllArticles(): BaselineArticle[] {
+  return [];
+}

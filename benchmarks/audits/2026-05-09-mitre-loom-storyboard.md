@@ -4,7 +4,7 @@
 >
 > **Recording prerequisite.** From `/Users/ofri/repos/ofriperetz.dev/eslint`, run `npm run docs:cwe-coverage` once before recording so `benchmark-results/cwe-coverage.{json,md}` exists.
 >
-> **Output destination.** Upload the recording to Loom, paste the URL into [`benchmarks/audits/2026-05-09-mitre-cwe-compatibility-readiness.md`](./2026-05-09-mitre-cwe-compatibility-readiness.md) under criterion RR-2, and reference it from the [public CWE Compatibility doc](../../apps/docs/content/docs/cwe-compatibility.mdx) and the MITRE submission form.
+> **Output destination.** Upload the recording to Loom, paste the URL into [`benchmarks/audits/2026-05-09-mitre-cwe-compatibility-readiness.md`](./2026-05-09-mitre-cwe-compatibility-readiness.md) under criterion RR-2, and reference it from the public CWE Compatibility doc (planned) and the MITRE submission form.
 
 ---
 
@@ -83,7 +83,7 @@
 
 ### Scene 5 — Close (3:30 – 4:00) · *Docs page*
 
-**Setup.** Browser, [`/docs/cwe-compatibility`](../../apps/docs/content/docs/cwe-compatibility.mdx) on the Interlace docs site.
+**Setup.** Browser, `/docs/cwe-compatibility` (planned) on the Interlace docs site.
 
 **Action.** Scroll the page. Highlight the four-criterion contract table.
 
@@ -109,4 +109,4 @@ After recording:
 - [ ] Add captions (Loom auto-generates; review for `CWE-NNN` accuracy)
 - [ ] Set the Loom to **public** (MITRE reviewers will need open access)
 - [ ] Update [`2026-05-09-mitre-cwe-compatibility-readiness.md`](./2026-05-09-mitre-cwe-compatibility-readiness.md) — flip RR-2 from ❌ to ✅ with the URL
-- [ ] Update [`apps/docs/content/docs/cwe-compatibility.mdx`](../../apps/docs/content/docs/cwe-compatibility.mdx) — add an `<iframe>` of the Loom under "## Demo"
+- [ ] Update `apps/docs/content/docs/cwe-compatibility.mdx` (planned) — add an `<iframe>` of the Loom under "## Demo"

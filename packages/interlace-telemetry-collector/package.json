@@ -4,13 +4,21 @@
   "description": "Reference HTTP collector for @interlace/telemetry payloads. Self-hostable. Receives anonymized rule-firing batches, stores as append-only NDJSON, produces fleet-rollup reports. Roadmap item 6.F.",
   "license": "MIT",
   "type": "module",
-  "main": "./src/server.mjs",
+  "main": "./dist/src/server.mjs",
   "bin": {
     "interlace-collector": "./src/server.mjs",
     "interlace-collector-rollup": "./src/rollup.mjs"
   },
-  "files": ["src", "README.md"],
-  "keywords": ["telemetry", "collector", "interlace", "self-hosted"],
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "telemetry",
+    "collector",
+    "interlace",
+    "self-hosted"
+  ],
   "engines": {
     "node": ">=22"
   }

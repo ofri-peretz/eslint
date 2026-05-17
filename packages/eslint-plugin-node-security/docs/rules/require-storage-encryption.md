@@ -123,7 +123,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 **Why**: This rule only checks for the _presence_ of a function call containing "encrypt". It does not verify the strength of the algorithm used.
 
-**Mitigation**: Use a trusted crypto library and follow the [Node Security Crypto Standard](../../../crypto/docs/standards.md).
+**Mitigation**: Use a trusted crypto library and follow the Node Security Crypto Standard (planned).
 
 ## References
 

@@ -1,0 +1,212 @@
+# Accessibility Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](./UX_PHILOSOPHY.md), expanding
+principle #1 (Adoption is friction subtraction) and #11 (Build with the
+ecosystem) into the accessibility surface. Accessibility is not a separate
+feature — it is the floor. A component that fails axe is a component that
+fails Google's Core Web Vitals signal, a component that breaks for keyboard
+users, and a component that limits the consumer's market.
+
+This document is the portable bar. It targets **WCAG 2.2 AA** (the current
+floor; WCAG 3.0 is still in working-draft) and the [axe-core](https://www.deque.com/axe/)
+rule set that ships in our test runner.
+
+---
+
+## The core rule
+
+> **Every interactive surface is keyboard-operable, focus-visible, screen
+> reader-labeled, motion-respectful, and AA-contrast. axe-core runs in
+> Storybook + unit tests + CI; zero violations, zero suppressions. New
+> WCAG 2.2 success criteria (target size, focus appearance, redundant entry)
+> are first-class, not aspirational.**
+
+Three tests, in order:
+
+1. **Keyboard test.** Tab through the entire page with no mouse. Can the user
+   reach every interactive element, see clear focus, and operate it?
+2. **axe-core test.** Does the page pass axe with zero violations? Suppressing
+   a rule (via `disabledRules` or `oxlint-disable`) is the regression.
+3. **WCAG 2.2 test.** Are target sizes ≥ 24×24 CSS px (SC 2.5.8)? Is focus
+   visible and not obscured by sticky elements (SC 2.4.11, 2.4.12)? Does
+   re-auth re-enter from memory (SC 3.3.7)?
+
+---
+
+## The 12 principles
+
+Ordered by leverage. Earlier principles, when violated, do the most damage.
+
+### 1. WCAG 2.2 AA is the floor, not 2.1
+
+WCAG 2.2 (October 2023) added nine success criteria. Most internal style
+guides still target 2.1. The 2.2 additions matter for SaaS:
+
+| SC      | Title                                | Why it matters                                                    |
+| ------- | ------------------------------------ | ----------------------------------------------------------------- |
+| 2.4.11  | Focus Not Obscured (Minimum) — AA    | Sticky headers / chat widgets cannot cover the focused element    |
+| 2.4.12  | Focus Not Obscured (Enhanced) — AAA  | Fully visible focus, not partially covered                        |
+| 2.4.13  | Focus Appearance — AAA               | Focus ring contrast ≥ 3:1 against adjacent colors, ≥ 2px thick    |
+| 2.5.7   | Dragging Movements — AA              | Anything draggable has a non-drag alternative                     |
+| 2.5.8   | Target Size (Minimum) — AA           | Pointer targets ≥ 24×24 CSS px (or 44×44 SC 2.5.5 AAA)            |
+| 3.2.6   | Consistent Help — A                  | Help / contact link is in the same place across pages             |
+| 3.3.7   | Redundant Entry — A                  | Don't ask users to re-enter info already given in a session       |
+| 3.3.8   | Accessible Authentication (Min) — AA | No cognitive function test in auth (CAPTCHA needs alternatives)   |
+| 3.3.9   | Accessible Authentication (Enh) — AAA| No cognitive test at all                                          |
+
+### 2. Headless behavior libraries own ARIA + keyboard
+
+Every interactive primitive in `@interlace/ui` sits on top of a headless
+library — Base UI (Mongo), Ariakit, or Radix. These libraries own the ARIA
+roles, keyboard interactions, focus management, and portal positioning. We
+own the styling.
+
+**Forbidden:**
+
+- Hand-rolled tabs, menus, accordions, dialogs, popovers, comboboxes.
+- Custom focus-trap implementations.
+- Manual `aria-expanded` / `aria-activedescendant` plumbing.
+
+If the headless lib doesn't ship the pattern, file an issue upstream before
+reinventing.
+
+### 3. axe-core runs at three layers
+
+1. **Storybook a11y addon** — fires on every story automatically; CI publishes
+   the report.
+2. **Unit tests** — `vitest-axe` asserts every primitive's render output is
+   axe-clean.
+3. **End-to-end** — Playwright `@axe-core/playwright` runs on key flows
+   (auth, checkout, settings) on each PR.
+
+Zero suppressions. Zero `disabledRules: ['color-contrast']`. If the rule
+fires, fix the tokens, not the test.
+
+### 4. Focus management is explicit
+
+Three contracts to honor:
+
+- **Focus trap** inside modal overlays (Dialog, Sheet, Popover with
+  `modal=true`). Headless libs ship this; verify it works.
+- **Focus restore** on dismiss — focus returns to the element that opened
+  the overlay (`<Dialog.Trigger>`).
+- **Focus visible** on every keyboard activation — `:focus-visible` ring with
+  ≥ 3:1 contrast against adjacent colors (WCAG 2.2 SC 2.4.13). Mouse
+  activation alone does not show the ring.
+
+### 5. Skip links + landmark structure
+
+Every page exposes:
+
+- A **skip-to-main** link as the first focusable element (`<a href="#main">`).
+- Landmark roles via semantic HTML: `<header>`, `<nav>`, `<main>`, `<aside>`,
+  `<footer>` — at most one of each per page.
+- A single `<h1>` per page (cross-link to [SEO_PHILOSOPHY.md](./SEO_PHILOSOPHY.md)).
+
+### 6. Color is never the only signal
+
+Every state distinction conveys via at least two channels: color **plus** an
+icon, text label, position, or pattern. Red borders on invalid inputs are
+not enough — pair with an icon and a text message. Required-field asterisks
+are not enough — pair with `aria-required="true"`.
+
+WCAG 2.2 success criteria affected: 1.4.1 Use of Color, 1.4.11 Non-text
+Contrast.
+
+### 7. Target size ≥ 24×24 (WCAG 2.2 SC 2.5.8)
+
+Pointer targets must be at least 24×24 CSS px **or** be exempt (inline links
+in prose, default browser controls). Icon-only buttons need padding to reach
+the size, not just visible icon dimensions.
+
+**Mechanics:**
+
+- Icon buttons: minimum `size-6` (24×24) **container**, with the icon
+  centered. Aim for `size-9` (36×36) on touch surfaces.
+- Toggles / checkboxes: hit area extends past the visual element via
+  padding or `before:absolute inset-...`.
+
+### 8. Reduced motion is a contract
+
+Every animation respects `prefers-reduced-motion: reduce`. Cross-link to
+[MOTION_PHILOSOPHY.md](./MOTION_PHILOSOPHY.md).
+
+**Mechanics:**
+
+- Tailwind's `motion-safe:` / `motion-reduce:` variants on every transition.
+- Default to reduced-motion-safe for new animations.
+- Auto-playing video / parallax has explicit pause control.
+
+### 9. Form accessibility (cross-link to FORM_PHILOSOPHY)
+
+Already covered in [FORM_PHILOSOPHY.md](./FORM_PHILOSOPHY.md) §9. Highlights:
+
+- `<label htmlFor>` + `<input id>` pair on every field.
+- `aria-invalid="true"` + `aria-describedby="<error-id>"` on invalid inputs.
+- Submit-error focus moves to the first error field.
+- Error messages have `aria-live="polite"`.
+
+### 10. Authentication accessibility (WCAG 2.2 SC 3.3.8)
+
+Cognitive function tests are forbidden in primary auth. CAPTCHA must have:
+
+- An audio alternative.
+- An object-recognition alternative.
+- Or a passkey / WebAuthn path that bypasses the test entirely.
+
+Username + password is the floor. Magic links, passkeys, OAuth are
+preferred. Re-auth flows must not re-prompt for info already provided
+this session (SC 3.3.7).
+
+### 11. Screen-reader testing is real testing
+
+`vitest-axe` catches the markup. It does not catch *the experience.* Every
+sprint, the team runs a primary flow with VoiceOver (macOS) or NVDA
+(Windows) and logs friction. Friction becomes tickets, not assumptions.
+
+### 12. Lint enforcement — react-a11y plugin
+
+The `eslint-plugin-react-a11y` package ships rules that catch the
+mechanical floor at lint time: `alt-text`, `anchor-is-valid`,
+`aria-props`, `aria-role`, `interactive-supports-focus`,
+`label-has-associated-control`, `no-noninteractive-element-to-interactive-role`,
+`heading-has-content`, `html-has-lang`, etc.
+
+**WCAG 2.2 gaps to add as lint rules:**
+
+- `min-target-size` — flag `<button>` / `<a>` / `[role=button]` whose
+  computed (or inherent) size is < 24×24. Hard to compute statically — file
+  as a Storybook a11y addon rule or a Playwright assertion.
+- `focus-not-obscured` — Playwright e2e check; not statically lintable.
+- `consistent-help` — link checker that asserts the help / contact route is
+  reachable from every shell.
+
+---
+
+## How this gets used
+
+When designing or reviewing an interactive surface, ask:
+
+1. Are all WCAG 2.2 AA success criteria honored (especially 2.4.11, 2.5.7, 2.5.8, 3.3.7, 3.3.8)?
+2. Does this primitive sit on a headless behavior library?
+3. Is axe-core clean (Storybook + vitest + Playwright)?
+4. Is focus trap + restore + visible correctly wired?
+5. Does the page expose skip links + landmark roles + single H1?
+6. Does every state distinction convey via 2+ channels?
+7. Are all pointer targets ≥ 24×24?
+8. Is reduced-motion respected?
+9. Are forms wired per FORM_PHILOSOPHY §9?
+10. Is auth free of cognitive tests, with WebAuthn/passkey paths?
+11. Has the flow been screen-reader tested this sprint?
+12. Are lint-catchable cases handled by `eslint-plugin-react-a11y`?
+
+If any answer is no, the surface is not yet shippable to disabled users —
+which means it's not shippable.
+
+---
+
+## Living document
+
+When an a11y pattern arises this doc didn't anticipate, edit it first, then
+ship. Accessibility regresses silently — drift here is invisible until
+someone complains. Lock invariants in tests.
