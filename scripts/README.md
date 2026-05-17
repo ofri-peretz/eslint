@@ -31,7 +31,6 @@ The Interlace Lint Bench — see [`../benchmarks/README.md`](../benchmarks/READM
 | `ilb-fuzz.ts` | Property-based fuzz tester for rule logic |
 | `ilb-wild.mjs` | Wild-corpus runner |
 | `ilb-smoke.mjs` | Fast smoke test (PR gate) |
-| `ilb-e2e.mjs` | End-to-end runner |
 | `ilb-mcp-test.mjs` | MCP server integration test |
 | `ilb-meta-url-fix.ts` | Codemod for fixing rule meta URLs |
 

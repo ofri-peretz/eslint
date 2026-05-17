@@ -66,13 +66,9 @@ A reader landing on any one is welcome to start there; the other two are linked.
 
 | Surface | What you do with it |
 | :--- | :--- |
-| [`packages/interlace-cli/`](packages/interlace-cli/) | `interlace audit / init / bench / mcp / doctor` |
 | [`packages/<plugin>-mcp/`](packages/) (×11) | Each ESLint plugin as an MCP server — one per security vertical |
 | [`packages/eslint-formatter-sarif/`](packages/eslint-formatter-sarif/) | SARIF v2.1.0 output for GHAS / Defender / GitLab |
-| [`packages/interlace-telemetry/`](packages/interlace-telemetry/) + [`packages/interlace-telemetry-collector/`](packages/interlace-telemetry-collector/) | Opt-in fleet telemetry; client + reference collector |
-| [`packages/interlace-vscode/`](packages/interlace-vscode/) | VS Code extension — squiggles + one-click MCP server boot |
 | [`Dockerfile`](Dockerfile) | Multi-arch image at `ghcr.io/ofri-peretz/interlace` |
-| [`.github/actions/audit/`](. github/actions/audit/) | One-line GitHub Action |
 | [`.github/workflows/`](. github/workflows/) | Publish, supply-chain attestation, scorecard, benchmarks, etc. |
 | [`examples/vulnerable-app/`](examples/vulnerable-app/) | Demo target — one fixture per flagship rule |
 

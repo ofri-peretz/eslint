@@ -329,6 +329,11 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # NOTES_FILE is set by the publish step; with `if: always()` this
+          # summary runs even when publish failed before setting it, so the
+          # `set -u` guard above would otherwise error with "NOTES_FILE:
+          # unbound variable" and mask the real publish failure.
+          NOTES_FILE="${NOTES_FILE:-}"
           status="✅ published"
           [ "$DRY_RUN" = "true" ] && status="🔍 dry-run"
 
@@ -346,7 +351,7 @@ jobs:
             echo "| **GitHub Release** | [$tag_short]($gh_url) |"
             echo "| **Provenance**   | [\`--provenance\` enabled](https://docs.npmjs.com/generating-provenance-statements) |"
             echo ""
-            if [ -f "$NOTES_FILE" ]; then
+            if [ -n "$NOTES_FILE" ] && [ -f "$NOTES_FILE" ]; then
               echo "<details><summary>Release notes</summary>"
               echo ""
               cat "$NOTES_FILE"

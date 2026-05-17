@@ -24,9 +24,7 @@ eslint/
 │   ├── eslint-devkit/           ← shared rule-creation utilities (createRule, helpers)
 │   ├── eslint-formatter/        ← custom CLI formatter (compact / json / ndjson modes)
 │   ├── eslint-formatter-sarif/  ← SARIF output for security tooling integration
-│   ├── eslint-mcp-base/         ← shared MCP-server base package
-│   ├── interlace-cli/           ← @interlace CLI
-│   └── interlace-telemetry/     ← shared telemetry helpers
+│   └── eslint-mcp-base/         ← shared MCP-server base package
 │
 ├── apps/
 │   └── docs/                    ← Fumadocs site at eslint.interlace.tools (Next.js)

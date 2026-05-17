@@ -185,3 +185,36 @@
     }
   }
 }
+
+/* =========================================
+   SCORECARD — entrance + draw-in animations
+   Used by ratchet cards, hero, sparklines.
+   All gated behind `motion-safe:` Tailwind modifier
+   so reduced-motion users get the final state.
+   ========================================= */
+
+@keyframes scorecard-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scorecard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scorecard-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

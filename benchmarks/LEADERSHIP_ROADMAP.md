@@ -138,11 +138,8 @@ Five items not in the original plan that became obvious once Phases 1-4 landed. 
 |---|---|---|---|---|
 | 5.1 | Auto-rule synthesis from CVEs | **Shipped** (deterministic baseline; LLM enrichment via `--use-llm` is documented stub) | 2026-05-09 | agent |
 | 5.2 | End-to-end smoke (`npm run ilb:smoke`) | **Shipped** (16-step orchestrator, ~5min wall time) | 2026-05-09 | agent |
-| 5.3 | Production-fleet telemetry (opt-in) | **Shipped** (`@interlace/telemetry` package, off-by-default) | 2026-05-09 | agent |
-| 5.4 | CLI rebrand (`interlace audit / init / bench / mcp`) | **Shipped** (`@interlace/cli` package, 4 subcommands verified) | 2026-05-09 | agent |
 | 5.5 | Federated wild-corpus | **Shipped** (aggregator + protocol; community submissions accepted via PR to `benchmarks/federated/`) | 2026-05-09 | agent |
-| 6.1 | GitHub Action: `interlace-audit` | **Shipped** (composite action + README + GHAS upload) | 2026-05-09 | agent |
-| 6.3 | npm publish pipeline | **Shipped** (workflow_dispatch + tag-push triggers, dry-run default, provenance enabled, READMEs for the 4 new packages) | 2026-05-09 | agent |
+| 6.3 | npm publish pipeline | **Shipped** (workflow_dispatch + tag-push triggers, dry-run default, provenance enabled) | 2026-05-09 | agent |
 | L1  | Smoke-gate gap fixes | **Shipped** — 3 rules CWE-annotated · CVE seed corpus 3× larger · ILB-Discover BM25 retriever rewritten (R@1 doubled) · smoke gate now 0 required failures | 2026-05-09 | agent |
 
 Phase 5 items are independent and can ship in any order. Recommended start: 5.2 (cheapest, immediate dev-velocity win) → 5.4 (adoption multiplier) → 5.1 (the strategic differentiator nobody else has) → 5.3 (telemetry buy-in) → 5.5 (community scaling).

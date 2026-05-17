@@ -26,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: 'Comma-separated package basenames (e.g. interlace-cli,interlace-telemetry) or "all".'
+        description: 'Comma-separated package basenames (e.g. eslint-mcp-base,eslint-formatter-sarif) or "all".'
         default: 'all'
 
 concurrency:
@@ -65,7 +65,7 @@ jobs:
       - name: Resolve target packages
         id: targets
         run: |
-          DEFAULT="interlace-cli interlace-telemetry eslint-mcp-base eslint-formatter-sarif \
+          DEFAULT="eslint-mcp-base eslint-formatter-sarif \
                    secure-coding-mcp browser-security-mcp node-security-mcp crypto-mcp jwt-mcp \
                    express-security-mcp lambda-security-mcp mongodb-security-mcp nestjs-security-mcp \
                    vercel-ai-security-mcp pg-mcp"
