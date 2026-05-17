@@ -115,7 +115,7 @@
 
   /* Destructive */
   --interlace-destructive: #ef4444;        /* red-500 — lighter on dark */
-  --interlace-destructive-foreground: #1e1b2e;
+  --interlace-destructive-foreground: #0a0a0f; /* 6.6:1 on #ef4444 (was #1e1b2e at 4.45 — sub-AA) */
 
   /* Success */
   --interlace-success: #10b981;            /* emerald-500 */
