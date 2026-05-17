@@ -110,7 +110,7 @@ jobs:
       # actions/attest-build-provenance attaches a signed SLSA L3 statement
       # to the tarballs. Verification: `gh attestation verify <tarball>`.
       - name: Attest build provenance (SLSA L3)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: artifacts/tarballs/*.tgz
 
@@ -148,7 +148,7 @@ jobs:
 
       - name: Attach attestation bundle to release (when tag-triggered)
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             artifacts/tarballs/*.tgz
