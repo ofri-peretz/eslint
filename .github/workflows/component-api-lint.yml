@@ -89,7 +89,7 @@ jobs:
 
       - name: Comment violations on PR
         if: github.event_name == 'pull_request' && steps.lint.outputs.total_messages != '0'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
