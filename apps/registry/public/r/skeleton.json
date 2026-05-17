@@ -11,7 +11,7 @@
       "path": "registry/interlace-ui/skeleton.tsx",
       "target": "components/ui/skeleton.tsx",
       "type": "registry:ui",
-      "content": "// Loading-state placeholder. Pure CSS — no headless dep.\n// Mirrors the shadcn canon: https://ui.shadcn.com/docs/components/skeleton\nimport * as React from 'react';\n\nimport { cn } from '../lib/cn.js';\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<'div'>) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn('bg-muted animate-pulse rounded-md', className)}\n      {...props}\n    />\n  );\n}\n\nexport { Skeleton };\n"
+      "content": "// Loading-state placeholder. Pure CSS — no headless dep.\n// Mirrors the shadcn canon: https://ui.shadcn.com/docs/components/skeleton\nimport * as React from 'react';\n\nimport { cn } from '@/lib/utils';\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<'div'>) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn('bg-muted animate-pulse rounded-md', className)}\n      {...props}\n    />\n  );\n}\n\nexport { Skeleton };\n"
     }
   ]
 }
