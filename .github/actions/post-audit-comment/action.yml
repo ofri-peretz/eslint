@@ -31,7 +31,7 @@ inputs:
     required: false
     default: ""
   github-token:
-    description: GitHub token with `pull-requests: write`. Defaults to GITHUB_TOKEN.
+    description: "GitHub token with `pull-requests: write`. Defaults to GITHUB_TOKEN."
     required: false
     default: ${{ github.token }}
 
