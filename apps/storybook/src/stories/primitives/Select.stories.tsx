@@ -78,7 +78,7 @@ export const Dark: Story = {
   render: () => (
     <div className="dark">
       <Select defaultValue="date">
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px]" aria-label="Sort by">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>

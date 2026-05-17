@@ -42,8 +42,16 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
 
-      - name: Build eslint-plugin-react-features
-        run: npm run build --workspace=eslint-plugin-react-features
+      - name: Build eslint-plugin-react-features + @interlace/eslint-config
+        # Root eslint.config.mjs imports the `componentApi` preset from
+        # @interlace/eslint-config (built via tsc → dist/src/index.js). The
+        # preset itself re-exports from eslint-plugin-react-features. Build
+        # both before invoking ESLint so the import chain resolves under
+        # the CI's clean node_modules. (Local lefthook hits cached dist
+        # artifacts so the gap isn't visible there.)
+        run: |
+          npm run build --workspace=eslint-plugin-react-features
+          npm run build --workspace=@interlace/eslint-config
 
       - name: Run vitest on component-api rules
         run: npx vitest run src/tests/component-api/
