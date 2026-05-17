@@ -31,7 +31,26 @@ import { cn } from '#interlace/lib/utils';
 
 const Select = BaseSelect.Root;
 const SelectGroup = BaseSelect.Group;
-const SelectValue = BaseSelect.Value;
+// Thin wrapper that surfaces the shadcn-canonical `placeholder` prop.
+// Base UI's `Select.Value` accepts a render function for the empty state;
+// shadcn consumers (and our stories) pass a plain `placeholder` string.
+// The wrapper forwards `placeholder` through to Base UI — the `any` cast
+// is necessary because Base UI's TypeScript types don't declare a
+// `placeholder` field on `Select.Value` props, but it accepts the
+// attribute at runtime via prop-forwarding.
+function SelectValue({
+  placeholder,
+  ...props
+}: React.ComponentProps<typeof BaseSelect.Value> & {
+  placeholder?: React.ReactNode;
+}) {
+  const Component = BaseSelect.Value as unknown as React.ComponentType<
+    React.ComponentProps<typeof BaseSelect.Value> & {
+      placeholder?: React.ReactNode;
+    }
+  >;
+  return <Component placeholder={placeholder} {...props} />;
+}
 const SelectPortal = BaseSelect.Portal;
 
 function SelectTrigger({

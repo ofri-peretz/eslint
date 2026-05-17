@@ -93,6 +93,13 @@ function normalizePath(path: string): string {
   return path.startsWith('/') ? path.slice(1) : path;
 }
 
+// Next.js extends `fetch` with a `next.revalidate` option for ISR. Widen
+// `RequestInit` locally so the loader compiles in environments without
+// `@types/next` in scope (e.g. the baseline-storybook typecheck) while
+// still passing the option through at runtime when Next.js IS the host.
+// Same pattern used in `components/mdx/remote-markdown.tsx`.
+type NextFetchInit = RequestInit & { next?: { revalidate?: number } };
+
 /** No-cache fetcher — call DEV.to directly each time. */
 export const defaultDevToFetcher: DevToFetcher = async (path) => {
   const normalized = normalizePath(path);
@@ -100,7 +107,7 @@ export const defaultDevToFetcher: DevToFetcher = async (path) => {
     const res = await fetch(`${DEVTO_API}/${normalized}`, {
       next: { revalidate: 3600 },
       headers: { Accept: 'application/json', 'User-Agent': 'Interlace-Docs/1.0' },
-    });
+    } as NextFetchInit);
     if (!res.ok) return undefined;
     return (await res.json()) as DevToArticle;
   } catch {
