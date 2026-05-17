@@ -53,6 +53,35 @@ const collectRegistryDependencies = (source) => {
   return [...deps].sort();
 };
 
+// ─── Consumer-side import rewriting ──────────────────────────────────────────
+
+/**
+ * Rewrite source-internal relative imports to consumer-facing shadcn aliases.
+ *
+ * The package source uses `../lib/cn.js` and `./button.js` because those resolve
+ * inside `@interlace/ui` (compiled from `packages/ui/src/`). But `shadcn add`
+ * writes the source verbatim into the consumer's `components/ui/<name>.tsx`,
+ * where no `../lib/` or sibling `.js` exists. Consumers configure aliases in
+ * `components.json` (`utils → @/lib/utils`, `ui → @/components/ui`) — rewrite
+ * to those before embedding so the consumer's tree resolves out of the box.
+ *
+ * Mapping:
+ *   `../lib/cn.js`                    → `@/lib/utils`
+ *   `../lib/use-reduced-motion.js`    → `@/hooks/use-reduced-motion`
+ *   `./<sibling>.js`                  → `@/components/ui/<sibling>`
+ */
+const rewriteImportsForConsumer = (source) =>
+  source
+    .replace(/from\s+(['"])\.\.\/lib\/cn\.js\1/g, 'from $1@/lib/utils$1')
+    .replace(
+      /from\s+(['"])\.\.\/lib\/(use-[\w-]+)\.js\1/g,
+      'from $1@/hooks/$2$1',
+    )
+    .replace(
+      /from\s+(['"])\.\/([\w-]+)\.js\1/g,
+      'from $1@/components/ui/$2$1',
+    );
+
 // ─── Per-primitive registry item ─────────────────────────────────────────────
 
 const readOptionalMeta = async (filePath) => {
@@ -83,7 +112,7 @@ const buildItem = async (filePath, fileName) => {
         path: `registry/interlace-ui/${name}.tsx`,
         target: `components/ui/${name}.tsx`,
         type: 'registry:ui',
-        content: source,
+        content: rewriteImportsForConsumer(source),
       },
     ],
   };
