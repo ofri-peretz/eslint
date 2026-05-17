@@ -153,6 +153,19 @@
   --ring: var(--interlace-ring);
   --destructive: var(--interlace-destructive);
   --destructive-foreground: var(--interlace-destructive-foreground);
+
+  /* Override fumadocs-prefixed tokens for AA contrast.
+   *
+   * Fumadocs `neutral.css` ships `--color-fd-muted-foreground: #737373`,
+   * which yields 4.34–4.46:1 contrast against the `bg-fd-card/40-50`
+   * surfaces our Section / SectionHeader stories render — just below
+   * the WCAG 2.2 AA 4.5:1 floor and gates Storybook a11y CI red.
+   *
+   * Rebinding to the brand muted-foreground (a darker purple-grey in
+   * light, lighter in dark) clears the threshold and keeps brand
+   * consistency between shadcn-styled and fumadocs-styled surfaces.
+   */
+  --color-fd-muted-foreground: var(--interlace-muted-foreground);
 }
 
 /* Register the shadcn-bare tokens as Tailwind v4 theme keys so utilities
