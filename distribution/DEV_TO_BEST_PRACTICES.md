@@ -12,7 +12,7 @@
 4. [Dev.to Liquid Tags](#4-devto-liquid-tags)
 5. [Content Structure](#5-content-structure)
 6. [Engagement Tactics](#6-engagement-tactics)
-7. [Article Checklist](#7-article-checklist)
+7. [Interlace Ecosystem Standards](#7-interlace-ecosystem-standards)
 
 ---
 

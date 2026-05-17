@@ -27,7 +27,7 @@ const checkedFiles = new Set<string>();
 function getMarkdownFiles(rootDir = '.'): string[] {
   try {
     const result = execSync(
-      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*"`,
+      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*" ! -path "*/.next/*" ! -path "*/.source/*" ! -path "*/test-results/*" ! -path "*/playwright-report/*" ! -path "*/build/*" ! -path "*/.gemini/*" ! -path "*/.cursor/*"`,
       { encoding: 'utf-8' }
     );
     return result
@@ -46,17 +46,40 @@ function extractLinks(content: string): Array<{ text: string; url: string; line:
   const lines = content.split('\n');
 
   // Match markdown links: [text](url) or [text](url "title")
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Also matches CommonMark `[text](<url with (parens)>)` autolink form by
+  // greedily consuming everything between the matching angle brackets.
+  const linkRegex = /\[([^\]]+)\]\(<([^>]+)>\)|\[([^\]]+)\]\(([^)]+)\)/g;
+  // Inline code: `…` or ``…`` — strip before scanning the line so that
+  // language samples like `obj[method](userInput)` aren't matched as links.
+  const inlineCodeRegex = /`+[^`]*`+/g;
 
+  let inFenced = false;
   lines.forEach((line, index) => {
+    // Fenced code blocks ```…``` or ~~~…~~~: skip every line between fences
+    // (including the fence markers themselves). Toggling on a line that
+    // contains only the fence keeps the rest of the file scannable.
+    if (/^[ \t]{0,3}(```|~~~)/.test(line)) {
+      inFenced = !inFenced;
+      return;
+    }
+    if (inFenced) return;
+    // Indented code blocks: 4+ spaces or a tab at line start, on a line that
+    // is not a list-item continuation, are code per CommonMark.
+    if (/^(    |\t)/.test(line)) return;
+
+    const scannable = line.replace(inlineCodeRegex, '');
+
     let match;
-    while ((match = linkRegex.exec(line)) !== null) {
-      const url = match[2].split(' ')[0].replace(/^"|"$/g, ''); // Remove title if present
-      links.push({
-        text: match[1],
-        url,
-        line: index + 1,
-      });
+    while ((match = linkRegex.exec(scannable)) !== null) {
+      // First alternation: <…> form (text in 1, url in 2). Second: bare
+      // form (text in 3, url in 4 — strip optional title).
+      const text = match[1] ?? match[3];
+      const rawUrl = match[2] ?? match[4];
+      if (!rawUrl) continue;
+      const url = match[2] !== undefined
+        ? rawUrl
+        : rawUrl.split(' ')[0]!.replace(/^"|"$/g, '');
+      links.push({ text: text!, url, line: index + 1 });
     }
   });
 
@@ -128,14 +151,31 @@ function validateAnchorLink(url: string, fileContent: string): { valid: boolean;
   const lines = fileContent.split('\n');
   const anchorLower = anchor.toLowerCase();
   
-  // Check for heading with this anchor (markdown headings are converted to lowercase IDs with special chars replaced)
+  // Check for heading with this anchor. Markdown renderers vary in their
+  // slug algorithm; we accept any of three common forms so writers can use
+  // either style without breaking the check:
+  //   - Collapsed: spaces and non-word chars all collapse to a single dash
+  //     (`Foo & Bar` → `foo-bar`)
+  //   - GitHub-style: non-word chars are stripped, then every space becomes
+  //     a single dash — so `Foo — Bar` (em-dash) → `foo--bar` (double dash
+  //     because the em-dash dropped between two spaces). This is the slug
+  //     GitHub's rendered Markdown uses.
+  //   - Raw heading text (lowercased) for old/loose anchors
   const hasHeading = lines.some(line => {
     const match = line.match(/^#{1,6}\s+(.+)$/);
     if (!match) return false;
-    const headingId = match[1].toLowerCase()
+    const lower = match[1].toLowerCase();
+    const collapsedSlug = lower
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-');
-    return headingId.includes(anchorLower) || match[1].toLowerCase().includes(anchorLower);
+    const githubSlug = lower
+      .replace(/[^\w -]/g, '')
+      .replace(/ /g, '-');
+    return (
+      collapsedSlug.includes(anchorLower) ||
+      githubSlug.includes(anchorLower) ||
+      lower.includes(anchorLower)
+    );
   });
   
   // Check for HTML anchors using simple string checks
@@ -159,6 +199,20 @@ function validateLink(
 
   // Skip empty or special links
   if (!url || url.startsWith('mailto:') || url.startsWith('tel:')) {
+    return;
+  }
+  // Skip `file://` URIs — they're absolute paths on the author's machine,
+  // not portable repo references; treating them as relative resolves to
+  // a nonsense `dirname(file)/file:/...` path. Leave them as-is and trust
+  // they were intentional (e.g. local-only orchestrator wiring).
+  if (url.startsWith('file:')) {
+    return;
+  }
+  // Skip template-placeholder anchors used by article / audit templates
+  // (`[Article Title](link)`, `[CWE-XXX](link)`). The literal "link" is not
+  // a path or URL by any reasonable interpretation, and templates
+  // intentionally ship with it as a fill-in marker.
+  if (url === 'link' || url === 'url' || url === 'href') {
     return;
   }
 
@@ -203,7 +257,17 @@ function validateLink(
   // Relative file links
   // Remove anchor if present
   const [filePart, anchor] = url.split('#');
-  const targetPath = filePart;
+  // Decode URL-encoded path components (e.g. `%28home%29` → `(home)` for
+  // Next.js route-group directories). Without this, links to files inside
+  // parenthesized directories show "File not found" even though the file
+  // exists on disk — links must use %28/%29 to round-trip through markdown
+  // renderers that treat raw `(`/`)` as link-syntax delimiters.
+  let targetPath: string;
+  try {
+    targetPath = decodeURIComponent(filePart);
+  } catch {
+    targetPath = filePart;
+  }
 
   // Handle different relative path patterns
   let resolvedPath: string;

@@ -44,7 +44,7 @@ member paths in machine-readable form.)
 
 ## Next steps to upgrade scoring
 
-1. Modify [no-cycle.ts](../../packages/eslint-plugin-import-next/src/rules/no-cycle.ts)
+1. Modify [no-cycle.ts](../../../packages/eslint-plugin-import-next/src/rules/no-cycle.ts)
    message templates to include `{{cycle}}` so cycle members are in the
    diagnostic text — then the scorer can do cycle-level (not just file-level)
    matching.

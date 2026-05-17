@@ -455,7 +455,10 @@ function renderMarkdown(summary: {
   lines.push(
     `> GitHub API auth available: ${summary.ghAvailable}. Successful fetches: ${summary.successfulFetches}/${summary.totalPeers}.`,
   );
-  lines.push('');
+  // `>` continuation keeps both paragraphs inside a single blockquote;
+  // a blank line here splits them into two, which markdownlint flags as
+  // MD028 (no-blanks-blockquote).
+  lines.push('>');
   lines.push(
     '> Source data: npm registry (downloads, releases, license) + GitHub API (stars, open issues, 90-day contributors).',
   );

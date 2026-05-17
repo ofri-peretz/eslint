@@ -2,7 +2,7 @@
 
 > **📚 Part of [CI/CD Pipeline Documentation](../CICD_PIPELINE.md)**
 >
-> Related docs: [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md#-versioning--releases-changesets) • [NPM Authentication](./NPM_AUTHENTICATION.md)
+> Related docs: [Versioning & Releases section in CONTRIBUTING.md](../CONTRIBUTING.md) • [NPM Authentication](./NPM_AUTHENTICATION.md)
 
 ---
 

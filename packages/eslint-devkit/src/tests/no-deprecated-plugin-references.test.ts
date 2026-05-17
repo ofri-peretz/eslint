@@ -53,6 +53,10 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       // general pattern.
       /^distribution\//,
       'benchmarks/FP_FN_REMEDIATION_TRACKER.md',
+      // META_HYGIENE.md is a per-plugin meta-coverage stats table that
+      // legitimately enumerates every published plugin, including the
+      // deprecated crypto package, for historical comparison.
+      'docs/META_HYGIENE.md',
     ],
   },
 ];

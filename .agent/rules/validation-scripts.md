@@ -206,9 +206,7 @@ When adding new validation scripts:
 
 ## Related Documentation
 
-- [Mermaid Syntax Audit](../.agent/mermaid-syntax-audit.md)
-- [Client-Side Error Detection Guide](../.agent/client-side-error-detection-guide.md)
-- [Sitemap Validation Audit](../.agent/sitemap-validation-audit.md)
+- [Client-Side Errors rule](./client-side-errors.md)
 
 ---
 

@@ -191,7 +191,7 @@ A board member who pulls on any single number in the paragraph terminates in eit
 The honest limits, per [`value-philosophy.md`](value-philosophy.md) §6.5 hostile-review discipline:
 
 1. **Acme Pay is hypothetical.** Its numbers are plausible but constructed. A real B2B fintech running this framework on its own data will produce a different headline; the *shape* should match.
-2. **The 0.4pp_churn_per_pp_CFR coefficient** in Step 6 is a working assumption. Closing it requires the kind of multi-org cohort study that [Prediction 5](value-philosophy.md#66-falsifiable-predictions--what-this-philosophy-claims-with-skin-in-the-game) commits to checking.
+2. **The 0.4pp_churn_per_pp_CFR coefficient** in Step 6 is a working assumption. Closing it requires the kind of multi-org cohort study that [Prediction 5](value-philosophy.md#66-falsifiable-predictions) commits to checking.
 3. **The recommendation order** (drop `T_pipeline` first, then `F`, then expand rule coverage) is the philosophy's recommendation, not a proven optimal sequence. A real org might find a different order works better given local constraints.
 
 ## Reproduce for your company
