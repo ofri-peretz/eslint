@@ -26,7 +26,6 @@ const preview: Preview = {
           values: [
             'wcag2a',
             'wcag2aa',
-            'wcag2aaa',
             'wcag21a',
             'wcag21aa',
             'wcag22aa',

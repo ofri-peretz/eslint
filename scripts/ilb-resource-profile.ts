@@ -180,23 +180,27 @@ async function main() {
     engine: 'eslint' | 'oxlint';
     name: string;
     cmd: string[];
-  }> = [
-    {
-      engine: 'eslint',
-      name: 'eslint-flagship',
-      cmd: ['npx', 'eslint', '--no-warn-ignored', '--config', 'eslint.flagship.config.mjs', args.corpus],
-    },
-    {
-      engine: 'oxlint',
-      name: 'oxlint-flagship',
-      cmd: ['npx', 'oxlint', '--config', '.oxlintrc.flagship.json', args.corpus],
-    },
-    {
-      engine: 'oxlint',
-      name: 'oxlint-default',
-      cmd: ['npx', 'oxlint', args.corpus],
-    },
-  ].filter((p) => !args.engine || p.engine === args.engine);
+  }> = (
+    [
+      {
+        engine: 'eslint',
+        name: 'eslint-flagship',
+        cmd: ['npx', 'eslint', '--no-warn-ignored', '--config', 'eslint.flagship.config.mjs', args.corpus],
+      },
+      {
+        engine: 'oxlint',
+        name: 'oxlint-flagship',
+        cmd: ['npx', 'oxlint', '--config', '.oxlintrc.flagship.json', args.corpus],
+      },
+      {
+        engine: 'oxlint',
+        name: 'oxlint-default',
+        cmd: ['npx', 'oxlint', args.corpus],
+      },
+    ] as const
+  )
+    .map((p) => ({ engine: p.engine, name: p.name, cmd: [...p.cmd] }))
+    .filter((p) => !args.engine || p.engine === args.engine);
 
   const rows: ProfileRow[] = [];
   for (const preset of presets) {
