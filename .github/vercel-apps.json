@@ -1,19 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "$comment": "Map of deployable apps in this repo → their Vercel project IDs. Consumed by .github/workflows/deploy.yml. orgId is the same across all Interlace projects. projectIds are public identifiers (not secrets); only VERCEL_TOKEN is a secret.",
+  "$comment": "Map of deployable apps in this repo → their Vercel project IDs and the canonical rootDirectory each project should carry on the dashboard. Consumed by .github/workflows/deploy.yml — the workflow PATCHes the Vercel project before each deploy so the dashboard config can never drift from this file. orgId is the same across all Interlace projects. projectIds are public identifiers (not secrets); only VERCEL_TOKEN is a secret.",
   "orgId": "team_sZpUs6MAa1BKXZJY6Hq2nfnh",
   "apps": {
     "docs": {
       "projectId": "prj_DSK82D4vMaxGwSskbRLpT0fnHXps",
-      "productionUrl": "https://interlace.tools"
+      "productionUrl": "https://interlace.tools",
+      "rootDirectory": "apps/docs"
     },
     "storybook": {
       "projectId": "prj_JyWHBGJ5K3UOeBbRyNIZA6MoRGkf",
-      "productionUrl": "https://storybook.interlace.tools"
+      "productionUrl": "https://storybook.interlace.tools",
+      "rootDirectory": "apps/storybook"
     },
     "registry": {
       "projectId": "prj_veNDMyIAMCyi7fSLVo0ebphyaFoe",
-      "productionUrl": "https://ds.interlace.tools"
+      "productionUrl": "https://ds.interlace.tools",
+      "rootDirectory": "apps/registry"
     }
   }
 }
