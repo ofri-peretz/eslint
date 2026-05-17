@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "echo 'static deploy — storybook-static/ is pre-built locally; rebuild with `npx turbo run build-storybook --filter=@interlace/storybook` then `vercel deploy --prod`'",
+  "buildCommand": "cd ../.. && npx turbo run build-storybook --filter=@interlace/storybook",
   "outputDirectory": "storybook-static",
-  "installCommand": "echo 'no install needed for static deploy'",
+  "installCommand": "cd ../.. && npm install --include=dev --no-audit --no-fund",
   "framework": null,
   "git": {
     "deploymentEnabled": {
