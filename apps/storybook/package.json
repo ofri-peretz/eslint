@@ -11,16 +11,16 @@
   },
   "dependencies": {
     "@interlace/ui": "*",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^1.16.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "^10.3.6",
-    "@storybook/addon-docs": "^10.3.6",
-    "@storybook/addon-themes": "^10.3.6",
-    "@storybook/react-vite": "^10.3.6",
-    "@storybook/test-runner": "^0.24.3",
+    "@storybook/addon-a11y": "^10.4.0",
+    "@storybook/addon-docs": "^10.4.0",
+    "@storybook/addon-themes": "^10.4.0",
+    "@storybook/react-vite": "^10.4.0",
+    "@storybook/test-runner": "^0.24.4",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
@@ -29,10 +29,10 @@
     "concurrently": "^9.1.2",
     "http-server": "^14.1.1",
     "playwright": "^1.49.0",
-    "storybook": "^10.3.6",
+    "storybook": "^10.4.0",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.0.0",
+    "typescript": "^6.0.3",
     "vite": "^7.3.1",
-    "wait-on": "^8.0.5"
+    "wait-on": "^9.0.10"
   }
 }
