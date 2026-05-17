@@ -76,6 +76,12 @@
       "description": "@interlace/ui — label primitive (shadcn-compatible)."
     },
     {
+      "name": "meteors",
+      "type": "registry:ui",
+      "title": "Meteors",
+      "description": "@interlace/ui — meteors primitive (shadcn-compatible)."
+    },
+    {
       "name": "pagination",
       "type": "registry:ui",
       "title": "Pagination",
