@@ -93,12 +93,16 @@ jobs:
 
       - name: Deploy
         id: deploy
+        # --archive=tgz packs the build output into a single tarball before
+        # upload; without it Vercel rejects any deployment >15000 files
+        # (registry's prebuild + node_modules tree easily clears that). See
+        # commit 6216fc91 which applied the same flag to deploy-docs.yml.
         run: |
           set -euo pipefail
           if [ "${{ inputs.target }}" = "production" ]; then
-            URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+            URL=$(vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN")
           else
-            URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+            URL=$(vercel deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN")
           fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
