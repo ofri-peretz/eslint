@@ -225,23 +225,30 @@ for (const plugin of eligible) {
   });
 }
 
-// Preserve the runtimeRuleNames snapshot (managed by verify-oxlint-shims.mjs)
-// across regenerations — the generator owns the static manifest, but the
-// runtime snapshot is captured separately and shouldn't be wiped.
-const previousRuntimeSnapshot = (() => {
+// Preserve cross-regeneration state from the existing manifest:
+//   - `runtimeRuleNames` snapshot is managed by verify-oxlint-shims.mjs and
+//     mustn't be wiped here.
+//   - `generatedAt` is preserved when nothing else changed, so re-runs on
+//     a later day don't show drift just because the wall clock moved.
+//     (Bug: was previously always set to `today`, which made `--check`
+//     fail every day until someone re-ran the generator and committed it.)
+const previous = (() => {
   if (!fs.existsSync(MANIFEST_PATH)) return undefined;
   try {
-    const existing = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-    return existing.runtimeRuleNames;
+    return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8')) as Record<string, unknown>;
   } catch {
     return undefined;
   }
 })();
+const previousRuntimeSnapshot = previous?.runtimeRuleNames;
 
-// Manifest is a generated artifact: regenerate every run, treat hand edits as drift.
-const manifestObj = {
+// Build the manifest first with TODAY's date so we have something to
+// compare against the prior on-disk version. Then, if every other field
+// matches, keep the prior `generatedAt` to avoid spurious drift.
+const today = new Date().toISOString().slice(0, 10);
+const manifestBase = {
   generatedBy: 'scripts/generate-oxlint-shims.mjs',
-  generatedAt: new Date().toISOString().slice(0, 10), // date-only — keeps diff stable across re-runs same day
+  generatedAt: today,
   totalPlugins: manifestEntries.length,
   totalRules: manifestEntries.reduce((s, p) => s + p.ruleCount, 0),
   oxlintCompatible: manifestEntries.reduce(
@@ -253,6 +260,18 @@ const manifestObj = {
   plugins: manifestEntries,
   ...(previousRuntimeSnapshot ? { runtimeRuleNames: previousRuntimeSnapshot } : {}),
 };
+
+const generatedAt = (() => {
+  if (!previous || typeof previous.generatedAt !== 'string') return today;
+  const candidate = { ...manifestBase, generatedAt: previous.generatedAt };
+  // Deep-equality check via canonical JSON. If nothing else changed,
+  // keep the prior date.
+  const prevCanonical = JSON.stringify({ ...previous });
+  const cmpCanonical = JSON.stringify(candidate);
+  return prevCanonical === cmpCanonical ? previous.generatedAt : today;
+})();
+
+const manifestObj = { ...manifestBase, generatedAt };
 
 const manifestContent = JSON.stringify(manifestObj, null, 2) + '\n';
 ensureFile(MANIFEST_PATH, manifestContent);
