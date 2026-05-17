@@ -7,23 +7,59 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { useTheme } from 'next-themes';
+
+import { cn } from '@/lib/utils';
+
+export interface MermaidProps {
+  /** Mermaid chart source. Supports both raw text and MDX-attribute-escaped (`\n`, `\"`) input. */
+  chart: string;
+  /** Resolved theme (`'light' | 'dark'`). If not provided, falls back to `prefers-color-scheme`. */
+  theme?: 'light' | 'dark';
+  /** Optional class on the wrapper div. */
+  className?: string;
+  /** Optional CSS injected into mermaid (e.g., `'margin: 1.5rem auto 0;'`). */
+  themeCSS?: string;
+}
+
+function usePrefersDark(): boolean {
+  const [isDark, setIsDark] = useState<boolean>(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDark(mql.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+  return isDark;
+}
 
 /**
- * Mermaid diagram renderer for MDX content.
+ * Mermaid diagram renderer for MDX.
  *
- * Usage in MDX:
- *   <Mermaid chart="graph TD; A-->B; B-->C;" />
+ * Usage:
+ *   <Mermaid chart="graph TD; A-->B;" />
+ *
+ * To integrate with `next-themes`, wrap or pass the resolved theme:
+ *   const { resolvedTheme } = useTheme();
+ *   <Mermaid theme={resolvedTheme === 'dark' ? 'dark' : 'light'} chart="..." />
  *
  * The component dynamically imports `mermaid` so it doesn't bloat the initial
- * bundle. Theme follows next-themes resolved value.
+ * bundle. Mermaid is declared as an optional peer dependency — install it in
+ * the consumer if you use `<Mermaid>` in MDX.
  */
-export function Mermaid({ chart }: { chart: string }) {
+export function Mermaid({
+  chart,
+  theme,
+  className,
+  themeCSS = 'margin: 1.5rem auto 0;',
+}: MermaidProps) {
   const [mounted, setMounted] = useState(false);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const id = useId().replace(/:/g, '-');
-  const { resolvedTheme } = useTheme();
+  const prefersDark = usePrefersDark();
+  const resolved = theme ?? (prefersDark ? 'dark' : 'light');
 
   useEffect(() => {
     setMounted(true);
@@ -31,69 +67,72 @@ export function Mermaid({ chart }: { chart: string }) {
 
   useEffect(() => {
     if (!mounted || !chart) return;
-
-    const renderDiagram = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         // mermaid is an optional peer dep — install it in the consumer if you
-        // use <Mermaid> in MDX. The ts-ignore lets sites that don't use it
-        // skip the install without breaking typecheck.
+        // use <Mermaid> in MDX.
         // @ts-ignore optional peer dep
         const mermaid = (await import('mermaid')).default;
-
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: 'loose',
           fontFamily: 'inherit',
-          themeCSS: 'margin: 1.5rem auto 0;',
-          theme: resolvedTheme === 'dark' ? 'dark' : 'default',
+          themeCSS,
+          theme: resolved === 'dark' ? 'dark' : 'default',
         });
-
-        const normalizedChart = chart.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        const normalizedChart = chart
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"');
         const { svg } = await mermaid.render(`mermaid-${id}`, normalizedChart);
-        setSvgContent(svg);
-        setError(null);
+        if (!cancelled) {
+          setSvgContent(svg);
+          setError(null);
+        }
       } catch (err) {
-        console.error('Mermaid rendering error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to render diagram');
-        setSvgContent(null);
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to render diagram');
+          setSvgContent(null);
+        }
       }
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, [mounted, chart, resolved, id, themeCSS]);
 
-    renderDiagram();
-  }, [mounted, chart, resolvedTheme, id]);
-
-  if (!mounted) {
+  // Skeleton while mounting/rendering — avoids a blank flash for diagram-heavy pages.
+  if (!mounted || (!svgContent && !error)) {
     return (
-      <div className="my-6 p-4 bg-muted/50 rounded-lg" suppressHydrationWarning>
+      <div
+        className={cn('my-6 p-4 bg-muted/50 rounded-lg animate-pulse', className)}
+        suppressHydrationWarning
+      >
         <div className="h-32 bg-muted rounded" />
       </div>
     );
   }
-
-  if (error) {
+  if (error)
     return (
-      <div className="my-6 p-4 border border-destructive/50 rounded-lg bg-destructive/10">
-        <p className="text-sm text-destructive">Failed to render diagram: {error}</p>
+      <div
+        className={cn(
+          'border-destructive/50 bg-destructive/5 text-destructive rounded-md border p-3 text-sm',
+          className,
+        )}
+      >
+        <p>Mermaid render error: {error}</p>
         <pre className="mt-2 text-xs overflow-auto max-h-32">
-          <code>{chart.substring(0, 200)}...</code>
+          <code>{chart.substring(0, 200)}{chart.length > 200 ? '...' : ''}</code>
         </pre>
       </div>
     );
-  }
-
-  if (!svgContent) {
-    return (
-      <div className="my-6 p-4 bg-muted/50 rounded-lg animate-pulse">
-        <div className="h-32 bg-muted rounded" />
-      </div>
-    );
-  }
-
   return (
     <div
-      className="my-6 overflow-x-auto"
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: svgContent }}
+      className={cn('flex justify-center', className)}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: mermaid SVG output is the component's purpose
+      dangerouslySetInnerHTML={{ __html: svgContent! }}
     />
   );
 }
+
+export default Mermaid;

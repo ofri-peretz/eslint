@@ -1,0 +1,978 @@
+{
+  "competitor": "import-official",
+  "host": "eslint",
+  "package": "eslint-plugin-import",
+  "version": "2.32.0",
+  "cycleFindings": [
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/testing-module.builder.ts",
+      "line": 15,
+      "message": "Dependency cycle via ./override-by.interface:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/testing-module.builder.ts",
+      "line": 20,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/testing-instance-loader.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./override-by.interface:3=>../testing-module.builder:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/testing-injector.ts",
+      "line": 9,
+      "message": "Dependency cycle via ./override-by.interface:3=>../testing-module.builder:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/interfaces/override-module.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/interfaces/override-by.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./interfaces:19"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/testing/interfaces/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../testing-module.builder:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/utils/transform-pattern.utils.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-proxy:5=>../utils:33"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/utils/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../interfaces:6=>./client-kafka-proxy.interface:2=>../client:1=>./client-proxy:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/serializers/rmq-record.serializer.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-rmq:8"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/serializers/nats-record.serializer.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-nats:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/serializers/mqtt-record.serializer.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-mqtt:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/microservice-configuration.interface.ts",
+      "line": 20,
+      "message": "Dependency cycle via ./kafka-parser:3=>../interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/microservice-configuration.interface.ts",
+      "line": 21,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../client:1=>./client-grpc:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../helpers:5=>./kafka-parser:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/custom-transport-strategy.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/client-metadata.interface.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./client-proxy-factory:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/client-metadata.interface.ts",
+      "line": 5,
+      "message": "Dependency cycle via ./kafka-parser:3=>../interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/interfaces/client-kafka-proxy.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./client-grpc:1=>../interfaces:11"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/helpers/kafka-reply-partition-assigner.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../helpers:38"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/helpers/kafka-parser.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-metadata.interface:3=>../helpers:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/helpers/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../interfaces:2=>./client-metadata.interface:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/helpers/index.ts",
+      "line": 4,
+      "message": "Dependency cycle via ../client/client-kafka:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/helpers/grpc-helpers.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./client-metadata.interface:3=>../helpers:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/deserializers/nats-response-json.deserializer.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-nats:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/deserializers/nats-request-json.deserializer.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-nats:4=>../deserializers/nats-response-json.deserializer:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/deserializers/kafka-response.deserializer.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-kafka:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/deserializers/incoming-response.deserializer.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-proxy:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/deserializers/incoming-request.deserializer.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1=>./client-nats:4=>../deserializers/nats-response-json.deserializer:6=>./nats-request-json.deserializer:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../interfaces:11=>./client-kafka-proxy.interface:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/index.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../interfaces/client-metadata.interface:7"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-tcp.ts",
+      "line": 8,
+      "message": "Dependency cycle via ./kafka-parser:3=>../interfaces:2=>./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-rmq.ts",
+      "line": 30,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-redis.ts",
+      "line": 9,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-proxy.ts",
+      "line": 15,
+      "message": "Dependency cycle via ../interfaces:2=>./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-proxy-factory.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-nats.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../interfaces:3=>./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-mqtt.ts",
+      "line": 8,
+      "message": "Dependency cycle via ./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-kafka.ts",
+      "line": 17,
+      "message": "Dependency cycle via ../interfaces:3=>./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-kafka.ts",
+      "line": 34,
+      "message": "Dependency cycle via ./kafka-reply-partition-assigner:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-grpc.ts",
+      "line": 10,
+      "message": "Dependency cycle via ./kafka-parser:3=>../interfaces:2=>./client-kafka-proxy.interface:2=>../client:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/scanner.ts",
+      "line": 36,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/scanner.ts",
+      "line": 51,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/application-config.ts",
+      "line": 10,
+      "message": "Dependency cycle via ./module:19"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/router/router-proxy.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../errors/exceptions/invalid-exception-filter.exception:6=>../messages:2=>../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/repl-function.ts",
+      "line": 3,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/repl-context.ts",
+      "line": 10,
+      "message": "Dependency cycle via ./help-repl-fn:1=>../repl-function:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/select-relp-fn.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/resolve-repl-fn.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/methods-repl-fn.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../repl-function:3=>./repl-context:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/help-repl-fn.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/get-repl-fn.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/debug-repl-fn.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./repl-context:3=>./native-functions:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/pipes/pipes-context-creator.ts",
+      "line": 5,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../pipes:21"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/pipes/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../injector/container:8=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/interceptors/interceptors-context-creator.ts",
+      "line": 5,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../interceptors:20"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/interceptors/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../injector/container:8=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/serialized-graph.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/serialized-graph.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./interfaces/external-handler-metadata.interface:25=>../../injector:1=>./lazy-module-loader/lazy-module-loader:4=>../../scanner:3=>./injector/internal-core-module/internal-core-module-factory:51"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/serialized-graph.ts",
+      "line": 19,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/partial-graph.host.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3=>./inspector/graph-inspector:54"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/graph-inspector.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../../injector/module:2=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/interfaces/serialized-graph-metadata.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./module:44=>./container:40=>../inspector/serialized-graph:16"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/interfaces/serialized-graph-json.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/inspector/interfaces/enhancer-metadata-cache-entry.interface.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./module:19=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3=>./inspector/graph-inspector:54"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/modules-container.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./container:40"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module.ts",
+      "line": 29,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module.ts",
+      "line": 30,
+      "message": "Dependency cycle via ./invalid-class-scope.exception:4=>../messages:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module.ts",
+      "line": 40,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module.ts",
+      "line": 42,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module-ref.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./module:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/module-ref.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../inspector/serialized-graph:16"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/instance-wrapper.ts",
+      "line": 13,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/instance-wrapper.ts",
+      "line": 19,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/instance-loader.ts",
+      "line": 5,
+      "message": "Dependency cycle via ./serialized-graph:11=>../injector/lazy-module-loader/lazy-module-loader:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/instance-links-host.ts",
+      "line": 4,
+      "message": "Dependency cycle via ../inspector/serialized-graph:16=>../injector/module-ref:7"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/injector.ts",
+      "line": 31,
+      "message": "Dependency cycle via ./invalid-class-scope.exception:4=>../messages:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/injector.ts",
+      "line": 33,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/injector.ts",
+      "line": 34,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/injector.ts",
+      "line": 36,
+      "message": "Dependency cycle via ./instance-wrapper:1=>./module:19=>./module-ref:42"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>./interfaces/external-handler-metadata.interface:25"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/container.ts",
+      "line": 8,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/container.ts",
+      "line": 16,
+      "message": "Dependency cycle via ../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/constants.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/abstract-instance-resolver.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./invalid-class-scope.exception:4=>../messages:3=>../injector/module:7=>./module-ref:42"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/topology-tree/topology-tree.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/lazy-module-loader/lazy-module-loader.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./injector/internal-core-module/internal-core-module-factory:51"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/lazy-module-loader/lazy-module-loader.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../inspector/graph-inspector:5=>./serialized-graph:11"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/internal-core-module/internal-core-module-factory.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../injector/container:14=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/handler-metadata-storage.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./instance-wrapper:1=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/external-proxy.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../errors/exceptions/invalid-exception-filter.exception:5=>../messages:2=>../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/external-context-creator.ts",
+      "line": 10,
+      "message": "Dependency cycle via ../injector/container:8=>../inspector/serialized-graph:16"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/external-context-creator.ts",
+      "line": 25,
+      "message": "Dependency cycle via ../../injector:1=>./lazy-module-loader/lazy-module-loader:4=>../../scanner:3=>./injector/internal-core-module/internal-core-module-factory:51"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/context-id-factory.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./module:19"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/context-creator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./instance-wrapper:1=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10=>./base-exception-filter-context:11"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/helpers/interfaces/external-handler-metadata.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./container:1=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/guards/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../injector/container:9=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/guards/guards-context-creator.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../guards:11"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/exceptions/external-exceptions-handler.ts",
+      "line": 5,
+      "message": "Dependency cycle via ../messages:2=>../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/exceptions/external-exception-filter-context.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./injector/instance-wrapper:10=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/exceptions/exceptions-handler.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../messages:2=>../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10=>../router/router-proxy:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/exceptions/base-exception-filter-context.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../injector/instance-wrapper:3=>./module:19=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/messages.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../errors/exceptions/undefined-dependency.exception:33"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/messages.ts",
+      "line": 7,
+      "message": "Dependency cycle via ./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3=>./errors/exceptions/invalid-class-module.exception:45"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/unknown-export.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/injector:6=>../errors/exceptions:31"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/unknown-dependencies.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/unknown-dependencies.exception.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3=>./inspector/graph-inspector:54"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/undefined-module.exception.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/undefined-forwardref.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/injector:6=>../errors/exceptions:31"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/undefined-dependency.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/invalid-module.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/invalid-exception-filter.exception.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../helpers/external-context-creator:3=>../exceptions/external-exception-filter-context:10=>./external-exceptions-handler:12"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/invalid-class.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/injector:6=>../errors/exceptions:31"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/invalid-class-scope.exception.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../injector/injector:6=>../errors/exceptions:31"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/invalid-class-module.exception.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../injector/module:7=>./container:40=>../inspector/serialized-graph:16=>../injector/lazy-module-loader/lazy-module-loader:6=>../../scanner:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/errors/exceptions/index.ts",
+      "line": 4,
+      "message": "Dependency cycle via ../messages:3=>../injector/injector:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/discovery/discoverable-meta-host-collection.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./module:19=>./container:40"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/index.ts",
+      "line": 9,
+      "message": "Dependency cycle via ./core:1=>./exception-filters.decorator:5"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/index.ts",
+      "line": 67,
+      "message": "Dependency cycle via ./parse-enum.pipe:6"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/utils/load-package.util.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./validation.pipe:10"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/utils/http-error-by-code.util.ts",
+      "line": 23,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./parse-array.pipe:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/utils/assign-custom-metadata.util.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../../index:6=>./decorators:9=>./http:3=>./create-route-param-metadata.decorator:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/logger.service.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./catch.decorator:2=>../../interfaces:2=>./nest-application-context.interface:22"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/logger.service.ts",
+      "line": 3,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/logger.service.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./filter-log-levels.util:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../decorators/core:2=>./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/console-logger.service.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./exception-filters.decorator:5=>../../index:2=>./services:69"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/console-logger.service.ts",
+      "line": 10,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/utils/is-log-level.util.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./utils:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/utils/is-log-level-enabled.util.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./console-logger.service:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/utils/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../logger.service:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/services/utils/filter-log-levels.util.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./utils:4"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/serializer/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../decorators/core:4=>./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/serializer/class-serializer.interfaces.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./serializer:68"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/serializer/class-serializer.interceptor.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../interfaces:2=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./serializer:68"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/serializer/decorators/serialize-options.decorator.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./core:1=>./exception-filters.decorator:5=>../../index:2=>./serializer:68=>./decorators:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/serializer/decorators/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../../decorators:1=>./core:1=>./exception-filters.decorator:5=>../../index:2=>./serializer:68"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/validation.pipe.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-uuid.pipe.ts",
+      "line": 8,
+      "message": "Dependency cycle via ../interfaces:23=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-int.pipe.ts",
+      "line": 8,
+      "message": "Dependency cycle via ../interfaces:23=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-float.pipe.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-enum.pipe.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-date.pipe.ts",
+      "line": 4,
+      "message": "Dependency cycle via ../interfaces:23=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-bool.pipe.ts",
+      "line": 8,
+      "message": "Dependency cycle via ../interfaces:23=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/parse-array.pipe.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./parse-file.pipe:5=>../../decorators/core:1=>./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/file/parse-file.pipe.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./file:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/file/parse-file-pipe.builder.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./file:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/file/parse-file-options.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../interfaces:23=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./file:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/file/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/pipes/file/file-type.validator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./pipes:67=>./file:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../services/logger.service:3=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/configurable-module.builder.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/utils/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../../interfaces:7=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66=>./configurable-module.builder:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/utils/get-injection-providers.util.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66=>./configurable-module.builder:1=>./utils:18"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/interfaces/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../../interfaces:6=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/interfaces/configurable-module-host.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../../interfaces:6=>./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66=>./interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/interfaces/configurable-module-cls.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66=>./interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/module-utils/interfaces/configurable-module-async-options.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1=>./exception-filters.decorator:5=>../../index:2=>./module-utils:66=>./interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/nest-microservice.interface.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./execution-context.interface:2=>../index:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/nest-application.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./execution-context.interface:2=>../index:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/nest-application-options.interface.ts",
+      "line": 6,
+      "message": "Dependency cycle via ../services/logger.service:1=>../decorators/core:1=>./catch.decorator:2=>../../interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/nest-application-context.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../decorators/core:1=>./catch.decorator:2=>../../interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/nest-application-context-options.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../decorators/core:1=>./catch.decorator:2=>../../interfaces:2=>./nest-application-context.interface:22"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/index.ts",
+      "line": 9,
+      "message": "Dependency cycle via ./execution-context.interface:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/index.ts",
+      "line": 17,
+      "message": "Dependency cycle via ./http-server.interface:3=>../../interfaces/nest-application-options.interface:2=>./nest-application-context-options.interface:6=>../services/logger.service:1=>../decorators/core:1=>./catch.decorator:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/index.ts",
+      "line": 24,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/modules/module-metadata.interface.ts",
+      "line": 3,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/modules/dynamic-module.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/middleware/middleware-consumer.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/middleware/middleware-config-proxy.interface.ts",
+      "line": 3,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/http/index.ts",
+      "line": 3,
+      "message": "Dependency cycle via ../../interfaces/nest-application-options.interface:2=>./nest-application-context-options.interface:6=>../services/logger.service:1=>../decorators/core:1=>./catch.decorator:2=>../../interfaces:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/http/http-server.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context-options.interface:6=>../services/logger.service:1=>../decorators/core:1=>./catch.decorator:2=>../../interfaces:2=>./http:17"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/features/nest-interceptor.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../index:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/features/execution-context.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle detected."
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/features/custom-route-param-factory.interface.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../index:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/interfaces/features/can-activate.interface.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../index:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/file-stream/streamable-file.ts",
+      "line": 4,
+      "message": "Dependency cycle via ./console-logger.service:1=>../decorators/core:2=>./exception-filters.decorator:5=>../../index:2=>./file-stream:12"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/file-stream/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ../services:4=>./console-logger.service:1=>../decorators/core:2=>./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/index.ts",
+      "line": 1,
+      "message": "Dependency cycle via ./exception-filters.decorator:5=>../../index:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/http/route-params.decorator.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./decorators:9=>./http:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/http/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../../index:6=>./decorators:9"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/http/create-route-param-metadata.decorator.ts",
+      "line": 3,
+      "message": "Dependency cycle via ./decorators:9=>./http:3"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/use-pipes.decorator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/use-interceptors.decorator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/use-guards.decorator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/inject.decorator.ts",
+      "line": 6,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/index.ts",
+      "line": 2,
+      "message": "Dependency cycle via ../../interfaces:2=>./nest-application-context.interface:22=>../services/logger.service:2"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/index.ts",
+      "line": 5,
+      "message": "Dependency cycle via ../../index:2=>./decorators:9"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/exception-filters.decorator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./decorators:9=>./core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/controller.decorator.ts",
+      "line": 8,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    },
+    {
+      "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/common/decorators/core/catch.decorator.ts",
+      "line": 2,
+      "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
+    }
+  ]
+}

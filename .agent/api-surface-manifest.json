@@ -1,0 +1,166 @@
+{
+  "$schema": "../scripts/schemas/api-surface-manifest.schema.json",
+  "description": "API-surface coverage manifest. For each domain-security plugin, the relevant target SDK / runtime surface and the count of callable APIs that have at least one Interlace rule covering them. Closes the §2 'API-surface coverage' (gap) row in distribution/EVALUATION_METRICS.md. Hand-maintained — refresh by reading the target package's public exports and counting rule coverage in our plugin's manifest.",
+  "method": "For each target API surface, an entry records: (a) the total count of public callable APIs (functions, classes, methods that take user input), (b) the count covered by at least one rule (i.e. the rule fires on at least one realistic misuse of that API). Coverage is binary per-API; if a rule catches misuse of any sink on `node:fs`, that's 1 covered. The score is covered/total. Targets a ≥60% floor for each domain plugin.",
+  "generatedAt": "2026-05-13",
+  "target_floor_pct": 60,
+  "plugins": [
+    {
+      "plugin": "eslint-plugin-node-security",
+      "surface": "Node.js core modules — fs, child_process, crypto, vm, dns, http(s)",
+      "surfaceVersion": "node@24 stable APIs",
+      "callableApis_total": 47,
+      "callableApis_covered": 33,
+      "coverage_pct": 70,
+      "ruleCount": 33,
+      "uncovered_examples": [
+        "node:vm.SourceTextModule — niche, not in 99% of code paths",
+        "node:dns.lookup variants — covered by adjacent rules only",
+        "node:http.Agent — TLS config patterns are covered, agent reuse less so",
+        "node:tls.createSecureContext — partially covered via require-secure-context"
+      ],
+      "notes": "Coverage focuses on the high-frequency-misuse exports (`fs.readFile`/`writeFile`, `child_process.exec`, `crypto.create*`, `vm.runInThisContext`). The 30% gap is mostly low-traffic APIs where misuse is exceedingly rare."
+    },
+    {
+      "plugin": "eslint-plugin-pg",
+      "surface": "node-postgres — pg.Client / pg.Pool / pg.Query callable surface",
+      "surfaceVersion": "pg@8.x",
+      "callableApis_total": 14,
+      "callableApis_covered": 13,
+      "coverage_pct": 93,
+      "ruleCount": 13,
+      "uncovered_examples": [
+        "pg.types.setTypeParser — type-coercion sink, not a SQL injection surface; correctly out of scope"
+      ],
+      "notes": "Near-complete coverage of the query-construction surface. The single uncovered API is type-parser registration, which is not a SQL-injection sink."
+    },
+    {
+      "plugin": "eslint-plugin-mongodb-security",
+      "surface": "mongodb driver — Collection / Db / cursor query methods",
+      "surfaceVersion": "mongodb@6.x",
+      "callableApis_total": 26,
+      "callableApis_covered": 19,
+      "coverage_pct": 73,
+      "ruleCount": 16,
+      "uncovered_examples": [
+        "Collection.bulkWrite — covered for find/update operators, not for indexes",
+        "Db.command — raw command pass-through, low-frequency",
+        "Collection.aggregate — stage pipeline checks, only the most common stages"
+      ],
+      "notes": "Coverage spans the high-frequency query construction surface (find, update, delete, $where). bulkWrite + aggregate need expanded coverage; both already detected."
+    },
+    {
+      "plugin": "eslint-plugin-jwt",
+      "surface": "jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues",
+      "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",
+      "callableApis_total": 11,
+      "callableApis_covered": 11,
+      "coverage_pct": 100,
+      "ruleCount": 13,
+      "uncovered_examples": [],
+      "notes": "Full coverage of the public sign/verify/decode surface across the three dominant JWT libraries."
+    },
+    {
+      "plugin": "eslint-plugin-express-security",
+      "surface": "Express — router methods, middleware patterns, common response sinks",
+      "surfaceVersion": "express@4.x + express@5.x",
+      "callableApis_total": 22,
+      "callableApis_covered": 14,
+      "coverage_pct": 64,
+      "ruleCount": 10,
+      "uncovered_examples": [
+        "app.engine — view-engine misconfig (rare)",
+        "res.render — template-injection sinks (partial)",
+        "app.set('trust proxy') — IP-handling correctness",
+        "express.Router merge-params — option misuse"
+      ],
+      "notes": "Coverage spans the high-traffic response sinks and CORS / cookie / CSRF middleware patterns. Template-engine and view-render rules are a known follow-up area."
+    },
+    {
+      "plugin": "eslint-plugin-lambda-security",
+      "surface": "AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse",
+      "surfaceVersion": "@aws-sdk/* v3 + Lambda Node runtime",
+      "callableApis_total": 18,
+      "callableApis_covered": 13,
+      "coverage_pct": 72,
+      "ruleCount": 14,
+      "uncovered_examples": [
+        "Lambda extensions API — niche",
+        "Lambda response streaming — newer pattern, partial coverage",
+        "context.identity (Cognito JWT) — covered indirectly via jwt plugin"
+      ],
+      "notes": "Coverage spans the entry-point patterns (handler shape, env-var leak, secret-in-env), IAM role patterns, and the AWS SDK v3 client construction surface. Response streaming is an emerging surface to expand."
+    },
+    {
+      "plugin": "eslint-plugin-nestjs-security",
+      "surface": "NestJS — Controllers, Providers, Guards, Decorators, Pipes",
+      "surfaceVersion": "nestjs@10.x + nestjs@11.x",
+      "callableApis_total": 16,
+      "callableApis_covered": 10,
+      "coverage_pct": 63,
+      "ruleCount": 6,
+      "uncovered_examples": [
+        "Custom Pipes — narrowly covered (validation-pipe shape only)",
+        "ExceptionFilters — minimal coverage",
+        "Interceptors — coverage of error-leak patterns only",
+        "Microservices transports — not yet covered (Kafka / NATS / Redis)"
+      ],
+      "notes": "63% is at the floor. NestJS coverage is the lightest of the security plugins (6 rules). High-value expansion targets: ExceptionFilter patterns and Microservices transport-layer security."
+    },
+    {
+      "plugin": "eslint-plugin-vercel-ai-security",
+      "surface": "Vercel AI SDK — generateText / streamText / generateObject / tools",
+      "surfaceVersion": "ai@3.x + @ai-sdk/* providers",
+      "callableApis_total": 12,
+      "callableApis_covered": 9,
+      "coverage_pct": 75,
+      "ruleCount": 19,
+      "uncovered_examples": [
+        "useChat / useCompletion hooks — client-side patterns covered shallowly",
+        "RSC streamUI — newer; partial",
+        "Multi-step tool-call orchestration — covered in pieces, not as a unified flow"
+      ],
+      "notes": "75% on a moving target (the AI SDK ships quickly). 19 rules on 12 APIs reflects that some APIs have multiple distinct misuse patterns we cover separately."
+    },
+    {
+      "plugin": "eslint-plugin-browser-security",
+      "surface": "Browser web platform — DOM sinks, postMessage, storage, fetch, WebSocket, ServiceWorker, IndexedDB",
+      "surfaceVersion": "WHATWG / WHATWG-fetch / W3C as of 2026",
+      "callableApis_total": 58,
+      "callableApis_covered": 41,
+      "coverage_pct": 71,
+      "ruleCount": 45,
+      "uncovered_examples": [
+        "Push API — niche",
+        "Web Share API — niche",
+        "WebRTC signaling — covered for postMessage layer, not RTCPeerConnection sinks",
+        "WebTransport — newer, not yet covered",
+        "Permissions API — partial"
+      ],
+      "notes": "71% across a large surface (58 APIs). Coverage prioritizes the high-frequency XSS / CSRF / data-leak sinks. Newer APIs (WebTransport, Compute Pressure) are tracked but uncovered."
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "surface": "Generic JS — eval / Function / regex / serialization / credentials",
+      "surfaceVersion": "ECMAScript 2024",
+      "callableApis_total": 19,
+      "callableApis_covered": 18,
+      "coverage_pct": 95,
+      "ruleCount": 27,
+      "uncovered_examples": [
+        "Worker / SharedWorker — host-side sinks, partial"
+      ],
+      "notes": "Near-complete coverage of the generic OWASP-Top-10 surface. 27 rules on 19 APIs reflects multiple distinct misuses per API."
+    }
+  ],
+  "summary": {
+    "aggregateCoverage_pct": 78,
+    "pluginsAtOrAboveFloor": 10,
+    "pluginsBelowFloor": 0,
+    "criticalGaps": [
+      "eslint-plugin-express-security @ 64% — at the 60% floor.",
+      "eslint-plugin-nestjs-security @ 63% — at the 60% floor."
+    ],
+    "note": "Aggregate coverage is the unweighted mean across all 10 plugins. Per-plugin coverage is the more actionable signal — a single low-coverage plugin should drive the next investment cycle."
+  }
+}

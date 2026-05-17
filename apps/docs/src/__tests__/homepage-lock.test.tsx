@@ -86,6 +86,44 @@ describe('Homepage: Structure Lock', () => {
       expect(homepageSource).toContain('STATS BAR');
     });
 
+    // RUNTIME STRIP (added 2026-05) — engine-portability signal lives
+    // adjacent to the hero, NOT inside it (the hero CTAs are locked).
+    // INTEROP_PHILOSOPHY.md is the canonical source for engine statuses;
+    // the strip is the user-facing surface that introduces them.
+    it('contains RUNTIME STRIP section between HERO and STATS BAR', () => {
+      expect(homepageSource).toContain('RUNTIME STRIP');
+      const stripIdx = homepageSource.indexOf('RUNTIME STRIP');
+      const statsIdx = homepageSource.indexOf('STATS BAR');
+      expect(stripIdx).toBeGreaterThan(-1);
+      expect(stripIdx).toBeLessThan(statsIdx);
+    });
+
+    it('runtime strip lists ESLint as the floor engine', () => {
+      expect(homepageSource).toMatch(/ESLint[\s\S]{0,80}floor/);
+    });
+
+    it('runtime strip lists Oxlint as automated peer (matches INTEROP_PHILOSOPHY.md support matrix)', () => {
+      expect(homepageSource).toMatch(/Oxlint[\s\S]{0,80}automated peer/);
+    });
+
+    it('runtime strip lists Biome as reserved peer (matches INTEROP_PHILOSOPHY.md support matrix)', () => {
+      expect(homepageSource).toMatch(/Biome[\s\S]{0,80}reserved peer/);
+    });
+
+    it('runtime strip lists TSC native (Go) as watching — never claims "TSC 7 compatible" (status is `watching` per INTEROP_PHILOSOPHY.md)', () => {
+      expect(homepageSource).toMatch(/TSC native[\s\S]{0,80}watching/);
+      // The host is Go, not Rust — Oxlint and Biome are Rust. Pin this
+      // because the user's mental model conflates the two languages.
+      expect(homepageSource).toContain('TSC native (Go)');
+      // Negative lock: must NOT promise compatibility with TSC 7 (status is "watching", not "compatible").
+      expect(homepageSource).not.toMatch(/compatible[\s\S]{0,40}TSC\s*7/i);
+      expect(homepageSource).not.toMatch(/TSC\s*7[\s\S]{0,40}compatible/i);
+    });
+
+    it('runtime strip cross-links to /docs/getting-started/concepts/runtime-portability', () => {
+      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+    });
+
     it('contains DOCS PREVIEW section', () => {
       expect(homepageSource).toContain('DOCS PREVIEW');
     });
@@ -530,6 +568,22 @@ describe('Homepage: Visual Identity Lock', () => {
       expect(homepageSource).toContain('/docs/getting-started/concepts/ai-integration');
     });
 
+    // Runtime-portability card lives inside "Our edges" — its copy must
+    // namedrop ESLint, Oxlint, AND the TSC native plugin host. The card is
+    // the second user-facing surface (after the hero strip) where the
+    // engine-portability story lands. Wording drift here is a regression.
+    it('Our edges grid contains the Runtime Portability card with all three engines named (ESLint + Oxlint + TSC native)', () => {
+      expect(homepageSource).toContain('Runtime Portability');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+      // Per INTEROP_PHILOSOPHY.md §"Vision": the TSC native host is the
+      // long-horizon target. Card copy MUST name it so the message isn't
+      // limited to "Oxlint and ESLint."
+      const cardChunk = homepageSource.slice(homepageSource.indexOf('Runtime Portability'));
+      expect(cardChunk).toMatch(/ESLint/);
+      expect(cardChunk).toMatch(/Oxlint/);
+      expect(cardChunk).toMatch(/TSC native/);
+    });
+
     it('has Final CTA section', () => {
       expect(homepageSource).toContain('Ready to Level Up?');
     });
@@ -566,6 +620,58 @@ describe('Homepage: Visual Identity Lock', () => {
 // home composes only those primitives. This block guards against
 // regression.
 // ============================================================
+
+// ============================================================
+// R19 — no raw color literals in JSX attributes
+// ----------------------------------------------------------------
+// The `react-features/component-api/no-raw-color-literal` rule forbids
+// hex / rgb / hsl / oklch strings inside JSX attribute values on this
+// surface — colors must come from CSS tokens (`var(--cta-*)` etc.)
+// defined in `apps/docs/src/app/global.css`. The lint rule catches new
+// drift; this lock catches re-introductions during refactors that
+// might run before lint (and is faster to read in a PR review).
+// ============================================================
+
+describe('Homepage: no raw color literals in JSX attributes (R19)', () => {
+  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
+  let homepageSource: string;
+  let heroSource: string;
+
+  beforeAll(() => {
+    homepageSource = readFileSync(homepagePath, 'utf-8');
+    heroSource = readFileSync(heroPath, 'utf-8');
+  });
+
+  // The rule pattern is `JSXAttribute > Literal` with the value matching
+  // `/(#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\s*\()/`. The lock
+  // mirrors that — any JSX attribute (`name="…"` or `name={"…"}`) whose
+  // string value contains a hex/rgb/hsl/oklch color is forbidden.
+  const RAW_COLOR_IN_JSX_ATTR =
+    /=\s*\{?\s*"[^"]*(?:#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\s*\()/;
+
+  it('homepage page.tsx contains NO raw hex/rgb/hsl/oklch literals in JSX attributes', () => {
+    expect(homepageSource).not.toMatch(RAW_COLOR_IN_JSX_ATTR);
+  });
+
+  it('hero-section.tsx contains NO raw hex/rgb/hsl/oklch literals in JSX attributes', () => {
+    // The hero owns two ShimmerButton CTAs (primary + secondary GitHub).
+    // Both used to inline `#c084fc` / `#6d28d9` / `rgba(255,255,255,0.12)`;
+    // they now read from `var(--cta-*)` in global.css. If this assertion
+    // fails the migration regressed — restore the var(...) refs.
+    expect(heroSource).not.toMatch(RAW_COLOR_IN_JSX_ATTR);
+  });
+
+  it('homepage references the CTA tokens (BorderBeam + ShimmerButton flow through global.css)', () => {
+    expect(homepageSource).toMatch(/var\(--cta-beam-(?:from|to)\)/);
+    expect(homepageSource).toMatch(/var\(--cta-(?:shimmer|bg-gradient)\)/);
+  });
+
+  it('hero references the CTA tokens for both primary and secondary CTAs', () => {
+    expect(heroSource).toMatch(/var\(--cta-(?:shimmer|bg-gradient)\)/);
+    expect(heroSource).toMatch(/var\(--cta-secondary-bg\)/);
+  });
+});
 
 describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
   let homepageSource: string;

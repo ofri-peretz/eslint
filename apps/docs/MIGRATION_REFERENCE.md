@@ -6,13 +6,13 @@
 
 ## Table of Contents
 
-1. [Branding & Identity](#1-branding--identity)
+1. [Branding & Identity](#1-branding-identity)
 2. [Dynamic Content from GitHub](#2-dynamic-content-from-github)
 3. [Mermaid Diagram System](#3-mermaid-diagram-system)
 4. [Quality Content Philosophy (FPs, FNs, Coverage)](#4-quality-content-philosophy-fps-fns-coverage)
 5. [Advanced Topics Concepts](#5-advanced-topics-concepts)
 6. [Theming System](#6-theming-system)
-7. [API Layer & Backend Services](#7-api-layer--backend-services)
+7. [API Layer & Backend Services](#7-api-layer-backend-services)
 8. [Key Components Reference](#8-key-components-reference)
 9. [Critical Implementation Notes](#9-critical-implementation-notes)
 
@@ -605,7 +605,7 @@ NEXT_PUBLIC_APP_VERSION=1.0.0
 
 ---
 
-## 8. Critical Implementation Notes
+## 9. Critical Implementation Notes
 
 ### Font
 

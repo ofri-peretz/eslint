@@ -14,9 +14,12 @@
  *   - CHANGELOG.md (any depth)   — historical release notes.
  *   - packages/eslint-plugin-crypto/** — the deprecated package's own files
  *                                       (which carry a deprecation banner).
+ *   - apps/docs/content/docs/security/plugin-crypto/** — the deprecated
+ *                                       package's docs (deprecation banner).
  *   - .agent/plugin-classification-graph.md — canonical deprecation registry.
- *   - distribution/EXPOSURE_AUDIT_LOG.md
- *   - distribution/EXPOSURE_IMPACT_REVIEW.md — dated download audits.
+ *   - distribution/** — dated audits, ecosystem analysis, exposure logs
+ *                       (content that *discusses* the deprecation, not
+ *                       recommends it).
  *   - benchmarks/FP_FN_REMEDIATION_TRACKER.md — dated remediation history.
  */
 import { describe, it, expect } from 'vitest';
@@ -42,9 +45,18 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       /^packages\/eslint-plugin-crypto\//,
       /^apps\/docs\/content\/docs\/security\/plugin-crypto\//,
       '.agent/plugin-classification-graph.md',
-      'distribution/EXPOSURE_AUDIT_LOG.md',
-      'distribution/EXPOSURE_IMPACT_REVIEW.md',
+      // `distribution/` holds dated audits, ecosystem analysis, and
+      // exposure logs — content that legitimately *discusses* the
+      // deprecation (rather than recommending the deprecated plugin).
+      // Allowlist the whole directory; EXPOSURE_AUDIT_LOG.md and
+      // EXPOSURE_IMPACT_REVIEW.md were two specific cases of this
+      // general pattern.
+      /^distribution\//,
       'benchmarks/FP_FN_REMEDIATION_TRACKER.md',
+      // META_HYGIENE.md is a per-plugin meta-coverage stats table that
+      // legitimately enumerates every published plugin, including the
+      // deprecated crypto package, for historical comparison.
+      'docs/META_HYGIENE.md',
     ],
   },
 ];

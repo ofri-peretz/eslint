@@ -14,7 +14,7 @@ import React, {
   useState,
 } from "react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 interface MousePosition {
   x: number
@@ -84,6 +84,26 @@ type Circle = {
   magnetism: number
 }
 
+// Canvas pixel-fill color. `hexToRgb()` requires a hex string at runtime, so
+// the documented fallback materialises as one. Consumers normally control the
+// color via the `--color-particles-default` token in `css/brand.css` (resolved
+// at mount via `getComputedStyle`) or by passing `color="#abcdef"` explicitly.
+// eslint-disable-next-line no-raw-color-literal -- documented canvas fallback
+const DEFAULT_PARTICLE_HEX = "#ffffff"
+
+function resolveParticleColor(propValue: string | undefined): string {
+  if (propValue) return propValue
+  if (typeof window === "undefined") return DEFAULT_PARTICLE_HEX
+  const tokenValue = getComputedStyle(document.documentElement)
+    .getPropertyValue("--color-particles-default")
+    .trim()
+  // `hexToRgb` only parses hex strings; fall back if the token resolved to
+  // any non-hex form (oklch / hsl / named color).
+  return tokenValue && tokenValue.startsWith("#")
+    ? tokenValue
+    : DEFAULT_PARTICLE_HEX
+}
+
 export const Particles: React.FC<ParticlesProps> = ({
   className = "",
   quantity = 100,
@@ -91,11 +111,12 @@ export const Particles: React.FC<ParticlesProps> = ({
   ease = 50,
   size = 0.4,
   refresh = false,
-  color = "#ffffff",
+  color,
   vx = 0,
   vy = 0,
   ...props
 }) => {
+  const resolvedColor = resolveParticleColor(color)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const context = useRef<CanvasRenderingContext2D | null>(null)
@@ -134,7 +155,7 @@ export const Particles: React.FC<ParticlesProps> = ({
       }
       window.removeEventListener("resize", handleResize)
     }
-  }, [color])
+  }, [resolvedColor])
 
   useEffect(() => {
     onMouseMove()
@@ -208,7 +229,7 @@ export const Particles: React.FC<ParticlesProps> = ({
     }
   }
 
-  const rgb = hexToRgb(color)
+  const rgb = hexToRgb(resolvedColor)
 
   const drawCircle = (circle: Circle, update = false) => {
     if (context.current) {

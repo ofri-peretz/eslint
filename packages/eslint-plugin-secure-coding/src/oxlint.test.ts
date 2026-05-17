@@ -27,6 +27,11 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
     const pkgJson = JSON.parse(
       fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'),
     );
+    // Paths point into `dist/` — the same convention every peer plugin in
+    // packages/eslint-plugin-*/package.json uses. Source-tree `./src/...`
+    // paths wouldn't resolve after `npm install` because `files` ships
+    // `dist/` only via tsc output. See sibling browser-security/package.json
+    // for the canonical shape.
     expect(pkgJson.exports['./oxlint']).toEqual({
       types: './src/oxlint.d.ts',
       default: './src/oxlint.js',
@@ -34,7 +39,7 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
   });
 
   it('re-exports the plugin object (meta + rules at top level)', async () => {
-    const oxlintModule = await import('./oxlint');
+    const oxlintModule = await import('./oxlint.js');
     const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
     expect(oxlintPlugin).toBeDefined();
     expect(oxlintPlugin.meta?.name).toBe('eslint-plugin-secure-coding');
@@ -42,7 +47,7 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
   });
 
   it('exposes the same rule names as the main entry (no rules dropped)', async () => {
-    const oxlintModule = await import('./oxlint');
+    const oxlintModule = await import('./oxlint.js');
     const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
     expect(Object.keys(oxlintPlugin.rules || {}).toSorted()).toEqual(
       Object.keys(mainPlugin.rules || {}).toSorted(),
@@ -50,7 +55,7 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
   });
 
   it('exposes the same rule references (pass-through, not a copy)', async () => {
-    const oxlintModule = await import('./oxlint');
+    const oxlintModule = await import('./oxlint.js');
     const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
     for (const ruleName of Object.keys(mainPlugin.rules || {})) {
       expect(oxlintPlugin.rules?.[ruleName]).toBe(

@@ -4,31 +4,33 @@
  * Edit there, then run `npm run sync` to redistribute.
  * Local edits will be overwritten on next sync (or refused without --force).
  */
-"use client"
+import * as React from 'react';
+import { Separator as BaseSeparator } from '@base-ui-components/react/separator';
 
-import * as React from "react"
-import * as SeparatorPrimitive from "@radix-ui/react-separator"
+import { cn } from '@/lib/utils';
 
-import { cn } from "@/lib/utils"
+type SeparatorProps = React.ComponentProps<typeof BaseSeparator> & {
+  orientation?: 'horizontal' | 'vertical';
+};
 
 function Separator({
   className,
-  orientation = "horizontal",
-  decorative = true,
+  orientation = 'horizontal',
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+}: SeparatorProps) {
   return (
-    <SeparatorPrimitive.Root
+    <BaseSeparator
       data-slot="separator"
-      decorative={decorative}
       orientation={orientation}
       className={cn(
-        "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-        className
+        'bg-border shrink-0',
+        orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Separator }
+export { Separator };
+export type { SeparatorProps };

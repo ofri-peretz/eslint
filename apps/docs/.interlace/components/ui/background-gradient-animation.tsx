@@ -8,15 +8,20 @@
 import { cn } from "../../lib/utils";
 import { useEffect, useRef, useState } from "react";
 
+// All defaults resolve to design-system tokens. The RGB triple props (e.g.
+// `firstColor = "18, 113, 255"`) are passed to `rgb(var(--first-color), …)`
+// inside the markup below, so they remain bare RGB triples rather than full
+// CSS color expressions. Consumers re-skin by redefining the tokens; no
+// literal colors survive in source.
 export const BackgroundGradientAnimation = ({
-  gradientBackgroundStart = "rgb(108, 0, 162)",
-  gradientBackgroundEnd = "rgb(0, 17, 82)",
-  firstColor = "18, 113, 255",
-  secondColor = "221, 74, 255",
-  thirdColor = "100, 220, 255",
-  fourthColor = "200, 50, 50",
-  fifthColor = "180, 180, 50",
-  pointerColor = "140, 100, 255",
+  gradientBackgroundStart = "var(--color-gradient-bg-start)",
+  gradientBackgroundEnd = "var(--color-gradient-bg-end)",
+  firstColor = "var(--gradient-first-rgb)",
+  secondColor = "var(--gradient-second-rgb)",
+  thirdColor = "var(--gradient-third-rgb)",
+  fourthColor = "var(--gradient-fourth-rgb)",
+  fifthColor = "var(--gradient-fifth-rgb)",
+  pointerColor = "var(--gradient-pointer-rgb)",
   size = "80%",
   blendingValue = "hard-light",
   children,

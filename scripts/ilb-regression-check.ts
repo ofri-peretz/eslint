@@ -439,7 +439,7 @@ if (baselineRulesSnapshot && Object.keys(baselineRulesSnapshot).length > 0) {
     // Hard-fail backfire heuristic: a rule that gained ≥ 100 hits on Wild
     // AND has zero synthetic-bench coverage is shipping unmeasured noise.
     const arenaPath = latestFileInDir(path.join(BENCH_RESULTS, 'ilb-arena'));
-    const julietPath = latestFileInDir(path.join(BENCH_RESULTS, 'ilb-juliet'));
+    const julietPath = latestFileInDir(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
     const measured = new Set<string>();
     for (const p of [arenaPath, julietPath]) {
       if (!p) continue;

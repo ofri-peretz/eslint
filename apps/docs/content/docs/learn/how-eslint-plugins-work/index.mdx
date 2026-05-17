@@ -1,0 +1,309 @@
+---
+title: How ESLint plugins work
+description: The pipeline from source text to a finding — lexer, AST, visitor, rule, fixer — with the source-file links so you can read past my words
+icon: Workflow
+---
+
+> I'm going to walk you through the pipeline an ESLint plugin sits in,
+> end to end. By the end you should be able to read any rule file in this
+> repo (or in `eslint-plugin-import`, or in `@typescript-eslint`) and know
+> what each piece is doing without re-deriving it. The shape of every
+> rule is the same; the variation is in *what the visitor functions
+> notice*.
+
+---
+
+## The 30-second answer
+
+Every lint result on your screen — every red squiggle, every missing-alt
+warning, every "no-unused-vars" — comes out of this pipeline:
+
+```
+your source code
+      │
+      ▼
+   Parser            (espree / @typescript-eslint/parser / oxc)
+      │
+      ▼
+     AST             (an object tree: nodes have a `type`, children, location)
+      │
+      ▼
+  Traversal          (ESLint walks the tree once, depth-first)
+      │
+      ▼
+ Rule visitors       (`Identifier`, `CallExpression`, … — your callbacks fire on matching nodes)
+      │
+      ▼
+context.report()     (you said "something's wrong here" — produces a message + location)
+      │
+      ▼
+   Findings          (line/column/severity/ruleId — what the user sees)
+      │
+      ▼
+   (optional) fixer  (a callback that rewrites the source span to fix it)
+```
+
+That's it. The rule itself is the *content* of one visitor function. The
+pipeline above is fixed; you slot your detection logic into the visitor
+and let ESLint do everything else.
+
+<Callout type="info" title="One pass, many rules">
+ESLint walks the AST **once** for the whole file and dispatches each
+node to every rule that registered a visitor for that node type. That's
+why writing a hot rule is a per-node-visit cost question, not a
+per-rule-cost question.
+</Callout>
+
+---
+
+## What an actual rule looks like
+
+The minimum viable rule, ESLint-API style:
+
+```ts
+import type { Rule } from 'eslint';
+
+export const rule: Rule.RuleModule = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'forbid eval()' },
+    messages: {
+      noEval: 'eval() runs arbitrary code at runtime — forbidden.',
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      // Visitor: fires on every `CallExpression` node in the source.
+      CallExpression(node) {
+        if (node.callee.type === 'Identifier' && node.callee.name === 'eval') {
+          context.report({
+            node,
+            messageId: 'noEval',
+          });
+        }
+      },
+    };
+  },
+};
+```
+
+The three pieces:
+
+1. **`meta`** — what kind of rule, what it's called, what messages it can
+   emit, what options it accepts. ESLint reads this without running the
+   rule (it's how `--rule` listings work, how docs generators introspect,
+   how IDE hovers show the description).
+2. **`create(context)`** — a factory that ESLint calls once per file.
+   Returns an object whose keys are AST node types and whose values are
+   visitor functions. Closure scope here is per-file state.
+3. **`context.report(...)`** — your hand on the trigger. Once you call
+   it, ESLint owns the rest: severity, ruleId, file path, line/column,
+   the fixer if you passed one.
+
+Three patterns sit on top of this primitive:
+
+| Pattern | Where you see it |
+| :--- | :--- |
+| **Single-node check.** Look at the current node, decide. `eval()` above. | Anywhere the rule's signature is purely local: "this `<img>` tag is missing `alt`," "this regex has catastrophic backtracking." |
+| **Two-pass with `Program:exit`.** Collect data on the way down, decide on `Program:exit` (fires when ESLint finishes the file). | `no-unused-vars`, `no-cycle` — you need the whole file's information before you can say something is unused or part of a cycle. |
+| **Cross-node correlation.** Hold state in the closure; the visitor pushes into it, a later visitor (or `Program:exit`) checks the accumulated state. | Taint-flow rules: `let x = req.body.userId` on a `VariableDeclaration`, then `db.query('SELECT * FROM users WHERE id = ' + x)` on a `CallExpression` whose argument is a `BinaryExpression` — needs the closure to remember that `x` is tainted. |
+
+---
+
+## Why the AST, not the source text
+
+The temptation, when you write your first rule, is to regex the source.
+Don't. The source text doesn't tell you that `eval` is a function call
+versus an identifier in a string literal versus a key in an object:
+
+```js
+eval(userInput);        // ← this is the bug
+const map = { eval: 1 }; // ← this is fine
+console.log('eval()');   // ← also fine
+```
+
+The AST knows. Each occurrence of `eval` here has a different parent
+node — `CallExpression.callee`, `Property.key`, `Literal.value` — and
+your visitor only fires on the one that matters.
+
+That's the whole reason ESLint won — it traded grep for AST and got
+massively better signal-to-noise.
+
+<Callout type="info" title="Picking a parser">
+The default ESLint parser is `espree`, which handles modern JavaScript
+but not TypeScript. For TS, you swap in `@typescript-eslint/parser`,
+which produces a superset AST (same node types plus TS-specific ones
+like `TSTypeAnnotation`). Oxlint uses `oxc-parser` (Rust), which emits
+the same `ESTree`-shaped AST. The rule's visitor doesn't care — it
+asks for `Identifier` and gets `Identifier`, whoever parsed it.
+</Callout>
+
+---
+
+## How a visitor fires
+
+Suppose your rule registers `Identifier(node) { ... }`. For each file
+ESLint lints:
+
+1. Parser produces the AST root (always a `Program` node).
+2. ESLint walks the tree depth-first.
+3. Every time it hits an `Identifier` node — and there are hundreds in
+   a typical file — it calls your visitor function with that node.
+4. ESLint also calls `Identifier:exit(node)` (note the `:exit` suffix)
+   on the way back *up* the tree. Most rules don't need this; the ones
+   that do use it for cleanup ("I'm done with this scope, pop state").
+
+You can register multiple visitors in one rule — ESLint dispatches each
+node to *every* matching visitor across *every* enabled rule. The
+practical consequence: a rule that registers `Identifier` runs on every
+identifier in the file, including standard-library names, variable
+declarations, and member-access expressions. If your check is anything
+more than O(1) per node, it adds real time to every file in the project.
+
+This is why our flagship rules have **narrow firing signatures** — a
+node type that only fires a few times per file, with a quick filter at
+the top:
+
+```ts
+// Hot path: this fires on every CallExpression. Bail fast.
+CallExpression(node) {
+  if (node.callee.type !== 'MemberExpression') return; // ~99% of calls
+  if (node.callee.property.type !== 'Identifier') return;
+  if (node.callee.property.name !== 'query') return;   // ← rare
+  // ...now the real work
+}
+```
+
+Every `return` above saves the rule from doing real work on a node it
+doesn't care about. Cumulative across hundreds of identifiers per file
+and hundreds of files per repo, those returns are the difference between
+a rule that costs 0.5 ms/file and one that costs 50 ms/file.
+
+---
+
+## The fixer — when rules can autofix
+
+If your rule passes a `fix` function in the report call, ESLint can
+automatically rewrite the source span to fix the issue:
+
+```ts
+context.report({
+  node,
+  messageId: 'noVar',
+  fix(fixer) {
+    return fixer.replaceText(node, 'const'); // `var` → `const`
+  },
+});
+```
+
+The fixer object has a small, well-defined API:
+
+| Method | What it does |
+| :--- | :--- |
+| `fixer.replaceText(node, str)` | Replace the source range of `node` with `str`. |
+| `fixer.insertTextBefore(node, str)` | Insert `str` immediately before `node`. |
+| `fixer.insertTextAfter(node, str)` | Insert `str` immediately after `node`. |
+| `fixer.remove(node)` | Delete `node`'s source range entirely. |
+| `fixer.replaceTextRange([start, end], str)` | Replace the byte range `[start, end)`. |
+| `fixer.removeRange([start, end])` | Delete the byte range `[start, end)`. |
+
+ESLint applies fixes in order, skipping any that would overlap with an
+already-applied fix. This is why a rule's `fix` should rewrite the
+**minimum** source span that resolves the issue — wider spans collide
+with other rules' fixes and the user ends up running `--fix` twice.
+
+<Callout type="warn" title="Fixers and semantic changes">
+A rule with a fixer is making a promise: "the code I produce is
+semantically equivalent to the code I replaced." Get that wrong and you
+silently change behavior. Our convention is fixers ship only when the
+replacement is provably equivalent (literal `var` → `const` in a
+single-assignment scope; quoted-string concatenation in a `pg.query()`
+call → a parameterized placeholder). When there's a judgment call, we
+emit the diagnostic but leave the fix to the developer.
+</Callout>
+
+---
+
+## How ESLint knows which rules to run
+
+A user writes a config:
+
+```js
+// eslint.config.js
+import secureCoding from '@interlace/eslint-plugin-secure-coding';
+
+export default [
+  {
+    plugins: { 'secure-coding': secureCoding },
+    rules: {
+      'secure-coding/no-eval': 'error',
+    },
+  },
+];
+```
+
+ESLint resolves `secure-coding/no-eval` by:
+
+1. Look up the plugin named `'secure-coding'` in the config's `plugins`
+   map → finds the `secureCoding` import.
+2. Look up `'no-eval'` in `secureCoding.rules` → finds the rule module
+   (the `{ meta, create }` object).
+3. Call `create(context)` for each file being linted.
+
+The plugin object is just `{ rules: Record<string, RuleModule> }`,
+optionally with `configs` (named presets like `recommended` /
+`flagship`) and `meta`. There's no registry, no manifest, no service
+discovery — the plugin is a plain object you import from a package.
+
+This shape is what makes ESLint rules portable. The same rule object
+loads under ESLint 8, ESLint 9, ESLint 10, and oxlint's JS-plugin tier
+(in alpha as of 2026-05 — see [`writing-js-plugins`](https://oxc.rs/docs/guide/usage/linter/writing-js-plugins.html)).
+Because the rule is data plus a function, swapping the host engine
+swaps everything around the rule without touching the rule itself.
+
+---
+
+## What's NOT in the pipeline (and why)
+
+A few things you might expect that aren't there:
+
+- **Type checking.** ESLint by default is purely syntactic — it sees the
+  AST, not types. For type-aware rules, you opt into
+  `@typescript-eslint/parser`'s services and ask for
+  `services.program.getTypeChecker()`. Every flagship rule in this repo
+  is type-unaware on purpose, because the type-aware tier is ~10–100×
+  slower per file and we want our rules to run under oxlint (which only
+  runs the JS-plugin tier, no TypeScript program build).
+- **Cross-file analysis.** A rule's `create(context)` is called per file.
+  If you need to know "is this exported symbol used somewhere else,"
+  you write a separate scan (that's how `eslint-plugin-import/no-cycle`
+  works) — not a rule visitor. ESLint's tree walker is intra-file by
+  design.
+- **Time-traveling history.** The visitor sees one snapshot of the
+  source. If you want "was this added in the last commit," that's a
+  custom-formatter or report-time concern, not a rule concern.
+
+---
+
+## Where to read past my words
+
+Every assertion above is in the source. The links below let you verify.
+
+- **ESLint's rule-author guide** — [eslint.org/docs/latest/extend/custom-rules](https://eslint.org/docs/latest/extend/custom-rules) — the canonical doc; what's above is the narrative version of this.
+- **The default parser** — [github.com/eslint/espree](https://github.com/eslint/espree) — the parser ESLint ships with. Produces an `ESTree`-shaped AST.
+- **AST shape** — [github.com/estree/estree](https://github.com/estree/estree) — the formal spec for the node-type names you register visitors for (`CallExpression`, `Identifier`, `Program`, …).
+- **AST Explorer** — [astexplorer.net](https://astexplorer.net) — paste any source, see the AST. Indispensable when writing a new rule.
+- **Our flagship rules** — [`.agent/flagship-rules.md`](https://github.com/ofri-peretz/eslint/blob/main/.agent/flagship-rules.md) — the 10 rules this monorepo holds up as exemplars. Read [`packages/eslint-plugin-pg/src/rules/no-unsafe-query/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-pg/src/rules/no-unsafe-query) for a hand-rolled SQL-injection visitor.
+- **Oxlint's JS-plugin contract** — [oxc.rs/docs/guide/usage/linter/writing-js-plugins](https://oxc.rs/docs/guide/usage/linter/writing-js-plugins.html) — the same shape this chapter describes, but with `createOnce(context)` as a more efficient `create(context)` variant. Alpha as of 2026-05.
+
+If a paragraph here didn't earn its keep — tell me. Suggest changes
+[via the GitHub source link](https://github.com/ofri-peretz/eslint/blob/main/apps/docs/content/docs/learn/how-eslint-plugins-work/index.mdx)
+or [open a discussion](https://github.com/ofri-peretz/eslint/discussions).
+
+---
+
+**Next in the series:** Designing a flagship rule — the 5 selection
+criteria from `.agent/flagship-rules.md` with `pg/no-unsafe-query` as
+the worked example end-to-end. *(Planned — see the [Learn index](/docs/learn)
+for the chapter roadmap.)*

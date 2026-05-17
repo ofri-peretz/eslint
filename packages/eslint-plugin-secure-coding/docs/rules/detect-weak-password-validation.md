@@ -153,7 +153,7 @@ if (secretInput.length >= 4) {
 ## Related Rules
 
 - [no-hardcoded-credentials](./no-hardcoded-credentials.md) (in eslint-plugin-pg)
-- [no-client-side-auth-logic](./no-client-side-auth-logic.md)
+- no-client-side-auth-logic (planned)
 
 ---
 

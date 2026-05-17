@@ -1,0 +1,399 @@
+{
+  "generatedAt": "2026-05-17T01:49:35.974Z",
+  "ghAvailable": true,
+  "totalPeers": 17,
+  "successfulFetches": 17,
+  "peers": [
+    {
+      "npm": "eslint-plugin-security",
+      "gh": "eslint-community/eslint-plugin-security",
+      "category": "security",
+      "npm_": {
+        "weeklyDownloads": 2460129,
+        "latestVersion": "4.0.0",
+        "releaseCount12mo": 1,
+        "medianReleaseIntervalDays": 64.7,
+        "daysSinceLastRelease": 86,
+        "license": "Apache-2.0"
+      },
+      "gh_": {
+        "stars": 2348,
+        "openIssues": 18,
+        "contributors90d": 3,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 115.3,
+        "ttfrSampleSize": 5
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-no-secrets",
+      "gh": "nickdeis/eslint-plugin-no-secrets",
+      "category": "security",
+      "npm_": {
+        "weeklyDownloads": 243839,
+        "latestVersion": "2.3.3",
+        "releaseCount12mo": 2,
+        "medianReleaseIntervalDays": 19.2,
+        "daysSinceLastRelease": 76,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 167,
+        "openIssues": 7,
+        "contributors90d": 1,
+        "defaultBranch": "master",
+        "medianTimeToFirstResponseHours": 47,
+        "ttfrSampleSize": 7
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-no-unsanitized",
+      "gh": "mozilla/eslint-plugin-no-unsanitized",
+      "category": "security",
+      "npm_": {
+        "weeklyDownloads": 729780,
+        "latestVersion": "4.1.5",
+        "releaseCount12mo": 2,
+        "medianReleaseIntervalDays": 69.9,
+        "daysSinceLastRelease": 86,
+        "license": "MPL-2.0"
+      },
+      "gh_": {
+        "stars": 245,
+        "openIssues": 35,
+        "contributors90d": 4,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 17.3,
+        "ttfrSampleSize": 4
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-sonarjs",
+      "gh": "SonarSource/eslint-plugin-sonarjs",
+      "category": "security",
+      "npm_": {
+        "weeklyDownloads": 2420985,
+        "latestVersion": "4.0.3",
+        "releaseCount12mo": 9,
+        "medianReleaseIntervalDays": 30.7,
+        "daysSinceLastRelease": 30,
+        "license": "LGPL-3.0-only"
+      },
+      "gh_": {
+        "stars": 1201,
+        "openIssues": 0,
+        "contributors90d": 0,
+        "defaultBranch": "master",
+        "medianTimeToFirstResponseHours": 461.6,
+        "ttfrSampleSize": 2
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-unicorn",
+      "gh": "sindresorhus/eslint-plugin-unicorn",
+      "category": "general",
+      "npm_": {
+        "weeklyDownloads": 6555841,
+        "latestVersion": "64.0.0",
+        "releaseCount12mo": 7,
+        "medianReleaseIntervalDays": 17.1,
+        "daysSinceLastRelease": 50,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 5017,
+        "openIssues": 374,
+        "contributors90d": 6,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 36.6,
+        "ttfrSampleSize": 6
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-n",
+      "gh": "eslint-community/eslint-plugin-n",
+      "category": "general",
+      "npm_": {
+        "weeklyDownloads": 6936546,
+        "latestVersion": "18.0.1",
+        "releaseCount12mo": 13,
+        "medianReleaseIntervalDays": 9.7,
+        "daysSinceLastRelease": 11,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 335,
+        "openIssues": 38,
+        "contributors90d": 10,
+        "defaultBranch": "master",
+        "medianTimeToFirstResponseHours": 1.9,
+        "ttfrSampleSize": 3
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-promise",
+      "gh": "eslint-community/eslint-plugin-promise",
+      "category": "general",
+      "npm_": {
+        "weeklyDownloads": 6542721,
+        "latestVersion": "7.3.0",
+        "releaseCount12mo": 1,
+        "medianReleaseIntervalDays": 17,
+        "daysSinceLastRelease": 19,
+        "license": "ISC"
+      },
+      "gh_": {
+        "stars": 996,
+        "openIssues": 52,
+        "contributors90d": 3,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 2686.9,
+        "ttfrSampleSize": 1
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-perfectionist",
+      "gh": "azat-io/eslint-plugin-perfectionist",
+      "category": "general",
+      "npm_": {
+        "weeklyDownloads": 2103011,
+        "latestVersion": "5.9.0",
+        "releaseCount12mo": 14,
+        "medianReleaseIntervalDays": 5.9,
+        "daysSinceLastRelease": 28,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 2866,
+        "openIssues": 6,
+        "contributors90d": 3,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 0.2,
+        "ttfrSampleSize": 6
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-react",
+      "gh": "jsx-eslint/eslint-plugin-react",
+      "category": "react",
+      "npm_": {
+        "weeklyDownloads": 46496456,
+        "latestVersion": "7.37.5",
+        "releaseCount12mo": 0,
+        "medianReleaseIntervalDays": 7.1,
+        "daysSinceLastRelease": 408,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 9284,
+        "openIssues": 352,
+        "contributors90d": 3,
+        "defaultBranch": "master",
+        "medianTimeToFirstResponseHours": 2.7,
+        "ttfrSampleSize": 10
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-react-hooks",
+      "gh": null,
+      "category": "react",
+      "npm_": {
+        "weeklyDownloads": 82049497,
+        "latestVersion": "7.1.1",
+        "releaseCount12mo": 483,
+        "medianReleaseIntervalDays": 0.1,
+        "daysSinceLastRelease": 8,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": null,
+        "openIssues": null,
+        "contributors90d": null,
+        "defaultBranch": null,
+        "medianTimeToFirstResponseHours": null,
+        "ttfrSampleSize": 0
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-jsx-a11y",
+      "gh": "jsx-eslint/eslint-plugin-jsx-a11y",
+      "category": "react",
+      "npm_": {
+        "weeklyDownloads": 33619233,
+        "latestVersion": "6.10.2",
+        "releaseCount12mo": 0,
+        "medianReleaseIntervalDays": 3.8,
+        "daysSinceLastRelease": 567,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 3582,
+        "openIssues": 133,
+        "contributors90d": 0,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 6.6,
+        "ttfrSampleSize": 13
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-import",
+      "gh": "import-js/eslint-plugin-import",
+      "category": "imports",
+      "npm_": {
+        "weeklyDownloads": 45521914,
+        "latestVersion": "2.32.0",
+        "releaseCount12mo": 1,
+        "medianReleaseIntervalDays": 7,
+        "daysSinceLastRelease": 330,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 5912,
+        "openIssues": 593,
+        "contributors90d": 4,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 5.2,
+        "ttfrSampleSize": 14
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-unused-imports",
+      "gh": "sweepline/eslint-plugin-unused-imports",
+      "category": "imports",
+      "npm_": {
+        "weeklyDownloads": 9024748,
+        "latestVersion": "4.4.1",
+        "releaseCount12mo": 3,
+        "medianReleaseIntervalDays": 38.9,
+        "daysSinceLastRelease": 96,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 621,
+        "openIssues": 17,
+        "contributors90d": 0,
+        "defaultBranch": "master",
+        "medianTimeToFirstResponseHours": 35.7,
+        "ttfrSampleSize": 7
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "eslint-plugin-simple-import-sort",
+      "gh": "lydell/eslint-plugin-simple-import-sort",
+      "category": "imports",
+      "npm_": {
+        "weeklyDownloads": 4921830,
+        "latestVersion": "13.0.0",
+        "releaseCount12mo": 1,
+        "medianReleaseIntervalDays": 46.8,
+        "daysSinceLastRelease": 40,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 2441,
+        "openIssues": 6,
+        "contributors90d": 3,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 4.9,
+        "ttfrSampleSize": 10
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "@typescript-eslint/eslint-plugin",
+      "gh": "typescript-eslint/typescript-eslint",
+      "category": "typescript",
+      "npm_": {
+        "weeklyDownloads": 105837458,
+        "latestVersion": "8.59.3",
+        "releaseCount12mo": 450,
+        "medianReleaseIntervalDays": 0.1,
+        "daysSinceLastRelease": 0,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 16245,
+        "openIssues": 319,
+        "contributors90d": 32,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 6.8,
+        "ttfrSampleSize": 4
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "oxlint",
+      "gh": "oxc-project/oxc",
+      "category": "engine-stock",
+      "npm_": {
+        "weeklyDownloads": 6736865,
+        "latestVersion": "1.65.0",
+        "releaseCount12mo": 73,
+        "medianReleaseIntervalDays": 5.1,
+        "daysSinceLastRelease": 1,
+        "license": "MIT"
+      },
+      "gh_": {
+        "stars": 21168,
+        "openIssues": 613,
+        "contributors90d": 23,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 1.1,
+        "ttfrSampleSize": 3
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    },
+    {
+      "npm": "@biomejs/biome",
+      "gh": "biomejs/biome",
+      "category": "engine-stock",
+      "npm_": {
+        "weeklyDownloads": 8763517,
+        "latestVersion": "2.4.15",
+        "releaseCount12mo": 53,
+        "medianReleaseIntervalDays": 5.2,
+        "daysSinceLastRelease": 7,
+        "license": "MIT OR Apache-2.0"
+      },
+      "gh_": {
+        "stars": 24669,
+        "openIssues": 452,
+        "contributors90d": 18,
+        "defaultBranch": "main",
+        "medianTimeToFirstResponseHours": 3.9,
+        "ttfrSampleSize": 5
+      },
+      "fetchedAt": "2026-05-17T01:49:35.974Z",
+      "errors": []
+    }
+  ]
+}

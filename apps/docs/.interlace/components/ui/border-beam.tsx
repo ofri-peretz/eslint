@@ -6,7 +6,7 @@
  */
 "use client"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 interface BorderBeamProps {
   /**
@@ -57,13 +57,18 @@ interface BorderBeamProps {
  * Converted from Framer Motion to pure CSS animation for better GPU acceleration.
  * Uses CSS offset-path animation which is hardware-accelerated.
  */
+// Defaults resolve via CSS tokens in `css/brand.css`. Consumers re-skin by
+// redefining `--color-beam-from` / `--color-beam-to`; no literal hex here.
+const DEFAULT_BEAM_FROM = "var(--color-beam-from)"
+const DEFAULT_BEAM_TO = "var(--color-beam-to)"
+
 export const BorderBeam = ({
   className,
   size = 50,
   delay = 0,
   duration = 6,
-  colorFrom = "#ffaa40",
-  colorTo = "#9c40ff",
+  colorFrom = DEFAULT_BEAM_FROM,
+  colorTo = DEFAULT_BEAM_TO,
   style,
   reverse = false,
   initialOffset = 0,

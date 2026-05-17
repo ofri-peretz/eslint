@@ -24,7 +24,11 @@ describe('eslint-plugin-react-features plugin interface', () => {
     expect(ruleKeys).toContain('performance/no-unnecessary-rerenders');
     expect(ruleKeys).toContain('react/no-direct-mutation-state');
 
-    expect(ruleKeys.length).toBe(106);
+    // Bumped from 106 → 122 on 2026-05-16 when 8 component-api rules
+    // (R5/R6/R8/R18/R19 + no-default-test-id, no-wrapper-sub-component,
+    // no-kind-prop-discriminator) were added and registered under both
+    // flat and `component-api/` namespaces.
+    expect(ruleKeys.length).toBe(122);
   });
 
   it('should export rules matching plugin.rules', () => {
@@ -38,15 +42,15 @@ describe('eslint-plugin-react-features plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs.recommended).toBeDefined();
-      expect(configs.recommended.plugins?.['@eslint/react-features']).toBeDefined();
-      
+      expect(configs.recommended.plugins?.['react-features']).toBeDefined();
+
       const recommendedRules = configs.recommended.rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^@eslint\/react-features\//);
+        expect(ruleName).toMatch(/^react-features\//);
       });
-      
-      expect(recommendedRules['@eslint/react-features/react/jsx-key']).toBe('error');
-      
+
+      expect(recommendedRules['react-features/jsx-key']).toBe('error');
+
       // Verify at least one rule is configured
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
@@ -54,9 +58,9 @@ describe('eslint-plugin-react-features plugin interface', () => {
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs.recommended.rules || {});
       const pluginRules = Object.keys(plugin.rules || {});
-      
+
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@eslint/react-features/', '');
+        const shortName = ruleName.replace('react-features/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

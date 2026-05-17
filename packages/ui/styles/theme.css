@@ -79,6 +79,35 @@
   --color-primary-foreground: var(--color-fd-primary-foreground);
   --color-destructive: hsl(0, 72%, 38%);
   --color-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* shadcn chart palette — five distinct hues for series colors.
+     Light-mode values pass ≥4.5:1 contrast on `bg-card` (white).
+     Used by @/components/ui/chart `<ChartContainer>` + ChartConfig. */
+  --chart-1: oklch(0.55 0.22 264);
+  --chart-2: oklch(0.55 0.16 162);
+  --chart-3: oklch(0.55 0.16 36);
+  --chart-4: oklch(0.55 0.2 320);
+  --chart-5: oklch(0.55 0.16 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+.dark {
+  /* Dark-mode chart palette — lifted lightness so each series stays
+     ≥4.5:1 on `bg-card` (near-black). */
+  --chart-1: oklch(0.78 0.16 264);
+  --chart-2: oklch(0.78 0.14 162);
+  --chart-3: oklch(0.78 0.14 36);
+  --chart-4: oklch(0.78 0.16 320);
+  --chart-5: oklch(0.78 0.14 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
 /* ─────────────────────────────────────────────────────────────────

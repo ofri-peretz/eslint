@@ -9,10 +9,10 @@ Complete list of all 13 rules with configuration options.
 | Rule                                                            | CWE     | Severity | Description                                     |
 | --------------------------------------------------------------- | ------- | -------- | ----------------------------------------------- |
 | [no-unsafe-query](./rules/no-unsafe-query.md)                   | CWE-89  | Critical | Prevents SQL injection via string interpolation |
-| [no-insecure-ssl](./rules/no-insecure-ssl.md)                   | CWE-295 | High     | Prevents disabling SSL certificate validation   |
+| no-insecure-ssl (planned)                   | CWE-295 | High     | Prevents disabling SSL certificate validation   |
 | [no-hardcoded-credentials](./rules/no-hardcoded-credentials.md) | CWE-798 | High     | Prevents hardcoded passwords in config          |
 | [no-unsafe-search-path](./rules/no-unsafe-search-path.md)       | CWE-426 | High     | Prevents dynamic search_path hijacking          |
-| [no-unsafe-copy-from](./rules/no-unsafe-copy-from.md)           | CWE-22  | Critical | Prevents COPY FROM file path exposure           |
+| no-unsafe-copy-from (planned)           | CWE-22  | Critical | Prevents COPY FROM file path exposure           |
 | [no-transaction-on-pool](./rules/no-transaction-on-pool.md)     | CWE-362 | High     | Prevents transaction commands on pool           |
 
 ### Resource Management (3 rules)

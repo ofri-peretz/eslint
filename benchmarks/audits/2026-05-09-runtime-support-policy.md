@@ -17,7 +17,7 @@
 
 Rationale: matches Node.js's [official release schedule](https://nodejs.org/en/about/previous-releases) — Active LTS gets full support, Maintenance LTS gets bug-fix support until EOL, and EOL'd versions stop being a contract obligation.
 
-This policy is enforced mechanically by [`benchmarks/suites/ilb-node-matrix/run.mjs`](../suites/ilb-node-matrix/run.mjs) — the `SUPPORT_POLICY` constant is the source of truth; touching it requires an explicit policy review (this doc).
+This policy is enforced mechanically by [`benchmarks/suites/ilb-node-matrix/run.mjs`](../suites/ilb-node-matrix/run.ts) — the `SUPPORT_POLICY` constant is the source of truth; touching it requires an explicit policy review (this doc).
 
 ## 2. Why these versions — Node.js LTS schedule
 
@@ -70,8 +70,8 @@ For *real* numbers when planning support coverage or marketing claims:
 
 ## 4. How the matrix benches use this policy
 
-- **[ILB-Node-Matrix](../suites/ilb-node-matrix/run.mjs)** runs the lint corpus under each major in `SUPPORT_POLICY` (active + maintenance + legacy). Per-version median latency + zero-drift correctness check.
-- **[ILB-TSC-Matrix](../suites/ilb-tsc-matrix/run.mjs)** does the same across `tsc-classic` (TS 5.x) and `tsc-go` (TS 6.x preview / GA).
+- **[ILB-Node-Matrix](../suites/ilb-node-matrix/run.ts)** runs the lint corpus under each major in `SUPPORT_POLICY` (active + maintenance + legacy). Per-version median latency + zero-drift correctness check.
+- **[ILB-TSC-Matrix](../suites/ilb-tsc-matrix/run.ts)** does the same across `tsc-classic` (TS 5.x) and `tsc-go` (TS 6.x preview / GA).
 - Combined matrix dimension: `{node@18, node@20, node@22, node@24} × {tsc-classic, tsc-go}` = 8 cells. CI runs the active-LTS subset (4 cells) per-PR; the full 8-cell matrix runs nightly.
 
 ## 5. Why we don't track Bun / Deno / Workerd here

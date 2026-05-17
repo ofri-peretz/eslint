@@ -66,12 +66,12 @@ export const plugin = {
 export const configs = {
   recommended: {
     plugins: {
-      '@interlace/maintainability': plugin,
+      'maintainability': plugin,
     },
     rules: {
-      '@interlace/maintainability/maintainability/cognitive-complexity': 'warn',
-      '@interlace/maintainability/maintainability/identical-functions': 'warn',
-      '@interlace/maintainability/maintainability/max-parameters': 'warn',
+      'maintainability/cognitive-complexity': 'warn',
+      'maintainability/identical-functions': 'warn',
+      'maintainability/max-parameters': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

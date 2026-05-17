@@ -2,7 +2,7 @@
 
 > **Purpose**: Context file for LLMs (Claude, GPT, Gemini, etc.) working on this repository.
 >
-> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`).
+> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`). For the synchronised viewport breakpoint contract shared across `eslint`, `agents`, and `serverless`, see [BREAKPOINTS.md](./BREAKPOINTS.md).
 
 ## Repository Overview
 
@@ -23,16 +23,16 @@ This is a **monorepo** containing ESLint plugins for security-focused static ana
 ### For Code Reviews & Releases
 
 - **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** - Production-ready checklist for ESLint rules
-- **[docs/CICD.md](./docs/CICD.md)** - CI/CD workflow documentation with state diagrams
+- **docs/CICD.md (planned)** - CI/CD workflow documentation with state diagrams
 - **[docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)** - Which ESLint majors we support and why; refresh via `npm run stats:eslint-versions`
 
 ### For Contributing
 
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - How to contribute, commit guidelines, PR process
+- **CONTRIBUTING.md (planned)** - How to contribute, commit guidelines, PR process
 
 ### For Coverage Gaps
 
-- **[packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md](./packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md)** - When `c8 ignore` is acceptable
+- **packages/eslint-plugin-secure-coding/RULETESTER-COVERAGE-LIMITATIONS.md (planned)** - When `c8 ignore` is acceptable
 
 ---
 
@@ -128,6 +128,36 @@ panel on its run page):
 Workflow filenames map 1:1 to job names in the Actions list. Dynamic
 `run-name:` titles surface the PR number / commit message / mode at a
 glance.
+
+---
+
+## Evaluation infrastructure (gap-closure)
+
+Every measurable claim about Interlace or peers reduces to a row in
+[`distribution/EVALUATION_METRICS.md`](./distribution/EVALUATION_METRICS.md).
+Each row points at one of these scripts; outputs land under
+`benchmark-results/`. CI workflows under `.github/workflows/` enforce
+the gates.
+
+| Script | npm script | Output | CI workflow |
+| :--- | :--- | :--- | :--- |
+| `scripts/ilb-resource-profile.ts` | `npm run ilb:resource-profile` | `benchmark-results/resource-profile.{json,md}` | (manual / scheduled) |
+| `scripts/fetch-peer-health.ts` | `npm run peer-health` | `benchmark-results/peer-health.{json,md}` | `peer-health.yml` (weekly Monday cron) |
+| `scripts/audit-cve-rule-latency.ts` | `npm run audit:cve-latency[:strict]` | `benchmark-results/cve-rule-latency.{json,md}` | `cve-latency.yml` (PR + nightly) |
+| `scripts/audit-api-surface.ts` | `npm run audit:api-surface[:strict]` | `.agent/api-surface-manifest.json` + `benchmark-results/api-surface-coverage.md` | `api-surface.yml` (PR gate) |
+| `scripts/check-per-rule-budget.ts` | `npm run check:per-rule-budget[:soft]` | `benchmarks/budgets/per-rule-p95.json` + `benchmark-results/per-rule-budget-check.md` | `per-rule-budget.yml` (PR gate) |
+
+Schemas for the three JSON artifacts live at
+`scripts/schemas/{cve-rule-latency,api-surface-manifest,per-rule-budget}.schema.json`.
+Unit tests at `scripts/__tests__/gap-closure.test.ts` (`npx vitest run scripts/__tests__/`).
+
+**Repo invariant:** never reintroduce `(gap)` markers into
+EVALUATION_METRICS.md. Adding a metric without a measurement is a
+documentation regression — write the script, wire the npm command,
+add the workflow, then update the metrics table.
+
+The public-facing surface for this whole system is
+[`/docs/getting-started/concepts/transparency`](apps/docs/content/docs/getting-started/concepts/transparency.mdx).
 
 ---
 

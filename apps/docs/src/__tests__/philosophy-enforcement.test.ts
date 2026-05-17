@@ -22,7 +22,22 @@ const ROOT = join(process.cwd(), 'src');
 const SCAN_GLOB = '**/*.{ts,tsx}';
 // `__tests__` itself is excluded — these tests reference the forbidden
 // patterns as string literals to assert their absence elsewhere.
-const IGNORE = ['__tests__/**', '**/*.d.ts'];
+// `components/play/snippets.ts` is also excluded — it intentionally
+// contains forbidden patterns (`<img>` without alt/width/height, inline
+// `style={{...}}`, deprecated Tailwind names) **as code-block content
+// strings**, not as real JSX. The whole point of the playground snippets
+// is to show what our rules flag.
+// `components/ui/chart.tsx` carries one inline `style={{ backgroundColor:
+// item.color }}` on the legend swatch — `item.color` is per-data-point
+// dynamic from `ChartConfig`. The companion `no-inline-style` ESLint rule
+// explicitly exempts CSS-variable / computed-dynamic values for exactly
+// this case; this scan would otherwise be stricter than the rule itself.
+const IGNORE = [
+  '__tests__/**',
+  '**/*.d.ts',
+  'components/play/snippets.ts',
+  'components/ui/chart.tsx',
+];
 
 const files = globSync(SCAN_GLOB, { cwd: ROOT, ignore: IGNORE, absolute: true });
 

@@ -29,7 +29,20 @@ export default defineConfig({
       'src/__tests__/**/*.test.ts', // Include src-level tests
       'src/__tests__/**/*.test.tsx',
     ],
-    exclude: [],
+    // Setting `exclude` replaces vitest's defaults, so we spread them back in
+    // and add build-artifact dirs that can shadow real tests (Next.js standalone
+    // output at `.next/standalone/...` regressed pre-commit on 2026-05-16).
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      '**/.next/**',
+      '**/.turbo/**',
+      '**/storybook-static/**',
+      '**/coverage/**',
+    ],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',

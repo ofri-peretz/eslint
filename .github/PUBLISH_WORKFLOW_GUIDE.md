@@ -20,7 +20,7 @@ Each step can be run independently, skipped, or combined based on your needs.
 
 **Steps:**
 
-1. Go to: [GitHub Actions → Manual Publish](../../actions/workflows/publish-manual.yml)
+1. Go to: GitHub Actions → Manual Publish (planned)
 2. Click **"Run workflow"**
 3. Set parameters:
    - `run-ci`: ✅ **true** (always validate first)

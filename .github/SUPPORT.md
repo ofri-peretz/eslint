@@ -7,13 +7,13 @@ We're here to help! Here are the best ways to get support for this eslint monore
 ### 📚 Documentation
 
 - **Main README**: [README.md](../README.md) - Overview and quick start
-- **Contributing Guide**: [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
+- **Contributing Guide**: CONTRIBUTING.md (planned) - How to contribute
 - **Package Documentation**: See individual package READMEs in `packages/*/README.md`
 - **AI Agent Guides**: See `packages/*/AGENTS.md` for LLM-optimized documentation
 
 ### 🐛 Bug Reports
 
-Found a bug? Please open an issue using our [bug report template](.github/ISSUE_TEMPLATE/bug_report.md).
+Found a bug? Please open an issue using our [bug report template](./ISSUE_TEMPLATE/bug_report.md).
 
 **Before reporting:**
 - Search existing issues to avoid duplicates
@@ -23,7 +23,7 @@ Found a bug? Please open an issue using our [bug report template](.github/ISSUE_
 
 ### ✨ Feature Requests
 
-Have an idea? We'd love to hear it! Use our [feature request template](.github/ISSUE_TEMPLATE/feature_request.md).
+Have an idea? We'd love to hear it! Use our [feature request template](./ISSUE_TEMPLATE/feature_request.md).
 
 ### 💬 Discussions
 
@@ -50,7 +50,7 @@ For questions, ideas, or general discussion:
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](../CONTRIBUTING.md) for details.
+We welcome contributions! See our Contributing Guide (planned) for details.
 
 ## Resources
 

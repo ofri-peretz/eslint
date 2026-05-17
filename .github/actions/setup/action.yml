@@ -12,7 +12,7 @@
 #      workflow when input/output hashes match.
 #   4. (opt-in) ~/.cache/ms-playwright — Playwright browser binaries.
 #   5. (opt-in) apps/docs/.next/cache — Next.js incremental build cache.
-#   6. (opt-in) packages/ui/storybook-static — built Storybook static site.
+#   6. (opt-in) apps/storybook/storybook-static — built Storybook static site.
 #
 # Node version comes from .nvmrc (single source of truth). Override via the
 # `node-version` input only when intentionally testing a different version
@@ -43,7 +43,7 @@ inputs:
     required: false
     default: "false"
   storybook-cache:
-    description: Restore + save the built Storybook static site (packages/ui/storybook-static). Set to "true" for jobs that run storybook test-runner / axe gate.
+    description: Restore + save the built Storybook static site (apps/storybook/storybook-static). Set to "true" for jobs that run storybook test-runner / axe gate.
     required: false
     default: "false"
 
@@ -115,7 +115,7 @@ runs:
       if: inputs.storybook-cache == 'true'
       uses: actions/cache@v5
       with:
-        path: packages/ui/storybook-static
-        key: storybook-${{ runner.os }}-${{ hashFiles('packages/ui/src/**', 'packages/ui/.storybook/**', 'packages/ui/package.json') }}
+        path: apps/storybook/storybook-static
+        key: storybook-${{ runner.os }}-${{ hashFiles('packages/ui/src/**', 'apps/storybook/src/**', 'apps/storybook/.storybook/**', 'apps/storybook/package.json', 'packages/ui/package.json') }}
         restore-keys: |
           storybook-${{ runner.os }}-

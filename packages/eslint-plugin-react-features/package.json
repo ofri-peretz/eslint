@@ -3,12 +3,12 @@
   "version": "1.1.4",
   "description": "ESLint React rules for modern react features, hooks, and patterns.",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./types": {
       "types": "./src/types/index.d.ts",

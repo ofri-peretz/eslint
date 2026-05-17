@@ -38,8 +38,13 @@ const APPLY = process.argv.includes('--apply');
 const BENCH_DIR_TO_NAME: Record<string, string> = {
   'ilb-arena': 'ILB-Arena',
   'ilb-arena-quality': 'ILB-Arena-Quality',
-  'ilb-juliet': 'ILB-Juliet',
-  'ilb-juliet-cwe': 'ILB-Juliet',
+  'ilb-cwe-corpus': 'ILB-CWE-Corpus',
+  // Legacy aliases — kept so backfill can still recognize pre-2026-05-13 result
+  // dirs. The `ilb-juliet-cwe/` directory is an orphan from an earlier schema
+  // pass; leave it labeled with the legacy bench name until it's pruned
+  // (tracked as Tier 0.8 follow-up in the plan file).
+  'ilb-juliet': 'ILB-CWE-Corpus',
+  'ilb-juliet-cwe': 'ILB-CWE-Corpus',
   'ilb-wild': 'ILB-Wild',
   'ilb-edge': 'ILB-Edge',
   'ilb-cov': 'ILB-Cov',

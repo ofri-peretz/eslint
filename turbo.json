@@ -96,6 +96,16 @@
       "dependsOn": ["build-storybook"],
       "inputs": [".storybook/**", "src/**", "test-runner.ts", "package.json"],
       "outputs": []
+    },
+    "registry#build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "scripts/**",
+        "public/index.html",
+        "package.json",
+        "../../packages/ui/src/primitives/**/*.tsx"
+      ],
+      "outputs": ["public/r/**"]
     }
   }
 }

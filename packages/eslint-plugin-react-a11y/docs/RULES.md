@@ -49,7 +49,7 @@
 | Name                                              | Description                         | 💼  | ⚠️  | 🔧  | 💡  | WCAG  |
 | ------------------------------------------------- | ----------------------------------- | --- | --- | --- | --- | ----- |
 | [img-redundant-alt](./rules/img-redundant-alt.md) | Prevent redundant words in alt text |     | ⚠️  |     | 💡  | 1.1.1 |
-| [img-requires-alt](./rules/img-requires-alt.md)   | Require alt attribute on images     | 💼  |     |     | 💡  | 1.1.1 |
+| img-requires-alt (planned)   | Require alt attribute on images     | 💼  |     |     | 💡  | 1.1.1 |
 
 ## Interactive Element Rules (6 rules)
 

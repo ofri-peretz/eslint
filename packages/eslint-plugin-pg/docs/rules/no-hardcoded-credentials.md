@@ -135,4 +135,4 @@ const client = new Client({ password });
 
 ## Related Rules
 
-- [no-insecure-ssl](./no-insecure-ssl.md) - Prevents insecure SSL settings
+- no-insecure-ssl (planned) - Prevents insecure SSL settings

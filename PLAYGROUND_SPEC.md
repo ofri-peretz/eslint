@@ -2,15 +2,110 @@
 
 A scoped engineering plan, not a philosophy. The interactive playground
 is the single largest signal of "this site is in the top tier" for a
-dev-tool docs site (Tailwind Play, shadcn/ui's preview, the
-Babel/SWC/TypeScript playgrounds — every one of them is a category-
-defining surface for its tool).
+dev-tool docs site.
 
 This document fixes scope, architecture, and a phased rollout. It is
 not a discussion of *whether* to build it — that decision is made
 by UX_PHILOSOPHY.md #9 (the docs site is the showcase) and by
 [CODE_EXAMPLE_PHILOSOPHY.md](./CODE_EXAMPLE_PHILOSOPHY.md) (runnable
 examples are the strongest illustration of a rule).
+
+---
+
+## Inspirations (named, not generic)
+
+> **A playground we value, anchored on specific references.** Generic
+> "we're inspired by category-leaders" is too vague to drive design
+> decisions. The references below are the concrete bar we aim at —
+> each named for the specific decision we're borrowing.
+
+### Primary reference — OXC / oxlint Playground
+
+[`playground.oxc.rs`](https://playground.oxc.rs/) is the primary
+anchor. The decision is doubly motivated:
+
+1. **Same audience.** OXC Playground targets JS/TS engineers evaluating
+   a linter. So do we. Visitors land familiar.
+2. **Same ecosystem.** Our 10 flagship rules are designed type-unaware
+   specifically so they run under oxlint's JS-plugin tier (12.6×
+   speedup vs full ESLint per `.agent/flagship-rules.md`). Aligning
+   visually + UX-wise with the oxlint playground signals that the
+   ecosystems are complementary, not competing — we are the rule
+   library to oxlint's engine, not its alternative. That story is the
+   `INTEROP_PHILOSOPHY.md` "rules portable, runtimes commodity"
+   position made tangible.
+
+**What we adopt from OXC Playground:**
+
+- **Rich URL state.** Every setting JSON-encoded into the URL so links
+  are fully reproducible (their URL includes `parser`, `linter`,
+  `formatter`, `transformer`, `codegen`, `compress`, `mangle`,
+  `controlFlow`, `inject`, `define`). Our equivalent (smaller scope):
+  `code`, `plugins`, `example`, `severity-overrides` — all
+  URL-encoded.
+- **Multi-mode tabs.** Same editor, different output panes selectable.
+  Their modes: parser / linter / formatter / transformer / codegen.
+  Ours (Phase 3+): findings / fix-preview / config-output.
+- **Settings panel with explicit form controls** for each axis. We
+  mirror this with plugin toggles + per-rule severity dropdowns.
+- **Live re-run on edit.** No submit button; output streams as the
+  buffer changes. Phase 2 work.
+- **Editor + output pane as equal partners.** Neither is decorative.
+
+**What we deliberately leave from OXC Playground:**
+
+- **Five execution modes** (parser/formatter/transformer/codegen/
+  isolated declarations). We need one (lint). Less is more.
+- **Settings density.** Their checkbox grid is dense by necessity; we
+  curate the 10 flagship rules first, then expose advanced as a reveal.
+
+### Secondary reference — TypeScript Playground
+
+[`typescriptlang.org/play`](https://www.typescriptlang.org/play) for
+the long-tail polish OXC is still iterating toward — examples-as-
+curated-gallery with categories, the "Settings" reveal pattern, a
+five-plus-year refinement on the share-via-URL pattern. When a UX
+call is contested and OXC doesn't have an opinion, TS Playground is
+the resolution.
+
+### Visual identity — shadcn/ui + Linear
+
+[`ui.shadcn.com`](https://ui.shadcn.com) sets the 2026 dev-tool look;
+our docs site already leans here via fumadocs.
+[`linear.app`](https://linear.app) sets the keyboard-first, dark-mode-
+native, fast feel. **What we adopt**: typography rhythm, muted-card
+surfaces, no-decoration-by-default chrome, Cmd+K-style ergonomics.
+
+### UX patterns lifted from specific tools
+
+| Pattern | Lifted from | Where it lands in our spec |
+| --- | --- | --- |
+| Click a finding → highlight the source span | [regex101](https://regex101.com) | § Architecture #3 (Renderer) — findings clickable, cursor jumps to `line:col` in Monaco |
+| Live re-run on every keystroke | OXC Playground | Phase 2 — `eslint-linter-browserify` wired with 200ms debounce |
+| Multi-mode output tabs (findings / fix-preview / config-output) | OXC Playground (modes) | Phase 3+ |
+| Plugin / preset toggles in a settings panel | OXC Playground · Babel REPL | Phase 3 — plugin toggle strip |
+| Curated-examples dropdown with category headers | TypeScript Playground | § MVP — 6 canonical snippets, one per flagship rule |
+| URL state for code + ALL settings | OXC Playground | § URL state contract |
+| Embedded mode (iframe-friendly) | shadcn/ui's preview blocks | Phase 4 — `/play/embed` |
+
+### Domain match we explicitly surpass
+
+[`eslint.org/play`](https://eslint.org/play) is closest in concept
+(code-in, findings-out). It's visually dated relative to OXC
+Playground. The bar is to be the obviously-better alternative —
+modern type system, richer finding metadata, plugin-aware out of the
+box, oxlint-aware in the toggle strip.
+
+### What we explicitly avoid
+
+- **Tailwind Play's three-pane shape** — optimized for visual output
+  preview. We have no visual output; pretending we do would be
+  cargo-culting.
+- **AST Explorer's density** — overwhelming for a first-time visitor.
+  We're a marketing surface first, debugger second.
+- **Heavy chrome around the editor** (toolbars, ribbons, tabs) — every
+  pixel of chrome competes with the editor for attention. OXC
+  Playground enforces this discipline; we match it.
 
 ---
 
@@ -81,9 +176,10 @@ Three layers, top to bottom:
   Monaco themes pre-built and committed (`monaco-light.json`,
   `monaco-dark.json`).
 
-### 2. Linter — ESLint in the browser
+### 2. Linter — engine choice
 
-Two viable approaches; recommend (a):
+Three viable approaches; **recommend (c) if the WASM bundle proves
+usable, otherwise (a)**:
 
 **(a) `eslint-linter-browserify` + plugin bundles.** Maintained
 package that ships ESLint's `Linter` class (no filesystem ops, no
@@ -100,8 +196,31 @@ dynamically.
 `WebWorker` + `@webcontainer/api` (or similar) to spin a Node-
 compat sandbox. Heavy, slow, overkill for our needs.
 
-→ Go with (a). Compatible with `eslint-bundle` patterns shipped by
-TypeScript-ESLint, Tailwind Play, etc.
+**(c) oxlint WASM + our rules as JS plugins.** OXC Playground
+([`playground.oxc.rs`](https://playground.oxc.rs/)) already ships
+oxlint as a WASM bundle that lints in the browser. Our flagship
+rules — and our entire 398-rule plugin catalog — are designed
+type-unaware specifically so they run under oxlint's JS-plugin tier.
+As of 2026-05-13 our compat verifier (`npm run oxlint:verify-runtime`)
+asserts 33/33 API surfaces pass on oxlint 1.62.0; the shim verifier
+loads all 20 plugins cleanly; CWE-089 parity is 100% (6/6, 0 eslint-
+only, 0 oxlint-only). So our rules can ride the oxlint WASM bundle the
+OXC team already maintains rather than us shipping our own
+`@interlace/eslint-bundle`.
+
+- Pros: shared engine with the broader ecosystem (oxlint is JS/TS
+  linting's fastest-growing engine — `npm download` Q1-2026 chart);
+  oxlint's WASM bundle is already optimized; no per-plugin UMD bundle
+  to maintain; story aligns with `INTEROP_PHILOSOPHY.md` "rules
+  portable, runtimes commodity."
+- Cons: oxlint JS-plugins is **alpha** ([per the docs](https://oxc.rs/docs/guide/usage/linter/writing-js-plugins.html));
+  the API can move. Mitigation: probe-based runtime verifier
+  (`scripts/probe-oxlint-runtime.cjs`) covers every API surface our
+  rules depend on; the gate fails closed if a probe regresses.
+
+→ Default: **(c)**. Fallback to **(a)** if WASM bundle size or
+performance fails the perf budget (§ Performance budget). Spike
+required in Phase 2 to validate.
 
 ### 3. Renderer — the right pane
 

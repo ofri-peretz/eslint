@@ -1,0 +1,176 @@
+# Auth Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](./UX_PHILOSOPHY.md), expanding
+principle #1 (Adoption is friction subtraction) and #8 (Open the side door)
+into the authentication surface. Auth is where adoption is lost: every
+friction point (CAPTCHA, password reset, missing OAuth, broken deep-link
+resume) deletes users at the moment they decided to try the product.
+
+This document binds auth-UX decisions across `@interlace/ui` patterns and
+any consumer surface that wires sign-in / sign-up / recovery. The
+**`/auth-flow-architecture.md`**-style contracts in the design-system are
+inherited here; this is the portable distillation.
+
+---
+
+## The core rule
+
+> **Auth is a single flow: sign-in is the default, sign-up is one click away,
+> social / passkey is offered at the top. Magic links beat passwords; passkeys
+> beat magic links. Deep links survive the auth interruption — the destination
+> URL is captured, signed, and resumed. Errors name the fix, never the diagnosis.**
+
+Three tests, in order:
+
+1. **Deep-link survival test.** Open `/projects/42` while logged out. The
+   auth interstitial appears; sign in. Does the post-auth navigation land
+   on `/projects/42`? If no, deep linking through auth is broken.
+2. **Friction test.** Count the clicks from "I want to sign up" to "I'm in
+   the product." More than 3 means a friction step is recoverable.
+3. **Re-auth test.** A session-expired interstitial appears. Does it ask
+   for credentials already provided this session? If yes, WCAG 2.2 SC 3.3.7
+   (Redundant Entry) is violated.
+
+---
+
+## The 10 principles
+
+Ordered by leverage.
+
+### 1. Passkeys (WebAuthn) are the default offer
+
+Passkeys are the 2026 best-practice — no passwords, no SMS codes, biometric
+attestation. Every auth screen offers passkey as the **first** option;
+password is the fallback.
+
+**Mechanics:**
+
+- Sign-in page: passkey button at top, "Continue with email" below.
+- Sign-up flow registers a passkey on first successful auth.
+- Passkey libraries: SimpleWebAuthn server + browser, or `@github/webauthn-json`.
+
+### 2. Magic links beat passwords
+
+For email/password fallback, **magic links** (one-time link sent to email) are
+preferred over passwords. They eliminate the password manager surface, reset
+flow, and credential-stuffing attack vector.
+
+**Mechanics:**
+
+- Email input → "Send sign-in link" → user clicks link → signed in.
+- Links expire in 15 minutes, single-use, cryptographically signed.
+- Same flow handles sign-up: existing user → sign in; new user → create
+  account.
+
+### 3. Deep links survive the auth interruption
+
+Cross-link to [DEEP_LINKING_PHILOSOPHY.md](./DEEP_LINKING_PHILOSOPHY.md) §1
+(Cold-load equivalence). When an unauthenticated user hits `/projects/42`:
+
+1. The router redirects to `/sign-in?returnTo=/projects/42`.
+2. `returnTo` is signed (HMAC) to prevent open-redirect.
+3. After successful auth, the router navigates to the original URL.
+4. The `returnTo` param is stripped from the address bar (clean URL).
+
+The `returnTo` must be same-origin; cross-origin redirects are an open-redirect
+vulnerability.
+
+### 4. OAuth / SSO is composable, not bundled
+
+Sign-in supports OAuth providers (Google, Microsoft, GitHub, Apple, …) as
+opt-in props, not hardcoded buttons. The auth pattern accepts a
+`providers: AuthProvider[]` prop; consumers wire their own provider list.
+
+**Forbidden:**
+
+- A primitive that bakes in "Sign in with Google" with a Google client ID
+  baked in.
+- Auth UI that depends on a specific provider being available.
+
+### 5. Error messages name the fix (cross-link to FORM + ERROR)
+
+Cross-link to [FORM_PHILOSOPHY.md](./FORM_PHILOSOPHY.md) §3 and
+[ERROR_PHILOSOPHY.md](./ERROR_PHILOSOPHY.md) §2. Auth errors are the most
+hostile failure surface — they are where users decide "this isn't worth it."
+
+| ❌ Diagnosis                | ✅ Fix                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| "Invalid credentials"       | "Email or password incorrect. Try again or reset your password."             |
+| "Account locked"            | "Too many attempts. Try again in 15 minutes or reset your password."         |
+| "Email not verified"        | "Check your inbox for the verification link. [Resend]"                       |
+| "Sign-up failed"            | "That email is already registered. [Sign in instead] or [Reset password]."   |
+
+### 6. WCAG 2.2 — accessible authentication (SC 3.3.8, 3.3.9)
+
+Cross-link to [A11Y_PHILOSOPHY.md](./A11Y_PHILOSOPHY.md) §10. **No cognitive
+function test in the primary path.** CAPTCHA is a regression unless paired
+with an alternative:
+
+- An audio CAPTCHA.
+- An object-recognition CAPTCHA.
+- A passkey path that skips the test entirely.
+- A reCAPTCHA v3 (invisible) that doesn't require user interaction.
+
+The 2026 best practice: bot detection happens server-side; user-facing
+CAPTCHA is the failure mode, not the design.
+
+### 7. Redundant Entry (WCAG 2.2 SC 3.3.7)
+
+Don't ask users to re-enter information already provided in the session.
+
+- Re-auth after timeout: prefill the email; ask only for the credential.
+- Multi-step sign-up: don't ask for the same field again on a later step.
+- Account recovery: if the user already gave us their email, don't ask for
+  it again.
+
+### 8. Sessions, tokens, and refresh
+
+- **Session cookies** (`HttpOnly`, `Secure`, `SameSite=Lax`) for browser
+  auth. Tokens in `localStorage` are forbidden — XSS leaks them.
+- **Refresh tokens** rotate on every refresh; reuse-detection invalidates
+  the chain.
+- **Idle timeout** is opt-in by consumer policy, not bundled into the
+  primitive.
+
+### 9. Consistent Help (WCAG 2.2 SC 3.2.6)
+
+Every auth screen has a consistent "Need help?" / "Contact support" link in
+the same place. Users in a broken state need a known exit.
+
+### 10. Build with the ecosystem
+
+`SimpleWebAuthn` / `@github/webauthn-json` for passkey. `next-auth` /
+`Auth.js` / `clerk` / `supabase-auth` for the session-management layer.
+The primitives in `@interlace/ui` are the *UI shell* — they accept
+callbacks and slot into any auth backend.
+
+**Forbidden:**
+
+- A bundled `<SignIn>` primitive that talks directly to a specific provider.
+- Hard-wired session management inside `@interlace/ui` primitives.
+
+---
+
+## How this gets used
+
+When designing or reviewing an auth surface, ask:
+
+1. Is passkey offered first, password second?
+2. Are magic links the default for the password-replacement path?
+3. Does the deep-link interruption flow survive (returnTo signed, resumed)?
+4. Are OAuth providers composable, not bundled?
+5. Do error messages name the fix, not the diagnosis?
+6. Are cognitive function tests absent from the primary auth path?
+7. Is redundant entry eliminated (no re-asking for known info)?
+8. Are session tokens in HttpOnly cookies, not localStorage?
+9. Is there a consistent help / contact link on every auth screen?
+10. Does the implementation reach for an auth SDK, not roll its own?
+
+If any answer is no, the auth surface is not yet shippable.
+
+---
+
+## Living document
+
+When an auth pattern arises this doc didn't anticipate, edit it first, then
+ship. Auth UX is where adoption lives — drift here is a leak.

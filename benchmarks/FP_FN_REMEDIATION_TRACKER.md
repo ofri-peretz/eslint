@@ -22,7 +22,7 @@ This document is the **active agenda** for false-positive and false-negative wor
 | [`audits/2026-05-03.md`](./audits/2026-05-03.md) | Per-rule misbehaviour ranking, P0/P1/P2 backlog, what landed in the 3 audit iterations | hand-rolled per audit |
 | [`benchmark-results/scorecard.md`](../benchmark-results/scorecard.md) | Top-line F1/precision/recall per bench + plugin-activation table + inter-rater κ | `npm run ilb:scorecard` |
 | [`results/ilb-arena/2026-05-03.json`](./results/ilb-arena/2026-05-03.json) | Per-fixture, per-plugin verdicts on the 18-plugin head-to-head | `npm run ilb:arena` |
-| [`results/ilb-juliet/2026-05-03.json`](./results/ilb-juliet/2026-05-03.json) | Per-CWE TP/FP/FN on the synthetic corpus | `npm run ilb:juliet` |
+| [`results/ilb-cwe-corpus/2026-05-03.json`](./results/ilb-cwe-corpus/2026-05-03.json) | Per-CWE TP/FP/FN on the synthetic corpus | `npm run ilb:cwe-corpus` |
 | [`results/ilb-arena-quality/2026-05-03.json`](./results/ilb-arena-quality/2026-05-03.json) | Per-fixture quality verdicts (FNs in `falseNegatives`, FPs in `cleanAnalysis.byRule`) | `npm run ilb:arena:quality` |
 | [`benchmark-results/2026-05-03/per-repo/*/per-rule.json`](../benchmark-results/2026-05-03/per-repo/) | Per-rule hit counts on 22 real OSS repos (Edge candidates live here) | `npm run ilb:wild` |
 | [`baseline.json`](../benchmark-results/baseline.json) | Regression baseline — `npm run ilb:regression` fails CI on F1 drops or new FPs | `npm run ilb:regression -- --update` |
@@ -36,7 +36,7 @@ This document is the **active agenda** for false-positive and false-negative wor
 | Bench | TP | FP | FN | Recall | F1 | SLO | Status |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
 | **ILB-Arena** (security, 18 plugins) | 40 | **0** | **0** | 100% | **100.0%** | rank ≤ 3 | ✅ rank 1/18 |
-| **ILB-Juliet** (CWE corpus, 6 plugins) | 13 | **0** | **0** | 100% | **100.0%** · BAS 100% | F1 ≥ 80% | ✅ rank 1/6 |
+| **ILB-CWE-Corpus** (self-authored CWE corpus, 6 plugins) | 13 | **0** | **0** | 100% | **100.0%** · BAS 100% | F1 ≥ 80% | ✅ rank 1/6 |
 | **ILB-Arena-Quality** (8 plugins) | 35 | **29** | **5** | 87.5% | **67.3%** | none yet | ⚠️ rank 1/8 (FP cleanup pending) |
 | **ILB-Edge** (5 adversarial-real OSS) | n/a | **3,837** | n/a | n/a | — | FP rate ≤ 2% | ⚠️ awaiting `detect-object-injection` refine |
 | **ILB-Wild** (22 real OSS repos) | n/a | n/a | n/a | n/a | 3.48/kLoC | — | exposure metric only |
@@ -57,11 +57,11 @@ These were FPs / FNs in the Feb 2026 tracker that have since been fixed and veri
 | FP-S1..S10 (10 FPs across 6 rules) | `detect-child-process`, `no-graphql-injection`, `detect-non-literal-fs-filename`, `detect-object-injection`, `no-sensitive-data-exposure`, `no-insecure-comparison`, `no-xpath-injection` | iter-1 (Feb 2026 tracker, verified 2026-02-08 + re-verified 2026-05-03) |
 | Arena single FP (`safe_redirect_sameorigin` flagged by `lambda-security/no-unvalidated-event-body`) | `lambda-security/no-unvalidated-event-body` | iter-1 of audit (Lambda-context gate) |
 | 480 monorepo FPs (`node-security/lock-file` on yarn / pnpm sub-packages) | `node-security/lock-file` | iter-1 of audit (multi-lockfile acceptance) |
-| 3 Juliet pg fixtures (`parameterized.js`, `prepared-statement.js`, `static-query.js`) | fixture cleanup, not rule fix | iter-1 of audit |
-| 2 Juliet zip-slip FPs (CWE-022 `static-path.js`, CWE-078 `execFile-array.js`) | `node-security/no-zip-slip` | iter-2 of audit |
-| 1 Juliet `exec-static.js` FP | `node-security/detect-child-process` (literal allowlist) | iter-2 of audit |
-| 1 Juliet `static-innerhtml.js` FP + 12 webpack FPs | `secure-coding/no-improper-sanitization` (literal-string detection) | iter-2 of audit |
-| 1 Juliet `password-label.js` FP + 280 webpack FPs | `secure-coding/no-hardcoded-credentials` (UI-label / i18n-key skip) | iter-2 of audit |
+| 3 CWE-Corpus pg fixtures (`parameterized.js`, `prepared-statement.js`, `static-query.js`) | fixture cleanup, not rule fix | iter-1 of audit |
+| 2 CWE-Corpus zip-slip FPs (CWE-022 `static-path.js`, CWE-078 `execFile-array.js`) | `node-security/no-zip-slip` | iter-2 of audit |
+| 1 CWE-Corpus `exec-static.js` FP | `node-security/detect-child-process` (literal allowlist) | iter-2 of audit |
+| 1 CWE-Corpus `static-innerhtml.js` FP + 12 webpack FPs | `secure-coding/no-improper-sanitization` (literal-string detection) | iter-2 of audit |
+| 1 CWE-Corpus `password-label.js` FP + 280 webpack FPs | `secure-coding/no-hardcoded-credentials` (UI-label / i18n-key skip) | iter-2 of audit |
 | ~600 vercel/ai + edge FPs in codemod context | `secure-coding/no-insecure-comparison` (AST-walker import detection) | iter-2 of audit |
 | 20 Quality FPs (catch-clause params, globals, import bindings, `new X()` results) | `reliability/no-missing-null-checks` | iter-2 of audit |
 | 14 Quality FPs (synchronous builtins) | `reliability/no-unhandled-promise` | iter-2 of audit |
@@ -210,7 +210,7 @@ After the prior session's auto-mode work hit context-summary, two scripts were l
 
 | Item | Result | How |
 | :--- | :--- | :--- |
-| **Markdown-lint errors** | 58 → **0** | Fixed [`benchmarks/suites/ilb-flagship/scorecard.mjs`](../benchmarks/suites/ilb-flagship/scorecard.mjs) message-cell renderer to replace `\n` with ` · ` so multi-line ESLint messages don't break table format. |
+| **Markdown-lint errors** | 58 → **0** | Fixed [`benchmarks/suites/ilb-flagship/scorecard.mjs`](../benchmarks/suites/ilb-flagship/scorecard.ts) message-cell renderer to replace `\n` with ` · ` so multi-line ESLint messages don't break table format. |
 | **`meta.docs.url` exposure** | 0% → **90%+ across 19/20 plugins** | Wrote [`scripts/ilb-meta-url-fix.ts`](../scripts/ilb-meta-url-fix.ts), bulk-inserted canonical doc URLs into 383 rule sources. Detected balanced-brace `docs: { … }` blocks via regex + brace walker; skipped rules where `url:` already present (14) or `docs:` not yet defined (29). Per-plugin meta-completeness score rose 15–25pp. |
 | **Severity calibration** (README §1 policy) | 8 violations → **4 rule sources demoted** | Per `npm run ilb:severity-audit`, the 6 edge-error + 2 volume-error risks correspond to 4 distinct rules (some flagged in both classes). Demoted from `error` to `warn`: `no-graphql-injection`, `no-unsafe-deserialization`, `no-redos-vulnerable-regex`, `no-unlimited-resource-allocation`, `no-unchecked-loop-condition` (secure-coding) + `no-buffer-overread` (node-security). Promote back to `error` once Wild Edge ratio drops to ≤ 50% and ≥ 4 fixtures land. |
 | **`browser-security/no-eval` indirect-eval FN** | open → **closed** | Added bracket-notation visitor: `window['eval']`, `globalThis['Function']`, `self['eval']`, etc. now caught alongside the existing `Identifier` and member-expression paths. 603/603 plugin tests pass; hand-curated stress test now shows all 3 `no-eval` cases matching. |
@@ -271,7 +271,7 @@ This is the doc-as-contract guarantee. It does NOT mean:
 
 - **Every rule is bug-free.** A rule with weak coverage (only catches a narrow case) may have all its doc examples passing while still missing many real-world patterns. The hand-curated stress test ([`npm run ilb:stress-test`](../scripts/ilb-stress-test.ts)) catches this class — it remains a separate gate.
 - **Every doc is rich.** The `--delete-unverified` step replaced 11 failing blocks with placeholder prose ("_Awaiting a tested example._"). Those rules need real tested examples added — a doc-quality follow-up tracked below.
-- **Every rule has full fixture coverage.** Many rules still have `0` Arena/Juliet fixtures (see scorecard "Per-rule observability" — Gap G); they fire on Wild without measurement. This is independent of the doc-harvest contract.
+- **Every rule has full fixture coverage.** Many rules still have `0` Arena/CWE-Corpus fixtures (see scorecard "Per-rule observability" — Gap G); they fire on Wild without measurement. This is independent of the doc-harvest contract.
 
 #### Follow-ups (P2)
 
@@ -531,7 +531,7 @@ Each needs a **NEW rule**, not a fix to an existing one. Drives Quality F1 from 
 | :- | :--- | :--- |
 | 1 | Refresh ILB-AI quarterly with current LLMs (next: Q3 2026) | ~½ day, ~$15 API |
 | 2 | Wire `npm run ilb:regression` into `.github/workflows/benchmark.yml` so PRs fail on F1 drops or new FPs | ~½ day |
-| 3 | Expand ILB-Juliet CWE corpus from 6 → 25+ to match OWASP Benchmark scope | ~3–5 days |
+| 3 | Expand ILB-CWE-Corpus from 6 → 25+ to match OWASP Benchmark scope | ~3–5 days |
 | 4 | Build `browser-security/no-document-write` (real coverage gap surfaced by validator on CWE-079) | ~½ day |
 | 5 | Hand-validate 125 `lambda-security/no-error-swallowing` hits on `serverless` (TP / FP split) | ~½ day |
 | 6 | Wire `npm run ilb:formatter` into `.github/workflows/benchmark.yml` per-PR job — fail on signal-contract violations or `interlace-compact` cost regression vs `eslint-stylish` | ~¼ day |
@@ -542,15 +542,15 @@ The 8-gap audit from earlier in this session is now fully scaffolded. Each item 
 
 | ✅ | Gap | What landed | Surfaced on first run |
 | :-- | :--- | :--- | :--- |
-| ✅ | P1 corpus consistency | `npm run ilb:corpus-integrity` + 20 branch repos pinned to SHAs in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.mjs); baseline recorded in [`benchmark-results/corpus-integrity.json`](../benchmark-results/corpus-integrity.json) | 20 mutable-branch pins → all converted to SHAs · 22/22 stable |
+| ✅ | P1 corpus consistency | `npm run ilb:corpus-integrity` + 20 branch repos pinned to SHAs in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.ts); baseline recorded in [`benchmark-results/corpus-integrity.json`](../benchmark-results/corpus-integrity.json) | 20 mutable-branch pins → all converted to SHAs · 22/22 stable |
 | ✅ | A — mutation testing | Stryker config scaffolded in [`packages/eslint-plugin-secure-coding/stryker.conf.mjs`](../packages/eslint-plugin-secure-coding/stryker.conf.mjs) (SLO ≥ 80% per rule, ≥ 90% on `recommended`-tier). Activates on `npm install -D @stryker-mutator/core` | n/a (config-only — pending Stryker install) |
-| ✅ | B — auto-fix correctness | `npm run ilb:autofix` (fixer-coverage + doc-snippet extraction in [`scripts/ilb-autofix-bench.mjs`](../scripts/ilb-autofix-bench.mjs)) | **47 of 53 fixable rules ship without any test verifying their fix output.** |
-| ✅ | C — doc-test alignment | `npm run ilb:doc-test-alignment` ([`scripts/ilb-doc-test-alignment.mjs`](../scripts/ilb-doc-test-alignment.mjs)) | **400 rules** · 6 missing doc · 162 docs missing ❌ Incorrect examples · 3 doc orphans (no impl) |
+| ✅ | B — auto-fix correctness | `npm run ilb:autofix` (fixer-coverage + doc-snippet extraction in [`scripts/ilb-autofix-bench.mjs`](../scripts/ilb-autofix-bench.ts)) | **47 of 53 fixable rules ship without any test verifying their fix output.** |
+| ✅ | C — doc-test alignment | `npm run ilb:doc-test-alignment` ([`scripts/ilb-doc-test-alignment.mjs`](../scripts/ilb-doc-test-alignment.ts)) | **400 rules** · 6 missing doc · 162 docs missing ❌ Incorrect examples · 3 doc orphans (no impl) |
 | ✅ | D — CVE corpus skeleton | [`benchmarks/corpus/CVE/`](./corpus/CVE/) with `README.md` + `policy.md` + 2 example CVEs (CVE-2018-7166 buffer-uninitialized, CVE-2024-28849 axios redirect leak) and a manifest schema. Curation queue: 50 CVEs by Q4 2026 | scaffold complete; 48 more CVEs to curate |
 | ✅ | E — LLM-fuzz scaffold | `npm run ilb:fuzz` ([`scripts/ilb-fuzz.ts`](../scripts/ilb-fuzz.ts)) generates FP/FN candidates per rule via Claude API — `--dry-run` works without an API key for prompt review | scaffold; lint-and-verify pass is the next step |
 | ✅ | H — backfire detection | [`scripts/ilb-regression-check.ts`](../scripts/ilb-regression-check.ts) now snapshots per-rule Wild hits to baseline.json; surfaces top risers/fallers + warns when an unmeasured rule gains ≥ 100 hits | baseline now carries a 149-rule snapshot; future PRs see deltas |
-| ✅ | I — severity calibration audit | `npm run ilb:severity-audit` ([`scripts/ilb-severity-audit.mjs`](../scripts/ilb-severity-audit.mjs)) — Edge-error risk + volume-error risk + promotion-eligible | **6 edge-error risks** (rules at `error` with ≥ 50% Edge ratio: `no-unlimited-resource-allocation`, `no-buffer-overread`, `no-unsafe-deserialization`, `no-unchecked-loop-condition`, `no-redos-vulnerable-regex`, `no-graphql-injection`). **2 volume-error risks** (≥ 100 hits without fixture coverage). |
-| ✅ | J — ESLint version matrix | [`.github/workflows/eslint-version-matrix.yml`](../.github/workflows/eslint-version-matrix.yml) — Node 22/24 × ESLint 9.39 / 9.x / 10.x-rc × Arena+Juliet, nightly + PR | first run on next push |
+| ✅ | I — severity calibration audit | `npm run ilb:severity-audit` ([`scripts/ilb-severity-audit.mjs`](../scripts/ilb-severity-audit.ts)) — Edge-error risk + volume-error risk + promotion-eligible | **6 edge-error risks** (rules at `error` with ≥ 50% Edge ratio: `no-unlimited-resource-allocation`, `no-buffer-overread`, `no-unsafe-deserialization`, `no-unchecked-loop-condition`, `no-redos-vulnerable-regex`, `no-graphql-injection`). **2 volume-error risks** (≥ 100 hits without fixture coverage). |
+| ✅ | J — ESLint version matrix | [`.github/workflows/eslint-version-matrix.yml`](../.github/workflows/eslint-version-matrix.yml) — Node 22/24 × ESLint 9.39 / 9.x / 10.x-rc × Arena+CWE-Corpus, nightly + PR | first run on next push |
 
 ### P1 — Newly surfaced from the 2026-05-09 verification work
 
@@ -572,7 +572,7 @@ The new tooling exposed real issues that need rule-level fixes (not infrastructu
 | Bench | Today (2026-05-03) | After P1 | Delta |
 | :--- | :--- | :--- | :--- |
 | ILB-Arena | F1 100.0% (40/0/0) | unchanged | — |
-| ILB-Juliet | F1 100.0% (13/0/0) · BAS 100% | unchanged | — |
+| ILB-CWE-Corpus | F1 100.0% (13/0/0) · BAS 100% | unchanged | — |
 | ILB-Arena-Quality | F1 67.3% (35/29/5) | F1 ~80% (35/~10/5) → with P2 → ~85% (40/~10/0) | +13–18 pp |
 | ILB-Edge | 3,837 FP candidates | ~1,500 candidates | −60% |
 | ILB-Wild | 6,343 findings (3.48/kLoC) | ~3,000 findings (~1.6/kLoC) | −53% |
@@ -595,7 +595,7 @@ pnpm nx build <plugin-name>
 
 # 3. Re-run the affected bench
 npm run ilb:arena              # security head-to-head
-npm run ilb:juliet             # CWE corpus
+npm run ilb:cwe-corpus             # CWE corpus
 npm run ilb:arena:quality      # quality head-to-head
 npm run ilb:wild               # real-OSS exposure (also refreshes Edge + Cov + Perf)
 
@@ -624,9 +624,9 @@ Then update the relevant section of this tracker (move the item from §4 to §3)
 jq '.plugins.interlace.summary, .plugins.interlace.safeAnalysis.byFunction, .plugins.interlace.vulnerableAnalysis.byFunction' \
   benchmarks/results/ilb-arena/2026-05-03.json
 
-# Juliet: every FP by CWE + fixture + rule
+# CWE-Corpus: every FP by CWE + fixture + rule
 jq '.plugins.interlace.perCwe | to_entries[] | {cwe: .key, fps: [.value.fixtures[] | select(.expectedVulnerable==false and .findings>0) | {file, ruleHits}]}' \
-  benchmarks/results/ilb-juliet/2026-05-03.json
+  benchmarks/results/ilb-cwe-corpus/2026-05-03.json
 
 # Quality: 29 FPs broken down by rule
 jq '.plugins."interlace-quality".cleanAnalysis.byRule' \

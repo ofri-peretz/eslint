@@ -2,7 +2,7 @@
 
 > **Purpose.** This is the canonical answer to *"for plugin X, which real-world OSS repos do we benchmark against, and against which competitor plugins?"*
 >
-> **Source of truth.** The actual repo list lives in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.mjs) (`BENCHMARK_REPOS`, lines 87–329). Each entry there has a `plugins: [...]` array binding it to one or more Interlace plugins. **This document is the inverse view** — pivoted by plugin — so you don't have to read the registry to answer "what do we run secure-coding against?"
+> **Source of truth.** The actual repo list lives in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.ts) (`BENCHMARK_REPOS`, lines 87–329). Each entry there has a `plugins: [...]` array binding it to one or more Interlace plugins. **This document is the inverse view** — pivoted by plugin — so you don't have to read the registry to answer "what do we run secure-coding against?"
 >
 > **Stability contract.** The repos below are pinned to specific commits/tags in the registry for reproducibility. **Do not change a repo's pinned commit without bumping the bench version** (see [`README.md` §8](./README.md#8-adding-things--fixtures-benches-rules)). When adding a new plugin or expanding coverage, follow the [Update procedure](#update-procedure) at the bottom.
 
@@ -101,7 +101,7 @@ These have **no real-OSS baseline today.** They run only on synthetic fixtures i
 
 ## Repo glossary
 
-Each repo is pinned to a specific commit/tag in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.mjs). Quick reference for what each is:
+Each repo is pinned to a specific commit/tag in [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.ts). Quick reference for what each is:
 
 ### Real-signal corpus (signal expected)
 
@@ -190,7 +190,7 @@ These are *not* 80K+ but are the consensus repo of their niche — important bec
 
 When adding/changing baseline repos:
 
-1. **Edit [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.mjs).** Add a new entry to `BENCHMARK_REPOS` with `name`, `repo`, `commit` (pin to a release tag where possible), `stars`, `srcGlob`, `plugins: [...]`, `category`, `why`, and `fpEdge: true` if applicable.
+1. **Edit [`scripts/ilb-wild.mjs`](../scripts/ilb-wild.ts).** Add a new entry to `BENCHMARK_REPOS` with `name`, `repo`, `commit` (pin to a release tag where possible), `stars`, `srcGlob`, `plugins: [...]`, `category`, `why`, and `fpEdge: true` if applicable.
 2. **Update this matrix.** Add the repo to the relevant plugin row(s) and to the "Repo glossary" table. Move it out of "Coverage expansion candidates" if it was there.
 3. **Bump the bench version** if the corpus shape changes meaningfully (add/remove plugin coverage, change pinned commit). See [`README.md` §8](./README.md#8-adding-things--fixtures-benches-rules) for versioning rules.
 4. **Run `npm run ilb:wild -- --repo <name>`** to validate the new entry produces results.

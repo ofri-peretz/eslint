@@ -60,17 +60,17 @@ describe('eslint-plugin-maintainability plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
-      expect(configs['recommended'].plugins?.['@interlace/maintainability']).toBeDefined();
+      expect(configs['recommended'].plugins?.['maintainability']).toBeDefined();
 
       const recommendedRules = configs['recommended'].rules || {};
       Object.keys(recommendedRules).forEach((ruleName) => {
-        expect(ruleName).toMatch(/^@interlace\/maintainability\//);
+        expect(ruleName).toMatch(/^maintainability\//);
       });
 
       expect(
-        recommendedRules['@interlace/maintainability/maintainability/cognitive-complexity'],
+        recommendedRules['maintainability/cognitive-complexity'],
       ).toBe('warn');
-      
+
       // Verify at least one rule is configured
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
@@ -78,9 +78,9 @@ describe('eslint-plugin-maintainability plugin interface', () => {
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs['recommended'].rules || {});
       const pluginRules = Object.keys(plugin.rules || {});
-      
+
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@interlace/maintainability/', '');
+        const shortName = ruleName.replace('maintainability/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

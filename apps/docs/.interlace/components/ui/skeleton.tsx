@@ -4,7 +4,7 @@
  * Edit there, then run `npm run sync` to redistribute.
  * Local edits will be overwritten on next sync (or refused without --force).
  */
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
