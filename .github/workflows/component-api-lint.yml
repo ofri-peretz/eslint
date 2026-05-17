@@ -51,30 +51,51 @@ jobs:
 
       - name: Lint packages/ui with componentApi preset
         id: lint
+        # The componentApi preset is wired into the root eslint.config.mjs
+        # (see "@interlace/ui — componentApi floor" block) and scoped to
+        # `packages/ui/src/primitives/**/*.tsx`. Invoking eslint with the
+        # target glob is sufficient — no `--rule` overrides needed. The
+        # legacy `--resolve-plugins-relative-to` flag was removed in ESLint
+        # 10 flat config and triggered a config-error exit + empty JSON
+        # report on the first CI run of this workflow.
+        #
+        # Severity model: the preset configures `no-default-test-id` as
+        # 'error' (hard gate) and the rest as 'warn' (guidance). The
+        # workflow respects that — errors fail CI, warnings surface in the
+        # PR comment for review but don't block. The earlier
+        # `--max-warnings 0` promoted every warning to blocking, which
+        # contradicted the preset's intent (and only worked because the
+        # broken `--resolve-plugins-relative-to` flag meant the rules
+        # never actually fired).
         run: |
           set +e
           npx eslint \
-            --resolve-plugins-relative-to packages/eslint-plugin-react-features \
-            --rule '@eslint/react-features/component-api/no-default-test-id: error' \
-            --rule '@eslint/react-features/component-api/require-data-slot: warn' \
-            --rule '@eslint/react-features/component-api/no-is-prefix-prop: warn' \
-            --rule '@eslint/react-features/component-api/no-inline-style: warn' \
-            --rule '@eslint/react-features/component-api/no-raw-color-literal: warn' \
-            --rule '@eslint/react-features/component-api/no-arbitrary-token-class: warn' \
-            --rule '@eslint/react-features/component-api/no-kind-prop-discriminator: warn' \
-            --rule '@eslint/react-features/component-api/no-wrapper-sub-component: warn' \
             --format json \
-            --max-warnings 0 \
             'packages/ui/src/primitives/**/*.tsx' > /tmp/eslint-report.json
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          # Compute total messages (errors + warnings) so the comment step
+          # can fire on warnings-only state, even though `exit_code` is 0.
+          total=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/eslint-report.json','utf8'));console.log(r.reduce((s,f)=>s+f.messages.length,0))" 2>/dev/null || echo 0)
+          echo "total_messages=$total" >> "$GITHUB_OUTPUT"
 
       - name: Comment violations on PR
-        if: github.event_name == 'pull_request' && steps.lint.outputs.exit_code != '0'
+        if: github.event_name == 'pull_request' && steps.lint.outputs.total_messages != '0'
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
-            const report = JSON.parse(fs.readFileSync('/tmp/eslint-report.json', 'utf8'));
+            // Guard: if the lint step exited non-zero due to a config error
+            // (not a violation), the JSON file may be empty. Skip the
+            // comment in that case so the workflow surfaces the underlying
+            // error in the Lint step's log instead of crashing on JSON.parse.
+            const raw = fs.existsSync('/tmp/eslint-report.json')
+              ? fs.readFileSync('/tmp/eslint-report.json', 'utf8').trim()
+              : '';
+            if (!raw) {
+              core.warning('Empty eslint-report.json — likely a config error in the Lint step. Skipping PR comment.');
+              return;
+            }
+            const report = JSON.parse(raw);
             const ruleToSkillId = {
               'no-default-test-id': 'R5',
               'require-data-slot': 'R6',
@@ -122,18 +143,12 @@ jobs:
           exit 1
 
       - name: Reference primitive self-test (dialog.tsx must be clean)
-        run: |
-          npx eslint \
-            --resolve-plugins-relative-to packages/eslint-plugin-react-features \
-            --rule '@eslint/react-features/component-api/no-default-test-id: error' \
-            --rule '@eslint/react-features/component-api/require-data-slot: error' \
-            --rule '@eslint/react-features/component-api/no-is-prefix-prop: error' \
-            --rule '@eslint/react-features/component-api/no-inline-style: error' \
-            --rule '@eslint/react-features/component-api/no-raw-color-literal: error' \
-            --rule '@eslint/react-features/component-api/no-arbitrary-token-class: error' \
-            --rule '@eslint/react-features/component-api/no-kind-prop-discriminator: error' \
-            --rule '@eslint/react-features/component-api/no-wrapper-sub-component: error' \
-            packages/ui/src/primitives/dialog.tsx
+        # dialog.tsx is the canonical reference primitive for the
+        # interlace-component skill. The same componentApi preset wired into
+        # the root eslint.config.mjs covers it; --max-warnings 0 ensures
+        # any warning (not just errors) fails the gate, matching the prior
+        # behavior where the workflow promoted every rule to error.
+        run: npx eslint --max-warnings 0 packages/ui/src/primitives/dialog.tsx
 
   registry-drift:
     name: registry drift check
