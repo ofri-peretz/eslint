@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@interlace/ui/styles/tokens.css';
+@import '@interlace/ui/styles/interlace-theme.css';
 
 @source "../../../../packages/ui/src";
 @source "../src";
@@ -13,8 +14,8 @@ html {
 }
 
 body {
-  background: hsl(var(--background, 0 0% 100%));
-  color: hsl(var(--foreground, 0 0% 9%));
+  background: var(--background);
+  color: var(--foreground);
 }
 
 .sb-show-main {

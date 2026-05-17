@@ -51,17 +51,17 @@ jobs:
 
       - name: Sync plugin stats
         if: inputs.targets == '' || contains(inputs.targets, 'plugin-stats')
-        run: node apps/docs/scripts/sync-plugin-stats.mjs
+        run: npx tsx apps/docs/scripts/sync-plugin-stats.ts
 
       - name: Sync README rule tables
         if: inputs.targets == '' || contains(inputs.targets, 'readme-rules')
-        run: node apps/docs/scripts/sync-readme-rules.mjs
+        run: npx tsx apps/docs/scripts/sync-readme-rules.ts
 
       - name: Sync articles
         if: inputs.targets == '' || contains(inputs.targets, 'articles')
         env:
           DEV_TO_API_KEY: ${{ secrets.DEV_TO_API_KEY }}
-        run: node apps/docs/scripts/update-articles-data.mjs
+        run: npx tsx apps/docs/scripts/update-articles-data.ts
 
       - name: Sync coverage stats
         if: inputs.targets == '' || contains(inputs.targets, 'coverage')

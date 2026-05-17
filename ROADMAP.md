@@ -80,10 +80,7 @@ Flagship preset is composable: `[importNext, pg, secureCoding, mongodb, jwt, bro
 
 | Component                       | Purpose                                                        | Status         |
 | ------------------------------- | -------------------------------------------------------------- | -------------- |
-| `interlace-cli`                 | One-command init, lint, MCP-server launch                      | ✅ Stable      |
 | `eslint-formatter` / `-sarif`   | Compact and SARIF output formats for CI / LLM consumers        | ✅ Stable      |
-| `interlace-vscode`              | VS Code extension — squiggles, audit-on-save, MCP launcher     | 🟨 Internal / dogfooding (not on Marketplace yet) |
-| `interlace-telemetry` (+ collector) | Opt-in usage telemetry for which rules fire in the wild    | 🟨 Internal    |
 | `eslint-devkit`                 | Shared rule helpers, AST utilities, taint-analysis primitives  | ✅ Stable      |
 
 ### Engine portability

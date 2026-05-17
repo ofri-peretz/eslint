@@ -124,10 +124,10 @@ function parseArgs(): CliArgs {
   };
 }
 
-function safeExec(cmd: string, args: string[]): { ok: true; out: string } | { ok: false; err: string } {
+function safeExec(cmd: string, args: string[]): { ok: boolean; out: string; err: string } {
   const r = spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 });
-  if (r.status !== 0) return { ok: false, err: r.stderr || `exit ${r.status}` };
-  return { ok: true, out: r.stdout };
+  if (r.status !== 0) return { ok: false, out: '', err: r.stderr || `exit ${r.status}` };
+  return { ok: true, out: r.stdout, err: '' };
 }
 
 /**

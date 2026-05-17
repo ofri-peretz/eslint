@@ -120,6 +120,10 @@
       "types": "./dist/primitives/stack.d.ts",
       "default": "./dist/primitives/stack.js"
     },
+    "./meteors": {
+      "types": "./dist/primitives/meteors.d.ts",
+      "default": "./dist/primitives/meteors.js"
+    },
     "./blocks/article-card": {
       "types": "./dist/blocks/article-card.d.ts",
       "default": "./dist/blocks/article-card.js"

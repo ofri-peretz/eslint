@@ -115,7 +115,7 @@
 
   /* Destructive */
   --interlace-destructive: #ef4444;        /* red-500 — lighter on dark */
-  --interlace-destructive-foreground: #1e1b2e;
+  --interlace-destructive-foreground: #0a0a0f; /* 6.6:1 on #ef4444 (was #1e1b2e at 4.45 — sub-AA) */
 
   /* Success */
   --interlace-success: #10b981;            /* emerald-500 */
@@ -127,10 +127,9 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
- *  Bind brand tokens to the shadcn-bare names (so primitives pick
- *  them up automatically without per-app rewiring). Apps that want
- *  to override individual brand values can re-declare them after
- *  this import.
+ *  Bind brand tokens to the shadcn-bare names. Apps that want to
+ *  override individual brand values can re-declare them after this
+ *  import.
  * ──────────────────────────────────────────────────────────────── */
 :root,
 .dark,
@@ -154,4 +153,32 @@
   --ring: var(--interlace-ring);
   --destructive: var(--interlace-destructive);
   --destructive-foreground: var(--interlace-destructive-foreground);
+}
+
+/* Register the shadcn-bare tokens as Tailwind v4 theme keys so utilities
+ * like `bg-card`, `text-foreground`, `border-border`, `bg-primary` are
+ * generated. `inline` preserves the `var()` reference, so the runtime
+ * `.dark { --background: ... }` overrides above flow through to every
+ * utility. Without this block, Tailwind v4 emits no `bg-card` rule
+ * regardless of what `--card` resolves to on :root. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 }

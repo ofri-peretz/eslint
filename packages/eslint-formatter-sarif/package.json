@@ -1,6 +1,7 @@
 {
   "name": "@interlace/eslint-formatter-sarif",
   "version": "0.1.0",
+  "private": true,
   "description": "SARIF v2.1.0 formatter for ESLint — emits results consumable by GitHub Advanced Security, Defender, GitLab, and any SAST pipeline (roadmap item 1.2).",
   "license": "MIT",
   "type": "module",

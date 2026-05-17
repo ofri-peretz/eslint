@@ -48,9 +48,9 @@ const pairs: Pair[] = [
   },
   {
     name: 'destructive-foreground / destructive',
-    fg: 'var(--destructive-foreground, white)',
+    fg: 'var(--destructive-foreground)',
     bg: 'var(--destructive)',
-    fgClass: 'text-white',
+    fgClass: 'text-destructive-foreground',
     bgClass: 'bg-destructive',
   },
   {

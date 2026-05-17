@@ -147,13 +147,18 @@ function DropdownMenuRadioItem({
   );
 }
 
+// Standalone label (shadcn / radix semantics): a visual heading at the top
+// of the menu, NOT a group label. Base UI's `Menu.GroupLabel` throws when
+// rendered outside a `Menu.Group` ancestor (error #31). Consumers that want
+// a semantic group label should wrap items in `<DropdownMenuGroup>` and
+// place the GroupLabel inside.
 function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: React.ComponentProps<typeof BaseMenu.GroupLabel> & { inset?: boolean }) {
+}: React.ComponentProps<'div'> & { inset?: boolean }) {
   return (
-    <BaseMenu.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(

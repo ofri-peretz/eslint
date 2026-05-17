@@ -20,13 +20,18 @@ import { injectAxe } from 'axe-playwright';
 const STRICT_TAGS = [
   'wcag2a',
   'wcag2aa',
-  'wcag2aaa',
   'wcag21a',
   'wcag21aa',
   'wcag22aa',
   'best-practice',
   'ACT',
 ];
+
+// AAA-level rules that the strict stack would otherwise pull in via their
+// `ACT` tag (axe's `runOnly: tags` enables every rule that matches any tag,
+// even ones disabled by default). Floor is WCAG 2.2 AA — AAA stays
+// aspirational and is audited separately via `npm run a11y:gradients`.
+const AAA_RULES_DISABLED: string[] = ['color-contrast-enhanced'];
 
 const config: TestRunnerConfig = {
   async preVisit(page) {
@@ -53,19 +58,18 @@ const config: TestRunnerConfig = {
     // without the rule identifiers, which made CI failures un-diagnosable.
     const results: { violations: Array<{ id: string; help: string; impact: string | null; nodes: Array<{ target: string[]; failureSummary: string; html: string }> }> } =
       await page.evaluate(
-        async ({ tags, rules }) => {
+        async ({ tags, rules, aaaDisabled }) => {
           const opts: Record<string, unknown> = {
             runOnly: { type: 'tag', values: tags },
           };
-          if (rules.length > 0) {
-            opts.rules = Object.fromEntries(
-              rules.map((r) => [r.id, { enabled: r.enabled !== false }]),
-            );
-          }
+          const ruleMap: Record<string, { enabled: boolean }> = {};
+          for (const id of aaaDisabled) ruleMap[id] = { enabled: false };
+          for (const r of rules) ruleMap[r.id] = { enabled: r.enabled !== false };
+          if (Object.keys(ruleMap).length > 0) opts.rules = ruleMap;
           // @ts-ignore — axe is injected into the page by injectAxe.
           return await window.axe.run(document.querySelector('#storybook-root'), opts);
         },
-        { tags: STRICT_TAGS, rules: ruleOverrides },
+        { tags: STRICT_TAGS, rules: ruleOverrides, aaaDisabled: AAA_RULES_DISABLED },
       );
 
     if (results.violations.length > 0) {

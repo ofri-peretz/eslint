@@ -25,16 +25,13 @@ Each file demonstrates one **flagship rule** firing. Open any file to see a comm
 
 ```bash
 # 1. Lint everything
-npx @interlace/cli audit src
+npx eslint src
 
 # 2. Emit SARIF
-npx @interlace/cli audit --sarif src > findings.sarif
-# → Upload to GitHub Code Scanning Alerts via the GitHub Action
+npx eslint --format=@interlace/eslint-formatter-sarif src > findings.sarif
+# → Upload to GitHub Code Scanning Alerts via the SARIF action
 
-# 3. Get one rule's violations
-npx @interlace/cli audit --plugin secure-coding src
-
-# 4. Try the official ESLint MCP from Claude Code, Cursor, or any MCP client.
+# 3. Try the official ESLint MCP from Claude Code, Cursor, or any MCP client.
 #    It discovers every Interlace plugin in eslint.config.* automatically.
 npx --yes @eslint/mcp
 ```
@@ -44,11 +41,13 @@ npx --yes @eslint/mcp
 Drop into any GitHub workflow:
 
 ```yaml
-- uses: ofri-peretz/eslint/.github/actions/audit@main
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with: { node-version: 20 }
+- run: npm ci && npx eslint --format=@interlace/eslint-formatter-sarif examples/vulnerable-app/src > findings.sarif
+- uses: github/codeql-action/upload-sarif@v3
   with:
-    path: examples/vulnerable-app/src
-    plugins: all
-    fail-on: error
+    sarif_file: findings.sarif
 ```
 
 Findings appear in the **Code Scanning Alerts** tab, filterable by CWE.

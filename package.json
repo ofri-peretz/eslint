@@ -158,8 +158,6 @@
     "ilb:cve:synthesize": "tsx scripts/ilb-cve-synthesize.ts",
     "ilb:federated:aggregate": "tsx scripts/ilb-federated-aggregate.ts",
     "ilb:federated:check": "tsx scripts/ilb-federated-aggregate.ts --check",
-    "ilb:e2e": "tsx scripts/ilb-e2e.ts",
-    "ilb:e2e:registry": "tsx scripts/ilb-e2e.ts --registry",
     "ilb:mcp-test": "tsx scripts/ilb-mcp-test.ts",
     "docs:cwe-coverage": "tsx scripts/docs-cwe-coverage.ts",
     "docs:cwe-coverage:check": "tsx scripts/docs-cwe-coverage.ts --check",

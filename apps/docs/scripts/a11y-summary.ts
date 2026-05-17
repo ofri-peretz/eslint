@@ -16,7 +16,6 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const STRICT_TAGS = [
   'wcag2a',
   'wcag2aa',
-  'wcag2aaa',
   'wcag21a',
   'wcag21aa',
   'wcag22aa',

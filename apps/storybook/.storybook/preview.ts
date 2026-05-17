@@ -26,6 +26,9 @@ const preview: Preview = {
       element: '#storybook-root',
       config: {
         rules: [
+          // AAA-only rules get pulled in by their `ACT` tag (see
+          // test-runner.ts AAA_RULES_DISABLED). Floor is WCAG 2.2 AA.
+          { id: 'color-contrast-enhanced', enabled: false },
           // Per-story overrides go in `parameters.a11y.config.rules`.
         ],
       },
@@ -35,7 +38,6 @@ const preview: Preview = {
           values: [
             'wcag2a',
             'wcag2aa',
-            'wcag2aaa',
             'wcag21a',
             'wcag21aa',
             'wcag22aa',

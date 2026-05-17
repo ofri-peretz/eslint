@@ -55,10 +55,20 @@ const collectRegistryDependencies = (source) => {
 
 // ─── Per-primitive registry item ─────────────────────────────────────────────
 
+const readOptionalMeta = async (filePath) => {
+  const metaPath = filePath.replace(/\.tsx$/, '.meta.json');
+  try {
+    return JSON.parse(await readFile(metaPath, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+
 const buildItem = async (filePath, fileName) => {
   const source = await readFile(filePath, 'utf8');
   const name = fileName.replace(/\.tsx$/, '');
-  return {
+  const meta = await readOptionalMeta(filePath);
+  const item = {
     $schema: 'https://ui.shadcn.com/schema/registry-item.json',
     name,
     type: 'registry:ui',
@@ -77,6 +87,12 @@ const buildItem = async (filePath, fileName) => {
       },
     ],
   };
+  // Optional sibling `<name>.meta.json` adds shadcn-schema fields the source
+  // file can't express on its own — cssVars (theme tokens), css (keyframes /
+  // @theme entries). Used by primitives that depend on a CSS-side companion.
+  if (meta?.cssVars) item.cssVars = meta.cssVars;
+  if (meta?.css) item.css = meta.css;
+  return item;
 };
 
 // ─── Main ────────────────────────────────────────────────────────────────────

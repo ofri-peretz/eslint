@@ -1,18 +1,18 @@
 /**
- * Accessibility scan — strictest config available.
+ * Accessibility scan — strict gate at the WCAG 2.2 AA floor.
  *
- * Tags applied (most comprehensive set axe-core supports):
- *   - wcag2a, wcag2aa, wcag2aaa  → WCAG 2.0 levels A, AA, and AAA
- *   - wcag21a, wcag21aa          → WCAG 2.1 levels A and AA (AAA criteria not supported by axe)
- *   - wcag22aa                   → WCAG 2.2 (target sizes, focus appearance)
+ * Tags applied:
+ *   - wcag2a, wcag2aa            → WCAG 2.0 levels A and AA
+ *   - wcag21a, wcag21aa          → WCAG 2.1 levels A and AA
+ *   - wcag22aa                   → WCAG 2.2 AA (target sizes, focus appearance)
  *   - best-practice              → axe-core's own best-practice rules (beyond WCAG)
  *   - ACT                        → Accessibility Conformance Testing rules
  *
- * Goal: zero violations across every tag, on every route. Failures should
- * block CI.
+ * Goal: zero violations across every tag, on every route. Failures block CI.
  *
- * Note: WCAG 2.1 AAA criteria are not implemented by axe-core (axe focuses on
- * automatable checks). Manual review remains necessary for full AAA conformance.
+ * AAA is intentionally out of scope: the project floor is WCAG 2.2 AA. AAA
+ * criteria (color-contrast-enhanced 7:1, etc.) are tracked separately as
+ * aspirational and audited via `npm run a11y:gradients`, not gated in CI.
  */
 
 import { test, expect } from '@playwright/test';
@@ -21,7 +21,6 @@ import AxeBuilder from '@axe-core/playwright';
 const STRICT_TAGS = [
   'wcag2a',
   'wcag2aa',
-  'wcag2aaa',
   'wcag21a',
   'wcag21aa',
   'wcag22aa',
