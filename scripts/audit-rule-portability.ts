@@ -311,7 +311,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.62.0', maxKnown: '1.62.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.65.0', maxKnown: '1.65.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -324,9 +324,9 @@ const VERIFIED_OXLINT_RANGE = { min: '1.62.0', maxKnown: '1.62.x' };
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
   'plugins.js': '3caddca8054c7d91c6e0b5bacaba2a5c6f05fb2e9fa7b8c7226550f1d0c8061c',
-  'plugins-dev.js': '8cba3c19f645f9b536d6572ad3f1ad7d0f64c366b294a605cbfa38817d363005',
-  'lint.js':   '209211d13f9edc8836c736e795649b082d9e261d9c31c9d9978e43dac3d935f5',
-  'bindings.js': 'b8d8d44ce0a1fd887459fd6c5b51f607cda41af0912935e63686d4600ea6fdea',
+  'plugins-dev.js': '050aec642a2c03884a217fecdd8644815d50f41650f2b083bce5e86cd2e9a157',
+  'lint.js':   '82ca488c2f31d995cab1d11b2c25e19d62749dc3cfbb712311804d7100f1d33a',
+  'bindings.js': '5e50fde52ccdb0ade40dcd78ca8caf48f806b4e232338ae8349dfda13ca3f8ac',
 };
 
 async function checkOxlintRuntimeHashes() {
@@ -378,8 +378,12 @@ async function runCi(allPlugins) {
   const failures = [];
 
   // Version pin: if oxlint is bumped to a version we haven't verified, fail loudly.
+  // The verified range is the single source of truth — this check follows it
+  // automatically when `verify-oxlint-runtime.ts --update` bumps both range
+  // and hashes together.
   const installedOxlint = readOxlintVersion();
-  if (installedOxlint && !installedOxlint.startsWith('1.62.')) {
+  const verifiedPrefix = VERIFIED_OXLINT_RANGE.maxKnown.replace(/\.x$/, '.');
+  if (installedOxlint && !installedOxlint.startsWith(verifiedPrefix)) {
     failures.push(
       `oxlint version ${installedOxlint} has not been verified for compatibility ` +
       `(audit blocker patterns are confirmed against ${VERIFIED_OXLINT_RANGE.maxKnown}). ` +
