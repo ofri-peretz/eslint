@@ -6,6 +6,7 @@
  */
 import * as React from "react";
 import { cn } from "../../lib/utils";
+import { NumberTicker } from "../ui/number-ticker";
 import { Sparkline } from "./sparkline";
 
 export interface NorthStarHeroProps extends React.ComponentProps<"section"> {
@@ -32,10 +33,6 @@ const compactFormat = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
-
-function formatBig(n: number): string {
-  return n >= 100_000 ? compactFormat.format(n) : numberFormat.format(n);
-}
 
 function formatDelta(n: number): string {
   const abs = Math.abs(n);
@@ -98,12 +95,13 @@ export function NorthStarHero({
       </p>
 
       <div className="flex flex-col items-center gap-2">
-        <span
+        <NumberTicker
           data-slot="north-star-value"
+          value={value}
+          startValue={0}
+          duration={2000}
           className="font-mono text-6xl font-bold tabular-nums tracking-tight sm:text-7xl"
-        >
-          {formatBig(value)}
-        </span>
+        />
 
         {(delta30d != null || growthPct30d != null) && (
           <p className="flex items-center gap-2 text-sm">

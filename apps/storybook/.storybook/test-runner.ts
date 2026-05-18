@@ -11,11 +11,18 @@
  * their interactions first, then get scanned (interactive states are
  * a11y-tested too, not just the initial render).
  *
+ * Each story is scanned in BOTH the light and dark theme — token
+ * contrast, focus-ring contrast, and `dark:` utility regressions all
+ * surface here rather than waiting for a visual audit. A story may opt
+ * out of the dark pass via `parameters.a11y.skipDarkTheme: true` (for
+ * stories whose decorator already pins the theme).
+ *
  * Layer 4 of UX_PHILOSOPHY.md — per-component isolation.
  */
 import type { TestRunnerConfig } from '@storybook/test-runner';
 import { getStoryContext } from '@storybook/test-runner';
 import { injectAxe } from 'axe-playwright';
+import type { Page } from 'playwright';
 
 const STRICT_TAGS = [
   'wcag2a',
@@ -33,6 +40,67 @@ const STRICT_TAGS = [
 // aspirational and is audited separately via `npm run a11y:gradients`.
 const AAA_RULES_DISABLED: string[] = ['color-contrast-enhanced'];
 
+type RuleOverride = { id: string; enabled?: boolean };
+
+interface AxeViolation {
+  id: string;
+  help: string;
+  impact: string | null;
+  nodes: Array<{ target: string[]; failureSummary: string; html: string }>;
+}
+
+interface AxeResults {
+  violations: AxeViolation[];
+}
+
+async function runAxeOnRoot(
+  page: Page,
+  ruleOverrides: RuleOverride[],
+): Promise<AxeResults> {
+  return page.evaluate(
+    async ({ tags, rules, aaaDisabled }) => {
+      const opts: Record<string, unknown> = {
+        runOnly: { type: 'tag', values: tags },
+      };
+      const ruleMap: Record<string, { enabled: boolean }> = {};
+      for (const id of aaaDisabled) ruleMap[id] = { enabled: false };
+      for (const r of rules) ruleMap[r.id] = { enabled: r.enabled !== false };
+      if (Object.keys(ruleMap).length > 0) opts.rules = ruleMap;
+      // @ts-ignore — axe is injected into the page by injectAxe.
+      return (await window.axe.run(
+        document.querySelector('#storybook-root'),
+        opts,
+      )) as AxeResults;
+    },
+    { tags: STRICT_TAGS, rules: ruleOverrides, aaaDisabled: AAA_RULES_DISABLED },
+  );
+}
+
+function reportViolations(
+  results: AxeResults,
+  themeLabel: 'light' | 'dark',
+  context: { title: string; name: string },
+): void {
+  if (results.violations.length === 0) return;
+  const lines = [
+    '',
+    `=== A11Y violations (${themeLabel} theme) in story: ${context.title} > ${context.name} ===`,
+  ];
+  for (const v of results.violations) {
+    lines.push(`[${v.impact ?? 'unknown'}] ${v.id} — ${v.help}`);
+    for (const n of v.nodes) {
+      lines.push(`  • ${n.target.join(' ')}`);
+      lines.push(`    ${n.failureSummary.replace(/\n/g, '\n    ')}`);
+      lines.push(`    html: ${n.html.slice(0, 200)}`);
+    }
+  }
+  // eslint-disable-next-line no-console
+  console.log(lines.join('\n'));
+  throw new Error(
+    `${results.violations.length} ${themeLabel}-theme a11y violation(s) in ${context.title} > ${context.name} (see logged report above)`,
+  );
+}
+
 const config: TestRunnerConfig = {
   async preVisit(page) {
     await injectAxe(page);
@@ -42,47 +110,32 @@ const config: TestRunnerConfig = {
     const storyContext = await getStoryContext(page, context);
     if (storyContext.parameters?.a11y?.skip) return;
 
-    type RuleOverride = { id: string; enabled?: boolean };
     const ruleOverrides: RuleOverride[] =
-      (storyContext.parameters?.a11y?.config?.rules as RuleOverride[] | undefined) ?? [];
+      (storyContext.parameters?.a11y?.config?.rules as
+        | RuleOverride[]
+        | undefined) ?? [];
 
-    const results: {
-      violations: Array<{
-        id: string;
-        help: string;
-        impact: string | null;
-        nodes: Array<{ target: string[]; failureSummary: string; html: string }>;
-      }>;
-    } = await page.evaluate(
-      async ({ tags, rules, aaaDisabled }) => {
-        const opts: Record<string, unknown> = {
-          runOnly: { type: 'tag', values: tags },
-        };
-        const ruleMap: Record<string, { enabled: boolean }> = {};
-        for (const id of aaaDisabled) ruleMap[id] = { enabled: false };
-        for (const r of rules) ruleMap[r.id] = { enabled: r.enabled !== false };
-        if (Object.keys(ruleMap).length > 0) opts.rules = ruleMap;
-        // @ts-ignore — axe is injected into the page by injectAxe.
-        return await window.axe.run(document.querySelector('#storybook-root'), opts);
-      },
-      { tags: STRICT_TAGS, rules: ruleOverrides, aaaDisabled: AAA_RULES_DISABLED },
-    );
+    // ─── Light theme scan (default) ─────────────────────────────────
+    const lightResults = await runAxeOnRoot(page, ruleOverrides);
+    reportViolations(lightResults, 'light', context);
 
-    if (results.violations.length > 0) {
-      const lines = ['', `=== A11Y violations in story: ${context.title} > ${context.name} ===`];
-      for (const v of results.violations) {
-        lines.push(`[${v.impact ?? 'unknown'}] ${v.id} — ${v.help}`);
-        for (const n of v.nodes) {
-          lines.push(`  • ${n.target.join(' ')}`);
-          lines.push(`    ${n.failureSummary.replace(/\n/g, '\n    ')}`);
-          lines.push(`    html: ${n.html.slice(0, 200)}`);
-        }
+    // ─── Dark theme scan ────────────────────────────────────────────
+    // Flip the html.dark class, re-scan, then revert. Stories whose
+    // decorators already pin a theme (Button.Dark, Select.Dark) opt out
+    // via `parameters.a11y.skipDarkTheme: true` to avoid a redundant
+    // double-scan.
+    if (!storyContext.parameters?.a11y?.skipDarkTheme) {
+      await page.evaluate(() => {
+        document.documentElement.classList.add('dark');
+      });
+      try {
+        const darkResults = await runAxeOnRoot(page, ruleOverrides);
+        reportViolations(darkResults, 'dark', context);
+      } finally {
+        await page.evaluate(() => {
+          document.documentElement.classList.remove('dark');
+        });
       }
-      // eslint-disable-next-line no-console
-      console.log(lines.join('\n'));
-      throw new Error(
-        `${results.violations.length} accessibility violation(s) in ${context.title} > ${context.name} (see logged report above)`,
-      );
     }
 
     // ─── Styling-sanity sweep ─────────────────────────────────────────

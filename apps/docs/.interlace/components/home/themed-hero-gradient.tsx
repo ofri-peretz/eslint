@@ -21,7 +21,7 @@
  *
  * Peer deps required in the consuming app:
  *   - `next-themes` (already a transitive of `fumadocs-ui`)
- *   - `@base-ui/react` (not used here directly, listed for the wider baseline)
+ *   - `@base-ui-components/react` (not used here directly, listed for the wider baseline)
  */
 
 import { useTheme } from 'next-themes';

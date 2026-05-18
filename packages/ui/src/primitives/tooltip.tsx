@@ -50,7 +50,15 @@ function TooltipContent({
           {...props}
         >
           {children}
-          <BaseTooltip.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+          <BaseTooltip.Arrow
+            className={cn(
+              'bg-primary fill-primary z-50 size-2.5 rotate-45 rounded-[2px]',
+              'data-[side=top]:-bottom-1',
+              'data-[side=bottom]:-top-1',
+              'data-[side=left]:top-1/2 data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2',
+              'data-[side=right]:top-1/2 data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2',
+            )}
+          />
         </BaseTooltip.Popup>
       </BaseTooltip.Positioner>
     </BaseTooltip.Portal>

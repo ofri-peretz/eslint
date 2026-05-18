@@ -46,7 +46,7 @@ export const Grouped: Story = {
           <SelectGroupLabel>Security</SelectGroupLabel>
           <SelectItem value="security">eslint-plugin-secure-coding</SelectItem>
           <SelectItem value="jwt">eslint-plugin-jwt</SelectItem>
-          <SelectItem value="crypto">eslint-plugin-crypto</SelectItem>
+          <SelectItem value="node">eslint-plugin-node-security</SelectItem>
         </SelectGroup>
         <SelectSeparator />
         <SelectGroup>
