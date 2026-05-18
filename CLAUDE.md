@@ -234,7 +234,7 @@ dispatches the per-app deploy workflow for each affected app:
 
 | Affected workspace | Dispatched workflow | Production URL |
 |---|---|---|
-| `docs` (or any dep via `...[<sha>]`, eg `@interlace/ui`, `*PHILOSOPHY.md`) | `deploy-docs.yml` (`environment=production`, includes Playwright smoke gate) | https://interlace.tools |
+| `docs` (or any dep via `...[<sha>]`, eg `@interlace/ui`, `*PHILOSOPHY.md`) | `deploy-docs.yml` (`environment=production`, includes Playwright smoke gate) | https://eslint.interlace.tools |
 | `@interlace/storybook` (or any dep, eg `@interlace/ui`) | `deploy.yml` (`app=storybook target=production`) | https://storybook.interlace.tools |
 | `registry` (or any dep, eg `packages/ui/src/primitives/**`) | `deploy.yml` (`app=registry target=production`) | https://ds.interlace.tools |
 

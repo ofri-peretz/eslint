@@ -12,17 +12,17 @@ name: Auto Deploy on Main
 # dependency graph. A path filter would miss those; turbo's `...[<sha>]`
 # selector walks the graph and reports every transitive dependent.
 #
+# Canonical Vercel project mapping (also lives in `.github/vercel-apps.json`):
+#
+#   - docs       → `eslint`                    → https://eslint.interlace.tools
+#   - storybook  → `storybook-interlace-tools` → https://storybook.interlace.tools
+#   - registry   → `ds-interlace-tools`        → https://ds.interlace.tools
+#
 # What is NOT in scope here:
 #
-#   - Per-branch preview deploys remain forbidden per CLAUDE.md (Vercel
-#     git-integration is intentionally NOT enabled on the canonical
-#     `interlace-landing`, `storybook-interlace-tools`, `ds-interlace-tools`
-#     projects). Previews still require an explicit `target=preview` dispatch.
+#   - Per-branch preview deploys remain forbidden per CLAUDE.md. Previews
+#     still require an explicit `target=preview` dispatch.
 #   - Package publishes — `release.yml` owns those, fires on changesets/tags.
-#   - The `eslint` Vercel project (`prj_f5DETjxcjOCNlwYpFvH8784SLOGE` →
-#     https://eslint-one.vercel.app) is NOT in `.github/vercel-apps.json` and
-#     is not deployed here. If it should be wired, add it to vercel-apps.json
-#     first.
 
 on:
   push:

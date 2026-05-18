@@ -4,8 +4,8 @@
   "orgId": "team_sZpUs6MAa1BKXZJY6Hq2nfnh",
   "apps": {
     "docs": {
-      "projectId": "prj_DSK82D4vMaxGwSskbRLpT0fnHXps",
-      "productionUrl": "https://interlace.tools",
+      "projectId": "prj_f5DETjxcjOCNlwYpFvH8784SLOGE",
+      "productionUrl": "https://eslint.interlace.tools",
       "rootDirectory": "apps/docs"
     },
     "storybook": {
