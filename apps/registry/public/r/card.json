@@ -5,7 +5,9 @@
   "title": "Card",
   "description": "@interlace/ui — card primitive (shadcn-compatible).",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/card.tsx",

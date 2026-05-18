@@ -21,9 +21,21 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REGISTRY_ROOT = path.resolve(SCRIPT_DIR, '..');
 const REPO_ROOT = path.resolve(REGISTRY_ROOT, '..', '..');
 const PRIMITIVES_DIR = path.join(REPO_ROOT, 'packages/ui/src/primitives');
+const STYLES_DIR = path.join(REPO_ROOT, 'packages/ui/styles');
 const OUT_DIR = path.join(REGISTRY_ROOT, 'public/r');
+const STYLES_OUT_DIR = path.join(OUT_DIR, 'styles');
 const HOMEPAGE = 'https://ds.interlace.tools';
 const CHECK_ONLY = process.argv.includes('--check');
+
+// Name of the registry:style item that every primitive depends on.
+// Consumers install it once; `shadcn add` pulls it as a transitive dep when
+// they add any primitive after the first.
+const STYLE_ITEM = 'theme';
+
+// Stylesheet files copied verbatim from @interlace/ui/styles into the
+// registry's public dir so they live at stable URLs (CSS @imports + raw
+// fetch both work). Order matters: tokens → theme → interlace-theme.
+const STYLE_FILES = ['tokens.css', 'theme.css', 'interlace-theme.css'];
 
 // ─── Heuristic dependency extraction ─────────────────────────────────────────
 
@@ -97,6 +109,9 @@ const buildItem = async (filePath, fileName) => {
   const source = await readFile(filePath, 'utf8');
   const name = fileName.replace(/\.tsx$/, '');
   const meta = await readOptionalMeta(filePath);
+  // Every primitive depends on the shared theme item so consumers get the
+  // brand tokens + animation keyframes installed alongside the .tsx.
+  const registryDependencies = [STYLE_ITEM, ...collectRegistryDependencies(source)];
   const item = {
     $schema: 'https://ui.shadcn.com/schema/registry-item.json',
     name,
@@ -106,7 +121,7 @@ const buildItem = async (filePath, fileName) => {
     ),
     description: `@interlace/ui — ${name} primitive (shadcn-compatible).`,
     dependencies: collectDependencies(source),
-    registryDependencies: collectRegistryDependencies(source),
+    registryDependencies,
     files: [
       {
         path: `registry/interlace-ui/${name}.tsx`,
@@ -124,6 +139,67 @@ const buildItem = async (filePath, fileName) => {
   return item;
 };
 
+// ─── Theme / style registry item ─────────────────────────────────────────
+//
+// Publishes the three @interlace/ui stylesheets (tokens, theme,
+// interlace-theme) as a single shadcn `registry:style` item so consumers
+// get the brand palette + token bridge + animation tokens installed when
+// they `npx shadcn add` any primitive.
+//
+// The raw .css files are also copied to `public/r/styles/*.css` so
+// consumers can pull them directly without the shadcn CLI (e.g. as plain
+// `@import "https://ds.interlace.tools/r/styles/tokens.css"` URLs from
+// their global stylesheet).
+
+const buildStyleItem = async () => {
+  const files = await Promise.all(
+    STYLE_FILES.map(async (name) => {
+      const content = await readFile(path.join(STYLES_DIR, name), 'utf8');
+      return {
+        path: `registry/interlace-ui/styles/${name}`,
+        target: `styles/interlace/${name}`,
+        type: 'registry:style',
+        content,
+      };
+    }),
+  );
+  return {
+    $schema: 'https://ui.shadcn.com/schema/registry-item.json',
+    name: STYLE_ITEM,
+    type: 'registry:style',
+    title: 'Interlace Theme',
+    description:
+      '@interlace/ui — brand tokens, shadcn-token bridge, and animation keyframes consumed by every primitive.',
+    dependencies: ['tw-animate-css'],
+    registryDependencies: [],
+    files,
+  };
+};
+
+const writeRawStyleFiles = async () => {
+  await mkdir(STYLES_OUT_DIR, { recursive: true });
+  for (const name of STYLE_FILES) {
+    const content = await readFile(path.join(STYLES_DIR, name), 'utf8');
+    await writeFile(path.join(STYLES_OUT_DIR, name), content, 'utf8');
+  }
+};
+
+const checkRawStyleFiles = async () => {
+  const errors = [];
+  for (const name of STYLE_FILES) {
+    const sourcePath = path.join(STYLES_DIR, name);
+    const outPath = path.join(STYLES_OUT_DIR, name);
+    try {
+      const source = await readFile(sourcePath, 'utf8');
+      const current = await readFile(outPath, 'utf8');
+      if (source !== current) errors.push(`drift: styles/${name}`);
+    } catch {
+      errors.push(`missing: styles/${name}`);
+    }
+  }
+  return errors;
+};
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 const main = async () => {
@@ -135,6 +211,17 @@ const main = async () => {
   if (CHECK_ONLY) {
     // Drift check: rebuild in-memory + diff against on-disk.
     const errors = [];
+    const styleBuilt = await buildStyleItem();
+    const stylePath = path.join(OUT_DIR, `${styleBuilt.name}.json`);
+    try {
+      const current = JSON.parse(await readFile(stylePath, 'utf8'));
+      if (JSON.stringify(current) !== JSON.stringify(styleBuilt)) {
+        errors.push(`drift: ${styleBuilt.name}`);
+      }
+    } catch {
+      errors.push(`missing: ${styleBuilt.name}`);
+    }
+    errors.push(...(await checkRawStyleFiles()));
     for (const file of files) {
       const built = await buildItem(path.join(PRIMITIVES_DIR, file), file);
       const outPath = path.join(OUT_DIR, `${built.name}.json`);
@@ -151,7 +238,9 @@ const main = async () => {
       console.error('Registry drift detected:\n  ' + errors.join('\n  '));
       process.exit(1);
     }
-    console.log(`OK — ${files.length} item(s) match on-disk.`);
+    console.log(
+      `OK — ${files.length} primitive item(s) + 1 style item + ${STYLE_FILES.length} raw stylesheet(s) match on-disk.`,
+    );
     return;
   }
 
@@ -162,6 +251,21 @@ const main = async () => {
     homepage: HOMEPAGE,
     items: [],
   };
+
+  // Theme/style item first so it appears at the top of `index.json`.
+  const styleBuilt = await buildStyleItem();
+  await writeFile(
+    path.join(OUT_DIR, `${styleBuilt.name}.json`),
+    JSON.stringify(styleBuilt, null, 2) + '\n',
+    'utf8',
+  );
+  index.items.push({
+    name: styleBuilt.name,
+    type: styleBuilt.type,
+    title: styleBuilt.title,
+    description: styleBuilt.description,
+  });
+  await writeRawStyleFiles();
 
   for (const file of files) {
     const built = await buildItem(path.join(PRIMITIVES_DIR, file), file);
@@ -184,7 +288,9 @@ const main = async () => {
     'utf8',
   );
 
-  console.log(`Built ${files.length} registry item(s) → ${OUT_DIR}`);
+  console.log(
+    `Built ${files.length} primitive item(s) + 1 style item + ${STYLE_FILES.length} raw stylesheet(s) → ${OUT_DIR}`,
+  );
 };
 
 main().catch((err) => {

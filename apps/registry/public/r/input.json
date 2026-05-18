@@ -5,7 +5,9 @@
   "title": "Input",
   "description": "@interlace/ui — input primitive (shadcn-compatible).",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/input.tsx",

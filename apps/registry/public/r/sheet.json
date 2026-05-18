@@ -8,7 +8,9 @@
     "@base-ui/react",
     "lucide-react"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/sheet.tsx",
