@@ -5,7 +5,7 @@ icon: Languages
 ---
 {/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
     source: I18N_PHILOSOPHY.md
-    hash: f6cfbfc6ab54 */}
+    hash: d87f7a5bddbb */}
 
 A focused sub-philosophy of [UX_PHILOSOPHY.md](/docs/design/ux), expanding
 principle #10 (Every component answers "would this travel?") into the language
@@ -101,7 +101,7 @@ has 6. Hardcoding `count === 1 ? "item" : "items"` breaks in most languages.
 **Mechanics:** ICU MessageFormat (`i18next` ICU plugin, `intl-messageformat`,
 or `@formatjs/intl`) is the floor. Translation key shape:
 
-```icu
+```text
 {count, plural, =0 {No items} one {# item} other {# items}}
 ```
 
