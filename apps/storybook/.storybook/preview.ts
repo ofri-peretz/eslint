@@ -76,7 +76,15 @@ const preview: Preview = {
       defaultTheme: 'light',
     }),
   ],
-  tags: ['autodocs'],
+  // No global `autodocs` tag. With autodocs on, every component's sidebar
+  // entry becomes "Docs" as the default child, and the Docs view doesn't
+  // render the Controls / Actions / Interactions / Accessibility bottom
+  // panels — those are Canvas-only. Removing the tag means clicking a
+  // component takes the user straight to its first story (Canvas view)
+  // where every addon panel + populated Controls table is visible.
+  // Stories that genuinely want an auto-generated docs page can opt in
+  // per-meta via `tags: ['autodocs']`. MDX-driven docs (Welcome.mdx,
+  // tokens/ColorContrast.stories.tsx) remain unaffected.
 };
 
 export default preview;
