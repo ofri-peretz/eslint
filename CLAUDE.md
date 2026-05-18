@@ -70,6 +70,37 @@ a new visual primitive, add a matching lock in the same PR.
 
 ---
 
+## Deploy: main branch only
+
+**Only `main` deploys to production. No other branch — feature, fix,
+chore, WIP, docs, anything — should produce a deployment, preview or
+otherwise.**
+
+Why: Vercel's default Git integration spins up a preview deploy per
+branch per push, which (a) generates noise in the deployment list, (b)
+wastes build minutes, (c) creates ambiguity about which URL is the
+source of truth, and (d) can race with production deploys when several
+feature branches are in flight against a manually-fired production
+deploy.
+
+How to apply:
+
+- The canonical deploy path is the manual `deploy-docs.yml` workflow
+  (see step 6 of the PR flow below). Don't add `push:` / `pull_request:`
+  triggers, and don't enable Vercel's Git-integration preview deploys
+  on non-main branches.
+- If you find queued / building Vercel deployments for non-main
+  branches, cancel them. Don't merge a PR while a stale preview build
+  for the same branch is still running — wait, cancel, or surface it.
+- One commit on `main` → one production deploy. If multiple PRs land
+  close together, prefer batching the manual deploy after the last
+  merge rather than firing a deploy per merge.
+- If you genuinely need a preview (e.g. a stakeholder demo), trigger it
+  via the existing manual workflow with `target=preview`. Don't reach
+  for `git push` as a deploy trigger.
+
+---
+
 ## Don't introduce CSP / security regressions
 
 `next.config.mjs` headers (`X-Frame-Options`, `Permissions-Policy`,
