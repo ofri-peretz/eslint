@@ -14,7 +14,7 @@
  * | R8   | No `isXxx` prefix                | All variant keys (`variant`, `size`) follow MUI naming, not `isXxx`         |
  * | R9   | Native onClick stays native      | `onClick` passes through `{...props}` — never wrapped in a bespoke name     |
  * | R12  | Reuse over wrap                  | The `render` prop lets consumers replace the rendered element entirely      |
- * | R13  | Ecosystem first                  | `useRender` from `@base-ui-components/react/use-render` owns slot rendering |
+ * | R13  | Ecosystem first                  | `useRender` from `@base-ui/react/use-render` owns slot rendering |
  * | R17  | API parity                       | Mirrors shadcn/ui Button + Base UI's `useRender` slot — no deviation        |
  * | R18  | Tailwind only                    | Zero inline `style={{}}`; all visual classes come from `buttonVariants`     |
  * | R19  | Tokens only                      | `buttonVariants` lives in [button-variants.ts](./button-variants.ts) and uses theme tokens |
@@ -27,7 +27,7 @@
  */
 
 import * as React from 'react';
-import { useRender } from '@base-ui-components/react/use-render';
+import { useRender } from '@base-ui/react/use-render';
 import type { VariantProps } from 'class-variance-authority';
 
 import { cn } from '../lib/cn.js';

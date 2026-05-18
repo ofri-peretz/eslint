@@ -256,7 +256,7 @@ TypeTable / Files / InlineTOC / ImageZoom / Banner from scratch.
 Fumadocs ships them; use those.
 
 **Measure**: dependency-graph audit — every primitive in `@interlace/ui`
-either wraps `@base-ui-components/react` or `fumadocs-*`, or is
+either wraps `@base-ui/react` or `fumadocs-*`, or is
 explicitly justified as a gap-fill in its file header.
 
 ---

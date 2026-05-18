@@ -3,7 +3,7 @@
  *
  * Locks the headless-library choice for every shadcn-canon primitive served
  * out of `.interlace/components/ui/`. The migration from Radix → Base UI
- * (`@base-ui-components/react`) is the active source of truth — these
+ * (`@base-ui/react`) is the active source of truth — these
  * assertions catch any future drift that would silently re-introduce a
  * `@radix-ui/*` import or rename a Base UI primitive back to its Radix
  * spelling.
@@ -22,7 +22,7 @@
  *
  *   - Two known API renames (Radix → Base UI) must NEVER reappear:
  *       1. `TooltipProvider` `delayDuration` → `delay`
- *       2. Dropdown trigger imports `@base-ui-components/react/menu`
+ *       2. Dropdown trigger imports `@base-ui/react/menu`
  *          (Base UI rolls dropdowns into a generic `Menu` primitive).
  */
 
@@ -65,16 +65,17 @@ const MIGRATED = [
 ];
 
 describe('Base UI migration: no Radix imports survived', () => {
-  it.each(MIGRATED)('%s imports `@base-ui-components/react`, never `@radix-ui/*`', (file) => {
+  it.each(MIGRATED)('%s imports `@base-ui/react`, never `@radix-ui/*`', (file) => {
     const src = read(file);
-    expect(src).toMatch(/@base-ui-components\/react/);
+    expect(src).toMatch(/@base-ui\/react/);
+    expect(src).not.toMatch(/@base-ui-components\//);
     expect(src).not.toMatch(/@radix-ui\//);
   });
 
   it('button.tsx uses Base UI `useRender` (not Radix `Slot`)', () => {
     const src = read('button.tsx');
     const code = stripComments(src);
-    expect(code).toContain("from '@base-ui-components/react/use-render'");
+    expect(code).toContain("from '@base-ui/react/use-render'");
     expect(code).not.toContain('@radix-ui/react-slot');
     // The render-prop API replaces the legacy `asChild` boolean. Locking the
     // type as `useRender.RenderProp` prevents an accidental re-introduction
@@ -88,7 +89,7 @@ describe('Base UI migration: no Radix imports survived', () => {
   it('badge.tsx uses Base UI `useRender` (not Radix `Slot`)', () => {
     const src = read('badge.tsx');
     const code = stripComments(src);
-    expect(code).toContain("from '@base-ui-components/react/use-render'");
+    expect(code).toContain("from '@base-ui/react/use-render'");
     expect(code).not.toContain('@radix-ui/react-slot');
     expect(code).not.toMatch(/asChild\s*\?\s*:/);
     expect(code).not.toMatch(/\{[^}]*\basChild\b[^}]*\}/);
@@ -105,9 +106,9 @@ describe('Base UI API renames: Radix-era spellings stay out', () => {
     expect(src).not.toContain('delayDuration');
   });
 
-  it('dropdown-menu.tsx imports from `@base-ui-components/react/menu` (Base UI rolls dropdowns into Menu)', () => {
+  it('dropdown-menu.tsx imports from `@base-ui/react/menu` (Base UI rolls dropdowns into Menu)', () => {
     const src = read('dropdown-menu.tsx');
-    expect(src).toContain("from '@base-ui-components/react/menu'");
+    expect(src).toContain("from '@base-ui/react/menu'");
     expect(src).not.toContain('@radix-ui/react-dropdown-menu');
   });
 });

@@ -5,7 +5,7 @@
   "title": "Avatar",
   "description": "@interlace/ui — avatar primitive (shadcn-compatible).",
   "dependencies": [
-    "@base-ui-components/react"
+    "@base-ui/react"
   ],
   "registryDependencies": [],
   "files": [
@@ -13,7 +13,7 @@
       "path": "registry/interlace-ui/avatar.tsx",
       "target": "components/ui/avatar.tsx",
       "type": "registry:ui",
-      "content": "// Mirrors the shadcn Avatar canon, built on Base UI primitives.\n// Upstream: https://base-ui.com/react/components/avatar\n'use client';\n\nimport * as React from 'react';\nimport { Avatar as BaseAvatar } from '@base-ui-components/react/avatar';\n\nimport { cn } from '@/lib/utils';\n\nfunction Avatar({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Root>) {\n  return (\n    <BaseAvatar.Root\n      data-slot=\"avatar\"\n      className={cn(\n        'relative flex size-8 shrink-0 overflow-hidden rounded-full',\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nfunction AvatarImage({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Image>) {\n  return (\n    <BaseAvatar.Image\n      data-slot=\"avatar-image\"\n      className={cn('aspect-square size-full', className)}\n      {...props}\n    />\n  );\n}\n\nfunction AvatarFallback({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Fallback>) {\n  return (\n    <BaseAvatar.Fallback\n      data-slot=\"avatar-fallback\"\n      className={cn(\n        'bg-muted flex size-full items-center justify-center rounded-full text-xs font-medium',\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nexport { Avatar, AvatarImage, AvatarFallback };\n"
+      "content": "// Mirrors the shadcn Avatar canon, built on Base UI primitives.\n// Upstream: https://base-ui.com/react/components/avatar\n'use client';\n\nimport * as React from 'react';\nimport { Avatar as BaseAvatar } from '@base-ui/react/avatar';\n\nimport { cn } from '@/lib/utils';\n\nfunction Avatar({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Root>) {\n  return (\n    <BaseAvatar.Root\n      data-slot=\"avatar\"\n      className={cn(\n        'relative flex size-8 shrink-0 overflow-hidden rounded-full',\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nfunction AvatarImage({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Image>) {\n  return (\n    <BaseAvatar.Image\n      data-slot=\"avatar-image\"\n      className={cn('aspect-square size-full', className)}\n      {...props}\n    />\n  );\n}\n\nfunction AvatarFallback({\n  className,\n  ...props\n}: React.ComponentProps<typeof BaseAvatar.Fallback>) {\n  return (\n    <BaseAvatar.Fallback\n      data-slot=\"avatar-fallback\"\n      className={cn(\n        'bg-muted flex size-full items-center justify-center rounded-full text-xs font-medium',\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nexport { Avatar, AvatarImage, AvatarFallback };\n"
     }
   ]
 }

@@ -7,7 +7,7 @@
 'use client';
 
 /**
- * Select primitive — built on Base UI (`@base-ui-components/react/select`).
+ * Select primitive — built on Base UI (`@base-ui/react/select`).
  *
  * Surface mirrors the shadcn Select API so consumers familiar with shadcn
  * find their footing immediately:
@@ -19,13 +19,13 @@
  * CSS variables from the brand baseline — never hardcoded colors.
  *
  * Peer deps required in the consuming app:
- *   - `@base-ui-components/react`
+ *   - `@base-ui/react`
  *   - `lucide-react`
  *   - `tailwindcss` v4
  */
 
 import * as React from 'react';
-import { Select as BaseSelect } from '@base-ui-components/react/select';
+import { Select as BaseSelect } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { cn } from '#interlace/lib/utils';
 

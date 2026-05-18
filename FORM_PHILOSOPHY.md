@@ -142,7 +142,7 @@ error field on submit when validation fails.
 
 ### 10. Build with the ecosystem
 
-`react-hook-form` for state. `zod` for schema. `@base-ui-components/react/form`
+`react-hook-form` for state. `zod` for schema. `@base-ui/react/form`
 for headless field primitives. We don't ship `<FormController>` — we ship
 input primitives that compose cleanly into those libraries.
 
