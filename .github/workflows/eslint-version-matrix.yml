@@ -72,7 +72,7 @@ jobs:
           fi
 
   matrix:
-    name: ${{ matrix.bench }} · node-${{ matrix.node }} · eslint-${{ matrix.eslint }}
+    name: ${{ matrix.bench }} · node24 · eslint-${{ matrix.eslint }}
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
@@ -80,14 +80,13 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       # Cancel sibling cells on first failure when running the cross-version
-      # matrix — when an ESLint major bumps and breaks one cell, the other
-      # 7 will almost always break the same way. Saves ~7 cells worth of
-      # runner minutes per regression. Override via workflow_dispatch if
-      # you need full results.
+      # matrix — when an ESLint major bumps and breaks one cell, every other
+      # cell will almost always break the same way. Saves runner minutes per
+      # regression. Override via workflow_dispatch if you need full results.
       fail-fast: true
       matrix:
-        node: [22, 24]
-        # All three are supported per docs/ESLINT_VERSION_SUPPORT.md:
+        # Node axis is fixed to 24 (the repo's `engines.node` and `.nvmrc`).
+        # All three ESLint majors are supported per docs/ESLINT_VERSION_SUPPORT.md:
         #   8.x = legacy active (24% share), 9.x = current default (60%),
         #   10.x = forward-looking (9%, released 2026-02-06).
         eslint: ['8.x', '9.x', '10.x']
@@ -96,12 +95,10 @@ jobs:
         include:
           # Pinned-version sanity check on the most-used minor — catches
           # regressions specific to that pin without exploding the matrix.
-          - node: 24
-            eslint: '9.39'
+          - eslint: '9.39'
             bench: arena
             experimental: false
-          - node: 24
-            eslint: '9.39'
+          - eslint: '9.39'
             bench: juliet
             experimental: false
 
@@ -110,7 +107,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node }}
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
@@ -150,6 +147,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ilb-${{ matrix.bench }}-node${{ matrix.node }}-eslint${{ matrix.eslint }}-${{ github.run_number }}
+          name: ilb-${{ matrix.bench }}-node24-eslint${{ matrix.eslint }}-${{ github.run_number }}
           path: benchmarks/results/ilb-${{ matrix.bench }}/*.json
           retention-days: 14
