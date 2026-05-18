@@ -1,0 +1,486 @@
+---
+title: "Documentation Philosophy"
+description: "apps/docs is the public docs site for our 11-plugin, 272-rule ESLint monorepo (built on Fumadocs / Next.js 16 / React 19)."
+icon: BookOpen
+---
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: DOCS_PHILOSOPHY.md
+    hash: 0bbdb7e1836b */}
+
+> Holistic philosophy for `apps/docs` — vendor-neutral concepts, industry best practices, and our concrete decision per topic. This document supersedes `~/.claude/plans/what-is-our-philosophy-abundant-noodle.md` (the original Fumadocs-specific rubric) by widening it to industry context.
+
+## Why this document exists
+
+`apps/docs` is the public docs site for our 11-plugin, 272-rule ESLint monorepo (built on Fumadocs / Next.js 16 / React 19). The goal of these docs is not to look good — it's to **lead static-code-analysis for JS, for both humans and AI coding agents**, per [benchmarks/LEADERSHIP_ROADMAP.md](benchmarks/LEADERSHIP_ROADMAP.md).
+
+Modern technical docs sites have ~15 named concept areas (page conventions, navigation, i18n, OG, llms.txt, etc.) that each demand a deliberate decision. Without a written rubric, every concept becomes an ad-hoc choice and the site drifts. This document defines:
+
+1. **Five cross-cutting principles** that any docs-related change must respect.
+2. **Per-topic philosophy** grounded in how leading docs sites (Stripe, Vercel, react.dev, MDN, Anthropic, Mintlify, TypeScript Handbook) actually solve each concern.
+3. **Our concrete decision** per topic with priority and next step.
+
+When a docs-related change is proposed, check it against the principles AND the relevant per-topic verdict. If it conflicts, either reject the change or update this rubric explicitly — never silently.
+
+---
+
+## The five cross-cutting principles
+
+1. **Two readers, equal weight.** Every page is simultaneously human-readable and agent-readable. Features that don't serialize cleanly to plaintext (heavy iframes, JSX-only widgets, client-side-only renders) are second-class.
+2. **Source of truth lives in `packages/*`.** The docs site is a *projection* of plugin metadata (`meta.schema`, `meta.docs`, `fixable`, `recommended`, `replacedBy`). Re-typing in prose is a drift bug, not a documentation choice.
+3. **Derive, don't curate.** With 272 rules, anything hand-maintained will rot. Page tree, schemas, examples, OG cards, and llms.txt entries must all be generated from the same metadata pipeline.
+4. **Bet on the strategic moat.** Agent-native docs (llms.txt + RuleSpec JSON + future MCP server) are where we win the IDE-agent integration war. Invest disproportionately there.
+5. **Don't ship weight for absent content.** No KaTeX without equations, no Storybook without components, no i18n without translation budget. YAGNI applies to docs infrastructure.
+
+---
+
+# Authoring & content rendering
+
+## 1. Page conventions
+
+**The concept.** The contract between filesystem layout and published URL: how a path becomes a slug, what metadata travels with the page, and whether content lives as authored prose or is generated from a programmatic source of truth.
+
+**Industry pattern.** Mature sites lean on file-as-route invariants and validate frontmatter with a typed schema. Astro Content Collections require a Zod schema per collection; Docusaurus derives `/docs/guide/hello` from `hello.md` automatically and reserves an explicit `slug` only for overrides; Nextra 4 mirrors Next.js App Router with a `page.{md,mdx}` convention.
+
+**Maturity ladder.**
+- **Minimum:** file path equals URL, a `title` field in frontmatter.
+- **Good:** typed/validated frontmatter (Zod, JSON Schema), explicit `slug` only as override, sidebar derived from filesystem.
+- **Great:** content-from-source generation (frontmatter + body emitted from a single source of truth at build time), redirects produced from rename history.
+
+**When to adopt.** >50 pages; multiple authors; pages derived from code rather than hand-written.
+
+**When to skip.** Under a dozen handwritten pages; URLs not yet promised externally.
+
+**Common failure modes.** (1) Drift between handwritten frontmatter and the underlying source. (2) Frontmatter overrides that silently break sidebars when files move.
+
+**Our verdict — extend (priority: medium).** Treat each rule's `meta.docs` + `meta.schema` as the source of truth and codegen the MDX page (frontmatter included) at build time. Slug = `/<plugin>/<rule-name>` derived purely from filesystem. Hand-edits to generated pages should be rejected by CI — any prose enrichment lives in a sibling `<rule>.notes.mdx` partial that the generator splices in. **Next step:** have `sync-rule-docs.ts` emit `[plugin]/meta.json` and `[plugin]/rules/meta.json` with deterministic ordering (recommended-first, then alphabetical).
+
+---
+
+## 2. Markdown / MDX
+
+**The concept.** MDX trades plaintext purity for component composability. The tension: how much JSX is allowed in prose before the file stops reading as Markdown, and which components are global vs. opt-in.
+
+**Industry pattern.** Quality sites register a small global component map and reserve heavy JSX for genuinely interactive needs. Docusaurus exposes the global scope through `@theme/MDXComponents`; Next.js uses a single `mdx-components.tsx` at project root. The MDX project itself: "prose in Markdown, interactivity in JSX — JSX only when you want to."
+
+**Maturity ladder.**
+- **Minimum:** vanilla Markdown plus syntax-highlighted code fences.
+- **Good:** small global registry (Callout, Tabs, CodeGroup, Steps); HTML element overrides; imports allowed but discouraged.
+- **Great:** curated, versioned component palette with TS prop types; a "plaintext readability" lint that flags pages where JSX outweighs prose; component aliases that round-trip back to plain Markdown for grep/AI ingestion.
+
+**When to adopt.** Interactive demos, tabbed runtime examples, product-specific widgets.
+
+**When to skip.** Content is almost entirely reference text consumed by agents or via raw `.md`.
+
+**Common failure modes.** (1) Component sprawl — dozens of one-off widgets nobody can find. (2) MDX files unreadable as plaintext, breaking grep, diff review, and LLM ingestion.
+
+**Our verdict — extend (priority: medium).** Stay aggressively Markdown-first. Allow only a tiny global registry: `<RuleMeta>`, `<RuleExample bad good>`, `<RuleOptions schema>`, `<Callout>`, plus the existing `Steps/Tabs/Accordion`. Forbid arbitrary imports in rule pages (lint-enforced). Every component must degrade to a sensible plaintext block when stripped, so `cat path/to/rule.mdx` is still useful to Claude/Cursor/Copilot. **Next step:** add the rule-domain MDX components and emit them from `sync-rule-docs.ts`.
+
+---
+
+## 3. Math notation
+
+**The concept.** Rendering LaTeX in the browser. The choice: when math is genuinely warranted, which renderer (KaTeX vs. MathJax), and whether to pay the bundle/CSS cost on pages with no math.
+
+**Industry pattern.** Material for MkDocs and most modern technical docs offer math as an opt-in extension, not a baseline. KaTeX is the default for speed and small footprint; MathJax wins on LaTeX feature breadth and accessibility. SSR is preferred to avoid layout shift.
+
+**Maturity ladder.**
+- **Minimum:** no math; describe formulas in prose or a code fence.
+- **Good:** KaTeX behind a per-page frontmatter flag (`math: true`) so CSS/JS only loads where needed; SSR to HTML.
+- **Great:** SSR KaTeX with zero client JS, MathML output for accessibility, MathJax fallback for exotic packages.
+
+**When to adopt.** Algorithms with non-trivial complexity proofs, statistics, ML, cryptography primitives — anything where prose ambiguity costs comprehension.
+
+**When to skip.** Application code, configuration, or APIs — math is at best decorative.
+
+**Common failure modes.** (1) Always-on math bundle adding ~270 KB to every page. (2) Client-side render causing visible layout shift on first paint.
+
+**Our verdict — use-as-is, off (priority: none).** Skip by default. ESLint rules describe AST patterns, not equations; complexity bounds belong in inline code fences. If a future rule (e.g. `crypto/no-weak-entropy`) genuinely needs notation, opt in per-page with KaTeX SSR so the other 271 pages pay nothing. Never enable math globally. **Next step:** none.
+
+---
+
+## 4. Diagrams (Mermaid)
+
+**The concept.** Mermaid trades artistic control for grep-able, version-controlled diagrams. Decisions: when a diagram beats prose, build-time SVG vs. client-side, theme reactivity, ownership (BYO vs. bundled).
+
+**Industry pattern.** Default Docusaurus and most Next.js docs render Mermaid client-side, which causes CLS, accessibility holes, and SEO issues. The mature pattern is **build-time SVG**: pre-render to static SVG, then theme either by emitting two SVGs swapped via `[data-theme]` CSS or by injecting CSS variables into the SVG so theme toggles are instant.
+
+**Maturity ladder.**
+- **Minimum:** client-side Mermaid via a bundled component, single theme.
+- **Good:** build-time SVG pre-render; one SVG per theme toggled by CSS attribute selector.
+- **Great:** build-time SVG with CSS-variable theming (single SVG, instant theme switch), accessible `<title>`/`<desc>`, deterministic IDs for stable diffs.
+
+**When to adopt.** State machines, sequence flows, plugin/lifecycle architectures, decision trees — anything where 2D layout beats nested bullets.
+
+**When to skip.** A bulleted list or table communicates the same information; the diagram is decoration.
+
+**Common failure modes.** (1) Shipping the 800 KB Mermaid runtime to every page. (2) Dark-mode diagrams that render with light colors because theme changes don't reach the iframe.
+
+**Our verdict — build-our-own, done (priority: low).** Reserve Mermaid for orchestrator/architecture pages (rule pipeline, autofix flow, plugin loading) — not individual rule pages, where a code example always wins. Base component lives in `@interlace/ui/mdx/mermaid` so docs and dashboards render identically; app wrapper bridges `next-themes`. **Next step:** investigate moving from client-side render to build-time SVG with CSS-variable theming — closes the CLS and SEO gap our current setup has.
+
+---
+
+## 5. Code annotation (Twoslash / type-aware code blocks)
+
+**The concept.** Twoslash runs the real TypeScript compiler over each code sample at build time, embedding accurate hovers, inferred types (`// ^?`), and expected errors (`// @errors:`) directly in the rendered HTML, with no client-side TS shipped. Tradeoff: build cost and authoring discipline vs. snippet truthfulness.
+
+**Industry pattern.** The TypeScript Handbook itself uses Shiki Twoslash; Vocs ships it as a first-class guide. The convention: ` ```ts twoslash ` opt-in, with `// ---cut---` to hide setup, `// @filename:` for multi-file virtual projects, `// ^?` for type queries, and `// @errors: 2322` to assert a diagnostic. All hover data is baked into HTML at build, so runtime cost is zero.
+
+**Maturity ladder.**
+- **Minimum:** Shiki/Prism syntax highlighting; snippets may not even compile.
+- **Good:** snippets type-checked in CI; hover/type info rendered as static HTML for opt-in code blocks.
+- **Great:** Twoslash with `// @errors:` assertions, multi-file virtual projects, `// ^?` queries embedded in prose, CI gate that fails the build on unexpected diagnostics.
+
+**When to adopt.** Type-driven library; readers need to see inferred types; stale snippets would mislead.
+
+**When to skip.** Language-agnostic snippets, configuration JSON, shell commands; build budget already strained.
+
+**Common failure modes.** (1) Twoslash applied to every code block, pushing build time from seconds to minutes. (2) Setup hidden by `---cut---` so confusingly that the snippet no longer reproduces standalone.
+
+**Our verdict — extend (priority: high).** Rule examples are TypeScript and the entire promise of an ESLint rule is "this code is wrong / this code is right" — Twoslash's `// @errors:` is literally the right primitive. Use Twoslash on every "incorrect" example to assert the diagnostic the rule emits (cross-checked against a snapshot run of the rule), and on "correct" examples to prove they typecheck. Plain Shiki for short config fences and CLI invocations. The agent-consumption story is huge: LLMs ingesting our docs see real types, not hand-waved pseudo-TS. **Next step:** enable `createFileSystemTypesCache()` and update `sync-rule-docs.ts` to default examples to ` ```ts twoslash ` blocks with `// @errors:` annotations sourced from rule test fixtures.
+
+---
+
+# Site experience & content lifecycle
+
+## 6. Navigation
+
+**The concept.** The contract between a site's information architecture and a reader's mental model. For reference-heavy docs: how to expose hundreds of leaf pages without forcing readers to learn the taxonomy first.
+
+**Industry pattern.** Mature reference docs combine a **grouped vertical sidebar** with a **global Cmd-K search** and rely on search for the long tail rather than deep nesting. react.dev keeps the tree at 2-3 levels under a small set of top-level pillars; Next.js docs uses a top-level **router switcher** (App vs. Pages) to fork two parallel sidebars rather than collapsing them into one over-deep tree.
+
+**Maturity ladder.**
+- **Minimum:** vertical sidebar grouped by section, working search box.
+- **Good:** two-tier sidebar (≤3 levels), breadcrumbs, on-page TOC, instant search (Algolia/Pagefind/local), Cmd+K shortcut.
+- **Great:** **faceted search with metadata filters** (type, severity, plugin), context switchers for parallel taxonomies, "recently viewed" memory, and an `llms.txt`/sitemap surface for machine consumers.
+
+**When to adopt faceted nav.** ≥50 leaf pages; multiple natural taxonomies; analytics show users land on Google results, not the index.
+
+**When to skip.** Under ~30 pages a flat sidebar is fine; don't build facets users won't filter by.
+
+**Common failure modes.** (1) Auto-generated 4-level nests no one explores. (2) Treating the "3-click rule" as gospel — clarity matters more than click count.
+
+**Our verdict — extend (priority: medium).** Group by plugin (11 nodes) at level 1, by category facet (security/quality/style) at level 2, with rule pages as leaves. Ship a faceted index page (filter by plugin × severity × type-aware × auto-fixable) — that's the page agents will scrape and humans will bookmark. Skip deep nesting; rely on Cmd+K + a structured `/rules.json` so agents resolve any rule in one hop. Keep breadcrumbs as cheap insurance. **Next step:** add a "Rules" top-level tab with the faceted index; expose the same data as `/llms.txt` and `/rules.json`.
+
+---
+
+## 7. Internationalization (i18n)
+
+**The concept.** Translating technical content trades reach for maintenance burden. Every translated page is a future drift risk; every untranslated page in a "supported" locale is a credibility hit.
+
+**Industry pattern.** Two dominant models. **Fork-per-locale, community-maintained**: react.dev runs ja.react.dev, zh-hans.react.dev, etc. as independent forks with a bot batching upstream changes. **Curated active-locale list**: MDN limits translations to ~7 locales where dedicated maintainer teams exist; inactive locales are archived rather than half-translated. Stripe and Linear take the third path — **English-only, deliberately**.
+
+**Maturity ladder.**
+- **Minimum:** English-only, `lang` attribute set, no fake locale switcher.
+- **Good:** small set of human-curated locales with named maintainers and a staleness banner ("This page is N commits behind English").
+- **Great:** locale-aware search, automated drift dashboards, machine-translated fallback with explicit labelling, RTL support.
+
+**When to adopt.** A locale community already self-organizes around your project; telemetry shows >10% non-English traffic concentrated in 1-2 languages; domain has terminology that machine translation mangles.
+
+**When to skip.** Pre-product-market-fit; no maintainer pipeline; audience is professional developers who already read English specs.
+
+**Common failure modes.** (1) Shipping a locale switcher exposing 30%-translated pages — worse than English-only. (2) Paying for translation once, never refreshing — docs describing v1 APIs while English describes v3.
+
+**Our verdict — use-as-is, English-only (priority: none).** Stay English-only. Readers are developers and AI agents; both consume English. Translating 272 rules × N locales × release cadence is a permanent staffing commitment with near-zero strategic upside (rule IDs, AST node names, ESLint config keys are untranslatable). The lingua franca of static analysis is English. **Next step:** keep the `i18n.ts` scaffold as a documented escape hatch; revisit only when a single plugin crosses 10M weekly downloads with measurable non-English traffic.
+
+---
+
+## 8. Feedback widgets
+
+**The concept.** A signal-collection surface embedded in the page. The design question: what *kind* of signal is worth the visual cost and where it routes.
+
+**Industry pattern.** PostHog's `useThumbSurvey` hook pairs binary thumbs with a conditional follow-up text box on negative responses — the dominant pattern for "Was this helpful?" widgets. GitHub Docs and Stripe both use page-level binary + optional free-text routed to internal analytics. Discord routes docs feedback to a dedicated GitHub Discussions category, separating "the docs are wrong" from "the product is wrong."
+
+**Maturity ladder.**
+- **Minimum:** single page-level binary widget; results land somewhere a human reads.
+- **Good:** thumbs + conditional follow-up textarea on negative; events tagged with page slug, version, locale; routed to PostHog or equivalent with a triage rotation.
+- **Great:** section/block-level signals on long pages; auto-create draft issue from negative + text; cohort by referrer and persona; close the loop publicly.
+
+**When to adopt.** You have a triage owner who reads weekly and acts in &lt;14 days.
+
+**When to skip.** No triage owner — you'll let it become a complaint void.
+
+**Common failure modes.** (1) Survivorship bias — frustrated readers click thumbs-down; happy ones leave silently. (2) Asking too many questions; binary + optional text outperforms a 5-field form by 10×.
+
+**Our verdict — extend (priority: medium).** Per-rule binary thumbs + conditional follow-up, captured to PostHog with `rule_id`, `plugin`, `version`, `agent_user_agent` (so we can separate Claude/Cursor/Copilot traffic from human). Pipe negatives into a weekly triage issue tagged `docs-feedback`. Skip block-level — rule pages are short. Add a separate "Report rule false positive" link distinct from "docs are wrong" so we don't conflate product and docs signal. **Next step:** install Fumadocs `<Feedback />` on rule pages; wire `onSendAction` to PostHog with the schema above.
+
+---
+
+## 9. Open Graph / social cards
+
+**The concept.** A 1200×630 image platforms render when someone pastes your URL. The only piece of marketing the link does on its own.
+
+**Industry pattern.** **Dynamic generation via Satori** (HTML→SVG→PNG) is the modern default — `@vercel/og` popularized it, Next.js shipped it as first-class. Vercel docs, Stripe docs, Anthropic docs, and most Mintlify-hosted sites use per-page dynamic OG images templated from page metadata. The headless-browser alternative (Puppeteer) is heavier and slower but supports CSS Grid and full webfonts when Satori's flexbox-only subset bites.
+
+**Maturity ladder.**
+- **Minimum:** one static 1200×630 site card with logo + tagline.
+- **Good:** per-page dynamic card with title, section, and brand; cached at the edge.
+- **Great:** per-section templates (rule cards differ from guide cards), variant testing, fallback static for the home/blog roots, and a debug `/og-debug` route.
+
+**When to adopt.** ≥20 distinct pages and any social distribution path (Twitter, HN, Slack channels in dev shops).
+
+**When to skip.** Internal-only docs; ImageResponse cold-start budget not justified by traffic.
+
+**Common failure modes.** (1) Cramming a paragraph of text into a card — only the title + 1 metadata line is readable at thumbnail size. (2) Forgetting the 500 KB Satori bundle limit and shipping a webfont that breaks rendering in production.
+
+**Our verdict — extend (priority: medium).** Yes — dynamic per-rule cards. Template: rule ID large, plugin badge, one-line description from `meta.docs.description`, severity color stripe, fixable/suggestion icons. Generate via Satori at the edge, cache aggressively (rule docs change rarely). The card *is* the recruitment surface when someone shares "look at this auto-fix" in a team Slack. Two templates only: rule + guide. **Next step:** iterate the existing Satori template at `src/app/og/docs/[...slug]/route.ts` to render a rule-card variant when slug matches `rules/{plugin}/{rule}`.
+
+---
+
+## 10. Content sourcing
+
+**The concept.** Where the bytes that become a docs page actually live. The choice determines who can edit, how drift is prevented, and whether builds break when source changes.
+
+**Industry pattern.** Three production models. **Local MDX-in-repo** (Fumadocs, Mintlify when self-hosted, react.dev): docs travel with code, reviewed in PRs. **Headless CMS** (Notion, Sanity, Contentful): non-engineers edit, runtime/ISR fetch, drift is permanent risk. **Source projection** (TypeDoc, eslint-doc-generator, OpenAPI→docs pipelines): API reference is *generated* from source-of-truth code at build time; hand-written prose lives in MDX next to the generated stubs. typescript-eslint and eslint-doc-generator both do this — `meta.schema` and `meta.docs` get projected into rule docs at build.
+
+**Maturity ladder.**
+- **Minimum:** MDX in the same repo as the code it documents.
+- **Good:** source-projection for API reference + hand-written narrative MDX for guides; CI fails if generated content drifts from source.
+- **Great:** bidirectional — docs schema is also the validation schema; one source feeds rendered HTML, `llms.txt`, JSON API, IDE hovers.
+
+**When to adopt source-projection.** Reference surface is large (>50 items), structured (typed metadata exists), and changes with code releases.
+
+**When to skip.** Marketing site, blog, prose-heavy guides — MDX is fine, projection is overkill.
+
+**Common failure modes.** (1) Runtime CMS fetches that break docs when the CMS goes down. (2) Generating docs from source but allowing hand-edits to the generated files — guarantees silent loss on next build.
+
+**Our verdict — extend, formalize (priority: low/ongoing).** Source-projection is non-negotiable for us. `meta.docs.description`, `meta.schema`, `meta.fixable`, `meta.type` already exist in every rule — they are the canonical truth. Build-time generate the rule page skeleton from `packages/*/src/rules/*.ts`; let authors only edit the narrative `## Why this rule` and `## When to disable` sections in a sibling MDX. Emit the same source as `/rules.json` for agent consumption. CI must fail on drift. We already have this hybrid (build-time sync via `sync-rule-docs.ts` + runtime fetch for changelog/READMEs via `remote-*` components); the work is **formalizing the contract**. **Next step:** document the sync contract (which `packages/*` fields → which MDX frontmatter) and add a CI check that fails when a package rule lacks a synced doc.
+
+---
+
+# API references & agent integration
+
+## 11. OpenAPI integration
+
+**The concept.** Whether your API reference is *generated from a machine-readable contract* or *hand-authored prose*. The deeper question: where does truth live — in the spec, or in the docs?
+
+**Industry pattern.** Spec-as-source-of-truth has won for REST. Stripe maintains its OpenAPI spec at github.com/stripe/openapi as a generated artifact from an internal Ruby DSL; every SDK, mock server, and the public reference page derive from it. Vendor extensions (`x-expandableFields`) carry what plain OpenAPI cannot express. Scalar and Redoc/Swagger UI render that spec at runtime so the moment the spec changes, the docs change. Twilio and GitHub follow the same pattern.
+
+**Maturity ladder.**
+- **Minimum:** a published OpenAPI/JSON-Schema file alongside human docs.
+- **Good:** that spec drives the rendered reference (Redoc/Scalar/Mintlify) so they cannot drift.
+- **Great:** spec drives reference + SDKs + mocks + try-it-out, with vendor extensions for concepts OpenAPI lacks, plus a hand-written *guides* layer that links into the generated reference.
+
+**When to adopt.** You ship a network API; >15 endpoints; multiple SDK languages.
+
+**When to skip.** Your "API" is a library/SDK (types are the contract, not HTTP).
+
+**Common failure modes.** (1) Spec and docs maintained separately, drifting silently. (2) Try-it-out playground enabled against production with no sandbox.
+
+**Our verdict — build-our-own, inspired by OpenAPI (priority: high).** We are the library case, not the REST case. But each rule's `meta.schema` *is* a JSON Schema — the same shape OpenAPI uses for `components.schemas`. The right move: treat `meta.schema` as our spec-of-record and render every rule's options from it the way Scalar renders parameters. Borrow Fumadocs OpenAPI's loader/virtual-file pattern (no MDX-tree bloat at 272 entries) and the human/JSON parity invariant. Reject try-it-out per rule; instead, one site-level "paste code, see violations" sandbox fed by all rules. **Next step:** contract drafted at [.agent/rule-spec.md](.agent/rule-spec.md); resolve its 7 open questions, then implement `/api/rules/index.json` and `/api/rules/[plugin]/[rule].json`.
+
+---
+
+## 12. Component story / preview integration
+
+**The concept.** Whether to render the *artifact being documented* alongside the prose. For UI components: a live preview. For CLIs: a runnable terminal. For ESLint rules: a before/after code panel.
+
+**Industry pattern.** Storybook is the canonical heavyweight: `.stories` files are the source, MDX wraps them with `<Story>`/`<Canvas>`/`<ArgsTable>` doc blocks. Lighter approach: Mintlify and Fumadocs ship `<CodeBlock>` + tabbed `<Preview>` MDX components rendering an inline iframe per snippet — no story file. Storybook when components have many states worth exploring; lightweight previews when there's one canonical example.
+
+**Maturity ladder.**
+- **Minimum:** static code block showing usage.
+- **Good:** side-by-side code + rendered preview for representative examples.
+- **Great:** interactive controls (args, props, config) so the reader can mutate the example, with shareable URLs encoding state.
+
+**When to adopt.** The artifact is visual or behavioral; users routinely ask "what does this look like."
+
+**When to skip.** The artifact is non-visual (a parser, a lint rule, a data transform) where the "preview" is just output a code block already shows.
+
+**Common failure modes.** (1) Building a Storybook nobody opens because the docs site already shows everything. (2) Iframe previews that fail to hydrate, leaving blank rectangles.
+
+**Our verdict — build-our-own RulePlayground; do NOT adopt Storybook (priority: low / RFC).** Skip Storybook entirely. The right preview for a lint rule is `// bad` / `// good` code blocks plus the diagnostic message — pure text, agent-ingestible, no iframe. Even for `react-a11y` / `react-features`, the documented unit is the source pattern that triggers the rule, not a runnable component. Layer one optional interactive widget at the site level: a single playground where users paste code and pick rules, returning diagnostics — the agentic differentiator no other ESLint plugin ships. **Next step:** none for Storybook. Track a separate RFC for the in-browser playground powered by the linter (Monaco/Shiki + in-browser ESLint).
+
+---
+
+## 13. TypeScript type rendering
+
+**The concept.** Where do option/parameter shapes come from: `.d.ts` files, JSON Schema, or hand-written tables? The trade is *fidelity vs. narrative*.
+
+**Industry pattern.** TypeDoc walks exports and emits HTML or a JSON model from TSDoc comments — full coverage, low editorial control. fumadocs-typescript and Mintlify's auto-types take a middle path: an `<AutoTypeTable name="Foo" />` reads a single type at build and renders just its fields. Apollo's GraphQL docs and tRPC docs both pair generated type tables with hand-written prose.
+
+**Maturity ladder.**
+- **Minimum:** prose tables hand-authored from the types (drifts immediately).
+- **Good:** build-time extraction of named types into MDX, prose written around them.
+- **Great:** types-as-source-of-truth, with TSDoc tags (`@deprecated`, `@example`, `@defaultValue`) carrying metadata the renderer respects, and CI failing when an exported type loses its doc comment.
+
+**When to adopt.** Typed library; consumers configure via typed objects; option surface is wide enough that hand-maintained tables drift within a release.
+
+**When to skip.** Types are too generic to be meaningful; the schema is already JSON Schema (use that instead).
+
+**Common failure modes.** (1) Auto-table dumps the entire union/intersection structure, producing a wall of noise. (2) Build-time generators that depend on filesystem access break on serverless deploys.
+
+**Our verdict — build-our-own, JSON-Schema-driven (priority: medium).** JSON Schema (`meta.schema`) is our source of truth, not `.d.ts`, because that's what ESLint actually validates against at runtime. Consumers configure via JSON in `eslint.config.js`, never by importing TS types. So the fumadocs/TypeDoc pattern doesn't apply; the OpenAPI/JSON-Schema pattern (#11) does. Borrow `<AutoTypeTable>`'s authoring UX: a single `<RuleOptions rule="..." />` MDX tag hides the rendering machinery. **Next step:** audit `rule-metadata-schema.ts` for parity with the JSON Schema features actually used across all 11 plugins (`oneOf`, `enum`, `$ref`) before scaling further.
+
+---
+
+## 14. Link validation in CI
+
+**The concept.** Every broken link is a credibility tax. For human readers it's annoying; for agents it's catastrophic — an LLM that follows a 404 has no recovery path and silently truncates context.
+
+**Industry pattern.** **lychee** (Rust, async, fastest) is the de-facto standard for Markdown/HTML link checking in CI; the official `lycheeverse/lychee-action` GitHub Action gates PRs against broken internal anchors and dead external URLs. Older Node projects use markdown-link-check; Next.js/fumadocs sites use `next-validate-link` which understands route params. Mature shops treat link health as an SLO: nightly runs catch external rot, PR runs block internal regressions.
+
+**Maturity ladder.**
+- **Minimum:** nothing — links rot silently.
+- **Good:** PR-gating internal link + anchor check that fails the build on any internal break.
+- **Great:** internal checks PR-gating, external checks nightly with retry/backoff and an allowlist for known-flaky hosts, plus a public dashboard of link health.
+
+**When to adopt.** Always, the moment you have >50 pages or any cross-linking.
+
+**When to skip.** Truly never. Only thing to defer is *external* checks on PRs (rate limits, flakes) — keep those nightly.
+
+**Common failure modes.** (1) External link checks on every PR causing flakes, training the team to ignore the job. (2) Anchor validation skipped, so `#section` links rot invisibly when headings get edited.
+
+**Our verdict — extend existing checker (priority: high).** Audited 2026-05-10: link validation already exists at [apps/docs/scripts/check-links.ts](apps/docs/scripts/check-links.ts) gated by [.github/workflows/check-links.yml](.github/workflows/check-links.yml) on PR. It covers external `https?://…` URLs (status, HTTPS, suspicious redirects) with a skip-list and PR comments — solid baseline. **Gaps vs. the "great" rung:** (1) no internal link validation (`[foo](../bar.mdx)`, `[foo](/docs/...)`); (2) no anchor validation (`[foo](#section)`); (3) no awareness of Fumadocs `<Card href>` or future `<RuleLink>` components; (4) no agent-trust check that every rule's `meta.docs.url` resolves. **Next step:** extend `check-links.ts` to scan relative + anchor refs (largest immediate rot risk with 272 cross-linked rules), then add a separate package-level CI step that asserts each rule's `meta.docs.url` resolves. Keep external check as-is.
+
+---
+
+## 15. llms.txt and agent-readable docs
+
+**The concept.** Agent-readable docs accept that LLMs and IDE agents (Cursor, Cline, Claude Code, Copilot) are now first-class readers and need *structured, parseable* access — not the rendered HTML a browser sees. **llms.txt** is the smallest possible standard for this: a Markdown index at `/llms.txt` listing the URLs an LLM should read, with one-line descriptions, written for inference-time consumption.
+
+**Industry pattern.** The llmstxt.org spec (Jeremy Howard / Answer.AI, Sept 2024) defines a strict order: H1 name, blockquote summary, optional prose, then H2 "file list" sections of `[name](url): note` entries, with an `Optional` section agents may skip when context-constrained. **Mintlify rolled out automatic `/llms.txt` and `/llms-full.txt` generation across every site it hosts in late 2025** — Anthropic, Cursor, Cloudflare, and Vercel all adopted overnight. Anthropic's `llms-full.txt` is ~481 K tokens covering the entire API reference. The hardening pattern: (1) `/llms.txt` as the index, (2) `/llms-full.txt` as the concatenated corpus, (3) per-page `.md` access (append `.md` to any URL), (4) optionally an MCP server (e.g. langchain-ai/mcpdoc) exposing `fetch_docs` over the llms.txt list as a tool. What the spec **does not** cover: structured JSON manifests, versioning, freshness signals, or per-entity metadata — those are emerging conventions.
+
+**Maturity ladder.**
+- **Minimum:** a `/llms.txt` index file at the docs root.
+- **Good:** `/llms.txt` + `/llms-full.txt` + per-page `.md` access + a small/filtered variant for tight context windows.
+- **Great:** all of the above plus a structured JSON manifest per documented entity, plus a hosted MCP server exposing search/fetch tools, plus freshness/version metadata (`x-version`, `last_modified`) so agents can cache safely.
+
+**When to adopt.** Audience uses AI coding tools; you can see those agents getting things wrong; you want to be cited as the authority on your domain in LLM answers.
+
+**When to skip.** Pure marketing sites; image/video docs; sites where freshness changes hourly (snapshot model breaks).
+
+**Common failure modes.** (1) Shipping `llms-full.txt` that's a dump of nav chrome, footers, and duplicate content — agents waste tokens. (2) Treating it as SEO ("AI SEO") and never measuring whether agents actually consume it; the right metric is *did Claude/Cursor cite us when asked about X*.
+
+**Our verdict — extend aggressively (priority: FLAGSHIP).** This is our strategic moat and it's table stakes by mid-2026 — every Mintlify-hosted competitor in adjacent spaces ships it automatically, and zero ESLint plugin authors do. We already have `/llms.txt`, `/llms-full.txt`, and `getLLMText()`. Ship the maximalist pattern on top:
+1. Group `/llms.txt` by plugin with one-line descriptions from `meta.docs.description`.
+2. Per-rule `.md` access (`/rules/<plugin>/<rule>.md`) so an agent fetching one rule never loads HTML.
+3. Structured JSON manifest at `/rules.json` giving each rule's `meta.schema`, severity defaults, fixability, related rules, stable URL — the agent-native equivalent of OpenAPI for lint rules.
+4. An MCP server exposing `search_rules`, `get_rule`, `lint_snippet`.
+5. Filtered variants: `/llms-security.txt`, `/llms-react.txt`, `/llms-flagship.txt` for context-constrained agents.
+
+Built right, an agent answers "which Interlace rule catches hardcoded credentials in Express handlers" without ever rendering a page — and that is the differentiator no competitor in the ESLint ecosystem currently offers. **Next step:** ship `/api/rules/index.json` and `/api/rules/[plugin]/[rule].json` first (cheap, unblocks everything), then design the MCP server as the consumer-facing surface.
+
+---
+
+## Decision summary
+
+| # | Topic | Decision | Priority | Where it lives |
+|---|-------|----------|----------|----------------|
+| 1 | Page conventions | extend | medium | `scripts/sync-rule-docs.ts` |
+| 2 | Markdown / MDX | extend | medium | `src/mdx-components.tsx` + new rule-domain components |
+| 3 | Math | use-as-is (off) | none | — |
+| 4 | Mermaid | build-our-own ✓ | low | `@interlace/ui/mdx/mermaid` |
+| 5 | Twoslash | extend | **high** | `source.config.ts`, `sync-rule-docs.ts` |
+| 6 | Navigation | extend | medium | `src/lib/source.ts`, new faceted index page |
+| 7 | i18n | use-as-is (off) | none | `src/lib/i18n.ts` (scaffold only) |
+| 8 | Feedback | extend | medium | new `<Feedback />` integration → PostHog |
+| 9 | OG | extend | medium | `src/app/og/docs/[...slug]/route.ts` |
+| 10 | Content sourcing | extend ✓ (formalize) | ongoing | `scripts/sync-rule-docs.ts` + drift CI |
+| 11 | OpenAPI | build-our-own (RuleSpec) | **high** | new `/api/rules/[plugin]/[rule].json` |
+| 12 | Story/Storybook | build-our-own (RulePlayground) | low (RFC) | future |
+| 13 | TypeScript | build-our-own (JSON-Schema-driven) | medium | `src/lib/rule-metadata-schema.ts` |
+| 14 | Validate-links | use-as-is | **high** | new CI workflow step |
+| 15 | LLMs (llms.txt) | extend aggressively ✓ | **FLAGSHIP** | existing routes + new RuleSpec + MCP |
+
+## Top-3 strategic moves (in execution order)
+
+1. **Validate-links extension** — extend the existing [check-links.ts](apps/docs/scripts/check-links.ts) to cover internal MDX→MDX links and `#anchor` refs (currently external-only). Cheap, prevents silent rot, raises agent trust.
+2. **RuleSpec JSON endpoints** — `/api/rules/index.json` + `/api/rules/[plugin]/[rule].json`. Contract drafted at [.agent/rule-spec.md](.agent/rule-spec.md). Unblocks LLMs leadership, OG enrichment, options-table rendering, MCP server.
+3. **MCP server over RuleSpec** — agentic moat. No competitor ships this. Differentiator for IDE-agent integration.
+
+## Verification
+
+This is a philosophy doc; verification is **alignment, not testing**:
+
+1. Read each verdict against the [five cross-cutting principles](#the-five-cross-cutting-principles) — no contradictions.
+2. Confirm "current state" claims by spot-checking [source.config.ts](apps/docs/source.config.ts), [src/mdx-components.tsx](apps/docs/src/mdx-components.tsx), [src/lib/source.ts](apps/docs/src/lib/source.ts).
+3. For each "Next step," validate it's actionable in &lt;1 PR (so they convert to issues cleanly).
+4. Sanity-check the strategic moves against [memory/competitive-landscape.md](.) and [benchmarks/LEADERSHIP_ROADMAP.md](benchmarks/LEADERSHIP_ROADMAP.md).
+
+---
+
+## Resources & sources
+
+Industry references consulted while drafting this philosophy. Use these to re-verify claims, deepen any topic, or onboard a new contributor to the rubric.
+
+### Page conventions, markdown, MDX
+- Astro Content Collections — https://docs.astro.build/en/guides/content-collections/
+- Nextra File Conventions — https://nextra.site/docs/file-conventions
+- Docusaurus: Create a Doc — https://docusaurus.io/docs/next/create-doc
+- Docusaurus: MDX and React — https://docusaurus.io/docs/markdown-features/react
+- MDX project (mdxjs.com) — https://mdxjs.com/
+- Next.js MDX Guide — https://nextjs.org/docs/app/guides/mdx
+- Fumadocs Content Collections — https://www.fumadocs.dev/docs/headless/content-collections
+
+### Math, diagrams
+- KaTeX vs MathJax 2025 comparison — https://biggo.com/news/202511040733_KaTeX_MathJax_Web_Rendering_Comparison
+- Material for MkDocs — Math reference — https://squidfunk.github.io/mkdocs-material/reference/math/
+- docusaurus-prerender-mermaid (build-time SVG) — https://github.com/musnuss/docusaurus-prerender-mermaid
+- Smart client-side rendered Mermaid Charts on Astro — https://mfyz.com/smart-client-side-rendered-mermaid-charts-on-astro-blogs/
+
+### Twoslash, type rendering
+- TypeScript Handbook: Twoslash Code Samples — https://www.typescriptlang.org/dev/twoslash/
+- Shiki Twoslash — https://shikijs.github.io/twoslash/
+- @shikijs/twoslash — https://shiki.style/packages/twoslash
+- Vocs Twoslash guide — https://vocs.dev/docs/guides/twoslash
+- TypeDoc — https://typedoc.org/
+- Fumadocs Auto Type Table — https://www.fumadocs.dev/docs/ui/components/auto-type-table
+- fumadocs-typescript — https://www.npmjs.com/package/fumadocs-typescript
+
+### Navigation, IA
+- React docs Reference — https://react.dev/reference/react
+- Next.js docs — https://nextjs.org/docs
+- Docusaurus sidebar items — https://docusaurus.io/docs/next/sidebar/items
+- I'd Rather Be Writing — Doc navigation principles — https://idratherbewriting.com/files/doc-navigation-wtd/design-principles-for-doc-navigation/
+- Carnegie — IA beyond three clicks — https://www.carnegiehighered.com/higher-ed-website-ia-and-ux-beyond-the-three-clicks-rule/
+
+### Internationalization
+- React Translations Hub — https://react.dev/community/translations
+- reactjs/translations.react.dev maintainer guide — https://github.com/reactjs/translations.react.dev/blob/main/maintainer-guide.md
+- MDN Localization Policy — https://developer.mozilla.org/en-US/docs/MDN/Community/Translated_content
+- mdn/translated-content — https://github.com/mdn/translated-content
+
+### Feedback widgets
+- PostHog `useThumbSurvey` docs — https://github.com/PostHog/posthog.com/blob/master/contents/docs/llm-analytics/user-feedback/use-thumb-survey.mdx
+- PostHog feedback widget — https://posthog.com/docs/apps/feedback-widget
+- Discord docs feedback Discussions — https://github.com/discord/discord-api-docs/discussions/categories/next-gen-docs-feedback
+- Froala — feedback widgets that drive product decisions — https://froala.com/blog/general/strategic-documentation-feedback-widget-product-decisions/
+
+### Open Graph
+- Vercel OG Image Generation docs — https://vercel.com/docs/og-image-generation
+- Introducing Vercel OG (Satori) — https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images
+- @vercel/og — https://www.npmjs.com/package/@vercel/og
+- OpenGraph image sizes 2026 cheat sheet — https://env.dev/guides/opengraph-image-sizes
+
+### Content sourcing, source projection
+- Stripe API Docs — https://docs.stripe.com/api
+- Stripe OpenAPI repo — https://github.com/stripe/openapi
+- Fern: best docs-as-code solutions 2026 — https://buildwithfern.com/post/docs-as-code-solutions-api-teams
+- eslint-doc-generator — https://github.com/bmish/eslint-doc-generator
+- typescript-eslint generated-rule-docs plugin — https://github.com/typescript-eslint/typescript-eslint/blob/39829c01906f326fec94e9b3a5fdb1730eb02002/packages/website/plugins/generated-rule-docs.ts
+- eslint-plugin-eslint-plugin require-meta-schema — https://github.com/eslint-community/eslint-plugin-eslint-plugin/blob/main/docs/rules/require-meta-schema.md
+
+### OpenAPI, API reference rendering
+- Scalar — https://scalar.com/
+- Redoc (Redocly) — https://github.com/redocly/redoc
+- Scalar vs Redoc vs Swagger UI 2026 — https://www.pkgpulse.com/blog/scalar-vs-redoc-vs-swagger-ui-api-documentation-2026
+
+### Storybook, component preview
+- Storybook MDX docs — https://storybook.js.org/docs/writing-docs/mdx
+- Storybook Doc Blocks — https://storybook.js.org/docs/writing-docs/doc-blocks
+
+### Link validation
+- lychee link checker — https://github.com/lycheeverse/lychee
+- lychee-action GitHub Action — https://github.com/lycheeverse/lychee-action
+
+### llms.txt and agent-readable docs (flagship topic — deeper bibliography)
+- llms.txt specification (llmstxt.org) — https://llmstxt.org/
+- What is llms.txt? — Mintlify blog — https://www.mintlify.com/blog/what-is-llms-txt
+- llms.txt explained (May 2026) — Codersera — https://codersera.com/blog/llms-txt-complete-guide-2026/
+- Real llms.txt examples from leading tech companies — Mintlify — https://www.mintlify.com/blog/real-llms-txt-examples
+- Anthropic llms-full.txt (MCP docs example) — https://modelcontextprotocol.io/llms-full.txt
+- langchain-ai/mcpdoc (MCP server over llms.txt) — https://github.com/langchain-ai/mcpdoc
+
+### Internal references
+- [memory/competitive-landscape.md](.) — top-20 ESLint plugin landscape (Feb 2026)
+- [memory/benchmark-baselines.md](.) — pointer to BASELINE_MATRIX + LEADERSHIP_ROADMAP
+- [PAGINATION_PHILOSOPHY.md](/docs/design/pagination) / [URL_PHILOSOPHY.md](/docs/design/url) / [MOTION_PHILOSOPHY.md](/docs/design/motion) / [LOADING_PHILOSOPHY.md](/docs/design/loading) — sibling philosophy docs at repo root

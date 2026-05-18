@@ -36,6 +36,8 @@
     "release:reconcile:cleanup": "tsx scripts/reconcile-tags.ts --cleanup-orphans --confirm",
     "release:reconcile:releases": "tsx scripts/reconcile-tags.ts --create-releases",
     "release:notes": "tsx scripts/extract-changelog.ts",
+    "sync:philosophies": "tsx scripts/sync-philosophies.ts",
+    "sync:philosophies:check": "tsx scripts/sync-philosophies.ts --check",
     "dev": "turbo run dev",
     "dev:docs": "turbo run dev --filter=docs",
     "build": "turbo run build",

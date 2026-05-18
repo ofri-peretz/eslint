@@ -38,6 +38,13 @@ Or all at once via the index:
 curl -s https://ds.interlace.tools/r/index.json | jq -r '.items[].name'
 ```
 
+## Design philosophies
+
+The look-and-feel of every primitive is governed by **23 design
+philosophies** — color, motion, layout, typography, CTAs, error
+handling, and more. Open the [**Philosophy**](?path=/docs/philosophy--docs)
+section in the sidebar for the full set.
+
 ## Theme contract
 
 Every primitive consumes brand tokens via `@interlace/ui/styles/interlace-theme.css` — never raw hex. Switching the toolbar light/dark toggle flips the active token set; the same component code renders correctly against both surfaces. Tokens are enforced by `eslint-plugin-react-features` lint rule `no-raw-color-literal`.

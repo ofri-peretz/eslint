@@ -1,0 +1,354 @@
+---
+title: "Loading & Skeleton Philosophy"
+description: "A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 (\"Ease of use is performance\")."
+icon: Loader
+---
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: LOADING_PHILOSOPHY.md
+    hash: ba239049c006 */}
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](/docs/design/ux),
+expanding Principle #6 ("Ease of use is performance"). UX_PHILOSOPHY.md
+explicitly names this as a gap ("Skeletons during ISR cold-start so the
+content area never flashes blank. Currently a gap..."). This document
+closes it.
+
+Every fetched, streamed, or otherwise time-variable piece of UI faces
+the same decision: what does the reader see while data is in flight?
+This document fixes the answer.
+
+---
+
+## The core rule
+
+> **Loading states are part of the design, not the absence of design.
+> Match the shape of the destination exactly. No spinners. CLS budget
+> on the swap is zero.**
+
+A blank area, a centered spinner, a "Loading..." text node — these are
+not loading states. They are *the absence of a loading state*. The
+reader sees nothing where something will be, and when something
+arrives, the page jumps.
+
+A real loading state is a **placeholder for the actual content,
+sharing its dimensions, its rhythm, and its position.** When the data
+arrives, the placeholder is replaced in place, the page does not move,
+and the swap reads as a refinement rather than a navigation.
+
+---
+
+## The taxonomy
+
+Four patterns. Each has a defined trigger and a defined ceiling.
+
+| Pattern | Use when | Ceiling |
+| --- | --- | --- |
+| **Static fallback** | Build-time data, no fetch needed | Default; no loading state required |
+| **Skeleton** | Shape is known, render is imminent (&lt; 1s expected) | Most common; the default for fetched data |
+| **Progressive** | Content streams in stable chunks (e.g. server-streamed list) | Each chunk is a skeleton until it resolves |
+| **Blocking spinner** | Explicit user action with ≤ 200ms wait (form submit, confirmation) | Last resort; never for navigation or initial render |
+
+The defaults: **skeleton first, progressive second, spinner only when
+the reader pressed a button and is waiting on their own action.**
+
+---
+
+## Skeleton rules
+
+The hard requirements for any skeleton component.
+
+### 1. Dimensions match the destination exactly
+
+The skeleton occupies the **same box** as the content that will replace
+it. Same width, same height, same padding, same grid placement. When
+data resolves, the swap is invisible to the layout engine.
+
+- A card grid that will render 12 cards renders 12 card-shaped
+  skeletons. Not 3, not 12 generic gray rectangles — 12 boxes whose
+  outer dimensions match the real card.
+- A paragraph that will be ~3 lines renders a 3-line skeleton with
+  the last line short.
+- An image that will be 16:9 with `h-44` renders a 16:9 placeholder
+  with `h-44`.
+
+**CLS budget on the swap = 0.** If real content shifts the layout
+when it arrives, the skeleton was wrong, not the content.
+
+### 2. Skeletons breathe with one pulse, not many
+
+A single `animate-pulse` (Tailwind's default keyframe — opacity
+between 1 and 0.5, 2s cycle) on the skeleton container. Not on each
+sub-element.
+
+- Opacity-only animation. No background-position, no shimmer
+  gradient sliding across the surface (CPU expensive, breaks under
+  reduced-motion).
+- Single animation on the wrapper, inherited visually by children.
+  See Motion Philosophy on per-item animation bans.
+- Cycle ≤ 2000ms. Slower than the human eye expects from "loading";
+  faster than the destination is expected to arrive.
+- Under `prefers-reduced-motion: reduce`: no pulse. Static dimmed
+  placeholder.
+
+### 3. Skeleton color is semi-transparent foreground, not background
+
+A skeleton that uses the *background* color is invisible. A skeleton
+that uses a tinted background (`bg-fd-muted`, `bg-zinc-200/60`)
+sits one layer above the page and reads as "this will be content."
+
+Use the existing design tokens. New skeleton shades do not go into
+the palette without justification.
+
+### 4. The skeleton lives in the same component as the content
+
+```tsx
+function Cards({ data }: { data?: Card[] }) {
+  if (!data) return <CardsSkeleton />;
+  return <div className="grid ...">{data.map(...)}</div>;
+}
+```
+
+Not in a separate route, not behind a Suspense boundary that's
+declared somewhere else. The component that owns the data owns its
+loading state.
+
+---
+
+## Progressive loading
+
+When data arrives in chunks (server-streamed, paginated, infinite
+list), the skeleton-to-content transition happens *per chunk*, not
+*per page*.
+
+- Chunks that haven't resolved still render skeletons in their final
+  positions.
+- Resolved chunks render real content.
+- The scroll position is anchored on something stable, never on a
+  resolving chunk.
+- `Suspense` boundaries scope at the chunk level, not the page.
+
+The reader sees the page take shape; they never see a blank canvas
+becoming a populated canvas in one frame.
+
+---
+
+## ISR cold-start contract
+
+The case UX_PHILOSOPHY.md specifically flagged.
+
+Next.js ISR (and similar incremental cache strategies) serve stale
+content while revalidating in the background. The first request after
+a deploy, or after the cache key expires, hits the cold path: the
+server has to fetch upstream data before it can render.
+
+**Rule:**
+
+> **On cold-start, the server returns a fully-shaped skeleton page
+> immediately. Real content streams in via React Server Components
+> (or equivalent). The reader never sees a generic loading page.**
+
+Mechanics:
+
+- The skeleton is rendered at the *page* level, not just the data-
+  bound component, so the entire layout (chrome, sidebar, breadcrumbs)
+  is up immediately.
+- The data-bound component's skeleton is replaced by content as the
+  fetch resolves.
+- LCP is measured against the *skeleton's* most-prominent element
+  (typically the page hero), not the data-bound content — so cold
+  starts don't tank LCP scores.
+- The skeleton page must be a valid, indexable HTML document on its
+  own (chrome, headings, navigation). Google crawling a cold-cache
+  hit should see structure, not a blank.
+
+---
+
+## Error states are first-class
+
+A failed fetch is not "no loading state" and it's not the absence of
+content. It's *its own designed surface*.
+
+### Rules
+
+- **Error has shape.** It occupies the same box the content would
+  have. CLS on swap from skeleton → error is zero.
+- **Retry affordance, always.** A button. Reader-initiated. Calling
+  the fetch on a timer is forbidden.
+- **Distinguish recoverable from terminal.**
+  - Recoverable (network blip, 5xx, rate limit): "Couldn't load. [Retry]"
+  - Terminal (404, 410, content-not-found): the tombstone (see URL
+    Philosophy). Not an error — a different state.
+- **Errors are logged.** Every error state that renders should emit
+  a client-side error event (Sentry, logs). Reader-visible errors
+  that aren't observable to us are bugs we don't know about.
+- **No raw error messages.** Stack traces, status codes, "fetch
+  failed" — never user-facing. The reader sees a designed message;
+  the developer sees the raw error in logs.
+
+### The error component shape
+
+```tsx
+<div className="<same-dimensions-as-content>">
+  <Icon /> {/* themed, not generic */}
+  <h3>Couldn't load articles</h3>
+  <p>Network issue. Try again?</p>
+  <Button onClick={retry}>Retry</Button>
+</div>
+```
+
+Themed icon (matches surface — articles get a book/feed icon, rules
+get a shield), action verb in the heading, retry as a button (not
+a link), under 30 words of explanation.
+
+---
+
+## Empty states are first-class
+
+An empty state is "the fetch succeeded; the result has 0 items." This
+is *not* a loading state and *not* an error.
+
+### Rules
+
+- **Empty has shape and dimensions matching the populated state.**
+  An empty grid still reserves the grid height. CLS on swap is zero.
+- **Empty suggests next action.** "No results matching *jwt none*.
+  [Clear filters] [Browse all articles]". Not just "No results."
+- **Empty respects context.** First-load empty ("no articles yet")
+  reads differently from filtered empty ("no results for these
+  filters"). Same component, different copy.
+- **Empty is not styled like an error.** Different icon, different
+  tone. Empty is "you found a real gap"; error is "something broke."
+
+---
+
+## What's forbidden
+
+Hard bans.
+
+- **The centered spinning circle on a blank page.** The least
+  informative loading state imaginable. Tells the reader nothing
+  about what's loading, how long it'll take, or what to expect.
+- **"Loading..." text.** Same as above with less effort.
+- **Layout that fills in.** A container that grows as data arrives.
+  Always CLS.
+- **Skeletons smaller than the real content.** They're useless —
+  the layout still shifts on swap.
+- **Skeletons larger than the real content.** They feel deceptive
+  ("the data must be huge") and the swap still shifts.
+- **Skeletons that animate motion across the surface** (sliding
+  shimmer gradient). Expensive, distracting, fails reduced-motion.
+- **Loading-state nested inside loading-state.** If a parent is
+  skeleton, the child is also skeleton — not a separate spinner.
+- **Optimistic UI that lies.** Showing a state that hasn't been
+  confirmed by the server, in a way that requires undoing on
+  failure. Acceptable for low-stakes mutations (toggle a bookmark);
+  forbidden for anything the reader will rely on (e.g., showing
+  data as saved when it failed).
+
+---
+
+## Implementation patterns
+
+### A data-bound component
+
+```tsx
+import { Suspense } from 'react';
+
+function Articles() {
+  return (
+    <Suspense fallback={<ArticlesSkeleton />}>
+      <ArticlesContent />
+    </Suspense>
+  );
+}
+
+function ArticlesSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 motion-safe:animate-pulse">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="h-[420px] bg-fd-muted rounded-xl" />
+      ))}
+    </div>
+  );
+}
+```
+
+12 boxes, same height as real cards, single pulse on the container.
+
+### Error boundary
+
+```tsx
+<ErrorBoundary
+  fallback={({ error, retry }) => (
+    <ArticlesErrorState error={error} onRetry={retry} />
+  )}
+>
+  <Articles />
+</ErrorBoundary>
+```
+
+The error state has the same outer dimensions as `<Articles />`.
+
+### Filter-result empty
+
+```tsx
+{results.length === 0 && (
+  <div className="min-h-[600px] flex flex-col items-center justify-center">
+    <Icon /> <h3>No matches</h3> <p>Try fewer filters</p>
+    <Button onClick={clear}>Clear filters</Button>
+  </div>
+)}
+```
+
+`min-h-[600px]` matches the grid height. The footer below doesn't
+shift when the result set changes.
+
+---
+
+## Measurement
+
+What we measure to keep this honest.
+
+- **CLS on data-resolve.** Every fetched component should report
+  zero CLS on the skeleton-to-content transition. Treat any non-zero
+  as a regression.
+- **Time-to-skeleton.** How fast the placeholder reaches the reader.
+  Should be ~LCP minus the skeleton wait.
+- **Time-to-real-content.** How long the skeleton-to-content gap
+  lasts. Median should be &lt; 1s; > 3s means the skeleton is hiding
+  a real problem (use progressive instead, or split the data).
+- **Error rate by component.** Loading-state regressions usually
+  show up as a spike in error states rendered.
+- **Reduced-motion correctness.** Test with the preference enabled
+  on every change.
+
+---
+
+## How this gets used
+
+When designing or reviewing a fetched / streamed / time-variable
+component, ask:
+
+1. **Pattern**: static / skeleton / progressive / spinner — using the
+   table, not vibes.
+2. **Dimensions**: does the skeleton match the destination exactly?
+3. **CLS**: is the skeleton-to-content swap zero CLS?
+4. **Motion**: single pulse on the container; respects reduced-motion?
+5. **Error**: is there a designed error state with retry? Is it
+   logged? Is it the same shape as the content?
+6. **Empty**: is there a designed empty state with a next-action
+   suggestion? Same dimensions?
+7. **ISR cold-start**: does the server return a skeleton on cache
+   miss, or does the reader see blank?
+
+If any answer is no, the component is not yet loading-state-correct.
+
+---
+
+## Living document
+
+Loading states are where performance meets perception. When a new
+fetched surface arrives that this document doesn't anticipate,
+**edit this document first**, then ship the component. Drift here
+shows up as the worst-feeling kind of regression: not a bug, just
+a feeling that the site is slow.

@@ -1,0 +1,192 @@
+---
+title: "Internationalization Philosophy"
+description: "A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #10 (Every component answers \"would this travel?\") into the language and locale surface."
+icon: Languages
+---
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: I18N_PHILOSOPHY.md
+    hash: d87f7a5bddbb */}
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](/docs/design/ux), expanding
+principle #10 (Every component answers "would this travel?") into the language
+and locale surface. A component that travels across docs sites must also
+travel across locales. Hardcoded English strings in a primitive are domain
+coupling in disguise — they make the component portable in name but not in
+practice.
+
+This is the contract for how `@interlace/ui` primitives, blocks, and
+patterns handle translatable content, text direction, and locale-aware
+formatting.
+
+---
+
+## The core rule
+
+> **No string in a primitive ships as a default. Every visible string crosses
+> the prop boundary or comes from a translation function. Text direction is a
+> CSS contract, not a JSX one. Numbers, dates, and currency go through
+> `Intl.*`. Plurals respect locale rules.**
+
+Three tests, in order:
+
+1. **Can a consumer ship this component in French / Hebrew / Japanese without
+   forking it?** If no, find the hardcoded string and lift it to a prop or a
+   translation key.
+2. **Does the layout survive RTL?** Mirror the JSX in a `dir="rtl"` story; if
+   icons, padding, or arrows look wrong, the styles use directional values
+   that should be logical (`ms-*` / `me-*` instead of `ml-*` / `mr-*`).
+3. **Does the number / date / currency reflect the user's locale?** `1,234.56`
+   in English, `1.234,56` in German, `१,२३४.५६` in Hindi. Hardcoded format
+   strings are a regression.
+
+---
+
+## The 10 principles
+
+Ordered by leverage.
+
+### 1. No hardcoded strings in primitives
+
+Primitives in `packages/ui/src/primitives/` ship zero default visible strings.
+Every visible string is consumer-supplied via prop.
+
+| ❌                                                | ✅                                                              |
+| ------------------------------------------------- | --------------------------------------------------------------- |
+| `<Dialog title="Are you sure?">`                  | `<Dialog title={t('dialog.confirmTitle')}>`                     |
+| `closeLabel: string = "Close"`                    | `closeLabel: string` (required from consumer)                   |
+| `<Button>Submit</Button>` baked into form blocks  | Block accepts `submitLabel` as a prop                           |
+
+The exception: `aria-label` defaults for icons that have no other label
+source (`aria-label="Previous slide"` on a carousel arrow). These are
+overridable.
+
+### 2. Logical CSS properties for direction
+
+Use logical properties wherever a directional one exists. Tailwind v4 ships
+the logical scale.
+
+| ❌ Directional        | ✅ Logical                  |
+| --------------------- | --------------------------- |
+| `ml-2 mr-4`           | `ms-2 me-4`                 |
+| `pl-3 pr-6`           | `ps-3 pe-6`                 |
+| `text-left`           | `text-start`                |
+| `border-l`            | `border-s`                  |
+| `left-0 right-auto`   | `start-0 end-auto`          |
+
+Icons that have directional meaning (chevrons, arrows) must flip in RTL.
+Mark them with `rtl:rotate-180` or a Base UI / Radix primitive that owns the
+direction.
+
+### 3. `Intl.*` for all formatting
+
+Numbers, dates, currency, units, lists, relative time, and plural forms go
+through the platform `Intl` APIs. No `toLocaleString()` with hardcoded
+locale; no manual format strings.
+
+| Concern        | API                                                 |
+| -------------- | --------------------------------------------------- |
+| Numbers        | `new Intl.NumberFormat(locale, options).format(n)`  |
+| Currency       | `Intl.NumberFormat(locale, { style: 'currency' })`  |
+| Dates          | `Intl.DateTimeFormat(locale, options).format(d)`    |
+| Relative time  | `Intl.RelativeTimeFormat(locale).format(...)`       |
+| Lists          | `Intl.ListFormat(locale).format([...])`             |
+| Plurals        | `Intl.PluralRules(locale).select(n)`                |
+| Display names  | `Intl.DisplayNames(locale, { type: 'language' })`   |
+
+### 4. Plurals respect locale rules
+
+English has 2 plural forms (one, other). Russian has 4. Arabic has 6. Welsh
+has 6. Hardcoding `count === 1 ? "item" : "items"` breaks in most languages.
+
+**Mechanics:** ICU MessageFormat (`i18next` ICU plugin, `intl-messageformat`,
+or `@formatjs/intl`) is the floor. Translation key shape:
+
+```text
+{count, plural, =0 {No items} one {# item} other {# items}}
+```
+
+### 5. Translation keys are namespaced
+
+Flat keys collide. Namespaced keys scale.
+
+| ❌ Flat              | ✅ Namespaced                       |
+| -------------------- | ----------------------------------- |
+| `submit`             | `form.submit`                        |
+| `error`              | `dialog.deleteConfirm.errorTitle`    |
+| `loading`            | `table.loadingRows`                  |
+
+### 6. Right-to-left is tested, not assumed
+
+Every primitive ships a `dir="rtl"` story in Storybook. Visual regression
+tests cover both directions. RTL bugs aren't found by review — they're
+found by rendering.
+
+**Mechanics:** Storybook globals `direction: 'ltr' | 'rtl'`; a `<DirectionWrapper>` decorator that flips it; Chromatic / Playwright VRT snapshots both directions.
+
+### 7. String concatenation is broken
+
+Concatenating fragments at the JSX level breaks word order in other languages.
+
+| ❌ Concatenation                                  | ✅ Interpolated key                                    |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| `<>{count} items in {bucketName}</>`              | `t('items.in', { count, bucketName })`                 |
+| `"Welcome, " + userName`                          | `t('welcome', { userName })`                           |
+
+The translation file owns word order; the source owns the variables.
+
+### 8. Locale is a context, not a prop
+
+Locale propagates via context (e.g. `IntlProvider` from react-intl, or
+`I18nextProvider`). Primitives read it implicitly via hooks. No primitive
+takes a `locale` prop — that's prop-drilling the global.
+
+**Mechanics:** `useLocale()` hook returns the active locale; primitives that
+need it call the hook. Consumer-side: the locale is determined once at the
+app root (URL segment, cookie, `Accept-Language`) and provided.
+
+### 9. Text expansion budgets
+
+German text averages 30% longer than English. Russian and Arabic can hit
+50%. UI that's tight at the English layout breaks elsewhere.
+
+**Mechanics:**
+- Button labels wrap (don't truncate by default) on locales > 1.3x English length.
+- Avoid `whitespace-nowrap` on translatable strings unless the design genuinely needs single-line.
+- Sidebar / nav labels reserve at least 1.5× English width; test with the longest known label.
+
+### 10. Build with the ecosystem
+
+`react-intl` / `i18next` / `next-intl` for state and message handling.
+`Intl.*` for formatting. We don't ship our own translation engine.
+
+**Forbidden:**
+- `if (locale === 'en') { ... } else { ... }` in component source.
+- Inline locale switches inside primitives.
+- Translation files in `packages/ui/` — translation belongs to the app.
+
+---
+
+## How this gets used
+
+When designing or reviewing a component, ask:
+
+1. Are there any hardcoded visible strings in primitive source?
+2. Are directional CSS properties logical (`ms-*`/`me-*`) where applicable?
+3. Does every number/date/currency go through `Intl.*`?
+4. Are plurals using ICU `plural` syntax, not ternaries?
+5. Are translation keys namespaced?
+6. Is there an RTL Storybook story?
+7. Are translatable strings whole sentences, not concatenations?
+8. Does locale come from context, not a prop?
+9. Will the layout survive a 1.5× text-expansion locale?
+10. Does the implementation reach for `react-intl` / `i18next` / `Intl.*`,
+    not invent its own?
+
+If any answer is no, the component is not yet shippable internationally.
+
+---
+
+## Living document
+
+When an i18n need arises this doc didn't anticipate, edit it first, then
+ship.

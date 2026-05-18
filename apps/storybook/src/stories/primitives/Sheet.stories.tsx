@@ -9,11 +9,21 @@ import {
 } from '@interlace/ui/sheet';
 import { Button } from '@interlace/ui/button';
 import { Badge } from '@interlace/ui/badge';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Sheet> = {
   title: 'Primitives/Sheet',
   component: Sheet,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Side-anchored Dialog variant — top, right, bottom, or left. Inherits Dialog\'s focus trap + Escape-to-close; the slide animation is killed under `prefers-reduced-motion` (see `ReducedMotion`).',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -42,4 +52,19 @@ export const Default: Story = {
       </SheetContent>
     </Sheet>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

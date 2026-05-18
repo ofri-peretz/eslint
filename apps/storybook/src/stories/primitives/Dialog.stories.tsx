@@ -11,11 +11,21 @@ import {
   DialogClose,
 } from '@interlace/ui/dialog';
 import { Button } from '@interlace/ui/button';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Dialog> = {
   title: 'Primitives/Dialog',
   component: Dialog,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Modal surface for focused tasks. Reference impl — see [dialog.tsx](packages/ui/src/primitives/dialog.tsx) for the JSDoc table mapping each R1–R26 component-floor rule to a line of code.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -82,4 +92,19 @@ export const OpenCloseFlow: Story = {
       await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeFalsy());
     });
   },
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

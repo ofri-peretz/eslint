@@ -133,8 +133,18 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
     }
 
     function compareVersions(version1: string, version2: string): number {
-      const v1 = parseSemver(version1);
-      const v2 = parseSemver(version2);
+      // Normalize wildcards (`24.x`, `24`) to a full semver so parseSemver
+      // succeeds — without this, `package.json#engines.node: "24.x"` falls
+      // through to `parseSemver -> null`, which the original code returned
+      // as 0 (equal), making every `>=` engine TODO falsely match.
+      const norm = (v: string): string => {
+        const cleaned = v.replace(/^[\^~>=<]+/, '').trim();
+        const parts = cleaned.split('.').map((p) => (/^\d+$/.test(p) ? p : '0'));
+        while (parts.length < 3) parts.push('0');
+        return parts.slice(0, 3).join('.');
+      };
+      const v1 = parseSemver(norm(version1));
+      const v2 = parseSemver(norm(version2));
 
       if (!v1 || !v2) return 0;
 

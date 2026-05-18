@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Skeleton } from '@interlace/ui/skeleton';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Skeleton> = {
   title: 'Primitives/Skeleton',
   component: Skeleton,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Loading placeholder per `LOADING_PHILOSOPHY.md`. Pulse-animated shape that matches the eventual content footprint — CLS=0 once data arrives. The pulse is killed under `prefers-reduced-motion`.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -26,4 +36,19 @@ export const ArticleCardLoading: Story = {
       </div>
     </div>
   ),
+};
+
+export const Dark: Story = {
+  ...ArticleCardLoading,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...ArticleCardLoading,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...ArticleCardLoading,
+  decorators: [withReducedMotion],
 };

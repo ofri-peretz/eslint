@@ -1,4 +1,12 @@
 {
     "title": "Documentation",
-    "defaultOpen": true
+    "defaultOpen": true,
+    "pages": [
+        "getting-started",
+        "design",
+        "security",
+        "quality",
+        "integrations",
+        "learn"
+    ]
 }

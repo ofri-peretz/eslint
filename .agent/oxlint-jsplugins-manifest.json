@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-17",
+  "generatedAt": "2026-05-18",
   "totalPlugins": 20,
-  "totalRules": 406,
-  "oxlintCompatible": 406,
+  "totalRules": 409,
+  "oxlintCompatible": 409,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -291,8 +291,14 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 11,
+      "ruleCount": 14,
       "rules": [
+        {
+          "name": "conventions/analytics-event-naming",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "conventions/consistent-existence-index-check",
           "portability": "compatible",
@@ -330,6 +336,12 @@
           "isTypeAware": false
         },
         {
+          "name": "conventions/no-raw-cross-property-href",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "conventions/prefer-code-point",
           "portability": "compatible",
           "blockers": [],
@@ -349,6 +361,12 @@
         },
         {
           "name": "conventions/require-data-testid",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/utm-taxonomy",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2673,6 +2691,7 @@
       "require-websocket-wss"
     ],
     "conventions": [
+      "analytics-event-naming",
       "consistent-existence-index-check",
       "expiring-todo-comments",
       "filename-case",
@@ -2680,10 +2699,12 @@
       "no-console-spaces",
       "no-deprecated-api",
       "no-json-schema-tags",
+      "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
-      "require-data-testid"
+      "require-data-testid",
+      "utm-taxonomy"
     ],
     "crypto": [
       "no-hardcoded-crypto-key",

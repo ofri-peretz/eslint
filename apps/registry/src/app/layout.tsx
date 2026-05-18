@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import './globals.css';
+import { PostHogProvider } from '@/components/posthog-provider';
+import { PostHogPageviewTracker } from '@/components/posthog-pageview-tracker';
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +30,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        <PostHogProvider>
+          <PostHogPageviewTracker />
+          {children}
+        </PostHogProvider>
+      </body>
     </html>
   );
 }
