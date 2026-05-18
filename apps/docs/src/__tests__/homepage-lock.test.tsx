@@ -34,25 +34,35 @@ describe('Homepage: Structure Lock', () => {
 
   describe('Required Imports', () => {
     it('imports HeroSection component', () => {
-      expect(homepageSource).toContain("import { HeroSection } from '@/components/home/hero-section'");
+      expect(homepageSource).toContain(
+        "import { HeroSection } from '@/components/home/hero-section'",
+      );
     });
 
     // Home-page diet (2026-05): BackgroundLines and Marquee retired in favor
     // of quieter sections. Lock asserts they are NOT re-introduced.
     it('does NOT re-import BackgroundLines (retired in 2026-05 home-page diet)', () => {
-      expect(homepageSource).not.toContain("from '@interlace/ui/aceternity/background-lines'");
+      expect(homepageSource).not.toContain(
+        "from '@interlace/ui/aceternity/background-lines'",
+      );
     });
 
     it('does NOT re-import Marquee (retired in 2026-05 home-page diet)', () => {
-      expect(homepageSource).not.toContain("from '@interlace/ui/magicui/marquee'");
+      expect(homepageSource).not.toContain(
+        "from '@interlace/ui/magicui/marquee'",
+      );
     });
 
     it('imports BorderBeam component', () => {
-      expect(homepageSource).toContain("import { BorderBeam } from '@interlace/ui/magicui/border-beam'");
+      expect(homepageSource).toContain(
+        "import { BorderBeam } from '@interlace/ui/magicui/border-beam'",
+      );
     });
 
     it('imports NumberTicker component', () => {
-      expect(homepageSource).toContain("import { NumberTicker } from '@interlace/ui/magicui/number-ticker'");
+      expect(homepageSource).toContain(
+        "import { NumberTicker } from '@interlace/ui/magicui/number-ticker'",
+      );
     });
 
     it('imports TweetCard from the @interlace/docs-baseline marketing layer', () => {
@@ -73,7 +83,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('imports stats loader', () => {
-      expect(homepageSource).toContain("import { getDisplayStats } from '@/lib/stats-loader'");
+      expect(homepageSource).toContain(
+        "import { getDisplayStats } from '@/lib/stats-loader'",
+      );
     });
   });
 
@@ -121,7 +133,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('runtime strip cross-links to /docs/getting-started/concepts/runtime-portability', () => {
-      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/runtime-portability',
+      );
     });
 
     it('contains DOCS PREVIEW section', () => {
@@ -170,7 +184,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('links to the full CWE coverage matrix (moved under Concepts/Ecosystem in 2026-05-10 IA pass)', () => {
-      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/cwe-compatibility',
+      );
     });
   });
 });
@@ -180,13 +196,19 @@ describe('Homepage: Structure Lock', () => {
 // =========================================
 
 describe('HeroSection: Structure Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs),
+  // the @interlace/ui/patterns/hero-cosmic preset (theme-aware atmospheric
+  // shell + structural skeleton), and the @interlace/ui/aceternity/daylight-
+  // background primitive (sun + clouds + sky for light theme). Lock-tests
+  // assert against all three as one logical unit.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -194,7 +216,9 @@ describe('HeroSection: Structure Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('hero section file exists', () => {
@@ -207,11 +231,11 @@ describe('HeroSection: Structure Lock', () => {
 
   describe('Shooting Stars Integration', () => {
     it('imports StarsBackground component', () => {
-      expect(heroSource).toContain("StarsBackground");
+      expect(heroSource).toContain('StarsBackground');
     });
 
     it('imports ShootingStars component', () => {
-      expect(heroSource).toContain("ShootingStars");
+      expect(heroSource).toContain('ShootingStars');
     });
 
     it('imports from the @interlace/ui aceternity stars-background', () => {
@@ -238,11 +262,15 @@ describe('HeroSection: Structure Lock', () => {
 
     it('has customized star color (purple)', () => {
       // Now lives as a default in HeroCosmic's `effects.shootingStarColor`.
-      expect(heroSource).toMatch(/(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/);
+      expect(heroSource).toMatch(
+        /(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
+      );
     });
 
     it('has customized trail color (cyan)', () => {
-      expect(heroSource).toMatch(/(trailColor|shootingTrailColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/);
+      expect(heroSource).toMatch(
+        /(trailColor|shootingTrailColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
+      );
     });
   });
 
@@ -272,7 +300,7 @@ describe('HeroSection: Structure Lock', () => {
     });
 
     it('links to getting started docs', () => {
-      expect(heroSource).toContain("href=\"/docs/getting-started\"");
+      expect(heroSource).toContain('href="/docs/getting-started"');
     });
 
     it('links to GitHub repository', () => {
@@ -291,8 +319,16 @@ describe('HeroSection: Structure Lock', () => {
       expect(heroSource).toContain("clipPath: 'inset(0)'");
     });
 
-    it('uses cosmic gradient background', () => {
-      expect(heroSource).toContain('bg-gradient-to-b from-purple-950');
+    it('uses cosmic gradient background (theme-prefixed Tailwind v4 — light theme uses daylight surface)', () => {
+      // After the 2026-05 daylight restoration, the cosmic gradient is gated
+      // behind the `dark:` Tailwind variant so the same wrapper carries both
+      // surfaces. The migration to Tailwind v4 canonical `bg-linear-to-b`
+      // happened at the same time, so accept both the legacy and canonical
+      // forms (with or without the `dark:` prefix) — what matters is that
+      // the deep-purple gradient stays paired with the cosmic surface.
+      expect(heroSource).toMatch(
+        /(?:bg-(?:gradient|linear)-to-b\s+from-purple-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-purple-950)/,
+      );
     });
 
     it('has min-h-screen for full viewport', () => {
@@ -306,7 +342,7 @@ describe('HeroSection: Structure Lock', () => {
 
   describe('Component Dependencies', () => {
     it('imports ShimmerButton for the hero primary (CTA_PHILOSOPHY.md #8 — animated CTA reserved for the surface primary)', () => {
-      expect(heroSource).toContain("import { ShimmerButton }");
+      expect(heroSource).toContain('import { ShimmerButton }');
     });
 
     it('uses exactly two ShimmerButton instances in the hero (CTA_PHILOSOPHY.md #3 sibling parity — same component for both CTAs)', () => {
@@ -359,12 +395,16 @@ describe('HeroSection: Structure Lock', () => {
     it('HeroCosmic `secondaryCta.label` slot is a `<ShimmerButton …>` (structural lock — refactors that swap the slot break this)', () => {
       // `secondaryCta={` … `label: ( <ShimmerButton …` — the `label:` value
       // immediately under `secondaryCta` must open with ShimmerButton.
-      expect(heroSource).toMatch(/secondaryCta=\{[\s\S]*?label:\s*\(\s*<ShimmerButton\b/);
+      expect(heroSource).toMatch(
+        /secondaryCta=\{[\s\S]*?label:\s*\(\s*<ShimmerButton\b/,
+      );
     });
 
     it('does NOT re-import AnimatedGradientText (retired from hero eyebrow in 2026-05 diet)', () => {
-      const heroOnly = heroSource.split('/* --- @interlace/ui/patterns/hero-cosmic --- */')[0];
-      expect(heroOnly).not.toContain("import { AnimatedGradientText }");
+      const heroOnly = heroSource.split(
+        '/* --- @interlace/ui/patterns/hero-cosmic --- */',
+      )[0];
+      expect(heroOnly).not.toContain('import { AnimatedGradientText }');
     });
 
     it('imports Link from next/link', () => {
@@ -397,13 +437,16 @@ describe('HeroSection: Structure Lock', () => {
 // =========================================
 
 describe('Homepage: Accessibility Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // Same composite hero source as the structure-lock block above — see that
+  // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -411,7 +454,9 @@ describe('Homepage: Accessibility Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('uses h1 for main headline', () => {
@@ -485,13 +530,16 @@ describe('Homepage: Code Block WCAG Compliance', () => {
 // =========================================
 
 describe('HeroSection: Meteors Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // Same composite hero source as the structure-lock block above — see that
+  // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -499,7 +547,9 @@ describe('HeroSection: Meteors Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('imports Meteors component', () => {
@@ -520,6 +570,196 @@ describe('HeroSection: Meteors Lock', () => {
 
   it('has configured maximum duration', () => {
     expect(heroSource).toContain('maxDuration=');
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Nuxt blog-old parity asserts — these defaults were the source of
+  // "the meteors feel weird" in May 2026. The cosmic surface drifted
+  // from the original blog (faster shooting stars, denser starfield)
+  // when it was ported. Each value below is pinned against
+  // `apps/blog-old/app/components/CosmicBackground.vue` so a future
+  // refactor can't silently re-introduce the drift.
+  // ──────────────────────────────────────────────────────────────────
+
+  it('cosmic meteor color matches Nuxt blog-old (`#e9d5ff`)', () => {
+    expect(heroSource).toContain("meteorColor: '#e9d5ff'");
+  });
+
+  it('cosmic meteor count matches Nuxt blog-old (3, NOT the 22 from the registry primitive)', () => {
+    expect(heroSource).toMatch(/meteorCount:\s*3\b/);
+  });
+
+  it('cosmic meteor duration window matches Nuxt blog-old (12–30s, NOT 3–9s)', () => {
+    expect(heroSource).toMatch(/meteorMinDuration:\s*12\b/);
+    expect(heroSource).toMatch(/meteorMaxDuration:\s*30\b/);
+  });
+
+  it('cosmic shooting-star cadence matches Nuxt blog-old (delay 1200–4200ms, speed 10–30)', () => {
+    expect(heroSource).toMatch(/shootingMinDelay:\s*1200\b/);
+    expect(heroSource).toMatch(/shootingMaxDelay:\s*4200\b/);
+    expect(heroSource).toMatch(/shootingMinSpeed:\s*10\b/);
+    expect(heroSource).toMatch(/shootingMaxSpeed:\s*30\b/);
+  });
+
+  it('cosmic star density matches Nuxt blog-old (0.00015, NOT 0.0002)', () => {
+    expect(heroSource).toMatch(/starDensity:\s*0\.00015\b/);
+  });
+});
+
+// =========================================
+// DAYLIGHT SURFACE LOCK
+// =========================================
+// Restores the light-theme atmospheric surface (sun + clouds + sky)
+// that was missing from the shadcn port. The Nuxt blog-old hero
+// shipped a theme-aware twin — cosmic at night, daylight in light
+// mode — and the regression policy at the top of CLAUDE.md mandates
+// a lock for every restored surface so it can't silently disappear
+// again on a future refactor.
+
+describe('HeroSection: Daylight Surface Lock', () => {
+  const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
+  const cosmicPath = join(
+    process.cwd(),
+    '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
+  );
+  let heroSource: string;
+  let daylightSource: string;
+
+  beforeAll(() => {
+    daylightSource = readFileSync(daylightPath, 'utf-8');
+    heroSource =
+      readFileSync(heroPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      daylightSource;
+  });
+
+  describe('Primitives exist in the @interlace/ui aceternity surface', () => {
+    it('daylight-background.tsx file exists', () => {
+      expect(existsSync(daylightPath)).toBe(true);
+    });
+
+    it('exports SkyGradient primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+SkyGradient\b/);
+    });
+
+    it('exports Sun primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+Sun\b/);
+    });
+
+    it('exports CloudParticle primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+CloudParticle\b/);
+    });
+
+    it('exports DaylightBackground convenience wrapper', () => {
+      expect(daylightSource).toMatch(
+        /export\s+function\s+DaylightBackground\b/,
+      );
+    });
+  });
+
+  describe('Wiring — HeroCosmic mounts the daylight layer behind the dark:hidden gate', () => {
+    it('hero-cosmic.tsx imports DaylightBackground from the aceternity surface', () => {
+      expect(heroSource).toMatch(
+        /import\s+\{\s*DaylightBackground\s*\}\s+from\s+['"]\.\.\/aceternity\/daylight-background\.js['"]/,
+      );
+    });
+
+    it('hero-cosmic.tsx renders <DaylightBackground …> inside a `block dark:hidden` wrapper', () => {
+      // The light surface is opt-out by being hidden in dark mode. Lock
+      // both halves: the toggle class AND the component instance must
+      // co-exist in the source.
+      expect(heroSource).toContain('block dark:hidden');
+      expect(heroSource).toMatch(/<DaylightBackground\b/);
+    });
+
+    it('hero-cosmic.tsx renders cosmic primitives inside a `hidden dark:block` wrapper (negative parity)', () => {
+      // The dark surface is opt-out by being hidden in light mode. Pairs
+      // with the daylight lock above so neither side can be deleted
+      // without breaking the other.
+      expect(heroSource).toContain('hidden dark:block');
+    });
+
+    it('daylight surface accepts cloud/sun tuning knobs (`daylight` prop)', () => {
+      expect(heroSource).toMatch(/daylight\?:\s*\{/);
+      expect(heroSource).toMatch(/showSun\?:\s*boolean/);
+      expect(heroSource).toMatch(/showClouds\?:\s*boolean/);
+      expect(heroSource).toMatch(/cloudCount\?:\s*number/);
+    });
+  });
+
+  describe('SVG cloud filter — matches the Nuxt CloudParticle.vue volumetric matrix', () => {
+    // The 5-layer feMerge stack was hand-tuned in the original Vue
+    // component to match Framer's cloud aesthetic. Re-deriving it
+    // risks visual drift, so lock the structural shape.
+    it('CloudParticle defines a 5-layer feMerge stack (volumetric depth)', () => {
+      const merges = daylightSource.match(/<feMergeNode\b/g) ?? [];
+      expect(merges.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('CloudParticle uses dual feTurbulence sources (detail + broad)', () => {
+      const turbs = daylightSource.match(/<feTurbulence\b/g) ?? [];
+      expect(turbs.length).toBe(2);
+    });
+
+    it('CloudParticle uses fractalNoise (not turbulence) for organic shapes', () => {
+      expect(daylightSource).toContain('fractalNoise');
+    });
+
+    it('CloudParticle preserves the blue-tinted underside shadow (rgb(66,105,146))', () => {
+      // The under-cloud shadow color is what makes the clouds read as
+      // "lit from above" instead of flat. The exact value is from the
+      // Nuxt source — don't drift it.
+      expect(daylightSource).toMatch(/rgb\(\s*66\s*,\s*105\s*,\s*146\s*\)/);
+    });
+  });
+
+  describe('Sun rendering — corona + glow + core + rotating rays + lens flares', () => {
+    it('Sun renders an outer + middle corona (atmospheric diffraction)', () => {
+      expect(daylightSource).toContain('interlace-sun-corona-outer');
+      expect(daylightSource).toContain('interlace-sun-corona-middle');
+    });
+
+    it('Sun renders an overexposed core (the bright disk)', () => {
+      expect(daylightSource).toContain('interlace-sun-core');
+    });
+
+    it('Sun renders conic-gradient rays animated over 120s (matches Nuxt)', () => {
+      expect(daylightSource).toMatch(
+        /animation:\s*interlace-sun-rays-rotate\s+120s/,
+      );
+    });
+
+    it('Sun honors prefers-reduced-motion (rays animation is killed)', () => {
+      expect(daylightSource).toMatch(
+        /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]{0,200}interlace-sun-rays[\s\S]{0,80}animation:\s*none/,
+      );
+    });
+
+    it('Sun renders both horizontal + vertical lens flares (anamorphic look)', () => {
+      expect(daylightSource).toContain('interlace-lens-flare-h');
+      expect(daylightSource).toContain('interlace-lens-flare-v');
+    });
+  });
+
+  describe('Sky gradient — five-layer atmospheric scattering', () => {
+    it('SkyGradient uses HSL Rayleigh-scattered base (210→195→45 hue ramp)', () => {
+      expect(daylightSource).toMatch(/hsl\(210,\s*80%,\s*55%\)/);
+      expect(daylightSource).toMatch(/hsl\(45,\s*50%,\s*88%\)/);
+    });
+
+    it('SkyGradient renders the horizon warm-glow layer (golden-hour band)', () => {
+      expect(daylightSource).toContain('interlace-sky-horizon');
+    });
+
+    it('SkyGradient renders the vignette layer (subtle depth cue)', () => {
+      expect(daylightSource).toContain('interlace-sky-vignette');
+    });
   });
 });
 
@@ -556,16 +796,28 @@ describe('Homepage: Visual Identity Lock', () => {
 
     it('has How it works section (surfaces Concepts corpus — Philosophy / AST / Detect→Understand→Fix)', () => {
       expect(homepageSource).toContain('How it works');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/philosophy');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/ast-fundamentals');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/detect-understand-fix');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/philosophy',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/ast-fundamentals',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/detect-understand-fix',
+      );
     });
 
     it('has Our edges section (Compatibility / Benchmarks / AI Leverage — replaces generic "Why" grid in 2026-05-10 edges pass)', () => {
       expect(homepageSource).toContain('Our edges');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/compatibility');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/benchmarks');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/ai-integration');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/compatibility',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/benchmarks',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/ai-integration',
+      );
     });
 
     // Runtime-portability card lives inside "Our edges" — its copy must
@@ -574,11 +826,15 @@ describe('Homepage: Visual Identity Lock', () => {
     // engine-portability story lands. Wording drift here is a regression.
     it('Our edges grid contains the Runtime Portability card with all three engines named (ESLint + Oxlint + TSC native)', () => {
       expect(homepageSource).toContain('Runtime Portability');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/runtime-portability',
+      );
       // Per INTEROP_PHILOSOPHY.md §"Vision": the TSC native host is the
       // long-horizon target. Card copy MUST name it so the message isn't
       // limited to "Oxlint and ESLint."
-      const cardChunk = homepageSource.slice(homepageSource.indexOf('Runtime Portability'));
+      const cardChunk = homepageSource.slice(
+        homepageSource.indexOf('Runtime Portability'),
+      );
       expect(cardChunk).toMatch(/ESLint/);
       expect(cardChunk).toMatch(/Oxlint/);
       expect(cardChunk).toMatch(/TSC native/);
@@ -590,8 +846,12 @@ describe('Homepage: Visual Identity Lock', () => {
 
     it("has What's next pair under final CTA (UX_PHILOSOPHY §4 — compare / CWE matrix)", () => {
       expect(homepageSource).toContain('Not ready yet? Explore');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/compare');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/compare',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/cwe-compatibility',
+      );
     });
   });
 
@@ -683,7 +943,9 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
 
   describe('Required imports', () => {
     it('imports Section from @interlace/ui (open-coded <section> wrappers are forbidden)', () => {
-      expect(homepageSource).toContain("import { Section } from '@interlace/ui/section'");
+      expect(homepageSource).toContain(
+        "import { Section } from '@interlace/ui/section'",
+      );
     });
 
     it('imports SectionHeader from @interlace/ui/blocks/section-header', () => {
@@ -697,11 +959,15 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
     it('does NOT open-code `container mx-auto px-*` in className strings (§1 — Section owns the wrapper)', () => {
       // Match inside JSX className strings only — comment prose explaining
       // the philosophy is allowed (and present in the page header).
-      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bcontainer\s+mx-auto\b/);
+      expect(homepageSource).not.toMatch(
+        /className=["'`][^"'`]*\bcontainer\s+mx-auto\b/,
+      );
     });
 
     it('does NOT use ad-hoc `max-w-3xl/4xl/5xl/6xl/7xl` widths in className strings (§2 — Container size is a contract)', () => {
-      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/);
+      expect(homepageSource).not.toMatch(
+        /className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/,
+      );
     });
 
     it('does NOT open-code a bare `<section className="container ...">` wrapper (§1, §7)', () => {
@@ -712,8 +978,12 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
       // After the refactor, dividers are owned by <Section divider="…">.
       // The only borders left in the file should be card / pillar internals.
       // Bare `<section …border-y border-fd-border` is what the philosophy forbids.
-      expect(homepageSource).not.toMatch(/<section[^>]*border-y\s+border-fd-border/);
-      expect(homepageSource).not.toMatch(/<section[^>]*border-t\s+border-fd-border/);
+      expect(homepageSource).not.toMatch(
+        /<section[^>]*border-y\s+border-fd-border/,
+      );
+      expect(homepageSource).not.toMatch(
+        /<section[^>]*border-t\s+border-fd-border/,
+      );
     });
 
     it('does NOT inline `bg-fd-card/30|50` on the section wrappers (§8 — tone prop owns it)', () => {
@@ -723,7 +993,8 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
 
   describe('Sections are composed (not open-coded)', () => {
     it('uses <Section …> for every page-level section block', () => {
-      const sectionPrimitive = (homepageSource.match(/<Section\b/g) ?? []).length;
+      const sectionPrimitive = (homepageSource.match(/<Section\b/g) ?? [])
+        .length;
       // Hero is full-bleed and out of scope (LAYOUT_AUDIT.md). The remaining
       // sections — stats / preview / catches / social / pillars / how-it-works
       // / edges / final-CTA — should all be <Section>.
