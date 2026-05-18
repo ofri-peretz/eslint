@@ -48,7 +48,12 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.app }} → ${{ inputs.target }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15min cancelled the registry + storybook deploys mid-Next.js / mid-
+    # turbo-storybook build. Monorepo install (~2400 pkgs) eats ~6min on
+    # its own; the actual build is the heavy lift after that. 30min gives
+    # registry's Next.js full build path and storybook's full turbo chain
+    # headroom without being so loose that a stuck deploy lingers forever.
+    timeout-minutes: 30
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
