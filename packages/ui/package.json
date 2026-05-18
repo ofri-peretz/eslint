@@ -200,7 +200,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
-    "motion": "^12.29.2",
+    "motion": "^12.39.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
