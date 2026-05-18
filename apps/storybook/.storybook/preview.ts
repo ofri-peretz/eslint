@@ -52,12 +52,17 @@ const preview: Preview = {
     layout: 'centered',
     options: {
       storySort: {
+        // `Welcome` first so the root URL deep-links to the landing page
+        // instead of `Tokens/Color Contrast/Docs` (alphabetic default).
         order: [
+          'Welcome',
           'Tokens',
           ['Color Contrast'],
           'Primitives',
           'Blocks',
           'Pages',
+          'Fumadocs',
+          'MagicUI',
         ],
       },
     },

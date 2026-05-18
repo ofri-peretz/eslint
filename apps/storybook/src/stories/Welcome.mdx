@@ -1,0 +1,49 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Welcome" />
+
+# Interlace UI
+
+shadcn-compatible primitives for the **Interlace ESLint ecosystem** — 332+ security rules across 18 specialized plugins, plus the design system that ships their docs surface.
+
+This Storybook is the live component reference. Every primitive here is also available as a one-line install from the [Interlace shadcn registry](https://ds.interlace.tools).
+
+## What's in here
+
+**Tokens** — color-contrast swatches: every shipped foreground/background token pair, gated to WCAG 2.2 AA via the Storybook a11y addon.
+
+**Primitives** — 26 shadcn-compatible building blocks: `Button`, `Card`, `Dialog`, `DropdownMenu`, …, `Meteors`. Each ships with a `Default`, `Dark`, and variant stories.
+
+**Blocks** — composed surfaces (`ArticleCard`, `SectionHeader`): the next layer up from primitives.
+
+**Pages** — full page-level surfaces (`ArticlesPage` and friends).
+
+**Fumadocs** — bridges between `@interlace/ui` primitives and `fumadocs-ui` docs surfaces.
+
+**MagicUI** — animated / decorative primitives (`ShimmerButton`, …) layered on top of the base.
+
+## Install
+
+Every primitive is shadcn-add-able from the registry:
+
+```bash
+npx shadcn@latest add https://ds.interlace.tools/r/button.json
+npx shadcn@latest add https://ds.interlace.tools/r/meteors.json
+npx shadcn@latest add https://ds.interlace.tools/r/dialog.json
+```
+
+Or all at once via the index:
+
+```bash
+curl -s https://ds.interlace.tools/r/index.json | jq -r '.items[].name'
+```
+
+## Theme contract
+
+Every primitive consumes brand tokens via `@interlace/ui/styles/interlace-theme.css` — never raw hex. Switching the toolbar light/dark toggle flips the active token set; the same component code renders correctly against both surfaces. Tokens are enforced by `eslint-plugin-react-features` lint rule `no-raw-color-literal`.
+
+## Related surfaces
+
+- [ESLint Interlace](https://eslint.interlace.tools) — full rule library + docs
+- [Shadcn registry](https://ds.interlace.tools) — install endpoint for these primitives
+- [GitHub source](https://github.com/ofri-peretz/eslint) — monorepo + contribution guide
