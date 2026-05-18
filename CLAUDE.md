@@ -101,3 +101,141 @@ When you reproduce a visual regression, the loop is: open the page in
 Chrome devtools at the affected viewport → confirm the broken pixel →
 identify the data or CSS path that produced it → write the lock →
 apply the fix → re-confirm in the browser.
+
+---
+
+## Shipping a task — PR flow
+
+Every code change goes through a PR; `git push origin main` is blocked by
+branch protection. The canonical loop is **branch → commit → push → PR →
+checks → merge → manually trigger `deploy-docs.yml`**. Unlike most projects,
+merging to `main` does **not** ship the docs site here — the deploy is a
+manual workflow that an agent must run and watch (see step 6).
+
+### 1. Branch from `main`
+
+```bash
+git fetch origin main
+git checkout -b <type>/<short-slug> origin/main
+```
+
+Branch-name prefixes that match the linter: `feat/`, `fix/`, `chore/`,
+`ci/`, `docs/`, `refactor/`.
+
+### 2. Commit with the project's commit convention
+
+Subject is `<type>(<scope>): <subject>`, scope required. Multi-line
+bodies via HEREDOC. Always include the Claude co-author trailer.
+
+```bash
+git commit -m "$(cat <<'EOF'
+fix(docs): tweet-cache HEAD-check rejects 404s before deploy
+
+Twitter rotates photo_image_full_size_large URLs faster than our 7-day
+TTL, so a "fresh" cache could still hold a 404. Add a HEAD probe in
+sync-tweet-cache.ts that exits 1 on non-2xx; pair with the
+social-embeds-integrity vitest lock.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+### 3. Push and open a PR
+
+```bash
+git push origin <branch>
+
+gh -R ofri-peretz/eslint pr create --base main --head <branch> \
+  --title "<type>(<scope>): <short title under 70 chars>" \
+  --body "$(cat <<'EOF'
+## Summary
+
+- Bulleted what-changed-and-why, one bullet per logical change.
+
+## Test plan
+
+- [x] Concrete commands run (lint, vitest, build) with their outcome.
+- [x] If a regression-lock was added, name the file and assertion.
+
+## After merge
+
+What lands in production, what to watch for, any follow-ups.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+### 4. Wait for the CI gate to go green
+
+Required checks on this repo (the workflow names visible on a PR):
+
+```text
+✅ oxlint (fast pass)
+✅ Prettier (format check)
+✅ TypeScript (typecheck)
+✅ Vitest (unit + lock tests)
+✅ Playwright (e2e + a11y)
+✅ Build (apps/docs)
+```
+
+Poll until every check finishes, **then verify every one reports
+`SUCCESS`** — the poll only ensures nothing is still pending; a `FAILURE`
+or `CANCELLED` would otherwise slip past it.
+
+```bash
+PR=<#>
+
+# 1. Wait until every required check has a terminal state.
+until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
+  --json statusCheckRollup \
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
+  sleep 20
+done
+
+# 2. Validation gate — refuse to merge unless EVERY required check is SUCCESS.
+FAILED=$(gh -R ofri-peretz/eslint pr view "$PR" \
+  --json statusCheckRollup \
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status) != "SUCCESS" and (.conclusion // .state // .status) != "SKIPPED" and (.conclusion // .state // .status) != "NEUTRAL") | "\(.conclusion // .state // .status)  \(.name // .context)"] | .[]')
+if [ -n "$FAILED" ]; then
+  echo "::error::PR $PR has non-success checks; not merging:"
+  echo "$FAILED"
+  exit 1
+fi
+
+gh -R ofri-peretz/eslint pr view "$PR" --json mergeable,mergeStateStatus,statusCheckRollup
+```
+
+If `mergeStateStatus == "DIRTY"` there's a conflict with `main`. Resolve
+via `git fetch origin main && git merge origin/main`; do not rebase
+blindly across unrelated changes. If `mergeStateStatus == "BLOCKED"`
+after all checks pass, branch protection is waiting on a required review
+(see CODEOWNERS / repository ruleset) — don't `--admin` past it without
+asking the user.
+
+### 5. Merge
+
+Squash and delete the branch:
+
+```bash
+gh -R ofri-peretz/eslint pr merge <#> --squash --delete-branch
+```
+
+### 6. Watch the auto-deploy
+
+The docs site uses the **manual** `deploy-docs.yml` flow (per
+[AGENTS.md](./AGENTS.md)); merges to `main` do **not** auto-deploy.
+After merging a docs-touching PR, surface that the manual deploy is
+still pending — don't claim "live" until you've watched the workflow
+run and confirmed at https://eslint.interlace.tools.
+
+For packages: the relevant npm publish workflow fires on the release
+PR/tag, not the merge. Cross-check the release flow in AGENTS.md before
+reporting `published` status.
+
+### 7. Verify the locks that scope the change still pass
+
+Per the regression policy at the top of this file: after merging a fix,
+confirm the matching lock test (or the new one you added) would have
+caught the bug pre-deploy.
