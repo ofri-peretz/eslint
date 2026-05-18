@@ -27,6 +27,25 @@ const config = {
   turbopack: {
     root: resolve(__dirname, '../..'),
   },
+  // PostHog reverse proxy (ANALYTICS_PHILOSOPHY principle 2). Same-origin
+  // ingest survives ad-blockers and keeps third-party hosts out of CSP.
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+      {
+        source: '/ingest/decide',
+        destination: 'https://us.i.posthog.com/decide',
+      },
+    ];
+  },
   async headers() {
     return [
       {

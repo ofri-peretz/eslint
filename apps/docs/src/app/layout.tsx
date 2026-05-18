@@ -5,6 +5,8 @@ import type { Metadata } from 'next';
 import { TooltipProvider } from '#interlace/components/ui/tooltip';
 import { CodeBlockLabeller } from '@/components/a11y/code-block-labeller';
 import { ThemeTimeSync } from '@/components/theme-time-sync';
+import { PostHogProvider } from '@/components/posthog-provider';
+import { PostHogPageviewTracker } from '@/components/posthog-pageview-tracker';
 import { SITE_ORIGIN } from '@/lib/site-config';
 import { THEME_TIME_INLINE_SCRIPT } from '@/lib/theme-time';
 
@@ -115,11 +117,14 @@ export default function Layout({ children }: LayoutProps<'/'>) {
             only the SSR fallback before the inline script runs; <ThemeTimeSync />
             captures explicit user toggles so they override the time default on
             subsequent visits. */}
-        <RootProvider theme={{ defaultTheme: 'dark' }}>
-          <ThemeTimeSync />
-          <TooltipProvider delay={250}>{children}</TooltipProvider>
-          <CodeBlockLabeller />
-        </RootProvider>
+        <PostHogProvider>
+          <PostHogPageviewTracker />
+          <RootProvider theme={{ defaultTheme: 'dark' }}>
+            <ThemeTimeSync />
+            <TooltipProvider delay={250}>{children}</TooltipProvider>
+            <CodeBlockLabeller />
+          </RootProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

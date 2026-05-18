@@ -50,6 +50,9 @@ const ALLOWED_THIRD_PARTY = [
   'eslint-plugin-perfectionist',
   'eslint-plugin-unused-imports',
   'eslint-plugin-simple-import-sort',
+  // Cited in design/docs.mdx (projected from DOCS_PHILOSOPHY.md) as the
+  // upstream meta-plugin our rule-authoring tooling neighbours.
+  'eslint-plugin-eslint-plugin',
 
   // === Documentation placeholders ===
   // `eslint-config-mycompany` is the "your shared config" example in

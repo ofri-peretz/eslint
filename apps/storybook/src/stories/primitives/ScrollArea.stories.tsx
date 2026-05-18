@@ -1,10 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ScrollArea } from '@interlace/ui/scroll-area';
 import { Separator } from '@interlace/ui/separator';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof ScrollArea> = {
   title: 'Primitives/ScrollArea',
   component: ScrollArea,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Cross-browser scrollable region with token-styled scrollbars. Keeps overflow content discoverable without the platform-default scrollbar variance.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -24,4 +34,14 @@ export const Default: Story = {
       ))}
     </ScrollArea>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

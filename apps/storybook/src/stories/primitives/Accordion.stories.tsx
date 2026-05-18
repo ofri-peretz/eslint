@@ -5,31 +5,31 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@interlace/ui/accordion';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Accordion> = {
   title: 'Primitives/Accordion',
   component: Accordion,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Vertical disclosure for FAQ, settings, or progressive content reveal. Each item opens its panel on click. Per `MOTION_PHILOSOPHY.md` the open/close transition is killed under `prefers-reduced-motion`.',
+      },
+    },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof Accordion>;
 
 export const Default: Story = {
-  // AccordionTrigger has `py-4` (16px top + 16px bottom = 32px vertical
-  // padding) atop a text line — well above WCAG 2.2's 24×24 target-size
-  // threshold. axe still flags it in isolation because the trigger is
-  // full-width without an explicit min-width attribute axe can pre-compute
-  // from class names, and adjacent triggers stack with no gap. Real usage
-  // (docs FAQ, marketing pages) is gated by apps/docs/e2e/a11y.spec.ts.
-  // Scope-disable for THIS isolated showcase — same pattern as Pagination
-  // and Button.stories.tsx Sizes.
-  parameters: {
-    a11y: {
-      config: {
-        rules: [{ id: 'target-size', enabled: false }],
-      },
-    },
-  },
+  // AccordionTrigger is `py-4` (32px tall) on a full-width container.
+  // Suppression for `target-size` was removed 2026-05-18 — the trigger
+  // is well above WCAG 2.2's 24×24 threshold and the explicit `w-[420px]`
+  // container makes the button's bounding box something axe can measure
+  // without ambiguity.
   render: () => (
     <Accordion className="w-[420px]">
       <AccordionItem value="a">
@@ -48,4 +48,19 @@ export const Default: Story = {
       </AccordionItem>
     </Accordion>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

@@ -250,11 +250,14 @@ describe('Plugin Documentation Coverage', () => {
   });
 
   it('should have rules directory for each plugin', () => {
-    const pluginDirs = globSync('content/docs/*/', { 
+    const pluginDirs = globSync('content/docs/*/', {
       ignore: [
-        'content/docs/concepts/', 
+        'content/docs/concepts/',
         'content/docs/getting-started/',
-        'content/docs/articles/'
+        'content/docs/articles/',
+        // Design philosophies are not plugins; they live alongside
+        // plugin docs but have no `rules/` subtree by design.
+        'content/docs/design/'
       ]
     });
     const missingRules: string[] = [];

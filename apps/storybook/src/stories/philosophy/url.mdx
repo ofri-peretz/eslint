@@ -1,0 +1,296 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Philosophy/Navigation & Routing/URL" />
+
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: URL_PHILOSOPHY.md
+    hash: 0bb8796c1b38 */}
+
+# URL Taxonomy & Redirect Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs),
+expanding Principle #2 ("Every URL is a contract"). Where #2 declares
+the contract, this document binds the mechanics: how URLs are shaped,
+how they change, how they die.
+
+URLs are the only part of the product we cannot iterate on safely.
+Component code can be rewritten weekly; a URL shipped once lives in
+backlinks, Slack messages, PR comments, Stack Overflow answers, and
+Google's index forever. **Treat URL design as a database-schema
+migration, not a styling decision.**
+
+---
+
+## The core rule
+
+> **URLs encode meaning, not implementation. Once shipped, they live
+> forever — either at their original location, or behind a permanent
+> redirect.**
+
+Three things follow from this. Every URL we ship must (a) describe what
+it points at in terms a reader can guess, (b) survive renames via
+redirect, never deletion, and (c) tolerate the underlying implementation
+being replaced wholesale without breaking.
+
+---
+
+## Slug grammar
+
+The non-negotiable shape of every path segment we ship.
+
+- **Lowercase only.** `/docs/jwt/no-none-algorithm`, never
+  `/docs/JWT/no-None-Algorithm`. Capitalization differences break case-
+  sensitive servers and confuse readers.
+- **Kebab-case for multi-word segments.** `/docs/secure-coding/...`,
+  never `/docs/secure_coding/` or `/docs/secureCoding/`. Hyphens are
+  the SEO standard.
+- **No trailing slash.** `/articles`, never `/articles/`. Pick one,
+  enforce it with a 301 from the wrong shape to the right shape.
+- **No file extensions.** `/docs/jwt/no-none-algorithm`, never
+  `/docs/jwt/no-none-algorithm.html` or `.mdx`. Implementation leaks.
+- **No query params as identity.** `/articles/why-jwt-none-is-broken`,
+  never `/articles?id=42`. Query params are filters and pagination,
+  not addresses (see Pagination Philosophy).
+- **No hashes-as-routes.** `/docs/jwt/no-none-algorithm`, never
+  `/docs#jwt/no-none-algorithm`. Hashes are intra-page anchors only.
+- **ASCII only.** Even when content is i18n'd, slugs remain
+  transliterated ASCII. Non-ASCII slugs survive zero round-trips
+  through corporate IM systems.
+
+---
+
+## Canonical shapes
+
+The address space of the site. Every new content type must claim a
+shape from this list (or amend the list before shipping).
+
+| Content type | Shape | Example |
+| --- | --- | --- |
+| Plugin landing | `/docs/<plugin>` | `/docs/jwt` |
+| Rule | `/docs/<plugin>/<rule-slug>` | `/docs/jwt/no-none-algorithm` |
+| Rule (alternative path) | `/rules/<plugin>/<rule-slug>` | reserved, currently not in use |
+| Article | `/articles/<article-slug>` | `/articles/why-jwt-none-is-broken` |
+| Tag index — articles | `/articles/tag/<tag>` | `/articles/tag/jwt` |
+| Tag index — rules | `/rules/tag/<tag>` | `/rules/tag/security` |
+| Cross-cutting index (CWE) | `/rules/cwe/<CWE-id>` | `/rules/cwe/CWE-798` |
+| Cross-cutting index (OWASP) | `/rules/owasp/<owasp-id>` | `/rules/owasp/A02-2021` |
+| Use-case index | `/rules/for/<use-case>` | `/rules/for/node`, `/rules/for/react` |
+| Version-anchored | `/v/<x.y.z>/...` | `/v/3.2.0/docs/jwt/no-none-algorithm` |
+| Latest (canonical) | `/...` (no version segment) | `/docs/jwt/no-none-algorithm` |
+| Changelog | `/changelog` | global; per-plugin via `/docs/<plugin>/changelog` |
+| OG image | `/og/<route>.png` | `/og/docs/jwt/no-none-algorithm.png` |
+
+The pattern: **noun → optional cross-cut → identity**. Never invert.
+`/articles/jwt/tag` reads wrong; `/articles/tag/jwt` reads right.
+
+---
+
+## Reserved namespaces
+
+These prefixes are off-limits for content URLs. They belong to the
+framework, the asset pipeline, or future expansion.
+
+- `/api/...` — server functions
+- `/og/...` — generated OG images
+- `/v/...` — versioned content
+- `/assets/...` — static assets
+- `/_next/...` — Next.js internals
+- `/<locale>/...` — reserved for i18n even though we ship English only
+
+Never let a plugin be named `api`, `og`, `v`, `assets`, `_next`, or
+any ISO 639-1 locale code. The lint rule that generates rule URLs
+should fail at build time on these.
+
+---
+
+## Query-param vocabulary
+
+The shared verbs across all filterable surfaces. Same names everywhere
+— `/articles` and `/rules` and any future surface use the same keys.
+
+| Param | Type | Used for |
+| --- | --- | --- |
+| `q` | string | full-text search |
+| `tag` | string or comma-joined | tag filter; repeatable form `?tag=a&tag=b` also valid |
+| `sort` | enum (`date`, `popular`, `name`, ...) | sort key |
+| `dir` | enum (`asc`, `desc`) | sort direction |
+| `page` | integer ≥ 1 | pagination (Pagination Philosophy) |
+| `v` | semver | version override on a `/latest` page (rare) |
+
+**Default-elision rule**: a param at its default value must be removed
+from the URL, not set to its default. `?sort=date&dir=desc&page=1` on
+`/articles` must round-trip to `/articles`. Otherwise sharability
+degrades into noise, and the canonical URL fragments per state.
+
+---
+
+## Redirect contract
+
+The hardest part of URL philosophy. The rule:
+
+> **Redirects, never deletes. Tombstones for content the redirect
+> can't replace.**
+
+### Rename of a slug
+
+Rule renamed from `no-none` to `no-none-algorithm`. Action:
+
+- **301** from old slug to new slug, forever.
+- Redirect lives in `next.config` `redirects()` (or equivalent edge
+  rules), not in application code, so it survives app crashes.
+- Old slug is reserved — never reused for a different rule.
+
+### Removal of a deprecated rule
+
+Rule deprecated and removed from the plugin. Action:
+
+- **The URL stays alive.** It returns 200, not 410, not 404.
+- Renders a **tombstone page**: "Removed in vX.Y.Z. Replaced by
+  [`<new-rule>`](...) / Superseded by community rule X / No replacement
+  — read the rationale."
+- Tombstones are part of the corpus. They are indexable, linkable,
+  and ship the same chrome as live pages (Principle #8). Readers
+  arriving from a 3-year-old SO answer get a graceful explanation,
+  not a 404.
+- A tombstone may redirect to a successor *only* when the successor's
+  behavior is a strict superset. Otherwise tombstone-and-explain.
+
+### Plugin merge or rename
+
+Plugin `crypto-helpers` merged into `crypto`. Action:
+
+- **301 every** `/docs/crypto-helpers/<rule>` to `/docs/crypto/<rule>`.
+- Plugin landing page `/docs/crypto-helpers` becomes a tombstone
+  pointing at `/docs/crypto`.
+- Old plugin name is reserved on npm and in the URL space.
+
+### Version-specific URLs
+
+`/v/3.2.0/docs/jwt/no-none-algorithm` is its own URL. It must continue
+to render the v3.2.0 content even after v4.0.0 removes the rule.
+Versioned URLs are immutable artifacts; only `/latest` (the unversioned
+path) reflects current state.
+
+### Anchor stability
+
+Headings within a page keep the same `id` even when their text changes.
+The `id` is derived from the *original* heading at first publication,
+not regenerated on edits. Google snippets and "scroll to here" links
+stay valid through copy revisions.
+
+If an `id` must change (e.g., heading was deleted, not just reworded),
+add a CSS-hidden `<span id="old-anchor">` at the new location so the
+fragment still scrolls correctly.
+
+### When 410 is allowed
+
+Never for content. Only for endpoints that were obviously machine-
+addressable and are being explicitly retired (e.g., a deprecated
+public API route). Even then, prefer a tombstone payload with a
+machine-readable hint.
+
+---
+
+## Versioning
+
+The contract for the `/latest` ↔ `/v/<x.y.z>/...` pair.
+
+- **`/latest` is unversioned in the URL.** A reader landing on
+  `/docs/jwt/no-none-algorithm` is implicitly on `latest`.
+- **Versioned URLs are immutable.** Once `/v/3.2.0/docs/...` is built
+  and shipped, its content is frozen. New rules in v3.2.1 do not appear
+  there.
+- **Canonical link on versioned pages points at `/latest`** when the
+  rule still exists there. When the rule is gone, the canonical points
+  at the tombstone.
+- **No `?v=` param.** Versioning lives in the path, never in a query
+  param, so caches and crawlers treat versions as distinct documents.
+
+---
+
+## Internationalization (reserved, not active)
+
+We ship English only today. The URL space reserves `/<locale>/` as the
+i18n prefix so adding it later does not break existing URLs.
+
+- When i18n ships, English content moves from `/...` to `/en/...` with
+  a permanent 301.
+- The bare `/...` then resolves via `Accept-Language` to the user's
+  preferred locale or falls back to `/en/...`.
+- Until then, no `/en/` URLs exist. The prefix is reserved.
+
+---
+
+## Forbidden patterns
+
+Hard bans. CI fails on these.
+
+- **Numeric-only slugs.** `/articles/42`. Wrong. Use `/articles/why-
+  jwt-none-is-broken`.
+- **Random hashes / build hashes in user-facing URLs.** `/articles/
+  a8f3c1`. Wrong. (Asset URLs under `/_next/` may have hashes — those
+  are not user-facing.)
+- **Date-stamped slugs that aren't dates.** `/articles/2024-10-15-
+  weird-thing` only if `2024-10-15` is the actual publish date *and*
+  you commit to never renaming. Otherwise omit the date — the article
+  page's metadata carries it.
+- **Pluralization mismatch within a noun family.** `/article/<slug>` +
+  `/articles` list. Pick one — we use plural everywhere.
+- **Mixed casing within a path.** `/docs/JWT/no-none-Algorithm`.
+- **Query-param routing.** `/page?type=article&id=42`. Wrong.
+- **Implementation-coupled segments.** `/api/v2/articles/get-by-slug`
+  is fine as an *API* URL, but never as a content URL.
+- **`index.html` or `.mdx` exposed.**
+
+---
+
+## CI enforcement
+
+The rules above only hold if they're enforced. The repo carries:
+
+- **Link-audit CI step.** Crawls the built site, fails the build on
+  any internal 404. Cross-references published article corpus and
+  every Dev.to mirror.
+- **Redirect-coverage check.** Every renamed slug in git history has
+  a corresponding redirect entry.
+- **Slug-shape lint.** A custom ESLint rule (`import-next` plugin or
+  similar) on the source of routes that flags violations of the
+  grammar.
+- **Anchor-stability check.** Diffing built HTML against the previous
+  build — heading `id`s that changed without a redirect entry fail
+  the check.
+
+These checks are part of the same CI tier as type-checking. URL drift
+is a build failure, not a deploy-time warning.
+
+---
+
+## How this gets used
+
+When designing any new page, route, or content type, ask:
+
+1. **Shape**: which canonical shape from the table does this match? If
+   none, what's the principled addition to the table?
+2. **Grammar**: does the slug obey the rules (lowercase, kebab-case,
+   no extensions, no trailing slash)?
+3. **Reserved**: is the new noun colliding with `/api`, `/og`, `/v`,
+   `/assets`, or a locale code?
+4. **Stability**: if this content gets renamed in 12 months, what's
+   the redirect target? If removed, what's the tombstone copy?
+5. **Anchors**: do all in-page headings have stable, derivable `id`s
+   that won't churn on copy edits?
+6. **Versioning**: does this page need to exist at both `/latest`
+   and `/v/<x.y.z>/...`? Are both routes wired?
+7. **Vocabulary**: do the filter/sort/page query params match the
+   shared vocabulary?
+
+If any answer is no, the URL is not yet shippable.
+
+---
+
+## Living document
+
+URL decisions are the most-irreversible decisions we ship. When a new
+content type, a new cross-cut, or a new redirect class arrives, **edit
+this document first**, then merge the route. Drift here destroys the
+contract Principle #2 promises.

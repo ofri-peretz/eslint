@@ -1,0 +1,332 @@
+---
+title: "Motion & Animation Philosophy"
+description: "A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 (\"Ease of use is performance\") and Principle #1 (\"Adoption is friction subtraction\")."
+icon: Wand2
+---
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: MOTION_PHILOSOPHY.md
+    hash: c3a93e8d7680 */}
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](/docs/design/ux), expanding
+Principle #6 ("Ease of use is performance") and Principle #1 ("Adoption is
+friction subtraction"). Motion is the part of the UI that, when wrong, hurts
+both at once: it harms perceived performance (CLS, INP) *and* increases the
+friction between a reader
+and what they came for.
+
+This document binds motion decisions. It exists because every
+component author is tempted to add motion, and the cost of getting it
+wrong is hidden until it's measured. We've already shipped one
+preventable CLS regression on `/articles` from motion choices alone.
+Once is data; twice is policy failure.
+
+---
+
+## The core rule
+
+> **Motion is earned, not assumed. Default to none. The CLS budget is
+> zero. `prefers-reduced-motion` is a hard contract.**
+
+Motion is earned when it serves comprehension — telling the reader
+*what just changed* and *where it went*. Motion is not earned when
+it serves decoration, signals effort, or asks the reader to wait for
+an animation to complete before they can act.
+
+Three tests, in order:
+
+1. **Does this motion communicate a change of state?** If no, it's
+   decoration. Cut it.
+2. **Does removing it reduce comprehension?** Try the page with
+   `prefers-reduced-motion: reduce`. If nothing is harder to
+   understand, the motion was decoration even if it looked like it
+   wasn't.
+3. **Does it preserve the layout?** If the motion changes the
+   position of anything *other than the element being animated*, the
+   CLS budget is already blown. Redesign.
+
+---
+
+## When motion is earned
+
+The short list of cases where motion is doing real work.
+
+- **State transitions that would otherwise be invisible.** A modal
+  opening, a sheet sliding in, an accordion expanding — the motion
+  tells the reader the new content came from a specific origin.
+- **Focus and hover feedback.** A `transition: opacity 150ms` on
+  hover communicates interactivity. A `:focus-visible` ring fading
+  in tells keyboard users where they are.
+- **Loading / skeleton breathing.** A single pulse on a skeleton
+  signals "this is intentionally placeholder, content is coming."
+  See Loading & Skeleton Philosophy.
+- **Drag, dismiss, swipe gestures.** Direct manipulation needs
+  motion because the reader's gesture *is* the animation.
+- **Page-transition continuity** (view-transitions). When two routes
+  share an element (a thumbnail that becomes a hero), continuity
+  motion explains the relationship.
+
+That's the list. Everything else needs justification.
+
+---
+
+## When motion is forbidden
+
+The hard bans. Not "discouraged" — forbidden, enforced in review.
+
+- **Anything that animates layout dimensions to/from `auto`.**
+  `height: 0 → auto`, `width: 0 → auto`, animated padding/margin
+  on containers that hold other content. The browser must measure
+  to animate, the measure causes reflow, the reflow shows up as CLS.
+  Use `grid-template-rows: 0fr → 1fr`, `transform: scaleY()`, or
+  `<details>` instead.
+- **Per-item stagger on list mount.** N items × stagger delay =
+  N separate layout commits, each counted toward CLS. Animate the
+  *container* once, not each child. If a stagger is genuinely needed
+  for hierarchy, the stagger total budget is ≤ 150ms across all
+  items, never per-item-delay × N.
+- **`AnimatePresence mode="popLayout"` on paginated content.**
+  popLayout is for *reordering*. Paginating *replaces*. Key the grid
+  by page and crossfade instead.
+- **Parallax tied to body scroll.** Causes scroll jank, breaks on
+  reduced-motion, and the effect is invisible on touch devices that
+  scroll at variable speed.
+- **Auto-advancing carousels.** Reader loses control; reading time
+  varies; ignored under reduced-motion.
+- **Long-form entry animations on first paint.** A 600ms fade-in on
+  the hero blocks comprehension for the duration. First paint
+  belongs to content, not theatre. Max 200ms on entry, or no
+  entry animation at all.
+- **JS-driven scroll-position animations.** `scrollTo({ behavior:
+  'smooth' })` is fine for anchor jumps; per-frame scroll-position
+  manipulation is not.
+- **Motion that responds to mouse position globally.** "Glow follows
+  cursor" is a CPU/GPU drain, breaks on touch, and is decoration.
+
+---
+
+## The CLS=0 budget
+
+A simple rule that resolves most motion disputes:
+
+> **The Cumulative Layout Shift caused by motion, per page, is zero.
+> Treat any non-zero CLS attributable to motion as a regression.**
+
+How to make zero achievable:
+
+- **Animate `transform` and `opacity` only.** These are GPU-composited
+  and never trigger layout. Anything else (top/left/width/height/
+  margin/padding) does.
+- **Reserve space before animating in.** If a banner slides down,
+  the space it occupies is already allocated, with the banner at
+  `transform: translateY(-100%)` initially. Then `translateY(0)`.
+  No layout shift, because the layout never changed.
+- **Use `will-change: transform, opacity`** sparingly on long-lived
+  animated elements. Avoid on entry animations — promotes a layer
+  unnecessarily.
+- **For collapsible containers, use the grid-row trick:**
+
+  ```css
+  .collapsible {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 200ms ease;
+  }
+  .collapsible[data-open] { grid-template-rows: 1fr; }
+  .collapsible > * { overflow: hidden; }
+  ```
+
+  No measured `auto`, no reflow, no CLS.
+
+---
+
+## `prefers-reduced-motion`
+
+A hard contract, not a nice-to-have. Roughly 30% of users on macOS
+have reduce-motion enabled by default for accessibility. Many more
+toggle it situationally (vestibular sensitivity, low-power mode,
+focus). Motion that ignores the preference is broken.
+
+**Rule:**
+
+> **Under `prefers-reduced-motion: reduce`, all motion is reduced to
+> a single zero-duration cut, or removed entirely. The reader sees
+> the destination state, never the journey.**
+
+Mechanics:
+
+- **CSS:** use the `motion-safe:` Tailwind prefix (or
+  `@media (prefers-reduced-motion: no-preference)` blocks) so that
+  motion is opt-in by media query, not opt-out.
+
+  ```html
+  <div class="motion-safe:animate-fade-in-up" />
+  ```
+
+- **JS (motion-react, etc.):** read the user preference and disable
+  motion at the source. Wrapping with `<MotionConfig reducedMotion="user">`
+  in motion-react is the canonical pattern.
+- **Functional state must still happen.** Reduced motion means the
+  modal still opens, the sheet still appears, the accordion still
+  expands — they just appear instantly instead of animating.
+- **Never test only with no-preference.** Every PR that adds motion
+  must be reviewed with reduced-motion enabled.
+
+---
+
+## Allowed primitives
+
+The toolchain. Adding a new motion library is a philosophy edit, not
+an install.
+
+- **CSS keyframes & transitions.** Default tool. Fastest, smallest,
+  works without JS, respects `prefers-reduced-motion` natively.
+- **Tailwind `animate-*` utilities.** Build on CSS keyframes,
+  enforce token consistency. Always paired with `motion-safe:`.
+- **View Transitions API.** For cross-route continuity. Native,
+  declarative, GPU-composited.
+- **`motion/react` (Framer Motion).** Escape hatch for *interactive*
+  motion — drag, gesture, layout, springs that respond to user
+  input. Not for entry animations.
+
+**Forbidden** (do not add): GSAP, anime.js, lottie-web (use Rive or
+GIF/video for genuinely hand-authored animation), per-frame
+`requestAnimationFrame` loops outside of canvas surfaces.
+
+---
+
+## Duration & easing tokens
+
+A small, opinionated set. New durations and easings get added to
+this table, not invented per-component.
+
+| Token | Duration | Use for |
+| --- | --- | --- |
+| `instant` | 0ms | Reduced-motion fallback |
+| `fast` | 100ms | Hover/focus feedback, small state |
+| `base` | 150-200ms | Default for visible UI state transitions |
+| `medium` | 250-300ms | Sheets, modals, accordions |
+| `slow` | 400-500ms | Hero / continuity / cross-route transitions |
+| `forbidden` | > 600ms | Almost never. Requires justification in code comment. |
+
+| Easing | Curve | Use for |
+| --- | --- | --- |
+| `linear` | `linear` | Loading shimmer only |
+| `ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | Default for entry / appear |
+| `ease-in` | `cubic-bezier(0.7, 0, 0.84, 0)` | Default for exit / dismiss |
+| `ease-in-out` | `cubic-bezier(0.4, 0, 0.2, 1)` | Movement that returns |
+| `spring` | `motion/react` springs | Direct-manipulation only |
+
+---
+
+## Stagger rules
+
+When motion *must* be staggered (hierarchical reveal, e.g. a tag
+panel opening), the budget is tight.
+
+- **Total stagger window ≤ 150ms across all items.** Not per-item.
+  N items, total budget 150ms, per-item delay is `150 / N`.
+- **Container animates first; children inherit.** The container's
+  entry is the primary motion. Children's stagger is a secondary
+  cue, not the main event.
+- **Items are positionally stable before animation begins.** All
+  items occupy their final position; only `transform` and `opacity`
+  animate. Layout is committed before any child appears.
+- **Reduced-motion: no stagger.** All children visible at the same
+  instant.
+
+---
+
+## Implementation patterns
+
+### Entry animation on a list
+
+**Wrong** (current `/articles` regression):
+
+```tsx
+{items.map((item, i) => (
+  <Card style={{ animationDelay: `${i * 50}ms` }} className="animate-fade-in-up" />
+))}
+```
+
+Causes N layout commits, fails CLS budget.
+
+**Right:**
+
+```tsx
+<div className="motion-safe:animate-fade-in-up">
+  {items.map((item) => <Card key={item.id} />)}
+</div>
+```
+
+One animation, on the container. Cards are positionally stable from
+first paint.
+
+### Collapsible panel
+
+**Wrong:**
+
+```tsx
+<motion.div animate={{ height: open ? 'auto' : 0 }} />
+```
+
+Measured layout, CLS regression.
+
+**Right:**
+
+```tsx
+<div data-open={open || undefined} className="grid grid-rows-[0fr] data-[open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-200">
+  <div className="overflow-hidden">{children}</div>
+</div>
+```
+
+### Page transition between paginated views
+
+**Wrong:**
+
+```tsx
+<AnimatePresence mode="popLayout">{paginated.map(...)}</AnimatePresence>
+```
+
+popLayout assumes reordering. Pagination replaces.
+
+**Right:**
+
+```tsx
+<div key={currentPage} className="motion-safe:animate-fade-in">
+  {paginated.map(...)}
+</div>
+```
+
+Crossfade keyed by page. Container animates; grid is positionally
+stable.
+
+---
+
+## How this gets used
+
+When adding or reviewing motion, ask:
+
+1. **Earned**: which of the "earned" cases does this match? If none,
+   delete the motion.
+2. **CLS**: does this animate only `transform` / `opacity`? Does it
+   reserve space before animating in? Does the page CLS stay at 0?
+3. **Reduced motion**: with `prefers-reduced-motion: reduce`, does
+   the destination state still appear immediately? Does the page
+   remain functional?
+4. **Duration / easing**: does this use a token from the table, or
+   invent its own?
+5. **Stagger**: if staggered, is the total budget ≤ 150ms? Are
+   children positionally stable from first paint?
+6. **Primitive**: is this CSS / Tailwind / view-transitions, or did
+   it reach for motion-react when it didn't need to?
+
+If any answer is no, the motion is not yet shippable.
+
+---
+
+## Living document
+
+The motion bans are the part of UX_PHILOSOPHY.md that gets tested
+most directly by web vitals. When a new motion need arises that this
+document didn't anticipate, **edit this document first**, then ship
+the motion. Drift here shows up in CLS dashboards within hours.

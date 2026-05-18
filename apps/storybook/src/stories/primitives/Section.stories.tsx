@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Section } from '@interlace/ui/section';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Section> = {
   title: 'Primitives/Section',
   component: Section,
+  tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
@@ -87,4 +89,14 @@ export const ToneVariants: Story = {
       </Section>
     </div>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

@@ -56,6 +56,7 @@ const preview: Preview = {
         // instead of `Tokens/Color Contrast/Docs` (alphabetic default).
         order: [
           'Welcome',
+          'Philosophy',
           'Tokens',
           ['Color Contrast'],
           'Primitives',

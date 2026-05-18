@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Container } from '@interlace/ui/container';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Container> = {
   title: 'Primitives/Container',
   component: Container,
+  tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
@@ -75,4 +77,14 @@ export const AllSizes: Story = {
       ))}
     </div>
   ),
+};
+
+export const Dark: Story = {
+  ...Content,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Content,
+  decorators: [withRtl],
 };

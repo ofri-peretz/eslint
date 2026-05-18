@@ -18,6 +18,9 @@ import { filenameCase } from './rules/conventions/filename-case';
 import { consistentExistenceIndexCheck } from './rules/conventions/consistent-existence-index-check';
 import { noJsonSchemaTags } from './rules/conventions/no-json-schema-tags';
 import { requireDataTestId } from './rules/conventions/require-data-testid';
+import { utmTaxonomy } from './rules/conventions/utm-taxonomy';
+import { noRawCrossPropertyHref } from './rules/conventions/no-raw-cross-property-href';
+import { analyticsEventNaming } from './rules/conventions/analytics-event-naming';
 
 export const rules = {
   'no-commented-code': noCommentedCode,
@@ -31,6 +34,9 @@ export const rules = {
   'consistent-existence-index-check': consistentExistenceIndexCheck,
   'no-json-schema-tags': noJsonSchemaTags,
   'require-data-testid': requireDataTestId,
+  'utm-taxonomy': utmTaxonomy,
+  'no-raw-cross-property-href': noRawCrossPropertyHref,
+  'analytics-event-naming': analyticsEventNaming,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {
@@ -50,6 +56,9 @@ export const configs = {
       'conventions/no-commented-code': 'warn',
       'conventions/expiring-todo-comments': 'warn',
       'conventions/no-deprecated-api': 'warn',
+      'conventions/utm-taxonomy': 'error',
+      'conventions/no-raw-cross-property-href': 'error',
+      'conventions/analytics-event-naming': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

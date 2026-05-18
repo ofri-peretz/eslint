@@ -24,8 +24,11 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('consistent-existence-index-check');
     expect(ruleKeys).toContain('no-json-schema-tags');
     expect(ruleKeys).toContain('require-data-testid');
+    expect(ruleKeys).toContain('utm-taxonomy');
+    expect(ruleKeys).toContain('no-raw-cross-property-href');
+    expect(ruleKeys).toContain('analytics-event-naming');
 
-    expect(ruleKeys.length).toBe(11);
+    expect(ruleKeys.length).toBe(14);
   });
 
   it('should export rules matching plugin.rules', () => {

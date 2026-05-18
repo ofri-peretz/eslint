@@ -1,0 +1,148 @@
+---
+title: Design
+description: The 25 contracts that govern look-and-feel across every Interlace surface.
+icon: Palette
+---
+
+import { Accessibility, AlertTriangle, BarChart3, BookOpen, ClipboardList, Code2, Globe, Keyboard, Languages, Layout, Link, Link2, ListOrdered, Loader, Lock, MousePointerClick, Palette, Plug, Search, Shield, Sparkles, Table, Tag, Type, Wand2 } from 'lucide-react';
+
+# Design philosophies
+
+The Interlace design system is governed by **25 contracts**,
+grouped into 8 clusters. Each contract lives at the
+monorepo root as a Markdown file and is the single source of truth; this
+section projects them so they're discoverable from inside the docs.
+
+If you're shipping a component change and can't point to the principle
+behind it, reconsider.
+
+## Foundations
+
+The visual contract. Every primitive consumes these tokens and rhythms.
+
+<Cards>
+  <Card title="UX Philosophy" icon={<Sparkles />} href="/docs/design/ux">
+    This is the foundational document for every UI/UX decision in this repo — the docs site, the @interlace/ui package, OG images, link metadata, the plugin READ…
+  </Card>
+  <Card title="Layout & Responsiveness Philosophy" icon={<Layout />} href="/docs/design/layout">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 ("Adoption is friction subtraction"), #6 ("Ease of use is performance"), #8 ("Open the s…
+  </Card>
+  <Card title="Typography & Reading Philosophy" icon={<Type />} href="/docs/design/typography">
+    A focused sub-philosophy of UX_PHILOSOPHY.md.
+  </Card>
+  <Card title="Color & Theming Philosophy" icon={<Palette />} href="/docs/design/color">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, paired with TYPOGRAPHY_PHILOSOPHY.md — together they define the page's visual contract.
+  </Card>
+  <Card title="Motion & Animation Philosophy" icon={<Wand2 />} href="/docs/design/motion">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 ("Ease of use is performance") and Principle #1 ("Adoption is friction subtraction").
+  </Card>
+</Cards>
+
+## Interaction & States
+
+How a primitive responds to a person — focus, loading, error, conversion.
+
+<Cards>
+  <Card title="CTA Philosophy" icon={<MousePointerClick />} href="/docs/design/cta">
+    Every call-to-action on this site — hero buttons, final-CTA banners, README "Install" buttons, OG-card link previews, plugin-page "Get started" links — is go…
+  </Card>
+  <Card title="Loading & Skeleton Philosophy" icon={<Loader />} href="/docs/design/loading">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 ("Ease of use is performance").
+  </Card>
+  <Card title="Keyboard Philosophy" icon={<Keyboard />} href="/docs/design/keyboard">
+    Every page on this site must be fully operable with a keyboard alone — no mouse, no trackpad, no touch.
+  </Card>
+  <Card title="Accessibility Philosophy" icon={<Accessibility />} href="/docs/design/a11y">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) and #11 (Build with the ecosystem) into the accessibi…
+  </Card>
+  <Card title="Error & Empty-State Philosophy" icon={<AlertTriangle />} href="/docs/design/error">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) into the failure path.
+  </Card>
+</Cards>
+
+## Content Patterns
+
+How information is presented inside the surface.
+
+<Cards>
+  <Card title="Code Example Philosophy" icon={<Code2 />} href="/docs/design/code-example">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 (friction subtraction), Principle #9 (the docs site is the showcase), and the typography…
+  </Card>
+  <Card title="Search Philosophy" icon={<Search />} href="/docs/design/search">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 (friction subtraction) and Principle #5 (discoverability beats memory).
+  </Card>
+  <Card title="Pagination Philosophy" icon={<ListOrdered />} href="/docs/design/pagination">
+    A focused sub-philosophy of UX_PHILOSOPHY.md.
+  </Card>
+  <Card title="Data Table Philosophy" icon={<Table />} href="/docs/design/data-table">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction), #5 (Discoverability beats memory), and #6 (Ease of u…
+  </Card>
+  <Card title="Form Philosophy" icon={<ClipboardList />} href="/docs/design/form">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principles #1 (Adoption is friction subtraction) and #6 (Ease of use is performance) into the data-en…
+  </Card>
+</Cards>
+
+## Navigation & Routing
+
+How URLs, anchors, and shared links behave.
+
+<Cards>
+  <Card title="URL Taxonomy & Redirect Philosophy" icon={<Link2 />} href="/docs/design/url">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #2 ("Every URL is a contract").
+  </Card>
+  <Card title="Deep-Linking Philosophy" icon={<Link />} href="/docs/design/deep-linking">
+    A focused sub-philosophy of URL_PHILOSOPHY.md and UX_PHILOSOPHY.md, expanding principle #2 ("Every URL is a contract") into the SPA + router surface.
+  </Card>
+  <Card title="SEO & AEO Philosophy" icon={<Globe />} href="/docs/design/seo">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principles #2 (Every URL is a contract), #3 (Sharing is the activation function), #5 (Discoverability…
+  </Card>
+</Cards>
+
+## Reach
+
+How a component travels across languages and tooling.
+
+<Cards>
+  <Card title="Internationalization Philosophy" icon={<Languages />} href="/docs/design/i18n">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #10 (Every component answers "would this travel?") into the language and locale surface.
+  </Card>
+  <Card title="Tooling Interop & Static-Analysis Philosophy" icon={<Plug />} href="/docs/design/interop">
+    A standalone engineering philosophy.
+  </Card>
+</Cards>
+
+## Trust
+
+Auth, app-layer security, and the UI surface of secure-by-default.
+
+<Cards>
+  <Card title="Auth Philosophy" icon={<Lock />} href="/docs/design/auth">
+    A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) and #8 (Open the side door) into the authentication s…
+  </Card>
+  <Card title="Security-by-Design Philosophy (UI Surface)" icon={<Shield />} href="/docs/design/security">
+    A focused sub-philosophy of UX_PHILOSOPHY.md and INTEROP_PHILOSOPHY.md, expanding the security surface that lives in the UI layer.
+  </Card>
+</Cards>
+
+## Observability
+
+How a deployed surface measures itself — pageviews, funnels, identity, cross-property journeys.
+
+<Cards>
+  <Card title="Analytics Philosophy" icon={<BarChart3 />} href="/docs/design/analytics">
+    A focused sub-philosophy of DEEP_LINKING_PHILOSOPHY.md and UTM_PHILOSOPHY.md, covering how a deployed surface measures itself — what events get captured, how…
+  </Card>
+  <Card title="UTM Philosophy" icon={<Tag />} href="/docs/design/utm">
+    A focused sub-philosophy of URL_PHILOSOPHY.md (principle #5 "default values never appear in URLs" and principle #9 "sticky parameters survive navigation") an…
+  </Card>
+</Cards>
+
+## Documentation
+
+How the design system explains itself to consumers.
+
+<Cards>
+  <Card title="Documentation Philosophy" icon={<BookOpen />} href="/docs/design/docs">
+    apps/docs is the public docs site for our 11-plugin, 272-rule ESLint monorepo (built on Fumadocs / Next.js 16 / React 19).
+  </Card>
+</Cards>
