@@ -56,7 +56,7 @@ export default async function HomePage() {
       <p>
         Every primitive follows the portable component-modeling floor:
         Tailwind + design tokens, AA contrast in light + dark, headless
-        behavior from <code>@base-ui-components/react</code>,
+        behavior from <code>@base-ui/react</code>,
         server-component by default, zero axe suppressions, locked visual
         invariants.
       </p>
