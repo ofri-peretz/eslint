@@ -1,0 +1,161 @@
+name: Auto Deploy on Main
+
+# Replaces the manual-only deploy gate for `apps/*` shipping. On every push to
+# `main`, computes which apps are turbo-affected by the new commit range and
+# dispatches the per-app production deploy workflow for each one. Existing
+# manual entry points (`deploy.yml`, `deploy-docs.yml`) are unchanged — they
+# can still be invoked via `gh workflow run` for ad-hoc redeploys / preview
+# targets.
+#
+# Why turbo-affected and not path filters: changes to `packages/ui/**` or
+# `packages/eslint-plugin-*/**` cascade into `apps/docs` via the workspace
+# dependency graph. A path filter would miss those; turbo's `...[<sha>]`
+# selector walks the graph and reports every transitive dependent.
+#
+# What is NOT in scope here:
+#
+#   - Per-branch preview deploys remain forbidden per CLAUDE.md (Vercel
+#     git-integration is intentionally NOT enabled on the canonical
+#     `interlace-landing`, `storybook-interlace-tools`, `ds-interlace-tools`
+#     projects). Previews still require an explicit `target=preview` dispatch.
+#   - Package publishes — `release.yml` owns those, fires on changesets/tags.
+#   - The `eslint` Vercel project (`prj_f5DETjxcjOCNlwYpFvH8784SLOGE` →
+#     https://eslint-one.vercel.app) is NOT in `.github/vercel-apps.json` and
+#     is not deployed here. If it should be wired, add it to vercel-apps.json
+#     first.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: auto-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write   # required to dispatch deploy.yml / deploy-docs.yml
+
+jobs:
+  affected:
+    name: Compute turbo-affected apps
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs: ${{ steps.compute.outputs.docs }}
+      storybook: ${{ steps.compute.outputs.storybook }}
+      registry: ${{ steps.compute.outputs.registry }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Need history reaching the previous main commit so turbo can
+          # diff against it. `0` = full clone; for very large repos we'd
+          # tune this, but the eslint monorepo is small enough.
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      - id: compute
+        name: Compute affected workspaces vs ${{ github.event.before }}
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          # Edge cases that yield no usable diff base — deploy everything to
+          # be safe. github.event.before is all-zeros on:
+          #   - first push to a new branch (irrelevant here, gated on main)
+          #   - branch creation by force-push from elsewhere
+          # We also fall back if the SHA is unreachable (e.g. force-push
+          # rewriting history past our fetch depth).
+          if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]] \
+             || ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+            echo "::notice::No usable diff base (BEFORE_SHA=$BEFORE_SHA) — deploying all three apps."
+            {
+              echo "docs=true"
+              echo "storybook=true"
+              echo "registry=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Ask turbo which workspaces are affected. `--dry-run=json` emits
+          # one entry per (workspace × task); we collapse to unique workspace
+          # names. `...[<sha>]` selects the workspace AND every dependent.
+          AFFECTED=$(npx --no turbo run build --filter="...[$BEFORE_SHA]" --dry-run=json \
+            | jq -r '.tasks[]?.package' \
+            | sort -u)
+
+          echo "Affected workspaces:"
+          echo "$AFFECTED" | sed 's/^/  /'
+          echo
+
+          # Map workspace name → vercel-apps.json key.
+          # Keep this table in lockstep with `.github/vercel-apps.json`.
+          docs=false; storybook=false; registry=false
+          while IFS= read -r ws; do
+            case "$ws" in
+              docs)                 docs=true ;;
+              "@interlace/storybook") storybook=true ;;
+              registry)             registry=true ;;
+            esac
+          done <<< "$AFFECTED"
+
+          {
+            echo "docs=$docs"
+            echo "storybook=$storybook"
+            echo "registry=$registry"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Dispatch decisions: docs=$docs storybook=$storybook registry=$registry"
+
+  deploy-docs:
+    name: Dispatch deploy-docs.yml
+    needs: affected
+    if: needs.affected.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fire deploy-docs.yml (production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-docs.yml \
+            --repo ofri-peretz/eslint \
+            --ref main \
+            -f environment=production \
+            -f ref=${{ github.sha }}
+
+  deploy-storybook:
+    name: Dispatch deploy.yml for storybook
+    needs: affected
+    if: needs.affected.outputs.storybook == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fire deploy.yml (storybook → production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy.yml \
+            --repo ofri-peretz/eslint \
+            --ref main \
+            -f app=storybook \
+            -f target=production
+
+  deploy-registry:
+    name: Dispatch deploy.yml for registry
+    needs: affected
+    if: needs.affected.outputs.registry == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fire deploy.yml (registry → production)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy.yml \
+            --repo ofri-peretz/eslint \
+            --ref main \
+            -f app=registry \
+            -f target=production
