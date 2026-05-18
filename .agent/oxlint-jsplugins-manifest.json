@@ -2691,6 +2691,7 @@
       "require-websocket-wss"
     ],
     "conventions": [
+      "analytics-event-naming",
       "consistent-existence-index-check",
       "expiring-todo-comments",
       "filename-case",
@@ -2698,10 +2699,12 @@
       "no-console-spaces",
       "no-deprecated-api",
       "no-json-schema-tags",
+      "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
-      "require-data-testid"
+      "require-data-testid",
+      "utm-taxonomy"
     ],
     "crypto": [
       "no-hardcoded-crypto-key",

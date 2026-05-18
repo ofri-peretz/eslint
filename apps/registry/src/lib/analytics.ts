@@ -7,12 +7,15 @@
  */
 import { posthog } from './posthog-init';
 
-export interface TrackedEventMap {
-  // Empty for now. Add `<category>:<object>_<verb>` entries here.
-  [eventName: string]: never;
-}
+// Empty for now — registry has no business events. Add typed entries here
+// when surfaces grow, then call sites are forced to match via the union.
+//
+// Shape mirrors apps/docs/src/lib/analytics.ts so the contract is uniform
+// across consumers (per ANALYTICS_PHILOSOPHY.md principle 3).
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface TrackedEventMap {}
 
-export type TrackedEventName = keyof TrackedEventMap;
+export type TrackedEventName = keyof TrackedEventMap & string;
 
 function isTrackingAllowed(): boolean {
   if (typeof window === 'undefined') return false;
