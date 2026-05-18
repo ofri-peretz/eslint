@@ -4,7 +4,6 @@ import { Stack, Cluster } from '@interlace/ui/stack';
 const meta: Meta<typeof Stack> = {
   title: 'Primitives/Stack',
   component: Stack,
-  tags: ['autodocs'],
   parameters: {
     docs: {
       description: {

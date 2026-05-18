@@ -4,7 +4,6 @@ import { Section } from '@interlace/ui/section';
 const meta: Meta<typeof Section> = {
   title: 'Primitives/Section',
   component: Section,
-  tags: ['autodocs'],
   parameters: {
     docs: {
       description: {

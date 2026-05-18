@@ -4,7 +4,6 @@ import { Container } from '@interlace/ui/container';
 const meta: Meta<typeof Container> = {
   title: 'Primitives/Container',
   component: Container,
-  tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
