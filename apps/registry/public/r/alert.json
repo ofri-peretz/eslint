@@ -7,7 +7,9 @@
   "dependencies": [
     "class-variance-authority"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/alert.tsx",

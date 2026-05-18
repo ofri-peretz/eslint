@@ -1,0 +1,337 @@
+/*
+ * @interlace/ui — fumadocs-flavored theme overrides used by every docs site
+ * built on top of @interlace/ui + fumadocs-ui.
+ *
+ * Import once in the consuming app's global stylesheet, AFTER
+ * `fumadocs-ui/css/<theme>.css` and `fumadocs-ui/css/preset.css`:
+ *
+ *   @import "fumadocs-ui/css/neutral.css";
+ *   @import "fumadocs-ui/css/preset.css";
+ *   @import "@interlace/ui/styles/theme.css";
+ *
+ * What's in here, why each block exists:
+ *
+ *   1. shadcn-token bridge — @interlace/ui primitives (Card, DropdownMenu,
+ *      Popover, …) use bare shadcn tokens (`bg-card`, `bg-popover`, `text-foreground`).
+ *      Fumadocs ships the `--color-fd-*` family but NOT the unprefixed shadcn
+ *      tokens. Without these aliases every shadcn-style class resolves to an
+ *      undefined variable and renders unstyled (e.g. transparent dropdowns).
+ *
+ *   2. Shiki AAA boosts — the github-light / github-dark Shiki themes pass AA
+ *      but a handful of muted tokens (comments, certain keywords) only reach
+ *      ~5:1 on white/near-black. We darken/brighten those specific
+ *      CSS-variable values so every token clears AAA (7:1).
+ *
+ *   3. Fumadocs TOC visual fix — single-line indicator over the
+ *      staircase rail. App-agnostic; any fumadocs consumer wants this.
+ *
+ *   4. Remote-content styling — works with @interlace/ui/fumadocs/remote-markdown.
+ *      Badge images inline, centered figure divs, image overflow.
+ *
+ *   5. Lightweight CSS animations — fade-in-up / slide-in-left / scale-in.
+ *      Reduced-motion contract is already wired in tokens.css.
+ *
+ * Brand colors (purple primary, AAA on white) are app-specific and stay in
+ * the app's global.css. Don't move them here.
+ */
+
+/* ─────────────────────────────────────────────────────────────────
+ * 1. shadcn-token bridge — maps shadcn-bare tokens to fumadocs sources.
+ *    Light + dark inherit from `--color-fd-*` which the app overrides.
+ * ──────────────────────────────────────────────────────────────── */
+:root {
+  --background: var(--color-fd-background);
+  --foreground: var(--color-fd-foreground);
+  --card: var(--color-fd-card);
+  --card-foreground: var(--color-fd-card-foreground);
+  --popover: var(--color-fd-popover);
+  --popover-foreground: var(--color-fd-popover-foreground);
+  --muted: var(--color-fd-muted);
+  --muted-foreground: var(--color-fd-muted-foreground);
+  --accent: var(--color-fd-accent);
+  --accent-foreground: var(--color-fd-accent-foreground);
+  --secondary: var(--color-fd-secondary);
+  --secondary-foreground: var(--color-fd-secondary-foreground);
+  --border: var(--color-fd-border);
+  --input: var(--color-fd-border);
+  --ring: var(--color-fd-ring);
+  --destructive: hsl(0, 72%, 38%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Tailwind v4 @theme-side aliases so utilities like `bg-card`,
+     `border-border` resolve. Same value as above. */
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+  --color-popover: var(--color-fd-popover);
+  --color-popover-foreground: var(--color-fd-popover-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-secondary: var(--color-fd-secondary);
+  --color-secondary-foreground: var(--color-fd-secondary-foreground);
+  --color-border: var(--color-fd-border);
+  --color-input: var(--color-fd-border);
+  --color-ring: var(--color-fd-ring);
+  --color-primary: var(--color-fd-primary);
+  --color-primary-foreground: var(--color-fd-primary-foreground);
+  --color-destructive: hsl(0, 72%, 38%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* shadcn chart palette — five distinct hues for series colors.
+     Light-mode values pass ≥4.5:1 contrast on `bg-card` (white).
+     Used by @/components/ui/chart `<ChartContainer>` + ChartConfig. */
+  --chart-1: oklch(0.55 0.22 264);
+  --chart-2: oklch(0.55 0.16 162);
+  --chart-3: oklch(0.55 0.16 36);
+  --chart-4: oklch(0.55 0.2 320);
+  --chart-5: oklch(0.55 0.16 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+.dark {
+  /* Dark-mode chart palette — lifted lightness so each series stays
+     ≥4.5:1 on `bg-card` (near-black). */
+  --chart-1: oklch(0.78 0.16 264);
+  --chart-2: oklch(0.78 0.14 162);
+  --chart-3: oklch(0.78 0.14 36);
+  --chart-4: oklch(0.78 0.16 320);
+  --chart-5: oklch(0.78 0.14 90);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 2. Shiki AAA boosts — github-light / github-dark themes.
+ *    Boost muted comment + keyword colors past 7:1 contrast.
+ * ──────────────────────────────────────────────────────────────── */
+.shiki span[style*="--shiki-light:#6E7781"],
+.shiki span[style*="--shiki-light:#6e7781"] {
+  --shiki-light: #424952 !important;
+}
+.shiki span[style*="--shiki-light:#CF222E"],
+.shiki span[style*="--shiki-light:#cf222e"] {
+  --shiki-light: #82071e !important;
+}
+.shiki span[style*="--shiki-light:#0550AE"],
+.shiki span[style*="--shiki-light:#0550ae"] {
+  --shiki-light: #033d8b !important;
+}
+.shiki span[style*="--shiki-light:#953800"] {
+  --shiki-light: #6c2700 !important;
+}
+.shiki span[style*="--shiki-light:#8250DF"],
+.shiki span[style*="--shiki-light:#8250df"] {
+  --shiki-light: #5a31aa !important;
+}
+.shiki span[style*="--shiki-light:#0A3069"] {
+  --shiki-light: #062350 !important;
+}
+
+/* DynamicCodeBlock (install snippets, fumadocs) ships a different Shiki
+   theme variant — match `--shiki-light: #XXXXXX` (with space) too. */
+.shiki span[style*="#6F42C1"],
+.shiki span[style*="#6f42c1"] {
+  --shiki-light: #5a2da3 !important;
+}
+.shiki span[style*="#005CC5"],
+.shiki span[style*="#005cc5"] {
+  --shiki-light: #003e8a !important;
+}
+.shiki span[style*="#032F62"],
+.shiki span[style*="#032f62"] {
+  --shiki-light: #021f42 !important;
+}
+.shiki span[style*="#D73A49"],
+.shiki span[style*="#d73a49"] {
+  --shiki-light: #971923 !important;
+}
+.shiki span[style*="#24292E"],
+.shiki span[style*="#24292e"] {
+  --shiki-light: #14171b !important;
+}
+
+/* Dark-mode tokens — brighten muted colors over near-black bg. */
+.shiki span[style*="#B392F0"],
+.shiki span[style*="#b392f0"] {
+  --shiki-dark: #d2b5ff !important;
+}
+.shiki span[style*="#9ECBFF"],
+.shiki span[style*="#9ecbff"] {
+  --shiki-dark: #c4e0ff !important;
+}
+.shiki span[style*="#F97583"],
+.shiki span[style*="#f97583"] {
+  --shiki-dark: #ffa3ad !important;
+}
+.shiki span[style*="--shiki-dark:#8B949E"],
+.shiki span[style*="--shiki-dark:#8b949e"] {
+  --shiki-dark: #b8c0c8 !important;
+}
+.shiki span[style*="--shiki-dark:#FF7B72"],
+.shiki span[style*="--shiki-dark:#ff7b72"] {
+  --shiki-dark: #ffa39d !important;
+}
+.shiki span[style*="--shiki-dark:#FFA657"],
+.shiki span[style*="--shiki-dark:#ffa657"] {
+  --shiki-dark: #ffc787 !important;
+}
+.shiki span[style*="--shiki-dark:#79C0FF"],
+.shiki span[style*="--shiki-dark:#79c0ff"] {
+  --shiki-dark: #a5d6ff !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 3. Fumadocs TOC visual fix — clean single-line indicator over the
+ *    staircase rail. The arbitrary-property utilities below are
+ *    classes Tailwind v4 cannot generate from `text-(--fd-…)` shorthand.
+ * ──────────────────────────────────────────────────────────────── */
+.h-\(--fd-height\) {
+  height: var(--fd-height);
+}
+.top-\(--fd-top\) {
+  top: var(--fd-top);
+}
+.transition-\[top\,height\] {
+  transition-property: top, height !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+#nd-toc .bg-fd-primary {
+  transition-property: top, height !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+
+/* Hide gray rail segments and diagonal connectors — keep only the
+   purple sliding indicator. */
+#nd-toc .bg-fd-foreground\/10 {
+  display: none !important;
+}
+#nd-toc svg line.stroke-fd-foreground\/10,
+#nd-toc .stroke-fd-foreground\/10 {
+  display: none !important;
+}
+
+/* Popover TOC item indentation by depth. */
+[data-toc-popover-content] a {
+  padding-inline-start: 14px !important;
+}
+[data-toc-popover-content] a[data-depth='3'] {
+  padding-inline-start: 26px !important;
+}
+[data-toc-popover-content] a[data-depth='4'],
+[data-toc-popover-content] a[data-depth='5'],
+[data-toc-popover-content] a[data-depth='6'] {
+  padding-inline-start: 36px !important;
+}
+
+@layer components {
+  /* Responsive TOC visibility:
+   *   xl+ (≥1280px): side TOC visible, popover TOC hidden
+   *   <xl: popover TOC visible, side TOC hidden
+   */
+  @media (min-width: 1280px) {
+    button[data-toc-popover-trigger],
+    div[data-toc-popover-content] {
+      display: none !important;
+    }
+  }
+  @media (max-width: 1279px) {
+    #nd-toc {
+      display: none !important;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 4. Remote-content styling — `<RemoteMarkdown>` (README / changelog /
+ *    rule-doc) classes from @interlace/ui/fumadocs/remote-markdown.
+ * ──────────────────────────────────────────────────────────────── */
+.remote-readme a > img,
+.remote-changelog a > img,
+.remote-rule-doc a > img {
+  display: inline-block !important;
+  vertical-align: middle;
+  height: auto;
+}
+
+.remote-readme div[align='center'],
+.remote-changelog div[align='center'],
+.remote-rule-doc div[align='center'] {
+  text-align: center;
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.remote-readme div[align='center'] a,
+.remote-changelog div[align='center'] a,
+.remote-rule-doc div[align='center'] a {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.remote-readme img,
+.remote-changelog img,
+.remote-rule-doc img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 5. Lightweight CSS animations — fade-in-up / slide-in-left / scale-in.
+ *    Reduced-motion is handled in tokens.css (already imported).
+ * ──────────────────────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s ease-out 0.3s both;
+}
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out 0.2s both;
+}
