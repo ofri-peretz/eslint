@@ -108,7 +108,9 @@ apply the fix → re-confirm in the browser.
 
 Every code change goes through a PR; `git push origin main` is blocked by
 branch protection. The canonical loop is **branch → commit → push → PR →
-checks → merge → auto-deploy**.
+checks → merge → manually trigger `deploy-docs.yml`**. Unlike most projects,
+merging to `main` does **not** ship the docs site here — the deploy is a
+manual workflow that an agent must run and watch (see step 6).
 
 ### 1. Branch from `main`
 
@@ -178,20 +180,39 @@ Required checks on this repo (the workflow names visible on a PR):
 ✅ Build (apps/docs)
 ```
 
-Poll until every check finishes — don't merge on red or unknown:
+Poll until every check finishes, **then verify every one reports
+`SUCCESS`** — the poll only ensures nothing is still pending; a `FAILURE`
+or `CANCELLED` would otherwise slip past it.
 
 ```bash
-until [ "$(gh -R ofri-peretz/eslint pr view <#> \
+PR=<#>
+
+# 1. Wait until every required check has a terminal state.
+until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
   --json statusCheckRollup \
   --jq '[.statusCheckRollup[]? | select((.conclusion // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
   sleep 20
 done
-gh -R ofri-peretz/eslint pr view <#> --json mergeable,mergeStateStatus,statusCheckRollup
+
+# 2. Validation gate — refuse to merge unless EVERY required check is SUCCESS.
+FAILED=$(gh -R ofri-peretz/eslint pr view "$PR" \
+  --json statusCheckRollup \
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status) != "SUCCESS" and (.conclusion // .state // .status) != "SKIPPED" and (.conclusion // .state // .status) != "NEUTRAL") | "\(.conclusion // .state // .status)  \(.name // .context)"] | .[]')
+if [ -n "$FAILED" ]; then
+  echo "::error::PR $PR has non-success checks; not merging:"
+  echo "$FAILED"
+  exit 1
+fi
+
+gh -R ofri-peretz/eslint pr view "$PR" --json mergeable,mergeStateStatus,statusCheckRollup
 ```
 
 If `mergeStateStatus == "DIRTY"` there's a conflict with `main`. Resolve
 via `git fetch origin main && git merge origin/main`; do not rebase
-blindly across unrelated changes.
+blindly across unrelated changes. If `mergeStateStatus == "BLOCKED"`
+after all checks pass, branch protection is waiting on a required review
+(see CODEOWNERS / repository ruleset) — don't `--admin` past it without
+asking the user.
 
 ### 5. Merge
 
