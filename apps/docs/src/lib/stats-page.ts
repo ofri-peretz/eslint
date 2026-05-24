@@ -38,6 +38,8 @@ export interface ImpactStats {
 export interface PluginRow {
   /** Package name, e.g. `eslint-plugin-pg`. */
   name: string;
+  /** One-line catalog description from plugin-stats.json. */
+  description: string;
   category: PluginStat['category'];
   rules: number;
   version: string;
@@ -220,6 +222,7 @@ export async function getStatsPageData(): Promise<StatsPageData> {
   const plugins: PluginRow[] = publishedPlugins
     .map((p) => ({
       name: p.name,
+      description: p.description,
       category: p.category,
       rules: p.rules,
       version: p.version,

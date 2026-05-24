@@ -147,6 +147,25 @@ describe('Stats page: structure lock', () => {
     );
   });
 
+  describe('Plugins table cell content', () => {
+    it('plugin name renders as a real npm link (not plain text)', () => {
+      expect(pageSource).toMatch(
+        /href=\{`https:\/\/www\.npmjs\.com\/package\/\$\{p\.name\}`\}/,
+      );
+      expect(pageSource).toMatch(/rel="noopener noreferrer"/);
+      expect(pageSource).toMatch(/target="_blank"/);
+    });
+
+    it('description from plugin-stats.json is surfaced in the row', () => {
+      expect(helperSource).toContain('description: p.description');
+      expect(pageSource).toContain('{p.description}');
+    });
+
+    it('PluginRow type exposes description so callers can render it', () => {
+      expect(helperSource).toMatch(/description:\s*string/);
+    });
+  });
+
   describe('Engagement NSM math', () => {
     it('helper exposes Reach + EngagementRate (not the old sum)', () => {
       expect(helperSource).toContain('reach');

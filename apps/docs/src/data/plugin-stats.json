@@ -97,19 +97,19 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-conventions",
+      "rules": 14,
+      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
+      "category": "quality",
+      "version": "4.0.7",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-maintainability",
       "rules": 13,
       "description": "ESLint rules for reducing cognitive load and ensuring code readability",
       "category": "quality",
       "version": "3.0.3",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-conventions",
-      "rules": 11,
-      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
-      "category": "quality",
-      "version": "4.0.7",
       "published": true
     },
     {
@@ -161,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 352,
+  "totalRules": 355,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-05-16T22:25:36.820Z"
+  "generatedAt": "2026-05-18T06:32:52.106Z"
 }

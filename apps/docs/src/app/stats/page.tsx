@@ -157,22 +157,34 @@ export default async function StatsPage() {
             <TableBody>
               {data.plugins.map((p: PluginRow) => (
                 <TableRow key={p.name}>
-                  <TableCell className="font-mono text-xs">{p.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="align-top">
+                    <a
+                      href={`https://www.npmjs.com/package/${p.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs underline-offset-2 hover:underline focus-visible:underline"
+                    >
+                      {p.name}
+                    </a>
+                    <p className="mt-1 text-xs text-fd-muted-foreground">
+                      {p.description}
+                    </p>
+                  </TableCell>
+                  <TableCell className="align-top">
                     <Badge variant="secondary" className="capitalize">
                       {p.category}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-right align-top tabular-nums">
                     {p.rules}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-right align-top tabular-nums">
                     {fmtDownloads(p.downloads)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right align-top">
                     <CoverageCell value={p.coverage} />
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="align-top font-mono text-xs">
                     {p.version}
                   </TableCell>
                 </TableRow>
