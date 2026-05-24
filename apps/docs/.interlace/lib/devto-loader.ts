@@ -105,7 +105,9 @@ export const defaultDevToFetcher: DevToFetcher = async (path) => {
   const normalized = normalizePath(path);
   try {
     const res = await fetch(`${DEVTO_API}/${normalized}`, {
-      next: { revalidate: 3600 },
+      // 12-hour TTL — bounded freshness without hammering Dev.to's
+      // per-IP rate limit. Standardized across blog + docs 2026-05-23.
+      next: { revalidate: 43200 },
       headers: { Accept: 'application/json', 'User-Agent': 'Interlace-Docs/1.0' },
     } as NextFetchInit);
     if (!res.ok) return undefined;

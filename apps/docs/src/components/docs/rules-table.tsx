@@ -106,7 +106,8 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
     let markdown = await readLocalReadme(packageName);
     if (markdown === null) {
       const res = await fetch(url, {
-        next: { revalidate: 21600 }, // 6 hour ISR cache
+        // 12-hour TTL — standardized across blog + docs 2026-05-23
+        next: { revalidate: 43200 },
       });
 
       if (!res.ok) {
@@ -150,7 +151,8 @@ async function fetchRuleDescriptions(plugin: string, rules: ParsedRule[]): Promi
     try {
       const ruleDocUrl = `${GITHUB_RAW_BASE}/${packageName}/docs/rules/${rule.name}.md`;
       const res = await fetch(ruleDocUrl, {
-        next: { revalidate: 21600 }, // 6 hour cache
+        // 12-hour TTL — standardized across blog + docs 2026-05-23
+        next: { revalidate: 43200 },
       });
       
       if (!res.ok) {
