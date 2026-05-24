@@ -80,6 +80,10 @@ function pickArticleFields(article: any) {
     reading_time_minutes: Number(article?.reading_time_minutes ?? 0),
     page_views_count: Number(article?.page_views_count ?? 0),
     public_reactions_count: Number(article?.public_reactions_count ?? 0),
+    // Legacy field name kept in sync with the canonical one so existing
+    // consumers (stats-page Engagement reducer, ArticlesClient, filter
+    // sort, lock tests) keep working without a fan-out rename.
+    positive_reactions_count: Number(article?.public_reactions_count ?? 0),
     comments_count: Number(article?.comments_count ?? 0),
     tag_list: Array.isArray(article?.tag_list)
       ? article.tag_list.filter((t: unknown): t is string => typeof t === 'string')

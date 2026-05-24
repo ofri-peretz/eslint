@@ -20,9 +20,34 @@ const APP_ID = 'storybook' as const;
 const COOKIE_DOMAIN = '.interlace.tools';
 void COOKIE_DOMAIN;
 
+function isLocalEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname.toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    host.endsWith('.local') ||
+    host.endsWith('.localhost')
+  );
+}
+
+function isLocalOptIn(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    return localStorage.getItem('interlace_local_analytics') === '1';
+  } catch {
+    return false;
+  }
+}
+
 function isTrackingAllowed(): boolean {
   if (typeof window === 'undefined') return false;
   if (typeof navigator === 'undefined') return false;
+  // Local dev short-circuit. Storybook dev server runs on localhost:6006,
+  // so without this every story-flip would pollute production cohorts.
+  if (isLocalEnvironment() && !isLocalOptIn()) return false;
   const dnt = navigator.doNotTrack;
   if (dnt === '1' || dnt === 'yes') return false;
   const gpc = (
