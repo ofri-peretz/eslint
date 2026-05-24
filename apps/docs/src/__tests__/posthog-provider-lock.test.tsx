@@ -123,6 +123,11 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
     expect(initSrc).toMatch(/doNotTrack/);
     expect(initSrc).toMatch(/globalPrivacyControl/);
   });
+  it('local-environment short-circuit before init (with localStorage opt-in)', () => {
+    expect(initSrc).toMatch(/isLocalEnvironment/);
+    expect(initSrc).toMatch(/interlace_local_analytics/);
+    expect(initSrc).toMatch(/localhost/);
+  });
   it('default `app` property is registered on load', () => {
     expect(initSrc).toMatch(/register\(\{\s*app:/);
   });

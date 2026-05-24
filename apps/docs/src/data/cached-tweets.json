@@ -1,11 +1,11 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-05-17T01:27:24.231Z",
+  "_lastUpdated": "2026-05-24T02:40:43.043Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",
+      "favorite_count": 0,
       "lang": "en",
-      "favorite_count": 9,
       "possibly_sensitive": false,
       "created_at": "2026-01-01T18:13:00.000Z",
       "display_text_range": [
@@ -13,7 +13,6 @@
         243
       ],
       "entities": {
-        "hashtags": [],
         "urls": [
           {
             "display_url": "dev.to/ofri-peretz/th…",
@@ -24,9 +23,7 @@
             ],
             "url": "https://t.co/5aWCclnWlG"
           }
-        ],
-        "user_mentions": [],
-        "symbols": []
+        ]
       },
       "id_str": "2006790779537121585",
       "text": "Onboarding to a new codebase? You need a security pulse check.\n\nHere is how to conduct a \"30-Minute Security Audit\" to find the glaring vulnerabilities before you write your first line of code.\n\n{ author: Ofri Peretz }\n\nhttps://t.co/5aWCclnWlG",
@@ -44,10 +41,10 @@
           "2006790779537121585"
         ],
         "editable_until_msecs": "1767294780000",
-        "is_edit_eligible": true,
-        "edits_remaining": "5"
+        "edits_remaining": "5",
+        "is_edit_eligible": true
       },
-      "conversation_count": 1,
+      "conversation_count": 0,
       "news_action_type": "conversation",
       "card": {
         "card_platform": {
@@ -66,17 +63,17 @@
         "binding_values": {
           "photo_image_full_size_large": {
             "image_value": {
-              "height": 419,
-              "width": 800,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=800x419"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=800x419",
+              "width": 764
             },
             "type": "IMAGE"
           },
           "thumbnail_image": {
             "image_value": {
               "height": 200,
-              "width": 400,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=400x400"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=400x400",
+              "width": 400
             },
             "type": "IMAGE"
           },
@@ -91,24 +88,24 @@
           "thumbnail_image_large": {
             "image_value": {
               "height": 300,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=600x600"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x600",
+              "width": 600
             },
             "type": "IMAGE"
           },
           "summary_photo_image_small": {
             "image_value": {
               "height": 202,
-              "width": 386,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=386x202"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=386x202",
+              "width": 386
             },
             "type": "IMAGE"
           },
           "thumbnail_image_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=orig"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
+              "width": 800
             },
             "type": "IMAGE"
           },
@@ -123,24 +120,24 @@
           "photo_image_full_size_small": {
             "image_value": {
               "height": 202,
-              "width": 386,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=386x202"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=386x202",
+              "width": 386
             },
             "type": "IMAGE"
           },
           "summary_photo_image_large": {
             "image_value": {
-              "height": 419,
-              "width": 800,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=800x419"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=800x419",
+              "width": 764
             },
             "type": "IMAGE"
           },
           "thumbnail_image_small": {
             "image_value": {
               "height": 72,
-              "width": 144,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=144x144"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=144x144",
+              "width": 144
             },
             "type": "IMAGE"
           },
@@ -153,17 +150,17 @@
           },
           "thumbnail_image_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=png&name=2048x2048_2_exp"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
+              "width": 800
             },
             "type": "IMAGE"
           },
           "photo_image_full_size_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=orig"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
+              "width": 800
             },
             "type": "IMAGE"
           },
@@ -175,8 +172,8 @@
           "photo_image_full_size": {
             "image_value": {
               "height": 314,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=600x314"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x314",
+              "width": 600
             },
             "type": "IMAGE"
           },
@@ -184,44 +181,28 @@
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 92.11,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 236,
+                    "green": 229,
+                    "red": 226
+                  }
                 },
                 {
+                  "percentage": 5.9,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
+                    "blue": 0,
+                    "green": 0,
+                    "red": 0
+                  }
                 },
                 {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
+                  "percentage": 2.65,
                   "rgb": {
                     "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "green": 110,
+                    "red": 110
+                  }
                 }
               ]
             },
@@ -235,44 +216,28 @@
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 92.11,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 236,
+                    "green": 229,
+                    "red": 226
+                  }
                 },
                 {
+                  "percentage": 5.9,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
+                    "blue": 0,
+                    "green": 0,
+                    "red": 0
+                  }
                 },
                 {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
+                  "percentage": 2.65,
                   "rgb": {
                     "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "green": 110,
+                    "red": 110
+                  }
                 }
               ]
             },
@@ -280,17 +245,17 @@
           },
           "summary_photo_image_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=png&name=2048x2048_2_exp"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
+              "width": 800
             },
             "type": "IMAGE"
           },
           "summary_photo_image": {
             "image_value": {
               "height": 314,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=600x314"
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x314",
+              "width": 600
             },
             "type": "IMAGE"
           },
@@ -298,44 +263,28 @@
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 92.11,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 236,
+                    "green": 229,
+                    "red": 226
+                  }
                 },
                 {
+                  "percentage": 5.9,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
+                    "blue": 0,
+                    "green": 0,
+                    "red": 0
+                  }
                 },
                 {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
+                  "percentage": 2.65,
                   "rgb": {
                     "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "green": 110,
+                    "red": 110
+                  }
                 }
               ]
             },
@@ -343,9 +292,9 @@
           },
           "photo_image_full_size_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=png&name=2048x2048_2_exp"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
+              "width": 800
             },
             "type": "IMAGE"
           },
@@ -356,9 +305,9 @@
           },
           "summary_photo_image_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2055768372642799616/omClUxrF?format=jpg&name=orig"
+              "height": 400,
+              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
+              "width": 800
             },
             "type": "IMAGE"
           }
@@ -366,7 +315,7 @@
       },
       "isEdited": false,
       "isStaleEdit": false,
-      "_cachedAt": "2026-05-17T01:27:23.728Z"
+      "_cachedAt": "2026-05-24T02:40:42.539Z"
     }
   }
 }

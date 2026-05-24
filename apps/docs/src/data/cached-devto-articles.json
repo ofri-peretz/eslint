@@ -1,6 +1,6 @@
 {
   "_comment": "Cached DEV.to article data to avoid API rate limits during builds. Updated by scripts/sync-devto-cache.mjs",
-  "_lastUpdated": "2026-02-02T07:29:39.069Z",
+  "_lastUpdated": "2026-05-24T03:17:17.718Z",
   "articles": {
     "devteam/top-7-featured-dev-posts-of-the-week-2cgm": {
       "id": 3151144,
@@ -22,7 +22,7 @@
       "organization": {
         "name": "The DEV Team"
       },
-      "_cachedAt": "2026-02-02T07:29:39.051Z"
+      "_cachedAt": "2026-05-24T03:17:17.544Z"
     },
     "devteam/top-7-featured-dev-posts-of-the-week-e8p": {
       "id": 3199636,
@@ -34,7 +34,7 @@
       "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fkkraeoyefdl2khru956p.jpg",
       "tag_list": "top7, discuss",
       "reading_time_minutes": 2,
-      "public_reactions_count": 40,
+      "public_reactions_count": 41,
       "comments_count": 20,
       "user": {
         "name": "Jess Lee",
@@ -44,7 +44,7 @@
       "organization": {
         "name": "The DEV Team"
       },
-      "_cachedAt": "2026-02-02T07:29:39.069Z"
+      "_cachedAt": "2026-05-24T03:17:17.718Z"
     }
   }
 }

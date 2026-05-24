@@ -276,7 +276,18 @@ export const MagicTweet = ({
   tweet: Tweet;
   className?: string;
 }) => {
-  const enrichedTweet = enrichTweet(tweet);
+  // Twitter's syndication API has, over time, dropped fields that
+  // `react-tweet`'s `enrichTweet` spreads unconditionally — most recently
+  // `entities.hashtags / user_mentions / symbols` and per-entity `indices`.
+  // A missing field crashes the build during prerender with an opaque
+  // "c is not iterable". Degrade to the skeleton instead of taking down
+  // the whole homepage.
+  let enrichedTweet: ReturnType<typeof enrichTweet>;
+  try {
+    enrichedTweet = enrichTweet(tweet);
+  } catch {
+    return <TweetSkeleton className={className} />;
+  }
   const tweetUrl = `https://x.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
 
   return (
