@@ -23,7 +23,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
     "lint:workflows": "tsx scripts/lint-workflows.ts",
     "lint:workflows:actionlint": "actionlint",
