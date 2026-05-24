@@ -172,6 +172,8 @@
     "ilb:flagship": "tsx benchmarks/suites/ilb-flagship/run.ts",
     "ilb:flagship:scorecard": "tsx benchmarks/suites/ilb-flagship/scorecard.ts",
     "ilb:flagship:smoke": "tsx benchmarks/suites/ilb-flagship/smoke.ts",
+    "verify:artifact": "tsx scripts/verify-published-artifact.ts",
+    "verify:artifact:all": "tsx scripts/verify-published-artifact.ts --all",
     "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
   },
   "keywords": [
