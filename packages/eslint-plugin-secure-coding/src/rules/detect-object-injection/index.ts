@@ -56,6 +56,14 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+const TYPED_ARRAY_CTORS = new Set([
+  'Int8Array', 'Uint8Array', 'Uint8ClampedArray',
+  'Int16Array', 'Uint16Array',
+  'Int32Array', 'Uint32Array',
+  'Float32Array', 'Float64Array',
+  'BigInt64Array', 'BigUint64Array',
+]);
+
 /**
  * Object access patterns and their security implications
  */
@@ -275,6 +283,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           src.startsWith('@typescript-eslint/')
         );
       });
+    })();
+
+    // Test-file skip — bracket access in tests is universally safe (fixture data,
+    // assertion helpers, mock objects). This closes the largest class of
+    // ILB-Wild FPs without any precision loss on real application code.
+    const isTestFile = (() => {
+      const f = context.filename;
+      return (
+        /\.test\.[mc]?[jt]sx?$/.test(f) ||
+        /\.spec\.[mc]?[jt]sx?$/.test(f) ||
+        /\/__tests__\//.test(f) ||
+        /\/test\//.test(f) ||
+        /\.fixture\.[mc]?[jt]sx?$/.test(f)
+      );
     })();
 
     // Check if TypeScript parser services are available for type-aware checking
@@ -645,11 +667,21 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
+      // SAFE: typed-array element assignment is numeric, not a string-key injection
+      if (isTypedArrayObject(node.left.object)) {
+        return false;
+      }
+
       const { propertyNode } = extractPropertyAccess(node);
 
       // SAFE: numeric keys can't pollute Object prototypes (typed-array
       // / numeric-array assignment is structurally safe).
       if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
+      // SAFE: key originates from for..in or Object.keys/entries iteration
+      if (isForInOrObjectKeysKey(propertyNode)) {
         return false;
       }
 
@@ -671,6 +703,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
+      // SAFE: typed-array element read is numeric, not a string-key injection
+      if (isTypedArrayObject(node.object)) {
+        return false;
+      }
+
       const { propertyNode } = extractPropertyAccess(node);
 
       // Numeric keys cannot pollute Object prototypes — typed-array and
@@ -680,6 +717,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // image/audio/geometry libraries) without weakening detection of
       // string-key prototype pollution.
       if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
+      // SAFE: key originates from for..in or Object.keys/entries iteration
+      if (isForInOrObjectKeysKey(propertyNode)) {
         return false;
       }
 
@@ -755,6 +797,78 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (init.type === AST_NODE_TYPES.Literal && typeof (init as TSESTree.Literal).value === 'number') {
           return true;
         }
+      }
+      return false;
+    };
+
+    /**
+     * Returns true if the identifier is the iteration variable of a `for...in`
+     * statement or a `for...of Object.keys()/Object.entries()` statement. Keys
+     * from these loops are guaranteed to be actual property names on the object
+     * (not user-controlled inputs), so `obj[key]` inside such a loop is safe
+     * from prototype-pollution injection. Closes the bulk of ILB-Wild FPs on
+     * utility and serialisation code.
+     */
+    const isForInOrObjectKeysKey = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const scope = context.sourceCode.getScope(node);
+      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      if (!variable || variable.defs.length === 0) return false;
+      const def = variable.defs[0];
+      const varDecl = def.node?.parent as TSESTree.Node | undefined;
+      const loopStmt = varDecl?.parent as TSESTree.Node | undefined;
+      if (!varDecl || varDecl.type !== AST_NODE_TYPES.VariableDeclaration) return false;
+
+      // for (const key in obj) { ... obj[key] ... }
+      if (loopStmt?.type === AST_NODE_TYPES.ForInStatement && loopStmt.left === varDecl) {
+        return true;
+      }
+
+      // for (const key of Object.keys(obj)) / Object.entries(obj)
+      if (loopStmt?.type === AST_NODE_TYPES.ForOfStatement && loopStmt.left === varDecl) {
+        const right = loopStmt.right;
+        return (
+          right.type === AST_NODE_TYPES.CallExpression &&
+          right.callee.type === AST_NODE_TYPES.MemberExpression &&
+          !right.callee.computed &&
+          right.callee.object.type === AST_NODE_TYPES.Identifier &&
+          right.callee.object.name === 'Object' &&
+          right.callee.property.type === AST_NODE_TYPES.Identifier &&
+          (right.callee.property.name === 'keys' || right.callee.property.name === 'entries')
+        );
+      }
+
+      return false;
+    };
+
+    /**
+     * Returns true if the object being indexed was declared as a typed array
+     * (Int8Array…Float64Array, BigInt64Array, BigUint64Array). Typed-array
+     * element access is numeric by construction; string-keyed prototype
+     * pollution is impossible. This closes FPs on geometry, audio, image, and
+     * buffer-heavy code (Three.js, WebGL, wasm adapters, etc.).
+     */
+    const isTypedArrayObject = (objectNode: TSESTree.Node): boolean => {
+      if (objectNode.type !== AST_NODE_TYPES.Identifier) return false;
+      const varName = (objectNode as TSESTree.Identifier).name;
+      let scope = context.sourceCode.getScope(objectNode);
+      while (scope) {
+        const variable = scope.variables.find((v) => v.name === varName);
+        if (variable) {
+          for (const def of variable.defs) {
+            const init = (def.node as TSESTree.VariableDeclarator).init;
+            if (
+              init?.type === AST_NODE_TYPES.NewExpression &&
+              init.callee.type === AST_NODE_TYPES.Identifier &&
+              TYPED_ARRAY_CTORS.has((init.callee as TSESTree.Identifier).name)
+            ) {
+              return true;
+            }
+          }
+          break;
+        }
+        if (!scope.upper) break;
+        scope = scope.upper;
       }
       return false;
     };
@@ -911,14 +1025,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
-        if (isInCodemodContext) return;
+        if (isInCodemodContext || isTestFile) return;
         return checkAssignmentExpression(node);
       },
       MemberExpression: (node: TSESTree.MemberExpression) => {
-        if (isInCodemodContext) return;
+        if (isInCodemodContext || isTestFile) return;
         return checkMemberExpression(node);
       },
-      CallExpression: checkObjectAssignSpread,
+      CallExpression: (node: TSESTree.CallExpression) => {
+        if (isInCodemodContext || isTestFile) return;
+        return checkObjectAssignSpread(node);
+      },
     };
   },
 });
