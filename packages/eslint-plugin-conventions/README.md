@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Project conventions: naming, file structure, and code style
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-conventions), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-conventions), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/quality/plugin-conventions) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-conventions)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-conventions), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-conventions)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions). 📚
 
 ```bash
 npm install eslint-plugin-conventions --save-dev
@@ -78,17 +78,17 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [consistent-existence-index-check](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/consistent-existence-index-check) |  |  |  | Enforce consistent style for checking if an element exists in an array | 🟢 |  |  |  | 💡 |  |
-| [expiring-todo-comments](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/expiring-todo-comments) |  |  |  | Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-c… | 🟢 |  | ⚠️ |  | 💡 |  |
-| [filename-case](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/filename-case) |  |  |  | Enforce filename case conventions for consistency across your codebase | 🟢 |  |  |  | 💡 |  |
-| [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code) |  |  |  | ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
-| [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
-| [no-deprecated-api](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-deprecated-api) | CWE-1078 |  |  | Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-co… | 🟢 |  | ⚠️ |  | 💡 |  |
-| [no-json-schema-tags](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-json-schema-tags) |  |  |  | Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags. | 🟢 |  |  |  | 💡 |  |
-| [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
-| [prefer-dependency-version-strategy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dependency-version-strategy) |  |  |  | Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies.… | 🟢 |  |  |  | 💡 |  |
-| [prefer-dom-node-text-content](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dom-node-text-content) |  |  |  | Prefer textContent over innerText. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
-| [require-data-testid](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/require-data-testid) |  |  |  | Require stable data-testid attributes on interactive elements for end-to-end test reliability | 🟢 |  |  |  | 💡 |  |
+| [consistent-existence-index-check](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/consistent-existence-index-check?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce consistent style for checking if an element exists in an array | 🟢 |  |  |  | 💡 |  |
+| [expiring-todo-comments](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/expiring-todo-comments?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-c… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [filename-case](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/filename-case?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce filename case conventions for consistency across your codebase | 🟢 |  |  |  | 💡 |  |
+| [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [no-deprecated-api](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-deprecated-api?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) | CWE-1078 |  |  | Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-co… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-json-schema-tags](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-json-schema-tags?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags. | 🟢 |  |  |  | 💡 |  |
+| [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [prefer-dependency-version-strategy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dependency-version-strategy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies.… | 🟢 |  |  |  | 💡 |  |
+| [prefer-dom-node-text-content](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dom-node-text-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer textContent over innerText. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [require-data-testid](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/require-data-testid?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Require stable data-testid attributes on interactive elements for end-to-end test reliability | 🟢 |  |  |  | 💡 |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -113,5 +113,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/quality/plugin-conventions"><img src="https://eslint.interlace.tools/images/og-conventions.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions"><img src="https://eslint.interlace.tools/images/og-conventions.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

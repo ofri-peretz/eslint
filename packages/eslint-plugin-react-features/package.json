@@ -64,7 +64,7 @@
     "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-plugin-react-features"
   },
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-react-features#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-react-features",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },

@@ -21,7 +21,7 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-lambda-security#readme",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security",
   "repository": {
     "type": "git",
     "url": "https://github.com/ofri-peretz/eslint",

@@ -28,6 +28,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { buildUtmHref } from './utm';
 
 const ROOT_DIR = path.join(__dirname, '..');
 const PACKAGES_DIR = path.join(ROOT_DIR, 'packages');
@@ -272,6 +273,7 @@ export function renderRulesTable(
   rules: RuleMeta[],
   pluginSlug: string,
   pillar: Pillar,
+  campaign: string,
 ): string {
   const header = '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
   const sep = '| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |';
@@ -279,7 +281,10 @@ export function renderRulesTable(
 
   const sorted = [...rules].toSorted((a, b) => a.name.localeCompare(b.name));
   for (const r of sorted) {
-    const url = `${DOCS_BASE_URL}/docs/${pillar}/plugin-${pluginSlug}/rules/${r.name}`;
+    const url = buildUtmHref(
+      `${DOCS_BASE_URL}/docs/${pillar}/plugin-${pluginSlug}/rules/${r.name}`,
+      { source: 'github', medium: 'referral', campaign },
+    );
     lines.push(
       `| [${r.name}](${url}) | ${r.cwe} | ${r.owasp} | ${r.cvss} | ${r.description} | ${TYPE_GLYPH[r.typeStatus]} | ${r.recommended ? '💼' : ''} | ${r.warns ? '⚠️' : ''} | ${r.fixable ? '🔧' : ''} | ${r.suggestions ? '💡' : ''} | ${r.deprecated ? '🚫' : ''} |`,
     );
@@ -399,7 +404,7 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
     extractRuleMetadata(pluginPath, entry.slug, n, recommended, opts.typeMap),
   );
 
-  const table = renderRulesTable(rules, entry.slug, entry.pillar);
+  const table = renderRulesTable(rules, entry.slug, entry.pillar, entry.package);
 
   let result: { content: string; modified: boolean };
   try {

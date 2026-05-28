@@ -52,7 +52,7 @@
     "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-plugin-conventions"
   },
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-conventions#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-conventions",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },
