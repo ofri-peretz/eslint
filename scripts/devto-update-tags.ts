@@ -354,8 +354,14 @@ async function main() {
     const article = articles[i];
     process.stdout.write(`   [${i + 1}/${articles.length}] "${article.title.slice(0, 50)}..." `);
 
-    // Fetch full article content for better analysis
-    const fullArticle = await fetchArticleContent(apiKey, article.id);
+    // Fetch full article content for better analysis; fall back to the list
+    // article if the public endpoint returns 404 (e.g. very recently published)
+    let fullArticle: DevToArticle;
+    try {
+      fullArticle = await fetchArticleContent(apiKey, article.id);
+    } catch {
+      fullArticle = article;
+    }
     const requiredTags = detectRequiredTags(fullArticle);
     const { newTags, removedTag: _removedTag } = calculateNewTags(article.tag_list, requiredTags);
 
