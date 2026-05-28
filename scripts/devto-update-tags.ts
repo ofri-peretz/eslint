@@ -21,7 +21,6 @@ const RATE_LIMIT_DELAY_MS = 1000;
 const _PLUGIN_TAGS = [
   'eslint',        // Core - MUST be on all ESLint articles
   'jwt',           // eslint-plugin-jwt
-  'crypto',        // Cryptography topics (covered by eslint-plugin-node-security)
   'mongodb',       // eslint-plugin-mongodb-security
   'express',       // eslint-plugin-express-security
   'nestjs',        // eslint-plugin-nestjs-security
@@ -42,16 +41,11 @@ const PLUGIN_DETECTION: Record<string, string[]> = {
   'token verification': ['jwt', 'eslint', 'security'],
   'token signing': ['jwt', 'eslint', 'security'],
   
-  // Cryptography topics (covered by eslint-plugin-node-security)
-  'crypto': ['crypto', 'eslint', 'security'],
-  'cryptography': ['crypto', 'eslint', 'security'],
-  'encryption': ['crypto', 'eslint', 'security'],
-  'bcrypt': ['crypto', 'eslint', 'security'],
-  'hash': ['crypto', 'eslint', 'security'],
-  'cipher': ['crypto', 'eslint', 'security'],
-  'aes': ['crypto', 'eslint', 'security'],
-  'rsa': ['crypto', 'eslint', 'security'],
-  
+  // Cryptography topics (covered by eslint-plugin-node-security — crypto plugin deprecated)
+  'cryptography': ['eslint', 'node', 'security'],
+  'encryption': ['eslint', 'node', 'security'],
+  'bcrypt': ['eslint', 'node', 'security'],
+
   // MongoDB plugin
   'mongodb': ['mongodb', 'eslint', 'security'],
   'mongoose': ['mongodb', 'eslint', 'security'],
@@ -210,6 +204,9 @@ function detectRequiredTags(article: DevToArticle): Set<string> {
       }
     }
   }
+
+  // Every article in this repo is ESLint-related — always require the base tag
+  requiredTags.add('eslint');
 
   return requiredTags;
 }
