@@ -89,10 +89,31 @@ const PLUGIN_DETECTION: Record<string, string[]> = {
   'dom': ['browser', 'eslint'],
   'innerhtml': ['browser', 'eslint', 'security'],
   
+  // Import / cycle detection (import-next plugin)
+  'no-cycle': ['javascript', 'node', 'eslint'],
+  'import cycle': ['javascript', 'node', 'eslint'],
+  'circular dependency': ['javascript', 'node', 'eslint'],
+  'circular import': ['javascript', 'node', 'eslint'],
+  'depth-first': ['javascript', 'algorithms', 'eslint'],
+
+  // Performance topics
+  'n+1': ['postgres', 'performance', 'node'],
+  'performance regression': ['javascript', 'performance', 'node'],
+  '100x': ['javascript', 'performance', 'eslint'],
+  'benchmark': ['javascript', 'performance', 'eslint'],
+
+  // AI / LLM security
+  'prompt injection': ['ai', 'security', 'javascript'],
+  'llm': ['ai', 'security', 'javascript'],
+  'openai': ['ai', 'security', 'javascript'],
+  'anthropic': ['ai', 'security', 'javascript'],
+  'claude': ['ai', 'security', 'javascript'],
+  'owasp llm': ['ai', 'security', 'javascript'],
+
   // General ESLint
   'eslint': ['eslint'],
   'linting': ['eslint'],
-  'static analysis': ['eslint'],
+  'static analysis': ['eslint', 'javascript'],
 };
 
 interface DevToArticle {
@@ -237,11 +258,20 @@ function calculateNewTags(currentTags: string[], requiredTags: Set<string>): { n
     'vercel': 95,
     'browser': 95,
     
-    'security': 90,     // Very important for SEO
-    'javascript': 80,   // Good for discoverability
+    'security': 90,       // Very important for SEO
+    'javascript': 80,     // Good for discoverability
     'typescript': 80,
+    'node': 70,
+    'ai': 70,
+    'devsecops': 70,
+    'performance': 65,
     'nodejs': 60,
     'webdev': 50,
+    'algorithms': 40,
+    'benchmarks': 35,
+    'tutorial': 35,
+    // Dead-discovery tags — explicitly deprioritised so any detected required tag displaces them
+    'staticanalysis': 5,
   };
 
   // Combine current and required tags

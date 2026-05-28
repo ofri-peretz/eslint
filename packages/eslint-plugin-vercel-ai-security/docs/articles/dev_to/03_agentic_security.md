@@ -2,7 +2,7 @@
 title: Securing AI Agents in the Vercel AI SDK
 published: true
 description: How to protect your Vercel AI SDK agents with automated ESLint rules covering OWASP Agentic Top 10 2026
-tags: ai, security, vercel, typescript
+tags: ai, security, vercel, eslint
 cover_image:
 ---
 
