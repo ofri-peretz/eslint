@@ -52,7 +52,7 @@
     "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-plugin-operability"
   },
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-operability#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-operability",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },

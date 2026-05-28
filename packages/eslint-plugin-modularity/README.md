@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Modularity rules — module boundaries, circular dependency
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-modularity), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/quality/plugin-modularity) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-modularity)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-modularity), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-modularity)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
 
 ```bash
 npm install eslint-plugin-modularity --save-dev
@@ -163,11 +163,11 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  |  |  | 💡 |  |
-| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  |  |  | 💡 |  |
-| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  |  |  | 💡 |  |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  |  |  | 💡 |  |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -192,5 +192,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/quality/plugin-modularity"><img src="https://eslint.interlace.tools/images/og-modularity.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity"><img src="https://eslint.interlace.tools/images/og-modularity.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

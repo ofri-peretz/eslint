@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Security rules tailored for NestJS applications (Controller
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-nestjs-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-nestjs-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-nestjs-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-nestjs-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-nestjs-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-nestjs-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security). 📚
 
 ```bash
 npm install eslint-plugin-nestjs-security --save-dev
@@ -149,12 +149,12 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints) | CWE-489 |  |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
-| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  |  |  |  |  |
-| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards) | CWE-284 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  |  |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-489 |  |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
+| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  |  |  |  |  |
+| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-284 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -179,5 +179,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/security/plugin-nestjs-security"><img src="https://eslint.interlace.tools/images/og-nestjs-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security"><img src="https://eslint.interlace.tools/images/og-nestjs-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Comprehensive security rules for Express.js applications, m
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-express-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-express-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-express-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-express-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-express-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-express-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security). 📚
 
 ```bash
 npm install eslint-plugin-express-security --save-dev
@@ -79,16 +79,16 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
-| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 |  |  |  |  |  |
-| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  |  |  |  |  |
-| [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | CWE-614 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors) | CWE-942 |  |  | Detects overly permissive CORS configurations in Express.js applications | 🟢 | 💼 |  |  |  |  |
-| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
-| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
+| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
+| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 |  |  |  |  |  |
+| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  |  |  |  |  |
+| [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-614 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | Detects overly permissive CORS configurations in Express.js applications | 🟢 | 💼 |  |  |  |  |
+| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
+| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -113,5 +113,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/security/plugin-express-security"><img src="https://eslint.interlace.tools/images/og-express-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security"><img src="https://eslint.interlace.tools/images/og-express-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>
