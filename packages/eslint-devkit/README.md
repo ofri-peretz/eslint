@@ -526,6 +526,15 @@ Contributions welcome! See CONTRIBUTING.md (planned).
 
 ---
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If the devkit saved you time, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and engineering behind these tools.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md) for a list of changes and version history.
