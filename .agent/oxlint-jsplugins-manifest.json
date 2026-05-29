@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-05-29",
   "totalPlugins": 20,
-  "totalRules": 412,
-  "oxlintCompatible": 412,
+  "totalRules": 413,
+  "oxlintCompatible": 413,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -291,7 +291,7 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 14,
+      "ruleCount": 15,
       "rules": [
         {
           "name": "conventions/analytics-event-naming",
@@ -331,6 +331,12 @@
         },
         {
           "name": "conventions/no-json-schema-tags",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/no-magic-numbers",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
