@@ -292,8 +292,8 @@ describe('ArticlesClient: Article Cards Lock', () => {
   });
 
   it('displays author information', () => {
-    expect(articlesSource).toContain('article.user.name');
-    expect(articlesSource).toContain('article.user.profile_image');
+    expect(articlesSource).toContain('article.user?.name');
+    expect(articlesSource).toContain('article.user?.profile_image');
   });
 
   it('displays tags', () => {
