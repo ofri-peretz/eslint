@@ -32,6 +32,18 @@
       "types": "./dist/primitives/card.d.ts",
       "default": "./dist/primitives/card.js"
     },
+    "./typography": {
+      "types": "./dist/primitives/typography.d.ts",
+      "default": "./dist/primitives/typography.js"
+    },
+    "./box": {
+      "types": "./dist/primitives/box.d.ts",
+      "default": "./dist/primitives/box.js"
+    },
+    "./grid": {
+      "types": "./dist/primitives/grid.d.ts",
+      "default": "./dist/primitives/grid.js"
+    },
     "./input": {
       "types": "./dist/primitives/input.d.ts",
       "default": "./dist/primitives/input.js"
@@ -169,6 +181,7 @@
       "default": "./dist/aceternity/*.js"
     },
     "./styles/tokens.css": "./styles/tokens.css",
+    "./styles/foundation.css": "./styles/foundation.css",
     "./styles/theme.css": "./styles/theme.css",
     "./styles/interlace-theme.css": "./styles/interlace-theme.css"
   },

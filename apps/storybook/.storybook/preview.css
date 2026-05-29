@@ -4,6 +4,7 @@
 @import 'fumadocs-ui/css/preset.css';
 @import 'fumadocs-twoslash/twoslash.css';
 @import '@interlace/ui/styles/tokens.css';
+@import '@interlace/ui/styles/foundation.css';
 @import '@interlace/ui/styles/theme.css';
 @import '@interlace/ui/styles/interlace-theme.css';
 
@@ -22,7 +23,11 @@
 
 /* Storybook canvas tweaks: respect reduced motion + give cards breathing room. */
 html {
-  font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont,
+  font-family:
+    'Space Grotesk',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
     sans-serif;
 }
 
