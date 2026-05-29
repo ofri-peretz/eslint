@@ -1,6 +1,6 @@
 ---
 title: jsx-key
-description: jsx-key rule
+description: "Detect missing or problematic React keys that could break reconciliation"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -8,13 +8,11 @@ type_aware: false
 type_aware_status: unaware
 ---
 
-import {
-  FalseNegativeCTA,
-  WhenNotToUse,
-  RuleBadges,
-} from '@/components/RuleComponents';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+jsx-key rule
 
 > **Keywords:** React, JSX, key prop, reconciliation, lists, map, iteration, ESLint rule, performance, LLM-optimized
 
@@ -22,13 +20,13 @@ Detect missing or problematic React keys that could break reconciliation. This r
 
 ## Quick Summary
 
-| Aspect         | Details                                 |
-| -------------- | --------------------------------------- |
-| **Severity**   | Error (correctness)                     |
-| **Auto-Fix**   | 💡 Suggests fixes                       |
-| **Category**   | React                                   |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For**   | All React/JSX projects                  |
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Error (correctness)                                                  |
+| **Auto-Fix**   | 💡 Suggests fixes                                                    |
+| **Category**   | React                                                                |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | All React/JSX projects                                               |
 
 ## Rule Details
 
@@ -50,16 +48,16 @@ flowchart TD
     A["🔍 JSX in Iterator"] --> B{"Has key prop?"}
     B -->|❌ No| C["❌ Report: Missing Key"]
     B -->|✅ Yes| D{"Key Quality?"}
-
+    
     D -->|🔢 Index| E["⚠️ Warn: Unstable Key"]
     D -->|✅ Stable ID| F["✅ Pass"]
     D -->|🔁 Duplicate| G["❌ Report: Duplicate Key"]
-
+    
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef warnNode fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
-
+    
     class A startNode
     class C,G errorNode
     class E warnNode
@@ -67,20 +65,21 @@ flowchart TD
 
 ```
 
+
 ### Why This Matters
 
-| Issue                   | Impact                       | Solution                  |
-| ----------------------- | ---------------------------- | ------------------------- |
-| 🔄 **Reconciliation**   | React can't track elements   | Add unique keys           |
-| ⚡ **Performance**      | Unnecessary re-renders       | Stable keys               |
-| 🐛 **State Bugs**       | Wrong component gets state   | Use item IDs, not indexes |
-| 🎨 **Animation Issues** | Elements animate incorrectly | Consistent key identity   |
+| Issue                     | Impact                          | Solution                  |
+| ------------------------- | ------------------------------- | ------------------------- |
+| 🔄 **Reconciliation**     | React can't track elements      | Add unique keys           |
+| ⚡ **Performance**        | Unnecessary re-renders          | Stable keys               |
+| 🐛 **State Bugs**         | Wrong component gets state      | Use item IDs, not indexes |
+| 🎨 **Animation Issues**   | Elements animate incorrectly    | Consistent key identity   |
 
 ## Configuration
 
-| Option             | Type      | Default | Description                          |
-| ------------------ | --------- | ------- | ------------------------------------ |
-| `warnUnstableKeys` | `boolean` | `true`  | Warn about potentially unstable keys |
+| Option             | Type      | Default | Description                              |
+| ------------------ | --------- | ------- | ---------------------------------------- |
+| `warnUnstableKeys` | `boolean` | `true`  | Warn about potentially unstable keys     |
 
 ## Examples
 
@@ -91,8 +90,8 @@ flowchart TD
 function UserList({ users }) {
   return (
     <ul>
-      {users.map((user) => (
-        <li>{user.name}</li> // ❌ Missing key
+      {users.map(user => (
+        <li>{user.name}</li>  // ❌ Missing key
       ))}
     </ul>
   );
@@ -103,7 +102,7 @@ function ItemList({ items }) {
   return (
     <ul>
       {items.map((item, index) => (
-        <li key={index}>{item.name}</li> // ⚠️ Unstable key
+        <li key={index}>{item.name}</li>  // ⚠️ Unstable key
       ))}
     </ul>
   );
@@ -117,8 +116,8 @@ function ItemList({ items }) {
 function UserList({ users }) {
   return (
     <ul>
-      {users.map((user) => (
-        <li key={user.id}>{user.name}</li> // ✅ Stable unique key
+      {users.map(user => (
+        <li key={user.id}>{user.name}</li>  // ✅ Stable unique key
       ))}
     </ul>
   );
@@ -128,8 +127,10 @@ function UserList({ users }) {
 function ItemList({ items }) {
   return (
     <ul>
-      {items.map((item) => (
-        <li key={`${item.category}-${item.name}`}>{item.name}</li> // ✅ Unique compound key
+      {items.map(item => (
+        <li key={`${item.category}-${item.name}`}>
+          {item.name}
+        </li>  // ✅ Unique compound key
       ))}
     </ul>
   );
@@ -164,14 +165,14 @@ function ItemList({ items }) {
 
 ### Choosing Keys
 
-| Source          | Quality  | Example                  |
-| --------------- | -------- | ------------------------ |
-| Database ID     | ✅ Best  | `key={user.id}`          |
-| Unique field    | ✅ Good  | `key={item.slug}`        |
-| Compound unique | ✅ Good  | `key={item.cat + '-' + item.name}` |
-| UUID/nanoid     | ⚠️ OK    | `key={generateId()}`     |
-| Array index     | ❌ Avoid | `key={index}`            |
-| Random number   | ❌ Never | `key={Math.random()}`    |
+| Source              | Quality    | Example                              |
+| ------------------- | ---------- | ------------------------------------ |
+| Database ID         | ✅ Best    | `key={user.id}`                      |
+| Unique field        | ✅ Good    | `key={item.slug}`                    |
+| Compound unique     | ✅ Good    | `key={cat + '-' + name}`             |
+| UUID/nanoid         | ⚠️ OK      | `key={generateId()}`                 |
+| Array index         | ❌ Avoid   | `key={index}`                        |
+| Random number       | ❌ Never   | `key={Math.random()}`                |
 
 ### When Index Keys Are Acceptable
 
@@ -179,18 +180,12 @@ function ItemList({ items }) {
 // ✅ Static list that never reorders/filters
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 <ul>
-  {WEEKDAYS.map((day, i) => (
-    <li key={i}>{day}</li>
-  ))}
-</ul>;
+  {WEEKDAYS.map((day, i) => <li key={i}>{day}</li>)}
+</ul>
 
 // ❌ Dynamic list - DON'T use index
-{
-  users.map((user, i) => <UserCard key={i} user={user} />);
-} // Bad!
-{
-  users.map((user) => <UserCard key={user.id} user={user} />);
-} // Good!
+{users.map((user, i) => <UserCard key={i} user={user} />)}  // Bad!
+{users.map(user => <UserCard key={user.id} user={user} />)} // Good!
 ```
 
 ## Common Patterns
@@ -202,7 +197,7 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 function DataList({ data }) {
   return (
     <>
-      {data.map((item) => (
+      {data.map(item => (
         <React.Fragment key={item.id}>
           <dt>{item.term}</dt>
           <dd>{item.definition}</dd>
@@ -217,12 +212,12 @@ function DataList({ data }) {
 
 ```tsx
 function NestedList({ categories }) {
-  return categories.map((category) => (
+  return categories.map(category => (
     <div key={category.id}>
       <h2>{category.name}</h2>
       <ul>
-        {category.items.map((item) => (
-          <li key={item.id}>{item.name}</li> // Separate key namespace
+        {category.items.map(item => (
+          <li key={item.id}>{item.name}</li>  // Separate key namespace
         ))}
       </ul>
     </div>
@@ -232,21 +227,21 @@ function NestedList({ categories }) {
 
 ## When Not To Use
 
-| Scenario                  | Recommendation                           |
-| ------------------------- | ---------------------------------------- |
-| 🧪 **Testing/Prototypes** | Consider allowing index keys temporarily |
-| 📊 **Static content**     | Index keys may be acceptable             |
-| 🔄 **No reordering**      | Index keys work for append-only lists    |
+| Scenario                    | Recommendation                              |
+| --------------------------- | ------------------------------------------- |
+| 🧪 **Testing/Prototypes**   | Consider allowing index keys temporarily    |
+| 📊 **Static content**       | Index keys may be acceptable                |
+| 🔄 **No reordering**        | Index keys work for append-only lists       |
 
 ## Comparison with Alternatives
 
-| Feature           | jsx-key         | eslint-plugin-react | jsx-ally |
-| ----------------- | --------------- | ------------------- | -------- |
-| **Missing key**   | ✅ Yes          | ✅ Yes              | ❌ No    |
-| **Unstable keys** | ✅ Configurable | ⚠️ Limited          | ❌ No    |
-| **LLM-Optimized** | ✅ Yes          | ❌ No               | ❌ No    |
-| **ESLint MCP**    | ✅ Optimized    | ❌ No               | ❌ No    |
-| **Suggestions**   | ✅ Yes          | ⚠️ Limited          | ❌ No    |
+| Feature              | jsx-key             | eslint-plugin-react | jsx-ally           |
+| -------------------- | ------------------- | ------------------- | ------------------ |
+| **Missing key**      | ✅ Yes              | ✅ Yes              | ❌ No              |
+| **Unstable keys**    | ✅ Configurable     | ⚠️ Limited          | ❌ No              |
+| **LLM-Optimized**    | ✅ Yes              | ❌ No               | ❌ No              |
+| **ESLint MCP**       | ✅ Optimized        | ❌ No               | ❌ No              |
+| **Suggestions**      | ✅ Yes              | ⚠️ Limited          | ❌ No              |
 
 ## Related Rules
 
@@ -259,7 +254,7 @@ function NestedList({ categories }) {
 - **[Why React Keys Matter](https://kentcdodds.com/blog/understanding-reacts-key-prop)** - Kent C. Dodds article
 - **[Reconciliation](https://react.dev/learn/preserving-and-resetting-state)** - How React updates the DOM
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
-  <WhenNotToUse />
+<WhenNotToUse />
 
 <FalseNegativeCTA />
 

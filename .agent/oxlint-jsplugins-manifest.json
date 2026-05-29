@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-05-29",
   "totalPlugins": 20,
-  "totalRules": 411,
-  "oxlintCompatible": 411,
+  "totalRules": 412,
+  "oxlintCompatible": 412,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1356,7 +1356,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 33,
+      "ruleCount": 34,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1456,6 +1456,12 @@
         },
         {
           "name": "no-insecure-rsa-padding",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-math-random-crypto",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2861,14 +2867,16 @@
     "modernization": [
       "no-instanceof-array",
       "prefer-at",
-      "prefer-event-target"
+      "prefer-event-target",
+      "prefer-template-literal"
     ],
     "modularity": [
       "ddd-anemic-domain-model",
       "ddd-value-object-immutability",
       "enforce-naming",
       "enforce-rest-conventions",
-      "no-external-api-calls-in-utils"
+      "no-external-api-calls-in-utils",
+      "no-mutable-exports"
     ],
     "mongodb-security": [
       "no-bypass-middleware",
@@ -2914,6 +2922,7 @@
       "no-ecb-mode",
       "no-insecure-key-derivation",
       "no-insecure-rsa-padding",
+      "no-math-random-crypto",
       "no-pii-in-logs",
       "no-self-signed-certs",
       "no-sha1-hash",

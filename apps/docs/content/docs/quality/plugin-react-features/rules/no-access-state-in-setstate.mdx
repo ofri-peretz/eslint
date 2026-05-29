@@ -1,6 +1,6 @@
 ---
 title: no-access-state-in-setstate
-description: no-access-state-in-setstate rule
+description: "Disallow accessing this.state inside setState calls"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -11,6 +11,8 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+no-access-state-in-setstate rule
 
 > **Keywords:** React, setState, this.state, functional updates, race conditions, class components, ESLint rule, LLM-optimized
 

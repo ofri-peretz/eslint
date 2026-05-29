@@ -1,6 +1,6 @@
 ---
 title: no-insecure-ssl
-description: Prevents disabling SSL certificate validation in PostgreSQL connections.
+description: "Prevent the use of insecure SSL configurations (rejectUnauthorized: false)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -17,6 +17,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 > **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+
+Prevents disabling SSL certificate validation in PostgreSQL connections.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

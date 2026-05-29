@@ -1,6 +1,6 @@
 ---
 title: no-debug-code-in-production
-description: Detects debug code that should not be present in production builds.
+description: "Detect debug code in production"
 tags: ['quality', 'operability', 'production']
 category: quality
 autofix: suggestions
@@ -13,6 +13,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** console.log, DEBUG, **DEV**, [CWE-489](https://cwe.mitre.org/data/definitions/489.html), leftover debug, production security
+
+Detects debug code that should not be present in production builds.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 
