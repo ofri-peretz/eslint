@@ -62,7 +62,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       description: 'Detects unchecked loop conditions that could cause DoS',
       cwe: 'CWE-400',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       uncheckedLoopCondition: formatLLMMessage({

@@ -150,3 +150,4 @@ benchmarks/results/ilb-oxlint-parity/.parity.oxlintrc.json
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
+.review-screens/

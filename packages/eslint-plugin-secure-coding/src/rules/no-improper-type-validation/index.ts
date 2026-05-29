@@ -64,7 +64,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       description: 'Detects improper type validation in user input handling',
       cwe: 'CWE-1287',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       improperTypeValidation: formatLLMMessage({

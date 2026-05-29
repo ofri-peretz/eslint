@@ -66,7 +66,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       description: 'Detects buffer access beyond bounds',
       cwe: 'CWE-126',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       bufferOverread: formatLLMMessage({
