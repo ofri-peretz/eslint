@@ -192,6 +192,26 @@
       "types": "./dist/blocks/section-header.d.ts",
       "default": "./dist/blocks/section-header.js"
     },
+    "./blocks/sign-in-form": {
+      "types": "./dist/blocks/sign-in-form.d.ts",
+      "default": "./dist/blocks/sign-in-form.js"
+    },
+    "./blocks/empty-state": {
+      "types": "./dist/blocks/empty-state.d.ts",
+      "default": "./dist/blocks/empty-state.js"
+    },
+    "./blocks/page-header": {
+      "types": "./dist/blocks/page-header.d.ts",
+      "default": "./dist/blocks/page-header.js"
+    },
+    "./blocks/stat-card": {
+      "types": "./dist/blocks/stat-card.d.ts",
+      "default": "./dist/blocks/stat-card.js"
+    },
+    "./blocks/hero": {
+      "types": "./dist/blocks/hero.d.ts",
+      "default": "./dist/blocks/hero.js"
+    },
     "./patterns/hero-cosmic": {
       "types": "./dist/patterns/hero-cosmic.d.ts",
       "default": "./dist/patterns/hero-cosmic.js"
