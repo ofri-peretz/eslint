@@ -34,25 +34,35 @@ describe('Homepage: Structure Lock', () => {
 
   describe('Required Imports', () => {
     it('imports HeroSection component', () => {
-      expect(homepageSource).toContain("import { HeroSection } from '@/components/home/hero-section'");
+      expect(homepageSource).toContain(
+        "import { HeroSection } from '@/components/home/hero-section'",
+      );
     });
 
     // Home-page diet (2026-05): BackgroundLines and Marquee retired in favor
     // of quieter sections. Lock asserts they are NOT re-introduced.
     it('does NOT re-import BackgroundLines (retired in 2026-05 home-page diet)', () => {
-      expect(homepageSource).not.toContain("from '@interlace/ui/aceternity/background-lines'");
+      expect(homepageSource).not.toContain(
+        "from '@interlace/ui/aceternity/background-lines'",
+      );
     });
 
     it('does NOT re-import Marquee (retired in 2026-05 home-page diet)', () => {
-      expect(homepageSource).not.toContain("from '@interlace/ui/magicui/marquee'");
+      expect(homepageSource).not.toContain(
+        "from '@interlace/ui/magicui/marquee'",
+      );
     });
 
     it('imports BorderBeam component', () => {
-      expect(homepageSource).toContain("import { BorderBeam } from '@interlace/ui/magicui/border-beam'");
+      expect(homepageSource).toContain(
+        "import { BorderBeam } from '@interlace/ui/magicui/border-beam'",
+      );
     });
 
     it('imports NumberTicker component', () => {
-      expect(homepageSource).toContain("import { NumberTicker } from '@interlace/ui/magicui/number-ticker'");
+      expect(homepageSource).toContain(
+        "import { NumberTicker } from '@interlace/ui/magicui/number-ticker'",
+      );
     });
 
     it('imports TweetCard from the @interlace/docs-baseline marketing layer', () => {
@@ -73,7 +83,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('imports stats loader', () => {
-      expect(homepageSource).toContain("import { getDisplayStats } from '@/lib/stats-loader'");
+      expect(homepageSource).toContain(
+        "import { getDisplayStats } from '@/lib/stats-loader'",
+      );
     });
   });
 
@@ -121,7 +133,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('runtime strip cross-links to /docs/getting-started/concepts/runtime-portability', () => {
-      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/runtime-portability',
+      );
     });
 
     it('contains DOCS PREVIEW section', () => {
@@ -170,7 +184,9 @@ describe('Homepage: Structure Lock', () => {
     });
 
     it('links to the full CWE coverage matrix (moved under Concepts/Ecosystem in 2026-05-10 IA pass)', () => {
-      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/cwe-compatibility',
+      );
     });
   });
 });
@@ -207,11 +223,11 @@ describe('HeroSection: Structure Lock', () => {
 
   describe('Shooting Stars Integration', () => {
     it('imports StarsBackground component', () => {
-      expect(heroSource).toContain("StarsBackground");
+      expect(heroSource).toContain('StarsBackground');
     });
 
     it('imports ShootingStars component', () => {
-      expect(heroSource).toContain("ShootingStars");
+      expect(heroSource).toContain('ShootingStars');
     });
 
     it('imports from the @interlace/ui aceternity stars-background', () => {
@@ -238,11 +254,15 @@ describe('HeroSection: Structure Lock', () => {
 
     it('has customized star color (purple)', () => {
       // Now lives as a default in HeroCosmic's `effects.shootingStarColor`.
-      expect(heroSource).toMatch(/(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/);
+      expect(heroSource).toMatch(
+        /(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
+      );
     });
 
     it('has customized trail color (cyan)', () => {
-      expect(heroSource).toMatch(/(trailColor|shootingTrailColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/);
+      expect(heroSource).toMatch(
+        /(trailColor|shootingTrailColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
+      );
     });
   });
 
@@ -272,7 +292,7 @@ describe('HeroSection: Structure Lock', () => {
     });
 
     it('links to getting started docs', () => {
-      expect(heroSource).toContain("href=\"/docs/getting-started\"");
+      expect(heroSource).toContain('href="/docs/getting-started"');
     });
 
     it('links to GitHub repository', () => {
@@ -306,7 +326,7 @@ describe('HeroSection: Structure Lock', () => {
 
   describe('Component Dependencies', () => {
     it('imports ShimmerButton for the hero primary (CTA_PHILOSOPHY.md #8 — animated CTA reserved for the surface primary)', () => {
-      expect(heroSource).toContain("import { ShimmerButton }");
+      expect(heroSource).toContain('import { ShimmerButton }');
     });
 
     it('uses exactly two ShimmerButton instances in the hero (CTA_PHILOSOPHY.md #3 sibling parity — same component for both CTAs)', () => {
@@ -349,22 +369,37 @@ describe('HeroSection: Structure Lock', () => {
       expect(opens[1]).toMatch(/highlight=\{false\}/);
     });
 
-    it('SECONDARY ShimmerButton contains the GitHub mark + label (catches a future "make it a Docs button" refactor)', () => {
+    it('SECONDARY ShimmerButton contains the GitHub mark + "Star on GitHub" label (catches a future "make it a Docs button" refactor)', () => {
       // The GitHub viewBox / `M12 0c-6.626` head are distinctive; pin those + the label.
       expect(heroSource).toContain('viewBox="0 0 24 24"');
       expect(heroSource).toMatch(/<path\s+d="M12 0c-6\.626/);
-      expect(heroSource).toMatch(/>\s*GitHub\s*<\/ShimmerButton>/);
+      // Label became a conversion-framed "Star on GitHub" ask (2026-05 growth
+      // pass). A refactor back to a bare "GitHub"/"Docs" label regresses the
+      // npm→GitHub funnel — pin the literal.
+      expect(heroSource).toContain('Star on GitHub');
+    });
+
+    it('SECONDARY CTA fires the homepage:star_click funnel event on click (GROWTH_PHILOSOPHY.md G1/G2 — npm→GitHub conversion measurement)', () => {
+      expect(heroSource).toContain("track('homepage:star_click'");
+    });
+
+    it('SECONDARY CTA surfaces the live star count only past the social-proof threshold (never advertises a low number)', () => {
+      expect(heroSource).toMatch(/githubStars\s*&&\s*githubStars\s*>=\s*100/);
     });
 
     it('HeroCosmic `secondaryCta.label` slot is a `<ShimmerButton …>` (structural lock — refactors that swap the slot break this)', () => {
       // `secondaryCta={` … `label: ( <ShimmerButton …` — the `label:` value
       // immediately under `secondaryCta` must open with ShimmerButton.
-      expect(heroSource).toMatch(/secondaryCta=\{[\s\S]*?label:\s*\(\s*<ShimmerButton\b/);
+      expect(heroSource).toMatch(
+        /secondaryCta=\{[\s\S]*?label:\s*\(\s*<ShimmerButton\b/,
+      );
     });
 
     it('does NOT re-import AnimatedGradientText (retired from hero eyebrow in 2026-05 diet)', () => {
-      const heroOnly = heroSource.split('/* --- @interlace/ui/patterns/hero-cosmic --- */')[0];
-      expect(heroOnly).not.toContain("import { AnimatedGradientText }");
+      const heroOnly = heroSource.split(
+        '/* --- @interlace/ui/patterns/hero-cosmic --- */',
+      )[0];
+      expect(heroOnly).not.toContain('import { AnimatedGradientText }');
     });
 
     it('imports Link from next/link', () => {
@@ -556,16 +591,28 @@ describe('Homepage: Visual Identity Lock', () => {
 
     it('has How it works section (surfaces Concepts corpus — Philosophy / AST / Detect→Understand→Fix)', () => {
       expect(homepageSource).toContain('How it works');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/philosophy');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/ast-fundamentals');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/detect-understand-fix');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/philosophy',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/ast-fundamentals',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/detect-understand-fix',
+      );
     });
 
     it('has Our edges section (Compatibility / Benchmarks / AI Leverage — replaces generic "Why" grid in 2026-05-10 edges pass)', () => {
       expect(homepageSource).toContain('Our edges');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/compatibility');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/benchmarks');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/ai-integration');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/compatibility',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/benchmarks',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/ai-integration',
+      );
     });
 
     // Runtime-portability card lives inside "Our edges" — its copy must
@@ -574,11 +621,15 @@ describe('Homepage: Visual Identity Lock', () => {
     // engine-portability story lands. Wording drift here is a regression.
     it('Our edges grid contains the Runtime Portability card with all three engines named (ESLint + Oxlint + TSC native)', () => {
       expect(homepageSource).toContain('Runtime Portability');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/runtime-portability');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/runtime-portability',
+      );
       // Per INTEROP_PHILOSOPHY.md §"Vision": the TSC native host is the
       // long-horizon target. Card copy MUST name it so the message isn't
       // limited to "Oxlint and ESLint."
-      const cardChunk = homepageSource.slice(homepageSource.indexOf('Runtime Portability'));
+      const cardChunk = homepageSource.slice(
+        homepageSource.indexOf('Runtime Portability'),
+      );
       expect(cardChunk).toMatch(/ESLint/);
       expect(cardChunk).toMatch(/Oxlint/);
       expect(cardChunk).toMatch(/TSC native/);
@@ -590,8 +641,12 @@ describe('Homepage: Visual Identity Lock', () => {
 
     it("has What's next pair under final CTA (UX_PHILOSOPHY §4 — compare / CWE matrix)", () => {
       expect(homepageSource).toContain('Not ready yet? Explore');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/compare');
-      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/compare',
+      );
+      expect(homepageSource).toContain(
+        '/docs/getting-started/concepts/cwe-compatibility',
+      );
     });
   });
 
@@ -683,7 +738,9 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
 
   describe('Required imports', () => {
     it('imports Section from @interlace/ui (open-coded <section> wrappers are forbidden)', () => {
-      expect(homepageSource).toContain("import { Section } from '@interlace/ui/section'");
+      expect(homepageSource).toContain(
+        "import { Section } from '@interlace/ui/section'",
+      );
     });
 
     it('imports SectionHeader from @interlace/ui/blocks/section-header', () => {
@@ -697,11 +754,15 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
     it('does NOT open-code `container mx-auto px-*` in className strings (§1 — Section owns the wrapper)', () => {
       // Match inside JSX className strings only — comment prose explaining
       // the philosophy is allowed (and present in the page header).
-      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bcontainer\s+mx-auto\b/);
+      expect(homepageSource).not.toMatch(
+        /className=["'`][^"'`]*\bcontainer\s+mx-auto\b/,
+      );
     });
 
     it('does NOT use ad-hoc `max-w-3xl/4xl/5xl/6xl/7xl` widths in className strings (§2 — Container size is a contract)', () => {
-      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/);
+      expect(homepageSource).not.toMatch(
+        /className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/,
+      );
     });
 
     it('does NOT open-code a bare `<section className="container ...">` wrapper (§1, §7)', () => {
@@ -712,8 +773,12 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
       // After the refactor, dividers are owned by <Section divider="…">.
       // The only borders left in the file should be card / pillar internals.
       // Bare `<section …border-y border-fd-border` is what the philosophy forbids.
-      expect(homepageSource).not.toMatch(/<section[^>]*border-y\s+border-fd-border/);
-      expect(homepageSource).not.toMatch(/<section[^>]*border-t\s+border-fd-border/);
+      expect(homepageSource).not.toMatch(
+        /<section[^>]*border-y\s+border-fd-border/,
+      );
+      expect(homepageSource).not.toMatch(
+        /<section[^>]*border-t\s+border-fd-border/,
+      );
     });
 
     it('does NOT inline `bg-fd-card/30|50` on the section wrappers (§8 — tone prop owns it)', () => {
@@ -723,7 +788,8 @@ describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
 
   describe('Sections are composed (not open-coded)', () => {
     it('uses <Section …> for every page-level section block', () => {
-      const sectionPrimitive = (homepageSource.match(/<Section\b/g) ?? []).length;
+      const sectionPrimitive = (homepageSource.match(/<Section\b/g) ?? [])
+        .length;
       // Hero is full-bleed and out of scope (LAYOUT_AUDIT.md). The remaining
       // sections — stats / preview / catches / social / pillars / how-it-works
       // / edges / final-CTA — should all be <Section>.
