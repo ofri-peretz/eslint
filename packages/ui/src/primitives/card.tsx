@@ -1,15 +1,17 @@
 import * as React from 'react';
 
+import { Box } from './box.js';
 import { cn } from '../lib/cn.js';
 
+/** Card composes Box for the surface/border/radius floor; layout utilities (flex, gap, py, shadow) stay local because they're card-specific, not surface-level. */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div
+    <Box
       data-slot="card"
-      className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
-        className,
-      )}
+      surface="card"
+      radius="lg"
+      border
+      className={cn('flex flex-col gap-6 py-6 shadow-sm', className)}
       {...props}
     />
   );

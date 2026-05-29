@@ -240,8 +240,8 @@ an `import`.
 no react-grid-layout), CSS-in-JS layout libraries, anything with a
 runtime layout cost or unbounded style props (`sx`, `mt`/`px` soup).
 `<Grid>` above is NOT a framework — it is a thin, token-bound CSS-grid
-primitive with closed prop unions, the 2-D sibling of `<Stack>`. Tailwind
-+ the six primitives above are the entire layout API.
+primitive with closed prop unions, the 2-D sibling of `<Stack>`.
+Tailwind plus the six primitives above are the entire layout API.
 
 ---
 

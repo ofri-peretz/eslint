@@ -16,10 +16,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Container } from '@interlace/ui/container';
-import { Section } from '@interlace/ui/section';
-import { Stack, Cluster } from '@interlace/ui/stack';
-import { SectionHeader } from '@interlace/ui/blocks/section-header';
+import { Container } from '../../../../packages/ui/src/primitives/container';
+import { Section } from '../../../../packages/ui/src/primitives/section';
+import { Stack, Cluster } from '../../../../packages/ui/src/primitives/stack';
+import { SectionHeader } from '../../../../packages/ui/src/blocks/section-header';
 
 const render = (el: React.ReactNode) =>
   renderToStaticMarkup(el as React.ReactElement);
