@@ -13,6 +13,7 @@
 @import 'tw-animate-css';
 @import '@interlace/ui/styles/tokens.css';
 @import '@interlace/ui/styles/foundation.css';
+@import '@interlace/ui/styles/preflight.css';
 @import '@interlace/ui/styles/theme.css';
 @import '@interlace/ui/styles/interlace-theme.css';
 

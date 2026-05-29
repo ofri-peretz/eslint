@@ -28,6 +28,7 @@
 | 11 | Server-first performance | RSC by default; LCP<2.5s, INP<200ms, CLS=0. |
 | 12 | Provenance-first trust | Every claim links to its source. Receipts beat assertions. |
 | 13 | One system, many surfaces | Same primitives, tokens, conventions everywhere. Divergence is a bug. |
+| 14 | Compatibility + min-viewport contract | Every primitive declares its minimum viable viewport; below it, the primitive warns (dev) or degrades (prod). Modern-baseline browsers; documented fallbacks for the rest. |
 
 ---
 
@@ -162,19 +163,19 @@ layer; everything above stays put. See [[interlace_design_system_vision]]
 
 ## How to apply
 
-- **Before building a new primitive**, check this list. If a principle isn't
++ **Before building a new primitive**, check this list. If a principle isn't
   obeyed, the primitive isn't ready.
-- **Before reviewing a PR**, check this list. If a principle is violated,
++ **Before reviewing a PR**, check this list. If a principle is violated,
   cite the principle number in review.
-- **Before forking a brand**, edit *only* the `--interlace-*` primitive
++ **Before forking a brand**, edit *only* the `--interlace-*` primitive
   layer; the shadcn-bare + `@theme inline` layers stay put. The principles
   are brand-invariant; the values are not.
 
 ## Out of scope (what these principles do NOT cover)
 
-- Per-domain mechanics — those live in the `*_PHILOSOPHY.md` siblings.
-- Engineering rules for component shape — those are R1–R26 (`interlace-component`).
-- Per-product copy / brand voice for marketing — these principles cover the
++ Per-domain mechanics — those live in the `*_PHILOSOPHY.md` siblings.
++ Engineering rules for component shape — those are R1–R26 (`interlace-component`).
++ Per-product copy / brand voice for marketing — these principles cover the
   product surface, not campaign copy.
 
 ## See also

@@ -1,0 +1,259 @@
+/*
+ * @interlace/ui — preflight: the token-aware baseline that goes beyond
+ * Tailwind's own preflight. Sits in the chain AFTER foundation.css (so the
+ * --color-*, --font-*, --ring tokens are defined) and BEFORE the brand /
+ * fumadocs bridge layers (so brands can override).
+ *
+ *   @import "tailwindcss";                              Tailwind's own preflight
+ *   @import "@interlace/ui/styles/tokens.css";          motion
+ *   @import "@interlace/ui/styles/foundation.css";      type + spacing + radius
+ *   @import "@interlace/ui/styles/preflight.css";       ← THIS FILE (token-aware baseline)
+ *   @import "@interlace/ui/styles/theme.css";            fumadocs color bridge
+ *   @import "@interlace/ui/styles/interlace-theme.css";  brand color values
+ *
+ * Why this file exists (the "more advanced than Tailwind preflight" the
+ * Interlace DS owes its consumers):
+ *   1. Tailwind's preflight resets margins / borders / box-sizing — necessary
+ *      but VALUELESS without tokens. We layer on the token-aware defaults the
+ *      brand depends on (selection color, focus ring, scrollbar tint,
+ *      ::placeholder, Inter font-features, text-wrap balance on headings).
+ *   2. It enforces DESIGN_PRINCIPLES at the document baseline — every page
+ *      that imports the DS inherits the right type rendering, the right focus
+ *      visibility (WCAG 2.2 SC 2.4.13), the right reduced-motion contract.
+ *   3. It owns the per-component min-viewport contract: `data-min-viewport`
+ *      sets a container so a primitive can warn (dev) when rendered below
+ *      its declared minimum — see DESIGN_PRINCIPLES.md #14.
+ *
+ * Forbidden in this file: brand color values (those live in interlace-theme.css);
+ * component-specific styles (those live in the primitive's cva); JS coupling.
+ * Allowed: token-referencing `var(--*)`, prefers-reduced-motion + prefers-color-scheme
+ * queries, container-type declarations.
+ */
+
+/* ─────────────────────────────────────────────────────────────────
+ * 1. Body + heading baseline
+ *    Inter for prose/UI; JetBrains Mono inherited where set. font-feature-settings
+ *    activates cv11 (single-storey a → matches our written language) + ss01
+ *    (alternate g). text-rendering: optimizeLegibility on body only (not
+ *    monospace — that's mechanical, not prose).
+ * ──────────────────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  font-feature-settings:
+    'cv11',
+    'ss01',
+    'calt',
+    'liga';
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Headings get text-wrap: balance for two-line + better visual rhythm.
+ * Browsers without support (older Safari/Firefox) gracefully fall back to
+ * normal wrapping. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/* Prose paragraphs get text-wrap: pretty (avoids orphan-word last lines).
+ * Same graceful fallback contract. */
+p {
+  text-wrap: pretty;
+}
+
+/* Monospace inheritance — code/kbd/samp/pre use the DS mono token,
+ * not the browser default (Courier). */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-feature-settings: 'calt';
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 2. Selection + focus contract
+ *    Selection: brand accent at low alpha (legible on both light + dark
+ *    surfaces). Focus-visible: 2px solid --ring, 2px offset (WCAG 2.2
+ *    SC 2.4.13 — ≥3:1 contrast, ≥2px thick). NEVER outline: none without a
+ *    replacement.
+ * ──────────────────────────────────────────────────────────────── */
+::selection {
+  background-color: color-mix(in oklch, var(--ring) 24%, transparent);
+  color: var(--foreground);
+}
+
+/* The DS focus ring contract — every interactive primitive inherits this
+ * unless it explicitly opts out for a designed alternative. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* No outline on click-only focus (mouse / touch users don't need it; SC 2.4.7
+ * is satisfied by :focus-visible). */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 3. Form-element inheritance
+ *    Tailwind preflight already resets borders + appearance, but input/textarea/
+ *    button still inherit Times/Helvetica on some browsers. Force the DS font.
+ *    ::placeholder uses --muted-foreground for AA contrast on every surface.
+ * ──────────────────────────────────────────────────────────────── */
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+  font-feature-settings: inherit;
+}
+
+::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1; /* Firefox defaults to 0.54 — restore full opacity for AA. */
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 4. Image + media defaults
+ *    Responsive by default (max-width: 100%). aspect-ratio preserved via
+ *    height: auto. vertical-align: middle prevents the descender gap
+ *    under inline images.
+ * ──────────────────────────────────────────────────────────────── */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 5. Scrollbar tint
+ *    A subtle DS-tinted scrollbar on long surfaces (modern browsers). Avoids
+ *    the heavy OS-default look without going invisible. Webkit + standards
+ *    syntax both included for coverage.
+ * ──────────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 6. Motion contract
+ *    Smooth-scroll on document navigation (anchor links, history nav).
+ *    prefers-reduced-motion overrides EVERYTHING — including any animation
+ *    a component sets — by clamping durations to 0.01ms (per WCAG SC 2.3.3
+ *    + the Tailwind motion-safe philosophy). DESIGN_PRINCIPLES #7.
+ * ──────────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 7. Tabular numerals for data
+ *    Vertically-scanned number lists / tables / live-changing counters get
+ *    tabular-nums + lining figures, so digits don't jump as the value
+ *    updates. TYPOGRAPHY_PHILOSOPHY "Numerals".
+ * ──────────────────────────────────────────────────────────────── */
+table,
+[role='grid'],
+[data-tabular-nums] {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 8. Min-viewport contract — DESIGN_PRINCIPLES #14
+ *    Each primitive declares the smallest viable viewport via the
+ *    `data-min-viewport="<px>"` attribute on its root. preflight establishes
+ *    the container so consumers (or a future preflight v2 with a
+ *    `body[data-interlace-dev]` gate) can render a warning when a primitive
+ *    is mounted in a container narrower than its declared minimum.
+ *
+ *    Today the attribute is documented machine-readable metadata (visible in
+ *    devtools, queryable in E2E tests). The visual dev-mode warning is wired
+ *    in apps that opt-in via `<body data-interlace-dev>`.
+ * ──────────────────────────────────────────────────────────────── */
+[data-min-viewport] {
+  container-type: inline-size;
+}
+
+body[data-interlace-dev] [data-min-viewport='320'] {
+  @container (max-width: 319px) {
+    outline: 2px dashed color-mix(in oklch, var(--destructive) 70%, transparent);
+    outline-offset: 4px;
+    position: relative;
+  }
+}
+
+body[data-interlace-dev] [data-min-viewport='480'] {
+  @container (max-width: 479px) {
+    outline: 2px dashed color-mix(in oklch, var(--destructive) 70%, transparent);
+    outline-offset: 4px;
+    position: relative;
+  }
+}
+
+body[data-interlace-dev] [data-min-viewport='768'] {
+  @container (max-width: 767px) {
+    outline: 2px dashed color-mix(in oklch, var(--destructive) 70%, transparent);
+    outline-offset: 4px;
+    position: relative;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ * 9. forced-colors / high-contrast mode
+ *    Windows High Contrast Mode + macOS Increased Contrast users need our
+ *    focus ring to remain visible. Defer color values to system tokens in
+ *    forced-colors so user overrides win — DESIGN_PRINCIPLES #9.
+ * ──────────────────────────────────────────────────────────────── */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}

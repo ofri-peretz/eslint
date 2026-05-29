@@ -182,6 +182,7 @@
     },
     "./styles/tokens.css": "./styles/tokens.css",
     "./styles/foundation.css": "./styles/foundation.css",
+    "./styles/preflight.css": "./styles/preflight.css",
     "./styles/theme.css": "./styles/theme.css",
     "./styles/interlace-theme.css": "./styles/interlace-theme.css"
   },
