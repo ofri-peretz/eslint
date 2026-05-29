@@ -136,6 +136,12 @@
       "description": "@interlace/ui — meteors primitive (shadcn-compatible)."
     },
     {
+      "name": "number-field",
+      "type": "registry:ui",
+      "title": "Number Field",
+      "description": "@interlace/ui — number-field primitive (shadcn-compatible)."
+    },
+    {
       "name": "pagination",
       "type": "registry:ui",
       "title": "Pagination",
@@ -196,6 +202,12 @@
       "description": "@interlace/ui — skeleton primitive (shadcn-compatible)."
     },
     {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "@interlace/ui — slider primitive (shadcn-compatible)."
+    },
+    {
       "name": "stack",
       "type": "registry:ui",
       "title": "Stack",
@@ -224,6 +236,12 @@
       "type": "registry:ui",
       "title": "Toast",
       "description": "@interlace/ui — toast primitive (shadcn-compatible)."
+    },
+    {
+      "name": "toggle",
+      "type": "registry:ui",
+      "title": "Toggle",
+      "description": "@interlace/ui — toggle primitive (shadcn-compatible)."
     },
     {
       "name": "tooltip",

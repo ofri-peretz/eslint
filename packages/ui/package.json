@@ -52,6 +52,18 @@
       "types": "./dist/primitives/input.d.ts",
       "default": "./dist/primitives/input.js"
     },
+    "./slider": {
+      "types": "./dist/primitives/slider.d.ts",
+      "default": "./dist/primitives/slider.js"
+    },
+    "./toggle": {
+      "types": "./dist/primitives/toggle.d.ts",
+      "default": "./dist/primitives/toggle.js"
+    },
+    "./number-field": {
+      "types": "./dist/primitives/number-field.d.ts",
+      "default": "./dist/primitives/number-field.js"
+    },
     "./textarea": {
       "types": "./dist/primitives/textarea.d.ts",
       "default": "./dist/primitives/textarea.js"

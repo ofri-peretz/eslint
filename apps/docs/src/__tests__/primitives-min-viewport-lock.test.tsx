@@ -51,6 +51,9 @@ const PRIMITIVES = [
   { name: 'aspect-ratio', viewport: 320, tier: 'server' },
   { name: 'collapsible', viewport: 320, tier: 'client' },
   { name: 'hover-card', viewport: 768, tier: 'client' },
+  { name: 'slider', viewport: 320, tier: 'client' },
+  { name: 'toggle', viewport: 320, tier: 'client' },
+  { name: 'number-field', viewport: 320, tier: 'client' },
 ] as const;
 
 // Allowed viewport floors. Keep in lock-step with DESIGN_PRINCIPLES #14.
