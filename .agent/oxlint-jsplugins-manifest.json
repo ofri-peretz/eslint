@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-18",
+  "generatedAt": "2026-05-29",
   "totalPlugins": 20,
-  "totalRules": 409,
-  "oxlintCompatible": 409,
+  "totalRules": 411,
+  "oxlintCompatible": 411,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1128,7 +1128,7 @@
       "short": "modernization",
       "shim": "tools/oxlint-plugins/interlace-modernization.cjs",
       "subpath": "eslint-plugin-modernization/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
         {
           "name": "no-instanceof-array",
@@ -1147,6 +1147,12 @@
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "prefer-template-literal",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
         }
       ]
     },
@@ -1155,7 +1161,7 @@
       "short": "modularity",
       "shim": "tools/oxlint-plugins/interlace-modularity.cjs",
       "subpath": "eslint-plugin-modularity/oxlint",
-      "ruleCount": 5,
+      "ruleCount": 6,
       "rules": [
         {
           "name": "ddd-anemic-domain-model",
@@ -1183,6 +1189,12 @@
         },
         {
           "name": "no-external-api-calls-in-utils",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mutable-exports",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
