@@ -25,12 +25,12 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const args = process.argv.slice(2);
-const DRY = args.includes('--dry');
-const ALL = args.includes('--all');
-const DO_TAGS = ALL || args.includes('--tags');
-const DO_TITLES = ALL || args.includes('--titles');
-const DO_CTAS = ALL || args.includes('--ctas');
+const args = new Set(process.argv.slice(2));
+const DRY = args.has('--dry');
+const ALL = args.has('--all');
+const DO_TAGS = ALL || args.has('--tags');
+const DO_TITLES = ALL || args.has('--titles');
+const DO_CTAS = ALL || args.has('--ctas');
 
 if (!DO_TAGS && !DO_TITLES && !DO_CTAS) {
   console.error('Pass at least one of: --tags --titles --ctas --all');
@@ -133,6 +133,11 @@ const TITLE_FIXES: { id: number; oldTitle: string; newTitle: string }[] = [
     oldTitle: 'The Security Engineering Blueprint: A JavaScript Master Document',
     newTitle: 'The JavaScript Security Checklist: Covering the OWASP Top 10 with ESLint',
   },
+  {
+    id: 3139002,
+    oldTitle: 'Hardening AI Agents: The Vercel AI Static Analysis Standard',
+    newTitle: 'Hardening Vercel AI SDK Agents: The Security Vulnerabilities ESLint Catches',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -214,7 +219,7 @@ async function apiFetch(path: string, options: RequestInit = {}) {
       'api-key': apiKey!,
       Accept: 'application/vnd.forem.api-v1+json',
       'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
+      ...(options.headers),
     },
   });
   if (!res.ok) {
@@ -242,6 +247,28 @@ async function patchArticle(id: number, patch: Record<string, unknown>) {
   });
 }
 
+// When an article's body_markdown has YAML frontmatter, DEV.to re-applies the
+// frontmatter fields on every save — so patching `title` or `tags` directly
+// gets overwritten. The reliable path is to update the frontmatter in the body.
+function hasFrontmatter(body: string) {
+  return body.trimStart().startsWith('---\n');
+}
+
+function patchFrontmatter(body: string, field: string, value: string): string {
+  const FM_RE = /^---\n([\s\S]*?\n)---\n/;
+  const m = body.match(FM_RE);
+  if (!m) return body;
+
+  let fm = m[1];
+  const fieldRe = new RegExp(`^${field}:.*$`, 'm');
+  if (fieldRe.test(fm)) {
+    fm = fm.replace(fieldRe, `${field}: ${value}`);
+  } else {
+    fm = fm.trimEnd() + `\n${field}: ${value}\n`;
+  }
+  return body.replace(FM_RE, `---\n${fm}---\n`);
+}
+
 // ---------------------------------------------------------------------------
 // Phase 1 — Tags
 // ---------------------------------------------------------------------------
@@ -252,7 +279,24 @@ async function fixTags() {
     console.log(`\n  [${fix.id}] ${fix.title.slice(0, 60)}`);
     console.log(`       → tags: [${fix.newTags.join(', ')}]`);
     if (DRY) continue;
-    await patchArticle(fix.id, { tags: fix.newTags });
+
+    let article: any;
+    try { article = await getArticle(fix.id); } catch (e) {
+      console.log(`       ⚠️  fetch failed: ${e}`);
+      await sleep(RATE_MS);
+      continue;
+    }
+
+    const body: string = article?.body_markdown ?? '';
+    const tagStr = fix.newTags.join(', ');
+
+    if (hasFrontmatter(body)) {
+      // Update tags inside the frontmatter so DEV doesn't override them
+      const newBody = patchFrontmatter(body, 'tags', tagStr);
+      await patchArticle(fix.id, { body_markdown: newBody });
+    } else {
+      await patchArticle(fix.id, { tags: fix.newTags });
+    }
     console.log('       ✅ done');
     await sleep(RATE_MS);
   }
@@ -268,7 +312,26 @@ async function fixTitles() {
     console.log(`\n  [${fix.id}] OLD: ${fix.oldTitle}`);
     console.log(`         NEW: ${fix.newTitle}`);
     if (DRY) continue;
-    await patchArticle(fix.id, { title: fix.newTitle });
+
+    let article: any;
+    try { article = await getArticle(fix.id); } catch (e) {
+      console.log(`         ⚠️  fetch failed: ${e}`);
+      await sleep(RATE_MS);
+      continue;
+    }
+
+    const body: string = article?.body_markdown ?? '';
+
+    if (hasFrontmatter(body)) {
+      // Escape YAML: wrap in single-quotes if title contains colons or special chars
+      const safeTitle = fix.newTitle.includes(':') || fix.newTitle.includes("'")
+        ? `"${fix.newTitle.replace(/"/g, '\\"')}"`
+        : fix.newTitle;
+      const newBody = patchFrontmatter(body, 'title', safeTitle);
+      await patchArticle(fix.id, { body_markdown: newBody, title: fix.newTitle });
+    } else {
+      await patchArticle(fix.id, { title: fix.newTitle });
+    }
     console.log('         ✅ done');
     await sleep(RATE_MS);
   }
@@ -338,7 +401,7 @@ async function fixCtas() {
 // Main
 // ---------------------------------------------------------------------------
 
-async function main() {
+async function run() {
   console.log(`\nDEV.to Precision Fix — ${DRY ? 'DRY RUN' : 'LIVE'}`);
   console.log(`Phases: ${[DO_TAGS && 'tags', DO_TITLES && 'titles', DO_CTAS && 'ctas'].filter(Boolean).join(' + ')}\n`);
 
@@ -349,7 +412,7 @@ async function main() {
   console.log('\n✅ All done.\n');
 }
 
-main().catch((e) => {
+run().catch((e) => {
   console.error('Fatal:', e);
   process.exit(1);
 });
