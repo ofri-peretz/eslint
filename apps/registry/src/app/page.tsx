@@ -1,6 +1,9 @@
 import Link from 'next/link';
 
-import { loadIndex } from '@/lib/registry';
+import { ClientServerBadge } from '@/components/client-server-badge';
+import { MinViewportBadge } from '@/components/min-viewport-badge';
+import { CATEGORIES, groupByCategory } from '@/lib/categories';
+import { loadEnrichedIndex, loadIndex } from '@/lib/registry';
 
 const PRIMARY_INSTALL =
   'npx shadcn@latest add https://ds.interlace.tools/r/button.json';
@@ -13,8 +16,13 @@ const STORYBOOK_URL = 'https://storybook.interlace.tools';
 
 export default async function HomePage() {
   const index = await loadIndex();
+  const enriched = await loadEnrichedIndex();
   const styleItem = index.items.find((i) => i.name === 'theme');
-  const primitives = index.items.filter((i) => i.type === 'registry:ui');
+  const primitives = enriched.filter((i) => i.type === 'registry:ui');
+  const grouped = groupByCategory(primitives);
+  const nonEmptyCategories = CATEGORIES.filter(
+    (c) => (grouped.get(c.id) ?? []).length > 0,
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -171,7 +179,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ─── Components list — no live previews ──────────────────── */}
+      {/* ─── Categorized components ──────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="flex items-end justify-between">
           <div>
@@ -179,42 +187,88 @@ export default async function HomePage() {
               Available primitives
             </div>
             <h2 className="mt-2 text-3xl font-bold tracking-tight">
-              {primitives.length} components
+              {primitives.length} components, {nonEmptyCategories.length} categories
             </h2>
             <p className="text-muted-foreground mt-2">
-              Visual previews + interactive variants live on{' '}
+              Grouped by intent — what you reach for, not by implementation
+              lineage. Visual previews + interactive variants live on{' '}
               <a
                 href={STORYBOOK_URL}
                 className="text-foreground underline-offset-4 hover:underline"
               >
                 storybook.interlace.tools
               </a>
-              . This registry is the source — install URLs, dependencies, and
-              JSON contract only.
+              .
             </p>
           </div>
         </div>
 
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {primitives.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={`/c/${item.name}`}
-                className="group border-border hover:border-violet-500/60 hover:bg-card flex h-full flex-col justify-between rounded-lg border bg-card/40 p-4 transition-all"
-              >
-                <div>
-                  <h3 className="font-semibold">{item.title}</h3>
-                  <p className="text-muted-foreground mt-1 font-mono text-xs">
-                    @interlace/{item.name}
-                  </p>
-                </div>
-                <span className="text-muted-foreground group-hover:text-violet-400 mt-3 text-xs transition-colors">
-                  Install · view JSON →
-                </span>
-              </Link>
-            </li>
+        {/* Category jump-links */}
+        <nav
+          aria-label="Component categories"
+          className="mt-8 flex flex-wrap gap-2"
+        >
+          {nonEmptyCategories.map((c) => (
+            <a
+              key={c.id}
+              href={`#${c.id}`}
+              className="border-border hover:border-violet-500/60 hover:bg-card rounded-full border bg-card/40 px-3 py-1 text-xs transition-colors"
+            >
+              {c.title}{' '}
+              <span className="text-muted-foreground">
+                · {(grouped.get(c.id) ?? []).length}
+              </span>
+            </a>
           ))}
-        </ul>
+        </nav>
+
+        {nonEmptyCategories.map((category) => {
+          const items = grouped.get(category.id) ?? [];
+          return (
+            <div key={category.id} id={category.id} className="mt-12 scroll-mt-20">
+              <div className="flex items-baseline gap-3">
+                <h3 className="text-xl font-semibold tracking-tight">
+                  {category.title}
+                </h3>
+                <span className="text-muted-foreground font-mono text-xs">
+                  {items.length}
+                </span>
+              </div>
+              <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+                {category.description}
+              </p>
+              <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((item) => (
+                  <li key={item.name}>
+                    <Link
+                      href={`/c/${item.name}`}
+                      className="group border-border hover:border-violet-500/60 hover:bg-card flex h-full flex-col justify-between gap-3 rounded-lg border bg-card/40 p-4 transition-all"
+                    >
+                      <div>
+                        <h4 className="font-semibold">{item.title}</h4>
+                        <p className="text-muted-foreground mt-1 font-mono text-xs">
+                          @interlace/{item.name}
+                        </p>
+                      </div>
+                      {item.metadata ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          <ClientServerBadge
+                            isClient={item.metadata.isClient}
+                          />
+                          {item.metadata.minViewport !== null ? (
+                            <MinViewportBadge
+                              value={item.metadata.minViewport}
+                            />
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </section>
 
       {/* ─── Footer ─────────────────────────────────────────────── */}

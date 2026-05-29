@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "aspect-ratio",
+  "type": "registry:ui",
+  "title": "Aspect Ratio",
+  "description": "@interlace/ui — aspect-ratio primitive (shadcn-compatible).",
+  "dependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
+  "files": [
+    {
+      "path": "registry/interlace-ui/aspect-ratio.tsx",
+      "target": "components/ui/aspect-ratio.tsx",
+      "type": "registry:ui",
+      "content": "/**\n * @interlace/ui — AspectRatio\n *\n * Anatomy: a single block-level wrapper that reserves space by ratio (CSS\n * `aspect-ratio`) and stretches to the parent's width. Use it as the *frame*\n * for media that arrives async (images, video, embeds, charts) so the\n * surrounding layout never shifts (DESIGN_PRINCIPLES #7 \"CLS = 0 from\n * layout\"). Children fill the frame absolutely or with `object-cover` on\n * `<img>` / `<video>`.\n *\n * | Rule | Concept                          | Where in this file                                   |\n * | ---- | -------------------------------- | ---------------------------------------------------- |\n * | R4   | Extends native el                | `React.ComponentProps<'div'>`                        |\n * | R6   | data-slot on the part            | `data-slot=\"aspect-ratio\"`                           |\n * | R7   | className merged + ...rest + ref | `cn('relative w-full', className)` + `{...props}` + `forwardRef` |\n * | R11  | One variable                     | One layout variable: `ratio` (number)                |\n * | R18  | Tailwind only — except aspect-ratio | Inline `style={{ aspectRatio: ratio }}` is unavoidable here — Tailwind has no class for an arbitrary runtime ratio short of `aspect-[w/h]` JIT, which can't accept a runtime number. This is the documented carve-out. |\n * | R19  | Tokens only                      | No color/spacing/radius/type — pure layout primitive  |\n * | R25  | Server component                 | No hooks; safe inside any RSC tree                   |\n *\n * MIN_VIEWPORT = 320 — pure CSS aspect-ratio works at every viewport; the\n * frame just scales to whatever width the parent offers. The 320px floor is\n * the design-system baseline for \"smallest viable viewport\" (iPhone SE\n * portrait); below it, preflight's `body[data-interlace-dev]` outline warns.\n *\n * API parity: Radix / shadcn `AspectRatio` (`ratio` number). Native CSS\n * `aspect-ratio` has 95%+ global support (caniuse, 2026), so this primitive\n * is a single `<div>` — no padding-bottom hack, no extra wrapper.\n */\n\nimport * as React from 'react';\n\nimport { cn } from '@/lib/utils';\n\n/** Smallest viable viewport this primitive supports (px). */\nexport const MIN_VIEWPORT = 320;\n\ninterface AspectRatioProps extends React.ComponentProps<'div'> {\n  /** Width / height ratio (e.g. 16 / 9, 4 / 3, 1). @default 16 / 9 */\n  ratio?: number;\n}\n\n/** Reserves layout space at a fixed ratio. Server component (no hooks). */\nconst AspectRatio = React.forwardRef<HTMLDivElement, AspectRatioProps>(\n  function AspectRatio({ ratio = 16 / 9, className, style, ...props }, ref) {\n    return (\n      <div\n        ref={ref}\n        data-slot=\"aspect-ratio\"\n        data-min-viewport={String(MIN_VIEWPORT)}\n        style={{ aspectRatio: ratio, ...style }}\n        className={cn('relative w-full', className)}\n        {...props}\n      />\n    );\n  },\n);\nAspectRatio.displayName = 'AspectRatio';\n\nexport { AspectRatio };\nexport type { AspectRatioProps };\n"
+    }
+  ]
+}

@@ -1,6 +1,11 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import {
+  type ComponentMetadata,
+  extractMetadata,
+} from './component-metadata';
+
 /**
  * Server-side helper to load registry-item JSON during page rendering.
  * The build runs `scripts/build-registry.mjs` (prebuild step) to populate
@@ -23,6 +28,10 @@ export type RegistryItem = {
   dependencies?: string[];
   registryDependencies?: string[];
   files: RegistryFile[];
+};
+
+export type EnrichedItem = RegistryItem & {
+  metadata: ComponentMetadata;
 };
 
 export type RegistryIndex = {
@@ -53,4 +62,32 @@ export const listItemNames = async (): Promise<string[]> => {
     .filter((f) => f.endsWith('.json') && f !== 'index.json')
     .map((f) => f.replace(/\.json$/, ''))
     .sort();
+};
+
+export const loadEnrichedItem = async (
+  name: string,
+): Promise<EnrichedItem | null> => {
+  const item = await loadItem(name);
+  if (!item) return null;
+  const content = item.files[0]?.content ?? '';
+  return { ...item, metadata: extractMetadata(content) };
+};
+
+export const loadEnrichedIndex = async (): Promise<
+  Array<RegistryIndex['items'][number] & { metadata: ComponentMetadata | null }>
+> => {
+  const index = await loadIndex();
+  const entries = await Promise.all(
+    index.items.map(async (item) => {
+      // Style items don't carry primitive source; skip the metadata extract.
+      if (item.type !== 'registry:ui') {
+        return { ...item, metadata: null };
+      }
+      const full = await loadItem(item.name);
+      if (!full) return { ...item, metadata: null };
+      const content = full.files[0]?.content ?? '';
+      return { ...item, metadata: extractMetadata(content) };
+    }),
+  );
+  return entries;
 };
