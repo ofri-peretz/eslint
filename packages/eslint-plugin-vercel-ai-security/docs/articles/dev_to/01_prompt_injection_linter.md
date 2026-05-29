@@ -2,7 +2,7 @@
 title: Your Vercel AI SDK App Has a Prompt Injection Vulnerability
 published: true
 description: How to detect and prevent prompt injection in generateText, streamText, and other Vercel AI SDK functions using automated ESLint security rules
-tags: vercel, ai, security, typescript
+tags: ai, security, vercel, eslint
 cover_image:
 ---
 

@@ -96,8 +96,8 @@ function ArticleCard({
         imageUrl={image}
         tags={article.tag_list}
         author={{
-          name: article.user.name,
-          imageUrl: article.user.profile_image,
+          name: article.user?.name ?? 'Ofri Peretz',
+          imageUrl: article.user?.profile_image ?? '',
         }}
         publishedAt={article.published_at}
         meta={{
