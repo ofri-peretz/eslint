@@ -47,6 +47,14 @@ export interface TrackedEventMap {
     channel: 'rss' | 'devto' | 'x' | 'github';
   };
   'articles:empty_state_view': { activeParams: string };
+  'stats:cta_click': {
+    action: 'star' | 'get_started' | 'plugin_install' | 'plugin_docs';
+    plugin?: string;
+  };
+  'flagship:cta_click': {
+    action: 'star' | 'install_config' | 'rule_install' | 'rule_docs';
+    rule?: string;
+  };
 }
 
 export type TrackedEventName = keyof TrackedEventMap;
@@ -58,9 +66,8 @@ function isTrackingAllowed(): boolean {
   if (typeof navigator === 'undefined') return false;
   const dnt = navigator.doNotTrack;
   if (dnt === '1' || dnt === 'yes') return false;
-  const gpc = (
-    navigator as Navigator & { globalPrivacyControl?: boolean }
-  ).globalPrivacyControl;
+  const gpc = (navigator as Navigator & { globalPrivacyControl?: boolean })
+    .globalPrivacyControl;
   if (gpc === true) return false;
   return true;
 }
