@@ -102,6 +102,61 @@ describe('no-missing-null-checks', () => {
     });
   });
 
+  describe('Valid Code - Truthy Guard (FP regression)', () => {
+    ruleTester.run('valid - truthy if guard', noMissingNullChecks, {
+      valid: [
+        // if (obj) { obj.prop } — direct truthy check proves non-null
+        {
+          code: 'if (obj) { obj.property; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          code: 'if (user) { user.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          code: 'if (response) { response.data.items; }',
+          filename: 'src/utils.ts',
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - short-circuit AND guard', noMissingNullChecks, {
+      valid: [
+        // obj && obj.prop — left-side guard proves right side is safe
+        {
+          code: 'const x = obj && obj.property;',
+          filename: 'src/utils.ts',
+        },
+        {
+          code: 'const r = user && user.name;',
+          filename: 'src/utils.ts',
+        },
+        {
+          code: 'const v = config && config.enabled;',
+          filename: 'src/utils.ts',
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - ternary guard', noMissingNullChecks, {
+      valid: [
+        // obj ? obj.prop : fallback — truthy test guards consequent
+        {
+          code: 'const x = obj ? obj.property : null;',
+          filename: 'src/utils.ts',
+        },
+        {
+          code: 'const name = user ? user.name : "anonymous";',
+          filename: 'src/utils.ts',
+        },
+      ],
+      invalid: [],
+    });
+  });
+
   describe('Valid Code - Test Files', () => {
     ruleTester.run('valid - test files ignored', noMissingNullChecks, {
       valid: [
