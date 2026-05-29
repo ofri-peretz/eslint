@@ -17,7 +17,7 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-modernization#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-modernization",
   "repository": {
     "type": "git",
     "url": "https://github.com/ofri-peretz/eslint",

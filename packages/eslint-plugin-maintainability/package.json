@@ -64,7 +64,7 @@
     "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-plugin-maintainability"
   },
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-maintainability#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-maintainability",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },

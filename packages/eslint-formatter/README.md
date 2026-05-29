@@ -175,4 +175,4 @@ Three contracts gate every release:
 
 ## License
 
-MIT © [Ofri Peretz](https://ofriperetz.dev)
+MIT © [Ofri Peretz](https://ofriperetz.dev/?utm_source=github&utm_medium=referral&utm_campaign=eslint-formatter)
