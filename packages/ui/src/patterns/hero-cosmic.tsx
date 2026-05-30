@@ -8,6 +8,7 @@ import {
   ShootingStars,
   Meteors,
 } from '../aceternity/stars-background.js';
+import { DaylightBackground } from '../aceternity/daylight-background.js';
 
 export interface HeroCosmicCTA {
   label: React.ReactNode;
@@ -48,6 +49,12 @@ export interface HeroCosmicProps {
     meteorMinDuration?: number;
     meteorMaxDuration?: number;
   };
+  /** Tuning knobs for the daylight (light-theme) surface. */
+  daylight?: {
+    showSun?: boolean;
+    showClouds?: boolean;
+    cloudCount?: number;
+  };
 }
 
 function renderCta(cta: HeroCosmicCTA | undefined) {
@@ -66,9 +73,20 @@ function renderCta(cta: HeroCosmicCTA | undefined) {
 }
 
 /**
- * Cosmic landing-hero preset for fumadocs sites: starfield + shooting stars
- * + meteors over a deep purple-to-black gradient. Drop-in replacement for a
- * hand-rolled hero — pass headline / tagline / CTAs and you're done.
+ * Atmospheric landing-hero preset for fumadocs sites — theme-aware twin
+ * surfaces. Light theme: Rayleigh-scattered sky + photorealistic sun +
+ * fluffy clouds (Nuxt `DaylightBackground.vue` port). Dark theme:
+ * starfield + shooting stars + meteors over a deep purple-to-black
+ * gradient (Nuxt `CosmicBackground.vue` port).
+ *
+ * Both surfaces wrap the same content slot, so headline / tagline / CTAs
+ * render exactly once — no duplicate `<h1>`, no SEO duplication, no
+ * accessible-name doubling. The cosmetic name `HeroCosmic` is retained
+ * for backwards-compatibility (this is a drop-in replacement).
+ *
+ * Cosmic defaults (star density, shooting-star delay/speed, meteor color
+ * and duration) match the Nuxt blog reference one-for-one — drift here
+ * was the reason "the new meteors feel weird" surfaced as a regression.
  */
 export function HeroCosmic({
   eyebrow,
@@ -79,16 +97,20 @@ export function HeroCosmic({
   footer,
   className,
   effects = {},
+  daylight = {},
 }: HeroCosmicProps) {
+  // Cosmic-surface (dark theme) defaults — calibrated against the Nuxt
+  // `CosmicBackground.vue` source so the visual cadence (how often a
+  // shooting star streaks, how dense the starfield reads) stays put.
   const e = {
-    starDensity: 0.0002,
-    twinkleProbability: 0.8,
-    minTwinkleSpeed: 0.4,
-    maxTwinkleSpeed: 1.2,
+    starDensity: 0.00015,
+    twinkleProbability: 0.7,
+    minTwinkleSpeed: 0.5,
+    maxTwinkleSpeed: 1,
     shootingMinSpeed: 10,
-    shootingMaxSpeed: 35,
-    shootingMinDelay: 600,
-    shootingMaxDelay: 2500,
+    shootingMaxSpeed: 30,
+    shootingMinDelay: 1200,
+    shootingMaxDelay: 4200,
     shootingStarColor: '#c084fc',
     shootingTrailColor: '#2EB9DF',
     meteorCount: 3,
@@ -97,6 +119,12 @@ export function HeroCosmic({
     meteorMaxDuration: 30,
     ...effects,
   };
+  const d = {
+    showSun: true,
+    showClouds: true,
+    cloudCount: 3,
+    ...daylight,
+  };
 
   return (
     <div
@@ -104,30 +132,48 @@ export function HeroCosmic({
       className={cn('relative', className)}
       style={{ contain: 'paint', clipPath: 'inset(0)' }}
     >
-      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-purple-950 via-slate-950 to-black">
-        <StarsBackground
-          starDensity={e.starDensity}
-          allStarsTwinkle
-          twinkleProbability={e.twinkleProbability}
-          minTwinkleSpeed={e.minTwinkleSpeed}
-          maxTwinkleSpeed={e.maxTwinkleSpeed}
-        />
-        <ShootingStars
-          minSpeed={e.shootingMinSpeed}
-          maxSpeed={e.shootingMaxSpeed}
-          minDelay={e.shootingMinDelay}
-          maxDelay={e.shootingMaxDelay}
-          starColor={e.shootingStarColor}
-          trailColor={e.shootingTrailColor}
-          starWidth={10}
-          starHeight={1}
-        />
-        <Meteors
-          number={e.meteorCount}
-          meteorColor={e.meteorColor}
-          minDuration={e.meteorMinDuration}
-          maxDuration={e.meteorMaxDuration}
-        />
+      <div className="relative flex min-h-screen items-center justify-center bg-linear-to-b from-sky-300 via-sky-100 to-amber-50 dark:bg-linear-to-b dark:from-purple-950 dark:via-slate-950 dark:to-black">
+        {/* Light-theme atmospheric surface — sky + sun + clouds. */}
+        <div
+          data-slot="hero-daylight-layer"
+          className="block dark:hidden absolute inset-0"
+        >
+          <DaylightBackground
+            showSun={d.showSun}
+            showClouds={d.showClouds}
+            cloudCount={d.cloudCount}
+          />
+        </div>
+
+        {/* Dark-theme cosmic surface — starfield + shooting stars + meteors. */}
+        <div
+          data-slot="hero-cosmic-layer"
+          className="hidden dark:block absolute inset-0"
+        >
+          <StarsBackground
+            starDensity={e.starDensity}
+            allStarsTwinkle
+            twinkleProbability={e.twinkleProbability}
+            minTwinkleSpeed={e.minTwinkleSpeed}
+            maxTwinkleSpeed={e.maxTwinkleSpeed}
+          />
+          <ShootingStars
+            minSpeed={e.shootingMinSpeed}
+            maxSpeed={e.shootingMaxSpeed}
+            minDelay={e.shootingMinDelay}
+            maxDelay={e.shootingMaxDelay}
+            starColor={e.shootingStarColor}
+            trailColor={e.shootingTrailColor}
+            starWidth={10}
+            starHeight={1}
+          />
+          <Meteors
+            number={e.meteorCount}
+            meteorColor={e.meteorColor}
+            minDuration={e.meteorMinDuration}
+            maxDuration={e.meteorMaxDuration}
+          />
+        </div>
 
         <div className="relative z-10 container mx-auto max-w-5xl px-4 py-20 text-center">
           {eyebrow ? <div className="mb-8 inline-flex">{eyebrow}</div> : null}
@@ -137,7 +183,7 @@ export function HeroCosmic({
           </h1>
 
           {tagline ? (
-            <p className="mx-auto mb-16 max-w-2xl text-lg leading-relaxed text-purple-100/90 drop-shadow md:text-xl">
+            <p className="mx-auto mb-16 max-w-2xl text-lg leading-relaxed text-slate-700 drop-shadow dark:text-purple-100/90 md:text-xl">
               {tagline}
             </p>
           ) : null}
