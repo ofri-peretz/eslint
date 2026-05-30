@@ -358,8 +358,11 @@ function IconDontDoSpecimen() {
               <Typography variant="caption" tone="destructive" as="code">
                 Don&apos;t · icon-only, no label
               </Typography>
+              {/* aria-hidden: this is a visual specimen of a bad pattern, not a real button */}
               <button
                 type="button"
+                aria-hidden="true"
+                tabIndex={-1}
                 className="border-border bg-background text-foreground inline-flex size-9 items-center justify-center rounded-sm border"
               >
                 <Trash className="size-5" strokeWidth={1.5} />

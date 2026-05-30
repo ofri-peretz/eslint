@@ -64,7 +64,7 @@ export const Variants: Story = {
     <div className="flex flex-col gap-lg">
       <section className="flex flex-col gap-xs">
         <div className="text-ui-sm text-muted-foreground">Full trail (4 segments)</div>
-        <Breadcrumb>
+        <Breadcrumb aria-label="Full trail breadcrumb">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -87,7 +87,7 @@ export const Variants: Story = {
 
       <section className="flex flex-col gap-xs">
         <div className="text-ui-sm text-muted-foreground">Collapsed (ellipsis)</div>
-        <Breadcrumb>
+        <Breadcrumb aria-label="Collapsed breadcrumb">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -113,7 +113,7 @@ export const Variants: Story = {
           Long trail — wraps via flex-wrap (constrained to 360px)
         </div>
         <div className="w-[360px]">
-          <Breadcrumb>
+          <Breadcrumb aria-label="Long trail breadcrumb">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink href="/">Home</BreadcrumbLink>
