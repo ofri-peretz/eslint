@@ -57,6 +57,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/cn.js';
 import { useReducedMotion } from '../lib/use-reduced-motion.js';
 
+// Signals that Toast sub-parts are inside a static (screenshot) render
+// path — no BaseToast.Root context available. Sub-parts fall back to
+// plain semantic HTML so they render without Base UI's Root context.
+const ToastStaticCtx = React.createContext(false);
+
 /**
  * Minimum viable viewport (CSS px) for this primitive. Toasts must remain
  * legible on a 320 CSS-px iPhone SE; below this width, the preflight
@@ -192,12 +197,19 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(function Toast(
   // surface so screenshot stories stay deterministic. Base UI's Root
   // allows `style` to be a `(state) => CSSProperties` callback; a plain
   // `<div>` only accepts a static `CSSProperties`, so we narrow here.
+  // ToastStaticCtx signals to sub-parts (Title, Description, Close) that
+  // they should also render as plain HTML — Base UI's Title/Description/
+  // Close require Toast.Root context which doesn't exist in the static path.
   const { style: rawStyle, ...divProps } =
     sharedProps as typeof sharedProps & {
       style?: React.CSSProperties | ((state: unknown) => React.CSSProperties | undefined);
     };
   const style = typeof rawStyle === 'function' ? undefined : rawStyle;
-  return <div ref={ref} {...divProps} style={style} />;
+  return (
+    <ToastStaticCtx.Provider value={true}>
+      <div ref={ref} {...divProps} style={style} />
+    </ToastStaticCtx.Provider>
+  );
 });
 Toast.displayName = 'Toast';
 
@@ -210,14 +222,16 @@ type ToastTitleProps = React.ComponentProps<typeof BaseToast.Title>;
 
 const ToastTitle = React.forwardRef<HTMLHeadingElement, ToastTitleProps>(
   function ToastTitle({ className, ...props }, ref) {
+    const isStatic = React.useContext(ToastStaticCtx);
+    const cls = cn('font-body text-ui font-semibold text-card-foreground', className);
+    if (isStatic) {
+      return <strong ref={ref as React.Ref<HTMLElement>} data-slot="toast-title" className={cls} {...(props as React.HTMLAttributes<HTMLElement>)} />;
+    }
     return (
       <BaseToast.Title
         ref={ref}
         data-slot="toast-title"
-        className={cn(
-          'font-body text-ui font-semibold text-card-foreground',
-          className,
-        )}
+        className={cls}
         {...props}
       />
     );
@@ -231,14 +245,16 @@ const ToastDescription = React.forwardRef<
   HTMLParagraphElement,
   ToastDescriptionProps
 >(function ToastDescription({ className, ...props }, ref) {
+  const isStatic = React.useContext(ToastStaticCtx);
+  const cls = cn('font-body text-ui-sm text-muted-foreground', className);
+  if (isStatic) {
+    return <p ref={ref} data-slot="toast-description" className={cls} {...(props as React.HTMLAttributes<HTMLParagraphElement>)} />;
+  }
   return (
     <BaseToast.Description
       ref={ref}
       data-slot="toast-description"
-      className={cn(
-        'font-body text-ui-sm text-muted-foreground',
-        className,
-      )}
+      className={cls}
       {...props}
     />
   );
@@ -254,26 +270,36 @@ type ToastCloseProps = React.ComponentProps<typeof BaseToast.Close>;
 
 const ToastClose = React.forwardRef<HTMLButtonElement, ToastCloseProps>(
   function ToastClose({ className, children, ...props }, ref) {
+    const isStatic = React.useContext(ToastStaticCtx);
+    const cls = cn(
+      'ml-auto inline-flex size-6 shrink-0 items-center justify-center rounded-sm',
+      'text-muted-foreground hover:text-foreground',
+      'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+      'transition-colors',
+      className,
+    );
+    const content = children ?? (
+      <>
+        <XIcon className="size-4" aria-hidden />
+        <span className="sr-only">Close</span>
+      </>
+    );
+    if (isStatic) {
+      return (
+        <button ref={ref} type="button" data-slot="toast-close" aria-label="Close" className={cls} {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+          {content}
+        </button>
+      );
+    }
     return (
       <BaseToast.Close
         ref={ref}
         data-slot="toast-close"
         aria-label="Close"
-        className={cn(
-          'ml-auto inline-flex size-6 shrink-0 items-center justify-center rounded-sm',
-          'text-muted-foreground hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-          'transition-colors',
-          className,
-        )}
+        className={cls}
         {...props}
       >
-        {children ?? (
-          <>
-            <XIcon className="size-4" aria-hidden />
-            <span className="sr-only">Close</span>
-          </>
-        )}
+        {content}
       </BaseToast.Close>
     );
   },

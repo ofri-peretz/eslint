@@ -62,8 +62,8 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
               {state.snippet.tag}
             </p>
             <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider">
-              <span aria-hidden className="size-1.5 rounded-full bg-yellow-500/70" />
-              Phase 1c · live linting in Phase 2
+              <span aria-hidden className="size-1.5 rounded-full bg-green-500/70" />
+              Phase 2 · live linting
             </Badge>
           </div>
           <h2 className="font-mono text-lg text-fd-foreground">{state.snippet.title}</h2>
@@ -89,6 +89,7 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
             isEdited={state.isEdited}
             hiddenCount={state.snippet.findings.length - state.visibleFindings.length}
             totalCount={state.snippet.findings.length}
+            lintStatus={state.lintStatus}
           />
         </div>
 

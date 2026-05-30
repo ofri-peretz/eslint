@@ -19,15 +19,14 @@ export const metadata: Metadata = {
 /**
  * /play — the interactive playground.
  *
- * Phase 1b (this version): renders 6 canonical flagship-rule snippets in
- * an editable Monaco editor with verified static findings per snippet.
- * When the user edits the code, the right pane switches to an honest
- * "edited, live linting pending" placeholder until Phase 2 ships.
- * URL state contract is wired (`?example=`) so links are shareable.
+ * Phase 2 (this version): live linting via POST /api/play/lint. The editor
+ * is fully interactive — edits trigger a debounced (300ms) lint request and
+ * findings update in real-time. Static verified findings are shown until the
+ * first live result arrives. URL state (`?example=`, `?plugins=`) is wired.
  *
- * Phase 2: swap the static findings for live in-browser ESLint output
- *          via `eslint-linter-browserify`.
- * Phase 3: plugin-toggle strip + "copy config" button.
+ * Phase 3: plugin-toggle strip drives the active plugin set in the live
+ *          linting request. "Copy config" generates the correct config.
+ * Phase 4: embed mode + homepage hero swap to live playground.
  *
  * Spec: PLAYGROUND_SPEC.md.
  */
