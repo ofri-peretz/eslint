@@ -1,6 +1,11 @@
 ---
-title: "prefer-pool-query"
-description: "title: prefer-pool-query"
+title: prefer-pool-query
+description: Suggests using pool.query() for single-shot queries instead of manual connect/release.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-693
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: prefer-pool-query
-description: Suggests using pool.query() for single-shot queries instead of manual connect/release.
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-693
-autofix: false
----
-
 > **Keywords:** pool, simplicity, quality, pg, node-postgres
-
-Suggests using pool.query() for single-shot queries instead of manual connect/release.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

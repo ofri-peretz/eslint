@@ -1,15 +1,4 @@
 ---
-title: "no-unsafe-inline-csp"
-description: "title: no-unsafe-inline-csp"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-unsafe-inline-csp
 description: "Disallow 'unsafe-inline' in Content Security Policy directives."
 tags: ['security', 'browser']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-79
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > No Unsafe Inline Csp
-
-Disallow 'unsafe-inline' in Content Security Policy directives.
-
-Disallow 'unsafe-inline' in Content Security Policy directives.
 
 ## ⚠️ Security Issue
 

@@ -1,15 +1,4 @@
 ---
-title: "require-projection"
-description: "title: require-projection"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-projection
 description: Requires field projection on queries to minimize data exposure.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-200
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
-
-Requires field projection on queries to minimize data exposure.
-
-Requires field projection on queries to minimize data exposure.
 
 ⚠️ This rule is **off** by default in the `recommended` config.
 

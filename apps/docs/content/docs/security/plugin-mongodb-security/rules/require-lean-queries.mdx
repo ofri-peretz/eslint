@@ -1,15 +1,4 @@
 ---
-title: "require-lean-queries"
-description: "title: require-lean-queries"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-lean-queries
 description: Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
 tags: ['security', 'mongodb']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-400
 owasp: "A04:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** CWE-400, lean, performance, Mongoose, memory
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** CWE-400, lean, performance, Mongoose, memory
 
 Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 

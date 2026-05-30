@@ -1,6 +1,11 @@
 ---
-title: "no-hardcoded-session-tokens"
-description: "title: no-hardcoded-session-tokens"
+title: no-hardcoded-session-tokens
+description: This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers
+tags: ['security', 'core']
+category: security
+severity: critical
+cwe: CWE-798
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-hardcoded-session-tokens
-description: This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers
-tags: ['security', 'core']
-category: security
-severity: critical
-cwe: CWE-798
-autofix: false
----
-
 > Detects hardcoded session/JWT tokens in code
-
-This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)  

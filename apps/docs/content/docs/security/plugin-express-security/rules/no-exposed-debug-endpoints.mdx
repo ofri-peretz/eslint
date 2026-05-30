@@ -1,15 +1,4 @@
 ---
-title: "no-exposed-debug-endpoints"
-description: "title: no-exposed-debug-endpoints"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-exposed-debug-endpoints
 description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
 tags: ['security', 'express']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-489
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
 
 **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10 M8](https://owasp.org/www-project-mobile-top-10/)

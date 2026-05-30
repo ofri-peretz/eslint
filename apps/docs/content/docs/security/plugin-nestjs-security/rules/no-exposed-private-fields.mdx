@@ -1,15 +1,4 @@
 ---
-title: "no-exposed-private-fields"
-description: "title: no-exposed-private-fields"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-exposed-private-fields
 description: This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
 tags: ['security', 'nestjs']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-200
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Detect exposed sensitive fields in DTOs/entities
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Detect exposed sensitive fields in DTOs/entities
 
 ## Rule Details
 

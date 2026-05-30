@@ -1,6 +1,11 @@
 ---
-title: "require-validated-prompt"
-description: "title: require-validated-prompt"
+title: require-validated-prompt
+description: This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-74
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-validated-prompt
-description: This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-74
-autofix: false
----
-
 > Prevents prompt injection by detecting unvalidated user input in AI prompts.
-
-This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
 
 ## 📊 Rule Details
 

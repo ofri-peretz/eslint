@@ -1,6 +1,11 @@
 ---
-title: "no-missing-csrf-protection"
-description: "title: no-missing-csrf-protection"
+title: no-missing-csrf-protection
+description: Detects missing CSRF token validation in POST/PUT/DELETE requests
+tags: ['security', 'browser']
+category: security
+severity: high
+cwe: CWE-352
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-missing-csrf-protection
-description: Detects missing CSRF token validation in POST/PUT/DELETE requests
-tags: ['security', 'browser']
-category: security
-severity: high
-cwe: CWE-352
-autofix: false
----
-
 > **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
-
-Detects missing CSRF token validation in POST/PUT/DELETE requests
 
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

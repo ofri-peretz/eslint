@@ -255,9 +255,10 @@ describe('Plugin Documentation Coverage', () => {
         'content/docs/concepts/',
         'content/docs/getting-started/',
         'content/docs/articles/',
-        // Design philosophies are not plugins; they live alongside
-        // plugin docs but have no `rules/` subtree by design.
-        'content/docs/design/'
+        // Design philosophies are not plugins; no `rules/` subtree by design.
+        'content/docs/design/',
+        // Design-system component catalog — primitive docs, not ESLint rules.
+        'content/docs/components/',
       ]
     });
     const missingRules: string[] = [];

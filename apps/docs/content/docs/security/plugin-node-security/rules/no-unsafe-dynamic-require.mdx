@@ -1,6 +1,11 @@
 ---
-title: "no-unsafe-dynamic-require"
-description: "title: no-unsafe-dynamic-require"
+title: no-unsafe-dynamic-require
+description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-494
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-unsafe-dynamic-require
-description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-494
-autofix: false
----
-
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
-
-Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
 
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

@@ -1,6 +1,9 @@
 ---
-title: "identical-functions"
-description: "title: identical-functions"
+title: identical-functions
+description: Detects duplicate function implementations with DRY refactoring suggestions
+tags: ['quality', 'maintainability']
+category: quality
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: identical-functions
-description: Detects duplicate function implementations with DRY refactoring suggestions
-tags: ['quality', 'maintainability']
-category: quality
-autofix: suggestions
----
-
 > **Keywords:** code duplication, DRY principle, CWE-1104, ESLint rule, duplicate code, refactoring, SonarQube, auto-fix, LLM-optimized, code quality
-
-Detects duplicate function implementations with DRY refactoring suggestions
 
 Detects duplicate function implementations with DRY refactoring suggestions. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with fix suggestions.
 

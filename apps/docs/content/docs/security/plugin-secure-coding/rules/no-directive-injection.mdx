@@ -1,6 +1,11 @@
 ---
-title: "no-directive-injection"
-description: "title: no-directive-injection"
+title: no-directive-injection
+description: Detects directive injection vulnerabilities in template systems
+tags: ['security', 'core']
+category: security
+severity: critical
+cwe: CWE-94
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-directive-injection
-description: Detects directive injection vulnerabilities in template systems
-tags: ['security', 'core']
-category: security
-severity: critical
-cwe: CWE-94
-autofix: false
----
-
 > **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
-
-Detects directive injection vulnerabilities in template systems
 
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

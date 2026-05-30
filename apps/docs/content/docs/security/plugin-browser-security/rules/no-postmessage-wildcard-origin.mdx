@@ -1,15 +1,4 @@
 ---
-title: "no-postmessage-wildcard-origin"
-description: "title: no-postmessage-wildcard-origin"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-postmessage-wildcard-origin
 description: "This rule prevents using \"\" as the targetOrigin parameter in postMessage() calls"
 tags: ['security', 'browser']
@@ -18,7 +7,13 @@ severity: medium
 cwe: CWE-693
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
 

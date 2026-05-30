@@ -1,15 +1,4 @@
 ---
-title: "no-sensitive-cookie-js"
-description: "title: no-sensitive-cookie-js"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-sensitive-cookie-js
 description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
 tags: ['security', 'browser']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-359
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
 
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

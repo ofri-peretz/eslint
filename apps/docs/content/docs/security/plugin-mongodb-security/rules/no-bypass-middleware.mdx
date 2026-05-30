@@ -1,15 +1,4 @@
 ---
-title: "no-bypass-middleware"
-description: "title: no-bypass-middleware"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-bypass-middleware
 description: Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-284
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-284, middleware, hooks, Mongoose, pre, post, security
-
-Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
-
-Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

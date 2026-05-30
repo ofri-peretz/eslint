@@ -1,6 +1,11 @@
 ---
-title: "no-transaction-on-pool"
-description: "title: no-transaction-on-pool"
+title: no-transaction-on-pool
+description: Prevents running transaction commands directly on pool (must use dedicated client).
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-362
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,23 +14,9 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-transaction-on-pool
-description: Prevents running transaction commands directly on pool (must use dedicated client).
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-362
-autofix: false
----
-
 > **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 
-Prevents running transaction commands directly on pool (must use dedicated client).
-
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
-
-Prevents running transaction commands directly on pool (must use dedicated client).
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

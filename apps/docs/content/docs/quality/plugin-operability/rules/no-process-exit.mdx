@@ -1,6 +1,9 @@
 ---
-title: "no-process-exit"
-description: "title: no-process-exit"
+title: no-process-exit
+description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
+tags: ['quality', 'operability', 'production']
+category: quality
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-process-exit
-description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
-tags: ['quality', 'operability', 'production']
-category: quality
-autofix: suggestions
----
-
 > **Keywords:** process.exit, Node.js, graceful shutdown, ESLint rule, server, LLM-optimized
-
-Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
 
 Prevents direct `process.exit()` calls to encourage graceful shutdown patterns. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability).
 

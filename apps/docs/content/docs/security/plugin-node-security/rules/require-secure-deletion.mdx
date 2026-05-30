@@ -1,6 +1,11 @@
 ---
-title: "require-secure-deletion"
-description: "title: require-secure-deletion"
+title: require-secure-deletion
+description: "CWE: CWE-459"
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-459
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,23 +14,9 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-secure-deletion
-description: "CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html)"
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-459
-autofix: false
----
-
 > **Keywords:** require-secure-deletion, secure wipe, memory cleanup, data destruction, property deletion, security, ESLint rule, CWE-459
 > **CWE:** [CWE-459: Incomplete Cleanup](https://cwe.mitre.org/data/definitions/459.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
-
-CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html)
-
-ESLint Rule: require-secure-deletion. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
 
 ## Quick Summary
 

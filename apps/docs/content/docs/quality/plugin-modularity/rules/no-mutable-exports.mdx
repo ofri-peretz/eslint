@@ -1,6 +1,9 @@
 ---
-title: "no-mutable-exports"
-description: "title: no-mutable-exports"
+title: no-mutable-exports
+description: Disallow mutable let/var declarations on exported bindings
+tags: ['architecture', 'modularity']
+category: modularity
+autofix: code
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-mutable-exports
-description: Disallow mutable let/var declarations on exported bindings
-tags: ['architecture', 'modularity']
-category: modularity
-autofix: code
----
-
 > **Keywords:** mutable export, live binding, let, var, const, ESLint rule, JavaScript, TypeScript, auto-fix, LLM-optimized
-
-Disallow mutable let/var declarations on exported bindings
 
 Disallow `export let` and `export var` declarations — they create shared live bindings that all importers observe. This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity).
 

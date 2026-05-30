@@ -1,15 +1,4 @@
 ---
-title: "no-arbitrary-file-access"
-description: "title: no-arbitrary-file-access"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-arbitrary-file-access
 description: Prevents file system access with unsanitized user input to protect against path traversal attacks.
 tags: ['security', 'node']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-22
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** path traversal, CWE-22, file access, LFI, directory traversal, fs, readFile, security
-
-Prevents file system access with unsanitized user input to protect against path traversal attacks.
-
-Prevents file system access with unsanitized user input to protect against path traversal attacks.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

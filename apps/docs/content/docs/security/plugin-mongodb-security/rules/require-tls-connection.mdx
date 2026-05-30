@@ -1,15 +1,4 @@
 ---
-title: "require-tls-connection"
-description: "title: require-tls-connection"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-tls-connection
 description: Requires TLS/SSL encryption for MongoDB connections in production environments.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-295
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
-
-Requires TLS/SSL encryption for MongoDB connections in production environments.
-
-Requires TLS/SSL encryption for MongoDB connections in production environments.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

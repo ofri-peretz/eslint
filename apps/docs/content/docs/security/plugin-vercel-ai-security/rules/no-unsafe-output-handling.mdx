@@ -1,6 +1,11 @@
 ---
-title: "no-unsafe-output-handling"
-description: "title: no-unsafe-output-handling"
+title: no-unsafe-output-handling
+description: This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-94
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-unsafe-output-handling
-description: This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-94
-autofix: false
----
-
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
-
-This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
 
 ## 📊 Rule Details
 

@@ -1,6 +1,11 @@
 ---
-title: "no-data-in-temp-storage"
-description: "title: no-data-in-temp-storage"
+title: no-data-in-temp-storage
+description: Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-312
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-data-in-temp-storage
-description: Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-312
-autofix: false
----
-
 > Prevents sensitive data in temporary directories
-
-Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
 
 **Severity:** 🔴 CRITICAL | 🟠 HIGH  
 **CWE:** [CWE-312](https://cwe.mitre.org/data/definitions/312.html)  

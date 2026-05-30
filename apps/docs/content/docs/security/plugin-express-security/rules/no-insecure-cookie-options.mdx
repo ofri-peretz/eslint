@@ -1,6 +1,11 @@
 ---
-title: "no-insecure-cookie-options"
-description: "title: no-insecure-cookie-options"
+title: no-insecure-cookie-options
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
+category: security
+severity: medium
+cwe: CWE-614
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-insecure-cookie-options
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
-tags: ['security', 'express']
-category: security
-severity: medium
-cwe: CWE-614
-autofix: false
----
-
 > Require secure cookie flags (httpOnly, secure, sameSite)
-
-The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-614](https://cwe.mitre.org/data/definitions/614.html)

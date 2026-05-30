@@ -1,6 +1,11 @@
 ---
-title: "require-abort-signal"
-description: "title: require-abort-signal"
+title: require-abort-signal
+description: "This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella..."
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-404
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-abort-signal
-description: "This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella..."
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-404
-autofix: false
----
-
 > Ensures streaming calls have AbortSignal for graceful cancellation.
-
-This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella...
 
 ## 📊 Rule Details
 

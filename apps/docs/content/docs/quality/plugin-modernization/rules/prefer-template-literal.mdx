@@ -1,6 +1,9 @@
 ---
-title: "prefer-template-literal"
-description: "title: prefer-template-literal"
+title: prefer-template-literal
+description: Prefer template literals over string concatenation with runtime values
+tags: ['architecture', 'modernization']
+category: modernization
+autofix: code
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: prefer-template-literal
-description: Prefer template literals over string concatenation with runtime values
-tags: ['architecture', 'modernization']
-category: modernization
-autofix: code
----
-
 > **Keywords:** template literal, string concatenation, plus operator, interpolation, ESLint rule, ES2015, auto-fix, LLM-optimized
-
-Prefer template literals over string concatenation with runtime values
 
 Prefer template literals over string concatenation with `+` when at least one operand is a runtime value. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 

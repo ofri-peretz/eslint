@@ -1,15 +1,4 @@
 ---
-title: "no-exposed-debug-endpoints"
-description: "title: no-exposed-debug-endpoints"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-exposed-debug-endpoints
 description: Detect debug endpoints without authentication in Lambda handlers
 tags: ['security', 'debug', 'cwe-489', 'lambda', 'aws']
@@ -18,13 +7,17 @@ severity: high
 cwe: CWE-489
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** debug endpoint, admin endpoint, authentication, CWE-489, Lambda, serverless
 > **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
 > **OWASP:** [A05:2021-Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
-
-Detect debug endpoints without authentication in Lambda handlers
 
 Detects debug and admin endpoints in Lambda handlers that may be exposed without authentication. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

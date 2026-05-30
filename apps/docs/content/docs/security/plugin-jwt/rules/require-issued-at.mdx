@@ -1,6 +1,11 @@
 ---
-title: "require-issued-at"
-description: "title: require-issued-at"
+title: require-issued-at
+description: This rule ensures tokens have the iat claim for freshness validation
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-294
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-issued-at
-description: This rule ensures tokens have the iat claim for freshness validation
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-294
-autofix: false
----
-
 > Require iat (issued at) claim for token freshness validation
-
-This rule ensures tokens have the iat claim for freshness validation
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

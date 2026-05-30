@@ -1,15 +1,4 @@
 ---
-title: "no-hardcoded-connection-string"
-description: "title: no-hardcoded-connection-string"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-hardcoded-connection-string
 description: Detects hardcoded MongoDB connection strings containing credentials in source code.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: critical
 cwe: CWE-798
 owasp: "A07:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
-
-Detects hardcoded MongoDB connection strings containing credentials in source code.
-
-Detects hardcoded MongoDB connection strings containing credentials in source code.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

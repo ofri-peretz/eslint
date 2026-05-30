@@ -1,6 +1,11 @@
 ---
-title: "no-sensitive-data-in-analytics"
-description: "title: no-sensitive-data-in-analytics"
+title: no-sensitive-data-in-analytics
+description: This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-359
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-sensitive-data-in-analytics
-description: This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-359
-autofix: false
----
-
 > Prevents PII being sent to analytics services
-
-This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
 
 **Severity:** 🟠 HIGH  
 **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)  

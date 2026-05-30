@@ -1,15 +1,4 @@
 ---
-title: "no-unsafe-populate"
-description: "title: no-unsafe-populate"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-unsafe-populate
 description: Detects user-controlled populate() paths that could lead to data exposure or injection.
 tags: ['security', 'mongodb']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-943
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects user-controlled populate() paths that could lead to data exposure or injection.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
 
 Detects user-controlled `populate()` paths that could lead to data exposure or injection.
 

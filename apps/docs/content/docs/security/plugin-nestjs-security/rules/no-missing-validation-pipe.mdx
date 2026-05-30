@@ -1,15 +1,4 @@
 ---
-title: "no-missing-validation-pipe"
-description: "title: no-missing-validation-pipe"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-missing-validation-pipe
 description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
 tags: ['security', 'nestjs']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-20
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Require ValidationPipe for DTO input parameters
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require ValidationPipe for DTO input parameters
 
 ## Error Message Format
 

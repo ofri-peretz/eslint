@@ -1,15 +1,4 @@
 ---
-title: "no-sensitive-indexeddb"
-description: "title: no-sensitive-indexeddb"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-sensitive-indexeddb
 description: Prevent storing sensitive data in IndexedDB.
 tags: ['security', 'browser']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-922
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > No Sensitive Indexeddb
-
-Prevent storing sensitive data in IndexedDB.
-
-Prevent storing sensitive data in IndexedDB.
 
 ## ⚠️ Security Issue
 

@@ -1,15 +1,4 @@
 ---
-title: "no-unsafe-copy-from"
-description: "title: no-unsafe-copy-from"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-unsafe-copy-from
 description: Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
 tags: ['security', 'postgres']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-73
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
 
 Prevents `COPY FROM` with file paths (should use STDIN for safe client-side data loading).
 

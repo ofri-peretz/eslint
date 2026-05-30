@@ -1,15 +1,4 @@
 ---
-title: "no-unsafe-where"
-description: "title: no-unsafe-where"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-unsafe-where
 description: Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code E...
 tags: ['security', 'mongodb']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-943
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code E...
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
 
 Prevents use of the dangerous `$where` operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE).
 

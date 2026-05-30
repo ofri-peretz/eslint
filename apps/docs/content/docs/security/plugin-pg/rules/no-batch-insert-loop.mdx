@@ -1,6 +1,11 @@
 ---
-title: "no-batch-insert-loop"
-description: "title: no-batch-insert-loop"
+title: no-batch-insert-loop
+description: Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-400
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,23 +14,9 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-batch-insert-loop
-description: Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-400
-autofix: false
----
-
 > **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
 
-Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
-
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
-
-Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

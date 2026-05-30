@@ -1,15 +1,4 @@
 ---
-title: "require-throttler"
-description: "title: require-throttler"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-throttler
 description: This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
 tags: ['security', 'nestjs']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-770
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Require ThrottlerGuard or @Throttle decorator for rate limiting
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require ThrottlerGuard or @Throttle decorator for rate limiting
 
 ## Rule Details
 

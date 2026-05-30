@@ -1,6 +1,10 @@
 ---
-title: "no-deprecated-buffer"
-description: "title: no-deprecated-buffer"
+title: no-deprecated-buffer
+description: Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call.
+tags: ['security', 'node-security', 'memory-safety']
+category: security
+cwe: CWE-676
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -8,15 +12,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
-title: no-deprecated-buffer
-description: Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call.
-tags: ['security', 'node-security', 'memory-safety']
-category: security
-cwe: CWE-676
-autofix: suggestions
----
 
 > **Keywords:** no-deprecated-buffer, Buffer, Node.js, uninitialized memory, CVE-2018-7166, CWE-676, Buffer.alloc, Buffer.from, ESLint rule
 > **CWE:** [CWE-676: Use of Potentially Dangerous Function](https://cwe.mitre.org/data/definitions/676.html)
