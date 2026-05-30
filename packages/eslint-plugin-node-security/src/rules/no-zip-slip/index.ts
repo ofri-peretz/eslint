@@ -90,7 +90,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       description: 'Detects zip slip/archive extraction vulnerabilities',
       cwe: 'CWE-22',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       zipSlipVulnerability: formatLLMMessage({

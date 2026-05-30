@@ -118,14 +118,18 @@ function analyzeDoc(pluginDir, ruleName) {
   const docPath = path.join(PACKAGES_DIR, pluginDir, 'docs', 'rules', `${ruleName}.md`);
   if (!fs.existsSync(docPath)) return { exists: false, hasIncorrect: false, hasCorrect: false, incorrectBlocks: 0 };
   const md = fs.readFileSync(docPath, 'utf-8');
-  // Match `## ❌ Incorrect` (or "## Incorrect" / "## ❌ Bad") and count fenced code blocks under it.
-  const incorrectHeader = md.match(/^##\s*(?:❌|🚫|🔴)?\s*(?:Incorrect|Bad|Anti-pattern)/im);
-  const correctHeader = md.match(/^##\s*(?:✅|🟢)?\s*(?:Correct|Good|Pattern)/im);
+  // Match `## ❌ Incorrect` (or `### ❌ Incorrect`, "## Incorrect" / "## ❌ Bad") and count fenced code blocks under it.
+  // Accept both H2 (## ) and H3 (### ) headings — most docs use ### under an ## Examples section.
+  const incorrectHeader = md.match(/^#{2,3}\s*(?:❌|🚫|🔴)?\s*(?:Incorrect|Bad|Anti-pattern)/im);
+  const correctHeader = md.match(/^#{2,3}\s*(?:✅|🟢)?\s*(?:Correct|Good|Pattern)/im);
   let incorrectBlocks = 0;
   if (incorrectHeader) {
-    // Slice from the Incorrect header to the next `## ` heading.
+    // Slice from end of the Incorrect header LINE to the next `## ` heading.
+    // We find the header position, then skip to the end of the full line (so
+    // that `## ❌ Incorrect Code` doesn't leave ` Code` orphaned in the section).
     const start = md.indexOf(incorrectHeader[0]);
-    const rest = md.slice(start + incorrectHeader[0].length);
+    const lineEnd = md.indexOf('\n', start);
+    const rest = md.slice(lineEnd >= 0 ? lineEnd + 1 : start + incorrectHeader[0].length);
     const nextHeading = rest.search(/^##\s/m);
     const section = nextHeading >= 0 ? rest.slice(0, nextHeading) : rest;
     // Count ```...``` fenced code blocks

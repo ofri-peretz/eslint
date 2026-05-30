@@ -6,11 +6,21 @@ import {
   TooltipProvider,
 } from '@interlace/ui/tooltip';
 import { Button } from '@interlace/ui/button';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Tooltip> = {
   title: 'Primitives/Tooltip',
   component: Tooltip,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Hover/focus-only hint. Never wrap interactive content — tooltips disappear on blur. The fade transition is killed under `prefers-reduced-motion` (see `ReducedMotion` story).',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -27,4 +37,19 @@ export const Default: Story = {
       </Tooltip>
     </TooltipProvider>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

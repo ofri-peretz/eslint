@@ -1,0 +1,79 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Philosophy" />
+
+# Design philosophies
+
+The Interlace design system ships **25 look-and-feel contracts**,
+grouped into 8 clusters. Each lives at the monorepo root
+and is the single source of truth; this section projects them so they're
+discoverable from inside Storybook alongside the live components they
+govern.
+
+If you're shipping a component change and can't point to the principle
+behind it, reconsider.
+
+## Foundations
+
+The visual contract. Every primitive consumes these tokens and rhythms.
+
+- **[UX Philosophy](?path=/docs/philosophy-foundations-ux--docs)** — This is the foundational document for every UI/UX decision in this repo — the docs site, the @interlace/ui package, OG images, link metadata, the plugin READ…
+- **[Layout & Responsiveness Philosophy](?path=/docs/philosophy-foundations-layout--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 ("Adoption is friction subtraction"), #6 ("Ease of use is performance"), #8 ("Open the s…
+- **[Typography & Reading Philosophy](?path=/docs/philosophy-foundations-typography--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md.
+- **[Color & Theming Philosophy](?path=/docs/philosophy-foundations-color--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, paired with TYPOGRAPHY_PHILOSOPHY.md — together they define the page's visual contract.
+- **[Motion & Animation Philosophy](?path=/docs/philosophy-foundations-motion--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 ("Ease of use is performance") and Principle #1 ("Adoption is friction subtraction").
+
+## Interaction & States
+
+How a primitive responds to a person — focus, loading, error, conversion.
+
+- **[CTA Philosophy](?path=/docs/philosophy-interaction-states-cta--docs)** — Every call-to-action on this site — hero buttons, final-CTA banners, README "Install" buttons, OG-card link previews, plugin-page "Get started" links — is go…
+- **[Loading & Skeleton Philosophy](?path=/docs/philosophy-interaction-states-loading--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #6 ("Ease of use is performance").
+- **[Keyboard Philosophy](?path=/docs/philosophy-interaction-states-keyboard--docs)** — Every page on this site must be fully operable with a keyboard alone — no mouse, no trackpad, no touch.
+- **[Accessibility Philosophy](?path=/docs/philosophy-interaction-states-a11y--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) and #11 (Build with the ecosystem) into the accessibi…
+- **[Error & Empty-State Philosophy](?path=/docs/philosophy-interaction-states-error--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) into the failure path.
+
+## Content Patterns
+
+How information is presented inside the surface.
+
+- **[Code Example Philosophy](?path=/docs/philosophy-content-patterns-code-example--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 (friction subtraction), Principle #9 (the docs site is the showcase), and the typography…
+- **[Search Philosophy](?path=/docs/philosophy-content-patterns-search--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #1 (friction subtraction) and Principle #5 (discoverability beats memory).
+- **[Pagination Philosophy](?path=/docs/philosophy-content-patterns-pagination--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md.
+- **[Data Table Philosophy](?path=/docs/philosophy-content-patterns-data-table--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction), #5 (Discoverability beats memory), and #6 (Ease of u…
+- **[Form Philosophy](?path=/docs/philosophy-content-patterns-form--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principles #1 (Adoption is friction subtraction) and #6 (Ease of use is performance) into the data-en…
+
+## Navigation & Routing
+
+How URLs, anchors, and shared links behave.
+
+- **[URL Taxonomy & Redirect Philosophy](?path=/docs/philosophy-navigation-routing-url--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding Principle #2 ("Every URL is a contract").
+- **[Deep-Linking Philosophy](?path=/docs/philosophy-navigation-routing-deep-linking--docs)** — A focused sub-philosophy of URL_PHILOSOPHY.md and UX_PHILOSOPHY.md, expanding principle #2 ("Every URL is a contract") into the SPA + router surface.
+- **[SEO & AEO Philosophy](?path=/docs/philosophy-navigation-routing-seo--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principles #2 (Every URL is a contract), #3 (Sharing is the activation function), #5 (Discoverability…
+
+## Reach
+
+How a component travels across languages and tooling.
+
+- **[Internationalization Philosophy](?path=/docs/philosophy-reach-i18n--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #10 (Every component answers "would this travel?") into the language and locale surface.
+- **[Tooling Interop & Static-Analysis Philosophy](?path=/docs/philosophy-reach-interop--docs)** — A standalone engineering philosophy.
+
+## Trust
+
+Auth, app-layer security, and the UI surface of secure-by-default.
+
+- **[Auth Philosophy](?path=/docs/philosophy-trust-auth--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md, expanding principle #1 (Adoption is friction subtraction) and #8 (Open the side door) into the authentication s…
+- **[Security-by-Design Philosophy (UI Surface)](?path=/docs/philosophy-trust-security--docs)** — A focused sub-philosophy of UX_PHILOSOPHY.md and INTEROP_PHILOSOPHY.md, expanding the security surface that lives in the UI layer.
+
+## Observability
+
+How a deployed surface measures itself — pageviews, funnels, identity, cross-property journeys.
+
+- **[Analytics Philosophy](?path=/docs/philosophy-observability-analytics--docs)** — A focused sub-philosophy of DEEP_LINKING_PHILOSOPHY.md and UTM_PHILOSOPHY.md, covering how a deployed surface measures itself — what events get captured, how…
+- **[UTM Philosophy](?path=/docs/philosophy-observability-utm--docs)** — A focused sub-philosophy of URL_PHILOSOPHY.md (principle #5 "default values never appear in URLs" and principle #9 "sticky parameters survive navigation") an…
+
+## Documentation
+
+How the design system explains itself to consumers.
+
+- **[Documentation Philosophy](?path=/docs/philosophy-documentation-docs--docs)** — apps/docs is the public docs site for our 11-plugin, 272-rule ESLint monorepo (built on Fumadocs / Next.js 16 / React 19).

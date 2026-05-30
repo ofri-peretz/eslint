@@ -43,6 +43,30 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 
 This rule helps enforce secure coding practices for lambda-security applications.
 
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Wildcard Resource grants access to every resource in the account
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: '*',
+};
+```
+
+### ✅ Correct
+
+```javascript
+// Scope Resource to the specific bucket and key prefix required
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: 'arn:aws:s3:::my-bucket/uploads/*',
+};
+```
+
 ## Configuration
 
 ```javascript

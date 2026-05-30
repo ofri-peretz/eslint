@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Operability rules — observability hooks, structured loggi
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-operability), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-operability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/quality/plugin-operability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-operability)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-operability), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-operability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability). 📚
 
 ```bash
 npm install eslint-plugin-operability --save-dev
@@ -142,12 +142,12 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-console-log](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-console-log) | CWE-532 |  |  | Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part o… | 🟢 |  |  |  | 💡 |  |
-| [no-debug-code-in-production](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-debug-code-in-production) | CWE-489 |  |  | Detects debug code that should not be present in production builds. | 🟢 |  |  |  | 💡 |  |
-| [no-process-exit](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-process-exit) |  |  |  | Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-p… | 🟢 |  |  |  | 💡 |  |
-| [no-verbose-error-messages](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-verbose-error-messages) | CWE-209 | A01:2021 |  | Prevent exposing stack traces to users in API responses | 🟢 |  |  |  |  |  |
-| [require-code-minification](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-code-minification) | CWE-656 |  |  | Require minification configuration in build tools | 🟢 |  |  |  |  |  |
-| [require-data-minimization](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-data-minimization) | CWE-213 |  |  | Identifies excessive data collection patterns that violate privacy principles | 🟢 |  |  |  | 💡 |  |
+| [no-console-log](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-console-log?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) | CWE-532 |  |  | Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part o… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-debug-code-in-production](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-debug-code-in-production?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) | CWE-489 |  |  | Detects debug code that should not be present in production builds. | 🟢 | 💼 |  |  | 💡 |  |
+| [no-process-exit](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-process-exit?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) |  |  |  | Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-p… | 🟢 |  |  |  | 💡 |  |
+| [no-verbose-error-messages](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-verbose-error-messages?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) | CWE-209 | A01:2021 |  | Prevent exposing stack traces to users in API responses | 🟢 |  | ⚠️ |  |  |  |
+| [require-code-minification](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-code-minification?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) | CWE-656 |  |  | Require minification configuration in build tools | 🟢 |  |  |  |  |  |
+| [require-data-minimization](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-data-minimization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability) | CWE-213 |  |  | Identifies excessive data collection patterns that violate privacy principles | 🟢 |  |  |  | 💡 |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -167,10 +167,19 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/quality/plugin-operability"><img src="https://eslint.interlace.tools/images/og-operability.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-operability"><img src="https://eslint.interlace.tools/images/og-operability.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

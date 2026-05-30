@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Security rules for PostgreSQL interaction in Node.js (SQL i
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-pg), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-pg), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-pg) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-pg)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-pg), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-pg)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg). 📚
 
 ```bash
 npm install eslint-plugin-pg --save-dev
@@ -103,19 +103,19 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
-| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
-| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
-| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
-| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
-| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
-| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
+| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -135,10 +135,19 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/security/plugin-pg"><img src="https://eslint.interlace.tools/images/og-pg.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-pg"><img src="https://eslint.interlace.tools/images/og-pg.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

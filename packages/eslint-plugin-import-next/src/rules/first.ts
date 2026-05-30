@@ -24,7 +24,6 @@ export const first = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/first.md',
       description: 'Ensure all imports appear before other statements',
     },
-    fixable: 'code',
     messages: {
       first: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Badge } from '@interlace/ui/badge';
+import { withRtl } from '@/decorators';
 
 const meta: Meta<typeof Badge> = {
   title: 'Primitives/Badge',
   component: Badge,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Compact label for status, tag, or count. Token-only colours per `COLOR_PHILOSOPHY.md`; never paint with raw hex. Four variants cover the typical severity ladder.',
+      },
+    },
+  },
   argTypes: {
     variant: {
       control: 'select',
@@ -31,4 +41,9 @@ export const Dark: Story = {
   globals: { theme: 'dark' },
   parameters: { backgrounds: { default: 'dark' } },
   decorators: [(S) => <div className="dark"><S /></div>],
+};
+
+export const RTL: Story = {
+  args: { children: 'أمان' },
+  decorators: [withRtl],
 };

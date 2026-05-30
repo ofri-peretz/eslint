@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Separator } from '@interlace/ui/separator';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Separator> = {
   title: 'Primitives/Separator',
   component: Separator,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Token-coloured divider — horizontal or vertical. Decorative by default; accessible via the underlying `Separator` role for assistive tech that needs the boundary cue.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -30,4 +40,14 @@ export const Vertical: Story = {
       <span>Long reads</span>
     </div>
   ),
+};
+
+export const Dark: Story = {
+  ...Horizontal,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Horizontal,
+  decorators: [withRtl],
 };

@@ -7,7 +7,7 @@
 > This package will continue to resolve for already-pinned consumers, but no new releases will ship. Please migrate.
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -32,12 +32,12 @@ This plugin provides Cryptographic security rules enforcing best practices and m
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-crypto), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-crypto), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-crypto) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-crypto)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-crypto), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-crypto)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto). 📚
 
 ```bash
 npm install eslint-plugin-crypto --save-dev
@@ -134,17 +134,17 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
-| [no-key-reuse](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-key-reuse) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
-| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-math-random-crypto) | CWE-338 | A02:2021 |  | CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html) | 🟢 |  |  |  |  |  |
-| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-numeric-only-tokens) | CWE-330 | A02:2021 |  | CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html) | 🟢 |  |  |  |  |  |
-| [no-predictable-salt](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-predictable-salt) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
-| [no-web-crypto-export](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-web-crypto-export) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
-| [require-authenticated-encryption](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-authenticated-encryption) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
-| [require-key-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-key-length) | CWE-326 | A02:2021 |  | CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html) | 🟢 |  |  |  |  |  |
-| [require-random-iv](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-random-iv) | CWE-329 | A02:2021 |  | CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html) | 🟢 |  |  |  |  |  |
-| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-secure-pbkdf2-digest) | CWE-328 | A02:2021 |  | CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html) | 🟢 |  |  |  |  |  |
-| [require-sufficient-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-sufficient-length) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-hardcoded-crypto-key?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
+| [no-key-reuse](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-key-reuse?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-math-random-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-338 | A02:2021 |  | CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html) | 🟢 |  |  |  |  |  |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-numeric-only-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-330 | A02:2021 |  | CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html) | 🟢 |  |  |  |  |  |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-predictable-salt?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/no-web-crypto-export?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-321 | A02:2021 |  | CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) | 🟢 |  |  |  |  |  |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-authenticated-encryption?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-327 | A02:2021 |  | CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) | 🟢 |  |  |  |  |  |
+| [require-key-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-key-length?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-326 | A02:2021 |  | CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html) | 🟢 |  |  |  |  |  |
+| [require-random-iv](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-random-iv?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-329 | A02:2021 |  | CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html) | 🟢 |  |  |  |  |  |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-secure-pbkdf2-digest?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-328 | A02:2021 |  | CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html) | 🟢 |  |  |  |  |  |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/security/plugin-crypto/rules/require-sufficient-length?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto) | CWE-331 | A02:2021 |  | CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html) | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -164,10 +164,19 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/security/plugin-crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

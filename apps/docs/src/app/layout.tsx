@@ -4,7 +4,12 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import { TooltipProvider } from '#interlace/components/ui/tooltip';
 import { CodeBlockLabeller } from '@/components/a11y/code-block-labeller';
+import { ThemeTimeSync } from '@/components/theme-time-sync';
+import { Analytics } from '@vercel/analytics/next';
+import { PostHogProvider } from '@/components/posthog-provider';
+import { PostHogPageviewTracker } from '@/components/posthog-pageview-tracker';
 import { SITE_ORIGIN } from '@/lib/site-config';
+import { THEME_TIME_INLINE_SCRIPT } from '@/lib/theme-time';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -82,6 +87,12 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <head>
+        {/* Time-based default theme. Runs synchronously before next-themes
+            hydrates so the right class lands on <html> before first paint.
+            Respects an explicit user pick stored via <ThemeTimeSync />. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: THEME_TIME_INLINE_SCRIPT }}
+        />
         {/* DNS prefetch for external domains - reduces lookup time */}
         <link rel="dns-prefetch" href="https://media.dev.to" />
         <link rel="dns-prefetch" href="https://dev-to-uploads.s3.amazonaws.com" />
@@ -101,12 +112,26 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         >
           Skip to main content
         </a>
-        {/* Dark is the default theme — branded cosmic hero looks best on a dark
-            canvas, and the rest of the surface is AAA-tuned for near-black. */}
-        <RootProvider theme={{ defaultTheme: 'dark' }}>
-          <TooltipProvider delay={250}>{children}</TooltipProvider>
-          <CodeBlockLabeller />
-        </RootProvider>
+        {/* Default theme is time-of-day based (see THEME_TIME_INLINE_SCRIPT in
+            src/lib/theme-time.ts): 06:00–17:59 → light, 18:00–05:59 → dark,
+            per the visitor's local clock. The `defaultTheme: 'dark'` below is
+            only the SSR fallback before the inline script runs; <ThemeTimeSync />
+            captures explicit user toggles so they override the time default on
+            subsequent visits. */}
+        <PostHogProvider>
+          <PostHogPageviewTracker />
+          <RootProvider theme={{ defaultTheme: 'dark' }}>
+            <ThemeTimeSync />
+            <TooltipProvider delay={250}>{children}</TooltipProvider>
+            <CodeBlockLabeller />
+          </RootProvider>
+        </PostHogProvider>
+        {/* Vercel Web Analytics — independent of PostHog. Self-contained
+            first-party script (/_vercel/insights), cookieless, no-ops off
+            Vercel and in dev. We report to both systems: PostHog owns
+            product events / funnels / replay; Vercel owns the zero-config
+            traffic + Web Vitals dashboard in the deploy console. */}
+        <Analytics />
       </body>
     </html>
   );

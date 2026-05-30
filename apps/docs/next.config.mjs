@@ -116,6 +116,25 @@ const config = {
     },
   ],
 
+  // PostHog reverse proxy (ANALYTICS_PHILOSOPHY principle 2). Keeps
+  // analytics on the same origin — survives ad-blockers, preserves the
+  // strict CSP above (no third-party connect-src needed).
+  skipTrailingSlashRedirect: true,
+  rewrites: async () => [
+    {
+      source: '/ingest/static/:path*',
+      destination: 'https://us-assets.i.posthog.com/static/:path*',
+    },
+    {
+      source: '/ingest/:path*',
+      destination: 'https://us.i.posthog.com/:path*',
+    },
+    {
+      source: '/ingest/decide',
+      destination: 'https://us.i.posthog.com/decide',
+    },
+  ],
+
   redirects: async () => [
     {
       source: '/docs',

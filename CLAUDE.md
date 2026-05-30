@@ -108,9 +108,13 @@ apply the fix → re-confirm in the browser.
 
 Every code change goes through a PR; `git push origin main` is blocked by
 branch protection. The canonical loop is **branch → commit → push → PR →
-checks → merge → manually trigger `deploy-docs.yml`**. Unlike most projects,
-merging to `main` does **not** ship the docs site here — the deploy is a
-manual workflow that an agent must run and watch (see step 6).
+checks → merge → auto-deploy (turbo-affected) → confirm production URL is
+live**. As of 2026-05-17 (PR #123 / `feat/auto-deploy-on-main`), merges to
+`main` automatically fire the per-app production deploy for every
+turbo-affected app via [`.github/workflows/auto-deploy.yml`](.github/workflows/auto-deploy.yml).
+The manual `deploy-docs.yml` and `deploy.yml` workflows still exist for
+ad-hoc redeploys, preview targets, and emergency rollbacks — they're just
+no longer the only path.
 
 ### 1. Branch from `main`
 
@@ -224,11 +228,27 @@ gh -R ofri-peretz/eslint pr merge <#> --squash --delete-branch
 
 ### 6. Watch the auto-deploy
 
-The docs site uses the **manual** `deploy-docs.yml` flow (per
-[AGENTS.md](./AGENTS.md)); merges to `main` do **not** auto-deploy.
-After merging a docs-touching PR, surface that the manual deploy is
-still pending — don't claim "live" until you've watched the workflow
-run and confirmed at https://eslint.interlace.tools.
+Merging to `main` fires [`auto-deploy.yml`](.github/workflows/auto-deploy.yml).
+It computes turbo-affected workspaces against the previous main commit and
+dispatches the per-app deploy workflow for each affected app:
+
+| Affected workspace | Dispatched workflow | Production URL |
+|---|---|---|
+| `docs` (or any dep via `...[<sha>]`, eg `@interlace/ui`, `*PHILOSOPHY.md`) | `deploy-docs.yml` (`environment=production`, includes Playwright smoke gate) | https://eslint.interlace.tools |
+| `@interlace/storybook` (or any dep, eg `@interlace/ui`) | `deploy.yml` (`app=storybook target=production`) | https://storybook.interlace.tools |
+| `registry` (or any dep, eg `packages/ui/src/primitives/**`) | `deploy.yml` (`app=registry target=production`) | https://ds.interlace.tools |
+
+After merging, **don't claim "live"** until:
+
+1. `gh -R ofri-peretz/eslint run list --workflow=auto-deploy.yml --limit=1` shows `completed success` for the new merge commit.
+2. The dispatched per-app workflow(s) also show `completed success` —
+   `gh run list --workflow=deploy-docs.yml --limit=1` etc.
+3. The matching production URL HEADs 2xx.
+
+If `auto-deploy.yml` fires but no per-app workflow ran, no app was
+turbo-affected by the change (e.g. a PR that only touched
+`.github/workflows/**` or root-level docs). That's the expected silent
+path — confirm by checking the `affected` job summary.
 
 For packages: the relevant npm publish workflow fires on the release
 PR/tag, not the merge. Cross-check the release flow in AGENTS.md before

@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { Avatar as BaseAvatar } from '@base-ui-components/react/avatar';
+import { Avatar as BaseAvatar } from '@base-ui/react/avatar';
 
 import { cn } from '../lib/cn.js';
 

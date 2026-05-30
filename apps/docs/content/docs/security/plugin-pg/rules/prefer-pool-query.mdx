@@ -1,6 +1,6 @@
 ---
 title: prefer-pool-query
-description: Suggests using pool.query() for single-shot queries instead of manual connect/release.
+description: "Prefer pool.query() over client.query() for single-shot queries."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** pool, simplicity, quality, pg, node-postgres
+
+Suggests using pool.query() for single-shot queries instead of manual connect/release.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

@@ -1,10 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Alert, AlertTitle, AlertDescription } from '@interlace/ui/alert';
 import { Terminal, AlertTriangle } from 'lucide-react';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Alert> = {
   title: 'Primitives/Alert',
   component: Alert,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Inline notice for system, validation, or empty-state messaging. Per `ERROR_PHILOSOPHY.md` errors must be visible and recoverable — `destructive` variant signals failure without using colour alone.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -31,4 +41,14 @@ export const Destructive: Story = {
       </AlertDescription>
     </Alert>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

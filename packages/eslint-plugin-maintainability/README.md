@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Maintainability rules — complexity ceilings, dead code, a
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-maintainability), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-maintainability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/quality/plugin-maintainability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-maintainability)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-maintainability), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-maintainability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability). 📚
 
 ```bash
 npm install eslint-plugin-maintainability --save-dev
@@ -66,18 +66,18 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [cognitive-complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/cognitive-complexity) |  |  |  | Enforces a maximum cognitive complexity threshold with refactoring guidance | 🟢 |  |  |  | 💡 |  |
-| [consistent-function-scoping](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/consistent-function-scoping) |  |  |  | Move functions to the highest possible scope | 🟢 |  |  |  | 💡 |  |
-| [error-message](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-message) |  |  |  | Enforce providing a message when creating built-in Error objects for better debugging | 🟢 |  |  |  | 💡 |  |
-| [identical-functions](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/identical-functions) | CWE-1104 |  |  | Detects duplicate function implementations with DRY refactoring suggestions | 🟢 |  |  |  | 💡 |  |
-| [max-parameters](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/max-parameters) |  |  |  | ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [nested-complexity-hotspots](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/nested-complexity-hotspots) |  |  |  | ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-lonely-if](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-lonely-if) |  |  |  | Disallow if statements as the only statement in else blocks | 🟢 |  |  |  | 💡 |  |
-| [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-missing-error-context) |  |  |  | ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-nested-ternary](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-nested-ternary) |  |  |  | Prevent nested ternary expressions for better readability | 🟢 |  |  |  | 💡 |  |
-| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-silent-errors) |  |  |  | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unhandled-promise) | CWE-1024 |  |  | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling | 🟢 |  |  |  | 💡 |  |
-| [no-unreadable-iife](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unreadable-iife) |  |  |  | Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns | 🟢 |  |  |  | 💡 |  |
+| [cognitive-complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/cognitive-complexity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Enforces a maximum cognitive complexity threshold with refactoring guidance | 🟢 |  | ⚠️ |  | 💡 |  |
+| [consistent-function-scoping](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/consistent-function-scoping?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Move functions to the highest possible scope | 🟢 |  |  |  | 💡 |  |
+| [error-message](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-message?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Enforce providing a message when creating built-in Error objects for better debugging | 🟢 |  |  |  | 💡 |  |
+| [identical-functions](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/identical-functions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) | CWE-1104 |  |  | Detects duplicate function implementations with DRY refactoring suggestions | 🟢 |  | ⚠️ |  | 💡 |  |
+| [max-parameters](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/max-parameters?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
+| [nested-complexity-hotspots](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/nested-complexity-hotspots?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-lonely-if](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-lonely-if?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Disallow if statements as the only statement in else blocks | 🟢 |  |  |  | 💡 |  |
+| [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-missing-error-context?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-nested-ternary](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-nested-ternary?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Prevent nested ternary expressions for better readability | 🟢 |  |  |  | 💡 |  |
+| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unhandled-promise?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) | CWE-1024 |  |  | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling | 🟢 |  |  |  | 💡 |  |
+| [no-unreadable-iife](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unreadable-iife?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability) |  |  |  | Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns | 🟢 |  |  |  | 💡 |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -97,10 +97,19 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/quality/plugin-maintainability"><img src="https://eslint.interlace.tools/images/og-maintainability.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-maintainability"><img src="https://eslint.interlace.tools/images/og-maintainability.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

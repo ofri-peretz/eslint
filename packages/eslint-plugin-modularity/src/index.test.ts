@@ -19,8 +19,9 @@ describe('eslint-plugin-modularity plugin interface', () => {
       'enforce-naming',
       'enforce-rest-conventions',
       'no-external-api-calls-in-utils',
+      'no-mutable-exports',
     ]);
-    expect(ruleKeys.length).toBe(5);
+    expect(ruleKeys.length).toBe(6);
   });
 
   describe('configurations', () => {

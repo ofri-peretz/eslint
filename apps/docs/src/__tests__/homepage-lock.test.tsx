@@ -385,11 +385,22 @@ describe('HeroSection: Structure Lock', () => {
       expect(opens[1]).toMatch(/highlight=\{false\}/);
     });
 
-    it('SECONDARY ShimmerButton contains the GitHub mark + label (catches a future "make it a Docs button" refactor)', () => {
+    it('SECONDARY ShimmerButton contains the GitHub mark + "Star on GitHub" label (catches a future "make it a Docs button" refactor)', () => {
       // The GitHub viewBox / `M12 0c-6.626` head are distinctive; pin those + the label.
       expect(heroSource).toContain('viewBox="0 0 24 24"');
       expect(heroSource).toMatch(/<path\s+d="M12 0c-6\.626/);
-      expect(heroSource).toMatch(/>\s*GitHub\s*<\/ShimmerButton>/);
+      // Label became a conversion-framed "Star on GitHub" ask (2026-05 growth
+      // pass). A refactor back to a bare "GitHub"/"Docs" label regresses the
+      // npm→GitHub funnel — pin the literal.
+      expect(heroSource).toContain('Star on GitHub');
+    });
+
+    it('SECONDARY CTA fires the homepage:star_click funnel event on click (GROWTH_PHILOSOPHY.md G1/G2 — npm→GitHub conversion measurement)', () => {
+      expect(heroSource).toContain("track('homepage:star_click'");
+    });
+
+    it('SECONDARY CTA surfaces the live star count only past the social-proof threshold (never advertises a low number)', () => {
+      expect(heroSource).toMatch(/githubStars\s*&&\s*githubStars\s*>=\s*100/);
     });
 
     it('HeroCosmic `secondaryCta.label` slot is a `<ShimmerButton …>` (structural lock — refactors that swap the slot break this)', () => {

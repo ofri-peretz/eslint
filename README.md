@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -17,10 +17,23 @@
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9+-blue.svg" alt="TypeScript" /></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24+-green.svg" alt="Node.js" /></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-4.0-6E9F18.svg" alt="Vitest" /></a>
+  <a href="https://github.com/ofri-peretz/eslint"><img src="https://img.shields.io/github/stars/ofri-peretz/eslint?style=flat&logo=github&label=Star" alt="GitHub stars" /></a>
+  <a href="https://dev.to/ofri-peretz"><img src="https://img.shields.io/badge/Dev.to-Follow-0A0A0A?logo=devdotto&logoColor=white" alt="Follow on Dev.to" /></a>
 </p>
 
 <p align="center">
 This monorepo houses battle-tested ESLint plugins, sharable configs, and supporting utilities that help teams enforce architecture, security, and consistency with actionable, LLM-friendly feedback.
+</p>
+
+<!-- INTERLACE:GROWTH_CTA -->
+<p align="center">
+  <strong>⭐ <a href="https://github.com/ofri-peretz/eslint">Star the repo</a></strong> &nbsp;·&nbsp;
+  <a href="https://github.com/ofri-peretz/eslint/subscription">👀 Watch releases</a> &nbsp;·&nbsp;
+  <a href="https://dev.to/ofri-peretz">📨 Follow the writeups</a> &nbsp;·&nbsp;
+  <a href="https://ofriperetz.dev/stats?utm_source=github&utm_medium=referral&utm_campaign=monorepo">📊 Live metrics</a>
+</p>
+<p align="center">
+  <sub>If these plugins caught a real bug for you, a star is the signal that keeps the ecosystem maintained.</sub>
 </p>
 
 ---

@@ -9,11 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@interlace/ui/select';
+import { withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Select> = {
   title: 'Primitives/Select',
   component: Select,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Drop-down single-select. Supports grouped items, separators, and `aria-invalid` styling per `FORM_PHILOSOPHY.md`. Open/close transition is killed under `prefers-reduced-motion` (see `ReducedMotion` story).',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -88,4 +98,48 @@ export const Dark: Story = {
       </Select>
     </div>
   ),
+};
+
+export const Invalid: Story = {
+  render: () => (
+    <div className="flex flex-col gap-1">
+      <Select>
+        <SelectTrigger
+          className="w-[180px]"
+          aria-label="Choose plan"
+          aria-invalid="true"
+          aria-describedby="plan-err-sel"
+        >
+          <SelectValue placeholder="Pick a plan" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="free">Free</SelectItem>
+          <SelectItem value="pro">Pro</SelectItem>
+        </SelectContent>
+      </Select>
+      <span id="plan-err-sel" className="text-destructive text-xs">
+        Plan is required.
+      </span>
+    </div>
+  ),
+};
+
+export const RTL: Story = {
+  render: () => (
+    <Select defaultValue="date">
+      <SelectTrigger className="w-[180px]" aria-label="رتب حسب">
+        <SelectValue placeholder="رتب حسب" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="date">الأحدث</SelectItem>
+        <SelectItem value="reactions">الأكثر شعبية</SelectItem>
+      </SelectContent>
+    </Select>
+  ),
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

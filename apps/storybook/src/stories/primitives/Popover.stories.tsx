@@ -7,11 +7,21 @@ import {
 import { Button } from '@interlace/ui/button';
 import { Label } from '@interlace/ui/label';
 import { Input } from '@interlace/ui/input';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Popover> = {
   title: 'Primitives/Popover',
   component: Popover,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Trigger-anchored panel. Lighter than Dialog — no focus trap by default, no scrim. Use for transient inputs, filters, or hover hints with interactivity.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -33,4 +43,19 @@ export const Default: Story = {
       </PopoverContent>
     </Popover>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

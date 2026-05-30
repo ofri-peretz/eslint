@@ -1,6 +1,6 @@
 ---
 title: prefer-at
-description: Prefer using Array.at() for accessing elements, especially with negative indices
+description: "Prefer .at() method over bracket notation for accessing elements from the end"
 tags: ['architecture', 'modernization']
 category: modernization
 autofix: suggestions
@@ -13,6 +13,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** Array.at(), negative index, last element, ESLint rule, ES2022, auto-fix, LLM-optimized
+
+Prefer using Array.at() for accessing elements, especially with negative indices
 
 Prefer using `Array.at()` for accessing elements, especially with negative indices. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 

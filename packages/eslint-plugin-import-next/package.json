@@ -21,7 +21,7 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next#readme",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-import-next",
   "repository": {
     "type": "git",
     "url": "https://github.com/ofri-peretz/eslint",

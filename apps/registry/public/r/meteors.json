@@ -5,7 +5,9 @@
   "title": "Meteors",
   "description": "@interlace/ui — meteors primitive (shadcn-compatible).",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/meteors.tsx",

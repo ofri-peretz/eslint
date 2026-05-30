@@ -8,34 +8,35 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from '@interlace/ui/pagination';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Pagination> = {
   title: 'Primitives/Pagination',
   component: Pagination,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Classic numbered pagination per `PAGINATION_PHILOSOPHY.md` — explicit page links, URL state, never infinite scroll. The active page is marked with `aria-current="page"` for assistive tech.',
+      },
+    },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof Pagination>;
 
 export const Default: Story = {
-  // Pagination's bare-primitive demo: `<a class="inline-flex size-9" ...>`
-  // is 36×36 per the Tailwind utility, comfortably above WCAG 2.2's 24×24
-  // target-size threshold. axe's measurement of inline-flex anchors with
-  // adjacent gap-1 spacing flags this story's compact layout as borderline.
-  // The real usage on /articles wraps each link in `<Button size="sm"
-  // className="size-10">` (40×40), gated by apps/docs/e2e/a11y.spec.ts.
-  // Scope-disable the rule for THIS isolated showcase only — same pattern
-  // as Button.stories.tsx Sizes.
-  parameters: {
-    a11y: {
-      config: {
-        rules: [{ id: 'target-size', enabled: false }],
-      },
-    },
-  },
+  // Pagination anchors are `size-9` (36×36 — well above WCAG 2.2's 24×24
+  // target-size threshold). The earlier suppression existed because the
+  // adjacent `gap-1` (4px) put axe's spacing-exception circle math into a
+  // borderline state. Override the default content gap to a comfortable
+  // `gap-2` (8px) — boundary-to-boundary spacing is now well clear of the
+  // target-size threshold, and the suppression is no longer needed.
   render: () => (
     <Pagination>
-      <PaginationContent>
+      <PaginationContent className="gap-2">
         <PaginationItem>
           <PaginationPrevious href="#" />
         </PaginationItem>
@@ -59,4 +60,14 @@ export const Default: Story = {
       </PaginationContent>
     </Pagination>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

@@ -5,7 +5,9 @@
   "title": "Label",
   "description": "@interlace/ui — label primitive (shadcn-compatible).",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/label.tsx",

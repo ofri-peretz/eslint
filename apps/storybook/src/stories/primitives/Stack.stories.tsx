@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Stack, Cluster } from '@interlace/ui/stack';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Stack> = {
   title: 'Primitives/Stack',
@@ -85,4 +86,14 @@ export const ClusterChips: Story = {
       ))}
     </Cluster>
   ),
+};
+
+export const Dark: Story = {
+  ...ClusterChips,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...ClusterChips,
+  decorators: [withRtl],
 };

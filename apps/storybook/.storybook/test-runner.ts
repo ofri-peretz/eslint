@@ -84,6 +84,68 @@ const config: TestRunnerConfig = {
         `${results.violations.length} accessibility violation(s) in ${context.title} > ${context.name} (see logged report above)`,
       );
     }
+
+    // ─── Styling-sanity sweep ─────────────────────────────────────────
+    // Cheap per-story computed-style checks. Catches the failure mode where
+    // a CSS-build regression (broken `@source`, missing import) ships an
+    // ~unstyled DOM. Each assertion is opt-in via a `data-slot`, so stories
+    // without the relevant primitive are no-ops.
+    const stylingProblems: string[] = await page.evaluate(() => {
+      const problems: string[] = [];
+      const parseAlpha = (rgba: string): number => {
+        // accepts `rgb(...)`, `rgba(...)`, `oklab(... / 0.5)`, `oklch(... / 0.5)`
+        const slash = rgba.match(/\/\s*([0-9.]+)\s*\)/);
+        if (slash) return Number.parseFloat(slash[1]);
+        const m = rgba.match(/rgba?\([^)]+\)/);
+        if (!m) return 1;
+        const parts = m[0].replace(/rgba?\(|\)/g, '').split(',');
+        return parts.length === 4 ? Number.parseFloat(parts[3]) : 1;
+      };
+
+      // Avatar root must be small (size-8 → 32px). If a primitive utility was
+      // dropped, the inner SVG fallback fills the canvas and width balloons.
+      for (const el of document.querySelectorAll<HTMLElement>('[data-slot="avatar"]')) {
+        const w = el.getBoundingClientRect().width;
+        if (w > 100) problems.push(`avatar width ${w.toFixed(0)}px > 100px (utility classes likely missing)`);
+      }
+
+      // Open Dialog content must be a fixed-position centred panel.
+      for (const el of document.querySelectorAll<HTMLElement>('[data-slot="dialog-content"][data-open], [data-slot="dialog-content"][data-state="open"]')) {
+        const cs = getComputedStyle(el);
+        if (cs.position !== 'fixed') problems.push(`dialog-content position=${cs.position} (expected fixed)`);
+      }
+
+      // Dialog overlay must be a visible scrim (alpha > 0). bg-black/50 expands
+      // to rgba(0,0,0,0.5) when emitted; if missing, alpha is 0 = invisible.
+      for (const el of document.querySelectorAll<HTMLElement>('[data-slot="dialog-overlay"]')) {
+        const alpha = parseAlpha(getComputedStyle(el).backgroundColor);
+        if (alpha === 0) problems.push(`dialog-overlay background-color alpha=0 (expected > 0)`);
+      }
+
+      // Popover / DropdownMenu / Tooltip content panels — same fixed-positioning
+      // contract as Dialog when open.
+      for (const slot of ['popover-content', 'dropdown-menu-content', 'tooltip-content']) {
+        const sel = `[data-slot="${slot}"][data-open], [data-slot="${slot}"][data-state="open"]`;
+        for (const el of document.querySelectorAll<HTMLElement>(sel)) {
+          const cs = getComputedStyle(el);
+          if (cs.position !== 'fixed' && cs.position !== 'absolute') {
+            problems.push(`${slot} position=${cs.position} (expected fixed|absolute)`);
+          }
+        }
+      }
+
+      return problems;
+    });
+
+    if (stylingProblems.length > 0) {
+      const lines = ['', `=== STYLING regressions in story: ${context.title} > ${context.name} ===`];
+      for (const p of stylingProblems) lines.push(`  • ${p}`);
+      // eslint-disable-next-line no-console
+      console.log(lines.join('\n'));
+      throw new Error(
+        `${stylingProblems.length} styling regression(s) in ${context.title} > ${context.name} (see logged report above)`,
+      );
+    }
   },
 };
 

@@ -1,17 +1,17 @@
 {
   "summary": {
-    "totalCoverage": 85,
-    "totalFiles": 245,
-    "totalLines": 12500,
-    "coveredLines": 10625,
-    "uncoveredLines": 1875
+    "totalCoverage": 92.5,
+    "totalFiles": 12,
+    "totalLines": 9467,
+    "coveredLines": 8757,
+    "uncoveredLines": 710
   },
   "plugins": {
     "security": [
       {
         "name": "eslint-plugin-browser-security",
         "slug": "browser-security",
-        "coverage": 85,
+        "coverage": 95,
         "status": "production",
         "category": "security"
       },
@@ -32,28 +32,14 @@
       {
         "name": "eslint-plugin-vercel-ai-security",
         "slug": "vercel-ai-security",
-        "coverage": 85,
+        "coverage": 90.7,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-mongodb-security",
         "slug": "mongodb-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-lambda-security",
-        "slug": "lambda-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-jwt",
-        "slug": "jwt",
-        "coverage": 85,
+        "coverage": 96.1,
         "status": "production",
         "category": "security"
       },
@@ -65,23 +51,37 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-jwt",
+        "slug": "jwt",
+        "coverage": 100,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-crypto",
         "slug": "crypto",
-        "coverage": 85,
+        "coverage": 95.7,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-lambda-security",
+        "slug": "lambda-security",
+        "coverage": 97.6,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-express-security",
         "slug": "express-security",
-        "coverage": 85,
+        "coverage": 93.4,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-nestjs-security",
         "slug": "nestjs-security",
-        "coverage": 85,
+        "coverage": 96.2,
         "status": "production",
         "category": "security"
       }
@@ -90,14 +90,7 @@
       {
         "name": "eslint-plugin-import-next",
         "slug": "import-next",
-        "coverage": 80,
-        "status": "production",
-        "category": "quality"
-      },
-      {
-        "name": "eslint-plugin-maintainability",
-        "slug": "maintainability",
-        "coverage": 80,
+        "coverage": 89.1,
         "status": "production",
         "category": "quality"
       },
@@ -109,6 +102,13 @@
         "category": "quality"
       },
       {
+        "name": "eslint-plugin-maintainability",
+        "slug": "maintainability",
+        "coverage": 91.2,
+        "status": "production",
+        "category": "quality"
+      },
+      {
         "name": "eslint-plugin-reliability",
         "slug": "reliability",
         "coverage": 80,
@@ -116,15 +116,15 @@
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-operability",
-        "slug": "operability",
+        "name": "eslint-plugin-modularity",
+        "slug": "modularity",
         "coverage": 80,
         "status": "production",
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-modularity",
-        "slug": "modularity",
+        "name": "eslint-plugin-operability",
+        "slug": "operability",
         "coverage": 80,
         "status": "production",
         "category": "quality"
@@ -144,8 +144,8 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-02-26T07:49:52.875Z",
-    "source": "estimated",
+    "generatedAt": "2026-05-24T03:17:18.338Z",
+    "source": "local-lcov",
     "ttl": 14400
   }
 }

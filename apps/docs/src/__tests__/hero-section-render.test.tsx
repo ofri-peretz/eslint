@@ -69,9 +69,9 @@ describe('HeroSection — DOM render lock', () => {
     expect(container).toBeTruthy();
   });
 
-  it('SECONDARY ShimmerButton ("GitHub") carries NEITHER spark nor highlight (CTA_PHILOSOPHY #8)', () => {
+  it('SECONDARY ShimmerButton ("Star on GitHub") carries NEITHER spark nor highlight (CTA_PHILOSOPHY #8)', () => {
     const { container, getByText } = render(<HeroSection />);
-    const label = getByText(/^GitHub$/);
+    const label = getByText(/Star on GitHub/);
     const button = label.closest('[data-slot="shimmer-button"]');
     expect(button, 'secondary CTA must be a ShimmerButton').not.toBeNull();
     expect(

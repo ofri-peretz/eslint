@@ -17,8 +17,9 @@ describe('eslint-plugin-modernization plugin interface', () => {
       'no-instanceof-array',
       'prefer-at',
       'prefer-event-target',
+      'prefer-template-literal',
     ]);
-    expect(ruleKeys.length).toBe(3);
+    expect(ruleKeys.length).toBe(4);
   });
 
   describe('configurations', () => {

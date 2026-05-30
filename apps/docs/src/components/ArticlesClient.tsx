@@ -80,7 +80,7 @@ function ArticleCard({
       data-testid={featured ? 'featured-article' : 'article-card'}
       className="motion-safe:animate-fade-in-up"
       onClickCapture={() =>
-        track('articles_card_clicked', {
+        track('articles:card_click', {
           articleId: article.id,
           position,
           isFeatured: featured,
@@ -96,8 +96,8 @@ function ArticleCard({
         imageUrl={image}
         tags={article.tag_list}
         author={{
-          name: article.user.name,
-          imageUrl: article.user.profile_image,
+          name: article.user?.name ?? 'Ofri Peretz',
+          imageUrl: article.user?.profile_image ?? '',
         }}
         publishedAt={article.published_at}
         meta={{
@@ -167,7 +167,7 @@ export function ArticlesClient({
     debounceTimer.current = setTimeout(() => {
       setSearch(value);
       navigate({ ...params, q: value, page: 1 }, 'replace');
-      track('articles_search_submitted', { q: value, resultCount: totalFiltered });
+      track('articles:search_submit', { q: value, resultCount: totalFiltered });
     }, SEARCH_DEBOUNCE_MS);
   };
 
@@ -182,7 +182,7 @@ export function ArticlesClient({
     const next = toggleTagInParams(params, tag);
     navigate(next);
     const wasActive = params.tags.includes(tag);
-    track('articles_filter_applied', {
+    track('articles:filter_add', {
       tagsAdded: wasActive ? [] : [tag],
       tagsRemoved: wasActive ? [tag] : [],
       activeTags: next.tags,
@@ -192,7 +192,7 @@ export function ArticlesClient({
 
   const setCurrentPage = (page: number) => {
     navigate({ ...params, page });
-    track('articles_pagination', { from: params.page, to: page, totalPages });
+    track('articles:pagination_update', { from: params.page, to: page, totalPages });
   };
 
   const clearFilters = () => {
@@ -206,7 +206,7 @@ export function ArticlesClient({
   // state is shown, so we can spot filter combos that yield zero results.
   useEffect(() => {
     if (items.length === 0 && hasFilters) {
-      track('articles_empty_state_seen', {
+      track('articles:empty_state_view', {
         activeParams: serializeArticleParams(params),
       });
     }
@@ -265,7 +265,7 @@ export function ArticlesClient({
                         RSS feed
                       </a>
                     }
-                    onClick={() => track('articles_subscribe_clicked', { channel: 'rss' })}
+                    onClick={() => track('articles:subscribe_click', { channel: 'rss' })}
                   />
                   <DropdownMenuItem
                     data-testid="articles-subscribe-devto"
@@ -279,7 +279,7 @@ export function ArticlesClient({
                         Follow on Dev.to
                       </a>
                     }
-                    onClick={() => track('articles_subscribe_clicked', { channel: 'devto' })}
+                    onClick={() => track('articles:subscribe_click', { channel: 'devto' })}
                   />
                   <DropdownMenuItem
                     data-testid="articles-subscribe-x"
@@ -293,7 +293,7 @@ export function ArticlesClient({
                         Follow on X
                       </a>
                     }
-                    onClick={() => track('articles_subscribe_clicked', { channel: 'x' })}
+                    onClick={() => track('articles:subscribe_click', { channel: 'x' })}
                   />
                   <DropdownMenuItem
                     data-testid="articles-subscribe-github"
@@ -307,7 +307,7 @@ export function ArticlesClient({
                         Star on GitHub
                       </a>
                     }
-                    onClick={() => track('articles_subscribe_clicked', { channel: 'github' })}
+                    onClick={() => track('articles:subscribe_click', { channel: 'github' })}
                   />
                 </DropdownMenuGroup>
               </DropdownMenuContent>

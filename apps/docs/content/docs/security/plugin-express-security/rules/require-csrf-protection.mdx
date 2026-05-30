@@ -1,6 +1,6 @@
 ---
 title: require-csrf-protection
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require CSRF protection middleware for state-changing HTTP methods"
 tags: ['security', 'express']
 category: security
 severity: high
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require CSRF protection middleware for state-changing HTTP methods
+
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)
