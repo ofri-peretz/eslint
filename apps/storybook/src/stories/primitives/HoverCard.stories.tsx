@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   HoverCard,
   HoverCardTrigger,
-  HoverCardContent,
+  HoverCardPortal,
+  HoverCardPositioner,
+  HoverCardPopup,
   MIN_VIEWPORT,
 } from '@interlace/ui/hover-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@interlace/ui/avatar';
@@ -28,8 +30,6 @@ type Story = StoryObj<typeof meta>;
 
 // ─────────────────────────────────────────────────────────────────
 // Shared fixture — a username link + the bio card it opens.
-// Kept inline so each story stays self-contained and the structure
-// is obvious at a glance.
 // ─────────────────────────────────────────────────────────────────
 const BioCard = () => (
   <div className="flex gap-md">
@@ -58,9 +58,9 @@ const UsernameLink = () => (
 );
 
 /**
- * Default story — opens with `open={true}` (Base UI controlled prop) so the
- * popup is visible without hover, which is essential for visual review and
- * for the autodocs page where pointer interaction isn't available.
+ * Default story — opens with `open={true}` so the popup is visible without
+ * hover, essential for visual review and autodocs where pointer interaction
+ * is not available.
  *
  * Callout: Tablet-and-up only; reach for Popover on touch devices.
  */
@@ -76,17 +76,19 @@ export const Default: Story = {
   render: () => (
     <HoverCard open>
       <HoverCardTrigger render={<UsernameLink />} />
-      <HoverCardContent className="w-80">
-        <BioCard />
-      </HoverCardContent>
+      <HoverCardPortal>
+        <HoverCardPositioner className="w-80">
+          <HoverCardPopup>
+            <BioCard />
+          </HoverCardPopup>
+        </HoverCardPositioner>
+      </HoverCardPortal>
     </HoverCard>
   ),
 };
 
 // ─────────────────────────────────────────────────────────────────
-// Variants — the single layout axis is `side`; sample the four
-// edges rather than enumerating every option. All forced open so
-// the placement is visible at a glance.
+// Variants — sample the four side placements, all forced open.
 // ─────────────────────────────────────────────────────────────────
 export const Variants: Story = {
   render: () => (
@@ -95,9 +97,13 @@ export const Variants: Story = {
         <div key={side} className="flex items-center justify-center">
           <HoverCard open>
             <HoverCardTrigger render={<UsernameLink />} />
-            <HoverCardContent side={side} className="w-80">
-              <BioCard />
-            </HoverCardContent>
+            <HoverCardPortal>
+              <HoverCardPositioner side={side} className="w-80">
+                <HoverCardPopup>
+                  <BioCard />
+                </HoverCardPopup>
+              </HoverCardPositioner>
+            </HoverCardPortal>
           </HoverCard>
         </div>
       ))}
@@ -117,24 +123,25 @@ export const RTL: Story = {
 
 /**
  * Below-min-viewport demo — wrap in a `(MIN_VIEWPORT - 1)`px container with
- * the `data-interlace-dev` flag so preflight's dashed warning outline
- * appears. Storybook renders both the warning and the still-functional
- * card; on real touch devices the consumer should switch to Popover.
+ * the `data-interlace-dev` flag so preflight's dashed warning outline appears.
  */
 export const BelowMinViewport: Story = {
   render: () => (
     <div data-interlace-dev style={{ width: MIN_VIEWPORT - 1 }}>
       <HoverCard open>
         <HoverCardTrigger render={<UsernameLink />} />
-        <HoverCardContent className="w-72">
-          <BioCard />
-        </HoverCardContent>
+        <HoverCardPortal>
+          <HoverCardPositioner className="w-72">
+            <HoverCardPopup>
+              <BioCard />
+            </HoverCardPopup>
+          </HoverCardPositioner>
+        </HoverCardPortal>
       </HoverCard>
     </div>
   ),
   decorators: [
     (Story) => (
-      // Promote the body flag for this story so the preflight selector matches.
       <div
         ref={(node) => {
           if (node && typeof document !== 'undefined') {
