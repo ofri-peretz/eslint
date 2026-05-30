@@ -325,8 +325,8 @@ const VERIFIED_OXLINT_RANGE = { min: '1.65.0', maxKnown: '1.65.x' };
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
   'plugins.js': '3caddca8054c7d91c6e0b5bacaba2a5c6f05fb2e9fa7b8c7226550f1d0c8061c',
   'plugins-dev.js': '050aec642a2c03884a217fecdd8644815d50f41650f2b083bce5e86cd2e9a157',
-  'lint.js':   'c88b8f84f4fce30196d384660c7800abc20ca2d514ae0bccc5bc4850c3544776',
-  'bindings.js': 'd09c1f588fa631e343c172733f79e3f197bf32df012b199819057d9775121cff',
+  'lint.js':   '82ca488c2f31d995cab1d11b2c25e19d62749dc3cfbb712311804d7100f1d33a',
+  'bindings.js': '5e50fde52ccdb0ade40dcd78ca8caf48f806b4e232338ae8349dfda13ca3f8ac',
 };
 
 async function checkOxlintRuntimeHashes() {
