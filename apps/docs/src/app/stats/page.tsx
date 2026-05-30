@@ -1,5 +1,5 @@
 import { Badge } from '@interlace/ui/badge';
-import { buttonVariants } from '@interlace/ui/button';
+// Note: buttonVariants is a client function — use inline className instead of importing it.
 import { Container } from '@interlace/ui/container';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -105,7 +105,7 @@ export default async function StatsPage() {
           <StarButton stars={data.impact.github.totalStars} surface="stats" />
           <Link
             href="/docs"
-            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3"
           >
             Get started →
           </Link>
