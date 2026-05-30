@@ -15,7 +15,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { join, relative, resolve } from 'path';
+import { relative, resolve } from 'path';
 import { globSync } from 'glob';
 
 // Use __dirname so this works regardless of whether vitest is invoked from the

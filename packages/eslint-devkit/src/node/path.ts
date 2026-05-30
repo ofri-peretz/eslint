@@ -39,11 +39,31 @@ export function patternToRegex(pattern: string, cache: PatternCache): RegExp {
     return cached;
   }
 
-  const escaped = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '.*')
-    .replace(/\*/g, '[^/]*')
-    .replace(/\?/g, '.');
+  // Translate the glob in a single left-to-right pass: escape every regex
+  // metacharacter, then map the glob wildcards (**, *, ?) to their regex
+  // equivalents. Doing it in one pass means an escaped metacharacter can never
+  // be re-interpreted as a wildcard. The previous chained-replace only handled
+  // `. * ?`, leaving `\ + ( ) [ ] { } ^ $ |` to leak through as regex syntax
+  // (CWE-116, incomplete sanitization) — e.g. the glob `a+b` compiled to the
+  // quantifier `a+b` instead of matching the literal `a+b`.
+  let escaped = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === '*') {
+      if (pattern[i + 1] === '*') {
+        escaped += '.*';
+        i++;
+      } else {
+        escaped += '[^/]*';
+      }
+    } else if (ch === '?') {
+      escaped += '.';
+    } else if (/[.+^${}()|[\]\\]/.test(ch)) {
+      escaped += '\\' + ch;
+    } else {
+      escaped += ch;
+    }
+  }
   const regex = new RegExp(escaped);
   cache.set(pattern, regex);
   return regex;

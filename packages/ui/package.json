@@ -32,9 +32,33 @@
       "types": "./dist/primitives/card.d.ts",
       "default": "./dist/primitives/card.js"
     },
+    "./typography": {
+      "types": "./dist/primitives/typography.d.ts",
+      "default": "./dist/primitives/typography.js"
+    },
+    "./box": {
+      "types": "./dist/primitives/box.d.ts",
+      "default": "./dist/primitives/box.js"
+    },
+    "./grid": {
+      "types": "./dist/primitives/grid.d.ts",
+      "default": "./dist/primitives/grid.js"
+    },
+    "./aspect-ratio": {
+      "types": "./dist/primitives/aspect-ratio.d.ts",
+      "default": "./dist/primitives/aspect-ratio.js"
+    },
     "./input": {
       "types": "./dist/primitives/input.d.ts",
       "default": "./dist/primitives/input.js"
+    },
+    "./textarea": {
+      "types": "./dist/primitives/textarea.d.ts",
+      "default": "./dist/primitives/textarea.js"
+    },
+    "./form": {
+      "types": "./dist/primitives/form.d.ts",
+      "default": "./dist/primitives/form.js"
     },
     "./tabs": {
       "types": "./dist/primitives/tabs.d.ts",
@@ -44,17 +68,33 @@
       "types": "./dist/primitives/dialog.d.ts",
       "default": "./dist/primitives/dialog.js"
     },
+    "./alert-dialog": {
+      "types": "./dist/primitives/alert-dialog.d.ts",
+      "default": "./dist/primitives/alert-dialog.js"
+    },
     "./accordion": {
       "types": "./dist/primitives/accordion.d.ts",
       "default": "./dist/primitives/accordion.js"
+    },
+    "./collapsible": {
+      "types": "./dist/primitives/collapsible.d.ts",
+      "default": "./dist/primitives/collapsible.js"
     },
     "./tooltip": {
       "types": "./dist/primitives/tooltip.d.ts",
       "default": "./dist/primitives/tooltip.js"
     },
+    "./hover-card": {
+      "types": "./dist/primitives/hover-card.d.ts",
+      "default": "./dist/primitives/hover-card.js"
+    },
     "./alert": {
       "types": "./dist/primitives/alert.d.ts",
       "default": "./dist/primitives/alert.js"
+    },
+    "./toast": {
+      "types": "./dist/primitives/toast.d.ts",
+      "default": "./dist/primitives/toast.js"
     },
     "./separator": {
       "types": "./dist/primitives/separator.d.ts",
@@ -72,6 +112,14 @@
       "types": "./dist/primitives/pagination.d.ts",
       "default": "./dist/primitives/pagination.js"
     },
+    "./breadcrumb": {
+      "types": "./dist/primitives/breadcrumb.d.ts",
+      "default": "./dist/primitives/breadcrumb.js"
+    },
+    "./breadcrumb": {
+      "types": "./dist/primitives/breadcrumb.d.ts",
+      "default": "./dist/primitives/breadcrumb.js"
+    },
     "./avatar": {
       "types": "./dist/primitives/avatar.d.ts",
       "default": "./dist/primitives/avatar.js"
@@ -79,6 +127,14 @@
     "./skeleton": {
       "types": "./dist/primitives/skeleton.d.ts",
       "default": "./dist/primitives/skeleton.js"
+    },
+    "./progress": {
+      "types": "./dist/primitives/progress.d.ts",
+      "default": "./dist/primitives/progress.js"
+    },
+    "./progress": {
+      "types": "./dist/primitives/progress.d.ts",
+      "default": "./dist/primitives/progress.js"
     },
     "./label": {
       "types": "./dist/primitives/label.d.ts",
@@ -169,6 +225,8 @@
       "default": "./dist/aceternity/*.js"
     },
     "./styles/tokens.css": "./styles/tokens.css",
+    "./styles/foundation.css": "./styles/foundation.css",
+    "./styles/preflight.css": "./styles/preflight.css",
     "./styles/theme.css": "./styles/theme.css",
     "./styles/interlace-theme.css": "./styles/interlace-theme.css"
   },

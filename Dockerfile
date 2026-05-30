@@ -23,7 +23,9 @@
 # Image size target: < 250 MB compressed. Achieved via alpine + multi-stage.
 
 # ─── builder ────────────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
+# Pinned to the node:24-alpine digest for reproducible builds (Scorecard
+# Pinned-Dependencies). Bump the digest when refreshing the base image.
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS builder
 
 WORKDIR /build
 RUN apk add --no-cache git
@@ -48,7 +50,7 @@ RUN npm install -g --no-fund --no-audit \
       eslint@latest
 
 # ─── runtime ────────────────────────────────────────────────────────────────
-FROM node:24-alpine
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14
 
 LABEL org.opencontainers.image.source="https://github.com/ofri-peretz/eslint"
 LABEL org.opencontainers.image.description="Interlace ESLint security suite — drop into any CI"

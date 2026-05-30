@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T17:45:53.529Z",
+  "generatedAt": "2026-05-30T04:47:15.948Z",
   "plugins": {
     "eslint-plugin-browser-security": {
       "rules": {
@@ -647,6 +647,18 @@
             "incorrectBlocks": 2
           }
         },
+        "no-magic-numbers": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
         "no-raw-cross-property-href": {
           "status": "missing-doc",
           "hasImpl": true,
@@ -722,6 +734,7 @@
       },
       "missingDoc": [
         "analytics-event-naming",
+        "no-magic-numbers",
         "no-raw-cross-property-href",
         "utm-taxonomy"
       ],
@@ -2289,9 +2302,23 @@
             "hasCorrect": true,
             "incorrectBlocks": 2
           }
+        },
+        "prefer-template-literal": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
         }
       },
-      "missingDoc": [],
+      "missingDoc": [
+        "prefer-template-literal"
+      ],
       "missingTest": [
         "no-instanceof-array",
         "prefer-at",
@@ -2361,9 +2388,23 @@
             "hasCorrect": true,
             "incorrectBlocks": 2
           }
+        },
+        "no-mutable-exports": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
         }
       },
-      "missingDoc": [],
+      "missingDoc": [
+        "no-mutable-exports"
+      ],
       "missingTest": [
         "ddd-anemic-domain-model",
         "ddd-value-object-immutability",
@@ -2853,6 +2894,18 @@
           "hasImpl": true,
           "hasDoc": true,
           "testPath": "packages/eslint-plugin-node-security/src/rules/no-insecure-rsa-padding/no-insecure-rsa-padding.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 2
+          }
+        },
+        "no-math-random-crypto": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/no-math-random-crypto.test.ts",
           "doc": {
             "exists": true,
             "hasIncorrect": true,
@@ -5300,11 +5353,11 @@
     }
   },
   "totals": {
-    "rules": 410,
-    "missingDoc": 11,
+    "rules": 414,
+    "missingDoc": 14,
     "missingTest": 192,
     "docNoExamples": 0,
     "missingImpl": 1,
-    "ok": 206
+    "ok": 207
   }
 }

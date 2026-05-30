@@ -11,14 +11,17 @@ import { cn } from '../lib/cn.js';
  * horizontally with wrap. Both pull their gap token from the six-step
  * scale:
  *
- *   | token  | px  | classes                  | use                          |
- *   | ------ | --- | ------------------------ | ---------------------------- |
- *   | `xs`   |  8  | `gap-2`                  | Inline chips                 |
- *   | `sm`   | 16  | `gap-4`                  | Cards, mobile padding        |
- *   | `md`   | 24  | `gap-6`                  | Card-grid gaps, header→grid  |
- *   | `lg`   | 40  | `gap-10`                 | Mobile section gaps          |
- *   | `xl`   | 64  | `gap-16`                 | Desktop section gaps         |
- *   | `2xl`  | 96  | `gap-24`                 | Hero / CTA breathing room    |
+ * Gap maps to the foundation `--spacing-*` tokens (DS-owned, not Tailwind's
+ * default scale — R19), shared with `<Grid>` so the two stay rhythm-consistent:
+ *
+ *   | token  | px  | class      | use                          |
+ *   | ------ | --- | ---------- | ---------------------------- |
+ *   | `xs`   |  8  | `gap-xs`   | Inline chips                 |
+ *   | `sm`   | 16  | `gap-sm`   | Cards, mobile padding        |
+ *   | `md`   | 24  | `gap-md`   | Card-grid gaps, header→grid  |
+ *   | `lg`   | 40  | `gap-lg`   | Mobile section gaps          |
+ *   | `xl`   | 64  | `gap-xl`   | Desktop section gaps         |
+ *   | `2xl`  | 96  | `gap-2xl`  | Hero / CTA breathing room    |
  */
 
 const stackVariants = cva('flex', {
@@ -28,12 +31,12 @@ const stackVariants = cva('flex', {
       horizontal: 'flex-row flex-wrap',
     },
     gap: {
-      xs: 'gap-2',
-      sm: 'gap-4',
-      md: 'gap-6',
-      lg: 'gap-10',
-      xl: 'gap-16',
-      '2xl': 'gap-24',
+      xs: 'gap-xs',
+      sm: 'gap-sm',
+      md: 'gap-md',
+      lg: 'gap-lg',
+      xl: 'gap-xl',
+      '2xl': 'gap-2xl',
     },
     align: {
       start: 'items-start',
@@ -76,7 +79,13 @@ function Stack({
     props: {
       'data-slot': 'stack',
       'data-direction': direction,
-      className: cn(stackVariants({ direction, gap, align, justify }), className),
+      'data-gap': gap ?? undefined,
+      'data-align': align ?? undefined,
+      'data-justify': justify ?? undefined,
+      className: cn(
+        stackVariants({ direction, gap, align, justify }),
+        className,
+      ),
       ...props,
     },
   });

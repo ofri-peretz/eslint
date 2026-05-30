@@ -4,6 +4,14 @@
 @import 'fumadocs-twoslash/twoslash.css';
 @import 'tw-animate-css';
 @import '@interlace/ui/styles/tokens.css';
+/* Foundation: type scale, spacing scale, radius, container widths, font
+   families — brand-invariant structure every consumer needs so primitives map
+   to real tokens (R19). See @interlace/ui/styles/foundation.css. */
+@import '@interlace/ui/styles/foundation.css';
+/* Token-aware baseline that goes beyond Tailwind preflight: selection color,
+   --ring focus outline, Inter font-feature-settings, reduced-motion smooth-scroll,
+   subtle scrollbar, ::placeholder, min-viewport container contract. */
+@import '@interlace/ui/styles/preflight.css';
 /* App-agnostic theme: shadcn-token bridge, Shiki AAA boosts, fumadocs TOC
    overrides, remote-content base, lightweight CSS animations. Lives in
    @interlace/ui so every consumer gets the same baseline. Brand colors

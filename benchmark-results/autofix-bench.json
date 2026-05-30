@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T05:40:39.952Z",
+  "generatedAt": "2026-05-30T04:47:15.482Z",
   "rules": [
     {
       "plugin": "eslint-plugin-browser-security",
@@ -222,12 +222,32 @@
       "snippetLength": 0
     },
     {
+      "plugin": "eslint-plugin-modernization",
+      "rule": "prefer-template-literal",
+      "file": "packages/eslint-plugin-modernization/src/rules/prefer-template-literal.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-modernization/src/tests/prefer-template-literal.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
       "plugin": "eslint-plugin-modularity",
       "rule": "enforce-naming",
       "file": "packages/eslint-plugin-modularity/src/rules/enforce-naming.ts",
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modularity/src/tests/enforce-naming.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-modularity",
+      "rule": "no-mutable-exports",
+      "file": "packages/eslint-plugin-modularity/src/rules/no-mutable-exports.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-modularity/src/tests/no-mutable-exports.test.ts",
       "hasIncorrectSnippet": false,
       "snippetLength": 0
     },
@@ -333,8 +353,8 @@
     }
   ],
   "summary": {
-    "fixableRules": 33,
-    "withFixerTest": 33,
+    "fixableRules": 35,
+    "withFixerTest": 35,
     "withoutFixerTest": 0,
     "snippetsExtracted": 0
   }

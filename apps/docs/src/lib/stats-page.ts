@@ -33,6 +33,12 @@ export interface ImpactStats {
     totalContributions: number;
   };
   npm: { totalDownloads: number; packageCount: number };
+  /**
+   * Audience reach — shown as context, never summed into any headline.
+   * `null` means the source was unavailable at build; the UI hides the stat
+   * rather than render a wrong/zero number.
+   */
+  audience: { devtoFollowers: number | null; githubFollowers: number | null };
 }
 
 export interface PluginRow {
@@ -89,7 +95,11 @@ async function loadEngagement(): Promise<Engagement> {
   );
   const ratePercent =
     totals.reach > 0
-      ? Number((((totals.reactions + totals.comments) / totals.reach) * 100).toFixed(2))
+      ? Number(
+          (((totals.reactions + totals.comments) / totals.reach) * 100).toFixed(
+            2,
+          ),
+        )
       : 0;
   return { ...totals, ratePercent };
 }
@@ -114,7 +124,9 @@ const loadNpmDownloads = unstable_cache(
         out[packageNames[0]!] = json.downloads;
         return out;
       }
-      for (const [name, entry] of Object.entries(json as Record<string, { downloads: number | null } | null>)) {
+      for (const [name, entry] of Object.entries(
+        json as Record<string, { downloads: number | null } | null>,
+      )) {
         if (entry && typeof entry.downloads === 'number') {
           out[name] = entry.downloads;
         }
@@ -159,7 +171,9 @@ const loadGithubRepoStats = unstable_cache(
       );
       let totalContributions = 0;
       if (contribRes.ok) {
-        const list = (await contribRes.json()) as Array<{ contributions?: number }>;
+        const list = (await contribRes.json()) as Array<{
+          contributions?: number;
+        }>;
         if (Array.isArray(list)) {
           totalContributions = list.reduce(
             (sum, c) => sum + (c.contributions ?? 0),
@@ -179,6 +193,58 @@ const loadGithubRepoStats = unstable_cache(
   },
   ['github-repo-stats'],
   { revalidate: REVALIDATE, tags: ['stats', 'github'] },
+);
+
+/**
+ * Audience reach: GitHub user followers (live API) + dev.to followers (the
+ * canonical Supabase-backed number, read from the blog's public stats API so
+ * /stats and the blog scorecard agree). Either side falls back to `null` so a
+ * transient failure hides the stat rather than showing a wrong number. Shown
+ * as context only — never summed into engagement or any headline.
+ */
+const loadAudienceFollowers = unstable_cache(
+  async (): Promise<ImpactStats['audience']> => {
+    let githubFollowers: number | null = null;
+    let devtoFollowers: number | null = null;
+
+    try {
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github+json',
+      };
+      if (process.env.GITHUB_TOKEN) {
+        headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+      }
+      const res = await fetch(`https://api.github.com/users/${GITHUB_OWNER}`, {
+        headers,
+        next: { revalidate: REVALIDATE },
+      });
+      if (res.ok) {
+        const user = (await res.json()) as { followers?: number };
+        if (typeof user.followers === 'number')
+          githubFollowers = user.followers;
+      }
+    } catch {
+      // leave null — UI hides the stat
+    }
+
+    try {
+      const res = await fetch('https://ofriperetz.dev/api/homepage-stats', {
+        next: { revalidate: REVALIDATE },
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { devto?: { followers?: number } };
+        if (typeof json.devto?.followers === 'number') {
+          devtoFollowers = json.devto.followers;
+        }
+      }
+    } catch {
+      // leave null — UI hides the stat
+    }
+
+    return { devtoFollowers, githubFollowers };
+  },
+  ['audience-followers'],
+  { revalidate: REVALIDATE, tags: ['stats', 'audience'] },
 );
 
 /**
@@ -206,14 +272,18 @@ function buildCoverageMap(
  * `src/data/`.
  */
 export async function getStatsPageData(): Promise<StatsPageData> {
-  const [pluginStats, coverage, engagement, github] = await Promise.all([
-    loadPluginStats(),
-    loadCoverageStats(),
-    loadEngagement(),
-    loadGithubRepoStats(),
-  ]);
+  const [pluginStats, coverage, engagement, github, audience] =
+    await Promise.all([
+      loadPluginStats(),
+      loadCoverageStats(),
+      loadEngagement(),
+      loadGithubRepoStats(),
+      loadAudienceFollowers(),
+    ]);
 
-  const publishedPlugins = (pluginStats?.plugins ?? []).filter((p) => p.published);
+  const publishedPlugins = (pluginStats?.plugins ?? []).filter(
+    (p) => p.published,
+  );
   const downloads = await loadNpmDownloads(publishedPlugins.map((p) => p.name));
   const coverageMap = buildCoverageMap(coverage);
 
@@ -237,6 +307,7 @@ export async function getStatsPageData(): Promise<StatsPageData> {
       totalDownloads,
       packageCount: pluginStats?.allPluginsCount ?? publishedPlugins.length,
     },
+    audience,
   };
 
   return {

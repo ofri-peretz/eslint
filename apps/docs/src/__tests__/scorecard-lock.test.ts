@@ -61,7 +61,9 @@ describe('Scorecard page: structure lock', () => {
 
     it('exports Next.js Metadata with /scorecard canonical', () => {
       expect(pageSource).toContain('export const metadata');
-      expect(pageSource).toMatch(/alternates:\s*{\s*canonical:\s*'\/scorecard'/);
+      expect(pageSource).toMatch(
+        /alternates:\s*{\s*canonical:\s*'\/scorecard'/,
+      );
     });
   });
 
@@ -99,6 +101,27 @@ describe('Scorecard page: structure lock', () => {
     it('container is the focusable #main-content target (KEYBOARD_PHILOSOPHY #1)', () => {
       expect(pageSource).toContain('id="main-content"');
       expect(pageSource).toContain('tabIndex={-1}');
+    });
+  });
+
+  describe('CTA locks (proof → action)', () => {
+    it('imports + renders the Star, per-rule Install, and Config CTAs', () => {
+      expect(pageSource).toContain("from '@/components/stats/cta'");
+      for (const sym of ['StarButton', 'InstallCell', 'ConfigCta']) {
+        expect(pageSource).toContain(sym);
+      }
+      expect(pageSource).toContain('<StarButton');
+      expect(pageSource).toContain('<InstallCell');
+      expect(pageSource).toContain('<ConfigCta');
+    });
+
+    it('adds a per-rule Try column derived from the rule id', () => {
+      expect(pageSource).toContain('ruleInstall');
+      expect(pageSource).toMatch(/<th[^>]*>Try<\/th>/);
+    });
+
+    it('closes with the flagship-config adoption CTA', () => {
+      expect(pageSource).toMatch(/Add the flagship config/);
     });
   });
 });

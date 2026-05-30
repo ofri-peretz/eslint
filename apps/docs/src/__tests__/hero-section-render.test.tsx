@@ -33,12 +33,20 @@ import { render, cleanup } from '@testing-library/react';
 afterEach(() => cleanup());
 
 // The cosmic background uses <canvas> + IntersectionObserver — neither is
-// reliable in jsdom and we don't care about them here. Stub the aceternity
-// modules to no-op components so we only render the hero's structural shell.
+// reliable in jsdom and we don't care about them here. The daylight surface
+// uses an SVG feTurbulence filter that jsdom under-implements. Stub both
+// aceternity modules to no-op components so we only render the hero's
+// structural shell.
 vi.mock('@interlace/ui/aceternity/stars-background', () => ({
   StarsBackground: () => null,
   ShootingStars: () => null,
   Meteors: () => null,
+}));
+vi.mock('@interlace/ui/aceternity/daylight-background', () => ({
+  DaylightBackground: () => null,
+  SkyGradient: () => null,
+  Sun: () => null,
+  CloudParticle: () => null,
 }));
 
 import { HeroSection } from '../components/home/hero-section';

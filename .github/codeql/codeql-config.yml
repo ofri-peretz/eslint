@@ -38,6 +38,17 @@ paths-ignore:
   # belt-and-braces guard for CodeQL even if a build artifact ends up checked
   # out (e.g. local accidental commit, future workflow that builds-then-scans).
   - "**/storybook-static/**"
+  # Generated Playwright HTML report — apps/docs/playwright-report/index.html is
+  # a bundled+minified single-page app, not first-party source. Already in
+  # .gitignore (and untracked from git); same belt-and-braces rationale as
+  # storybook-static so an accidentally-checked-out report is never scanned.
+  - "**/playwright-report/**"
+  # Per-plugin vulnerable-by-design fixtures: the secure-coding benchmark inputs
+  # (safe-patterns.js / vulnerable.ts) and the artifact-smoke ReDoS fixture are
+  # the EXPECTED input to our own security rules — same rationale as
+  # benchmarks/corpus above, just colocated under packages/.
+  - "packages/*/benchmark/test-files/**"
+  - "packages/*/test/artifact-smoke/**"
 
 queries:
   - uses: security-extended
@@ -65,3 +76,9 @@ query-filters:
   # the script's intent, not a vulnerability.
   - exclude:
       id: js/file-from-untrusted-data
+  # `js/http-to-file-access` is the same network→file pattern under a different
+  # query id; it fires on the identical three scripts above (ilb-cve-synthesize,
+  # ilb-fuzz, fetch-eslint-version-stats). Same rationale: the validated
+  # response IS the intended on-disk artifact, not a tainted-data leak.
+  - exclude:
+      id: js/http-to-file-access

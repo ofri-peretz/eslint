@@ -50,6 +50,14 @@ export interface TrackedEventMap {
   // Homepage hero → GitHub star CTA. The npm→GitHub arrow is the widest leak
   // in the conversion funnel (GROWTH_PHILOSOPHY.md G1/G2); this measures it.
   'homepage:star_click': { stars: number | null };
+  // Stats / scorecard page CTAs (star, install, docs links).
+  'stats:cta_click': { action: 'star' | 'plugin_install' | 'plugin_docs'; plugin?: string };
+  // Flagship / scorecard page CTAs.
+  'flagship:cta_click': {
+    action: 'star' | 'plugin_install' | 'rule_install' | 'rule_docs' | 'install_config';
+    plugin?: string;
+    rule?: string;
+  };
 }
 
 export type TrackedEventName = keyof TrackedEventMap;
@@ -129,8 +137,12 @@ export function pageview(
       url ?? (typeof window !== 'undefined' ? window.location.href : '');
     posthog.capture?.('$pageview', { $current_url, ...properties });
     if (process.env.NODE_ENV !== 'production') {
+      // Pass the URL as a separate arg, not interpolated into the format
+      // string: $current_url can derive from window.location.href (which
+      // CodeQL treats as user-controlled), and a %-token in it would be read
+      // as a console format specifier (js/tainted-format-string).
       // eslint-disable-next-line no-console
-      console.debug(`[analytics] pageview ${$current_url}`, properties);
+      console.debug('[analytics] pageview', $current_url, properties);
     }
   });
 }

@@ -1,0 +1,150 @@
+/*
+ * @interlace/ui — foundation tokens: type scale, spacing scale, radius,
+ * container widths, font families. The brand-INVARIANT structural layer.
+ *
+ * Import in the consuming app AFTER tokens.css, BEFORE/independent of the
+ * brand layer (interlace-theme.css):
+ *
+ *   @import "@interlace/ui/styles/tokens.css";       motion
+ *   @import "@interlace/ui/styles/foundation.css";   type + spacing + radius   ← THIS FILE
+ *   @import "@interlace/ui/styles/theme.css";         fumadocs color bridge
+ *   @import "@interlace/ui/styles/interlace-theme.css"; brand color values
+ *
+ * Why a separate file (not theme.css / interlace-theme.css):
+ *   - theme.css is the fumadocs COLOR bridge; interlace-theme.css is the brand
+ *     COLOR layer (and is not imported by every consumer — docs omits it).
+ *   - Type/spacing/radius/container are brand-invariant STRUCTURE that EVERY
+ *     consumer needs so primitives (Typography/Stack/Grid/Box/Container) map to
+ *     real tokens (R19) instead of Tailwind defaults. Keeping them here, in a
+ *     universally-imported file, fixes the prior gap where the radius bridge +
+ *     font tokens lived only in the registry app (apps/registry/globals.css) and
+ *     non-registry consumers silently fell back to Tailwind defaults.
+ *
+ * Sources: TYPOGRAPHY_PHILOSOPHY.md (type scale, body/code contracts, fluid
+ * type, reading-vs-UI modes) + LAYOUT_PHILOSOPHY.md (#2 container widths, #3
+ * spacing token table). Values are ours; the 3-layer SYSTEM mirrors the concept,
+ * not any one project's numbers.
+ *
+ * Self-contained: every value is a literal here, so the file works even when a
+ * consumer omits the brand layer. Brand-coupled tokens (e.g. --subtle, derived
+ * from the violet primary) stay in interlace-theme.css.
+ *
+ * Fonts: families only. Inter / JetBrains Mono are loaded by the app (next/font
+ * or @font-face with font-display: swap, per TYPOGRAPHY_PHILOSOPHY "no FOIT").
+ * This file names the family stack; it does not ship font binaries.
+ */
+
+@theme {
+  /* ── Font families ─────────────────────────────────────────────── */
+  /* font-body / font-mono utilities. --font-sans aliases body so stock
+     shadcn `font-sans` usages pick up Inter without a rename. */
+  --font-body:
+    'Inter', 'Inter Variable', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-sans: var(--font-body);
+  --font-mono:
+    'JetBrains Mono', 'JetBrains Mono Variable', 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  /* ── Type scale (font-size + paired line-height) ───────────────────
+     SIX heading levels max (TYPOGRAPHY "heading scale"). Display end fluids
+     on a single curve; body stays FIXED (no clamp on body — confuses readers).
+     Generates text-h1…text-h6, text-body, text-long, text-ui, text-code, etc. */
+  --text-h1: clamp(2.5rem, 4vw + 1rem, 3.5rem); /* 40 → 56px */
+  --text-h1--line-height: 1.1;
+  --text-h2: 1.875rem; /* 30px */
+  --text-h2--line-height: 1.2;
+  --text-h3: 1.5rem; /* 24px */
+  --text-h3--line-height: 1.25;
+  --text-h4: 1.25rem; /* 20px */
+  --text-h4--line-height: 1.3;
+  --text-h5: 1.0625rem; /* 17px */
+  --text-h5--line-height: 1.4;
+  --text-h6: 1rem; /* 16px */
+  --text-h6--line-height: 1.4;
+  --text-body: 1rem; /* 16px base body */
+  --text-body--line-height: 1.6;
+  --text-long: 1.0625rem; /* 17px long-form reading */
+  --text-long--line-height: 1.7;
+  --text-ui: 0.875rem; /* 14px UI text */
+  --text-ui--line-height: 1.5;
+  --text-ui-sm: 0.8125rem; /* 13px dense UI */
+  --text-ui-sm--line-height: 1.5;
+  --text-code: 0.875rem; /* 14px code blocks */
+  --text-code--line-height: 1.6;
+  --text-caption: 0.8125rem; /* 13px captions / eyebrows */
+  --text-caption--line-height: 1.5;
+
+  /* ── Line-height scale (standalone leading-* utilities) ─────────── */
+  --leading-body: 1.6;
+  --leading-long: 1.7;
+  --leading-ui: 1.5;
+  --leading-heading: 1.2;
+
+  /* ── Letter-spacing (tracking-* utilities) ─────────────────────────
+     0 body; tighten only headings ≥32px. */
+  --tracking-display: -0.02em;
+  --tracking-heading: -0.01em;
+
+  /* Weight ladder (TYPOGRAPHY "weight ladder"): 400 body / 500 UI emphasis /
+     600 strong + headings / 700 page headings — NO 900 ever. Uses Tailwind's
+     built-in font-normal/font-medium/font-semibold/font-bold; NOT redefined as
+     --font-weight-* tokens (those would collide with the --font-* family keys
+     on the shared `font-<name>` utility namespace). */
+
+  /* ── Spacing scale (LAYOUT #3 — the six-step token table) ──────────
+     Named keys → p-xs / gap-md / m-lg / py-xl utilities, DS-owned (R19).
+     Additive: the numeric Tailwind scale (p-4, gap-6) is untouched. */
+  --spacing-xs: 0.5rem; /*  8px — inline chip / badge padding */
+  --spacing-sm: 1rem; /* 16px — card padding, mobile page padding */
+  --spacing-md: 1.5rem; /* 24px — card-grid gaps */
+  --spacing-lg: 2.5rem; /* 40px — mobile section vertical padding */
+  --spacing-xl: 4rem; /* 64px — desktop section vertical padding */
+  --spacing-2xl: 6rem; /* 96px — hero / final-CTA breathing room */
+
+  /* ── Radius (8/12/16 three-step scale) ─────────────────────────────
+     PROMOTED from apps/registry/globals.css to the shared package so
+     rounded-sm/md/lg are DS-owned in every consumer (docs/storybook too),
+     not the Tailwind defaults (2/6/8px). */
+  --radius-sm: 0.5rem; /*  8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px */
+
+  /* ── Container widths (LAYOUT #2 — four sizes only) ─────────────────
+     Generates max-w-prose / max-w-content / max-w-wide. `full` = no max-width
+     (omit the utility). ad-hoc max-w-3xl/4xl/5xl/6xl are forbidden by R21. */
+  --container-prose: 65ch; /* long-form text */
+  --container-content: 64rem; /* 1024px — default landing section */
+  --container-wide: 80rem; /* 1280px — card-grid-heavy section */
+}
+
+/* ── Reading-mode vs UI-mode component classes ──────────────────────
+   TYPOGRAPHY "Reading mode vs UI mode": the call site declares intent.
+   The Typography primitive applies the right class by default; consumers
+   reach for these directly on prose containers. Body is FIXED size (never
+   fluid); measure is bounded ≤75ch (non-negotiable). */
+@layer components {
+  .prose-body {
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    max-width: 65ch;
+  }
+  .prose-long {
+    font-family: var(--font-body);
+    font-size: var(--text-long);
+    line-height: var(--leading-long);
+    max-width: 75ch;
+    text-rendering: optimizeLegibility;
+  }
+  .ui-text {
+    font-family: var(--font-body);
+    font-size: var(--text-ui);
+    line-height: var(--leading-ui);
+  }
+  .ui-text-sm {
+    font-family: var(--font-body);
+    font-size: var(--text-ui-sm);
+    line-height: var(--leading-ui);
+  }
+}
