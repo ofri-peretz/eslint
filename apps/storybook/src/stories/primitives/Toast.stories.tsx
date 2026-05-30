@@ -78,15 +78,18 @@ const TONES = [
  */
 export const Default: Story = {
   render: () => (
-    <div className="flex w-[420px] flex-col gap-sm">
-      {TONES.map(({ tone, Icon, title, description }) => (
-        <Toast key={tone} tone={tone}>
-          <Icon className="size-4" aria-hidden />
-          <ToastTitle>{title}</ToastTitle>
-          <ToastDescription>{description}</ToastDescription>
-        </Toast>
-      ))}
-    </div>
+    // ToastProvider required: Toast uses @base-ui/react context (error #66 without it)
+    <ToastProvider>
+      <div className="flex w-[420px] flex-col gap-sm">
+        {TONES.map(({ tone, Icon, title, description }) => (
+          <Toast key={tone} tone={tone}>
+            <Icon className="size-4" aria-hidden />
+            <ToastTitle>{title}</ToastTitle>
+            <ToastDescription>{description}</ToastDescription>
+          </Toast>
+        ))}
+      </div>
+    </ToastProvider>
   ),
 };
 
