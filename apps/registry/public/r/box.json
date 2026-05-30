@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "box",
+  "type": "registry:ui",
+  "title": "Box",
+  "description": "@interlace/ui — box primitive (shadcn-compatible).",
+  "dependencies": [
+    "class-variance-authority"
+  ],
+  "registryDependencies": [
+    "theme"
+  ],
+  "files": [
+    {
+      "path": "registry/interlace-ui/box.tsx",
+      "target": "components/ui/box.tsx",
+      "type": "registry:ui",
+      "content": "// Box — the lowest-altitude layout primitive: surface + box-model on one\n// element. Mirrors MUI <Box> (polymorphic unopinionated wrapper) minus the `sx`\n// CSS-in-JS prop — Interlace uses a curated, tokenized cva variant set instead,\n// so it can't reopen the magic-number problem LAYOUT_PHILOSOPHY closes.\n// `<Card>` composes `<Box>` (not the reverse); reach for <Section>/<Container>\n// for page rhythm. Server component (as-prop seam, like Section). See\n// LAYOUT_PHILOSOPHY.md \"Allowed primitives\".\n\n/**\n * @interlace/ui — Box\n *\n * | Rule | Concept                          | Where in this file                                   |\n * | ---- | -------------------------------- | ---------------------------------------------------- |\n * | R4   | Extends native el + VariantProps | `React.ComponentProps<'div'> & VariantProps<...>`    |\n * | R6   | data-slot                        | `data-slot=\"box\"` + data-surface                     |\n * | R7   | className merged + ...rest + ref  | `cn(boxVariants(...), className)` + `{...props}`     |\n * | R8   | boolean default-false, no isXxx  | `border` boolean variant; surface/padding/radius enums |\n * | R18  | Tailwind only                    | zero inline style                                    |\n * | R19  | Tokens only                      | surface→bg-card/muted/accent; padding→p-{--spacing}; radius→rounded-{sm,md,lg} (foundation) |\n * | R20  | AA contrast                      | every surface ships its paired `text-*-foreground`   |\n * | R25  | Server component                 | no hooks → no 'use client'                           |\n *\n * API parity: MUI `component=` → `as`; MUI `sx` (CSS-in-JS) → tokenized cva +\n * className (no runtime). No open-ended system props (`mt`/`px`/`bgcolor`).\n */\n\nimport * as React from 'react';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\nconst boxVariants = cva('', {\n  variants: {\n    /** Background + paired foreground (AA token pairs). */\n    surface: {\n      none: '',\n      card: 'bg-card text-card-foreground',\n      muted: 'bg-muted text-muted-foreground',\n      accent: 'bg-accent text-accent-foreground',\n    },\n    /** Padding from the foundation --spacing scale (8/16/24/40/64px). */\n    padding: {\n      none: '',\n      xs: 'p-xs',\n      sm: 'p-sm',\n      md: 'p-md',\n      lg: 'p-lg',\n      xl: 'p-xl',\n    },\n    /** Corner radius from the foundation 3-step scale (8/12/16px). */\n    radius: {\n      none: 'rounded-none',\n      sm: 'rounded-sm',\n      md: 'rounded-md',\n      lg: 'rounded-lg',\n    },\n    /** 1px token border. */\n    border: {\n      true: 'border border-border',\n      false: '',\n    },\n  },\n  defaultVariants: {\n    surface: 'none',\n    padding: 'none',\n    radius: 'none',\n    border: false,\n  },\n});\n\ninterface BoxProps\n  extends React.ComponentProps<'div'>, VariantProps<typeof boxVariants> {\n  /** Render as a different element (e.g. `section`, `article`, `ul`). Default `div`. */\n  as?: React.ElementType;\n}\n\n/** Surface + box-model wrapper. Server component (no hooks). */\nfunction Box({\n  className,\n  surface,\n  padding,\n  radius,\n  border,\n  as,\n  ...props\n}: BoxProps) {\n  const Tag = (as ?? 'div') as React.ElementType;\n  return (\n    <Tag\n      data-slot=\"box\"\n      data-surface={surface ?? undefined}\n      className={cn(\n        boxVariants({ surface, padding, radius, border }),\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n\nexport { Box, boxVariants };\nexport type { BoxProps };\n"
+    }
+  ]
+}
