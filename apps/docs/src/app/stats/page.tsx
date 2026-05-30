@@ -1,8 +1,11 @@
 import { Badge } from '@interlace/ui/badge';
+// Note: buttonVariants is a client function — use inline className instead of importing it.
 import { Container } from '@interlace/ui/container';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { DownloadsByPackage } from '@/components/charts/downloads-by-package';
+import { InstallCell, StarButton } from '@/components/stats/cta';
 import { ImpactCard } from '@/components/stats/impact-card';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +49,12 @@ function fmtDownloads(n: number): string {
   return new Intl.NumberFormat('en-US').format(n);
 }
 
+/** Internal docs link for a plugin row — same-property nav, so no UTM. */
+function pluginDocsHref(p: PluginRow): string {
+  const slug = p.name.replace(/^eslint-plugin-/, '');
+  return `/docs/${p.category}/plugin-${slug}`;
+}
+
 interface CoverageCellProps {
   value: number | null;
 }
@@ -71,6 +80,8 @@ export default async function StatsPage() {
   const packages = data.plugins
     .filter((p) => p.downloads > 0)
     .map((p) => ({ name: p.name, downloads: p.downloads }));
+  const totalRules = data.plugins.reduce((sum, p) => sum + p.rules, 0);
+  const { devtoFollowers, githubFollowers } = data.impact.audience;
 
   return (
     <Container
@@ -86,6 +97,19 @@ export default async function StatsPage() {
           Star Metric), adoption across npm + GitHub, and the full plugin
           catalog with per-plugin downloads, rule count, and test coverage.
         </p>
+        <p className="mt-2 text-sm font-medium text-fd-foreground">
+          {totalRules.toLocaleString()} rules across {data.plugins.length}{' '}
+          plugins.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <StarButton stars={data.impact.github.totalStars} surface="stats" />
+          <Link
+            href="/docs"
+            className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-3"
+          >
+            Get started →
+          </Link>
+        </div>
       </header>
 
       <section aria-labelledby="impact-heading" className="mt-12">
@@ -96,13 +120,26 @@ export default async function StatsPage() {
           Impact
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
-          Engagement separates magnitude (Reach) from quality (Engagement
-          rate). Code-adoption metrics confirm whether the audience is
-          shipping the rules, not just reading the articles.
+          Engagement separates magnitude (Reach) from quality (Engagement rate).
+          Code-adoption metrics confirm whether the audience is shipping the
+          rules, not just reading the articles.
         </p>
         <div className="mt-6">
           <ImpactCard stats={data.impact} />
         </div>
+        {(githubFollowers !== null || devtoFollowers !== null) && (
+          <p className="mt-4 text-sm text-fd-muted-foreground">
+            <span className="font-medium text-fd-foreground">Audience</span>{' '}
+            (reach, not part of any total):
+            {githubFollowers !== null && (
+              <> {fmtDownloads(githubFollowers)} GitHub followers</>
+            )}
+            {githubFollowers !== null && devtoFollowers !== null && <> ·</>}
+            {devtoFollowers !== null && (
+              <> {fmtDownloads(devtoFollowers)} dev.to followers</>
+            )}
+          </p>
+        )}
       </section>
 
       <section aria-labelledby="downloads-heading" className="mt-12">
@@ -113,8 +150,8 @@ export default async function StatsPage() {
           Top packages by downloads
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
-          Weekly npm downloads per plugin, top 10. Same data as the table
-          below, ranked visually.
+          Weekly npm downloads per plugin, top 10. Same data as the table below,
+          ranked visually.
         </p>
         <Card className="mt-6">
           <CardHeader className="sr-only">
@@ -135,14 +172,14 @@ export default async function StatsPage() {
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
           Every published Interlace plugin with rule count, weekly downloads,
-          test coverage, and the latest published version. Sorted by
-          downloads, descending.
+          test coverage, and the latest published version. Sorted by downloads,
+          descending.
         </p>
         <Card className="mt-6">
           <Table>
             <TableCaption className="sr-only">
-              Published Interlace ESLint plugins — category, rule count,
-              weekly downloads, line coverage, and version.
+              Published Interlace ESLint plugins — category, rule count, weekly
+              downloads, line coverage, and version.
             </TableCaption>
             <TableHeader>
               <TableRow>
@@ -152,12 +189,20 @@ export default async function StatsPage() {
                 <TableHead className="text-right">Downloads / wk</TableHead>
                 <TableHead className="text-right">Coverage</TableHead>
                 <TableHead>Version</TableHead>
+                <TableHead className="text-right">Get it</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.plugins.map((p: PluginRow) => (
                 <TableRow key={p.name}>
-                  <TableCell className="font-mono text-xs">{p.name}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <Link
+                      href={pluginDocsHref(p)}
+                      className="text-fd-primary underline-offset-4 hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="capitalize">
                       {p.category}
@@ -175,6 +220,13 @@ export default async function StatsPage() {
                   <TableCell className="font-mono text-xs">
                     {p.version}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <InstallCell
+                      pkg={p.name}
+                      docsHref={pluginDocsHref(p)}
+                      surface="stats"
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -191,8 +243,7 @@ export default async function StatsPage() {
           </time>{' '}
           by <code className="font-mono">npm run sync:plugin-stats</code>.{' '}
           <strong>Live numbers</strong> (npm downloads, GitHub stars, forks,
-          contributions) fetched at build and revalidated hourly; last
-          resolved{' '}
+          contributions) fetched at build and revalidated hourly; last resolved{' '}
           <time dateTime={data.liveFetchedAt}>
             {fmtDate(data.liveFetchedAt)}
           </time>
