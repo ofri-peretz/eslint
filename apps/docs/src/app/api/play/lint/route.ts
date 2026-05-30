@@ -145,7 +145,7 @@ const mongoNoUnsafeQuery: Rule.RuleModule = {
         if (containsUserInput((node as any).value)) {
           ctx.report({
             node: (node as any).value,
-            message: `\`${keyName}\` operator with user-controlled value enables NoSQL injection (CWE-943). Use structured operators (\$eq, \$gt, …) and validate against an allow-list.`,
+            message: `\`${keyName}\` operator with user-controlled value enables NoSQL injection (CWE-943). Use structured operators ($eq, $gt, …) and validate against an allow-list.`,
           });
         }
       },

@@ -8,8 +8,8 @@ import type { LintStatus } from '@/lib/playground/useLiveLinting';
 
 export interface FindingsListProps {
   findings: readonly PlaygroundFinding[];
-  /** True when the editor buffer no longer matches the canonical snippet. */
-  isEdited: boolean;
+  /** @deprecated Phase 2: live linting supersedes the edited state; kept for API compatibility. */
+  isEdited?: boolean;
   /** Number of findings hidden by the active plugin filter, for the header label. */
   hiddenCount: number;
   /** Total findings on the canonical snippet; used to differentiate "no findings"
@@ -31,7 +31,7 @@ export interface FindingsListProps {
  *    the active plugin filter. Suggest toggling a plugin back on.
  *  - **Active list**: render each finding via `FindingCard`.
  */
-export function FindingsList({ findings, isEdited, hiddenCount, totalCount, lintStatus }: FindingsListProps) {
+export function FindingsList({ findings, hiddenCount, totalCount, lintStatus }: FindingsListProps) {
   const isLinting = lintStatus === 'linting';
 
   return (
