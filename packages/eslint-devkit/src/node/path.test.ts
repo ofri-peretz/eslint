@@ -89,6 +89,38 @@ describe('node/path', () => {
 
       expect(regex1).toBe(regex2);
     });
+
+    // Regression lock (CWE-116, code-scanning js/incomplete-sanitization):
+    // the glob→regex converter must escape EVERY regex metacharacter, not just
+    // `.`. Pre-fix, the chained-replace left `+ ( ) | [ ] { } ^ $ \` to leak
+    // through as regex syntax, so these patterns matched the wrong strings.
+    // Each assertion below fails on the old implementation.
+    it('escapes regex metacharacters so globs match literally', () => {
+      // `+` was a quantifier pre-fix (/a+b/ matched "aaab"); now literal.
+      const plus = patternToRegex('a+b', cache);
+      expect(plus.test('a+b')).toBe(true);
+      expect(plus.test('aaab')).toBe(false);
+
+      // Parentheses were a capture group pre-fix (/(x)/ matched "x"); literal now.
+      const group = patternToRegex('(x)', cache);
+      expect(group.test('(x)')).toBe(true);
+      expect(group.test('x')).toBe(false);
+
+      // `|` was alternation pre-fix (/a|b/ matched "a"); now a literal pipe.
+      const pipe = patternToRegex('a|b', cache);
+      expect(pipe.test('a|b')).toBe(true);
+      expect(pipe.test('a')).toBe(false);
+    });
+
+    it('still translates glob wildcards after the metachar fix', () => {
+      const re = patternToRegex('src/**/*.test.ts', cache);
+      expect(re.test('src/a/b.test.ts')).toBe(true);
+      expect(re.test('src/a/b/c.test.ts')).toBe(true);
+
+      const single = patternToRegex('file?.ts', cache);
+      expect(single.test('file1.ts')).toBe(true);
+      expect(single.test('file.ts')).toBe(false);
+    });
   });
 
   describe('shouldIgnoreFile', () => {

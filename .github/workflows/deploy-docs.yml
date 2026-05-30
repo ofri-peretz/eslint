@@ -40,13 +40,15 @@ concurrency:
 
 permissions:
   contents: read
-  deployments: write # GitHub Deployments API → record the deploy URL
 
 jobs:
   deploy:
     name: Deploy (${{ inputs.environment }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      deployments: write # GitHub Deployments API → record the deploy URL
     environment:
       # Maps to GitHub Environments — gate on reviewers if you want a manual
       # approval step before production deploys (Settings → Environments → production).
@@ -57,7 +59,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ inputs.ref || github.ref }}
           fetch-depth: 1
@@ -153,7 +155,7 @@ jobs:
 
       - name: Upload smoke artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: deploy-smoke-${{ inputs.environment }}
           path: |

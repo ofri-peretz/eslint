@@ -52,14 +52,14 @@ runs:
   steps:
     - name: Setup Node (from .nvmrc)
       if: inputs.node-version == ''
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version-file: .nvmrc
         cache: npm
 
     - name: Setup Node (override)
       if: inputs.node-version != ''
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
         cache: npm
@@ -67,7 +67,7 @@ runs:
     - name: Restore node_modules cache
       if: inputs.install == 'true'
       id: node-modules-cache
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: |
           node_modules
@@ -84,7 +84,7 @@ runs:
 
     - name: Restore Turbo cache
       if: inputs.turbo-cache == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: .turbo
         key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}
@@ -94,7 +94,7 @@ runs:
 
     - name: Restore Playwright browser cache
       if: inputs.playwright-cache == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -103,7 +103,7 @@ runs:
 
     - name: Restore Next.js build cache
       if: inputs.next-cache == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: apps/docs/.next/cache
         key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('apps/docs/**/*.[jt]s', 'apps/docs/**/*.[jt]sx', 'apps/docs/**/*.mdx', 'packages/ui/src/**') }}
@@ -113,7 +113,7 @@ runs:
 
     - name: Restore Storybook static cache
       if: inputs.storybook-cache == 'true'
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: apps/storybook/storybook-static
         key: storybook-${{ runner.os }}-${{ hashFiles('packages/ui/src/**', 'apps/storybook/src/**', 'apps/storybook/.storybook/**', 'apps/storybook/package.json', 'packages/ui/package.json') }}
