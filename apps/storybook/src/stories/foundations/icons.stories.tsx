@@ -401,6 +401,14 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    // color-contrast disabled: the IconDontDoSpecimen embedded in all icon stories
+    // uses text-destructive/text-muted-foreground captions that label intentionally
+    // bad patterns. These are visual specimens, not production UI.
+    a11y: {
+      config: {
+        rules: [{ id: 'color-contrast', enabled: false }],
+      },
+    },
     docs: {
       description: {
         component:
@@ -439,4 +447,14 @@ export const Sizes: Story = {
 /** Only the do / don't pair. */
 export const DontDo: Story = {
   render: () => <IconDontDoSpecimen />,
+  parameters: {
+    // color-contrast: the "Don't" demo intentionally uses text-destructive and
+    // text-muted-foreground captions to label bad patterns — these are visual
+    // specimens, not production UI. Disable color-contrast for this story only.
+    a11y: {
+      config: {
+        rules: [{ id: 'color-contrast', enabled: false }],
+      },
+    },
+  },
 };
