@@ -63,7 +63,7 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
             </p>
             <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider">
               <span aria-hidden className="size-1.5 rounded-full bg-green-500/70" />
-              Phase 2 · live linting
+              Phase 3 · plugin-driven linting
             </Badge>
           </div>
           <h2 className="font-mono text-lg text-fd-foreground">{state.snippet.title}</h2>

@@ -19,13 +19,11 @@ export const metadata: Metadata = {
 /**
  * /play — the interactive playground.
  *
- * Phase 2 (this version): live linting via POST /api/play/lint. The editor
- * is fully interactive — edits trigger a debounced (300ms) lint request and
- * findings update in real-time. Static verified findings are shown until the
- * first live result arrives. URL state (`?example=`, `?plugins=`) is wired.
+ * Phase 3 (this version): plugin-toggle strip drives the active plugin set
+ * in the live linting request — toggling a plugin off sends `plugins: [...]`
+ * without it, so only the selected rules run server-side. "Copy config"
+ * generates a correct eslint.config.js for the active set.
  *
- * Phase 3: plugin-toggle strip drives the active plugin set in the live
- *          linting request. "Copy config" generates the correct config.
  * Phase 4: embed mode + homepage hero swap to live playground.
  *
  * Spec: PLAYGROUND_SPEC.md.
@@ -45,7 +43,7 @@ export default async function PlaygroundPage({
         <SectionHeader
           eyebrow="Try it"
           title="Playground"
-          tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Phase 1c — Monaco editor + plugin toggle strip + verified static findings; live in-browser linting (oxlint WASM) arrives in Phase 2."
+          tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Live linting — edits trigger a real ESLint run in under 300 ms; plugin toggles drive the active rule set."
         />
       </Section>
 
