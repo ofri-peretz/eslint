@@ -233,11 +233,15 @@ an `import`.
 | `<Section>` | `packages/ui/src/primitives/section.tsx` | Vertical rhythm + tone + dividers + container. Props: `spacing`, `tone`, `divider`, `container`, `as`. |
 | `<SectionHeader>` | `packages/ui/src/blocks/section-header.tsx` | The repeated `text-center mb-12` + h2 + tagline pattern. Props: `eyebrow`, `title`, `tagline`, `align`. |
 | `<Stack>` / `<Cluster>` | `packages/ui/src/primitives/stack.tsx` | Vertical (`Stack`) and horizontal-wrapping (`Cluster`) gap rhythm. Props: `gap`, `direction?`, `align?`, `wrap?`. |
+| `<Grid>` / `<GridItem>` | `packages/ui/src/primitives/grid.tsx` | 2-D CSS-grid rhythm on the §3 spacing scale: `<Grid>` sets columns + gap, `<GridItem>` spans responsively per breakpoint. Two flat components (never a `kind` union). Props: `cols`, `gap`, `rowGap?`, `colGap?` / `span`, `colStart?`. |
+| `<Box>` | `packages/ui/src/primitives/box.tsx` | The lowest-altitude wrapper — surface + box-model on one element. Props: `surface`, `padding`, `radius`, `border`, `as`. Curated tokenized props only (no `sx` / `mt`/`px` style-prop soup). `<Card>` composes `<Box>`; reach for `<Section>`/`<Container>` for page rhythm. |
 
-**Forbidden** (do not add): grid-system frameworks (no Bootstrap-grid,
-no react-grid-layout), CSS-in-JS layout libraries, anything that
-introduces a runtime layout cost. Tailwind + the four primitives above
-are the entire layout API.
+**Forbidden** (do not add): grid-system _frameworks_ (no Bootstrap-grid,
+no react-grid-layout), CSS-in-JS layout libraries, anything with a
+runtime layout cost or unbounded style props (`sx`, `mt`/`px` soup).
+`<Grid>` above is NOT a framework — it is a thin, token-bound CSS-grid
+primitive with closed prop unions, the 2-D sibling of `<Stack>`.
+Tailwind plus the six primitives above are the entire layout API.
 
 ---
 

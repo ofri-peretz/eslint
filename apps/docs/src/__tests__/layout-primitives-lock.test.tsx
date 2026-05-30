@@ -16,12 +16,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Container } from '@interlace/ui/container';
-import { Section } from '@interlace/ui/section';
-import { Stack, Cluster } from '@interlace/ui/stack';
-import { SectionHeader } from '@interlace/ui/blocks/section-header';
+import { Container } from '../../../../packages/ui/src/primitives/container';
+import { Section } from '../../../../packages/ui/src/primitives/section';
+import { Stack, Cluster } from '../../../../packages/ui/src/primitives/stack';
+import { SectionHeader } from '../../../../packages/ui/src/blocks/section-header';
 
-const render = (el: React.ReactNode) => renderToStaticMarkup(el as React.ReactElement);
+const render = (el: React.ReactNode) =>
+  renderToStaticMarkup(el as React.ReactElement);
 
 // =========================================
 // CONTAINER — LAYOUT §2 (width contract) + §5 (density)
@@ -46,15 +47,21 @@ describe('Container: width contract (LAYOUT §2)', () => {
   });
 
   it('size="prose" caps at 65ch', () => {
-    expect(render(<Container size="prose">x</Container>)).toContain('max-w-[65ch]');
+    expect(render(<Container size="prose">x</Container>)).toContain(
+      'max-w-[65ch]',
+    );
   });
 
   it('size="content" caps at 1024px (the landing default)', () => {
-    expect(render(<Container size="content">x</Container>)).toContain('max-w-[1024px]');
+    expect(render(<Container size="content">x</Container>)).toContain(
+      'max-w-[1024px]',
+    );
   });
 
   it('size="wide" caps at 1280px (card-grid heavy sections)', () => {
-    expect(render(<Container size="wide">x</Container>)).toContain('max-w-[1280px]');
+    expect(render(<Container size="wide">x</Container>)).toContain(
+      'max-w-[1280px]',
+    );
   });
 
   it('size="full" removes the cap AND strips horizontal padding (full-bleed)', () => {
@@ -76,7 +83,11 @@ describe('Container: width contract (LAYOUT §2)', () => {
   });
 
   it('preserves user-supplied className alongside the variant classes', () => {
-    const html = render(<Container size="content" className="custom-x">x</Container>);
+    const html = render(
+      <Container size="content" className="custom-x">
+        x
+      </Container>,
+    );
     expect(html).toContain('max-w-[1024px]');
     expect(html).toContain('custom-x');
   });
@@ -125,7 +136,9 @@ describe('Section: vertical rhythm (LAYOUT §3, §5)', () => {
 
 describe('Section: tone + divider (LAYOUT §8)', () => {
   it('tone="muted" applies bg-fd-card/30', () => {
-    expect(render(<Section tone="muted">x</Section>)).toContain('bg-fd-card/30');
+    expect(render(<Section tone="muted">x</Section>)).toContain(
+      'bg-fd-card/30',
+    );
   });
 
   it('tone="inset" applies bg-fd-card/50 + backdrop-blur-sm', () => {
@@ -205,7 +218,9 @@ describe('Section: element + data attrs', () => {
 
   it('tags the rendered element with data-slot + data-spacing + data-tone + data-divider', () => {
     const html = render(
-      <Section spacing="tight" tone="inset" divider="both">x</Section>,
+      <Section spacing="tight" tone="inset" divider="both">
+        x
+      </Section>,
     );
     expect(html).toContain('data-slot="section"');
     expect(html).toContain('data-spacing="tight"');
@@ -220,20 +235,39 @@ describe('Section: element + data attrs', () => {
 
 describe('Stack: gap scale (LAYOUT §3)', () => {
   it.each([
-    ['xs', 'gap-2'],
-    ['sm', 'gap-4'],
-    ['md', 'gap-6'],
-    ['lg', 'gap-10'],
-    ['xl', 'gap-16'],
-    ['2xl', 'gap-24'],
-  ] as const)('gap="%s" produces %s', (gap, klass) => {
+    ['xs', 'gap-xs'],
+    ['sm', 'gap-sm'],
+    ['md', 'gap-md'],
+    ['lg', 'gap-lg'],
+    ['xl', 'gap-xl'],
+    ['2xl', 'gap-2xl'],
+  ] as const)('gap="%s" produces DS-token %s', (gap, klass) => {
     expect(render(<Stack gap={gap}>x</Stack>)).toContain(klass);
   });
 
-  it('defaults to vertical (flex-col) + gap="md" (gap-6)', () => {
+  it('gap maps to the --spacing tokens, NOT raw Tailwind gap-N', () => {
+    // Regression lock: re-keying to the foundation --spacing scale must not
+    // revert to Tailwind's default numeric scale.
+    const html = render(<Stack gap="md">x</Stack>);
+    expect(html).toContain('gap-md');
+    expect(html).not.toContain('gap-6');
+  });
+
+  it('defaults to vertical (flex-col) + gap="md" (gap-md)', () => {
     const html = render(<Stack>x</Stack>);
     expect(html).toContain('flex-col');
-    expect(html).toContain('gap-6');
+    expect(html).toContain('gap-md');
+  });
+
+  it('emits data-gap / data-align / data-justify styling hooks', () => {
+    const html = render(
+      <Stack gap="lg" align="center" justify="between">
+        x
+      </Stack>,
+    );
+    expect(html).toContain('data-gap="lg"');
+    expect(html).toContain('data-align="center"');
+    expect(html).toContain('data-justify="between"');
   });
 
   it('direction="horizontal" produces flex-row flex-wrap', () => {
@@ -250,9 +284,9 @@ describe('Cluster: horizontal sugar (LAYOUT §3)', () => {
     expect(html).toContain('flex-wrap');
   });
 
-  it('defaults to gap="sm" (gap-4) and align="center" (chip-row preset)', () => {
+  it('defaults to gap="sm" (gap-sm) and align="center" (chip-row preset)', () => {
     const html = render(<Cluster>x</Cluster>);
-    expect(html).toContain('gap-4');
+    expect(html).toContain('gap-sm');
     expect(html).toContain('items-center');
   });
 
@@ -284,7 +318,9 @@ describe('SectionHeader: structure (LAYOUT §1)', () => {
   });
 
   it('renders the eyebrow above the title when provided', () => {
-    const html = render(<SectionHeader title="t" eyebrow={<span>Featured</span>} />);
+    const html = render(
+      <SectionHeader title="t" eyebrow={<span>Featured</span>} />,
+    );
     expect(html).toContain('Featured');
     expect(html).toContain('mb-4 flex items-center justify-center');
   });

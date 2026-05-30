@@ -12,6 +12,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@interlace/ui/styles/tokens.css';
+@import '@interlace/ui/styles/foundation.css';
+@import '@interlace/ui/styles/preflight.css';
 @import '@interlace/ui/styles/theme.css';
 @import '@interlace/ui/styles/interlace-theme.css';
 
@@ -45,15 +47,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --radius-sm: var(--interlace-radius-sm);
-  --radius-md: var(--interlace-radius-md);
-  --radius-lg: var(--interlace-radius-lg);
-
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono:
-    ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
-    monospace;
+  /* radius (8/12/16) + font families (Inter/JetBrains) now come from the
+     shared @interlace/ui/styles/foundation.css — not redeclared here, so
+     docs/storybook/registry all resolve identically (was registry-only). */
 }
 
 /* Base resets */
