@@ -2,13 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   AlertDialog,
   AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
+  AlertDialogPortal,
+  AlertDialogBackdrop,
+  AlertDialogPopup,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
+  AlertDialogClose,
   MIN_VIEWPORT,
 } from '@interlace/ui/alert-dialog';
 import { Button } from '@interlace/ui/button';
@@ -41,19 +40,20 @@ export const Default: Story = {
   render: () => (
     <AlertDialog open={true}>
       <AlertDialogTrigger render={<Button variant="outline">Delete rule</Button>} />
-      <AlertDialogContent>
-        <AlertDialogHeader>
+      <AlertDialogPortal>
+        <AlertDialogBackdrop />
+        <AlertDialogPopup>
           <AlertDialogTitle>Delete this rule?</AlertDialogTitle>
           <AlertDialogDescription>
             This permanently removes the rule from your config. Existing
             violations will no longer be flagged. This action cannot be undone.
           </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel render={<Button variant="outline">Cancel</Button>} />
-          <AlertDialogAction render={<Button variant="destructive">Confirm Delete</Button>} />
-        </AlertDialogFooter>
-      </AlertDialogContent>
+          <div className="flex justify-end gap-sm pt-sm">
+            <AlertDialogClose render={<Button variant="outline">Cancel</Button>} />
+            <AlertDialogClose render={<Button variant="destructive">Confirm Delete</Button>} />
+          </div>
+        </AlertDialogPopup>
+      </AlertDialogPortal>
     </AlertDialog>
   ),
 };
@@ -69,34 +69,36 @@ export const Variants: Story = {
   render: () => (
     <div className="flex flex-col gap-md">
       <AlertDialog open={true}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogPortal>
+          <AlertDialogBackdrop />
+          <AlertDialogPopup>
             <AlertDialogTitle>Delete this rule?</AlertDialogTitle>
             <AlertDialogDescription>
               Destructive tone — removes the rule from your config permanently.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel render={<Button variant="outline">Cancel</Button>} />
-            <AlertDialogAction render={<Button variant="destructive">Confirm Delete</Button>} />
-          </AlertDialogFooter>
-        </AlertDialogContent>
+            <div className="flex justify-end gap-sm pt-sm">
+              <AlertDialogClose render={<Button variant="outline">Cancel</Button>} />
+              <AlertDialogClose render={<Button variant="destructive">Confirm Delete</Button>} />
+            </div>
+          </AlertDialogPopup>
+        </AlertDialogPortal>
       </AlertDialog>
 
       <AlertDialog open={true}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogPortal>
+          <AlertDialogBackdrop />
+          <AlertDialogPopup>
             <AlertDialogTitle>Publish this article?</AlertDialogTitle>
             <AlertDialogDescription>
               Primary tone — publishes to all subscribers. Cannot be undone
               once the syndication fan-out completes.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel render={<Button variant="outline">Cancel</Button>} />
-            <AlertDialogAction render={<Button>Confirm Publish</Button>} />
-          </AlertDialogFooter>
-        </AlertDialogContent>
+            <div className="flex justify-end gap-sm pt-sm">
+              <AlertDialogClose render={<Button variant="outline">Cancel</Button>} />
+              <AlertDialogClose render={<Button>Confirm Publish</Button>} />
+            </div>
+          </AlertDialogPopup>
+        </AlertDialogPortal>
       </AlertDialog>
     </div>
   ),
@@ -127,19 +129,20 @@ export const BelowMinViewport: Story = {
         <AlertDialogTrigger
           render={<Button variant="outline">{`< ${MIN_VIEWPORT}px — dev outline`}</Button>}
         />
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogPortal>
+          <AlertDialogBackdrop />
+          <AlertDialogPopup>
             <AlertDialogTitle>Delete this rule?</AlertDialogTitle>
             <AlertDialogDescription>
               Rendered inside a sub-min-viewport container — the dashed
               preflight outline should mark this surface in dev mode.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel render={<Button variant="outline">Cancel</Button>} />
-            <AlertDialogAction render={<Button variant="destructive">Confirm Delete</Button>} />
-          </AlertDialogFooter>
-        </AlertDialogContent>
+            <div className="flex justify-end gap-sm pt-sm">
+              <AlertDialogClose render={<Button variant="outline">Cancel</Button>} />
+              <AlertDialogClose render={<Button variant="destructive">Confirm Delete</Button>} />
+            </div>
+          </AlertDialogPopup>
+        </AlertDialogPortal>
       </AlertDialog>
     </div>
   ),
