@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { DevToArticle } from '@/lib/articles.types';
+import type { DevToArticle } from '../lib/articles.types';
 import {
   ARTICLES_PER_PAGE,
   DEFAULT_PARAMS,
@@ -24,7 +24,7 @@ import {
   serializeArticleParams,
   toggleTagInParams,
   type ArticleParams,
-} from '@/lib/articles.filter';
+} from '../lib/articles.filter';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fixtures

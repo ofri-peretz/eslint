@@ -16,7 +16,7 @@ import { resolve } from 'node:path';
 import {
   validatePluginTemplateConformance,
   type RequiredPage,
-} from '#interlace/validators/plugin-template-conformance';
+} from '../../.interlace/validators/plugin-template-conformance';
 
 const ESLINT_REQUIRED_PAGES: RequiredPage[] = [
   { file: 'index.mdx', required: true, rationale: 'Plugin landing page.' },

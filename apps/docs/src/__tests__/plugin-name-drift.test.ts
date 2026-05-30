@@ -16,7 +16,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
-import { validatePluginNameDrift } from '#interlace/validators/plugin-name-drift';
+import { validatePluginNameDrift } from '../../.interlace/validators/plugin-name-drift';
 import { PLUGIN_PACKAGES } from '../lib/plugins';
 
 const ALLOWED_THIRD_PARTY = [

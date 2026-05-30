@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Hero section render-time lock
  *
@@ -24,8 +25,12 @@
  * (animation budget reserved for the primary).
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, cleanup } from '@testing-library/react';
+
+// Ensure DOM is cleaned between tests even when running without the docs
+// vitest config (which normally handles this via environment isolation).
+afterEach(() => cleanup());
 
 // The cosmic background uses <canvas> + IntersectionObserver — neither is
 // reliable in jsdom and we don't care about them here. Stub the aceternity
@@ -36,7 +41,7 @@ vi.mock('@interlace/ui/aceternity/stars-background', () => ({
   Meteors: () => null,
 }));
 
-import { HeroSection } from '@/components/home/hero-section';
+import { HeroSection } from '../components/home/hero-section';
 
 describe('HeroSection — DOM render lock', () => {
   it('renders exactly two ShimmerButton instances', () => {

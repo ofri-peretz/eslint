@@ -11,9 +11,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
-const docsRoot = process.cwd();
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+// __dirname = apps/docs/tests → ../  = apps/docs
+const docsRoot = resolve(__dirname, '..');
 
 describe('Configuration Files: ESLint Compliance', () => {
   describe('postcss.config.mjs', () => {

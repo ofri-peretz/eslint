@@ -12,7 +12,11 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const REPO_ROOT = resolve(__dirname, '../../../..');
 
 // =========================================
 // ACETERNITY UI SPECIFICATION
@@ -146,8 +150,8 @@ describe('BackgroundBeamsWithCollision: Aceternity UI Specification Compliance',
 
 describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
 
   it('component file exists', () => {
@@ -298,8 +302,8 @@ describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
 
 describe('BackgroundBeamsWithCollision: Container Structure', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -373,8 +377,8 @@ describe('BackgroundBeamsWithCollision: Container Structure', () => {
 
 describe('BackgroundBeamsWithCollision: Theme Support', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -471,8 +475,8 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
 
 describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -577,8 +581,8 @@ describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
 
 describe('BackgroundBeamsWithCollision: Beam Animation', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -686,8 +690,8 @@ describe('BackgroundBeamsWithCollision: Beam Animation', () => {
 
 describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -817,8 +821,8 @@ describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
 
 describe('BackgroundBeamsWithCollision: hideCollisionSurface Prop', () => {
   const componentPath = join(
-    process.cwd(),
-    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    REPO_ROOT,
+    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -862,8 +866,9 @@ describe('BackgroundBeamsWithCollision: hideCollisionSurface Prop', () => {
 });
 
 describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
+  const APP_ROOT = resolve(__dirname, '../..');
   const articlesClientPath = join(
-    process.cwd(),
+    APP_ROOT,
     'src/components/ArticlesClient.tsx'
   );
   let articlesSource: string;

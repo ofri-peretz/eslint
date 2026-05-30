@@ -10,16 +10,20 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
 
 describe('Stats page: structure lock', () => {
-  const pagePath = join(process.cwd(), 'src/app/stats/page.tsx');
-  const layoutPath = join(process.cwd(), 'src/app/stats/layout.tsx');
+  const pagePath = join(APP_ROOT, 'src/app/stats/page.tsx');
+  const layoutPath = join(APP_ROOT, 'src/app/stats/layout.tsx');
   const impactCardPath = join(
-    process.cwd(),
+    APP_ROOT,
     'src/components/stats/impact-card.tsx',
   );
-  const helperPath = join(process.cwd(), 'src/lib/stats-page.ts');
+  const helperPath = join(APP_ROOT, 'src/lib/stats-page.ts');
   let pageSource: string;
   let layoutSource: string;
   let impactCardSource: string;

@@ -20,7 +20,7 @@ import { resolve } from 'node:path';
 import {
   validateRuleDocConformance,
   DEFAULT_REQUIRED_SECTIONS,
-} from '#interlace/validators/rule-doc-conformance';
+} from '../../.interlace/validators/rule-doc-conformance';
 
 const PACKAGES_ROOT = resolve(__dirname, '..', '..', '..', '..', 'packages');
 

@@ -12,7 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
-import { validateInterlaceDomainDrift } from '#interlace/validators/interlace-domain-drift';
+import { validateInterlaceDomainDrift } from '../../.interlace/validators/interlace-domain-drift';
 import { SITE_ORIGIN, SIBLING_ORIGINS } from '../lib/site-config';
 
 describe('interlace-domain drift (eslint content/docs)', () => {

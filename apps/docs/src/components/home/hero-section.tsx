@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HeroCosmic } from '@interlace/ui/patterns/hero-cosmic';
 import { ShimmerButton } from '@interlace/ui/magicui/shimmer-button';
-import { track } from '@/lib/analytics';
+import { track } from '../../lib/analytics';
 
 /**
  * Site landing hero — branded copy + CTAs over the @interlace/ui cosmic

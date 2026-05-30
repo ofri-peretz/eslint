@@ -10,13 +10,17 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { FLAGSHIP_RULES } from '../lib/scorecard';
 
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+
 describe('Scorecard page: structure lock', () => {
-  const pagePath = join(process.cwd(), 'src/app/scorecard/page.tsx');
-  const layoutPath = join(process.cwd(), 'src/app/scorecard/layout.tsx');
+  const pagePath = join(APP_ROOT, 'src/app/scorecard/page.tsx');
+  const layoutPath = join(APP_ROOT, 'src/app/scorecard/layout.tsx');
   let pageSource: string;
   let layoutSource: string;
 
@@ -100,7 +104,7 @@ describe('Scorecard page: structure lock', () => {
 });
 
 describe('Scorecard page: flagship-list coverage', () => {
-  const pagePath = join(process.cwd(), 'src/app/scorecard/page.tsx');
+  const pagePath = join(APP_ROOT, 'src/app/scorecard/page.tsx');
   let pageSource: string;
 
   beforeAll(() => {
@@ -117,7 +121,7 @@ describe('Scorecard page: flagship-list coverage', () => {
 });
 
 describe('Scorecard nav link', () => {
-  const navPath = join(process.cwd(), 'src/lib/layout.shared.tsx');
+  const navPath = join(APP_ROOT, 'src/lib/layout.shared.tsx');
   let navSource: string;
 
   beforeAll(() => {

@@ -15,15 +15,18 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { getTweet } from 'react-tweet/api';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const DOCS_ROOT = join(process.cwd(), 'src');
-const CONTENT_ROOT = join(process.cwd(), 'content');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const DOCS_ROOT = join(APP_ROOT, 'src');
+const CONTENT_ROOT = join(APP_ROOT, 'content');
 
 // Patterns to find tweet embeds in source files
 const TWEET_PATTERNS = [
@@ -315,7 +318,7 @@ describe('Social Embeds - Static Validation', () => {
 // ============================================================================
 
 describe('Social Embeds - Cache Validation', () => {
-  const CACHE_FILE = join(process.cwd(), 'src/data/cached-tweets.json');
+  const CACHE_FILE = join(APP_ROOT, 'src/data/cached-tweets.json');
   
   it('should have cached-tweets.json file', () => {
     expect(existsSync(CACHE_FILE)).toBe(true);
@@ -512,7 +515,7 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
       
       for (const { path, context } of articles) {
         const existing = articleReferences.get(path) || { files: [], contexts: [] };
-        const relativePath = getRelativePath(file, process.cwd());
+        const relativePath = getRelativePath(file, APP_ROOT);
         
         if (!existing.files.includes(relativePath)) {
           existing.files.push(relativePath);
@@ -587,7 +590,7 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
 });
 
 describe('Social Embeds - DEV.to Cache Validation', () => {
-  const CACHE_FILE = join(process.cwd(), 'src/data/cached-devto-articles.json');
+  const CACHE_FILE = join(APP_ROOT, 'src/data/cached-devto-articles.json');
   
   it('should have cached-devto-articles.json file', () => {
     expect(existsSync(CACHE_FILE)).toBe(true);

@@ -15,10 +15,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { globSync } from 'glob';
 
-const ROOT = join(process.cwd(), 'src');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const ROOT = resolve(__dirname, '../../src');
 const SCAN_GLOB = '**/*.{ts,tsx}';
 // `__tests__` itself is excluded — these tests reference the forbidden
 // patterns as string literals to assert their absence elsewhere.

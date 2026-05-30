@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Skip-link render-time test
  *
@@ -17,8 +18,12 @@
  * contract.
  */
 
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, cleanup } from '@testing-library/react';
+
+// Ensure DOM is cleaned between tests even when running without
+// the docs vitest config (which sets environment: 'jsdom' globally).
+afterEach(() => cleanup());
 
 // Mirror of the skip-link snippet in `apps/docs/src/app/layout.tsx`.
 // If the layout's snippet drifts from this, the source-text lock will

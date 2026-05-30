@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Theme-Time Behavior Lock Tests
  *
@@ -11,8 +12,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { join } from 'path';
-import { getTimeBasedTheme, THEME_TIME_INLINE_SCRIPT } from '@/lib/theme-time';
+import { join, resolve } from 'path';
+import { getTimeBasedTheme, THEME_TIME_INLINE_SCRIPT } from '../lib/theme-time';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
 
 describe('getTimeBasedTheme: hour boundary contract', () => {
   const at = (hour: number, minute = 0) =>
@@ -137,7 +142,7 @@ describe('THEME_TIME_INLINE_SCRIPT: executable behaviour', () => {
 
 describe('layout.tsx: time-based theme integration', () => {
   const layout = readFileSync(
-    join(process.cwd(), 'src/app/layout.tsx'),
+    join(APP_ROOT, 'src/app/layout.tsx'),
     'utf-8'
   );
 

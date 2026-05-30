@@ -15,13 +15,16 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CONTENT_ROOT = join(process.cwd(), 'content/docs');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const CONTENT_ROOT = join(APP_ROOT, 'content/docs');
 const GETTING_STARTED_ROOT = join(CONTENT_ROOT, 'getting-started');
 
 // External link patterns that should be validated differently

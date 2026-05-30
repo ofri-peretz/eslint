@@ -18,11 +18,16 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
-const articlesClientPath = join(process.cwd(), 'src/components/ArticlesClient.tsx');
-const articlesPagePath = join(process.cwd(), 'src/app/articles/page.tsx');
-const articlesFilterPath = join(process.cwd(), 'src/lib/articles.filter.ts');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const REPO_ROOT = resolve(__dirname, '../../../..');
+
+const articlesClientPath = join(APP_ROOT, 'src/components/ArticlesClient.tsx');
+const articlesPagePath = join(APP_ROOT, 'src/app/articles/page.tsx');
+const articlesFilterPath = join(APP_ROOT, 'src/lib/articles.filter.ts');
 let articlesSource: string;
 let pageSource: string;
 let filterSource: string;
@@ -415,7 +420,7 @@ describe('ArticlesClient: Visual Identity Lock', () => {
     // packages/ui/src/blocks/article-card.tsx. Storybook a11y enforces the
     // visual contract there. ArticlesClient just consumes the block.
     const blockSource = readFileSync(
-      join(process.cwd(), '../../packages/ui/src/blocks/article-card.tsx'),
+      join(REPO_ROOT, 'packages/ui/src/blocks/article-card.tsx'),
       'utf-8',
     );
     expect(blockSource).toContain('group-hover');
@@ -456,7 +461,7 @@ describe('ArticlesClient: Accessibility Lock', () => {
     // Image rendering moved into the UI package's `ArticleCard` block — alt
     // attributes are enforced there + by the Storybook a11y workflow.
     const blockSource = readFileSync(
-      join(process.cwd(), '../../packages/ui/src/blocks/article-card.tsx'),
+      join(REPO_ROOT, 'packages/ui/src/blocks/article-card.tsx'),
       'utf-8',
     );
     expect(blockSource).toContain('alt=');
