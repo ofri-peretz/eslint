@@ -10,10 +10,10 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 34,
+      "rules": 35,
       "description": "Security-focused ESLint plugin for Node",
       "category": "security",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "published": true
     },
     {
@@ -98,7 +98,7 @@
     },
     {
       "name": "eslint-plugin-conventions",
-      "rules": 14,
+      "rules": 15,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
       "version": "4.0.7",
@@ -161,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 357,
+  "totalRules": 359,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-05-29T21:35:29.261Z"
+  "generatedAt": "2026-05-29T23:50:27.722Z"
 }
