@@ -512,6 +512,74 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-ssrf',
+    shortRuleName: 'no-ssrf',
+    cases: [
+      {
+        label: 'TP: fetch with user-controlled URL parameter',
+        hypothesis: 'Function param named "url" with URL substring → fire',
+        expected: 'fire',
+        code: `
+          async function fetchData(url) {
+            const res = await fetch(url);
+            return res.json();
+          }
+        `,
+      },
+      {
+        label: 'TP: axios.get with endpoint param',
+        hypothesis: 'Function param named "endpoint" → fire',
+        expected: 'fire',
+        code: `
+          async function proxy(endpoint) {
+            return axios.get(endpoint);
+          }
+        `,
+      },
+      {
+        label: 'FP: fetch with literal URL',
+        hypothesis: 'Hardcoded string → safe, should not fire',
+        expected: 'silent',
+        code: `
+          fetch('https://api.stripe.com/v1/charges');
+        `,
+      },
+      {
+        label: 'FP: fetch after allowlist validation',
+        hypothesis: 'URL validated against ALLOWED_HOSTS → should not fire',
+        expected: 'silent',
+        code: `
+          const ALLOWED_HOSTS = ['api.stripe.com', 'api.twilio.com'];
+          const url = new URL(userUrl);
+          if (!ALLOWED_HOSTS.includes(url.hostname)) throw new Error('Host not allowed');
+          fetch(userUrl);
+        `,
+      },
+      {
+        label: 'FP: fetch with config variable (non-user-input name)',
+        hypothesis: 'Variable name "config" has no URL substring → skip',
+        expected: 'silent',
+        code: `
+          const config = getConfig();
+          fetch(config);
+        `,
+      },
+      {
+        label: 'TP: http.request with user URL',
+        hypothesis: 'http.request(userUrl) — direct SSRF via Node http module',
+        expected: 'fire',
+        code: `
+          const http = require('http');
+          function makeRequest(userUrl) {
+            http.request(userUrl);
+          }
+        `,
+      },
+    ],
+  },
+  {
     pluginName: 'eslint-plugin-jwt',
     pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
     fullRuleName: 'jwt/no-algorithm-none',
