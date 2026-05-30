@@ -22,7 +22,7 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'noMagicNumber';
+type MessageIds = 'noMagicNumber' | 'extractConst';
 
 export interface Options {
   /**
@@ -49,6 +49,32 @@ type RuleOptions = [Options?];
 /** Numbers that are universally idiomatic in JS/TS and need no naming. */
 const DEFAULT_IGNORE = new Set<number>([-1, 0, 1, 2]);
 
+/** Build a SCREAMING_SNAKE_CASE const name from a numeric value. */
+function constNameFor(value: number): string {
+  // e.g. 5000 → MAGIC_5000 · -3 → MAGIC_NEG_3 · 1.5 → MAGIC_1_5
+  const prefix = value < 0 ? 'MAGIC_NEG_' : 'MAGIC_';
+  const digits = String(Math.abs(value)).replace('.', '_');
+  return `${prefix}${digits}`;
+}
+
+/**
+ * Walk up the AST to find the nearest statement ancestor that can be used
+ * as the insertion point for a const declaration.
+ */
+function nearestStatement(node: TSESTree.Node): TSESTree.Statement | null {
+  const STATEMENT_TYPES = new Set([
+    'ExpressionStatement', 'VariableDeclaration', 'ReturnStatement',
+    'IfStatement', 'WhileStatement', 'ForStatement', 'ForInStatement',
+    'ForOfStatement', 'ThrowStatement', 'SwitchStatement',
+  ]);
+  let current: TSESTree.Node | undefined = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  while (current) {
+    if (STATEMENT_TYPES.has(current.type)) return current as TSESTree.Statement;
+    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  }
+  return null;
+}
+
 export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
   name: 'no-magic-numbers',
   meta: {
@@ -58,6 +84,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow magic numbers (numeric literals without a named constant)',
     },
+    hasSuggestions: true,
     messages: {
       noMagicNumber: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -68,6 +95,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         fix: 'const TIMEOUT_MS = {{value}}; // use the named constant everywhere',
         documentationLink: 'https://refactoring.guru/replace-magic-literal',
       }),
+      extractConst: 'Extract {{value}} to a named constant ({{constName}})',
     },
     schema: [
       {
@@ -199,10 +227,32 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         if (isBitwiseContext(node)) return;
         if (isPropertyKey(node)) return;
 
+        const constName = constNameFor(value);
+        const sourceCode = context.sourceCode;
+
         context.report({
           node,
           messageId: 'noMagicNumber',
           data: { value: String(value) },
+          suggest: [
+            {
+              messageId: 'extractConst',
+              data: { value: String(value), constName },
+              fix(fixer) {
+                const stmt = nearestStatement(node);
+                if (!stmt) return null;
+                // Determine indentation from the statement's first token.
+                const firstToken = sourceCode.getFirstToken(stmt);
+                if (!firstToken) return null;
+                const col = firstToken.loc.start.column;
+                const indent = ' '.repeat(col);
+                return [
+                  fixer.insertTextBefore(stmt, `const ${constName} = ${value};\n${indent}`),
+                  fixer.replaceText(node, constName),
+                ];
+              },
+            },
+          ],
         });
       },
     };
