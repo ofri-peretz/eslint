@@ -1,5 +1,5 @@
 /**
- * Growth conversion lock — CI guardrail for GROWTH_PHILOSOPHY.md.
+ * Growth conversion lock — CI guardrail for the npm→GitHub conversion funnel.
  *
  * The ecosystem runs at ~29K downloads/month against a handful of GitHub stars
  * (see agents-repo metrics/surge-analysis-2026-05.md). The conversion funnel —
@@ -7,10 +7,12 @@
  * surface, and per CLAUDE.md a CTA that isn't asserted by a test silently
  * regresses the next time a baseline sync or refactor runs.
  *
- * This lock pins the funnel's load-bearing markers:
+ * This lock pins the funnel's load-bearing markers on the surfaces THIS repo owns:
  *   - the root README carries the star/follow CTA + a live GitHub-stars badge,
- *   - every published eslint-plugin-* README carries the INTERLACE:STAR_CTA block,
- *   - GROWTH_PHILOSOPHY.md exists and states the North Star + the landscape-framing rule.
+ *   - every published eslint-plugin-* README carries the INTERLACE:STAR_CTA block.
+ *
+ * The growth strategy itself (the "why") lives in the agents repo at
+ * footprint/strategy/growth-philosophy.md — not here.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -44,7 +46,9 @@ describe('growth conversion lock', () => {
     });
 
     it('shows a live GitHub-stars badge (social proof)', () => {
-      expect(readme).toContain('img.shields.io/github/stars/ofri-peretz/eslint');
+      expect(readme).toContain(
+        'img.shields.io/github/stars/ofri-peretz/eslint',
+      );
     });
   });
 
@@ -61,20 +65,5 @@ describe('growth conversion lock', () => {
         expect(readFileSync(path, 'utf-8')).toContain(STAR_CTA_MARKER);
       },
     );
-  });
-
-  describe('GROWTH_PHILOSOPHY.md is codified', () => {
-    const p = join(MONOREPO_ROOT, 'distribution', 'GROWTH_PHILOSOPHY.md');
-
-    it('exists', () => {
-      expect(existsSync(p)).toBe(true);
-    });
-
-    it('states the North Star and the landscape-framing rule', () => {
-      const src = readFileSync(p, 'utf-8');
-      expect(src).toContain('Convert silent adoption into visible community leadership');
-      expect(src).toContain('Landscape framing, never threat framing');
-      expect(src).toContain('download-to-star ratio');
-    });
   });
 });
