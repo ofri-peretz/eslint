@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment."
+        description: 'Target environment.'
         required: true
         type: choice
         options: [preview, production]
@@ -31,7 +31,7 @@ on:
       ref:
         description: "Git ref to deploy (default: this workflow's checkout — typically main for production)."
         required: false
-        default: ""
+        default: ''
 
 concurrency:
   # Don't overlap two prod deploys; preview deploys can coexist (one per ref).
@@ -40,7 +40,7 @@ concurrency:
 
 permissions:
   contents: read
-  deployments: write   # GitHub Deployments API → record the deploy URL
+  deployments: write # GitHub Deployments API → record the deploy URL
 
 jobs:
   deploy:
@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
 
       - name: Pull Vercel environment metadata
         run: |
@@ -72,6 +72,37 @@ jobs:
             --yes \
             --environment=${{ inputs.environment }} \
             --token="$VERCEL_TOKEN"
+
+      # ─── Analytics regression lock (env) ───────────────────────────────
+      # The docs site went dark in PostHog because NEXT_PUBLIC_POSTHOG_KEY
+      # was stored as a *Sensitive* Vercel var: `vercel pull` returns an
+      # EMPTY value for sensitive vars, so `vercel build` inlines an empty
+      # key and `initPostHog()` silently no-ops (`if (!key) return`). Catch
+      # that here — before we ship a build with dark analytics. A NEXT_PUBLIC_*
+      # key is public by definition and MUST be non-sensitive so the build
+      # can read it. See CLAUDE.md "Regressions are the issue. Lock
+      # everything you fix." Scoped to production (the surface that must
+      # report); preview deploys are not gated on analytics.
+      - name: Verify PostHog key present in production env
+        if: inputs.environment == 'production'
+        run: |
+          set -euo pipefail
+          ENVFILE=".vercel/.env.production.local"
+          [ -f "$ENVFILE" ] || ENVFILE="apps/docs/.vercel/.env.production.local"
+          if [ ! -f "$ENVFILE" ]; then
+            echo "::error::Expected $ENVFILE from 'vercel pull' but it is missing."
+            exit 1
+          fi
+          KEY="$(grep -E '^NEXT_PUBLIC_POSTHOG_KEY=' "$ENVFILE" | head -1 | cut -d= -f2- | tr -d '"' || true)"
+          if [ -z "$KEY" ]; then
+            echo "::error::NEXT_PUBLIC_POSTHOG_KEY is empty in the production env — analytics would be dark."
+            echo "::error::Fix: vercel env rm NEXT_PUBLIC_POSTHOG_KEY production && vercel env add NEXT_PUBLIC_POSTHOG_KEY production --no-sensitive (value = the PostHog project's phc_ api_token). Sensitive vars are unreadable by 'vercel build'."
+            exit 1
+          fi
+          case "$KEY" in
+            phc_*) echo "✅ NEXT_PUBLIC_POSTHOG_KEY present (${KEY:0:8}…)" ;;
+            *) echo "::error::NEXT_PUBLIC_POSTHOG_KEY is set but does not look like a PostHog 'phc_' key." ; exit 1 ;;
+          esac
 
       - name: Build (${{ inputs.environment }})
         run: |
@@ -82,6 +113,25 @@ jobs:
             npx vercel build --prod --token="$VERCEL_TOKEN"
           else
             npx vercel build --token="$VERCEL_TOKEN"
+          fi
+
+      # ─── Analytics regression lock (built bundle) ──────────────────────
+      # Ultimate truth: the public phc_ key must actually be inlined into a
+      # client-served JS chunk. If the env check above ever drifts (path
+      # change, new var name), this catches dark analytics at the artifact
+      # level. Greps the Build Output API static surface for a phc_ token.
+      - name: Verify PostHog key inlined in built client bundle
+        if: inputs.environment == 'production'
+        run: |
+          set -euo pipefail
+          OUT=".vercel/output/static"
+          [ -d "$OUT" ] || OUT="apps/docs/.vercel/output/static"
+          [ -d "$OUT" ] || OUT=".vercel/output"
+          if grep -rqlE 'phc_[A-Za-z0-9]{30,}' "$OUT" 2>/dev/null; then
+            echo "✅ PostHog phc_ key inlined in the built client bundle ($OUT)."
+          else
+            echo "::error::No 'phc_' PostHog key found under $OUT — the production build has dark analytics. See the env step above."
+            exit 1
           fi
 
       # ─── Pre-deploy smoke gate ─────────────────────────────────────────
