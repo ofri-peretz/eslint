@@ -11,7 +11,11 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
 
 const CHART_FILES = [
   'downloads-by-package.tsx',
@@ -19,7 +23,7 @@ const CHART_FILES = [
   'effort-stars-correlation.tsx',
 ] as const;
 
-const chartsDir = join(process.cwd(), 'src/components/charts');
+const chartsDir = join(APP_ROOT, 'src/components/charts');
 
 describe.each(CHART_FILES)('Chart %s: shadcn conformance', (file) => {
   let src: string;

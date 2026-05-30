@@ -19,7 +19,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import {
   PLAYGROUND_SNIPPETS,
   getPluginPrefix,
@@ -30,7 +30,9 @@ import {
   getSnippetBySlug,
 } from '../components/play/snippets';
 
-const ROOT = join(process.cwd(), 'src/components/play');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const ROOT = resolve(__dirname, '../../src/components/play');
 
 function readPlayFile(name: string): string {
   return readFileSync(join(ROOT, name), 'utf-8');

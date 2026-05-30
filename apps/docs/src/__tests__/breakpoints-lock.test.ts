@@ -25,9 +25,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, extname } from 'path';
+import { join, extname, resolve } from 'path';
 
-const PROJECT_ROOT = process.cwd();
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const PROJECT_ROOT = resolve(__dirname, '../..');
 const SRC_DIR = join(PROJECT_ROOT, 'src');
 const PACKAGE_JSON_PATH = join(PROJECT_ROOT, 'package.json');
 

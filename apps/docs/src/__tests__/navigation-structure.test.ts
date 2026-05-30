@@ -13,13 +13,16 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CONTENT_ROOT = join(process.cwd(), 'content/docs/getting-started');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const CONTENT_ROOT = join(APP_ROOT, 'content/docs/getting-started');
 
 // Pattern for valid separator strings: ---Name--- or ---Name Name---
 const SEPARATOR_PATTERN = /^---[A-Za-z][A-Za-z0-9\s]*---$/;

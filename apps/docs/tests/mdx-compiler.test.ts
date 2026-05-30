@@ -162,7 +162,7 @@ describe('MDX Compiler Module', () => {
       const path = await import('path');
       
       const modulePath = path.resolve(
-        process.cwd(),
+        path.resolve(__dirname, '..'),
         'src/lib/mdx-compiler.tsx'
       );
       const source = await fs.readFile(modulePath, 'utf-8');
@@ -180,7 +180,7 @@ describe('MDX Compiler Module', () => {
       const path = await import('path');
 
       const modulePath = path.resolve(
-        process.cwd(),
+        path.resolve(__dirname, '..'),
         'src/lib/mdx-compiler.tsx'
       );
       const source = await fs.readFile(modulePath, 'utf-8');

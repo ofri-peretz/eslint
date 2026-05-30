@@ -10,14 +10,18 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
 
 // =========================================
 // HOMEPAGE STRUCTURE LOCK
 // =========================================
 
 describe('Homepage: Structure Lock', () => {
-  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const homepagePath = join(APP_ROOT, 'src/app/(home)/page.tsx');
   let homepageSource: string;
 
   beforeAll(() => {
@@ -203,8 +207,8 @@ describe('HeroSection: Structure Lock', () => {
   // assert against all three as one logical unit.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
-    process.cwd(),
-    '../../packages/ui/src/patterns/hero-cosmic.tsx',
+    resolve(__dirname, '../../../..'),
+    'packages/ui/src/patterns/hero-cosmic.tsx',
   );
   const daylightPath = join(
     process.cwd(),
@@ -452,8 +456,8 @@ describe('Homepage: Accessibility Lock', () => {
   // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
-    process.cwd(),
-    '../../packages/ui/src/patterns/hero-cosmic.tsx',
+    resolve(__dirname, '../../../..'),
+    'packages/ui/src/patterns/hero-cosmic.tsx',
   );
   const daylightPath = join(
     process.cwd(),
@@ -496,7 +500,7 @@ describe('Homepage: Accessibility Lock', () => {
 // =========================================
 
 describe('Homepage: Code Block WCAG Compliance', () => {
-  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const homepagePath = join(APP_ROOT, 'src/app/(home)/page.tsx');
   let homepageSource: string;
 
   beforeAll(() => {
@@ -545,8 +549,8 @@ describe('HeroSection: Meteors Lock', () => {
   // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
-    process.cwd(),
-    '../../packages/ui/src/patterns/hero-cosmic.tsx',
+    resolve(__dirname, '../../../..'),
+    'packages/ui/src/patterns/hero-cosmic.tsx',
   );
   const daylightPath = join(
     process.cwd(),
@@ -779,7 +783,7 @@ describe('HeroSection: Daylight Surface Lock', () => {
 // =========================================
 
 describe('Homepage: Visual Identity Lock', () => {
-  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const homepagePath = join(APP_ROOT, 'src/app/(home)/page.tsx');
   let homepageSource: string;
 
   beforeAll(() => {
@@ -904,8 +908,8 @@ describe('Homepage: Visual Identity Lock', () => {
 // ============================================================
 
 describe('Homepage: no raw color literals in JSX attributes (R19)', () => {
-  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
-  const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
+  const homepagePath = join(APP_ROOT, 'src/app/(home)/page.tsx');
+  const heroPath = join(APP_ROOT, 'src/components/home/hero-section.tsx');
   let homepageSource: string;
   let heroSource: string;
 
@@ -946,7 +950,7 @@ describe('Homepage: no raw color literals in JSX attributes (R19)', () => {
 
 describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
   let homepageSource: string;
-  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+  const homepagePath = join(APP_ROOT, 'src/app/(home)/page.tsx');
 
   beforeAll(() => {
     homepageSource = readFileSync(homepagePath, 'utf-8');

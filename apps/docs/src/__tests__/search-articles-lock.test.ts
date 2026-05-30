@@ -18,13 +18,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { createSearchAPI } from 'fumadocs-core/search/server';
-import articlesData from '@/data/articles.json';
-import type { CachedArticlesData } from '@/lib/articles.types';
+import articlesData from '../data/articles.json';
+import type { CachedArticlesData } from '../lib/articles.types';
 import {
   buildArticleSearchIndexes,
   ARTICLE_SEARCH_TAG,
   ARTICLE_BREADCRUMB,
-} from '@/lib/search-articles';
+} from '../lib/search-articles';
 
 const { articles } = articlesData as unknown as CachedArticlesData;
 

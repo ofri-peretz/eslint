@@ -20,9 +20,11 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
-const ROOT = process.cwd();
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const ROOT = resolve(__dirname, '../..');
 
 function read(rel: string): string {
   return readFileSync(join(ROOT, rel), 'utf-8');

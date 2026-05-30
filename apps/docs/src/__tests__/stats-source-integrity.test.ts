@@ -7,9 +7,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-const dataDir = join(process.cwd(), 'src/data');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const dataDir = join(APP_ROOT, 'src/data');
 
 function readJSON<T>(file: string): T {
   return JSON.parse(readFileSync(join(dataDir, file), 'utf-8')) as T;

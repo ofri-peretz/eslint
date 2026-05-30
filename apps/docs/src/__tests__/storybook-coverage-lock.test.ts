@@ -20,7 +20,10 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync } from 'fs';
 import { join, resolve } from 'path';
 
-const REPO_ROOT = resolve(process.cwd(), '../..');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+// __dirname = apps/docs/src/__tests__ → ../../../.. = repo root
+const REPO_ROOT = resolve(__dirname, '../../../..');
 const PRIMITIVES_DIR = join(REPO_ROOT, 'packages/ui/src/primitives');
 const STORIES_DIR = join(REPO_ROOT, 'apps/storybook/src/stories/primitives');
 

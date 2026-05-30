@@ -13,6 +13,11 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { execSync } from 'child_process';
 
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const REPO_ROOT = resolve(__dirname, '../../../..');
+
 /**
  * Read the docs app's `global.css` together with every CSS file it imports
  * from `@interlace/ui/styles`. We moved most fumadocs/TOC overrides into
@@ -22,13 +27,11 @@ import { execSync } from 'child_process';
  */
 function readGlobalCSS(): string {
   const docsGlobal = readFileSync(
-    join(process.cwd(), 'src/app/global.css'),
+    join(APP_ROOT, 'src/app/global.css'),
     'utf-8',
   );
   const uiStylesDir = resolve(
-    process.cwd(),
-    '..',
-    '..',
+    REPO_ROOT,
     'packages',
     'ui',
     'styles',
@@ -140,15 +143,15 @@ describe('Tailwind CSS Compilation', () => {
   let buildOutputDir: string;
 
   beforeAll(() => {
-    buildOutputDir = join(process.cwd(), '.next');
-    
+    buildOutputDir = join(APP_ROOT, '.next');
+
     if (!existsSync(buildOutputDir)) {
       console.log('Build output not found, running build...');
       try {
-        execSync('npm run build', { 
-          cwd: process.cwd(),
+        execSync('npm run build', {
+          cwd: APP_ROOT,
           stdio: 'pipe',
-          timeout: 120000 
+          timeout: 120000
         });
       } catch {
         console.warn('Build failed or skipped - checking dev mode output');
@@ -198,7 +201,7 @@ describe('Source File Configuration', () => {
   });
 
   it('should have fumadocs-ui in tailwind content paths', () => {
-    const configPath = join(process.cwd(), 'tailwind.config.mjs');
+    const configPath = join(APP_ROOT, 'tailwind.config.mjs');
     
     if (existsSync(configPath)) {
       const config = readFileSync(configPath, 'utf-8');
@@ -221,7 +224,7 @@ describe('Source File Configuration', () => {
   describe('Brand Color Variables', () => {
     it('should define primary color for light mode', () => {
       const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
+        join(APP_ROOT, 'src/app/global.css'),
         'utf-8'
       );
       
@@ -231,7 +234,7 @@ describe('Source File Configuration', () => {
 
     it('should define primary color for dark mode', () => {
       const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
+        join(APP_ROOT, 'src/app/global.css'),
         'utf-8'
       );
       
@@ -241,7 +244,7 @@ describe('Source File Configuration', () => {
 
     it('should define foreground color', () => {
       const globalCSS = readFileSync(
-        join(process.cwd(), 'src/app/global.css'),
+        join(APP_ROOT, 'src/app/global.css'),
         'utf-8'
       );
       

@@ -12,7 +12,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const REPO_ROOT = resolve(__dirname, '../../../..');
 
 // =========================================
 // ACETERNITY UI SPECIFICATION
@@ -103,7 +107,7 @@ describe('ShootingStars + StarsBackground: Aceternity UI Specification Complianc
 });
 
 describe('ShootingStars + StarsBackground: Source File Integrity', () => {
-  const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+  const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
 
   it('component file exists', () => {
     expect(existsSync(componentPath)).toBe(true);
@@ -365,19 +369,19 @@ describe('ShootingStars + StarsBackground: Source File Integrity', () => {
 describe('ShootingStars + StarsBackground: Animation Logic', () => {
   describe('Star Generation Logic', () => {
     it('star density calculation is area-based', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('area * starDensity');
     });
 
     it('star radius is randomized', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('Math.random() * 0.05 + 0.5');
     });
 
     it('star opacity is randomized', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('Math.random() * 0.5 + 0.5');
     });
@@ -385,19 +389,19 @@ describe('ShootingStars + StarsBackground: Animation Logic', () => {
 
   describe('Shooting Star Movement Logic', () => {
     it('shooting star speed is randomized within range', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('Math.random() * (maxSpeed - minSpeed) + minSpeed');
     });
 
     it('shooting star delay is randomized within range', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('Math.random() * (maxDelay - minDelay) + minDelay');
     });
 
     it('angle is converted to radians for calculation', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('Math.PI) / 180');
     });
@@ -405,31 +409,31 @@ describe('ShootingStars + StarsBackground: Animation Logic', () => {
 
   describe('Canvas Drawing Operations', () => {
     it('clears canvas each frame', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('ctx.clearRect');
     });
 
     it('draws stars using arc method', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('ctx.arc');
     });
 
     it('uses 2D context for drawing', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('getContext("2d")');
     });
 
     it('uses beginPath before drawing', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('ctx.beginPath()');
     });
 
     it('uses fill after path creation', () => {
-      const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+      const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
       const componentSource = readFileSync(componentPath, 'utf-8');
       expect(componentSource).toContain('ctx.fill()');
     });
@@ -437,7 +441,7 @@ describe('ShootingStars + StarsBackground: Animation Logic', () => {
 });
 
 describe('ShootingStars + StarsBackground: Props TypeScript Interface', () => {
-  const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+  const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
   let componentSource: string;
 
   beforeAll(() => {
@@ -577,7 +581,7 @@ describe('Meteors: Aceternity-Inspired Component Specification', () => {
 });
 
 describe('Meteors: Source File Integrity', () => {
-  const componentPath = join(process.cwd(), '../../packages/ui/src/aceternity/stars-background.tsx');
+  const componentPath = join(REPO_ROOT, 'packages/ui/src/aceternity/stars-background.tsx');
 
   describe('File Structure', () => {
     let componentSource: string;

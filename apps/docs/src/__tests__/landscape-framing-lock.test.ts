@@ -22,9 +22,12 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
-const CONTENT_ROOT = join(process.cwd(), 'content/docs/getting-started/concepts');
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const CONTENT_ROOT = join(APP_ROOT, 'content/docs/getting-started/concepts');
 
 const LANDSCAPE_DOCS = [
   'ecosystem.mdx',
