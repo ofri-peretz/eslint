@@ -1,0 +1,230 @@
+---
+title: Components
+description: 40 production-ready primitives in @interlace/ui — Base UI + shadcn defaults, Interlace brand tokens, WCAG 2.2 AA, Tailwind v4.
+icon: Layers
+---
+
+import { ExternalLink } from 'lucide-react';
+
+The Interlace design system ships as `@interlace/ui` — a monorepo-local package of **40 primitives** built on top of [Base UI](https://base-ui.com) and [shadcn/ui](https://ui.shadcn.com) defaults, styled with Interlace brand tokens, and verified WCAG 2.2 AA in CI.
+
+Every primitive is:
+- **Tree-shakeable** — import only what you use (`@interlace/ui/button`, not `@interlace/ui`)
+- **Dark-mode ready** — semantic tokens flip automatically via `class="dark"`
+- **Accessible** — axe + Storybook test-runner runs against every story in CI
+- **Motion-safe** — `useReducedMotion` gates all animations per `MOTION_PHILOSOPHY.md`
+
+Live demos: [storybook.interlace.tools](https://storybook.interlace.tools) · Design tokens: [ds.interlace.tools](https://ds.interlace.tools)
+
+---
+
+## Installation
+
+```bash
+# Inside the monorepo — already available as a workspace dependency.
+# For external consumers (when published):
+npm install @interlace/ui
+```
+
+---
+
+## Primitives
+
+### Layout
+
+Structural primitives that enforce the 4-container, 6-step spacing contract from `LAYOUT_PHILOSOPHY.md`.
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Container` | `@interlace/ui/container` | 4 named widths: `prose` · `content` · `wide` · `full` |
+| `Section` | `@interlace/ui/section` | Page section with spacing + optional `tone` background |
+| `Stack` | `@interlace/ui/stack` | Vertical flex stack with 6-step gap token |
+| `Box` | `@interlace/ui/box` | Generic layout box with forwarded className |
+| `Grid` | `@interlace/ui/grid` | CSS grid with responsive column helpers |
+
+```tsx
+import { Container } from '@interlace/ui/container';
+import { Section } from '@interlace/ui/section';
+import { Stack } from '@interlace/ui/stack';
+
+export function Page() {
+  return (
+    <Section spacing="comfortable" container="content">
+      <Stack gap="md">
+        {/* content */}
+      </Stack>
+    </Section>
+  );
+}
+```
+
+### Typography
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Typography` | `@interlace/ui/typography` | Semantic heading + body variants with fluid type |
+
+### Form Controls
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Button` | `@interlace/ui/button` | 5 variants · 4 sizes · `hero` size for CTAs |
+| `Input` | `@interlace/ui/input` | Text input with error state styling |
+| `Textarea` | `@interlace/ui/textarea` | Multi-line input |
+| `Label` | `@interlace/ui/label` | Accessible form label |
+| `Checkbox` | `@interlace/ui/checkbox` | Controlled/uncontrolled checkbox |
+| `Switch` | `@interlace/ui/switch` | Toggle switch |
+| `RadioGroup` | `@interlace/ui/radio-group` | Radio group with `RadioGroupItem` |
+| `Select` | `@interlace/ui/select` | Dropdown select |
+| `Form` | `@interlace/ui/form` | react-hook-form integration helpers |
+
+```tsx
+import { Button } from '@interlace/ui/button';
+import { Input } from '@interlace/ui/input';
+import { Label } from '@interlace/ui/label';
+
+export function LoginForm() {
+  return (
+    <form>
+      <Label htmlFor="email">Email</Label>
+      <Input id="email" type="email" placeholder="you@example.com" />
+      <Button type="submit">Sign in</Button>
+    </form>
+  );
+}
+```
+
+### Feedback & Status
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Badge` | `@interlace/ui/badge` | 4 variants: `default` · `secondary` · `destructive` · `outline` |
+| `Alert` | `@interlace/ui/alert` | Inline message with `AlertTitle` + `AlertDescription` |
+| `Toast` | `@interlace/ui/toast` | Portal-mounted notification · 4 tones · `useReducedMotion`-safe |
+| `Progress` | `@interlace/ui/progress` | Linear progress bar with `aria-valuenow` |
+| `Skeleton` | `@interlace/ui/skeleton` | Pulsing placeholder for loading states |
+
+```tsx
+import { Toast, ToastProvider, ToastTitle, ToastDescription } from '@interlace/ui/toast';
+
+// Static render (screenshot / docs)
+export function Example() {
+  return (
+    <ToastProvider>
+      <Toast tone="success">
+        <ToastTitle>Saved</ToastTitle>
+        <ToastDescription>Your changes were applied.</ToastDescription>
+      </Toast>
+    </ToastProvider>
+  );
+}
+```
+
+### Overlays & Popovers
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Dialog` | `@interlace/ui/dialog` | Modal dialog with `DialogContent` · `DialogTitle` · `DialogDescription` |
+| `AlertDialog` | `@interlace/ui/alert-dialog` | Confirmation dialog with cancel/confirm actions |
+| `Sheet` | `@interlace/ui/sheet` | Side-drawer overlay |
+| `Popover` | `@interlace/ui/popover` | Floating popover anchored to a trigger |
+| `Tooltip` | `@interlace/ui/tooltip` | Hover/focus tooltip |
+| `HoverCard` | `@interlace/ui/hover-card` | Rich hover card |
+| `DropdownMenu` | `@interlace/ui/dropdown-menu` | Dropdown menu with nested items |
+
+```tsx
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@interlace/ui/dialog';
+import { Button } from '@interlace/ui/button';
+
+export function ConfirmDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogDescription>This action cannot be undone.</DialogDescription>
+        <Button onClick={onClose}>Confirm</Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+### Navigation
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Breadcrumb` | `@interlace/ui/breadcrumb` | Breadcrumb trail with `BreadcrumbItem` · `BreadcrumbSeparator` |
+| `Tabs` | `@interlace/ui/tabs` | Tab strip with `TabsList` · `TabsTrigger` · `TabsContent` |
+| `Pagination` | `@interlace/ui/pagination` | Page navigation with URL state |
+
+### Disclosure
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Accordion` | `@interlace/ui/accordion` | Expandable panel group |
+| `Collapsible` | `@interlace/ui/collapsible` | Single expandable region |
+
+### Data Display
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Card` | `@interlace/ui/card` | Surface card with `CardHeader` · `CardContent` · `CardFooter` |
+| `Avatar` | `@interlace/ui/avatar` | User avatar with `AvatarImage` · `AvatarFallback` |
+| `AspectRatio` | `@interlace/ui/aspect-ratio` | Constrain child to a fixed ratio |
+| `Separator` | `@interlace/ui/separator` | Horizontal/vertical divider |
+| `ScrollArea` | `@interlace/ui/scroll-area` | Custom-scrollbar container |
+
+### Decorative / Motion
+
+| Primitive | Import | Description |
+|---|---|---|
+| `Meteors` | `@interlace/ui/meteors` | Animated meteor shower background |
+
+---
+
+## Blocks
+
+Higher-level compositions built from primitives.
+
+| Block | Import | Description |
+|---|---|---|
+| `ArticleCard` | `@interlace/ui/blocks/article-card` | Dev.to article card with cover, tags, metrics |
+| `CodeWindow` | `@interlace/ui/blocks/code-window` | Syntax-highlighted code panel with chrome |
+| `SectionHeader` | `@interlace/ui/blocks/section-header` | Eyebrow + title + tagline section heading |
+
+---
+
+## Design tokens
+
+Primitives consume semantic tokens defined in `@interlace/ui/styles/tokens.css`. The full token catalog is at [ds.interlace.tools](https://ds.interlace.tools).
+
+| Token group | CSS custom property prefix | Examples |
+|---|---|---|
+| Colors | `--color-*` | `--color-primary`, `--color-destructive` |
+| Spacing | `--spacing-*` | `--spacing-sm`, `--spacing-md`, `--spacing-lg` |
+| Radius | `--radius-*` | `--radius-md`, `--radius-full` |
+| Typography | `--font-*` | `--font-body`, `--font-mono` |
+
+---
+
+## Philosophy contracts
+
+Every primitive decision is governed by the following docs:
+
+- [Layout Philosophy](/docs/design/layout) — 4 containers, 6-step spacing, mobile-first
+- [Color Philosophy](/docs/design/color) — semantic tokens, dark-mode contract, AA contrast
+- [Typography Philosophy](/docs/design/typography) — body/heading/code contracts, fluid type
+- [Motion Philosophy](/docs/design/motion) — CLS=0, reduced-motion, animation budgets
+- [CTA Philosophy](/docs/design/cta) — button hierarchy, `hero` size, ShimmerButton rules
+- [Loading Philosophy](/docs/design/loading) — skeleton taxonomy, error/empty as first-class
+- [A11y Philosophy](/docs/design/a11y) — WCAG 2.2 AA floor, axe suppression policy
+
+---
+
+## Storybook
+
+Every primitive has a story in [storybook.interlace.tools](https://storybook.interlace.tools):
+- **Default** — static render of the component's canonical state (screenshot-stable)
+- **Dark** — dark-mode variant
+- **RTL** — right-to-left variant
+- **Variants** — interactive demos (where the primitive has imperative behavior)

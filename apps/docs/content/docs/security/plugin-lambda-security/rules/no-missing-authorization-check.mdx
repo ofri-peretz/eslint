@@ -1,10 +1,6 @@
 ---
-title: no-missing-authorization-check
-description: "Detects Lambda handlers without authorization checks"
-tags: ['security', 'aws', 'serverless', 'authentication']
-category: security
-severity: high
-autofix: false
+title: "no-missing-authorization-check"
+description: "title: no-missing-authorization-check"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -12,6 +8,15 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-missing-authorization-check
+description: Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+tags: ['security', 'aws', 'serverless', 'authentication']
+category: security
+severity: high
+autofix: false
+---
 
 > **Keywords:** lambda-security, security, ESLint rule, LLM-optimized
 

@@ -1,12 +1,6 @@
 ---
-title: no-math-random-crypto
-description: "Disallow Math.random() for cryptographic purposes"
-tags: ['security', 'cryptography', 'cwe-338', 'nodejs']
-category: security
-severity: critical
-cwe: CWE-338
-owasp: "A02:2021"
-autofix: false
+title: "no-math-random-crypto"
+description: "title: no-math-random-crypto"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-math-random-crypto
+description: Disallow Math.random() for cryptographic purposes (tokens, keys, secrets, salts, IVs)
+tags: ['security', 'cryptography', 'cwe-338', 'nodejs']
+category: security
+severity: critical
+cwe: CWE-338
+owasp: 'A02:2021'
+autofix: false
+---
 
 > **Keywords:** Math.random, insecure randomness, CSPRNG, token generation, session id, CWE-338, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-338](https://cwe.mitre.org/data/definitions/338.html)

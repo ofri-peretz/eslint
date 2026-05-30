@@ -1,11 +1,6 @@
 ---
-title: no-allow-arbitrary-loads
-description: "Prevent configuration allowing insecure loads"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-295
-autofix: false
+title: "no-allow-arbitrary-loads"
+description: "title: no-allow-arbitrary-loads"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-allow-arbitrary-loads
+description: "Prevents disabling App Transport Security (ATS) by detecting allowArbitraryLoads: true in configuration."
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-295
+autofix: false
+---
 
 > **Keywords:** ATS, App Transport Security, iOS security, CWE-295, NSAppTransportSecurity, allowArbitraryLoads, mobile security
 

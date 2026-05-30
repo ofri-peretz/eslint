@@ -1,10 +1,6 @@
 ---
-title: no-overly-permissive-iam-policy
-description: "Detects IAM policies with overly broad permissions (wildcards)"
-tags: ['security', 'aws', 'serverless']
-category: security
-severity: medium
-autofix: false
+title: "no-overly-permissive-iam-policy"
+description: "title: no-overly-permissive-iam-policy"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -12,6 +8,15 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-overly-permissive-iam-policy
+description: Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+tags: ['security', 'aws', 'serverless']
+category: security
+severity: medium
+autofix: false
+---
 
 > **Keywords:** lambda-security, security, ESLint rule, LLM-optimized
 

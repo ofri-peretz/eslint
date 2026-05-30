@@ -26,6 +26,8 @@ export const SITE_ORIGIN = 'https://eslint.interlace.tools' as const;
 export const SIBLING_ORIGINS = [
   'https://interlace.tools', // brand apex / landing site
   'https://serverless.interlace.tools', // sister product
+  'https://storybook.interlace.tools', // @interlace/ui component stories
+  'https://ds.interlace.tools', // design-token registry
 ] as const;
 
 /** Build a canonical absolute URL for a docs page path. */

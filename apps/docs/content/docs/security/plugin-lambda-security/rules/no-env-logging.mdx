@@ -1,12 +1,6 @@
 ---
-title: no-env-logging
-description: "Detects logging of process.env which may expose secrets"
-tags: ['security', 'logging', 'cwe-532', 'lambda', 'aws']
-category: security
-severity: high
-cwe: CWE-532
-owasp: "A09:2021"
-autofix: false
+title: "no-env-logging"
+description: "title: no-env-logging"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-env-logging
+description: Detect logging of process.env which may expose secrets
+tags: ['security', 'logging', 'cwe-532', 'lambda', 'aws']
+category: security
+severity: high
+cwe: CWE-532
+owasp: "A09:2021"
+autofix: false
+---
 
 > **Keywords:** logging, process.env, secrets, CloudWatch, CWE-532, Lambda, serverless
 > **CWE:** [CWE-532](https://cwe.mitre.org/data/definitions/532.html)  

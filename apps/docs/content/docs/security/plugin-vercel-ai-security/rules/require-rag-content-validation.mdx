@@ -1,11 +1,6 @@
 ---
-title: require-rag-content-validation
-description: "Require validation of RAG content before including in AI prompts"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-74
-autofix: false
+title: "require-rag-content-validation"
+description: "title: require-rag-content-validation"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-rag-content-validation
+description: This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used d...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-74
+autofix: false
+---
 
 > Requires validation of RAG content before including in AI prompts.
 

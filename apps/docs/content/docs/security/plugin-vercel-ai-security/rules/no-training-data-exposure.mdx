@@ -1,11 +1,6 @@
 ---
-title: no-training-data-exposure
-description: "Prevent user data from being sent to LLM training endpoints"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-359
-autofix: false
+title: "no-training-data-exposure"
+description: "title: no-training-data-exposure"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-training-data-exposure
+description: This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data coll...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-359
+autofix: false
+---
 
 > Prevents user data from being sent to LLM training endpoints.
 

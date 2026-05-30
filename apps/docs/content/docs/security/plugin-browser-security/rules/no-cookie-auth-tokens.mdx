@@ -1,12 +1,6 @@
 ---
-title: no-cookie-auth-tokens
-description: "Disallow storing auth tokens in cookies via JavaScript"
-tags: ['security', 'browser']
-category: security
-severity: high
-cwe: CWE-1004
-owasp: "A02:2021"
-autofix: false
+title: "no-cookie-auth-tokens"
+description: "title: no-cookie-auth-tokens"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -15,7 +9,20 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-cookie-auth-tokens
+description: Prevent storing authentication tokens in JavaScript-accessible cookies.
+tags: ['security', 'browser']
+category: security
+severity: high
+cwe: CWE-1004
+owasp: "A02:2021"
+autofix: false
+---
+
 > No Cookie Auth Tokens
+
+Prevent storing authentication tokens in JavaScript-accessible cookies.
 
 Prevent storing authentication tokens in JavaScript-accessible cookies.
 

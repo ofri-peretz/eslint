@@ -1,11 +1,6 @@
 ---
-title: no-sensitive-localstorage
-description: "Disallow storing sensitive data like tokens and passwords in localStorage"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-922
-autofix: false
+title: "no-sensitive-localstorage"
+description: "title: no-sensitive-localstorage"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-sensitive-localstorage
+description: Detects storage of sensitive data (tokens, passwords, PII) in localStorage
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-922
+autofix: false
+---
 
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
 

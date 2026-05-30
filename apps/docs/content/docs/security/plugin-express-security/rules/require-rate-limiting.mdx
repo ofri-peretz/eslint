@@ -1,11 +1,6 @@
 ---
-title: require-rate-limiting
-description: "Require rate limiting middleware in Express.js applications"
-tags: ['security', 'express']
-category: security
-severity: medium
-cwe: CWE-770
-autofix: false
+title: "require-rate-limiting"
+description: "title: require-rate-limiting"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-rate-limiting
+description: This rule detects Express.js applications missing rate limiting middleware
+tags: ['security', 'express']
+category: security
+severity: medium
+cwe: CWE-770
+autofix: false
+---
 
 > Require rate limiting middleware to prevent DDoS and brute-force attacks
 

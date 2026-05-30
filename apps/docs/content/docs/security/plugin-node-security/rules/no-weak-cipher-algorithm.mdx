@@ -1,12 +1,6 @@
 ---
-title: no-weak-cipher-algorithm
-description: "Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish)"
-tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
-category: security
-severity: critical
-cwe: CWE-327
-owasp: "A02:2021"
-autofix: false
+title: "no-weak-cipher-algorithm"
+description: "title: no-weak-cipher-algorithm"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-weak-cipher-algorithm
+description: Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish, RC2, IDEA)
+tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
+category: security
+severity: critical
+cwe: CWE-327
+owasp: "A02:2021"
+autofix: false
+---
 
 > **Keywords:** DES, 3DES, RC4, Blowfish, weak cipher, encryption, CWE-327, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  

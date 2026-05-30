@@ -1,9 +1,6 @@
 ---
-title: no-verbose-error-messages
-description: "Prevent exposing stack traces to users"
-tags: ['quality', 'operability', 'production', 'error-handling', 'cwe-209']
-category: quality
-autofix: false
+title: "no-verbose-error-messages"
+description: "title: no-verbose-error-messages"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-verbose-error-messages
+description: Prevent exposing stack traces to users in API responses
+tags: ['quality', 'operability', 'production', 'error-handling', 'cwe-209']
+category: quality
+autofix: false
+---
 
 > **Keywords:** stack trace, error message, information disclosure, CWE-209, production, API response
 > **CWE:** [CWE-209](https://cwe.mitre.org/data/definitions/209.html)  

@@ -1,9 +1,6 @@
 ---
-title: no-console-log
-description: "Disallow console.log with configurable remediation strategies"
-tags: ['quality', 'operability', 'production']
-category: quality
-autofix: suggestions
+title: ".github/workflows/lint.yml"
+description: "title: no-console-log"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-console-log
+description: Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part of eslint-plugin-operability and provides 4 auto-f
+tags: ['quality', 'operability', 'production']
+category: quality
+autofix: suggestions
+---
 
 > **Keywords:** console.log, logging, ESLint rule, production logging, structured logging, logger migration, auto-fix, LLM-optimized, code quality, debugging, observability, Winston, Pino
 

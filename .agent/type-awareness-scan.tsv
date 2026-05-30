@@ -399,3 +399,5 @@ node-security	no-ssrf	unaware	backfilled docs 2026-05-10
 react-a11y	alt-text	unaware	backfilled docs 2026-05-10
 reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
+modernization	prefer-template-literal	unaware	
+modularity	no-mutable-exports	unaware	

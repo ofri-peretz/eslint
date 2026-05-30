@@ -1,11 +1,6 @@
 ---
-title: no-algorithm-none
-description: "Empty algorithms array may default to accepting any algorithm including none"
-tags: ['security', 'jwt']
-category: security
-severity: critical
-cwe: CWE-347
-autofix: false
+title: "no-algorithm-none"
+description: "title: no-algorithm-none"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-algorithm-none
+description: This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification
+tags: ['security', 'jwt']
+category: security
+severity: critical
+cwe: CWE-347
+autofix: false
+---
 
 > Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)
 

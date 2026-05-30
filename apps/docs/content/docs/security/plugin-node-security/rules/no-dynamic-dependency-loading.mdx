@@ -1,11 +1,6 @@
 ---
-title: no-dynamic-dependency-loading
-description: "Prevent runtime dependency injection with dynamic paths"
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-1104
-autofix: false
+title: "no-dynamic-dependency-loading"
+description: "title: no-dynamic-dependency-loading"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-dynamic-dependency-loading
+description: This rule detects dynamically constructed paths in require() and import() statements
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-1104
+autofix: false
+---
 
 > Prevents runtime dependency injection with dynamic paths
 

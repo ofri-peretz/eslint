@@ -1,11 +1,6 @@
 ---
-title: check-query-params
-description: "Ensure the number of query parameters matches the arguments array."
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-89
-autofix: false
+title: "check-query-params"
+description: "title: check-query-params"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: check-query-params
+description: Ensures the number of placeholders in SQL queries matches the provided parameters.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-89
+autofix: false
+---
+
 > **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
+
+Ensures the number of placeholders in SQL queries matches the provided parameters.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

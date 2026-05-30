@@ -1,11 +1,6 @@
 ---
-title: detect-child-process
-description: "Detects child_process usage that may allow command injection"
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-78
-autofix: false
+title: "Attacker input: \"repo}; rm -rf /; #\""
+description: "title: detect-child-process"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: detect-child-process
+description: Detects instances of childprocess & non-literal exec() calls that may allow command injection
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-78
+autofix: false
+---
 
 > **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
 

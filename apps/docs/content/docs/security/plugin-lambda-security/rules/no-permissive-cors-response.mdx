@@ -1,11 +1,6 @@
 ---
-title: no-permissive-cors-response
-description: "Detects permissive CORS (Access-Control-Allow-Origin: *) in Lambda response headers"
-tags: ['security', 'lambda']
-category: security
-severity: medium
-cwe: CWE-942
-autofix: false
+title: "no-permissive-cors-response"
+description: "title: no-permissive-cors-response"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-permissive-cors-response
+description: Detects permissive CORS headers in Lambda API Gateway responses
+tags: ['security', 'lambda']
+category: security
+severity: medium
+cwe: CWE-942
+autofix: false
+---
 
 > **Keywords:** CORS, Lambda, API Gateway, CWE-942, security, Access-Control-Allow-Origin, wildcard, auto-fix
 

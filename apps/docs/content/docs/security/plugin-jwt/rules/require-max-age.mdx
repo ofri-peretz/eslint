@@ -1,11 +1,6 @@
 ---
-title: require-max-age
-description: "Require maxAge option in verify operations to enforce token freshness"
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-294
-autofix: false
+title: "require-max-age"
+description: "title: require-max-age"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-max-age
+description: This rule mandates maxAge in verify operations
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-294
+autofix: false
+---
 
 > Require maxAge option in verify operations to enforce token freshness
 

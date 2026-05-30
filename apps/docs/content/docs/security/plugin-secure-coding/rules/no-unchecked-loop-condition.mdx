@@ -1,11 +1,6 @@
 ---
-title: no-unchecked-loop-condition
-description: "Detects unchecked loop conditions that could cause DoS"
-tags: ['security', 'core']
-category: security
-severity: medium
-cwe: CWE-400
-autofix: false
+title: "no-unchecked-loop-condition"
+description: "title: no-unchecked-loop-condition"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-unchecked-loop-condition
+description: Detects unchecked loop conditions that could cause DoS
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-400
+autofix: false
+---
+
 > **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
+
+Detects unchecked loop conditions that could cause DoS
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

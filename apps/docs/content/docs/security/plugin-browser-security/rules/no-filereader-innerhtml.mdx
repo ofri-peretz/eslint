@@ -1,12 +1,6 @@
 ---
-title: no-filereader-innerhtml
-description: "Disallow using innerHTML or similar methods with FileReader data"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-693
-owasp: "A03:2021"
-autofix: false
+title: "no-filereader-innerhtml"
+description: "title: no-filereader-innerhtml"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-filereader-innerhtml
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-693
+owasp: "A03:2021"
+autofix: false
+---
 
 > 🔒 Disallow using innerHTML with FileReader data
 

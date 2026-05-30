@@ -1,11 +1,6 @@
 ---
-title: no-disabled-certificate-validation
-description: "Prevent disabled SSL/TLS certificate validation"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-295
-autofix: false
+title: "no-disabled-certificate-validation"
+description: "title: no-disabled-certificate-validation"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,9 +9,23 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-disabled-certificate-validation
+description: "CWE: [CWE-295](https://cwe.mitre.org/data/definitions/295.html)"
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-295
+autofix: false
+---
+
 > **Keywords:** no disabled certificate validation, SSL, TLS, security, ESLint rule, [CWE-295](https://cwe.mitre.org/data/definitions/295.html), MitM, rejectUnauthorized
 > **CWE:** [CWE-295: Improper Certificate Validation](https://cwe.mitre.org/data/definitions/295.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M5: Insufficient Communication Layer Security](https://owasp.org/www-project-mobile-top-10/)
+
+CWE: [CWE-295](https://cwe.mitre.org/data/definitions/295.html)
+
+ESLint Rule: no-disabled-certificate-validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 

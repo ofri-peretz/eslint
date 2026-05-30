@@ -1,11 +1,6 @@
 ---
-title: require-max-tokens
-description: "Require maxTokens limit in generateText and streamText calls"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-770
-autofix: false
+title: "require-max-tokens"
+description: "title: require-max-tokens"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-max-tokens
+description: "This rule identifies AI SDK calls that don't specify a maxTokens limit"
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-770
+autofix: false
+---
 
 > Ensures all AI calls have token limits to prevent resource exhaustion.
 

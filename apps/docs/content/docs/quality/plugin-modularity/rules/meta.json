@@ -7,6 +7,7 @@
     "ddd-value-object-immutability",
     "enforce-naming",
     "enforce-rest-conventions",
-    "no-external-api-calls-in-utils"
+    "no-external-api-calls-in-utils",
+    "no-mutable-exports"
   ]
 }

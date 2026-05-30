@@ -1,11 +1,6 @@
 ---
-title: no-privilege-escalation
-description: "Detects potential privilege escalation vulnerabilities"
-tags: ['security', 'core']
-category: security
-severity: medium
-cwe: CWE-269
-autofix: false
+title: "no-privilege-escalation"
+description: "title: no-privilege-escalation"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-privilege-escalation
+description: Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions withou...
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-269
+autofix: false
+---
 
 > **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
 

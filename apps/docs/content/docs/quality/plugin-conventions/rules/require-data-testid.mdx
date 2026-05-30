@@ -1,9 +1,6 @@
 ---
-title: require-data-testid
-description: "Require stable `data-testid` attributes on interactive elements and custom components for testability."
-tags: ['quality', 'conventions', 'testing']
-category: quality
-autofix: suggestions
+title: "conventions/require-data-testid"
+description: "title: require-data-testid"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-data-testid
+description: Require stable data-testid attributes on interactive elements for end-to-end test reliability
+tags: ['quality', 'conventions', 'testing']
+category: quality
+autofix: suggestions
+---
 
 Require stable `data-testid` attributes on interactive elements and custom
 components for end-to-end test reliability.

@@ -1,0 +1,10 @@
+{
+    "title": "Components",
+    "description": "The @interlace/ui design system primitives",
+    "icon": "Layers",
+    "root": true,
+    "defaultOpen": false,
+    "pages": [
+        "index"
+    ]
+}

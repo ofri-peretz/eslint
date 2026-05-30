@@ -1,12 +1,6 @@
 ---
-title: require-websocket-wss
-description: "Require secure WebSocket connections (wss://) instead of unencrypted (ws://)"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-319
-owasp: "A02:2021"
-autofix: false
+title: "require-websocket-wss"
+description: "title: require-websocket-wss"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-websocket-wss
+description: "This rule enforces the use of wss:// (WebSocket Secure) protocol instead of ws:// (unencrypted WebSocket)"
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-319
+owasp: "A02:2021"
+autofix: false
+---
 
 > 🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)
 

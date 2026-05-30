@@ -1,11 +1,6 @@
 ---
-title: no-express-unsafe-regex-route
-description: "Disallow ReDoS-vulnerable regular expressions in Express.js route patterns"
-tags: ['security', 'express']
-category: security
-severity: medium
-cwe: CWE-1333
-autofix: false
+title: "no-express-unsafe-regex-route"
+description: "title: no-express-unsafe-regex-route"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-express-unsafe-regex-route
+description: This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns
+tags: ['security', 'express']
+category: security
+severity: medium
+cwe: CWE-1333
+autofix: false
+---
 
 > Disallow vulnerable regular expressions in route definitions
 

@@ -1,11 +1,6 @@
 ---
-title: require-embedding-validation
-description: "Require validation of embeddings before storage or similarity search"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-20
-autofix: false
+title: "require-embedding-validation"
+description: "title: require-embedding-validation"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: require-embedding-validation
+description: This rule identifies code patterns where embeddings are stored in vector databases without validation.
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-20
+autofix: false
+---
+
 > Requires validation of embeddings before storage or similarity search.
+
+This rule identifies code patterns where embeddings are stored in vector databases without validation.
 
 ## 📊 Rule Details
 

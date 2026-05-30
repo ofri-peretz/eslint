@@ -1,11 +1,6 @@
 ---
-title: detect-mixed-content
-description: "Detect HTTP resources in HTTPS pages"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-311
-autofix: false
+title: "detect-mixed-content"
+description: "title: detect-mixed-content"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: detect-mixed-content
+description: Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-311
+autofix: false
+---
+
 > **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+
+Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
 
 Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
 

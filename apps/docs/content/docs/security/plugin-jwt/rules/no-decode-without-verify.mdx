@@ -1,11 +1,6 @@
 ---
-title: no-decode-without-verify
-description: "Disallow trusting decoded JWT payload without signature verification"
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-345
-autofix: false
+title: "no-decode-without-verify"
+description: "title: no-decode-without-verify"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-decode-without-verify
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-345
+autofix: false
+---
 
 > Disallow trusting decoded JWT payload without signature verification
 

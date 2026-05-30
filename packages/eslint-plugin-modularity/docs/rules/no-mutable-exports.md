@@ -1,0 +1,111 @@
+---
+title: no-mutable-exports
+description: Disallow mutable let/var declarations on exported bindings
+tags: ['architecture', 'modularity']
+category: modularity
+autofix: code
+---
+
+> **Keywords:** mutable export, live binding, let, var, const, ESLint rule, JavaScript, TypeScript, auto-fix, LLM-optimized
+
+
+<!-- @rule-summary -->
+Disallow mutable let/var declarations on exported bindings
+<!-- @/rule-summary -->
+
+Disallow `export let` and `export var` declarations — they create shared live bindings that all importers observe. This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity).
+
+## Quick Summary
+
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Warning (code quality)                                               |
+| **Auto-Fix**   | ✅ Yes (replaces `let`/`var` with `const`)                           |
+| **Category**   | Modularity |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | All JavaScript/TypeScript codebases with ES module exports           |
+
+## Rule Details
+
+ES modules export *live bindings*. When you write `export let count = 0`, every importer gets a reference to the same binding — if the exporting module reassigns `count`, all importers immediately see the new value. This creates invisible coupling across module boundaries and makes behavior hard to reason about.
+
+The auto-fix replaces `let` or `var` with `const`. If the variable is later reassigned inside the module you will need to refactor that logic (e.g. encapsulate mutation behind an exported function), but the fix surfaces the issue immediately.
+
+`export const`, `export function`, and `export class` are all fine and are never flagged.
+
+### Why This Matters
+
+| Issue                     | Impact                                       | Solution                          |
+| ------------------------- | -------------------------------------------- | --------------------------------- |
+| 🔗 **Implicit coupling**  | All importers share the same mutable binding | Use `const` or encapsulate state  |
+| 🐛 **Spooky action**      | Remote reassignment surprises importers      | Export functions instead          |
+| 🔄 **Predictability**     | Module interface becomes stateful            | Keep exports immutable            |
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Mutable export creates a live binding
+export let count = 0;
+export var config = {};
+```
+
+### ✅ Correct
+
+```javascript
+// Immutable exports
+export const count = 0;
+export const config = Object.freeze({});
+export function increment() { return count + 1; }
+export class Counter {}
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'modularity/no-mutable-exports': 'warn'
+  }
+}
+```
+
+## Related Rules
+
+- [`no-external-api-calls-in-utils`](./no-external-api-calls-in-utils.md) - Keep utility modules side-effect free
+- [`enforce-naming`](./enforce-naming.md) - Consistent naming across module boundaries
+
+## Further Reading
+
+- **[export - MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export)** - MDN reference on live bindings
+- **[ES Modules in Depth](https://tc39.es/ecma262/#sec-module-semantics)** - ECMAScript specification
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Re-exported Mutable Bindings
+
+**Why**: When a mutable binding is imported from another module and then re-exported, the rule cannot trace the original declaration.
+
+```javascript
+// ❌ NOT DETECTED - re-export of a mutable binding
+import { count } from './state';
+export { count }; // still a live binding if count was declared with let
+```
+
+**Mitigation**: Apply the rule in the originating module and review re-export chains manually.
+
+### Namespace Exports
+
+**Why**: `export * from './module'` bulk-re-exports all bindings; the rule cannot inspect the source module statically.
+
+```javascript
+// ❌ NOT DETECTED - bulk re-export
+export * from './mutable-state';
+```
+
+**Mitigation**: Avoid `export *` for modules that contain mutable state; prefer explicit named exports.

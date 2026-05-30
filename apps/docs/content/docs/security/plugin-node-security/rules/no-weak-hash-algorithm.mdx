@@ -1,12 +1,6 @@
 ---
-title: no-weak-hash-algorithm
-description: "Disallow weak hash algorithms (MD5, SHA1, MD4)"
-tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
-category: security
-severity: high
-cwe: CWE-327
-owasp: "A02:2021"
-autofix: false
+title: "no-weak-hash-algorithm"
+description: "title: no-weak-hash-algorithm"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-weak-hash-algorithm
+description: Disallow weak hash algorithms (MD5, MD4, SHA-1, RIPEMD)
+tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
+category: security
+severity: high
+cwe: CWE-327
+owasp: "A02:2021"
+autofix: false
+---
 
 > **Keywords:** MD5, SHA-1, MD4, RIPEMD, weak hash, cryptography, CWE-327, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  

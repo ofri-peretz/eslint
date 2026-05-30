@@ -1,12 +1,6 @@
 ---
-title: no-unvalidated-event-body
-description: "Detects Lambda handlers using event body/params without validation"
-tags: ['security', 'input-validation', 'cwe-20', 'lambda', 'aws']
-category: security
-severity: high
-cwe: CWE-20
-owasp: "A03:2021"
-autofix: false
+title: "no-unvalidated-event-body"
+description: "title: no-unvalidated-event-body"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-unvalidated-event-body
+description: Detect Lambda handlers using event body without validation
+tags: ['security', 'input-validation', 'cwe-20', 'lambda', 'aws']
+category: security
+severity: high
+cwe: CWE-20
+owasp: "A03:2021"
+autofix: false
+---
 
 > **Keywords:** input validation, event body, injection, CWE-20, Lambda, Zod, Joi, Middy, serverless
 > **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  

@@ -1,9 +1,6 @@
 ---
-title: no-unhandled-promise
-description: "Detects unhandled Promise rejections"
-tags: ['quality', 'reliability', 'async']
-category: quality
-autofix: suggestions
+title: "no-unhandled-promise"
+description: "title: no-unhandled-promise"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -12,7 +9,17 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-unhandled-promise
+description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
+tags: ['quality', 'reliability', 'async']
+category: quality
+autofix: suggestions
+---
+
 > **Keywords:** unhandled promise, promise rejection, async error handling, Promise, async/await, error handling, Node.js, JavaScript promises, async patterns, promise chains, try/catch, await, error propagation, [CWE-1024](https://cwe.mitre.org/data/definitions/1024.html), SonarQube RSPEC-4635
+
+Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
 
 Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have their rejection handled, preventing silent failures in production applications.
 

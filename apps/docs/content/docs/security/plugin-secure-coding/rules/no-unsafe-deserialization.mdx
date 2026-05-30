@@ -1,11 +1,6 @@
 ---
-title: no-unsafe-deserialization
-description: "Detects unsafe deserialization of untrusted data"
-tags: ['security', 'core']
-category: security
-severity: medium
-cwe: CWE-502
-autofix: false
+title: "no-unsafe-deserialization"
+description: "title: no-unsafe-deserialization"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-unsafe-deserialization
+description: Detects unsafe deserialization of untrusted data
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-502
+autofix: false
+---
+
 > **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
+
+Detects unsafe deserialization of untrusted data
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

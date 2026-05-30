@@ -1,11 +1,6 @@
 ---
-title: no-electron-security-issues
-description: "Detects Electron security vulnerabilities and insecure configurations"
-tags: ['security', 'core']
-category: security
-severity: medium
-cwe: CWE-16
-autofix: false
+title: "no-electron-security-issues"
+description: "title: no-electron-security-issues"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-electron-security-issues
+description: Detects Electron security vulnerabilities and insecure configurations
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-16
+autofix: false
+---
+
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
+
+Detects Electron security vulnerabilities and insecure configurations
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

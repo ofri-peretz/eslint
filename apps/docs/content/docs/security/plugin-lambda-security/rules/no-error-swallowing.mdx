@@ -1,12 +1,6 @@
 ---
-title: no-error-swallowing
-description: "Detects empty catch blocks and missing error logging in Lambda handlers"
-tags: ['serverless', 'lambda', 'cwe-390', 'logging', 'aws']
-category: security
-severity: medium
-cwe: CWE-390
-owasp: "A09:2021"
-autofix: false
+title: "no-error-swallowing"
+description: "title: no-error-swallowing"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-error-swallowing
+description: Detect empty catch blocks and missing error logging
+tags: ['serverless', 'lambda', 'cwe-390', 'logging', 'aws']
+category: security
+severity: medium
+cwe: CWE-390
+owasp: "A09:2021"
+autofix: false
+---
 
 > **Keywords:** catch block, error handling, logging, CWE-390, Lambda, serverless, monitoring
 > **CWE:** [CWE-390](https://cwe.mitre.org/data/definitions/390.html)  

@@ -128,6 +128,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢 |  |  |  | 💡 |  |
 | [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer using Array.at() for accessing elements, especially with negative indices | 🟢 |  |  |  | 💡 |  |
 | [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer EventTarget over EventEmitter for isomorphic code | 🟢 |  |  |  | 💡 |  |
+| [prefer-template-literal](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-template-literal?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer template literals over string concatenation with runtime values | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

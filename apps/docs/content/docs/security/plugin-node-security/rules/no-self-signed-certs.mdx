@@ -1,12 +1,6 @@
 ---
-title: no-self-signed-certs
-description: "Disallow rejectUnauthorized: false in TLS options"
-tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
-category: security
-severity: critical
-cwe: CWE-295
-owasp: "A07:2021"
-autofix: false
+title: "no-self-signed-certs"
+description: "title: no-self-signed-certs"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-self-signed-certs
+description: Disallow rejectUnauthorized false in TLS options
+tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
+category: security
+severity: critical
+cwe: CWE-295
+owasp: "A07:2021"
+autofix: false
+---
 
 > **Keywords:** TLS, SSL, certificate, rejectUnauthorized, self-signed, MITM, CWE-295, security, ESLint rule
 > **CWE:** [CWE-295](https://cwe.mitre.org/data/definitions/295.html)  
