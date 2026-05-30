@@ -1,9 +1,6 @@
 ---
-title: prefer-at
-description: "Prefer .at() method over bracket notation for accessing elements from the end"
-tags: ['architecture', 'modernization']
-category: modernization
-autofix: suggestions
+title: "prefer-at"
+description: "description: Prefer using Array.at() for accessing elements, especially with negative indices"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: prefer-at
+description: Prefer using Array.at() for accessing elements, especially with negative indices
+tags: ['architecture', 'modernization']
+category: modernization
+autofix: suggestions
+---
 
 > **Keywords:** Array.at(), negative index, last element, ESLint rule, ES2022, auto-fix, LLM-optimized
 

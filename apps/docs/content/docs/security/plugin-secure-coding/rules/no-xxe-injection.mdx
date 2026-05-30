@@ -1,11 +1,6 @@
 ---
-title: no-xxe-injection
-description: "Detect XML External Entity (XXE) injection vulnerabilities"
-tags: ['security', 'core']
-category: security
-severity: critical
-cwe: CWE-611
-autofix: false
+title: "no-xxe-injection"
+description: "title: no-xxe-injection"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-xxe-injection
+description: Detects XML External Entity (XXE) injection vulnerabilities
+tags: ['security', 'core']
+category: security
+severity: critical
+cwe: CWE-611
+autofix: false
+---
 
 > **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
 

@@ -1,11 +1,6 @@
 ---
-title: no-sensitive-in-prompt
-description: "Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-200
-autofix: false
+title: "no-sensitive-in-prompt"
+description: "title: no-sensitive-in-prompt"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-sensitive-in-prompt
+description: This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally identifiable ...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
+---
 
 > Prevents sensitive data (passwords, tokens, PII) from being sent to LLMs.
 

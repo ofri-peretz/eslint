@@ -1,11 +1,6 @@
 ---
-title: require-algorithm-whitelist
-description: "Require explicit algorithm specification in JWT verify operations"
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-757
-autofix: false
+title: "require-algorithm-whitelist"
+description: "title: require-algorithm-whitelist"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-algorithm-whitelist
+description: This rule enforces explicit algorithm specification in verify() calls
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-757
+autofix: false
+---
 
 > Require explicit algorithm specification in JWT verify operations
 

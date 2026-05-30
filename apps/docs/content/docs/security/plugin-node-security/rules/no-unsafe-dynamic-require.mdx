@@ -1,11 +1,6 @@
 ---
-title: no-unsafe-dynamic-require
-description: "Prevent unsafe dynamic require() calls that could enable code injection"
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-494
-autofix: false
+title: "no-unsafe-dynamic-require"
+description: "title: no-unsafe-dynamic-require"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-unsafe-dynamic-require
+description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-494
+autofix: false
+---
 
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
 

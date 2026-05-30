@@ -1,10 +1,6 @@
 ---
-title: no-pii-in-logs
-description: "Prevent PII (email, SSN, credit cards) in console logs"
-tags: ['security', 'secure-coding', 'pii', 'logging', 'gdpr']
-category: security
-cwe: CWE-359
-autofix: suggestions
+title: "no-pii-in-logs"
+description: "title: no-pii-in-logs"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -12,6 +8,15 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-pii-in-logs
+description: Prevent personally identifiable information (PII) — emails, SSNs, credit cards, phone numbers — from reaching console / logger output.
+tags: ['security', 'secure-coding', 'pii', 'logging', 'gdpr']
+category: security
+cwe: CWE-359
+autofix: suggestions
+---
 
 > **Keywords:** no-pii-in-logs, PII, GDPR, HIPAA, CCPA, console.log, logger, email, SSN, credit card, phone number, CWE-359, ESLint rule
 > **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)

@@ -1,11 +1,6 @@
 ---
-title: no-graphql-introspection-production
-description: "Disallow GraphQL introspection in production environments"
-tags: ['security', 'express']
-category: security
-severity: medium
-cwe: CWE-200
-autofix: false
+title: "no-graphql-introspection-production"
+description: "title: no-graphql-introspection-production"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-graphql-introspection-production
+description: This rule detects GraphQL servers with introspection enabled in production
+tags: ['security', 'express']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
+---
 
 > Disallow GraphQL introspection in production environments
 

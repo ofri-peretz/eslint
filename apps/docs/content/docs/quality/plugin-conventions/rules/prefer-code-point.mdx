@@ -1,9 +1,6 @@
 ---
-title: prefer-code-point
-description: "Prefer codePointAt over charCodeAt for proper Unicode character handling"
-tags: ['quality', 'conventions', 'style']
-category: quality
-autofix: suggestions
+title: "prefer-code-point"
+description: "title: prefer-code-point"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: prefer-code-point
+description: Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions.
+tags: ['quality', 'conventions', 'style']
+category: quality
+autofix: suggestions
+---
 
 > **Keywords:** codePointAt, charCodeAt, Unicode, emoji, ESLint rule, auto-fix, LLM-optimized
 

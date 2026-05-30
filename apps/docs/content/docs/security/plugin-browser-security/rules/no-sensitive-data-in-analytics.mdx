@@ -1,11 +1,6 @@
 ---
-title: no-sensitive-data-in-analytics
-description: "Prevent PII being sent to analytics services"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-359
-autofix: false
+title: "no-sensitive-data-in-analytics"
+description: "title: no-sensitive-data-in-analytics"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-sensitive-data-in-analytics
+description: This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-359
+autofix: false
+---
 
 > Prevents PII being sent to analytics services
 

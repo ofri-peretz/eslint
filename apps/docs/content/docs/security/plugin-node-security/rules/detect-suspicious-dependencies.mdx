@@ -1,11 +1,6 @@
 ---
-title: detect-suspicious-dependencies
-description: "Detect typosquatting in package names"
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-506
-autofix: false
+title: "detect-suspicious-dependencies"
+description: "title: detect-suspicious-dependencies"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: detect-suspicious-dependencies
+description: This rule detects package imports that look like typosquatting attempts on popular npm packages
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-506
+autofix: false
+---
 
 > Detect typosquatting attacks in npm package imports
 

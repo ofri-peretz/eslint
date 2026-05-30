@@ -1,11 +1,6 @@
 ---
-title: require-tool-confirmation
-description: "Require human confirmation for destructive tool operations (delete, transfer, execute)"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-862
-autofix: false
+title: "require-tool-confirmation"
+description: "title: require-tool-confirmation"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-tool-confirmation
+description: "This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before..."
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-862
+autofix: false
+---
 
 > Requires human confirmation for destructive tool operations.
 

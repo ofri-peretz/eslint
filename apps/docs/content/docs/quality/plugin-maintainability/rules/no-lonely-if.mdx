@@ -1,9 +1,6 @@
 ---
-title: no-lonely-if
-description: "Prevent lone if statements inside else blocks - use else if instead"
-tags: ['quality', 'maintainability']
-category: quality
-autofix: suggestions
+title: "no-lonely-if"
+description: "description: Disallow if statements as the only statement in else blocks"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-lonely-if
+description: Disallow if statements as the only statement in else blocks
+tags: ['quality', 'maintainability']
+category: quality
+autofix: suggestions
+---
 
 > **Keywords:** if, else, refactoring, readability, ESLint rule, code quality, LLM-optimized
 

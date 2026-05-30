@@ -1,11 +1,6 @@
 ---
-title: require-csp-headers
-description: "Require Content Security Policy headers"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-1021
-autofix: false
+title: "require-csp-headers"
+description: "title: require-csp-headers"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,9 +9,23 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: require-csp-headers
+description: "CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)"
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-1021
+autofix: false
+---
+
 > **Keywords:** require csp headers, Content Security Policy, security, ESLint rule, [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html), XSS, Helmet
 > **CWE:** [CWE-1021: Improper Restriction of Rendered-UI Layers or Frames](https://cwe.mitre.org/data/definitions/1021.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
+
+CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)
+
+ESLint Rule: require-csp-headers. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 

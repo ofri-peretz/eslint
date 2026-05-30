@@ -1,10 +1,6 @@
 ---
-title: no-client-side-auth-logic
-description: "Prevent authentication logic in client code"
-tags: ['security', 'browser', 'client-side', 'authentication']
-category: security
-severity: high
-autofix: false
+title: "no-client-side-auth-logic"
+description: "title: no-client-side-auth-logic"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -12,6 +8,15 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-client-side-auth-logic
+description: Prevent client-side authentication logic that can be bypassed. This rule is part of eslint-plugin-browser-security and provides LLM-optimized error messages.
+tags: ['security', 'browser', 'client-side', 'authentication']
+category: security
+severity: high
+autofix: false
+---
 
 > **Keywords:** browser, security, authentication, client-side, ESLint rule, LLM-optimized
 

@@ -1,11 +1,6 @@
 ---
-title: require-https-only
-description: "Enforce HTTPS for all external requests"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-319
-autofix: false
+title: "require-https-only"
+description: "title: require-https-only"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-https-only
+description: This rule detects HTTP (unencrypted) URLs in fetch() and axios requests
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-319
+autofix: false
+---
 
 > Enforces HTTPS for all external requests
 

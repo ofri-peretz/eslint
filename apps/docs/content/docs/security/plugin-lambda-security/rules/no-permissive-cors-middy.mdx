@@ -1,11 +1,6 @@
 ---
-title: no-permissive-cors-middy
-description: "Detects @middy/http-cors middleware with permissive origin (*)"
-tags: ['security', 'lambda']
-category: security
-severity: medium
-cwe: CWE-942
-autofix: false
+title: "no-permissive-cors-middy"
+description: "title: no-permissive-cors-middy"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-permissive-cors-middy
+description: Detects permissive CORS configurations in Middy middleware
+tags: ['security', 'lambda']
+category: security
+severity: medium
+cwe: CWE-942
+autofix: false
+---
 
 > **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
 

@@ -1,12 +1,6 @@
 ---
-title: no-user-controlled-requests
-description: "Detects HTTP requests with user-controlled URLs (SSRF vulnerability)"
-tags: ['security', 'ssrf', 'cwe-918', 'lambda', 'aws']
-category: security
-severity: critical
-cwe: CWE-918
-owasp: "A10:2021"
-autofix: false
+title: "no-user-controlled-requests"
+description: "title: no-user-controlled-requests"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-user-controlled-requests
+description: Detect HTTP requests with user-controlled URLs (SSRF)
+tags: ['security', 'ssrf', 'cwe-918', 'lambda', 'aws']
+category: security
+severity: critical
+cwe: CWE-918
+owasp: "A10:2021"
+autofix: false
+---
 
 > **Keywords:** SSRF, Server-Side Request Forgery, fetch, axios, user input, CWE-918, Lambda, serverless
 > **CWE:** [CWE-918](https://cwe.mitre.org/data/definitions/918.html)  

@@ -1,9 +1,6 @@
 ---
-title: no-instanceof-array
-description: "Prefer Array.isArray() over instanceof Array for better cross-realm compatibility"
-tags: ['modernization', 'reliability', 'cross-realm']
-category: modernization
-autofix: suggestions
+title: "no-instanceof-array"
+description: "title: no-instanceof-array"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-instanceof-array
+description: Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms (iframes, Web Workers).
+tags: ['modernization', 'reliability', 'cross-realm']
+category: modernization
+autofix: suggestions
+---
 
 > **Keywords:** no-instanceof-array, Array.isArray, type checking, cross-realm, iframes, web workers, reliability, ESLint rule, modernization
 

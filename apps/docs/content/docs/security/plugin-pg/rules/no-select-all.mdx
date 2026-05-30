@@ -1,11 +1,6 @@
 ---
-title: no-select-all
-description: "Prevent using * in SELECT statements (implicit columns)."
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-693
-autofix: false
+title: "no-select-all"
+description: "description: Discourages SELECT in favor of explicit column lists."
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-select-all
+description: Discourages SELECT  in favor of explicit column lists.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-693
+autofix: false
+---
 
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
 

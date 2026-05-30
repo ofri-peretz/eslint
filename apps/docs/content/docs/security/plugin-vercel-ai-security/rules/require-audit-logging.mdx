@@ -1,11 +1,6 @@
 ---
-title: require-audit-logging
-description: "Suggest audit logging for AI SDK operations"
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-778
-autofix: false
+title: "require-audit-logging"
+description: "title: require-audit-logging"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-audit-logging
+description: "This rule identifies AI SDK calls that aren't preceded by logging statements"
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-778
+autofix: false
+---
 
 > Suggests audit logging for AI SDK operations.
 

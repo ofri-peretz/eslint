@@ -1,11 +1,6 @@
 ---
-title: require-issued-at
-description: "Require iat (issued at) claim for token freshness validation"
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-294
-autofix: false
+title: "require-issued-at"
+description: "title: require-issued-at"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-issued-at
+description: This rule ensures tokens have the iat claim for freshness validation
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-294
+autofix: false
+---
 
 > Require iat (issued at) claim for token freshness validation
 

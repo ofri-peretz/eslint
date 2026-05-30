@@ -1,9 +1,6 @@
 ---
-title: require-code-minification
-description: "Require minification configuration"
-tags: ['quality', 'operability', 'production', 'build', 'cwe-656']
-category: quality
-autofix: false
+title: "require-code-minification"
+description: "title: require-code-minification"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: require-code-minification
+description: Require minification configuration in build tools
+tags: ['quality', 'operability', 'production', 'build', 'cwe-656']
+category: quality
+autofix: false
+---
 
 > **Keywords:** minification, webpack, build, production, obfuscation, CWE-656, bundle size
 > **CWE:** [CWE-656](https://cwe.mitre.org/data/definitions/656.html)

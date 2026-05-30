@@ -1,11 +1,6 @@
 ---
-title: no-unbounded-batch-processing
-description: "Detects processing batch records without size validation"
-tags: ['serverless', 'lambda', 'cwe-770', 'batch', 'aws']
-category: security
-severity: medium
-cwe: CWE-770
-autofix: false
+title: "no-unbounded-batch-processing"
+description: "title: no-unbounded-batch-processing"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-unbounded-batch-processing
+description: Detect processing batch records without size validation
+tags: ['serverless', 'lambda', 'cwe-770', 'batch', 'aws']
+category: security
+severity: medium
+cwe: CWE-770
+autofix: false
+---
 
 > **Keywords:** Lambda, batch, SQS, Records, size limit, CWE-770, AWS, serverless, denial of service
 > **CWE:** [CWE-770](https://cwe.mitre.org/data/definitions/770.html)

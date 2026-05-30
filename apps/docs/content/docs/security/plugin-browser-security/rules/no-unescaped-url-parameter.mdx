@@ -1,11 +1,6 @@
 ---
-title: no-unescaped-url-parameter
-description: "Detects unescaped URL parameters"
-tags: ['security', 'browser']
-category: security
-severity: medium
-cwe: CWE-79
-autofix: false
+title: "no-unescaped-url-parameter"
+description: "title: no-unescaped-url-parameter"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-unescaped-url-parameter
+description: Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities
+tags: ['security', 'browser']
+category: security
+severity: medium
+cwe: CWE-79
+autofix: false
+---
 
 > **Keywords:** URL encoding, CWE-79, security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
 

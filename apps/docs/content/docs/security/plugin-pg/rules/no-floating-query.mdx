@@ -1,11 +1,6 @@
 ---
-title: no-floating-query
-description: "Ensure all queries are awaited or returned to prevent unhandled promise rejections."
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-252
-autofix: false
+title: "no-floating-query"
+description: "title: no-floating-query"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-floating-query
+description: Ensures query promises are awaited or handled.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-252
+autofix: false
+---
+
 > **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
+
+Ensures query promises are awaited or handled.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

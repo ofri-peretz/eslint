@@ -1,12 +1,6 @@
 ---
-title: detect-eval-with-expression
-description: "Detects eval(variable) which can allow an attacker to run arbitrary code"
-tags: ['security', 'node']
-category: security
-severity: critical
-cwe: CWE-95
-owasp: "A03:2021"
-autofix: false
+title: "detect-eval-with-expression"
+description: "title: detect-eval-with-expression"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,6 +8,17 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: detect-eval-with-expression
+description: Detects eval(variable) which can allow an attacker to run arbitrary code inside your process
+tags: ['security', 'node']
+category: security
+severity: critical
+cwe: CWE-95
+owasp: "A03:2021"
+autofix: false
+---
 
 > **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
 > **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  

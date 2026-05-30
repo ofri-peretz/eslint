@@ -1,9 +1,6 @@
 ---
-title: no-process-exit
-description: "Prevent usage of process.exit() which can terminate the process unexpectedly"
-tags: ['quality', 'operability', 'production']
-category: quality
-autofix: suggestions
+title: "no-process-exit"
+description: "title: no-process-exit"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -11,6 +8,14 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-process-exit
+description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
+tags: ['quality', 'operability', 'production']
+category: quality
+autofix: suggestions
+---
 
 > **Keywords:** process.exit, Node.js, graceful shutdown, ESLint rule, server, LLM-optimized
 

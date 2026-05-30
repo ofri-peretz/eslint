@@ -5,6 +5,7 @@
   "pages": [
     "no-instanceof-array",
     "prefer-at",
-    "prefer-event-target"
+    "prefer-event-target",
+    "prefer-template-literal"
   ]
 }

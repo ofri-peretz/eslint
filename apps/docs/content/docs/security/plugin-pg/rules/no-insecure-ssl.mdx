@@ -1,11 +1,6 @@
 ---
-title: no-insecure-ssl
-description: "Prevent the use of insecure SSL configurations (rejectUnauthorized: false)."
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-295
-autofix: false
+title: "no-insecure-ssl"
+description: "title: no-insecure-ssl"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-insecure-ssl
+description: Prevents disabling SSL certificate validation in PostgreSQL connections.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-295
+autofix: false
+---
+
 > **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
+
+Prevents disabling SSL certificate validation in PostgreSQL connections.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

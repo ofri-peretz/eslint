@@ -1,11 +1,6 @@
 ---
-title: no-eval
-description: "Disallow eval(), Function(), and other code execution patterns"
-tags: ['security', 'browser']
-category: security
-severity: critical
-cwe: CWE-94
-autofix: false
+title: "no-eval"
+description: "description: Detects dangerous eval() and similar code execution patterns"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-eval
+description: Detects dangerous eval() and similar code execution patterns
+tags: ['security', 'browser']
+category: security
+severity: critical
+cwe: CWE-94
+autofix: false
+---
 
 > **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
 

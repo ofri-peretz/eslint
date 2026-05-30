@@ -1,11 +1,6 @@
 ---
-title: no-exposed-debug-endpoints
-description: "Detect debug endpoints without auth in NestJS applications"
-tags: ['security', 'nestjs']
-category: security
-severity: medium
-cwe: CWE-489
-autofix: false
+title: "no-exposed-debug-endpoints"
+description: "title: no-exposed-debug-endpoints"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -13,6 +8,16 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+---
+title: no-exposed-debug-endpoints
+description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
+tags: ['security', 'nestjs']
+category: security
+severity: medium
+cwe: CWE-489
+autofix: false
+---
 
 > **Keywords:** NestJS, debug endpoint, admin path, exposed routes, @Get, @Post, decoractor security, CWE-489, OWASP M8, test endpoints, information disclosure, unauthorized access
 
