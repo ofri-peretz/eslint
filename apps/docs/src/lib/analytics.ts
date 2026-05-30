@@ -137,8 +137,12 @@ export function pageview(
       url ?? (typeof window !== 'undefined' ? window.location.href : '');
     posthog.capture?.('$pageview', { $current_url, ...properties });
     if (process.env.NODE_ENV !== 'production') {
+      // Pass the URL as a separate arg, not interpolated into the format
+      // string: $current_url can derive from window.location.href (which
+      // CodeQL treats as user-controlled), and a %-token in it would be read
+      // as a console format specifier (js/tainted-format-string).
       // eslint-disable-next-line no-console
-      console.debug(`[analytics] pageview ${$current_url}`, properties);
+      console.debug('[analytics] pageview', $current_url, properties);
     }
   });
 }

@@ -67,7 +67,10 @@ export function ExamplePicker({ snippets, currentSlug, onSelect }: ExamplePicker
       const currentIndex = focusable.findIndex((el) => el === document.activeElement);
       if (currentIndex < 0) return;
 
-      let nextIndex = currentIndex;
+      // Declared without an initializer: every non-returning branch below
+      // assigns it, and the `default` returns early, so the old
+      // `= currentIndex` seed was dead (js/useless-assignment-to-local).
+      let nextIndex: number;
       switch (e.key) {
         case 'ArrowRight':
         case 'ArrowDown':

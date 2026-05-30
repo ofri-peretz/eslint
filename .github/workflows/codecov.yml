@@ -62,7 +62,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: steps.find.outputs.has_lcov == 'true'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload test results (Test Analytics)
         if: steps.find.outputs.has_junit == 'true'
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload coverage artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-reports-${{ github.run_id }}
           path: |

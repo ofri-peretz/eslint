@@ -158,7 +158,7 @@ jobs:
       max-parallel: 4
       matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -234,7 +234,7 @@ jobs:
 
       - name: Upload compatibility artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.key }}-compatibility-results
           path: packages/${{ matrix.plugin }}/.compatibility-results/
@@ -242,7 +242,7 @@ jobs:
 
       - name: Open / update issue on failure
         if: steps.test.outcome == 'failure' && inputs.create_issue != false
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           PLUGIN_PATH: packages/${{ matrix.plugin }}
           ISSUE_LABEL: ${{ matrix.issue_label }}
@@ -322,7 +322,7 @@ jobs:
 
       - name: Upload status artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: sdk-status-${{ matrix.key }}
           path: .sdk-status/
@@ -342,7 +342,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Download per-cell statuses
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: .sdk-status
           pattern: sdk-status-*

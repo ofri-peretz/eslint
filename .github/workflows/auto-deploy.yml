@@ -34,7 +34,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: write   # required to dispatch deploy.yml / deploy-docs.yml
 
 jobs:
   affected:
@@ -46,7 +45,7 @@ jobs:
       storybook: ${{ steps.compute.outputs.storybook }}
       registry: ${{ steps.compute.outputs.registry }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           # Need history reaching the previous main commit so turbo can
           # diff against it. `0` = full clone; for very large repos we'd
@@ -115,6 +114,8 @@ jobs:
     if: needs.affected.outputs.docs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      actions: write   # dispatch deploy*.yml via `gh workflow run`
     steps:
       - name: Fire deploy-docs.yml (production)
         env:
@@ -132,6 +133,8 @@ jobs:
     if: needs.affected.outputs.storybook == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      actions: write   # dispatch deploy*.yml via `gh workflow run`
     steps:
       - name: Fire deploy.yml (storybook → production)
         env:
@@ -149,6 +152,8 @@ jobs:
     if: needs.affected.outputs.registry == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      actions: write   # dispatch deploy*.yml via `gh workflow run`
     steps:
       - name: Fire deploy.yml (registry → production)
         env:

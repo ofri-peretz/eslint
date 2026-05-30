@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       # Composite setup: node from .nvmrc + node_modules cache + npm ci on
       # miss. Saves ~60s per PR push when the cache hits. turbo/playwright/
@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload generated coverage report on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: api-surface-coverage
           path: benchmark-results/api-surface-coverage.md

@@ -1,7 +1,7 @@
 # Composite action: post (or update) a sticky PR comment with a generated
 # audit `.md` report. Extracts the dedup-by-H1 pattern that originated in
 # `.github/workflows/benchmark.yml` so each gating workflow gets a one-liner
-# instead of duplicating 30 lines of `actions/github-script@v9` boilerplate.
+# instead of duplicating 30 lines of `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9` boilerplate.
 #
 # The comment is keyed by the first line of the report (must start with
 # `# `, which all reports from scripts/lib/report-format.ts produce by
@@ -40,7 +40,7 @@ runs:
   steps:
     - name: Post / update sticky audit-report comment
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v9
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         REPORT_PATH: ${{ inputs.report-path }}
         MARKER_PREFIX: ${{ inputs.marker-prefix }}

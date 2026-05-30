@@ -148,7 +148,16 @@ export async function compileRemoteMDX(
   // "Unexpected character `!` (U+0021) before name" — the `<` triggers JSX
   // parsing, which expects an identifier, not `!`.
   // We strip them here so the rest of the toolchain stays untouched.
-  const stripped = source.replace(/<!--[\s\S]*?-->/g, '');
+  // Loop until stable: a single pass can leave a fresh `<!--` behind when
+  // markers overlap (e.g. `<!--<!-- -->-->`), which CodeQL flags as
+  // js/incomplete-multi-character-sanitization. Re-running until no match
+  // remains makes the strip idempotent regardless of nesting.
+  let stripped = source;
+  let prev: string;
+  do {
+    prev = stripped;
+    stripped = stripped.replace(/<!--[\s\S]*?-->/g, '');
+  } while (stripped !== prev);
 
   // ```mermaid blocks are dispatched on the React side by the `pre`
   // override in `src/mdx-components.tsx` — no remark transform needed.

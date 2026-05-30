@@ -42,17 +42,19 @@ concurrency:
 
 permissions:
   contents: read
-  deployments: write
 
 jobs:
   deploy:
     name: Deploy ${{ inputs.app }} → ${{ inputs.target }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: write
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       # Composite setup: node from .nvmrc + cached node_modules + cached
       # Turbo + cached Next.js / Storybook build artifacts. Skips `npm ci`
