@@ -1,6 +1,6 @@
 ---
 title: require-schema-validation
-description: Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
+description: "Mongoose schema field lacks validation"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CWE-20, input validation, Mongoose, schema, security
+
+Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

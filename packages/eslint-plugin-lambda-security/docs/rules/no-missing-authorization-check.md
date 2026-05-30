@@ -29,6 +29,30 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 
 This rule helps enforce secure coding practices for lambda-security applications.
 
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Lambda handler performs a privileged operation without checking caller identity
+export const handler = async (event) => {
+  await db.query('DELETE FROM users');
+};
+```
+
+### ✅ Correct
+
+```javascript
+// Verify authorization before performing sensitive operations
+export const handler = async (event) => {
+  const user = event.requestContext?.authorizer?.claims;
+  if (!user?.sub) {
+    return { statusCode: 403, body: 'Forbidden' };
+  }
+  await db.query('DELETE FROM users WHERE id = $1', [user.sub]);
+};
+```
+
 ## Configuration
 
 ```javascript

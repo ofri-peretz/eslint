@@ -149,43 +149,47 @@ describe('no-unlimited-resource-allocation', () => {
 
   describe('Invalid Code - Resource Allocation in Loops', () => {
     ruleTester.run('invalid - resource allocation inside loops', noUnlimitedResourceAllocation, {
-      valid: [],
-      invalid: [
+      valid: [
+        // Literal-size allocations in loops are bounded — safe (FP regression lock)
         {
           code: `
             for (let i = 0; i < 10; i++) {
-              const buf = Buffer.alloc(1024); // Allocates in loop
+              const buf = Buffer.alloc(1024); // literal size: always 1024 bytes
             }
           `,
-          errors: [
-            {
-              messageId: 'resourceAllocationInLoop',
-            },
-          ],
         },
         {
           code: `
             while (condition) {
-              const arr = new Array(100); // Allocates in loop
+              const arr = new Array(100); // literal size: bounded
             }
           `,
-          errors: [
-            {
-              messageId: 'resourceAllocationInLoop',
-            },
-          ],
         },
         {
           code: `
             for (const item of items) {
-              const buffer = Buffer.alloc(512); // Allocates in loop
+              const buffer = Buffer.alloc(512); // literal size: bounded
             }
           `,
-          errors: [
-            {
-              messageId: 'resourceAllocationInLoop',
-            },
-          ],
+        },
+      ],
+      invalid: [
+        // Variable-size allocations in loops are genuinely risky
+        {
+          code: `
+            for (let i = 0; i < 10; i++) {
+              const buf = Buffer.alloc(userSize); // dynamic size from user input
+            }
+          `,
+          errors: [{ messageId: 'resourceAllocationInLoop' }],
+        },
+        {
+          code: `
+            while (condition) {
+              const arr = new Array(dynamicCount); // variable size, not literal
+            }
+          `,
+          errors: [{ messageId: 'resourceAllocationInLoop' }],
         },
       ],
     });
@@ -502,11 +506,11 @@ describe('no-unlimited-resource-allocation', () => {
         },
       ],
       invalid: [
-        // Just allocation in loop without assignment check
+        // Dynamic-size allocation in loop without assignment (still risky)
         {
           code: `
             for (let i = 0; i < 10; i++) {
-              const b = Buffer.alloc(100);
+              const b = Buffer.alloc(userSize);
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],

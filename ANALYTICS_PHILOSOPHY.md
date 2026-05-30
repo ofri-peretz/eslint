@@ -222,6 +222,13 @@ autocapture, pageviews, replay, web vitals, exceptions.
 - `navigator.doNotTrack === '1'` and
   `navigator.globalPrivacyControl === true` short-circuit `init` — PostHog
   never loads, nothing captures.
+- **Local environment short-circuit.** When `window.location.hostname` is
+  `localhost`, `127.0.0.1`, `0.0.0.0`, `::1`, or ends in `.local` /
+  `.localhost`, `init` is skipped by default. Without this, every
+  `pnpm dev` / `npm run dev` session would pollute production cohorts and
+  funnels. To intentionally exercise the integration locally, set
+  `localStorage.interlace_local_analytics = '1'` and reload — the
+  short-circuit lifts for that browser only.
 - Internal users mark themselves via `localStorage.interlace_internal = '1'`
   (set by a hidden setup page), which `$set`s `is_internal_user: true` on
   the person; every saved insight filters it out.

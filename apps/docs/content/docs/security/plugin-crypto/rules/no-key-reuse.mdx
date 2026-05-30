@@ -1,21 +1,17 @@
 ---
 title: no-key-reuse
-description: 'CWE: CWE-327'
+description: "Warn when same key is used for multiple cipher operations"
 tags: ['security', 'crypto']
 category: security
 severity: medium
 cwe: CWE-327
-owasp: 'A02:2021'
+owasp: "A02:2021"
 autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
 
-import {
-  FalseNegativeCTA,
-  WhenNotToUse,
-  RuleBadges,
-} from '@/components/RuleComponents';
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
@@ -29,7 +25,7 @@ import {
 | -------------- | -------------------------------------------- |
 | **Severity**   | Critical (Asymmetric/Symmetric Risk)         |
 | **Auto-Fix**   | ❌ No (requires architectural review)        |
-| **Category**   | Security                                     |
+| **Category**   | Security |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
 | **Best For**   | Enterprise key management and secure storage |
 
@@ -83,6 +79,7 @@ flowchart TD
     C --> E["💡 Suggest key derivation or rotation"]
 
 ```
+
 
 ### Why This Matters
 

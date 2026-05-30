@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -24,12 +24,12 @@ This plugin provides Security best practices for AWS Lambda functions (IAM, time
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-lambda-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-lambda-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-lambda-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-lambda-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-lambda-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-lambda-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security). 📚
 
 ```bash
 npm install eslint-plugin-lambda-security --save-dev
@@ -119,20 +119,20 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging) | CWE-532 | A09:2021 |  | Detect logging of process.env which may expose secrets | 🟢 |  | ⚠️ |  |  |  |
-| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing) | CWE-390 | A09:2021 |  | Detect empty catch blocks and missing error logging | 🟢 |  | ⚠️ |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints) | CWE-489 | A05:2021 |  | Detect debug endpoints without authentication in Lambda handlers | 🟢 | 💼 |  |  |  |  |
-| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details) | CWE-209 | A01:2021 |  | Detect Lambda handlers exposing internal error details in responses | 🟢 |  | ⚠️ |  |  |  |
-| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk) | CWE-798 |  |  | Detects hardcoded AWS credentials in SDK client configurations | 🟢 | 💼 |  |  |  |  |
-| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check) |  |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 |  | ⚠️ |  |  |  |
-| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy) | CWE-732 |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 | 💼 |  |  |  |  |
-| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  |  | Detects permissive CORS configurations in Middy middleware | 🟢 | 💼 |  |  |  |  |
-| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response) | CWE-942 |  |  | Detects permissive CORS headers in Lambda API Gateway responses | 🟢 | 💼 |  |  |  |  |
-| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env) | CWE-798 |  |  | Detects secrets defined directly in environment variable configurations | 🟢 | 💼 |  |  |  |  |
-| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing) | CWE-770 |  |  | Detect processing batch records without size validation | 🟢 |  | ⚠️ |  |  |  |
-| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body) | CWE-20 | A03:2021 |  | Detect Lambda handlers using event body without validation | 🟢 |  | ⚠️ |  |  |  |
-| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests) | CWE-918 | A10:2021 |  | Detect HTTP requests with user-controlled URLs (SSRF) | 🟢 | 💼 |  |  |  |  |
-| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling) | CWE-400 |  |  | Require timeout handling in Lambda handlers with external calls | 🟢 |  | ⚠️ |  |  |  |
+| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-532 | A09:2021 |  | Detect logging of process.env which may expose secrets | 🟢 |  | ⚠️ |  |  |  |
+| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-390 | A09:2021 |  | Detect empty catch blocks and missing error logging | 🟢 |  | ⚠️ |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-489 | A05:2021 |  | Detect debug endpoints without authentication in Lambda handlers | 🟢 | 💼 |  |  |  |  |
+| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-209 | A01:2021 |  | Detect Lambda handlers exposing internal error details in responses | 🟢 |  | ⚠️ |  |  |  |
+| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-798 |  |  | Detects hardcoded AWS credentials in SDK client configurations | 🟢 | 💼 |  |  |  |  |
+| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) |  |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 |  | ⚠️ |  |  |  |
+| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-732 |  |  | Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-opti… | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-942 |  |  | Detects permissive CORS configurations in Middy middleware | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-942 |  |  | Detects permissive CORS headers in Lambda API Gateway responses | 🟢 | 💼 |  |  |  |  |
+| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-798 |  |  | Detects secrets defined directly in environment variable configurations | 🟢 | 💼 |  |  |  |  |
+| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-770 |  |  | Detect processing batch records without size validation | 🟢 |  | ⚠️ |  |  |  |
+| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-20 | A03:2021 |  | Detect Lambda handlers using event body without validation | 🟢 |  | ⚠️ |  |  |  |
+| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-918 | A10:2021 |  | Detect HTTP requests with user-controlled URLs (SSRF) | 🟢 | 💼 |  |  |  |  |
+| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security) | CWE-400 |  |  | Require timeout handling in Lambda handlers with external calls | 🟢 |  | ⚠️ |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -152,10 +152,19 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/security/plugin-lambda-security"><img src="https://eslint.interlace.tools/images/og-lambda-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-lambda-security"><img src="https://eslint.interlace.tools/images/og-lambda-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

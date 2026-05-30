@@ -2,7 +2,7 @@
 title: 100% OWASP LLM Top 10 Coverage for Vercel AI SDK
 published: true
 description: A complete mapping of OWASP LLM Top 10 2025 categories to automated ESLint rules for the Vercel AI SDK
-tags: ai, security, owasp, typescript
+tags: ai, security, owasp, eslint
 cover_image:
 ---
 

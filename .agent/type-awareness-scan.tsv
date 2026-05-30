@@ -228,7 +228,8 @@ node-security	no-self-signed-certs	unaware
 node-security	no-cryptojs	unaware	
 node-security	no-buffer-overread	unaware	
 node-security	no-static-iv	unaware	
-node-security	no-cryptojs-weak-random	unaware	
+node-security	no-cryptojs-weak-random	unaware
+node-security	no-math-random-crypto	unaware	
 node-security	no-data-in-temp-storage	unaware	
 node-security	no-sha1-hash	unaware	
 operability	no-debug-code-in-production	unaware	

@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { TooltipProvider } from '#interlace/components/ui/tooltip';
 import { CodeBlockLabeller } from '@/components/a11y/code-block-labeller';
 import { ThemeTimeSync } from '@/components/theme-time-sync';
+import { Analytics } from '@vercel/analytics/next';
 import { PostHogProvider } from '@/components/posthog-provider';
 import { PostHogPageviewTracker } from '@/components/posthog-pageview-tracker';
 import { SITE_ORIGIN } from '@/lib/site-config';
@@ -125,6 +126,12 @@ export default function Layout({ children }: LayoutProps<'/'>) {
             <CodeBlockLabeller />
           </RootProvider>
         </PostHogProvider>
+        {/* Vercel Web Analytics — independent of PostHog. Self-contained
+            first-party script (/_vercel/insights), cookieless, no-ops off
+            Vercel and in dev. We report to both systems: PostHog owns
+            product events / funnels / replay; Vercel owns the zero-config
+            traffic + Web Vitals dashboard in the deploy console. */}
+        <Analytics />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 ---
 title: require-postmessage-origin-check
-description: Detects postMessage event handlers without origin validation
+description: "Require origin validation in postMessage event listeners"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
+
+Detects postMessage event handlers without origin validation
 
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

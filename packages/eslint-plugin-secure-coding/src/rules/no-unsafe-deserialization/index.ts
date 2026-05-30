@@ -239,6 +239,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     const validatedVariables = new Set<string>();
     // Track variables that contain untrusted data
     const untrustedVariables = new Set<string>();
+    // Variables read from a literal-string file path (e.g. fs.readFileSync('config.json')).
+    // These are still "untrusted" for eval/Function but safe for JSON.parse and other
+    // schema-validating parsers because the file content is statically bundled.
+    const literalPathFileVars = new Set<string>();
 
     /**
      * Check if this is a dangerous deserialization function
@@ -458,6 +462,11 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             if (arg.type === 'Identifier' && validatedVariables.has(arg.name)) {
               return false;
             }
+            // SAFE for JSON.parse/schema parsers: if the input came from a
+            // literal-path file read (bundled config), it is not user-controlled.
+            if (arg.type === 'Identifier' && literalPathFileVars.has(arg.name)) {
+              return false;
+            }
             return isUntrustedInput(arg) && !isInputValidated(arg);
           });
 
@@ -506,6 +515,12 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                   callee.property.type === 'Identifier' &&
                   ['readFile', 'readFileSync'].includes(callee.property.name)) {
                 untrustedVariables.add(declarator.id.name);
+                // Track whether the path is a literal — used downstream to skip
+                // safe deserializers (JSON.parse) on known-static files.
+                const pathArg = declarator.init.arguments[0];
+                if (pathArg?.type === 'Literal' && typeof pathArg.value === 'string') {
+                  literalPathFileVars.add(declarator.id.name);
+                }
               }
             }
           }
