@@ -47,14 +47,9 @@ export interface TrackedEventMap {
     channel: 'rss' | 'devto' | 'x' | 'github';
   };
   'articles:empty_state_view': { activeParams: string };
-  'stats:cta_click': {
-    action: 'star' | 'get_started' | 'plugin_install' | 'plugin_docs';
-    plugin?: string;
-  };
-  'flagship:cta_click': {
-    action: 'star' | 'install_config' | 'rule_install' | 'rule_docs';
-    rule?: string;
-  };
+  // Homepage hero → GitHub star CTA. The npm→GitHub arrow is the widest leak
+  // in the conversion funnel (GROWTH_PHILOSOPHY.md G1/G2); this measures it.
+  'homepage:star_click': { stars: number | null };
 }
 
 export type TrackedEventName = keyof TrackedEventMap;

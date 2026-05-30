@@ -32,7 +32,6 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1078',
       cvss: 2.5,
     },
-    fixable: 'code',
     messages: {
       noNamespace: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

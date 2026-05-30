@@ -9,6 +9,7 @@ import { dddValueObjectImmutability } from './rules/ddd-value-object-immutabilit
 import { enforceNaming } from './rules/enforce-naming';
 import { enforceRestConventions } from './rules/enforce-rest-conventions';
 import { noExternalApiCallsInUtils } from './rules/no-external-api-calls-in-utils';
+import { noMutableExports } from './rules/no-mutable-exports';
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
@@ -21,6 +22,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'enforce-naming': enforceNaming,
   'enforce-rest-conventions': enforceRestConventions,
   'no-external-api-calls-in-utils': noExternalApiCallsInUtils,
+  'no-mutable-exports': noMutableExports,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -43,6 +45,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'modularity/enforce-naming': 'warn',
   'modularity/enforce-rest-conventions': 'error',
   'modularity/no-external-api-calls-in-utils': 'error',
+  'modularity/no-mutable-exports': 'warn',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

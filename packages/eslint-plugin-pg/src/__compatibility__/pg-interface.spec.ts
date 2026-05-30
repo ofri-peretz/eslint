@@ -36,7 +36,7 @@ beforeAll(async () => {
       'pg package is not installed. Run: pnpm add pg --save-dev -w'
     );
   }
-});
+}, 30_000); // native-addon packages can take >10s to load cold
 
 describe('pg Interface Compatibility', () => {
   // ═══════════════════════════════════════════════════════════════════════════

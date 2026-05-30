@@ -55,6 +55,19 @@ describe('no-unsafe-deserialization', () => {
     ruleTester.run('invalid - dangerous eval usage', noUnsafeDeserialization, {
       valid: [],
       invalid: [
+        {
+          code: 'eval(req.body.script);',
+          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+        },
+        {
+          code: `
+            const fs = require('fs');
+            const data = fs.readFileSync('data.json');
+            eval(data);
+          `,
+          // Even a literal-path file read should flag eval — file content can be tampered.
+          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+        },
       ],
     });
   });

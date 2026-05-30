@@ -1,6 +1,6 @@
 ---
 title: require-express-body-parser-limits
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require size limits on Express.js body parsers to prevent DoS attacks"
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require size limits on body parser middleware to prevent DoS attacks
+
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 **Severity:** 🟡 Warning  
 **CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)

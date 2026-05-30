@@ -37,7 +37,6 @@ export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1078',
       cvss: 7.5,
     },
-    fixable: 'code',
     messages: {
       importModuleExports: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

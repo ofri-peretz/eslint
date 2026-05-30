@@ -33,7 +33,19 @@ This rule identifies destructive tools (delete, transfer, execute, etc.) that do
 
 ## ❌ Incorrect Code
 
-> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+```typescript
+// Destructive tool executes immediately with no confirmation gate
+await generateText({
+  model: openai('gpt-4'),
+  prompt: 'Delete the temp files',
+  tools: {
+    deleteFile: {
+      description: 'Delete a file',
+      execute: async ({ path }: { path: string }) => fs.unlinkSync(path),
+    },
+  },
+});
+```
 
 ## ✅ Correct Code
 

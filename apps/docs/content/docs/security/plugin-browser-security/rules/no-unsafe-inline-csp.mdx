@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-inline-csp
-description: "Disallow 'unsafe-inline' in Content Security Policy directives."
+description: "Replace unsafe-inline with nonces or hashes"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > No Unsafe Inline Csp
+
+Disallow 'unsafe-inline' in Content Security Policy directives.
 
 ## ⚠️ Security Issue
 
