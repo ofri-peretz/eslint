@@ -52,6 +52,12 @@ export interface TrackedEventMap {
   'homepage:star_click': { stars: number | null };
   // Stats / scorecard page CTAs (star, install, docs links).
   'stats:cta_click': { action: 'star' | 'plugin_install' | 'plugin_docs'; plugin?: string };
+  // Flagship / scorecard page CTAs.
+  'flagship:cta_click': {
+    action: 'star' | 'plugin_install' | 'rule_docs' | 'install_config';
+    plugin?: string;
+    rule?: string;
+  };
 }
 
 export type TrackedEventName = keyof TrackedEventMap;
