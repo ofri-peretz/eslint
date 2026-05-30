@@ -68,7 +68,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects directive injection vulnerabilities in templates',
       cwe: 'CWE-96',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       directiveInjection: formatLLMMessage({

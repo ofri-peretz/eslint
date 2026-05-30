@@ -31,7 +31,6 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-95',
       cvss: 9.5,
     },
-    fixable: 'code',
     hasSuggestions: false,
     messages: {
       unsafeDynamicRequire: formatLLMMessage({

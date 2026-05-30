@@ -65,7 +65,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects XPath injection vulnerabilities',
       cwe: 'CWE-643',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       xpathInjection: formatLLMMessage({

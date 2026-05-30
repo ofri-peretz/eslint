@@ -1,6 +1,6 @@
 ---
 title: no-overly-permissive-iam-policy
-description: Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+description: "Detects IAM policies with overly broad permissions (wildcards)"
 tags: ['security', 'aws', 'serverless']
 category: security
 severity: medium
@@ -14,6 +14,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** lambda-security, security, ESLint rule, LLM-optimized
+
+Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
 
 This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 
@@ -43,6 +45,30 @@ This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/pac
 ## Rule Details
 
 This rule helps enforce secure coding practices for lambda-security applications.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Wildcard Resource grants access to every resource in the account
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: '*',
+};
+```
+
+### ✅ Correct
+
+```javascript
+// Scope Resource to the specific bucket and key prefix required
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: 'arn:aws:s3:::my-bucket/uploads/*',
+};
+```
 
 ## Configuration
 

@@ -160,7 +160,7 @@ function hasNullCheck(
   // Check if parent is optional chaining
   const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
   if (parent && parent.type === 'ChainExpression') {
-    return true; // Optional chaining handles null/undefined
+    return true;
   }
 
   // Check if used with nullish coalescing
@@ -168,15 +168,49 @@ function hasNullCheck(
     return true;
   }
 
-  // Check for basic explicit null checks in if statements
-  // This is a simplified check that looks for patterns like:
-  // if (obj !== null) { obj.property; }
+  const objectText = sourceCode.getText(node.object);
+
+  // Short-circuit AND: `obj && obj.prop` — the right side of && runs only
+  // when the left side is truthy, so obj is guaranteed non-null here.
+  // Walk up one level (CallExpression wraps MemberExpression for `obj && obj.method()`)
+  const immediateParent = parent as TSESTree.Node | undefined;
+  const nodeOrCall =
+    immediateParent?.type === 'CallExpression' &&
+    (immediateParent as TSESTree.CallExpression).callee === node
+      ? immediateParent
+      : (node as TSESTree.Node);
+  const andParent = (nodeOrCall as TSESTree.Node & { parent?: TSESTree.Node })
+    .parent as TSESTree.LogicalExpression | undefined;
+  if (
+    andParent?.type === 'LogicalExpression' &&
+    andParent.operator === '&&' &&
+    andParent.right === nodeOrCall
+  ) {
+    const leftText = sourceCode.getText(andParent.left);
+    if (leftText === objectText || leftText.endsWith(objectText)) return true;
+  }
+
+  // Ternary consequent: `obj ? obj.prop : fallback` — the test being truthy
+  // guarantees obj is non-null before the consequent evaluates.
+  let cur: TSESTree.Node = node;
+  for (let depth = 0; depth < 8; depth++) {
+    const p: TSESTree.Node | undefined = (cur as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    if (!p) break;
+    if (
+      p.type === 'ConditionalExpression' &&
+      (p as TSESTree.ConditionalExpression).consequent === cur
+    ) {
+      if (sourceCode.getText((p as TSESTree.ConditionalExpression).test) === objectText) {
+        return true;
+      }
+    }
+    cur = p;
+  }
+
+  // Explicit null/truthy check in enclosing if statement
   if (hasExplicitNullCheck(node, sourceCode)) {
     return true;
   }
-
-  // For more sophisticated null checking, we'd need control flow analysis
-  // This is a simplified implementation that checks for basic patterns
 
   return false;
 }
@@ -220,7 +254,19 @@ function isNullCheckForObject(
   object: TSESTree.Expression,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  // Handle binary expressions like obj !== null
+  const objectText = sourceCode.getText(object);
+
+  // Truthy check: `if (obj)` or `if (obj.prop)` — direct truthy guard proves
+  // non-null. Also covers nested chains: `if (response) { response.data.items }`
+  // because checking the root (response) implicitly protects the full chain.
+  if (test.type === 'Identifier' || test.type === 'MemberExpression') {
+    const testText = sourceCode.getText(test);
+    if (testText === objectText || objectText.startsWith(testText + '.')) {
+      return true;
+    }
+  }
+
+  // Handle binary expressions like obj !== null, obj != undefined
   if (test.type === 'BinaryExpression') {
     const { left, right, operator } = test;
     if (
@@ -231,9 +277,7 @@ function isNullCheckForObject(
     ) {
       const leftText = sourceCode.getText(left);
       const rightText = sourceCode.getText(right);
-      const objectText = sourceCode.getText(object);
 
-      // Check if one side matches our object and the other is null/undefined
       if (
         (leftText === objectText &&
           (rightText === 'null' || rightText === 'undefined')) ||
@@ -252,6 +296,9 @@ function isNullCheckForObject(
       isNullCheckForObject(test.right, object, sourceCode)
     );
   }
+
+  // Unary negation: `if (!obj)` is a FALSY guard — only safe when paired
+  // with early return, which requires control-flow analysis. Skip for now.
 
   return false;
 }

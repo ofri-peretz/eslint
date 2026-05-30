@@ -94,6 +94,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow ECB encryption mode (use GCM or CBC instead) | 🟢 |  |  |  |  |  |
 | [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-916 | A02:2021 |  | Disallow PBKDF2 with insufficient iterations (< 100,000) | 🟢 |  |  |  |  |  |
 | [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack) | 🟢 |  |  |  |  |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-math-random-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-338 | A02:2021 |  | Disallow Math.random() for cryptographic purposes (tokens, keys, secrets) | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-pii-in-logs?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-532 |  |  | CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html) | 🟢 |  |  |  |  |  |
 | [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-295 | A07:2021 |  | Disallow rejectUnauthorized false in TLS options | 🟢 |  |  |  |  |  |
 | [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow sha1() from crypto-hash package (use sha256 or sha512) | 🟢 |  |  |  |  |  |
@@ -128,6 +129,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+<!-- INTERLACE:STAR_CTA:START -->
+## ⭐ Support & follow
+
+If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
 
 ## 📄 License
 

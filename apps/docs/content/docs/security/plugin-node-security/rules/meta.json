@@ -19,6 +19,7 @@
     "no-ecb-mode",
     "no-insecure-key-derivation",
     "no-insecure-rsa-padding",
+    "no-math-random-crypto",
     "no-pii-in-logs",
     "no-self-signed-certs",
     "no-sha1-hash",

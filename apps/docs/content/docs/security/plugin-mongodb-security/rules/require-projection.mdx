@@ -1,6 +1,6 @@
 ---
 title: require-projection
-description: Requires field projection on queries to minimize data exposure.
+description: "Query returns all fields without projection"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
+
+Requires field projection on queries to minimize data exposure.
 
 ⚠️ This rule is **off** by default in the `recommended` config.
 

@@ -1,6 +1,6 @@
 ---
 title: no-sensitive-payload
-description: JWT payloads are NOT encrypted, only base64-encoded
+description: "Prevent storing sensitive data in JWT payload which is only base64-encoded"
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevent storing sensitive data in JWT payload which is only base64-encoded
+
+JWT payloads are NOT encrypted, only base64-encoded
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)

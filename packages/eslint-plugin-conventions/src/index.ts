@@ -21,6 +21,7 @@ import { requireDataTestId } from './rules/conventions/require-data-testid';
 import { utmTaxonomy } from './rules/conventions/utm-taxonomy';
 import { noRawCrossPropertyHref } from './rules/conventions/no-raw-cross-property-href';
 import { analyticsEventNaming } from './rules/conventions/analytics-event-naming';
+import { noMagicNumbers } from './rules/conventions/no-magic-numbers';
 
 export const rules = {
   'no-commented-code': noCommentedCode,
@@ -37,6 +38,7 @@ export const rules = {
   'utm-taxonomy': utmTaxonomy,
   'no-raw-cross-property-href': noRawCrossPropertyHref,
   'analytics-event-naming': analyticsEventNaming,
+  'no-magic-numbers': noMagicNumbers,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {
@@ -59,6 +61,7 @@ export const configs = {
       'conventions/utm-taxonomy': 'error',
       'conventions/no-raw-cross-property-href': 'error',
       'conventions/analytics-event-naming': 'error',
+      'conventions/no-magic-numbers': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

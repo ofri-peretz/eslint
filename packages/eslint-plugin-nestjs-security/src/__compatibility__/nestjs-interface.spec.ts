@@ -29,7 +29,7 @@ beforeAll(async () => {
   } catch {
     console.warn('class-transformer not installed');
   }
-});
+}, 30_000); // native-addon packages can take >10s to load cold
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // @NESTJS/COMMON DECORATORS

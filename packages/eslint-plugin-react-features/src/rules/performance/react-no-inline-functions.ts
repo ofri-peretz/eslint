@@ -35,7 +35,6 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-no-inline-functions.md',
       description: 'Prevent inline functions in React renders with performance metrics',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 42% reduction (48→28 tokens) - inline functions cause unnecessary re-renders
