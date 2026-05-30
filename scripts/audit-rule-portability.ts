@@ -311,7 +311,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.65.0', maxKnown: '1.65.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.67.0', maxKnown: '1.67.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -325,8 +325,8 @@ const VERIFIED_OXLINT_RANGE = { min: '1.65.0', maxKnown: '1.65.x' };
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
   'plugins.js': '3caddca8054c7d91c6e0b5bacaba2a5c6f05fb2e9fa7b8c7226550f1d0c8061c',
   'plugins-dev.js': '050aec642a2c03884a217fecdd8644815d50f41650f2b083bce5e86cd2e9a157',
-  'lint.js':   '82ca488c2f31d995cab1d11b2c25e19d62749dc3cfbb712311804d7100f1d33a',
-  'bindings.js': '5e50fde52ccdb0ade40dcd78ca8caf48f806b4e232338ae8349dfda13ca3f8ac',
+  'lint.js':   'c88b8f84f4fce30196d384660c7800abc20ca2d514ae0bccc5bc4850c3544776',
+  'bindings.js': 'd09c1f588fa631e343c172733f79e3f197bf32df012b199819057d9775121cff',
 };
 
 async function checkOxlintRuntimeHashes() {
