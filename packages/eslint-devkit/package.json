@@ -77,7 +77,7 @@
   },
   "dependencies": {
     "@typescript-eslint/utils": "^7.0.0 || ^8.0.0",
-    "oxc-resolver": "^11.19.1"
+    "oxc-resolver": "^11.20.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
