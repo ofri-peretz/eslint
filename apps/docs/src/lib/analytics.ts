@@ -50,6 +50,8 @@ export interface TrackedEventMap {
   // Homepage hero → GitHub star CTA. The npm→GitHub arrow is the widest leak
   // in the conversion funnel (GROWTH_PHILOSOPHY.md G1/G2); this measures it.
   'homepage:star_click': { stars: number | null };
+  // Stats / scorecard page CTAs (star, install, docs links).
+  'stats:cta_click': { action: 'star' | 'plugin_install' | 'plugin_docs'; plugin?: string };
 }
 
 export type TrackedEventName = keyof TrackedEventMap;
