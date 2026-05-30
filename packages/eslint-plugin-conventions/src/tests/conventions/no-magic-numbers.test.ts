@@ -38,22 +38,22 @@ describe('no-magic-numbers', () => {
     invalid: [
       {
         code: 'setTimeout(cb, 5000);',
-        errors: [{ messageId: 'noMagicNumber' }],
+        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_5000 = 5000;\nsetTimeout(cb, MAGIC_5000);' }] }],
       },
       {
         code: 'const limit = users.length > 100 ? users.slice(0, 100) : users;',
         errors: [
-          { messageId: 'noMagicNumber' },
-          { messageId: 'noMagicNumber' },
+          { messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_100 = 100;\nconst limit = users.length > MAGIC_100 ? users.slice(0, 100) : users;' }] },
+          { messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_100 = 100;\nconst limit = users.length > 100 ? users.slice(0, MAGIC_100) : users;' }] },
         ],
       },
       {
         code: 'if (response.status === 404) {}',
-        errors: [{ messageId: 'noMagicNumber' }],
+        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_404 = 404;\nif (response.status === MAGIC_404) {}' }] }],
       },
       {
         code: 'const scaled = value * 1.5;',
-        errors: [{ messageId: 'noMagicNumber' }],
+        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_1_5 = 1.5;\nconst scaled = value * MAGIC_1_5;' }] }],
       },
     ],
   });
@@ -64,7 +64,7 @@ describe('no-magic-numbers', () => {
       {
         code: 'const x = arr[5];',
         options: [{ ignoreArrayIndexes: false }],
-        errors: [{ messageId: 'noMagicNumber' }],
+        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_5 = 5;\nconst x = arr[MAGIC_5];' }] }],
       },
     ],
   });
