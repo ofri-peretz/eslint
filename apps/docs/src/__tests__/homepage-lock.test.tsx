@@ -196,13 +196,19 @@ describe('Homepage: Structure Lock', () => {
 // =========================================
 
 describe('HeroSection: Structure Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs),
+  // the @interlace/ui/patterns/hero-cosmic preset (theme-aware atmospheric
+  // shell + structural skeleton), and the @interlace/ui/aceternity/daylight-
+  // background primitive (sun + clouds + sky for light theme). Lock-tests
+  // assert against all three as one logical unit.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -210,7 +216,9 @@ describe('HeroSection: Structure Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('hero section file exists', () => {
@@ -311,8 +319,16 @@ describe('HeroSection: Structure Lock', () => {
       expect(heroSource).toContain("clipPath: 'inset(0)'");
     });
 
-    it('uses cosmic gradient background', () => {
-      expect(heroSource).toContain('bg-gradient-to-b from-purple-950');
+    it('uses cosmic gradient background (theme-prefixed Tailwind v4 — light theme uses daylight surface)', () => {
+      // After the 2026-05 daylight restoration, the cosmic gradient is gated
+      // behind the `dark:` Tailwind variant so the same wrapper carries both
+      // surfaces. The migration to Tailwind v4 canonical `bg-linear-to-b`
+      // happened at the same time, so accept both the legacy and canonical
+      // forms (with or without the `dark:` prefix) — what matters is that
+      // the deep-purple gradient stays paired with the cosmic surface.
+      expect(heroSource).toMatch(
+        /(?:bg-(?:gradient|linear)-to-b\s+from-purple-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-purple-950)/,
+      );
     });
 
     it('has min-h-screen for full viewport', () => {
@@ -432,13 +448,16 @@ describe('HeroSection: Structure Lock', () => {
 // =========================================
 
 describe('Homepage: Accessibility Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // Same composite hero source as the structure-lock block above — see that
+  // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -446,7 +465,9 @@ describe('Homepage: Accessibility Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('uses h1 for main headline', () => {
@@ -520,13 +541,16 @@ describe('Homepage: Code Block WCAG Compliance', () => {
 // =========================================
 
 describe('HeroSection: Meteors Lock', () => {
-  // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs)
-  // and the @interlace/ui/patterns/hero-cosmic preset (cosmic background +
-  // structural skeleton). Lock-tests assert against both as one logical unit.
+  // Same composite hero source as the structure-lock block above — see that
+  // block's header for the rationale.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
   const cosmicPath = join(
     process.cwd(),
     '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -534,7 +558,9 @@ describe('HeroSection: Meteors Lock', () => {
     heroSource =
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
-      readFileSync(cosmicPath, 'utf-8');
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      readFileSync(daylightPath, 'utf-8');
   });
 
   it('imports Meteors component', () => {
@@ -555,6 +581,196 @@ describe('HeroSection: Meteors Lock', () => {
 
   it('has configured maximum duration', () => {
     expect(heroSource).toContain('maxDuration=');
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Nuxt blog-old parity asserts — these defaults were the source of
+  // "the meteors feel weird" in May 2026. The cosmic surface drifted
+  // from the original blog (faster shooting stars, denser starfield)
+  // when it was ported. Each value below is pinned against
+  // `apps/blog-old/app/components/CosmicBackground.vue` so a future
+  // refactor can't silently re-introduce the drift.
+  // ──────────────────────────────────────────────────────────────────
+
+  it('cosmic meteor color matches Nuxt blog-old (`#e9d5ff`)', () => {
+    expect(heroSource).toContain("meteorColor: '#e9d5ff'");
+  });
+
+  it('cosmic meteor count matches Nuxt blog-old (3, NOT the 22 from the registry primitive)', () => {
+    expect(heroSource).toMatch(/meteorCount:\s*3\b/);
+  });
+
+  it('cosmic meteor duration window matches Nuxt blog-old (12–30s, NOT 3–9s)', () => {
+    expect(heroSource).toMatch(/meteorMinDuration:\s*12\b/);
+    expect(heroSource).toMatch(/meteorMaxDuration:\s*30\b/);
+  });
+
+  it('cosmic shooting-star cadence matches Nuxt blog-old (delay 1200–4200ms, speed 10–30)', () => {
+    expect(heroSource).toMatch(/shootingMinDelay:\s*1200\b/);
+    expect(heroSource).toMatch(/shootingMaxDelay:\s*4200\b/);
+    expect(heroSource).toMatch(/shootingMinSpeed:\s*10\b/);
+    expect(heroSource).toMatch(/shootingMaxSpeed:\s*30\b/);
+  });
+
+  it('cosmic star density matches Nuxt blog-old (0.00015, NOT 0.0002)', () => {
+    expect(heroSource).toMatch(/starDensity:\s*0\.00015\b/);
+  });
+});
+
+// =========================================
+// DAYLIGHT SURFACE LOCK
+// =========================================
+// Restores the light-theme atmospheric surface (sun + clouds + sky)
+// that was missing from the shadcn port. The Nuxt blog-old hero
+// shipped a theme-aware twin — cosmic at night, daylight in light
+// mode — and the regression policy at the top of CLAUDE.md mandates
+// a lock for every restored surface so it can't silently disappear
+// again on a future refactor.
+
+describe('HeroSection: Daylight Surface Lock', () => {
+  const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
+  const cosmicPath = join(
+    process.cwd(),
+    '../../packages/ui/src/patterns/hero-cosmic.tsx',
+  );
+  const daylightPath = join(
+    process.cwd(),
+    '../../packages/ui/src/aceternity/daylight-background.tsx',
+  );
+  let heroSource: string;
+  let daylightSource: string;
+
+  beforeAll(() => {
+    daylightSource = readFileSync(daylightPath, 'utf-8');
+    heroSource =
+      readFileSync(heroPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
+      readFileSync(cosmicPath, 'utf-8') +
+      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      daylightSource;
+  });
+
+  describe('Primitives exist in the @interlace/ui aceternity surface', () => {
+    it('daylight-background.tsx file exists', () => {
+      expect(existsSync(daylightPath)).toBe(true);
+    });
+
+    it('exports SkyGradient primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+SkyGradient\b/);
+    });
+
+    it('exports Sun primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+Sun\b/);
+    });
+
+    it('exports CloudParticle primitive', () => {
+      expect(daylightSource).toMatch(/export\s+function\s+CloudParticle\b/);
+    });
+
+    it('exports DaylightBackground convenience wrapper', () => {
+      expect(daylightSource).toMatch(
+        /export\s+function\s+DaylightBackground\b/,
+      );
+    });
+  });
+
+  describe('Wiring — HeroCosmic mounts the daylight layer behind the dark:hidden gate', () => {
+    it('hero-cosmic.tsx imports DaylightBackground from the aceternity surface', () => {
+      expect(heroSource).toMatch(
+        /import\s+\{\s*DaylightBackground\s*\}\s+from\s+['"]\.\.\/aceternity\/daylight-background\.js['"]/,
+      );
+    });
+
+    it('hero-cosmic.tsx renders <DaylightBackground …> inside a `block dark:hidden` wrapper', () => {
+      // The light surface is opt-out by being hidden in dark mode. Lock
+      // both halves: the toggle class AND the component instance must
+      // co-exist in the source.
+      expect(heroSource).toContain('block dark:hidden');
+      expect(heroSource).toMatch(/<DaylightBackground\b/);
+    });
+
+    it('hero-cosmic.tsx renders cosmic primitives inside a `hidden dark:block` wrapper (negative parity)', () => {
+      // The dark surface is opt-out by being hidden in light mode. Pairs
+      // with the daylight lock above so neither side can be deleted
+      // without breaking the other.
+      expect(heroSource).toContain('hidden dark:block');
+    });
+
+    it('daylight surface accepts cloud/sun tuning knobs (`daylight` prop)', () => {
+      expect(heroSource).toMatch(/daylight\?:\s*\{/);
+      expect(heroSource).toMatch(/showSun\?:\s*boolean/);
+      expect(heroSource).toMatch(/showClouds\?:\s*boolean/);
+      expect(heroSource).toMatch(/cloudCount\?:\s*number/);
+    });
+  });
+
+  describe('SVG cloud filter — matches the Nuxt CloudParticle.vue volumetric matrix', () => {
+    // The 5-layer feMerge stack was hand-tuned in the original Vue
+    // component to match Framer's cloud aesthetic. Re-deriving it
+    // risks visual drift, so lock the structural shape.
+    it('CloudParticle defines a 5-layer feMerge stack (volumetric depth)', () => {
+      const merges = daylightSource.match(/<feMergeNode\b/g) ?? [];
+      expect(merges.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('CloudParticle uses dual feTurbulence sources (detail + broad)', () => {
+      const turbs = daylightSource.match(/<feTurbulence\b/g) ?? [];
+      expect(turbs.length).toBe(2);
+    });
+
+    it('CloudParticle uses fractalNoise (not turbulence) for organic shapes', () => {
+      expect(daylightSource).toContain('fractalNoise');
+    });
+
+    it('CloudParticle preserves the blue-tinted underside shadow (rgb(66,105,146))', () => {
+      // The under-cloud shadow color is what makes the clouds read as
+      // "lit from above" instead of flat. The exact value is from the
+      // Nuxt source — don't drift it.
+      expect(daylightSource).toMatch(/rgb\(\s*66\s*,\s*105\s*,\s*146\s*\)/);
+    });
+  });
+
+  describe('Sun rendering — corona + glow + core + rotating rays + lens flares', () => {
+    it('Sun renders an outer + middle corona (atmospheric diffraction)', () => {
+      expect(daylightSource).toContain('interlace-sun-corona-outer');
+      expect(daylightSource).toContain('interlace-sun-corona-middle');
+    });
+
+    it('Sun renders an overexposed core (the bright disk)', () => {
+      expect(daylightSource).toContain('interlace-sun-core');
+    });
+
+    it('Sun renders conic-gradient rays animated over 120s (matches Nuxt)', () => {
+      expect(daylightSource).toMatch(
+        /animation:\s*interlace-sun-rays-rotate\s+120s/,
+      );
+    });
+
+    it('Sun honors prefers-reduced-motion (rays animation is killed)', () => {
+      expect(daylightSource).toMatch(
+        /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]{0,200}interlace-sun-rays[\s\S]{0,80}animation:\s*none/,
+      );
+    });
+
+    it('Sun renders both horizontal + vertical lens flares (anamorphic look)', () => {
+      expect(daylightSource).toContain('interlace-lens-flare-h');
+      expect(daylightSource).toContain('interlace-lens-flare-v');
+    });
+  });
+
+  describe('Sky gradient — five-layer atmospheric scattering', () => {
+    it('SkyGradient uses HSL Rayleigh-scattered base (210→195→45 hue ramp)', () => {
+      expect(daylightSource).toMatch(/hsl\(210,\s*80%,\s*55%\)/);
+      expect(daylightSource).toMatch(/hsl\(45,\s*50%,\s*88%\)/);
+    });
+
+    it('SkyGradient renders the horizon warm-glow layer (golden-hour band)', () => {
+      expect(daylightSource).toContain('interlace-sky-horizon');
+    });
+
+    it('SkyGradient renders the vignette layer (subtle depth cue)', () => {
+      expect(daylightSource).toContain('interlace-sky-vignette');
+    });
   });
 });
 
