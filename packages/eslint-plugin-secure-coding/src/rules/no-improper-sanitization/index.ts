@@ -68,7 +68,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       description: 'Detects improper sanitization of user input',
       cwe: 'CWE-116',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       improperSanitization: formatLLMMessage({

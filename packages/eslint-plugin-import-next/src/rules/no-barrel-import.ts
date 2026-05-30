@@ -99,7 +99,6 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow imports from barrel files to improve build performance and tree-shaking',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       barrelImportDetected: formatLLMMessage({

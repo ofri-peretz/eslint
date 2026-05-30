@@ -1,6 +1,6 @@
 ---
 title: require-max-tokens
-description: "This rule identifies AI SDK calls that don't specify a maxTokens limit"
+description: "Require maxTokens limit in generateText and streamText calls"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Ensures all AI calls have token limits to prevent resource exhaustion.
+
+This rule identifies AI SDK calls that don't specify a maxTokens limit
 
 ## 📊 Rule Details
 

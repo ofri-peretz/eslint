@@ -39,7 +39,7 @@ beforeAll(async () => {
   } catch {
     console.warn('jwt-decode not installed');
   }
-});
+}, 30_000); // native-addon packages can take >10s to load cold
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // JSONWEBTOKEN INTERFACE

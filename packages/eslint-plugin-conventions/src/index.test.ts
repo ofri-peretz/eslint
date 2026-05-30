@@ -28,7 +28,7 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('no-raw-cross-property-href');
     expect(ruleKeys).toContain('analytics-event-naming');
 
-    expect(ruleKeys.length).toBe(14);
+    expect(ruleKeys.length).toBe(15);
   });
 
   it('should export rules matching plugin.rules', () => {

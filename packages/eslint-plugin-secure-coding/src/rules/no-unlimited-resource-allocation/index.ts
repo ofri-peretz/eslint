@@ -70,7 +70,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       description: 'Detects unlimited resource allocation that could cause DoS',
       cwe: 'CWE-770',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       unlimitedResourceAllocation: formatLLMMessage({
@@ -618,30 +617,42 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
               calleeText.includes('readFile') ||
               calleeText.includes('writeFile')) {
 
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-            /* c8 ignore stop */
+            // SAFE: Array.isArray / Array.from / Array.of are not allocation hazards.
+            if (calleeText === 'Array.isArray' ||
+                calleeText === 'Array.from' ||
+                calleeText === 'Array.of') {
+              // Array.from / Array.of are fine; allocation comes from their args, not size
+            } else {
+              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
+              if (safetyChecker.isSafe(node, context)) {
+                return;
+              }
+              /* c8 ignore stop */
 
-            // Skip if this is an assignment to an array element (pre-allocated pattern)
-            const parent = node.parent;
-            if (parent && parent.type === 'AssignmentExpression' &&
-                parent.left.type === 'MemberExpression' &&
-                parent.left.object.type === 'Identifier') {
-              // This is assigning to an array element, likely pre-allocated
-              return;
-            }
+              // SAFE: first arg is a numeric literal — size is statically bounded.
+              const firstArg = node.arguments[0];
+              if (firstArg?.type === 'Literal' && typeof firstArg.value === 'number') {
+                return;
+              }
 
-            // Report resourceAllocationInLoop - this can be in addition to user input errors
-            context.report({
-              node,
-              messageId: 'resourceAllocationInLoop',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
+              // Skip if this is an assignment to an array element (pre-allocated pattern)
+              const parent = node.parent;
+              if (parent && parent.type === 'AssignmentExpression' &&
+                  parent.left.type === 'MemberExpression' &&
+                  parent.left.object.type === 'Identifier') {
+                return;
+              }
+
+              // Report resourceAllocationInLoop - this can be in addition to user input errors
+              context.report({
+                node,
+                messageId: 'resourceAllocationInLoop',
+                data: {
+                  filePath: filename,
+                  line: String(node.loc?.start.line ?? 0),
+                },
+              });
+            }
           }
         }
       },
@@ -743,7 +754,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
 
         // Check for resource allocation inside loops
         if (isInsideLoop(node)) {
-          // Check if this allocates resources
           const newCalleeText = sourceCode.getText(callee);
           if (newCalleeText.includes('Buffer') ||
               newCalleeText.includes('Array') ||
@@ -755,6 +765,12 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
               return;
             }
             /* c8 ignore stop */
+
+            // SAFE: first arg is a numeric literal — size is statically bounded.
+            const firstArg = node.arguments[0];
+            if (firstArg?.type === 'Literal' && typeof firstArg.value === 'number') {
+              return;
+            }
 
             context.report({
               node,

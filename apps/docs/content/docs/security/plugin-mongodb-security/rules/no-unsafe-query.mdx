@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-query
-description: Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
+description: "Prevent NoSQL injection via direct use of user input in MongoDB queries"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
+
+Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

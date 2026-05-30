@@ -367,8 +367,14 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     const isTestFile = allowInTests && (
       filename.includes('.test.') ||
       filename.includes('.spec.') ||
+      filename.includes('.fixture.') ||
+      filename.includes('.mock.') ||
       filename.includes('__tests__') ||
-      filename.includes('/test/')
+      filename.includes('__mocks__') ||
+      filename.includes('/test/') ||
+      filename.includes('/tests/') ||
+      filename.includes('/fixtures/') ||
+      filename.includes('/mocks/')
     );
 
     // Compile ignore patterns to regex
@@ -614,6 +620,27 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // Skip if in test files and allowed
       if (isTestFile) {
         return;
+      }
+
+      // Skip fallback in `process.env.X || 'value'` — the string is only
+      // used when the env var is absent (dev-mode default). The real secret
+      // lives in the environment, not the source file.
+      if (
+        parent?.type === 'LogicalExpression' &&
+        (parent as TSESTree.LogicalExpression).operator === '||' &&
+        (parent as TSESTree.LogicalExpression).right === node
+      ) {
+        const left = (parent as TSESTree.LogicalExpression).left;
+        if (
+          left.type === 'MemberExpression' &&
+          left.object.type === 'MemberExpression' &&
+          left.object.object.type === 'Identifier' &&
+          left.object.object.name === 'process' &&
+          left.object.property.type === 'Identifier' &&
+          left.object.property.name === 'env'
+        ) {
+          return; // safe — fallback to process.env value
+        }
       }
 
       // Skip if used as a UI label / HTML attribute value (form-field name,

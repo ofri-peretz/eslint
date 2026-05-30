@@ -1,6 +1,6 @@
 ---
 title: no-algorithm-confusion
-description: This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
+description: "Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys"
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
+
+This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 

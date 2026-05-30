@@ -75,7 +75,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects GraphQL injection vulnerabilities and DoS attacks',
       cwe: 'CWE-89',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       graphqlInjection: formatLLMMessage({

@@ -1,6 +1,22 @@
 {
   "articles": [
     {
+      "id": 3769186,
+      "title": "I Inherited a NestJS Codebase. The First Lint Run Found 6 Vulnerabilities.",
+      "description": "The codebase had 2 years of feature PRs and zero security audits. In 30 minutes, a fresh ESLint run surfaced 6 distinct vulnerability classes.",
+      "url": "https://dev.to/ofri-peretz/i-inherited-a-nestjs-codebase-the-first-lint-run-found-6-vulnerabilities-55ma",
+      "canonical_url": "https://ofriperetz.dev/articles/i-inherited-a-nestjs-codebase-the-first-lint-run-found-6-vulnerabilities",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fjr9sy2gzvsl2w7j2uuvi.png",
+      "published_at": "2026-05-28T07:46:05Z",
+      "readable_publish_date": "",
+      "reading_time_minutes": 5,
+      "page_views_count": 0,
+      "public_reactions_count": 0,
+      "positive_reactions_count": 0,
+      "comments_count": 0,
+      "tag_list": ["eslint", "nestjs", "security", "devsecops"]
+    },
+    {
       "id": 3688612,
       "title": "no-cycle finds 0 cycles in next.js (and other lies caches tell you)",
       "description": "Our import-next/no-cycle reported 0 cycles in next.js's 14K-file repo. oxlint reported 17. The same rule, run on a 33-file subset of the same repo, found 5+. The bug: cache pollution from a depth-truncated DFS marking files as 'known acyclic' that hadn't been fully explored.",
@@ -743,7 +759,7 @@
       ]
     }
   ],
-  "total": 37,
+  "total": 38,
   "lastUpdated": "2026-05-24T03:20:52.927Z",
   "source": "authenticated"
 }

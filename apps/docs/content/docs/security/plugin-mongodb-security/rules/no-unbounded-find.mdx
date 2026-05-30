@@ -1,6 +1,6 @@
 ---
 title: no-unbounded-find
-description: Requires limit() on find queries to prevent resource exhaustion from unbounded result sets.
+description: "find() without limit() may return excessive data"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CWE-400, resource exhaustion, limit, MongoDB, DoS, security
+
+Requires limit() on find queries to prevent resource exhaustion from unbounded result sets.
 
 Requires `limit()` on find queries to prevent resource exhaustion from unbounded result sets.
 

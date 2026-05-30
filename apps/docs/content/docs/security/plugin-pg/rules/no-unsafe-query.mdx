@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-query
-description: SQL injection is one of the most critical security vulnerabilities
+description: "Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
+
+SQL injection is one of the most critical security vulnerabilities
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 

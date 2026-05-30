@@ -57,6 +57,10 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       // legitimately enumerates every published plugin, including the
       // deprecated crypto package, for historical comparison.
       'docs/META_HYGIENE.md',
+      // Changeset and migration doc for no-math-random-crypto legitimately
+      // explain the eslint-plugin-crypto → node-security consolidation.
+      /^\.changeset\/node-security-no-math-random-crypto\.md$/,
+      'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
     ],
   },
 ];
