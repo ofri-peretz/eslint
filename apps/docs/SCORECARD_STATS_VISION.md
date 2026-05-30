@@ -118,7 +118,7 @@
   `utm_source=ofriperetz_dev&utm_medium=referral&utm_campaign=scorecard`.
 - **Audience followers** come from Supabase (`v_creator_latest`), shown as
   context — never added to the North Star total.
-- A per-section **freshness stamp** ("updated <relative>") and a visible
+- A per-section **freshness stamp** ("updated N minutes ago") and a visible
   "data unavailable" state (instead of silent zeros when Supabase env is
   missing) keep the numbers honest.
 
