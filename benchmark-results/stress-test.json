@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-29T17:39:28.481Z",
+  "generatedAt": "2026-05-30T19:49:47.555Z",
   "totals": {
-    "cases": 51,
-    "matched": 51,
+    "cases": 57,
+    "matched": 57,
     "disagreement": 0,
     "errors": 0
   },
@@ -310,6 +310,57 @@
       "expected": "silent",
       "actual": "silent",
       "match": true
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "TP: fetch with user-controlled URL parameter",
+      "hypothesis": "Function param named \"url\" with URL substring → fire",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:31 ssrfVulnerability 🔒 CWE-918 OWASP:A01-Broken CVSS:9.1 | HTTP request with potentially user-controlled URL. An attacker could access inter"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "TP: axios.get with endpoint param",
+      "hypothesis": "Function param named \"endpoint\" → fire",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:20 ssrfVulnerability 🔒 CWE-918 OWASP:A01-Broken CVSS:9.1 | HTTP request with potentially user-controlled URL. An attacker could access inter"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "FP: fetch with literal URL",
+      "hypothesis": "Hardcoded string → safe, should not fire",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "FP: fetch after allowlist validation",
+      "hypothesis": "URL validated against ALLOWED_HOSTS → should not fire",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "FP: fetch with config variable (non-user-input name)",
+      "hypothesis": "Variable name \"config\" has no URL substring → skip",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "label": "TP: http.request with user URL",
+      "hypothesis": "http.request(userUrl) — direct SSRF via Node http module",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:13 ssrfVulnerability 🔒 CWE-918 OWASP:A01-Broken CVSS:9.1 | HTTP request with potentially user-controlled URL. An attacker could access inter"
     },
     {
       "rule": "jwt/no-algorithm-none",

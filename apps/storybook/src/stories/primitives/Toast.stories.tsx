@@ -135,15 +135,17 @@ export const RTL: Story = {
  */
 export const BelowMinViewport: Story = {
   render: () => (
-    <div data-interlace-dev style={{ width: MIN_VIEWPORT - 1 }}>
-      <Toast tone="info">
-        <Info className="size-4" aria-hidden />
-        <ToastTitle>{`< ${MIN_VIEWPORT}px — dev outline`}</ToastTitle>
-        <ToastDescription>
-          Toast still renders below the documented minimum viewport.
-        </ToastDescription>
-      </Toast>
-    </div>
+    <ToastProvider>
+      <div data-interlace-dev style={{ width: MIN_VIEWPORT - 1 }}>
+        <Toast tone="info">
+          <Info className="size-4" aria-hidden />
+          <ToastTitle>{`< ${MIN_VIEWPORT}px — dev outline`}</ToastTitle>
+          <ToastDescription>
+            Toast still renders below the documented minimum viewport.
+          </ToastDescription>
+        </Toast>
+      </div>
+    </ToastProvider>
   ),
   decorators: [
     (Story) => (

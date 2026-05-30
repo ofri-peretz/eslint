@@ -19,15 +19,12 @@ export const metadata: Metadata = {
 /**
  * /play — the interactive playground.
  *
- * Phase 1b (this version): renders 6 canonical flagship-rule snippets in
- * an editable Monaco editor with verified static findings per snippet.
- * When the user edits the code, the right pane switches to an honest
- * "edited, live linting pending" placeholder until Phase 2 ships.
- * URL state contract is wired (`?example=`) so links are shareable.
+ * Phase 3 (this version): plugin-toggle strip drives the active plugin set
+ * in the live linting request — toggling a plugin off sends `plugins: [...]`
+ * without it, so only the selected rules run server-side. "Copy config"
+ * generates a correct eslint.config.js for the active set.
  *
- * Phase 2: swap the static findings for live in-browser ESLint output
- *          via `eslint-linter-browserify`.
- * Phase 3: plugin-toggle strip + "copy config" button.
+ * Phase 4: embed mode + homepage hero swap to live playground.
  *
  * Spec: PLAYGROUND_SPEC.md.
  */
@@ -46,7 +43,7 @@ export default async function PlaygroundPage({
         <SectionHeader
           eyebrow="Try it"
           title="Playground"
-          tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Phase 1c — Monaco editor + plugin toggle strip + verified static findings; live in-browser linting (oxlint WASM) arrives in Phase 2."
+          tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Live linting — edits trigger a real ESLint run in under 300 ms; plugin toggles drive the active rule set."
         />
       </Section>
 
