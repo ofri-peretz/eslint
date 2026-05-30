@@ -11,6 +11,7 @@ import {
   type PlaygroundSnippet,
   type PlaygroundFinding,
 } from './snippets';
+import { useLiveLinting } from '@/lib/playground/useLiveLinting';
 
 /**
  * Parse the `?plugins=` query param. Empty / missing = all plugins enabled.
@@ -60,10 +61,16 @@ export function usePlaygroundState(initialSlug: string) {
     [enabledPlugins, snippetPlugins],
   );
 
-  const visibleFindings = useMemo<readonly PlaygroundFinding[]>(
-    () => snippet.findings.filter((f) => effectiveEnabled.has(getPluginPrefix(f.ruleId))),
-    [snippet.findings, effectiveEnabled],
-  );
+  // Phase 2: live linting. Runs whenever the editor value or plugin set changes.
+  const { liveFindings, lintStatus, lintError } = useLiveLinting(editorValue, effectiveEnabled);
+
+  // Use live findings when available; fall back to static canonical findings
+  // (shown while the first lint is in-flight, or if the API fails).
+  // Filter by the effective enabled-plugin set either way.
+  const visibleFindings = useMemo<readonly PlaygroundFinding[]>(() => {
+    const source = liveFindings ?? snippet.findings;
+    return source.filter((f) => effectiveEnabled.has(getPluginPrefix(f.ruleId)));
+  }, [liveFindings, snippet.findings, effectiveEnabled]);
 
   const writeUrl = useCallback(
     (mutate: (p: URLSearchParams) => void) => {
@@ -161,6 +168,9 @@ export function usePlaygroundState(initialSlug: string) {
     configSnippet,
     copyConfig,
     copied,
+    // Phase 2: live linting status
+    lintStatus,
+    lintError,
   } as const;
 }
 

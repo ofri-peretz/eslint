@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@interlace/ui/badge';
 import type { PlaygroundFinding } from './snippets';
+import type { LintStatus } from '@/lib/playground/useLiveLinting';
 
 export interface FindingsListProps {
   findings: readonly PlaygroundFinding[];
@@ -14,6 +15,8 @@ export interface FindingsListProps {
   /** Total findings on the canonical snippet; used to differentiate "no findings"
    *  from "all-plugins-disabled". */
   totalCount: number;
+  /** Phase 2: current lint status from useLiveLinting. */
+  lintStatus?: LintStatus;
 }
 
 /**
@@ -28,20 +31,31 @@ export interface FindingsListProps {
  *    the active plugin filter. Suggest toggling a plugin back on.
  *  - **Active list**: render each finding via `FindingCard`.
  */
-export function FindingsList({ findings, isEdited, hiddenCount, totalCount }: FindingsListProps) {
+export function FindingsList({ findings, isEdited, hiddenCount, totalCount, lintStatus }: FindingsListProps) {
+  const isLinting = lintStatus === 'linting';
+
   return (
     <div className="flex flex-col gap-2">
       <p className="font-mono text-xs uppercase tracking-wider text-fd-muted-foreground">
-        Findings {isEdited ? '· paused' : `· ${findings.length}`}
-        {!isEdited && hiddenCount > 0 && (
-          <span className="ml-1 normal-case tracking-normal text-fd-muted-foreground/70">
-            ({hiddenCount} hidden by plugin filter)
+        {isLinting ? (
+          <span className="flex items-center gap-1.5">
+            <Loader2 aria-hidden className="size-3 animate-spin" />
+            Linting…
           </span>
+        ) : (
+          <>
+            Findings · {findings.length}
+            {hiddenCount > 0 && (
+              <span className="ml-1 normal-case tracking-normal text-fd-muted-foreground/70">
+                ({hiddenCount} hidden by plugin filter)
+              </span>
+            )}
+          </>
         )}
       </p>
 
-      {isEdited ? (
-        <EditedPlaceholder />
+      {isLinting && findings.length === 0 ? (
+        <LintingSkeleton />
       ) : findings.length === 0 ? (
         <EmptyState
           message={
@@ -64,21 +78,12 @@ export function FindingsList({ findings, isEdited, hiddenCount, totalCount }: Fi
   );
 }
 
-function EditedPlaceholder() {
+/** Shown while the first lint result is in-flight. */
+function LintingSkeleton() {
   return (
-    <div className="flex flex-col items-start gap-2 rounded-md border border-dashed border-fd-border bg-fd-card/50 p-4 text-sm text-fd-muted-foreground">
-      <div className="flex items-center gap-2">
-        <Sparkles aria-hidden className="size-4 opacity-60" />
-        <span className="font-mono text-xs uppercase tracking-wider">
-          Code edited — live linting pending
-        </span>
-      </div>
-      <p>
-        The findings list shows the verified output for the canonical
-        snippet only. Live in-browser ESLint arrives in Phase 2 — until
-        then, click <em>Reset</em> to restore the snippet and see the
-        canonical findings.
-      </p>
+    <div className="flex flex-col gap-2" aria-busy aria-label="Linting in progress">
+      <div className="h-[88px] animate-pulse rounded-md border border-fd-border bg-fd-card/50 opacity-75" />
+      <div className="h-[88px] animate-pulse rounded-md border border-fd-border bg-fd-card/50 opacity-50" />
     </div>
   );
 }
