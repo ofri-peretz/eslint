@@ -141,7 +141,9 @@ describe('Stats page: structure lock', () => {
       'renders a <TableHead>%s</TableHead> header (className optional)',
       (col) => {
         const escaped = col.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-        const re = new RegExp(`<TableHead\\b[^>]*>\\s*${escaped}\\s*</TableHead>`);
+        const re = new RegExp(
+          `<TableHead\\b[^>]*>\\s*${escaped}\\s*</TableHead>`,
+        );
         expect(pageSource).toMatch(re);
       },
     );
@@ -184,6 +186,36 @@ describe('Stats page: structure lock', () => {
     it('forbids the misleading engagement-as-sum NSM model in ImpactCard', () => {
       expect(impactCardSource).not.toMatch(/engagement\.total/);
       expect(impactCardSource).not.toMatch(/engagement\.breakdown/);
+    });
+  });
+
+  describe('CTA + Audience locks', () => {
+    const ctaPath = join(process.cwd(), 'src/components/stats/cta.tsx');
+
+    it('the CTA island component exists', () => {
+      expect(existsSync(ctaPath)).toBe(true);
+    });
+
+    it('imports + renders the Star and per-plugin Install CTAs', () => {
+      expect(pageSource).toContain("from '@/components/stats/cta'");
+      for (const sym of ['StarButton', 'InstallCell']) {
+        expect(pageSource).toContain(sym);
+      }
+      expect(pageSource).toContain('<StarButton');
+      expect(pageSource).toContain('<InstallCell');
+    });
+
+    it('links each plugin row to its docs (not plain text)', () => {
+      expect(pageSource).toContain('pluginDocsHref');
+      expect(pageSource).toMatch(/<Link[^>]*href={pluginDocsHref/);
+    });
+
+    it('shows followers as Audience reach, null-guarded in the helper', () => {
+      expect(pageSource).toMatch(/Audience/);
+      expect(pageSource).toMatch(/followers/i);
+      expect(helperSource).toContain('audience');
+      expect(helperSource).toContain('githubFollowers');
+      expect(helperSource).toContain('devtoFollowers');
     });
   });
 });
