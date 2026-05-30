@@ -50,10 +50,17 @@ const docsSearch = createFromSource(source, {
   },
 });
 
+// Cast through `unknown` because the cached articles.json carries the
+// dev.to API's actual response shape (`public_reactions_count`, no
+// `user`), but `DevToArticle` declares the older shape used elsewhere
+// in the docs app. `buildArticleSearchIndexes` only reads fields that
+// exist on both, so the runtime is safe here. Aligning `DevToArticle`
+// with reality belongs in a follow-up PR — it touches lock tests that
+// pin the current field names and is out of scope for this change.
 const articlesSearch = createSearchAPI('advanced', {
   language: 'english',
   indexes: buildArticleSearchIndexes(
-    (articlesData as CachedArticlesData).articles,
+    (articlesData as unknown as CachedArticlesData).articles,
   ),
 });
 

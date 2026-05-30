@@ -8,10 +8,20 @@ import {
   CardFooter,
 } from '@interlace/ui/card';
 import { Button } from '@interlace/ui/button';
+import { withRtl } from '@/decorators';
 
 const meta: Meta<typeof Card> = {
   title: 'Primitives/Card',
   component: Card,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Container surface that groups related content. Uses `bg-card`/`text-card-foreground` token pair per `COLOR_PHILOSOPHY.md` — contrast holds in both themes without override.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -53,4 +63,9 @@ export const Dark: Story = {
       </Card>
     </div>
   ),
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

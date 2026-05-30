@@ -5,7 +5,9 @@
   "title": "Skeleton",
   "description": "@interlace/ui — skeleton primitive (shadcn-compatible).",
   "dependencies": [],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/skeleton.tsx",

@@ -83,7 +83,7 @@ This rule detects imports of these third-party crypto libraries:
 
 ## Examples
 
-### ❌ Third-Party (Flagged)
+### ❌ Incorrect
 
 ```typescript
 // crypto-js (deprecated, unmaintained)

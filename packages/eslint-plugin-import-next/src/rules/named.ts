@@ -30,7 +30,6 @@ export const named = createRule<RuleOptions, MessageIds>({
       description:
         'Ensure named imports correspond to a named export in the remote file',
     },
-    fixable: 'code',
     messages: {
       named: formatLLMMessage({
         icon: MessageIcons.SECURITY, // Using SECURITY as incorrect imports can be dangerous or break build

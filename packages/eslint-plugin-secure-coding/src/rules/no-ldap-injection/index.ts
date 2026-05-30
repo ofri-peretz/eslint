@@ -65,7 +65,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects LDAP injection vulnerabilities',
       cwe: 'CWE-90',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       ldapInjection: formatLLMMessage({

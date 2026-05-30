@@ -1,0 +1,78 @@
+{
+  "schema": "artifact-smoke/v2",
+  "pluginName": "eslint-plugin-secure-coding",
+  "configKey": "flagship",
+  "eslint": {
+    "findings": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "line": 16,
+        "messageId": "useEnvironmentVariable"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "line": 19,
+        "messageId": "useEnvironmentVariable"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "line": 22,
+        "messageId": "redosVulnerable"
+      }
+    ]
+  },
+  "oxlint": {
+    "findings": [
+      {
+        "ruleId": "secure-coding/detect-non-literal-regexp",
+        "line": 22
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "line": 16
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "line": 19
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "line": 22
+      }
+    ],
+    "ruleSubset": [
+      "no-graphql-injection",
+      "no-xxe-injection",
+      "no-xpath-injection",
+      "no-ldap-injection",
+      "no-directive-injection",
+      "no-format-string-injection",
+      "detect-non-literal-regexp",
+      "no-redos-vulnerable-regex",
+      "no-unsafe-regex-construction",
+      "detect-object-injection",
+      "no-unsafe-deserialization",
+      "no-insecure-comparison",
+      "no-improper-sanitization",
+      "no-improper-type-validation",
+      "no-missing-authentication",
+      "no-privilege-escalation",
+      "no-weak-password-recovery",
+      "require-backend-authorization",
+      "no-hardcoded-credentials",
+      "no-sensitive-data-exposure",
+      "no-pii-in-logs",
+      "no-unlimited-resource-allocation",
+      "no-unchecked-loop-condition",
+      "detect-weak-password-validation",
+      "no-electron-security-issues",
+      "no-hardcoded-session-tokens",
+      "require-secure-defaults"
+    ]
+  },
+  "parity": {
+    "knownDivergences": {
+      "secure-coding/detect-non-literal-regexp@22": "oxlint host fires detect-non-literal-regexp on the literal regex /(a+)+b/ at fixture.js:22 — ESLint correctly silent. Engine-shim bug; tracked. Remove this entry once the rule's oxlint codepath is fixed."
+    }
+  }
+}

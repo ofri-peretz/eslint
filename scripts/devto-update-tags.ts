@@ -21,7 +21,6 @@ const RATE_LIMIT_DELAY_MS = 1000;
 const _PLUGIN_TAGS = [
   'eslint',        // Core - MUST be on all ESLint articles
   'jwt',           // eslint-plugin-jwt
-  'crypto',        // Cryptography topics (covered by eslint-plugin-node-security)
   'mongodb',       // eslint-plugin-mongodb-security
   'express',       // eslint-plugin-express-security
   'nestjs',        // eslint-plugin-nestjs-security
@@ -42,16 +41,11 @@ const PLUGIN_DETECTION: Record<string, string[]> = {
   'token verification': ['jwt', 'eslint', 'security'],
   'token signing': ['jwt', 'eslint', 'security'],
   
-  // Cryptography topics (covered by eslint-plugin-node-security)
-  'crypto': ['crypto', 'eslint', 'security'],
-  'cryptography': ['crypto', 'eslint', 'security'],
-  'encryption': ['crypto', 'eslint', 'security'],
-  'bcrypt': ['crypto', 'eslint', 'security'],
-  'hash': ['crypto', 'eslint', 'security'],
-  'cipher': ['crypto', 'eslint', 'security'],
-  'aes': ['crypto', 'eslint', 'security'],
-  'rsa': ['crypto', 'eslint', 'security'],
-  
+  // Cryptography topics (covered by eslint-plugin-node-security — crypto plugin deprecated)
+  'cryptography': ['eslint', 'node', 'security'],
+  'encryption': ['eslint', 'node', 'security'],
+  'bcrypt': ['eslint', 'node', 'security'],
+
   // MongoDB plugin
   'mongodb': ['mongodb', 'eslint', 'security'],
   'mongoose': ['mongodb', 'eslint', 'security'],
@@ -95,10 +89,31 @@ const PLUGIN_DETECTION: Record<string, string[]> = {
   'dom': ['browser', 'eslint'],
   'innerhtml': ['browser', 'eslint', 'security'],
   
+  // Import / cycle detection (import-next plugin)
+  'no-cycle': ['javascript', 'node', 'eslint'],
+  'import cycle': ['javascript', 'node', 'eslint'],
+  'circular dependency': ['javascript', 'node', 'eslint'],
+  'circular import': ['javascript', 'node', 'eslint'],
+  'depth-first': ['javascript', 'algorithms', 'eslint'],
+
+  // Performance topics
+  'n+1': ['postgres', 'performance', 'node'],
+  'performance regression': ['javascript', 'performance', 'node'],
+  '100x': ['javascript', 'performance', 'eslint'],
+  'benchmark': ['javascript', 'performance', 'eslint'],
+
+  // AI / LLM security
+  'prompt injection': ['ai', 'security', 'javascript'],
+  'llm': ['ai', 'security', 'javascript'],
+  'openai': ['ai', 'security', 'javascript'],
+  'anthropic': ['ai', 'security', 'javascript'],
+  'claude': ['ai', 'security', 'javascript'],
+  'owasp llm': ['ai', 'security', 'javascript'],
+
   // General ESLint
   'eslint': ['eslint'],
   'linting': ['eslint'],
-  'static analysis': ['eslint'],
+  'static analysis': ['eslint', 'javascript'],
 };
 
 interface DevToArticle {
@@ -211,6 +226,9 @@ function detectRequiredTags(article: DevToArticle): Set<string> {
     }
   }
 
+  // Every article in this repo is ESLint-related — always require the base tag
+  requiredTags.add('eslint');
+
   return requiredTags;
 }
 
@@ -240,11 +258,20 @@ function calculateNewTags(currentTags: string[], requiredTags: Set<string>): { n
     'vercel': 95,
     'browser': 95,
     
-    'security': 90,     // Very important for SEO
-    'javascript': 80,   // Good for discoverability
+    'security': 90,       // Very important for SEO
+    'javascript': 80,     // Good for discoverability
     'typescript': 80,
+    'node': 70,
+    'ai': 70,
+    'devsecops': 70,
+    'performance': 65,
     'nodejs': 60,
     'webdev': 50,
+    'algorithms': 40,
+    'benchmarks': 35,
+    'tutorial': 35,
+    // Dead-discovery tags — explicitly deprioritised so any detected required tag displaces them
+    'staticanalysis': 5,
   };
 
   // Combine current and required tags
@@ -327,8 +354,14 @@ async function main() {
     const article = articles[i];
     process.stdout.write(`   [${i + 1}/${articles.length}] "${article.title.slice(0, 50)}..." `);
 
-    // Fetch full article content for better analysis
-    const fullArticle = await fetchArticleContent(apiKey, article.id);
+    // Fetch full article content for better analysis; fall back to the list
+    // article if the public endpoint returns 404 (e.g. very recently published)
+    let fullArticle: DevToArticle;
+    try {
+      fullArticle = await fetchArticleContent(apiKey, article.id);
+    } catch {
+      fullArticle = article;
+    }
     const requiredTags = detectRequiredTags(fullArticle);
     const { newTags, removedTag: _removedTag } = calculateNewTags(article.tag_list, requiredTags);
 

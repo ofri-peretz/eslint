@@ -180,7 +180,7 @@ describe('expiring-todo-comments', () => {
       valid: [
         // Engine version not reached
         {
-          code: '// TODO [engine:node@>=20.0.0]: Future Node version',
+          code: '// TODO [engine:node@>=99.0.0]: Future Node version',
         },
       ],
       invalid: [

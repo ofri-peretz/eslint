@@ -4,6 +4,12 @@
   "homepage": "https://ds.interlace.tools",
   "items": [
     {
+      "name": "theme",
+      "type": "registry:style",
+      "title": "Interlace Theme",
+      "description": "@interlace/ui — brand tokens, shadcn-token bridge, and animation keyframes consumed by every primitive."
+    },
+    {
       "name": "accordion",
       "type": "registry:ui",
       "title": "Accordion",

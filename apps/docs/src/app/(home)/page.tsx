@@ -25,6 +25,7 @@ import { createTweetFetcher } from '#interlace/lib/tweet-loader';
 import { createDevToFetcher } from '#interlace/lib/devto-loader';
 import { ShimmerButton } from '@interlace/ui/magicui/shimmer-button';
 import { getDisplayStats } from '@/lib/stats-loader';
+import { getGitHubStars } from '@/lib/github-stars';
 import { HeroSection } from '@/components/home/hero-section';
 import { InstallSnippet } from '@/components/mdx/install-snippet';
 import cachedTweets from '@/data/cached-tweets.json';
@@ -44,6 +45,7 @@ const devtoFetcher = createDevToFetcher({ cache: cachedDevToArticles });
 
 export default async function HomePage() {
   const stats = await getDisplayStats();
+  const githubStars = await getGitHubStars();
 
   // Note: fumadocs `HomeLayout` already provides the page-level `<main>`
   // landmark; nesting another would trip axe `landmark-no-duplicate-main`.
@@ -56,7 +58,7 @@ export default async function HomePage() {
   return (
     <div id="main-content" tabIndex={-1} className="relative min-h-screen outline-hidden">
       {/* HERO — full-bleed; not subject to container rules (LAYOUT §2 `full`) */}
-      <HeroSection />
+      <HeroSection githubStars={githubStars} />
 
       {/* RUNTIME STRIP — engine portability sits adjacent to the hero so the
           "rules portable, runtimes commodity" position (INTEROP_PHILOSOPHY.md)

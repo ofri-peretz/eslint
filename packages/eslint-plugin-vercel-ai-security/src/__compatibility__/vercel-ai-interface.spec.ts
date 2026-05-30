@@ -17,7 +17,7 @@ beforeAll(async () => {
   } catch {
     throw new Error('ai package is not installed. Run: pnpm add ai --save-dev');
   }
-});
+}, 30_000); // native-addon packages can take >10s to load cold
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORE FUNCTION EXPORTS

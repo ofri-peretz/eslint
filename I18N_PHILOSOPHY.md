@@ -94,7 +94,7 @@ has 6. Hardcoding `count === 1 ? "item" : "items"` breaks in most languages.
 **Mechanics:** ICU MessageFormat (`i18next` ICU plugin, `intl-messageformat`,
 or `@formatjs/intl`) is the floor. Translation key shape:
 
-```icu
+```text
 {count, plural, =0 {No items} one {# item} other {# items}}
 ```
 

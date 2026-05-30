@@ -5,16 +5,18 @@
   "title": "Container",
   "description": "@interlace/ui — container primitive (shadcn-compatible).",
   "dependencies": [
-    "@base-ui-components/react",
+    "@base-ui/react",
     "class-variance-authority"
   ],
-  "registryDependencies": [],
+  "registryDependencies": [
+    "theme"
+  ],
   "files": [
     {
       "path": "registry/interlace-ui/container.tsx",
       "target": "components/ui/container.tsx",
       "type": "registry:ui",
-      "content": "import * as React from 'react';\nimport { useRender } from '@base-ui-components/react/use-render';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\n/**\n * `<Container>` — width contract from LAYOUT_PHILOSOPHY.md §2.\n *\n * Four sizes only, mapped to fixed max-widths. Mixing ad-hoc `max-w-3xl` /\n * `max-w-5xl` is forbidden in app code.\n *\n *   | size      | max-width | Use                                  |\n *   | --------- | --------- | ------------------------------------ |\n *   | `prose`   | 65ch      | Long-form text (rule docs, articles) |\n *   | `content` | 1024px    | Default for landing sections         |\n *   | `wide`    | 1280px    | Card-grid heavy sections             |\n *   | `full`    | none      | Full-bleed hero, decorative bands    |\n *\n * Owns the responsive horizontal padding scale: `px-4 sm:px-6 lg:px-8`\n * (LAYOUT_PHILOSOPHY §5).\n */\n\nconst containerVariants = cva('mx-auto w-full px-4 sm:px-6 lg:px-8', {\n  variants: {\n    size: {\n      prose: 'max-w-[65ch]',\n      content: 'max-w-[1024px]',\n      wide: 'max-w-[1280px]',\n      full: 'max-w-none px-0 sm:px-0 lg:px-0',\n    },\n  },\n  defaultVariants: {\n    size: 'content',\n  },\n});\n\ntype ContainerProps = React.ComponentProps<'div'> &\n  VariantProps<typeof containerVariants> & {\n    render?: useRender.RenderProp;\n  };\n\nfunction Container({ className, size, render, ...props }: ContainerProps) {\n  const element = useRender({\n    render: render ?? <div />,\n    props: {\n      'data-slot': 'container',\n      'data-size': size ?? undefined,\n      className: cn(containerVariants({ size }), className),\n      ...props,\n    },\n  });\n\n  return element;\n}\n\nexport { Container, containerVariants };\nexport type { ContainerProps };\n"
+      "content": "import * as React from 'react';\nimport { useRender } from '@base-ui/react/use-render';\nimport { cva, type VariantProps } from 'class-variance-authority';\n\nimport { cn } from '@/lib/utils';\n\n/**\n * `<Container>` — width contract from LAYOUT_PHILOSOPHY.md §2.\n *\n * Four sizes only, mapped to fixed max-widths. Mixing ad-hoc `max-w-3xl` /\n * `max-w-5xl` is forbidden in app code.\n *\n *   | size      | max-width | Use                                  |\n *   | --------- | --------- | ------------------------------------ |\n *   | `prose`   | 65ch      | Long-form text (rule docs, articles) |\n *   | `content` | 1024px    | Default for landing sections         |\n *   | `wide`    | 1280px    | Card-grid heavy sections             |\n *   | `full`    | none      | Full-bleed hero, decorative bands    |\n *\n * Owns the responsive horizontal padding scale: `px-4 sm:px-6 lg:px-8`\n * (LAYOUT_PHILOSOPHY §5).\n */\n\nconst containerVariants = cva('mx-auto w-full px-4 sm:px-6 lg:px-8', {\n  variants: {\n    size: {\n      prose: 'max-w-[65ch]',\n      content: 'max-w-[1024px]',\n      wide: 'max-w-[1280px]',\n      full: 'max-w-none px-0 sm:px-0 lg:px-0',\n    },\n  },\n  defaultVariants: {\n    size: 'content',\n  },\n});\n\ntype ContainerProps = React.ComponentProps<'div'> &\n  VariantProps<typeof containerVariants> & {\n    render?: useRender.RenderProp;\n  };\n\nfunction Container({ className, size, render, ...props }: ContainerProps) {\n  const element = useRender({\n    render: render ?? <div />,\n    props: {\n      'data-slot': 'container',\n      'data-size': size ?? undefined,\n      className: cn(containerVariants({ size }), className),\n      ...props,\n    },\n  });\n\n  return element;\n}\n\nexport { Container, containerVariants };\nexport type { ContainerProps };\n"
     }
   ]
 }

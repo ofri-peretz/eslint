@@ -23,7 +23,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
     "lint:workflows": "tsx scripts/lint-workflows.ts",
     "lint:workflows:actionlint": "actionlint",
@@ -36,6 +36,8 @@
     "release:reconcile:cleanup": "tsx scripts/reconcile-tags.ts --cleanup-orphans --confirm",
     "release:reconcile:releases": "tsx scripts/reconcile-tags.ts --create-releases",
     "release:notes": "tsx scripts/extract-changelog.ts",
+    "sync:philosophies": "tsx scripts/sync-philosophies.ts",
+    "sync:philosophies:check": "tsx scripts/sync-philosophies.ts --check",
     "dev": "turbo run dev",
     "dev:docs": "turbo run dev --filter=docs",
     "build": "turbo run build",
@@ -55,6 +57,10 @@
     "sync-tags": "tsx scripts/sync-git-tags.ts",
     "sync-tags:dry-run": "tsx scripts/sync-git-tags.ts --dry-run",
     "check-links": "tsx scripts/check-markdown-links.ts",
+    "check:utm-links": "tsx scripts/check-utm-links.ts",
+    "sync-readmes": "tsx scripts/sync-readme-rules.ts && tsx scripts/stamp-utm-links.ts",
+    "sync:homepages": "tsx scripts/sync-package-homepages.ts",
+    "utm:social": "tsx scripts/utm-social.ts",
     "check-versions": "tsx scripts/check-version-alignment.ts",
     "check-source-versions": "tsx scripts/check-source-version-sync.ts",
     "check-stale-artifacts": "tsx scripts/check-stale-build-artifacts.ts",
@@ -64,7 +70,9 @@
     "benchmark:json": "tsx scripts/benchmark-plugin.ts --json",
     "stats:eslint-versions": "tsx scripts/fetch-eslint-version-stats.ts",
     "stats:eslint-versions:json": "tsx scripts/fetch-eslint-version-stats.ts --json --out=benchmark-results/eslint-version-stats.json",
+    "devto:audit": "tsx scripts/devto-audit.ts",
     "devto:publish": "tsx scripts/devto-publish.ts",
+    "devto:sync-articles": "tsx apps/docs/scripts/update-articles-data.ts",
     "devto:update-tags": "tsx scripts/devto-update-tags.ts",
     "oxlint": "oxlint --config .oxlintrc.json apps/ packages/ scripts/ tools/",
     "oxlint:interlace": "oxlint --config .oxlintrc.experimental.json packages/",
@@ -170,6 +178,8 @@
     "ilb:flagship": "tsx benchmarks/suites/ilb-flagship/run.ts",
     "ilb:flagship:scorecard": "tsx benchmarks/suites/ilb-flagship/scorecard.ts",
     "ilb:flagship:smoke": "tsx benchmarks/suites/ilb-flagship/smoke.ts",
+    "verify:artifact": "tsx scripts/verify-published-artifact.ts",
+    "verify:artifact:all": "tsx scripts/verify-published-artifact.ts --all",
     "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
   },
   "keywords": [

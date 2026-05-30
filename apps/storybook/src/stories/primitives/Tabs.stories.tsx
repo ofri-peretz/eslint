@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@interlace/ui/tabs';
+import { withDark, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Tabs> = {
   title: 'Primitives/Tabs',
   component: Tabs,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Horizontal tab navigation with keyboard arrow-key traversal per `KEYBOARD_PHILOSOPHY.md`. Lazy-mount: a TabsContent renders only when its trigger is active.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -28,4 +38,14 @@ export const Default: Story = {
       </TabsContent>
     </Tabs>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
 };

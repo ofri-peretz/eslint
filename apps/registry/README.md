@@ -31,7 +31,7 @@ Each `public/r/<name>.json` follows the [shadcn registry-item schema](https://ui
   "type": "registry:ui",
   "title": "Button",
   "description": "@interlace/ui — button primitive (shadcn-compatible).",
-  "dependencies": ["@base-ui-components/react", "class-variance-authority"],
+  "dependencies": ["@base-ui/react", "class-variance-authority"],
   "registryDependencies": [],
   "files": [
     {

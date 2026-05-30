@@ -8,11 +8,21 @@ import {
   DropdownMenuSeparator,
 } from '@interlace/ui/dropdown-menu';
 import { Button } from '@interlace/ui/button';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof DropdownMenu> = {
   title: 'Primitives/DropdownMenu',
   component: DropdownMenu,
-  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Trigger-anchored menu with full keyboard navigation per `KEYBOARD_PHILOSOPHY.md`. Supports items, checkbox-items, radio-items, sub-menus. Closes on Escape or click-outside.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -34,4 +44,19 @@ export const Default: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

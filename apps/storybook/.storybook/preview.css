@@ -1,11 +1,21 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-twoslash/twoslash.css';
 @import '@interlace/ui/styles/tokens.css';
 @import '@interlace/ui/styles/theme.css';
 @import '@interlace/ui/styles/interlace-theme.css';
 
-@source "../../../../packages/ui/src";
+/* From `apps/storybook/.storybook/preview.css`:
+ *   ..       → apps/storybook/
+ *   ../..    → apps/
+ *   ../../.. → eslint/ (repo root)
+ * Three `..` lands at the monorepo root; four `..` (the previous value)
+ * silently resolved outside the repo and Tailwind dropped every utility
+ * referenced only inside `packages/ui/src/**`.
+ */
+@source "../../../packages/ui/src";
 @source "../src";
 
 @custom-variant dark (&:is(.dark *));

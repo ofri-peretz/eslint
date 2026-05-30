@@ -1,0 +1,208 @@
+# UTM Philosophy
+
+A focused sub-philosophy of [URL_PHILOSOPHY.md](./URL_PHILOSOPHY.md)
+(principle #5 "default values never appear in URLs" and principle #9 "sticky
+parameters survive navigation") and
+[ANALYTICS_PHILOSOPHY.md](./ANALYTICS_PHILOSOPHY.md), covering how `utm_*`
+parameters carry inbound source and campaign context across the six
+properties we ship.
+
+This document is the portable rulebook for UTM in any property under our
+ownership — the eslint docs site, the registry, the design system, the Nuxt
+blog, the landing page, the storybook. UTM is a 25-year-old convention
+everyone half-remembers; the value is in pinning it to a fixed taxonomy and a
+single helper so the data joins cleanly when PostHog reads it.
+
+---
+
+## The core rule
+
+> **`utm_*` is the source-of-truth attribution signal for cross-property
+> traffic. The taxonomy is fixed, the construction goes through one blessed
+> helper, the params are stripped from the visible URL after capture, and
+> they never appear on internal navigation.**
+
+Three tests, in order:
+
+1. **Taxonomy test.** Does every `utm_source` and `utm_medium` value match
+   the fixed list? Free-text values (`Blog`, `blog-1`, `BLOG`) destroy
+   joinability — they don't compose into a "blog traffic" cohort, they split
+   into three.
+2. **Construction test.** Is the URL built by `buildUtmHref(href, opts)`, or
+   by a template literal? Template literals bypass the taxonomy and the
+   ESLint rule that enforces it.
+3. **Strip test.** After the landing `$pageview` fires, does the address bar
+   still show `?utm_source=…`? If yes, a re-share re-stamps source and the
+   journey gets attributed to the wrong campaign forever.
+
+---
+
+## The taxonomy
+
+Five slots, fixed values in the first two. Free-form values are forbidden
+in `source` and `medium`; structured-slug-form is allowed in `campaign`,
+`content`, and `term`.
+
+| Slot           | Values                                                                                                                       | Example                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `utm_source`   | `ofriperetz_dev` `interlace` `eslint_docs` `serverless_docs` `ds` `storybook` `dev_to` `github` `npm` `x` `linkedin` `email` | `utm_source=ofriperetz_dev`   |
+| `utm_medium`   | `blog` `docs` `landing` `social` `email` `referral` `cli`                                                                    | `utm_medium=blog`             |
+| `utm_campaign` | slug, derived from the content piece                                                                                         | `utm_campaign=flagship_rules` |
+| `utm_content`  | slug, names the placement on the source page                                                                                 | `utm_content=hero_cta`        |
+| `utm_term`     | free-form, optional (paid search, rarely used here)                                                                          | —                             |
+
+The `utm_source` and `utm_medium` value sets are checked at build time by
+the `conventions/utm-taxonomy` ESLint rule. Adding a new value edits the
+rule first, the taxonomy table second, the call site third.
+
+---
+
+## The 10 principles
+
+Ordered by leverage. Earlier principles, when violated, do the most damage.
+
+### 1. One taxonomy, fixed values
+
+A finite vocabulary is the only thing that makes UTM data joinable.
+Free-text `utm_source=blog,Blog,BLOG-1` doesn't compose into a "blog
+traffic" cohort — it splits into three rows that nothing in PostHog can
+re-merge automatically.
+
+**Forbidden:**
+- New `utm_source` or `utm_medium` values that aren't in the taxonomy table.
+- Capitalisation variants (`Blog` vs `blog`).
+- Trailing version suffixes (`blog-v2`) — that belongs in `utm_campaign`,
+  not in `utm_source`.
+
+### 2. `utm_source` is the property, `utm_medium` is the channel
+
+The two slots are independent. A link from a dev.to article counts as
+`utm_source=dev_to&utm_medium=blog` — dev.to is the property, blog is the
+channel. Conflating them (`utm_source=dev_to_blog`) destroys both axes of
+attribution.
+
+### 3. Strip from the URL after capture
+
+The first `$pageview` reads the params, then `history.replaceState` rewrites
+the URL without them. The PostHog event already carries the source; leaving
+the params visible invites two failure modes — re-shares attribute future
+visits to the same campaign, and bookmarks bake a stale source in forever.
+
+**Mechanics:**
+- Stripping happens in the same client effect that captures the landing
+  `$pageview`.
+- The anchor (`#…`) survives. `ph_distinct_id` survives until the
+  ANALYTICS_PHILOSOPHY principle 8 handler consumes it (one route-tick
+  later).
+- Cold-load equivalence (DEEP_LINKING_PHILOSOPHY principle 1) still holds
+  after strip: the URL still resolves the same view, it just no longer
+  carries campaign attribution.
+
+### 4. Cross-property links always carry source
+
+Outbound from `ofriperetz.dev` → `*.interlace.tools` MUST include UTM. Same
+for outbound to `npm`, `github`, `dev.to`. Without this, the destination
+cannot attribute the visitor, and PostHog can't draw the journey.
+
+Internal cross-subdomain (`eslint.interlace.tools` → `ds.interlace.tools`)
+does **not** add UTM — same eTLD+1, cookie carries identity, and
+ANALYTICS_PHILOSOPHY principle 8 takes over.
+
+### 5. Campaign maps to content, not to time
+
+`utm_campaign` names the content piece (`flagship_rules_launch`,
+`interop_announcement`), not a date window (`2026_q2`). Time windows are
+derived from the event timestamp; baking them into the campaign name
+double-counts the same content and forces every cohort to know dates.
+
+### 6. Content slot names the placement
+
+`utm_content=hero_cta`, `inline_link`, `footer_subscribe`. This is what
+converted, not what the content was about. A single article with a hero CTA
+and a footer CTA produces two distinct `utm_content` values from the same
+`utm_campaign`.
+
+### 7. No `utm_*` on internal navigation
+
+The router strips them on internal nav. They only ever travel from outside a
+property to inside. An internal link inside `eslint.interlace.tools` that
+carries `utm_source=eslint_docs` is a bug — it overwrites the original
+inbound source on every click and the journey forgets where the person
+really came from.
+
+### 8. Hash and identity survive UTM strip
+
+The principle-3 strip removes `utm_*` only. `#section` survives
+(DEEP_LINKING_PHILOSOPHY principle 2 — fragments are scroll targets, not
+routes). `ph_distinct_id` survives until the
+ANALYTICS_PHILOSOPHY principle 8 landing handler consumes it.
+
+### 9. One blessed builder
+
+`buildUtmHref(href, { source, medium, campaign, content })` is the only
+blessed way to construct a cross-property URL. Hand-written strings are
+forbidden by the `conventions/no-raw-cross-property-href` ESLint rule, which
+flags any `<a href="https://*.interlace.tools/…">` or
+`https://ofriperetz.dev/…` that doesn't come from the helper.
+
+**Mechanics:**
+- The helper validates source/medium against the taxonomy via a typed union;
+  invalid values fail the build.
+- For cross-eTLD+1 outbound, the helper also appends
+  `ph_distinct_id=<current_id>` for identity stitching — see
+  ANALYTICS_PHILOSOPHY principle 8.
+- The helper is duplicated as `lib/utm.ts` in each property (Next or Nuxt).
+  Duplication is intentional — low maintenance, no cross-repo versioning.
+  The taxonomy stays consistent across copies via the
+  `conventions/utm-taxonomy` ESLint rule, which reads the same fixed list.
+
+### 10. UTM is one signal among several
+
+`utm_*` answers "where did this person come from?" but not "is this the same
+person who visited last week?" — that's the cookie + `ph_distinct_id` job.
+A campaign analysis that joins UTM with identity tells the full story:
+first-touch source, last-touch source, repeat-visit pattern. UTM alone
+tells half the story.
+
+---
+
+## Cross-property travel matrix
+
+The blessed builder picks the right combination per edge.
+
+| From                       | To                          | utm_source       | utm_medium  | ph_distinct_id |
+| -------------------------- | --------------------------- | ---------------- | ----------- | -------------- |
+| `ofriperetz.dev`           | `*.interlace.tools`         | `ofriperetz_dev` | `blog`      | yes            |
+| `ofriperetz.dev`           | `npm` / `github`            | `ofriperetz_dev` | `blog`      | no             |
+| `interlace.tools`          | `*.interlace.tools`         | `interlace`      | `landing`   | no (same TLD)  |
+| `eslint.interlace.tools`   | `ds.interlace.tools`        | (none)           | (none)      | no (same TLD)  |
+| `eslint.interlace.tools`   | `npm` / `github` / `dev.to` | `eslint_docs`    | `docs`      | no             |
+| `*.interlace.tools`        | `ofriperetz.dev`            | `interlace`      | `landing`   | yes            |
+
+`utm_campaign` and `utm_content` are content-bound; the call site sets them.
+
+---
+
+## How this gets used
+
+When adding a cross-property link, ask:
+
+1. Are `utm_source` and `utm_medium` values from the fixed taxonomy?
+2. Is the URL built by `buildUtmHref()`, not a template literal?
+3. Does `utm_campaign` name the content piece, not a date window?
+4. Does `utm_content` name the placement, not the topic?
+5. Does the destination strip `utm_*` from the URL after capture?
+6. For cross-eTLD+1 outbound, does the helper also append `ph_distinct_id`?
+7. For internal nav, is the link free of `utm_*` entirely?
+8. Does the ESLint rule flag any hand-written cross-property URL?
+
+If any answer is no, the link is not yet shippable.
+
+---
+
+## Living document
+
+When a campaign or property arises this doc didn't anticipate, extend the
+taxonomy first (the ESLint rule will refuse hand-rolled values otherwise),
+then ship. The taxonomy is the contract — drift in it makes the analytics
+drift downstream.

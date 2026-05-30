@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-17",
+  "generatedAt": "2026-05-29",
   "totalPlugins": 20,
-  "totalRules": 406,
-  "oxlintCompatible": 406,
+  "totalRules": 413,
+  "oxlintCompatible": 413,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -291,8 +291,14 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 11,
+      "ruleCount": 15,
       "rules": [
+        {
+          "name": "conventions/analytics-event-naming",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "conventions/consistent-existence-index-check",
           "portability": "compatible",
@@ -330,6 +336,18 @@
           "isTypeAware": false
         },
         {
+          "name": "conventions/no-magic-numbers",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/no-raw-cross-property-href",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "conventions/prefer-code-point",
           "portability": "compatible",
           "blockers": [],
@@ -349,6 +367,12 @@
         },
         {
           "name": "conventions/require-data-testid",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/utm-taxonomy",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1110,7 +1134,7 @@
       "short": "modernization",
       "shim": "tools/oxlint-plugins/interlace-modernization.cjs",
       "subpath": "eslint-plugin-modernization/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
         {
           "name": "no-instanceof-array",
@@ -1129,6 +1153,12 @@
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "prefer-template-literal",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
         }
       ]
     },
@@ -1137,7 +1167,7 @@
       "short": "modularity",
       "shim": "tools/oxlint-plugins/interlace-modularity.cjs",
       "subpath": "eslint-plugin-modularity/oxlint",
-      "ruleCount": 5,
+      "ruleCount": 6,
       "rules": [
         {
           "name": "ddd-anemic-domain-model",
@@ -1165,6 +1195,12 @@
         },
         {
           "name": "no-external-api-calls-in-utils",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mutable-exports",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1326,7 +1362,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 33,
+      "ruleCount": 34,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1426,6 +1462,12 @@
         },
         {
           "name": "no-insecure-rsa-padding",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-math-random-crypto",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2673,6 +2715,7 @@
       "require-websocket-wss"
     ],
     "conventions": [
+      "analytics-event-naming",
       "consistent-existence-index-check",
       "expiring-todo-comments",
       "filename-case",
@@ -2680,10 +2723,13 @@
       "no-console-spaces",
       "no-deprecated-api",
       "no-json-schema-tags",
+      "no-magic-numbers",
+      "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
-      "require-data-testid"
+      "require-data-testid",
+      "utm-taxonomy"
     ],
     "crypto": [
       "no-hardcoded-crypto-key",
@@ -2828,14 +2874,16 @@
     "modernization": [
       "no-instanceof-array",
       "prefer-at",
-      "prefer-event-target"
+      "prefer-event-target",
+      "prefer-template-literal"
     ],
     "modularity": [
       "ddd-anemic-domain-model",
       "ddd-value-object-immutability",
       "enforce-naming",
       "enforce-rest-conventions",
-      "no-external-api-calls-in-utils"
+      "no-external-api-calls-in-utils",
+      "no-mutable-exports"
     ],
     "mongodb-security": [
       "no-bypass-middleware",
@@ -2881,6 +2929,7 @@
       "no-ecb-mode",
       "no-insecure-key-derivation",
       "no-insecure-rsa-padding",
+      "no-math-random-crypto",
       "no-pii-in-logs",
       "no-self-signed-certs",
       "no-sha1-hash",

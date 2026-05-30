@@ -7,6 +7,7 @@
 import { noInstanceofArray } from './rules/no-instanceof-array';
 import { preferAt } from './rules/prefer-at';
 import { preferEventTarget } from './rules/prefer-event-target';
+import { preferTemplateLiteral } from './rules/prefer-template-literal';
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
@@ -17,6 +18,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-instanceof-array': noInstanceofArray,
   'prefer-at': preferAt,
   'prefer-event-target': preferEventTarget,
+  'prefer-template-literal': preferTemplateLiteral,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -37,6 +39,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'modernization/no-instanceof-array': 'error',
   'modernization/prefer-at': 'warn',
   'modernization/prefer-event-target': 'warn',
+  'modernization/prefer-template-literal': 'warn',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

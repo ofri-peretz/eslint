@@ -8,6 +8,7 @@
     "class-variance-authority"
   ],
   "registryDependencies": [
+    "theme",
     "container"
   ],
   "files": [

@@ -21,7 +21,7 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-jwt#readme",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-jwt?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-jwt",
   "repository": {
     "type": "git",
     "url": "https://github.com/ofri-peretz/eslint",

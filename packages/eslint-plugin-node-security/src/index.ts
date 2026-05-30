@@ -1,6 +1,6 @@
 /**
  * eslint-plugin-node-security
- * 
+ *
  * Security rules for Node.js built-in modules (fs, child_process, vm, path, etc.)
  */
 
@@ -33,6 +33,7 @@ import { noCryptojsWeakRandom } from './rules/no-cryptojs-weak-random';
 import { noDeprecatedCipherMethod } from './rules/no-deprecated-cipher-method';
 import { noEcbMode } from './rules/no-ecb-mode';
 import { noInsecureKeyDerivation } from './rules/no-insecure-key-derivation';
+import { noMathRandomCrypto } from './rules/no-math-random-crypto';
 import { noInsecureRsaPadding } from './rules/no-insecure-rsa-padding';
 import { noSelfSignedCerts } from './rules/no-self-signed-certs';
 import { noSha1Hash } from './rules/no-sha1-hash';
@@ -44,7 +45,10 @@ import { preferNativeCrypto } from './rules/prefer-native-crypto';
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
-export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+export const rules: Record<
+  string,
+  TSESLint.RuleModule<string, readonly unknown[]>
+> = {
   'detect-child-process': detectChildProcess,
   'detect-eval-with-expression': detectEvalWithExpression,
   'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
@@ -75,6 +79,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-ecb-mode': noEcbMode,
   'no-insecure-key-derivation': noInsecureKeyDerivation,
   'no-insecure-rsa-padding': noInsecureRsaPadding,
+  'no-math-random-crypto': noMathRandomCrypto,
   'no-self-signed-certs': noSelfSignedCerts,
   'no-sha1-hash': noSha1Hash,
   'no-static-iv': noStaticIv,
@@ -87,7 +92,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.1.0',
+    version: '4.2.0',
   },
   rules,
 };
@@ -124,6 +129,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-weak-cipher-algorithm': 'error',
   'node-security/no-static-iv': 'error',
   'node-security/no-ecb-mode': 'error',
+  'node-security/no-math-random-crypto': 'error',
   'node-security/no-cryptojs': 'warn',
 };
 
@@ -139,11 +145,12 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'node-security': plugin,
     },
     rules: Object.fromEntries(
-      Object.keys(rules).map(ruleName => [`node-security/${ruleName}`, 'error'])
+      Object.keys(rules).map((ruleName) => [
+        `node-security/${ruleName}`,
+        'error',
+      ]),
     ),
   } satisfies TSESLint.FlatConfig.Config,
 };
 
-
 export default plugin;
-

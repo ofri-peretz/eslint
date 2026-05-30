@@ -50,7 +50,10 @@ export default async function ArticlesPage({
   const raw = await searchParams;
   const params = parseArticleParams(raw);
 
-  const { articles, lastUpdated } = articlesData as CachedArticlesData;
+  // Cast via `unknown` — see api/search/route.ts for the type-vs-cache
+  // divergence rationale. Aligning DevToArticle with the cached shape is
+  // tracked as a follow-up.
+  const { articles, lastUpdated } = articlesData as unknown as CachedArticlesData;
 
   const filtered = filterAndSortArticles(articles, params);
   const featured = getFeaturedArticle(articles, filtered, params);

@@ -1,0 +1,367 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Philosophy/Content Patterns/Code Example" />
+
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: CODE_EXAMPLE_PHILOSOPHY.md
+    hash: 7a69f9f5ee87 */}
+
+# Code Example Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs),
+expanding Principle #1 (friction subtraction), Principle #9 (the docs
+site is the showcase), and the typography contract from
+[TYPOGRAPHY_PHILOSOPHY.md](?path=/docs/philosophy-typography--docs).
+
+Code examples are the **signature surface of a technical site**. They
+are the part the reader trusts or doesn't, copies or doesn't, and
+remembers months later. Stripe, Tailwind, shadcn/ui, Vercel — every
+top-1% reference site is recognizable by how its code blocks behave
+and what they let the reader do. Without a binding contract, every
+rule page invents its own format and the corpus reads as inconsistent.
+
+---
+
+## The core rule
+
+> **Every code block answers three questions before the reader has
+> to ask them: what package manager, what filename, and how do I copy
+> this into my project.** When the reader can't answer those in under
+> two seconds, the example failed regardless of how correct the code
+> is.
+
+Three corollaries:
+
+1. **One-click copy is the floor.** A copy button that works on
+   touch, has feedback, and copies without trailing newlines.
+2. **Package manager switcher is the floor for installs.** Never
+   hardcode `npm install` — every install snippet ships with a
+   tabbed switcher.
+3. **Bad-vs-good is the most valuable kind of example.** "Don't do
+   this / do this instead" is more memorable than either alone.
+
+---
+
+## Anatomy of a code block
+
+The visible parts:
+
+```
++-----------------------------------------------------------+
+|  filename.ts                                  [npm  pnpm…]| ← Header: filename + PM tabs
++-----------------------------------------------------------+
+| 1 | const x = 'hello';                                    | ← Body: line numbers + code
+| 2 | console.log(x);                                       |
++-----------------------------------------------------------+
+|                                                  [ Copy ] | ← Footer: copy button (in header on hover)
++-----------------------------------------------------------+
+```
+
+Mandatory parts of every code block:
+
+- **Filename label** when the code lives in a file. `eslint.config.js`,
+  `package.json`, `src/index.ts`. Implicit when the example is
+  obviously REPL-able (e.g. `>` prefix on a shell example).
+- **Language tag** — drives syntax highlighting. Always present, never
+  inferred.
+- **Copy button** — top-right, visible on hover (desktop), always
+  visible on touch.
+- **Theme matches dark/light mode** — see "Syntax highlighting"
+  below.
+- **Border + slight elevation** so the code block reads as a layer
+  above the page surface. `border border-fd-border bg-fd-muted
+  rounded-lg`.
+- **`<pre>` not `<div>`** for the code container — semantic + screen
+  reader friendly.
+- **`<code>` inside with the language class** — `<code class="language-ts">`.
+
+Optional parts:
+
+- **Line numbers** — on by default for blocks ≥ 6 lines, off otherwise
+  (line numbers on a 2-line snippet are noise).
+- **Line highlights** — `// [!code highlight]` or `// [!code focus]`
+  comments to mark important lines, syntactically transformed away by
+  the highlighter.
+- **Diff markers** — `// [!code ++]` / `// [!code --]` for
+  before/after diffs.
+- **Expand-collapse** — for blocks > 30 lines. Default-collapsed with
+  the first 8 lines visible.
+
+---
+
+## The package manager switcher
+
+Every install snippet uses the switcher. Always. Forever.
+
+The contract:
+
+- **Four tabs in fixed order**: `npm` · `pnpm` · `yarn` · `bun`.
+  Order matches the developer ecosystem's mental hierarchy.
+- **Selection persists across sessions.** A reader who picked `pnpm`
+  on the homepage sees `pnpm` on every install snippet site-wide, via
+  `localStorage`.
+- **No "preferred" highlight.** All four are equal. (Until our
+  telemetry says otherwise; even then, the highlight is a subtle
+  indicator, not a re-order.)
+- **The actual command is canonical per PM.** `npm install` not
+  `npm i`. `pnpm add` not `pnpm install`. `yarn add` not `yarn`.
+  `bun add` not `bun install`. Use the standard one even when both
+  work — the reader's muscle memory is sticky.
+- **Dev/peer/optional flags are switcher-aware.**
+  - `npm install -D` ↔ `pnpm add -D` ↔ `yarn add --dev` ↔ `bun add -d`
+- **Workspace flags translate.**
+  - `npm install -w` ↔ `pnpm add --filter` ↔ `yarn workspace ... add` ↔ `bun add --filter`
+- **Multi-package installs go on one line**, comma-free. `npm install
+  eslint @interlace/eslint-plugin-jwt` not piecemeal.
+
+The PM switcher is **forbidden** outside install snippets. A "run the
+tests" command is `npm test` — not switched, because that's not what
+the switcher communicates. Reserve the switcher for installs.
+
+---
+
+## Bad vs. good examples — the diff format
+
+For ESLint rule documentation, the "without our rule / with our rule"
+diff is the most important surface. Get this format right and the rule
+sells itself.
+
+The pattern:
+
+```
+[ ❌ Don't ]
+const token = jwt.verify(t, key, { algorithms: ['none'] });
+//                                              ^^^^^^^^
+// `none` algorithm accepts unsigned tokens — auth is bypassed.
+
+[ ✓ Do ]
+const token = jwt.verify(t, key, { algorithms: ['HS256'] });
+```
+
+Mandatory parts:
+
+- **Two adjacent blocks**, never one wrapped block with both. The
+  diff stays readable on narrow screens.
+- **Header label** — "Don't" / "Do" — with semantic color (status
+  tokens from COLOR_PHILOSOPHY: `fd-destructive` for don't,
+  `fd-success` for do).
+- **Caret + comment** under the don't block pointing at the offending
+  span. Caret made of `^^^` characters in the source; the highlighter
+  styles them.
+- **Same example surface area.** If the don't block sets up `const x`,
+  the do block also uses `const x` — the reader's eye is doing diff
+  matching, don't change unrelated lines.
+- **No "❌"/"✓" emoji in the source** — drive them via `data-` attr
+  in the MDX component. (Emojis in source are accessibility-hostile,
+  break in print, and don't theme.)
+
+The component (`<DontDo>`, lives in `apps/docs/components/`) takes:
+
+```mdx
+<DontDo
+  dont="const token = jwt.verify(t, key, { algorithms: ['none'] });"
+  dontWhy="`none` algorithm accepts unsigned tokens — auth is bypassed."
+  do="const token = jwt.verify(t, key, { algorithms: ['HS256'] });"
+/>
+```
+
+This is the showcase mechanic Principle #9 promised. Walk the talk.
+
+---
+
+## Syntax highlighting
+
+The contract:
+
+- **Tool**: Shiki (via `shiki` or `rehype-pretty-code`). It's what
+  Fumadocs ships; never re-implement.
+- **Themes**: a paired light/dark theme picked once and committed.
+  - Light: `github-light` (clean, high contrast)
+  - Dark: `github-dark-dimmed` (slightly muted, easy on eyes)
+  - Both: `vitesse-light` / `vitesse-dark` are an acceptable
+    alternate; pick one pair, never mix.
+- **Token colors are part of COLOR_PHILOSOPHY's audit budget.**
+  Comment color must hit 4.5:1 against background — a comment too
+  faded to read is a contract violation.
+- **No CSS-overriding the theme tokens.** If a theme color is wrong,
+  fork the theme JSON, don't override in CSS.
+
+Build-time, not runtime: highlight at build via `rehype-pretty-code`
+in MDX, never on the client. The client receives pre-styled HTML.
+
+---
+
+## The copy button
+
+The single most-clicked element on a code block.
+
+- **Position**: top-right of the block; absolutely positioned over the
+  content. Visible on hover (desktop), always visible (touch /
+  prefers-reduced-motion).
+- **Size**: 32×32 minimum (touch target floor).
+- **Icon-only on desktop**, icon + "Copy" label on touch.
+- **State machine**:
+  - default → hover (slight chrome change) → click → "Copied" with
+    check icon for 1.5s → default
+- **Feedback**: visual (icon + label change) + ARIA live region
+  announcement ("Copied").
+- **What gets copied**: exact code text, no line numbers, no comment
+  decorations (`// [!code ++]` markers stripped), no trailing newline.
+- **Multi-block copy**: when the block has tabs (PM switcher), copy
+  the *active* tab. The button label adapts: "Copy npm" when npm is
+  active.
+
+Implementation: a single `<CopyButton>` in `@interlace/ui/blocks/`,
+imported by every code-block surface. No bespoke copy buttons.
+
+---
+
+## Runnable vs. static examples
+
+Three modes:
+
+| Mode | Use when | Cost |
+| --- | --- | --- |
+| **Static** | The code is illustrative; running it adds nothing | None |
+| **In-page editable** | The reader benefits from tweaking and re-running | Bundle size, moderate |
+| **External playground link** | The example needs a full environment (terminal, multiple files) | One round trip |
+
+Defaults:
+
+- Rule docs: static. Don't-vs-do is illustrative; running it doesn't
+  teach more than reading.
+- Quickstart guides: static `npm install` + static config snippet.
+- Tutorials: in-page editable for the *one* canonical example per
+  tutorial. The rest are static.
+- Showcase / landing: in-page editable for the *hero* example only.
+  See PLAYGROUND_SPEC.md (planned) for the interactive ESLint
+  playground.
+
+In-page editable uses Monaco (or Sandpack) only — never CodeMirror,
+never custom. Lazy-loaded; never on first paint.
+
+---
+
+## Filename labels
+
+The header carries the filename. Conventions:
+
+- **Real path** — `eslint.config.js`, `src/utils/auth.ts`. Not "config
+  example" or "the file." The reader's intuition for where this code
+  lives is part of the lesson.
+- **Monorepo paths use forward slash** — `packages/jwt/src/rules/no-none-algorithm.ts`,
+  not Windows backslashes.
+- **`package.json` snippets** show only the relevant fragment, with
+  surrounding `{...}` ellipsis. A 200-line `package.json` for one
+  field is noise.
+- **Dotfiles** — `.eslintrc.json`, `.gitignore`, `.env.example` —
+  are real filenames, label them as such.
+
+The label uses code typography, not body — it's part of the code
+block's chrome.
+
+---
+
+## Long examples — the expand contract
+
+Examples > 30 lines (or > 600px tall):
+
+- Default-collapsed to the first 8 lines + a fade-out gradient
+  bottom edge.
+- "Show all" button below the fade.
+- Once expanded, "Collapse" button at the bottom.
+- Expanded state remembered for that page session.
+- Copy button is unaffected — it always copies the full content,
+  whether collapsed or not.
+
+For genuinely-long files (entire `eslint.config.js` examples),
+consider whether the example needs to be inline at all — link to a
+GitHub gist or a real file in the repo, embed only the relevant
+fragment.
+
+---
+
+## Print and offline
+
+A code block in a PDF (Principle #6 via the print stylesheet):
+
+- Theme switches to a print-friendly version (high contrast, no
+  background tint, syntax colors converted to bold/italic for B&W
+  printers).
+- Line numbers ON in print regardless of the screen default.
+- Filename label included.
+- Copy button hidden.
+- `page-break-inside: avoid` so a single block isn't split across
+  pages where possible.
+
+---
+
+## What's forbidden
+
+Hard bans.
+
+- **Hand-styled code blocks.** No `<div>` with `font-mono` instead of
+  `<pre><code>`. Semantic HTML.
+- **Inline `<style>` tags** in code blocks (already covered by
+  `feedback_no_inline_styles`, restated for emphasis).
+- **Image screenshots of code.** Code is text; text is searchable,
+  copyable, theme-able, screen-reader-readable. Screenshots are
+  none of those.
+- **Lorem ipsum / `foo`/`bar` examples** for anything beyond the
+  shortest illustrative blocks. Real-looking examples are 10x more
+  memorable.
+- **Code that doesn't run.** Every code example is verified to
+  parse-or-run during build. CI fails on syntax errors in code
+  blocks (linted via `eslint-mdx` + the documented language).
+- **Out-of-date examples without a date.** If an example pins a
+  specific package version, the version is shown in the filename
+  label and the date is in the page metadata.
+- **Examples > 50 lines without a "show real file on GitHub" link.**
+- **Per-block bespoke copy / chrome / theming.** Use the primitives.
+
+---
+
+## Implementation
+
+Components:
+
+- `<CodeBlock filename="..." language="ts">` — the primitive.
+  Server-rendered, Shiki-highlighted, copy button attached.
+- `<InstallSnippet packages="..." dev>` — the package-manager
+  switcher; renders four tabs with persisted selection.
+- `<DontDo dont="..." dontWhy="..." do="...">` — the diff format.
+- `<CodeFromFile path="..." lines="10-20">` — pulls a real range
+  from a real source file at build time. Drift-resistant by
+  construction.
+
+All live in `@interlace/ui/blocks/code/` and are travel-worthy
+(Principle #10) — any docs site would adopt them.
+
+---
+
+## How this gets used
+
+When adding or reviewing a code surface, ask:
+
+1. **Three questions**: filename visible? PM (where applicable)
+   switcher present? Copy button placed correctly?
+2. **Bad vs. good**: if this is a rule example, does it use the
+   `<DontDo>` format?
+3. **Highlighting**: theme matches mode? Comments hit 4.5:1?
+4. **Length**: > 30 lines collapsed? > 50 lines linked to source?
+5. **Runnability**: static is the default — is this one of the
+   exceptions?
+6. **Realism**: does the example look like real production code, or
+   `foo`/`bar` placeholder?
+
+If any answer is no, the example is not yet shippable.
+
+---
+
+## Living document
+
+When a new code-surface need appears that this document didn't
+anticipate (a new diff style, a new playground integration), **edit
+this document first**, then add the component. Code-block drift is
+the surface that breaks Principle #9 — walking the talk only works
+if the talk is consistent.

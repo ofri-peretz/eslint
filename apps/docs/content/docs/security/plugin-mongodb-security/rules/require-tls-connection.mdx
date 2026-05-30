@@ -1,6 +1,6 @@
 ---
 title: require-tls-connection
-description: Requires TLS/SSL encryption for MongoDB connections in production environments.
+description: "MongoDB connection is not using TLS encryption"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
+
+Requires TLS/SSL encryption for MongoDB connections in production environments.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

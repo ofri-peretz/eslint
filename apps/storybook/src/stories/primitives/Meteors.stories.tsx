@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Meteors } from '@interlace/ui/meteors';
+import { withDark, withReducedMotion, withRtl } from '@/decorators';
 
 const meta: Meta<typeof Meteors> = {
   title: 'Primitives/Meteors',
   component: Meteors,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Decorative falling-meteor animation. Honours `prefers-reduced-motion: reduce` per `MOTION_PHILOSOPHY.md` — emits `null` when the user has requested reduced motion (visible in the `ReducedMotion` story).',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -46,4 +56,19 @@ export const Sparse: Story = {
       </div>
     </div>
   ),
+};
+
+export const Dark: Story = {
+  ...Default,
+  decorators: [withDark],
+};
+
+export const RTL: Story = {
+  ...Default,
+  decorators: [withRtl],
+};
+
+export const ReducedMotion: Story = {
+  ...Default,
+  decorators: [withReducedMotion],
 };

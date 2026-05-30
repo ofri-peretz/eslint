@@ -26,7 +26,7 @@ import {
   ARTICLE_BREADCRUMB,
 } from '@/lib/search-articles';
 
-const { articles } = articlesData as CachedArticlesData;
+const { articles } = articlesData as unknown as CachedArticlesData;
 
 describe('search-articles index builder', () => {
   it('emits one index per cached article', () => {

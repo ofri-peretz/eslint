@@ -1,0 +1,236 @@
+---
+title: "Pagination Philosophy"
+description: "A focused sub-philosophy of UX_PHILOSOPHY.md."
+icon: ListOrdered
+---
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: PAGINATION_PHILOSOPHY.md
+    hash: 9a52dcd22baa */}
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](/docs/design/ux). When a
+surface displays a collection — articles, rules, releases, search results,
+benchmark scorecards — the choice between pagination, "Load More," and
+infinite scroll is one decision, not three. This document fixes that
+decision and the supporting rules.
+
+The decision is non-obvious because the three patterns *look* like
+gradient variations of the same idea. They are not. Each optimizes for a
+different reader intent, and picking the wrong one harms adoption (#1),
+URL stability (#2), shareability (#3), and SEO (#7) at the same time.
+
+---
+
+## The core rule
+
+> **Pagination for finding. Infinite scroll for feeds. "Load more" only
+> when you need a hybrid — and almost never on this site.**
+
+A *feed* is a passive, endless stream consumed without a goal: Twitter,
+TikTok, Instagram. A *corpus* is a finite, rankable collection a reader
+arrives at with intent: an articles archive, a rules index, a search
+result page, a release log. **Everything we ship is a corpus.** The
+default is pagination.
+
+---
+
+## Use-when / avoid-when
+
+| Pattern | Use when | Avoid when |
+| --- | --- | --- |
+| **Classic pagination** | Content is finite, rankable, SEO-bearing, users have goal intent, deep-link to a position matters | The set is genuinely endless and discovery is passive |
+| **Load More** (button) | You want less click-friction on a flat, unranked list *and* you can still emit per-page URLs underneath | Each item has long-tail SEO value (button-loaded items index worse than paginated URLs) |
+| **Infinite scroll** | Endless feed, no item-level SEO, footer not worth reaching, intent is passive | Anything goal-oriented, SEO-bearing, or where the reader wants to know how deep they are |
+
+Apply the table by reader intent, not by content type. A *list of
+articles* is a corpus when the reader is looking for one; it is a feed
+only if we have so much content that there is no "end." We don't. We
+won't for years.
+
+---
+
+## Industry consensus
+
+Cited so we can defend the call:
+
+- **Nielsen Norman Group**, "Infinite Scrolling Is Not for Every Website"
+  (Hoa Loranger) and "Pagination vs. Infinite Scrolling" (Kate Moran):
+  infinite scroll is for *discovery*, not *finding*. For content-heavy
+  sites, switching from pagination to infinite scroll *hurts business*.
+- **Baymard Institute**, e-commerce browsing studies (2012, 2016, 2020):
+  pagination and "Load More" both beat infinite scroll on task
+  completion. Pagination wins on *ranked* content where readers want
+  position. "Load More" wins on *flat* content with low friction needs.
+- **Google web.dev (CLS guide) and John Mueller (2019)**: infinite scroll
+  without per-page URLs is invisible to crawlers past the first
+  viewport. Google's own search results use paginated URLs.
+- **Etsy (Dan McKinley, 2012)**: A/B test replacing infinite scroll with
+  pagination *raised* engagement and purchase rate. Still the most-cited
+  case study; never seriously contradicted.
+- **What the canon actually ships**: Google search, GitHub issues/PRs,
+  npm search, Stripe Press, NYT archive, Hacker News, the Vercel blog,
+  the Next.js blog, the Tailwind blog — all paginated. Twitter, TikTok,
+  Instagram, Pinterest — all feeds.
+
+We are in the first category. We ship pagination.
+
+---
+
+## The corollaries
+
+Saying "use pagination" is not enough. The pattern only delivers its
+benefits if four rules hold.
+
+### 1. URLs are the storage layer, not React state
+
+Pagination state belongs in the URL. `?q=&tag=&sort=&dir=&page=` round-
+trips with the router. Cleared filters drop the param. Reasons:
+
+- **Sharability** (#3). A reader can paste `/articles?tag=jwt&page=2`
+  into Slack and the recipient lands on the same view.
+- **Back button works.** The browser's history is the keyboard
+  shortcut readers already know.
+- **Refresh-stable.** F5 doesn't dump you to page 1.
+- **Indexable** (#7). Each filter+page combo is a crawlable URL.
+
+State sync mechanics:
+
+- `useSearchParams` reads, `router.replace` writes.
+- Debounced search keystrokes use `replace` (no history pollution).
+- Page changes, tag toggles, sort changes use `push` (back button steps
+  through them).
+- Removed filters → param dropped from the URL, not set to `""`.
+
+### 2. The server reads the params; the client only writes them
+
+The page that owns the collection is a Server Component that reads
+`searchParams`, applies filter/sort/slice, and returns the rendered
+grid. The Client Component is small — just the input handlers that
+update the URL. Reasons:
+
+- **Crawlers see every page.** Page 2 articles are indexable.
+- **Cold-load is correct.** No client-side re-slice flash; the right
+  page renders on first paint.
+- **LCP** (#6). Less JS, less hydration, faster perceived load.
+- **Skeletons during ISR cold-start** (#6). The skeleton matches the
+  real grid dimensions, so the swap is zero-CLS.
+
+This is the rule that turns pagination from "nicer-looking infinite
+scroll" into actual SEO infrastructure.
+
+### 3. Page size optimized so most readers never paginate
+
+NN/g and Baymard both find that readers' patience drops sharply past 3
+pages and is mostly gone past 5. The implication is direct: **the page
+size should be large enough that the median reader, with the median
+filter, sees their answer on page 1.**
+
+For our `/articles` corpus today (~50 articles), page size **12** lands
+the corpus in 4-5 pages. As the corpus grows, the page size grows with
+it, not the page count.
+
+A guide, not a constant:
+
+- ≤ 36 items: don't paginate at all
+- 37-120 items: page size 12, total ≤ 10 pages
+- 121-300 items: page size 20-24, total ≤ 15 pages
+- 300+ items: page size 24-30 *and* better filtering, because the
+  reader's real complaint is no longer "too many pages," it's "I can't
+  narrow"
+
+### 4. Layout dimensions are reserved, not derived
+
+The single biggest reason pagination implementations fail web vitals is
+that the page's height changes per page. The fix is to budget CLS as
+**zero** and design the page so that holds.
+
+Concretely:
+
+- **The grid container reserves N card-slots.** When the page has 3
+  cards instead of 12, the container is the same height. Empty slots
+  are invisible spacers, not collapsed.
+- **The pagination footer always renders.** Even when `totalPages === 1`
+  it occupies the same box. Buttons may be disabled.
+- **The featured slot always renders.** When filters are active, its
+  content adapts ("top result for this filter"), but it never disappears
+  from the layout.
+- **Cards have explicit `width`/`height` on images and `aspect-ratio`
+  on containers.** No reflow on decode.
+- **No per-card stagger animations.** A single fade on the grid
+  container is fine; per-card animation delays cause N layout commits,
+  each counted toward CLS. Animate the *grid*, not the cards.
+- **Filter-panel expand uses `grid-template-rows: 0fr → 1fr`** or
+  `<details>`, never measured `height: 0 → auto`.
+- **`min-height` on empty state matches the grid height.** Switching
+  from results to empty state should not shift the footer.
+
+CLS budget for any paginated page: **0.00**. Treat any non-zero CLS as
+a regression bug, not a tradeoff.
+
+---
+
+## What pagination looks like in our stack
+
+Concrete defaults for `apps/docs`:
+
+- **Route**: `app/<collection>/page.tsx` as a Server Component reading
+  `searchParams`.
+- **Slicing**: server-side from a pre-computed array (or DB query if it
+  ever moves off-disk). No client filter that re-shapes the slice the
+  server returned.
+- **URL params**: stable names across surfaces — `q` (search), `tag`
+  (repeatable or comma-joined), `sort`, `dir`, `page`. Same vocabulary
+  across `/articles`, `/rules`, future surfaces.
+- **Prerender top combinations** at build: bare route, top sort, top
+  10 tags. Each gets a real HTML file. Side-door entry (#8) lands on
+  pre-rendered HTML.
+- **Pagination component**: lives in `@interlace/ui` as a generic
+  primitive. Travel-worthy (#10) — any docs site would adopt it.
+- **Accessibility**: `<nav aria-label="Pagination">`, `aria-current="page"`
+  on the active button, prev/next have visible text not only icons,
+  page jump links are real `<a href="?page=N">` so keyboard and
+  middle-click work.
+
+---
+
+## What we explicitly are not doing
+
+- **Infinite scroll on `/articles`.** Goal-oriented corpus. Breaks SEO,
+  breaks footer, breaks back button.
+- **"Load More" as the default.** Reserved for surfaces where the
+  collection is small and flat (e.g. "related articles" widget at the
+  bottom of a rule page). Not for the index.
+- **Client-side filter state without URL.** Loses sharability,
+  bookmarkability, indexability.
+- **Per-card stagger animations on grid-load.** Pretty, costs CLS,
+  philosophy violation.
+- **`AnimatePresence mode="popLayout"` for pagination.** Wrong
+  primitive — popLayout is for *reordering*. Page changes replace the
+  set; key the grid by page and crossfade.
+
+---
+
+## How this gets used
+
+When designing or reviewing a collection surface, ask:
+
+1. **Pattern**: pagination, load-more, or infinite — using the use-when
+   table, not vibes.
+2. **URL**: do all filter and page params live in the URL?
+3. **Server-rendered**: does the server read `searchParams` and slice?
+4. **Page size**: does the median reader resolve their intent on page 1?
+5. **Reserved layout**: is the grid box, footer, and featured slot a
+   fixed shape regardless of result count?
+6. **CLS budget**: can you point at zero per-card stagger, explicit
+   image dims, and a non-measured filter-panel toggle?
+7. **Prerender**: are the top combinations static HTML?
+
+If any answer is no, the surface is not yet aligned with this document.
+
+---
+
+## Living document
+
+This philosophy is the source of truth for collection-surface design.
+When a future surface ships a variation this document didn't
+anticipate, **update this document first**, then make the change. The
+failure mode is drift between principle and practice.

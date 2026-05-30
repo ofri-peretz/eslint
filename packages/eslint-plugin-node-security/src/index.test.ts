@@ -42,6 +42,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-ecb-mode',
       'no-insecure-key-derivation',
       'no-insecure-rsa-padding',
+      'no-math-random-crypto',
       'no-self-signed-certs',
       'no-sha1-hash',
       'no-static-iv',
@@ -56,24 +57,26 @@ describe('eslint-plugin-node-security plugin interface', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
       expect(configs['recommended'].plugins?.['node-security']).toBeDefined();
-      
+
       const recommendedRules = configs['recommended'].rules || {};
-      Object.keys(recommendedRules).forEach(ruleName => {
+      Object.keys(recommendedRules).forEach((ruleName) => {
         expect(ruleName).toMatch(/^node-security\//);
       });
-      
-      expect(recommendedRules['node-security/detect-child-process']).toBe('error');
+
+      expect(recommendedRules['node-security/detect-child-process']).toBe(
+        'error',
+      );
     });
 
     it('should provide strict configuration', () => {
       expect(configs['strict']).toBeDefined();
       expect(configs['strict'].plugins?.['node-security']).toBeDefined();
-      
+
       const strictRules = configs['strict'].rules || {};
-      Object.keys(strictRules).forEach(ruleName => {
+      Object.keys(strictRules).forEach((ruleName) => {
         expect(ruleName).toMatch(/^node-security\//);
       });
-      
+
       expect(strictRules['node-security/detect-child-process']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });

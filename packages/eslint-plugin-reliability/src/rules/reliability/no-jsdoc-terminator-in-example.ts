@@ -96,7 +96,6 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
       description:
         'Detects `*/` sequences inside JSDoc @example blocks that prematurely close the comment',
     },
-    fixable: 'code',
     hasSuggestions: true,
     messages: {
       jsdocTerminatorInExample: formatLLMMessage({

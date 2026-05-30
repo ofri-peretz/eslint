@@ -438,6 +438,104 @@ describe('detect-object-injection', () => {
   });
 
   /**
+   * FP Regression: for..in / Object.keys / Object.entries iteration
+   * Keys produced by these loops are own property names from the object,
+   * not user-controlled input → safe from prototype-pollution injection.
+   */
+  describe('FP Regression: for-in and Object-keys iteration', () => {
+    ruleTester.run('for..in loop variable is safe', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            for (const key in obj) {
+              result[key] = obj[key];
+            }
+          `,
+        },
+        {
+          code: `
+            const target = {};
+            for (const prop in source) {
+              if (Object.prototype.hasOwnProperty.call(source, prop)) {
+                target[prop] = source[prop];
+              }
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('Object.keys iteration variable is safe', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            for (const key of Object.keys(obj)) {
+              copy[key] = obj[key];
+            }
+          `,
+        },
+        {
+          code: `
+            for (const key of Object.keys(defaults)) {
+              if (!(key in options)) options[key] = defaults[key];
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('Object.entries iteration variable is safe', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            for (const [key, val] of Object.entries(schema)) {
+              result[key] = transform(val);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
+   * FP Regression: typed-array element access
+   * Typed arrays (Int8Array…Float64Array, BigInt64Array, BigUint64Array) use
+   * numeric indices by construction — string-keyed prototype pollution is
+   * impossible.
+   */
+  describe('FP Regression: typed-array access', () => {
+    ruleTester.run('typed-array new-expression objects are safe', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            const buf = new Float32Array(1024);
+            for (let i = 0; i < buf.length; i++) {
+              buf[i] = Math.random();
+            }
+          `,
+        },
+        {
+          code: `
+            const pixels = new Uint8Array(width * height * 4);
+            pixels[offset] = r;
+            pixels[offset + 1] = g;
+          `,
+        },
+        {
+          code: `
+            const view = new Int32Array(buffer);
+            const val = view[idx];
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
    * Benchmark FP Regression Tests
    * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */

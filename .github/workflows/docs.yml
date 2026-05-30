@@ -42,3 +42,6 @@ jobs:
 
       - name: Check rule tables sync (dry run)
         run: npx tsx scripts/sync-readme-rules.ts --dry-run
+
+      - name: Check README + homepage UTM links (regression lock)
+        run: npx tsx scripts/check-utm-links.ts

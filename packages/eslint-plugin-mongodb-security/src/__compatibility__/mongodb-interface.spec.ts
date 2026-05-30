@@ -45,7 +45,7 @@ beforeAll(async () => {
       'mongoose package is not installed. Run: pnpm add mongoose --save-dev -w'
     );
   }
-});
+}, 30_000); // native-addon packages can take >10s to load cold
 
 describe('MongoDB Driver Interface Compatibility', () => {
   // ═══════════════════════════════════════════════════════════════════════════

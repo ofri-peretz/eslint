@@ -1,0 +1,221 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Philosophy/Navigation & Routing/SEO" />
+
+{/* AUTO-GENERATED — run `npm run sync:philosophies` after editing the source.
+    source: SEO_PHILOSOPHY.md
+    hash: 6a0b038e8707 */}
+
+# SEO & AEO Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs), expanding
+principles #2 (Every URL is a contract), #3 (Sharing is the activation
+function), #5 (Discoverability beats memory), #7 (Technical content is
+long-tail SEO), and #8 (Open the side door). It folds in **AEO — Answer Engine
+Optimization** — the new surface where LLM-based search (Perplexity, ChatGPT,
+Google AI Overviews, Claude search) decides what to quote and cite.
+
+SEO and AEO are now one practice. Both reward the same things: structured
+data, clear hierarchy, semantic HTML, canonical URLs, and content that answers
+a question directly.
+
+---
+
+## The core rule
+
+> **Every page is a citation candidate. Title + meta description + canonical
+> + structured data are required, not optional. Content begins with a
+> direct answer, then the explanation. URLs are stable across the
+> URL-philosophy contract. Crawlable and parseable beat clever.**
+
+Three tests, in order:
+
+1. **Direct-answer test.** Read the page's first paragraph. Does it answer
+   the question the URL implies, without preamble? AEO ranks paragraphs that
+   answer in the first 60 words.
+2. **Citation test.** If an LLM quotes one passage from this page, will the
+   quote stand alone? Pages that depend on context-above-the-quote get
+   misquoted or skipped.
+3. **Structured-data test.** Does this page emit JSON-LD that names the type,
+   the author, and (if applicable) the dates? Pages without structured data
+   are invisible to Rich Results.
+
+---
+
+## The 12 principles
+
+Ordered by leverage. SEO and AEO principles interleave because they're the
+same practice now.
+
+### 1. Title + meta description + canonical, every page
+
+Every page emits:
+
++ `<title>` — the H1 that the SERP shows; under 60 characters.
++ `<meta name="description">` — the snippet beneath the title; 140–160
+  characters; answers the page's question.
++ `<link rel="canonical">` — the URL the page wants to be indexed at.
+  Prevents duplicate content between query-string variants, mirror sites
+  (Dev.to + your docs), and route aliases.
+
+**Mechanics:** Next.js metadata API, Astro `<title>`/`<meta>` in `<head>`,
+fumadocs' `metadata` export. No exceptions.
+
+### 2. Open Graph + Twitter Card on every shareable route
+
+Sharing is the activation function (UX #3). A bad link preview is a missed
+share. Every route emits:
+
++ `og:title` (mirror of `<title>`)
++ `og:description` (mirror of meta description)
++ `og:image` (1200×630, generated per page via build-time OG-image route)
++ `og:image:width` / `og:image:height` (the spec requires it)
++ `twitter:card="summary_large_image"`
++ `twitter:image` (often the same as `og:image`)
++ `og:url` (canonical URL)
++ `og:type` ("article" for content, "website" for landing)
+
+### 3. JSON-LD structured data on every content page
+
+This is the AEO floor. LLM-based search and Rich Results both consume JSON-LD.
+Pick the right `@type` from [schema.org](https://schema.org/):
+
+| Page type     | `@type`                                                |
+| ------------- | ------------------------------------------------------ |
+| Article / blog post | `Article` / `BlogPosting` / `TechArticle`         |
+| Rule docs / how-to  | `TechArticle` + `HowTo` when steps apply           |
+| FAQ section         | `FAQPage` (LLMs cite FAQ schema heavily)           |
+| Product / SaaS landing | `Product` / `SoftwareApplication`               |
+| Author / org page   | `Person` / `Organization` (sameAs links to socials) |
+
+Always include `author` (`Person`), `datePublished`, `dateModified`,
+`headline`, `image`. Missing dates = LLMs can't cite "as of when."
+
+### 4. Direct-answer-first content (AEO ranking signal)
+
+LLM-based search extracts the first 60–100 words for the citation snippet.
+Lead with the answer; explain after.
+
+| ❌ Preamble                                                  | ✅ Direct answer                                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| "There are many ways to fix CWE-89. In this article we'll…" | "To fix CWE-89, parameterize every SQL query. Never concatenate user input into SQL." |
+| "JWT is a complex topic with a long history. First…"         | "JWT signs claims as a base64-encoded payload + HMAC signature."                       |
+
+### 5. Semantic HTML — heading hierarchy intact
+
++ Exactly **one `<h1>`** per page (the page topic).
++ Subsections use `<h2>`, then `<h3>`, never skipping levels.
++ Heading IDs are stable (kebab-case slug of the heading text); URL-philosophy
+  R-3.1 applies to anchors too.
++ Lists are `<ul>` / `<ol>`, not `<div role="list">`. LLMs lean on semantic
+  HTML to understand structure.
+
+### 6. URLs are SEO-aware
+
+Cross-link to [URL_PHILOSOPHY.md](?path=/docs/philosophy-url--docs) and
+[DEEP_LINKING_PHILOSOPHY.md](?path=/docs/philosophy-deep-linking--docs):
+
++ URLs encode meaning (`/docs/security/jwt/no-none-algorithm`),
+  not implementation (`/docs/v2/articles/12345`).
++ Slugs are kebab-case, present in path.
++ Redirects, never deletes (UX #2). `301` for renames; the URL stays alive.
++ Heading anchors keep stable IDs even when copy is rewritten — Google
+  snippets stay valid.
+
+### 7. Performance is a ranking signal — Core Web Vitals
+
+Google's ranking algorithm includes LCP, INP, and CLS. Cross-link to
+[UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs) #6 (Ease of use is performance) and
+[LAYOUT_PHILOSOPHY.md](?path=/docs/philosophy-layout--docs) §6 (Reserve space).
+
+**Budgets:**
+
++ LCP ≤ 2.5s on 4G median devices.
++ INP ≤ 200ms.
++ CLS ≤ 0.1 (we aim for 0).
++ TTFB ≤ 600ms on critical landing routes.
+
+### 8. Sitemap + robots.txt + RSS
+
++ `/sitemap.xml` lists every indexable route with `<lastmod>`. Auto-generated
+  on build.
++ `/robots.txt` declares the sitemap location and any deliberate disallows.
++ `/feed.xml` (RSS) for blog/article content — fuels Newsletter readers AND
+  certain LLM crawlers.
+
+### 9. Internal linking — bidirectional, semantic
+
+LLM crawlers and Google PageRank both reward dense, semantic internal
+linking. Cross-link to UX #4 (Momentum) and #7 (Long-tail SEO).
+
+**Mechanics:**
+
++ Every article references the rules it discusses, with descriptive anchor
+  text ("CWE-89: prevent SQL injection" — not "click here").
++ Every rule page references articles that mention it (Mentioned-In block).
++ "Related" / "Next" cards at the foot of each page maintain the chain.
+
+### 10. Crawlable, parseable, accessible
+
++ **Crawlable.** Server-rendered, static-render where possible. JS-only
+  routes break LLM crawlers and many Twitter/LinkedIn unfurls.
++ **Parseable.** Semantic HTML, ARIA labels, alt text on images. Same
+  contract LLMs and screen readers use.
++ **Accessible.** WCAG AA. Accessibility and SEO converge — both reward
+  the same markup.
+
+### 11. AEO-specific surfaces
+
++ **FAQ blocks** marked with `<FAQPage>` schema — LLMs extract these heavily.
++ **Definition pages** for technical terms — schema.org `DefinedTerm`.
++ **`llms.txt`** at the root listing key pages + brief descriptions —
+  emergent AEO convention; cheap to ship.
++ **Markdown mirrors** of content (raw `.md` accessible via URL) — some
+  LLM crawlers prefer markdown over HTML.
+
+### 12. Build with the ecosystem
+
+Fumadocs / Next-metadata / Astro / Vercel OG image generation handle 80% of
+this surface. Don't reinvent:
+
++ Title / description / canonical — framework metadata API.
++ OG image — build-time route (e.g. Next `app/og/route.tsx`).
++ JSON-LD — `<script type="application/ld+json">` inline, framework-agnostic.
++ Sitemap — framework auto-generation or a tiny build script.
+
+**Forbidden:**
+
++ Hand-rolled `<head>` tags for any of the above when the framework owns it.
++ Client-side `document.title` updates as the sole source — server must emit
+  it for crawlers.
+
+---
+
+## How this gets used
+
+When designing or reviewing a page, ask:
+
+1. Does every page emit title + meta description + canonical?
+2. Does every shareable route emit full OG + Twitter card metadata?
+3. Does every content page emit JSON-LD with the right `@type`?
+4. Does the first 60 words answer the page's question directly?
+5. Is heading hierarchy intact (single H1, no skipped levels)?
+6. Do URLs encode meaning and follow the URL/Deep-Linking philosophies?
+7. Are LCP / INP / CLS within budget?
+8. Are sitemap.xml, robots.txt, and feed.xml live?
+9. Is internal linking dense and descriptive (no "click here")?
+10. Is the page crawlable (server-rendered) and parseable (semantic HTML)?
+11. Do FAQ / definitions emit the right schema?
+12. Does the implementation reach for the framework's metadata API,
+    not hand-rolled `<head>` tags?
+
+If any answer is no, the page is not yet shippable to a public-indexable
+surface.
+
+---
+
+## Living document
+
+When an SEO/AEO pattern arises this doc didn't anticipate, edit it first,
+then ship. The AEO surface in particular is evolving fast — this doc is the
+working contract, not a final spec.
