@@ -1,6 +1,6 @@
 ---
 title: no-postmessage-innerhtml
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Disallow using innerHTML or similar methods with postMessage data"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > 🔒 Disallow using innerHTML with postMessage data
+
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

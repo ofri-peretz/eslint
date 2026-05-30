@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-output-handling
-description: This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
+description: "Prevent using AI output directly in dangerous operations (eval, SQL, HTML)"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
+
+This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
 
 ## 📊 Rule Details
 

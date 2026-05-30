@@ -1,6 +1,6 @@
 ---
 title: no-hardcoded-connection-string
-description: Detects hardcoded MongoDB connection strings containing credentials in source code.
+description: "MongoDB connection string contains hardcoded credentials"
 tags: ['security', 'mongodb']
 category: security
 severity: critical
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
+
+Detects hardcoded MongoDB connection strings containing credentials in source code.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

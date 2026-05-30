@@ -1,6 +1,6 @@
 ---
 title: no-exposed-private-fields
-description: This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
+description: "Detects sensitive fields not excluded from serialization"
 tags: ['security', 'nestjs']
 category: security
 severity: medium
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Detect exposed sensitive fields in DTOs/entities
+
+This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
 
 ## Rule Details
 

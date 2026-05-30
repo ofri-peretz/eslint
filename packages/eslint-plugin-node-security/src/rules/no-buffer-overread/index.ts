@@ -270,12 +270,11 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       for (const type of bufferTypesSet) {
         if (lowerName.includes(type)) return true;
       }
-      // Conventional Buffer parameter names that don't lexically include
-      // 'buffer'. The audit FN was on `function readChunk(buf, req) {
-      // buf.slice(0, req.query.length) }` — `buf` is the universal Node
-      // Buffer parameter convention. Adding these aliases closes the FN
-      // without requiring authors to rename parameters.
-      if (lowerName === 'buf' || lowerName === 'b' || lowerName === 'bytes' || lowerName === 'chunk') return true;
+      // Conventional Buffer parameter names. `buf` and `bytes` are strong
+      // signals for Node Buffer parameters (the original FN target). `b`
+      // and `chunk` are intentionally excluded — single-char names and
+      // stream-chunk array variables produce too many FPs in real code.
+      if (lowerName === 'buf' || lowerName === 'bytes') return true;
       return false;
     };
 

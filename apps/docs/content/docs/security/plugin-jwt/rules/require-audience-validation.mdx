@@ -1,6 +1,6 @@
 ---
 title: require-audience-validation
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require audience (aud) claim validation in JWT verify operations"
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require audience (aud) claim validation in JWT verify operations
+
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html)
