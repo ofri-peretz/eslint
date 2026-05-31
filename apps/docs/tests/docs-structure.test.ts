@@ -250,17 +250,11 @@ describe('Plugin Documentation Coverage', () => {
   });
 
   it('should have rules directory for each plugin', () => {
-    const pluginDirs = globSync('content/docs/*/', {
-      ignore: [
-        'content/docs/concepts/',
-        'content/docs/getting-started/',
-        'content/docs/articles/',
-        // Design philosophies are not plugins; no `rules/` subtree by design.
-        'content/docs/design/',
-        // Design-system component catalog — primitive docs, not ESLint rules.
-        'content/docs/components/',
-      ]
-    });
+    // Plugins live nested under category dirs in the docs structure:
+    // content/docs/<category>/plugin-<name>/. Top-level dirs (security/,
+    // quality/, benchmarks/, learn/, integrations/, design/, components/) are
+    // categories or doc sections, not plugins — glob the actual plugin dirs.
+    const pluginDirs = globSync('content/docs/*/plugin-*/');
     const missingRules: string[] = [];
 
     for (const dir of pluginDirs) {
