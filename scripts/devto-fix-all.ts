@@ -325,7 +325,7 @@ async function fixTitles() {
     if (hasFrontmatter(body)) {
       // Escape YAML: wrap in single-quotes if title contains colons or special chars
       const safeTitle = fix.newTitle.includes(':') || fix.newTitle.includes("'")
-        ? `"${fix.newTitle.replace(/"/g, '\\"')}"`
+        ? `"${fix.newTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
         : fix.newTitle;
       const newBody = patchFrontmatter(body, 'title', safeTitle);
       await patchArticle(fix.id, { body_markdown: newBody, title: fix.newTitle });

@@ -387,9 +387,10 @@ function generateManifest(): Record<string, Record<string, {
       // Primary environment: if the rule only uses one env signal, use it.
       // If it uses multiple, pick the most specific one (non-universal wins).
       const allowedEnvs = PLUGIN_ALLOWED_ENVIRONMENTS[pluginDir] ?? ['universal'];
-      const pluginPrimaryEnv = allowedEnvs[allowedEnvs.length - 1]; // most specific
 
-      let environment = pluginPrimaryEnv;
+      // Every branch below assigns `environment`, so no seed value is needed
+      // (the old `= pluginPrimaryEnv` seed was always overwritten — dead store).
+      let environment: string;
       if (envs.length === 0) environment = allowedEnvs[0]; // default to plugin's first
       else if (envs.length === 1) environment = envs[0];
       else {
