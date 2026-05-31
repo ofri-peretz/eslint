@@ -33,7 +33,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     deprecated: true,
-    replacedBy: ['@see eslint-plugin-crypto/no-timing-unsafe-compare'],
+    replacedBy: ['node-security/no-timing-unsafe-compare'],
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
       description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',

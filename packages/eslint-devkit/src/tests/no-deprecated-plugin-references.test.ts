@@ -42,8 +42,6 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
     successor: 'eslint-plugin-node-security',
     allowlist: [
       /(^|\/)CHANGELOG\.md$/,
-      /^packages\/eslint-plugin-crypto\//,
-      /^apps\/docs\/content\/docs\/security\/plugin-crypto\//,
       '.agent/plugin-classification-graph.md',
       // `distribution/` holds dated audits, ecosystem analysis, and
       // exposure logs — content that legitimately *discusses* the

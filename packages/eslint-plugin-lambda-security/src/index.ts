@@ -22,7 +22,7 @@
  * - SAS-7: Denial of Service ✅ (require-timeout-handling, no-unbounded-batch-processing)
  * - SAS-8: Server-Side Request Forgery ✅ (no-user-controlled-requests)
  * - SAS-9: Functions Misconfiguration ✅ (no-exposed-error-details)
- * - SAS-10: Improper Crypto ➡️ (Use eslint-plugin-crypto)
+ * - SAS-10: Improper Crypto ➡️ (Use eslint-plugin-node-security)
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
