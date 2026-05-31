@@ -8,6 +8,7 @@ import {
 } from 'fumadocs-ui/layouts/docs/page';
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
+import { RuleValueCTA } from '@/components/docs/rule-value-cta';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import type { MDXComponents } from 'mdx/types';
 import type { ReactElement } from 'react';
@@ -29,6 +30,16 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const pageData = page.data as unknown as ProcessedPageData;
   const MDX = pageData.body;
 
+  // Peak-value conversion CTA on rule pages: the slug is
+  // [...category, 'plugin-<name>', 'rules', '<rule>']. This is the page reached
+  // from the editor's "see docs" link — i.e. right after the rule caught
+  // something in the reader's code (the highest-gratitude moment we have).
+  const slug = params.slug ?? [];
+  const rulesIdx = slug.indexOf('rules');
+  const isRulePage = rulesIdx > 0 && rulesIdx < slug.length - 1;
+  const rulePlugin = isRulePage ? slug[rulesIdx - 1].replace(/^plugin-/, '') : '';
+  const ruleName = isRulePage ? slug[rulesIdx + 1] : '';
+
   return (
     <DocsPage
       toc={pageData.toc}
@@ -42,6 +53,9 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
         <MDX components={getMDXComponents()} />
+        {isRulePage && ruleName ? (
+          <RuleValueCTA plugin={rulePlugin} rule={ruleName} />
+        ) : null}
       </DocsBody>
     </DocsPage>
   );

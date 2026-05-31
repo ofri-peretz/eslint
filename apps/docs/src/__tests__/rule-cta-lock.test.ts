@@ -16,10 +16,15 @@ const SRC = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(SRC, rel), 'utf8');
 
 describe('rule-page conversion CTA lock', () => {
-  it('renders RuleValueCTA on every rule page (wired into remote-rule-doc)', () => {
-    const doc = read('components/docs/remote-rule-doc.tsx');
-    expect(doc).toMatch(/import\s+\{\s*RuleValueCTA\s*\}/);
-    expect(doc).toMatch(/<RuleValueCTA\s+plugin=\{plugin\}\s+rule=\{rule\}\s*\/>/);
+  it('renders RuleValueCTA on rule pages via the real Fumadocs page renderer', () => {
+    // The live rule pages are served by app/docs/[[...slug]]/page.tsx (it
+    // renders the generated MDX); RemoteRuleDoc is not in any route. The CTA
+    // must live here or it never reaches a reader.
+    const page = read('app/docs/[[...slug]]/page.tsx');
+    expect(page).toMatch(/import\s+\{\s*RuleValueCTA\s*\}/);
+    expect(page).toMatch(/<RuleValueCTA\s+plugin=\{rulePlugin\}\s+rule=\{ruleName\}\s*\/>/);
+    // Scoped to rule pages, not every doc page.
+    expect(page).toMatch(/isRulePage/);
   });
 
   it('asks for both conversions — Dev.to follow and GitHub star', () => {

@@ -6,7 +6,6 @@
 
 import { RemoteMarkdown } from '@interlace/ui/fumadocs/remote-markdown';
 import { compileRemoteMDX } from '@/lib/mdx-compiler';
-import { RuleValueCTA } from './rule-value-cta';
 
 const GITHUB_RAW_BASE =
   'https://raw.githubusercontent.com/ofri-peretz/eslint/main/packages';
@@ -60,23 +59,20 @@ export async function RemoteRuleDoc({ plugin, rule }: RemoteRuleDocProps) {
   );
 
   return (
-    <>
-      <RemoteMarkdown
-        url={url}
-        revalidate={21600}
-        fallback={fallback}
-        className="remote-rule-doc"
-        source={{
-          variant: 'rule',
-          label: `${rule}.md`,
-          sourceUrl: githubUrl,
-          cacheWindowLabel: '6 hours',
-        }}
-        preprocess={cleanRuleDoc}
-        compile={(source) => compileRemoteMDX(source, { pluginName: plugin })}
-      />
-      <RuleValueCTA plugin={plugin} rule={rule} />
-    </>
+    <RemoteMarkdown
+      url={url}
+      revalidate={21600}
+      fallback={fallback}
+      className="remote-rule-doc"
+      source={{
+        variant: 'rule',
+        label: `${rule}.md`,
+        sourceUrl: githubUrl,
+        cacheWindowLabel: '6 hours',
+      }}
+      preprocess={cleanRuleDoc}
+      compile={(source) => compileRemoteMDX(source, { pluginName: plugin })}
+    />
   );
 }
 
