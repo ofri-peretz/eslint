@@ -20,6 +20,12 @@ pre-commit:
       # which is how the import-next/no-cycle regression hid for weeks before
       # the 2026-05-16 sweep. See scripts/check-stale-build-artifacts.ts.
       run: npm run --silent check-stale-artifacts
+    scope-audit:
+      # Validates that every ESLint rule lives in the correct plugin and that
+      # its detection method matches its severity. Runs only when rule source
+      # files or the manifest change. See scripts/ilb-plugin-scope-audit.ts.
+      glob: "{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}"
+      run: npm run --silent ilb:scope-audit
     tests-affected:
       run: |
         if git rev-parse --verify --quiet origin/main >/dev/null; then

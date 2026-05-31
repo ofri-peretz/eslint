@@ -14,7 +14,6 @@ import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
-import { noPiiInLogs } from './rules/no-pii-in-logs';
 import { noSsrf } from './rules/no-ssrf';
 
 // Migrated rules from secure-coding
@@ -59,7 +58,6 @@ export const rules: Record<
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
-  'no-pii-in-logs': noPiiInLogs,
   'no-ssrf': noSsrf,
 
   // Migrated rules
@@ -121,7 +119,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',
-  'node-security/lock-file': 'error',
+  'node-security/lock-file': 'warn', // filesystem check — not pure AST; CI enforces this better
   'node-security/require-dependency-integrity': 'error',
 
   // Crypto rules in recommended
