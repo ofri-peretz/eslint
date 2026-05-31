@@ -22,9 +22,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-zip-slip',
       'no-arbitrary-file-access',
       'no-data-in-temp-storage',
-      // no-pii-in-logs migrated to eslint-plugin-secure-coding by the
-      // plugin-scope reorg (general security concern, not Node-runtime
-      // specific); it's registered there now, not here.
+      // no-pii-in-logs removed 2026-05-31: duplicate of secure-coding/no-pii-in-logs
       'no-ssrf',
       'detect-suspicious-dependencies',
       'lock-file',

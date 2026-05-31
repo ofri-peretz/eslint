@@ -11,7 +11,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-supports-aria-props.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ROLE_SUPPORTED_ARIA_PROPS } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, ROLE_SUPPORTED_ARIA_PROPS, GLOBAL_ARIA_PROPS } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsupportedAriaProp';
@@ -109,7 +109,9 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
 
         if (!role || !ROLE_SUPPORTED_ARIA_PROPS[role]) return;
 
-        const supportedProps = ROLE_SUPPORTED_ARIA_PROPS[role];
+        const roleSupportedProps = ROLE_SUPPORTED_ARIA_PROPS[role];
+        // Global ARIA props are valid on every element regardless of role
+        const supportedProps = new Set([...roleSupportedProps, ...GLOBAL_ARIA_PROPS]);
 
         // Check all aria-* attributes
         for (const attr of node.attributes) {

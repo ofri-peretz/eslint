@@ -77,21 +77,23 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
         if (!hasInteractiveHandler) return;
 
         // Check if it has a role that makes it interactive
-        const hasRole = node.attributes.some(
+        const roleAttr = node.attributes.find(
           (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-             attr.type === 'JSXAttribute' && 
-             attr.name.type === 'JSXIdentifier' && 
+             attr.type === 'JSXAttribute' &&
+             attr.name.type === 'JSXIdentifier' &&
              attr.name.name === 'role'
         );
 
-        // Also check for hidden input type? No, this is static elements.
-        
-        if (!hasRole) {
-             context.report({
-                 node,
-                 messageId: 'noStaticInteraction',
-             });
-        }
+        // presentation/none roles don't make an element interactive
+        const roleValue = roleAttr?.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+        const NON_INTERACTIVE_ROLES = new Set(['presentation', 'none', 'separator', 'img', 'figure', 'group', 'definition', 'note', 'status', 'log', 'marquee', 'alert', 'feed', 'tooltip']);
+        if (roleValue && !NON_INTERACTIVE_ROLES.has(roleValue)) return; // has a real interactive role — OK
+
+        // No role, or only a non-interactive role — report
+        context.report({
+             node,
+             messageId: 'noStaticInteraction',
+        });
       },
     };
   },

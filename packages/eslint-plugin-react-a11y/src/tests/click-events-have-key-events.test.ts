@@ -32,6 +32,9 @@ describe('click-events-have-key-events', () => {
         { code: '<a href="#" onClick={handler}></a>' },
         { code: '<input onClick={handler} />' },
         { code: '<div></div>' },
+        // Interactive ARIA role — AT handles keyboard; no separate key handler needed
+        { code: '<div role="button" onClick={handler} />' },
+        { code: '<div role="menuitem" onClick={handler} />' },
       ],
       invalid: [],
     });
