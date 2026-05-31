@@ -56,7 +56,7 @@ export const configs = {
       reliability: plugin,
     },
     rules: {
-      'reliability/no-silent-errors': 'warn',
+      'reliability/no-silent-errors': 'error',
       'reliability/no-missing-null-checks': 'warn',
       'reliability/require-network-timeout': 'error',
     },

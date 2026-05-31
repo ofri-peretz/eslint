@@ -1091,7 +1091,7 @@
     "no-deprecated-buffer": {
       "environment": "node",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-toctou-vulnerability": {
       "environment": "universal",
@@ -1173,7 +1173,7 @@
     "no-cryptojs": {
       "environment": "node",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-cryptojs-weak-random": {
       "environment": "universal",
@@ -1857,7 +1857,7 @@
     "no-silent-errors": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-missing-error-context": {
       "environment": "universal",
@@ -1934,12 +1934,12 @@
     "no-redos-vulnerable-regex": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-unsafe-regex-construction": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "detect-object-injection": {
       "environment": "universal",
