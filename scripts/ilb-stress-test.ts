@@ -727,6 +727,68 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
+    pluginName: 'eslint-plugin-express-security',
+    pluginEntry: 'packages/eslint-plugin-express-security/src/index.ts',
+    fullRuleName: 'express-security/no-user-controlled-redirect',
+    shortRuleName: 'no-user-controlled-redirect',
+    cases: [
+      {
+        label: 'TP: res.redirect(req.query.next) — direct user-controlled redirect',
+        hypothesis: 'Direct req.query access as redirect target → open redirect, should fire',
+        expected: 'fire',
+        code: `
+          app.get('/login', (req, res) => {
+            res.redirect(req.query.next);
+          });
+        `,
+      },
+      {
+        label: 'TP: res.redirect(req.body.url) — POST body redirect',
+        hypothesis: 'req.body access → user-controlled, should fire',
+        expected: 'fire',
+        code: `
+          app.post('/go', (req, res) => {
+            res.redirect(req.body.url);
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect("/dashboard") — literal target',
+        hypothesis: 'String literal redirect target is always safe',
+        expected: 'silent',
+        code: `
+          app.get('/home', (req, res) => {
+            res.redirect('/dashboard');
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect(next) — variable (indirect, not direct req access)',
+        hypothesis: 'Indirect variable not detected — conservative to avoid FPs',
+        expected: 'silent',
+        code: `
+          app.get('/go', (req, res) => {
+            const next = req.query.next;
+            res.redirect(next);
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect(validated) — after allowlist check',
+        hypothesis: 'Validated redirect — rule does not fire (indirect assignment)',
+        expected: 'silent',
+        code: `
+          const ALLOWED = ['/home', '/dashboard', '/profile'];
+          app.get('/go', (req, res) => {
+            const target = req.query.next;
+            if (!ALLOWED.includes(target)) return res.redirect('/home');
+            res.redirect(target);
+          });
+        `,
+      },
+    ],
+  },
+  {
     pluginName: 'eslint-plugin-pg',
     pluginEntry: 'packages/eslint-plugin-pg/src/index.ts',
     fullRuleName: 'pg/no-unsafe-query',
