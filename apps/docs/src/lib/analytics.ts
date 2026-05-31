@@ -50,6 +50,10 @@ export interface TrackedEventMap {
   // Homepage hero → GitHub star CTA. The npm→GitHub arrow is the widest leak
   // in the conversion funnel (GROWTH_PHILOSOPHY.md G1/G2); this measures it.
   'homepage:star_click': { stars: number | null };
+  // Peak-value rule-page CTA (RuleValueCTA): the ask shown right after a rule
+  // caught something. `follow` (Dev.to) and `star` (GitHub) tracked separately
+  // so we can see which conversion the rule-page traffic actually takes.
+  'rule_page:cta_click': { action: 'star' | 'follow'; plugin: string; rule: string };
   // Stats / scorecard page CTAs (star, install, docs links).
   'stats:cta_click': { action: 'star' | 'plugin_install' | 'plugin_docs'; plugin?: string };
   // Flagship / scorecard page CTAs.
