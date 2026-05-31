@@ -84,7 +84,10 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       expect(configs['owasp-top-10'].plugins?.['secure-coding']).toBeDefined();
       
       const owaspRules = configs['owasp-top-10'].rules || {};
-      expect(owaspRules['secure-coding/no-missing-authentication']).toBe('error');
+      // no-missing-authentication was removed from owasp-top-10 by the scope
+      // reorg (Express-specific → use eslint-plugin-express-security). Assert a
+      // rule that genuinely ships in this config instead.
+      expect(owaspRules['secure-coding/no-hardcoded-credentials']).toBe('error');
     });
   });
 });

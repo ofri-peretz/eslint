@@ -1,7 +1,7 @@
 /**
  * Unit tests for the root-level rules-table generator at
  * `scripts/sync-readme-rules.ts`. The generator is the single source of truth
- * for README rule tables across all 20 plugins — these tests lock the
+ * for README rule tables across all 19 plugins — these tests lock the
  * behaviors that regressed in 2026-05 (eating adjacent markdown tables,
  * dropping rules silently, non-idempotent output).
  */
@@ -179,9 +179,9 @@ describe('spliceTable', () => {
 });
 
 describe('loadPluginRegistry', () => {
-  it('parses the canonical 20-plugin registry from apps/docs/src/lib/plugins.ts', () => {
+  it('parses the canonical 19-plugin registry from apps/docs/src/lib/plugins.ts', () => {
     const registry = loadPluginRegistry(resolve(ROOT, 'apps', 'docs', 'src', 'lib', 'plugins.ts'));
-    expect(registry.length).toBe(20);
+    expect(registry.length).toBe(19);
     const slugs = registry.map((p) => p.slug);
     expect(slugs).toContain('reliability');
     expect(slugs).toContain('browser-security');
