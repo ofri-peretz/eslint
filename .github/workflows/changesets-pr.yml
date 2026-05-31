@@ -65,6 +65,14 @@ jobs:
           # No `publish:` — release.yml does that on merge.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # changesets/action runs `git commit` + `git push origin
+          # HEAD:changeset-release/main` to open the Version PR. CI installs
+          # lefthook git hooks (npm ci → prepare), and the pre-push `changelog`
+          # gate then fails the bot's push — the version-bump commit has package
+          # changes but the changesets were just consumed by `changeset version`
+          # (and `shim-verify` flags dist it can't see). Disable lefthook for this
+          # automated push; the real gates run on the resulting Version PR.
+          LEFTHOOK: "0"
 
       # Closes the loop for solo-maintainer continuous delivery: once CI is
       # green, GitHub auto-squash-merges the Version PR. release.yml then fires

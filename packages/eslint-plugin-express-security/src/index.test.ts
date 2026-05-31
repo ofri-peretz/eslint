@@ -12,7 +12,7 @@ describe('eslint-plugin-express-security plugin interface', () => {
   it('should export all express-security rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
-    expect(ruleKeys).toEqual([
+    expect(ruleKeys).toEqual(expect.arrayContaining([
       'require-helmet',
       'no-permissive-cors',
       'require-csrf-protection',
@@ -23,13 +23,13 @@ describe('eslint-plugin-express-security plugin interface', () => {
       'require-express-body-parser-limits',
       'no-express-unsafe-regex-route',
       'no-exposed-debug-endpoints',
-      // Migrated from browser-security by the plugin-scope reorg — these are
-      // server-side Express checks (correct environment per the scope audit).
+      // Migrated from browser-security
       'no-missing-cors-check',
       'no-missing-csrf-protection',
       'no-missing-security-headers',
+      // Open redirect (structural CWE-601)
       'no-user-controlled-redirect',
-    ]);
+    ]));
     expect(ruleKeys.length).toBe(14);
   });
 

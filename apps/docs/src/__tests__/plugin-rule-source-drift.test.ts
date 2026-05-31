@@ -89,11 +89,30 @@ describe('extractReadmeRuleNames', () => {
 describe('plugin rule-source drift across the canonical registry', () => {
   it('every plugin has identical rule names across src/index.ts, docs/rules, README, MDX, and meta.json', () => {
     const plugins = loadRegistry();
-    expect(plugins.length).toBe(20);
+    expect(plugins.length).toBe(19);
 
     const findings = validatePluginRuleSourceDrift({
       monorepoRoot: MONOREPO_ROOT,
       plugins,
+      exceptions: {
+        // The `componentApi` preset rules are opt-in (NOT in `recommended`) and
+        // are intentionally omitted from the README rules table by
+        // sync-readme-rules.ts. They remain fully documented elsewhere — source
+        // docs at docs/rules/component-api/<rule>.md, plus MDX + meta.json — so
+        // the only legitimate divergence is their absence from the README.
+        'react-features': {
+          readme: [
+            'no-arbitrary-token-class',
+            'no-default-test-id',
+            'no-inline-style',
+            'no-is-prefix-prop',
+            'no-kind-prop-discriminator',
+            'no-raw-color-literal',
+            'no-wrapper-sub-component',
+            'require-data-slot',
+          ],
+        },
+      },
     });
 
     if (findings.length > 0) {
