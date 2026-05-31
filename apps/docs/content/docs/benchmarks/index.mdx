@@ -135,6 +135,21 @@ Full write-ups, each with the reproducible config:
 - [Same NestJS prompt: Claude got 6 security errors, Gemini got 2](https://dev.to/ofri-peretz/i-ran-the-same-nestjs-prompt-on-claude-and-gemini-one-got-6-security-errors-heres-what-both-1fnf)
 - [Aggregate benchmarks lie — what 700 AI functions look like by security domain](https://dev.to/ofri-peretz/aggregate-benchmarks-lie-heres-what-700-ai-functions-look-like-by-security-domain-1hgj)
 
+## import-next/no-cycle vs eslint-plugin-import
+
+`import-next/no-cycle` runs head-to-head against `eslint-plugin-import`'s cycle detection on the Next.js source (131K LoC):
+
+| Metric | import-next | eslint-plugin-import |
+|---|---|---|
+| Cold lint time | 20.6 s | 25.9 s |
+| Warm lint time | 470 ms | 410 ms |
+| Findings (unique cycles) | 914 | 0 |
+| Recall vs reference | 93% (14/15 flagged files) | 0% |
+
+`eslint-plugin-import` finds zero cycles on the same codebase because it uses a fixed depth cap (default: 10) that misses deep dependency chains. `import-next/no-cycle` defaults to unlimited depth with a deduplication cache that keeps memory bounded.
+
+For full methodology and per-file breakdown, see the [import-next rule docs](/docs/imports/plugin-import-next/rules/no-cycle).
+
 ## What ILB is
 
 The **Interlace Linter Benchmark** is an open measurement framework built into this
