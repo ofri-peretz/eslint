@@ -57,14 +57,6 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-crypto",
-      "rules": 10,
-      "description": "[DEPRECATED — use eslint-plugin-node-security] Security-focused ESLint plugin for cryptographic best practices",
-      "category": "security",
-      "version": "2.2.3",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-lambda-security",
       "rules": 16,
       "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications",

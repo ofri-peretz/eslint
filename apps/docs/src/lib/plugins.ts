@@ -50,12 +50,6 @@ export const PLUGINS: PluginEntry[] = [
     description: 'XSS, DOM security',
   },
   {
-    slug: 'crypto',
-    package: 'eslint-plugin-crypto',
-    pillar: 'security',
-    description: 'Cryptographic algorithm and randomness safety',
-  },
-  {
     slug: 'express-security',
     package: 'eslint-plugin-express-security',
     pillar: 'security',

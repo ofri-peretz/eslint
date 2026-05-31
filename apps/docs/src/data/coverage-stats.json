@@ -58,13 +58,6 @@
         "category": "security"
       },
       {
-        "name": "eslint-plugin-crypto",
-        "slug": "crypto",
-        "coverage": 95.7,
-        "status": "production",
-        "category": "security"
-      },
-      {
         "name": "eslint-plugin-lambda-security",
         "slug": "lambda-security",
         "coverage": 97.6,
