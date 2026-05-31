@@ -431,6 +431,12 @@
       "detection": "structural-api",
       "confidence": "review-prompt",
       "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+    },
+    "no-user-controlled-redirect": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on res.redirect(req.query.*) AST shape \u2014 structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
     }
   },
   "eslint-plugin-import-next": {
