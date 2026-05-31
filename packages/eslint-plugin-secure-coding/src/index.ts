@@ -206,9 +206,29 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   } satisfies TSESLint.FlatConfig.Config,
 
   /**
+   * Recommended-strict configuration
+   *
+   * Same rule set as `recommended` but every rule is promoted to `'error'`.
+   * Use this when you want CI to block on all security findings rather than
+   * only warning on lower-confidence rules.
+   *
+   * This is the configuration independently chosen by production teams who
+   * audit `recommended` and decide they want zero tolerance on all 16 rules.
+   */
+  'recommended-strict': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: Object.fromEntries(
+      Object.keys(recommendedRules).map((rule) => [rule, 'error']),
+    ),
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Strict security configuration
-   * 
-   * All security rules set to 'error' for maximum protection.
+   *
+   * ALL rules (including experimental and opinionated ones) set to 'error'.
+   * Prefer `recommended-strict` unless you specifically need full coverage.
    */
   strict: {
     plugins: {
