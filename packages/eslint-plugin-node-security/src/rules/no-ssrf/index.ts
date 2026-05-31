@@ -186,23 +186,23 @@ function hasValidationBefore(node: TSESTree.CallExpression): boolean {
 export const noSsrf = createRule<RuleOptions, MessageIds>({
   name: 'no-ssrf',
   meta: {
-    type: 'problem',
+    type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
       description:
-        'Detects HTTP requests with user-controlled URLs (SSRF vulnerability)',
+        'Flags HTTP calls whose URL argument is an identifier with a user-input-sounding name — a heuristic prompt for code review, not a proof of SSRF',
       cwe: 'CWE-918',
-      cvss: 7.5,
+      cvss: 4.0,
     },
     messages: {
       ssrfVulnerability: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Server-Side Request Forgery (SSRF)',
+        issueName: 'Possible SSRF — heuristic (CWE-918)',
         cwe: 'CWE-918',
         description:
-          'HTTP request with potentially user-controlled URL. An attacker could access internal services.',
-        severity: 'HIGH',
-        fix: 'Validate URL against an allowlist of permitted hosts before making the request.',
+          'HTTP call whose URL argument name suggests user input. This is a naming heuristic, not data-flow analysis — review whether the URL could originate from an untrusted source at runtime.',
+        severity: 'LOW',
+        fix: 'If the URL comes from user input, validate it against an allowlist of permitted hosts before making the request.',
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html',
       }),
