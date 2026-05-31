@@ -173,6 +173,16 @@ Three contracts gate every release:
 - **Latency contract** — `interlace-*` P50 ≤ {tiny:5, small:10, medium:25, large:50, extreme:250} ms per fixture scale.
 - **Per-cell regression check** — every cell within +5 % tokens / max(+50 %, +0.5 ms) latency / signal score ≥ baseline vs the snapshotted `baseline.json`.
 
+<!-- INTERLACE:STAR_CTA:START -->
+
+## ⭐ Support & follow
+
+If the Interlace ESLint ecosystem is useful to you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps it maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## License
 
 MIT © [Ofri Peretz](https://ofriperetz.dev/?utm_source=github&utm_medium=referral&utm_campaign=eslint-formatter)

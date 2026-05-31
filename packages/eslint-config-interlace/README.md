@@ -141,6 +141,16 @@ directly, this preset will work there unchanged. See
 
 ---
 
+<!-- INTERLACE:STAR_CTA:START -->
+
+## ⭐ Support & follow
+
+If the Interlace ESLint ecosystem is useful to you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps it maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
 ## License
 
 [MIT](./LICENSE) © Ofri Peretz.

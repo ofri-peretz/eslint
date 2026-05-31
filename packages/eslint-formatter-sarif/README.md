@@ -63,3 +63,13 @@ For one-line CI integration that handles install + run + upload in one step, use
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
+<!-- INTERLACE:STAR_CTA:START -->
+
+## ⭐ Support & follow
+
+If the Interlace ESLint ecosystem is useful to you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps it maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+
+[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+
+<!-- INTERLACE:STAR_CTA:END -->
+
