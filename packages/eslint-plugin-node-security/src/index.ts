@@ -117,7 +117,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
   'node-security/no-data-in-temp-storage': 'error',
-  'node-security/no-ssrf': 'error',
+  'node-security/no-ssrf': 'warn',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',
