@@ -21,6 +21,13 @@ run-name: >-
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  # Post-merge verification: the heavy gate is PR-gated for cost, so a merge
+  # (incl. an --admin / draft-merged PR that skipped it) could land broken on
+  # main and sit red only until the weekly cron. Running on push to main turns
+  # that into immediate detection. Non-PR events run the full battery via the
+  # gate job (event != pull_request → run=true).
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
     types: [ready_for_review, labeled, synchronize]

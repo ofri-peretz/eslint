@@ -9,6 +9,16 @@ name: Storybook a11y gate
 # weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
 
 on:
+  # Post-merge verification on main (e.g. a lockfile change that re-hoists
+  # storybook's vite breaks the build) — same path filter as the PR trigger.
+  push:
+    branches: [main]
+    paths:
+      - 'apps/storybook/**'
+      - 'packages/ui/**'
+      - 'apps/docs/src/**'
+      - '.github/workflows/storybook-a11y.yml'
+      - 'package-lock.json'
   pull_request:
     branches: [main]
     types: [ready_for_review, labeled, synchronize]

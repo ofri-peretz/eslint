@@ -100,7 +100,7 @@ jobs:
           PORT: "3000"
 
       - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.14.x
+        run: npm install -g @lhci/cli@0.14.0
 
       - name: Run Lighthouse CI
         id: lhci
