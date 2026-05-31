@@ -140,6 +140,11 @@ export function initPostHog(): void {
     api_host: '/ingest',
     ui_host: 'https://us.posthog.com',
     person_profiles: 'identified_only',
+    // Cookie-free mode: no `ph_` cookie is set, so no GDPR consent banner
+    // is required for EU visitors. Cross-session person stitching is lost
+    // (each page load is anonymous) but for a public docs site with no
+    // logged-in users this is the right trade-off.
+    persistence: 'memory',
     capture_pageview: false,
     capture_pageleave: true,
     capture_performance: true,
