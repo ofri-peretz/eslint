@@ -159,9 +159,11 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-improper-sanitization': 'error',
 
   // High - Logic
-  'secure-coding/no-missing-authentication': 'warn',
+  // NOTE: no-missing-authentication and require-backend-authorization are deprecated in
+  // secure-coding — they assume Express route handler context and belong in express-security.
+  // Kept in the rules registry for backwards compat; removed from flagship config.
   'secure-coding/no-privilege-escalation': 'warn',
-  'secure-coding/no-weak-password-recovery': 'error',
+  'secure-coding/no-weak-password-recovery': 'warn', // naming heuristic — demoted
 
   // High - Exposure
   'secure-coding/no-sensitive-data-exposure': 'warn',
@@ -228,8 +230,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       // A01:2021 – Broken Access Control
-      'secure-coding/no-missing-authentication': 'error',
-      'secure-coding/no-privilege-escalation': 'error',
+      // no-missing-authentication removed: Express-specific, use express-security plugin instead
+      'secure-coding/no-privilege-escalation': 'warn',
       
       // A02:2021 – Cryptographic Failures
       'secure-coding/no-hardcoded-credentials': 'error',

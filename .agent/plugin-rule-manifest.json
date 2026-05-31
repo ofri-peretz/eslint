@@ -1,0 +1,2128 @@
+{
+  "eslint-plugin-browser-security": {
+    "no-innerhtml": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-eval": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-postmessage-origin-check": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-postmessage-wildcard-origin": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-postmessage-innerhtml": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-localstorage": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-jwt-in-storage": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-sessionstorage": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-indexeddb": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-cookie-js": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-cookie-auth-tokens": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-cookie-secure-attrs": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-websocket-wss": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-websocket-innerhtml": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-websocket-eval": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-filereader-innerhtml": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-blob-url-revocation": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-dynamic-service-worker-url": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-worker-message-innerhtml": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-inline-csp": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-eval-csp": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "detect-mixed-content": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-allow-arbitrary-loads": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-clickjacking": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-credentials-in-query-params": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-http-urls": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-redirects": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-websocket": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-missing-cors-check": {
+      "environment": "browser",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-cors-check"
+    },
+    "no-missing-csrf-protection": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-csrf-protection"
+    },
+    "no-missing-security-headers": {
+      "environment": "browser",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-security-headers"
+    },
+    "no-password-in-url": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-permissive-cors": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-sensitive-data-in-analytics": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-sensitive-data-in-cache": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-tracking-without-consent": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unencrypted-transmission": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unescaped-url-parameter": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "no-unvalidated-deeplinks": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-csp-headers": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-https-only": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-url-validation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-mime-type-validation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-disabled-certificate-validation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-client-side-auth-logic": {
+      "environment": "browser",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-conventions": {
+    "no-commented-code": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "expiring-todo-comments": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-code-point": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prefer-dom-node-text-content": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-console-spaces": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-deprecated-api": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-dependency-version-strategy": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "filename-case": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "consistent-existence-index-check": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-json-schema-tags": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-data-testid": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "utm-taxonomy": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-raw-cross-property-href": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "analytics-event-naming": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-magic-numbers": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-crypto": {
+    "no-hardcoded-crypto-key": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-key-reuse": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-math-random-crypto": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-numeric-only-tokens": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-predictable-salt": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-web-crypto-export": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-authenticated-encryption": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-key-length": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-random-iv": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "require-secure-pbkdf2-digest": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-sufficient-length": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-express-security": {
+    "require-helmet": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-csrf-protection": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-insecure-cookie-options": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-rate-limiting": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-graphql-introspection-production": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-cors-credentials-wildcard": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-express-body-parser-limits": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-express-unsafe-regex-route": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-exposed-debug-endpoints": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-missing-cors-check": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+    },
+    "no-missing-csrf-protection": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+    },
+    "no-missing-security-headers": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+    }
+  },
+  "eslint-plugin-import-next": {
+    "no-duplicates": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-self-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unresolved": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-absolute-path": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-dynamic-require": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-relative-packages": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-useless-path-segments": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-amd": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-commonjs": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-nodejs-modules": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-import-module-exports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-cycle": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-internal-modules": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-cross-domain-imports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "enforce-dependency-direction": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-restricted-paths": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-relative-parent-imports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-default-export": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-named-export": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prefer-default-export": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "no-anonymous-default-export": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-mutable-exports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-deprecated": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "exports-last": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "group-exports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "enforce-import-order": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unassigned-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "newline-after-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-empty-named-blocks": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-named-as-default": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-named-as-default-member": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-named-default": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-namespace": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "consistent-type-specifier-style": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "dynamic-import-chunkname": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-extraneous-dependencies": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-unused-modules": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "max-dependencies": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-node-protocol": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-barrel-file": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-barrel-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-tree-shakeable-imports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-direct-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-full-package-import": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "enforce-team-boundaries": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-legacy-imports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-import-approval": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prefer-modern-api": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "module-resolution": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "Source not found \u2014 manual review required"
+    },
+    "import-style": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "Source not found \u2014 manual review required"
+    }
+  },
+  "eslint-plugin-jwt": {
+    "no-algorithm-none": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-algorithm-confusion": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-algorithm-whitelist": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-decode-without-verify": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-weak-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-expiration": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-hardcoded-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issued-at": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issuer-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-audience-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-timestamp-manipulation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-max-age": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-payload": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-lambda-security": {
+    "no-hardcoded-credentials-sdk": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors-response": {
+      "environment": "lambda",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors-middy": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-secrets-in-env": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-env-logging": {
+      "environment": "lambda",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-unvalidated-event-body": {
+      "environment": "lambda",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-missing-authorization-check": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-overly-permissive-iam-policy": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-error-swallowing": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-timeout-handling": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unbounded-batch-processing": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-user-controlled-requests": {
+      "environment": "lambda",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-exposed-error-details": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-exposed-debug-endpoints": {
+      "environment": "lambda",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-maintainability": {
+    "cognitive-complexity": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "nested-complexity-hotspots": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "identical-functions": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "max-parameters": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-lonely-if": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-nested-ternary": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "consistent-function-scoping": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "no-unreadable-iife": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "error-message": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-missing-error-context": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-silent-errors": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unhandled-promise": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-modernization": {
+    "no-instanceof-array": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prefer-at": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-event-target": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-template-literal": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-modularity": {
+    "ddd-anemic-domain-model": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "ddd-value-object-immutability": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "enforce-naming": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "enforce-rest-conventions": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-external-api-calls-in-utils": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-mutable-exports": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-mongodb-security": {
+    "no-unsafe-query": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-operator-injection": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-where": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-regex-query": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-connection-string": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-credentials": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-tls-connection": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-auth-mechanism": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-schema-validation": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-select-sensitive-fields": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-bypass-middleware": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-populate": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unbounded-find": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-projection": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-lean-queries": {
+      "environment": "mongodb",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-debug-mode-production": {
+      "environment": "mongodb",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-nestjs-security": {
+    "require-guards": {
+      "environment": "nestjs",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-missing-validation-pipe": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "require-throttler": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "require-class-validator": {
+      "environment": "nestjs",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-exposed-private-fields": {
+      "environment": "nestjs",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-exposed-debug-endpoints": {
+      "environment": "nestjs",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-node-security": {
+    "detect-child-process": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "detect-eval-with-expression": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "detect-non-literal-fs-filename": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-dynamic-require": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-buffer-overread": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-deprecated-buffer": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-toctou-vulnerability": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-zip-slip": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-arbitrary-file-access": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-data-in-temp-storage": {
+      "environment": "node",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-pii-in-logs": {
+      "environment": "node",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "violation": "DUPLICATE \u2014 identical rule exists in secure-coding; naming heuristic only"
+    },
+    "no-ssrf": {
+      "environment": "node",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "detect-suspicious-dependencies": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "opt-in"
+    },
+    "lock-file": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "opt-in",
+      "deprecated": "Use CI tooling instead \u2014 this checks filesystem for lock file existence, not AST analysis"
+    },
+    "no-dynamic-dependency-loading": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-dependency-integrity": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-secure-credential-storage": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-secure-deletion": {
+      "environment": "node",
+      "detection": "naming-heuristic",
+      "confidence": "opt-in"
+    },
+    "require-storage-encryption": {
+      "environment": "node",
+      "detection": "naming-heuristic",
+      "confidence": "opt-in"
+    },
+    "no-dynamic-require": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-cryptojs": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-cryptojs-weak-random": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-deprecated-cipher-method": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-ecb-mode": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-key-derivation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-insecure-rsa-padding": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-math-random-crypto": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-self-signed-certs": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-sha1-hash": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-static-iv": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-timing-unsafe-compare": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-weak-cipher-algorithm": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-weak-hash-algorithm": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prefer-native-crypto": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-operability": {
+    "no-console-log": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-process-exit": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-debug-code-in-production": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-verbose-error-messages": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-code-minification": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-data-minimization": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-pg": {
+    "no-unsafe-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-ssl": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-credentials": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "check-query-params": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-missing-client-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-transaction-on-pool": {
+      "environment": "pg",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-floating-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-select-all": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-pool-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-batch-insert-loop": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-search-path": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-copy-from": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prevent-double-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-react-a11y": {
+    "anchor-ambiguous-text": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "anchor-has-content": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "anchor-is-valid": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "aria-activedescendant-has-tabindex": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "aria-props": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "aria-role": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "aria-unsupported-elements": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "autocomplete-valid": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "control-has-associated-label": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "label-has-associated-control": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "click-events-have-key-events": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "mouse-events-have-key-events": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "heading-has-content": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "html-has-lang": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "iframe-has-title": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "lang": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "media-has-caption": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "img-redundant-alt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "alt-text": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "interactive-supports-focus": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-interactive-element-to-noninteractive-role": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-noninteractive-element-interactions": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-noninteractive-element-to-interactive-role": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-noninteractive-tabindex": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-static-element-interactions": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-access-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-aria-hidden-on-focusable": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-autofocus": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-keyboard-inaccessible-elements": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "tabindex-no-positive": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-distracting-elements": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-missing-aria-labels": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-redundant-roles": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "role-has-required-aria-props": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "role-supports-aria-props": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prefer-tag-over-role": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "scope": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "wcag-a": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "Source not found \u2014 manual review required"
+    },
+    "wcag-aa": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "Source not found \u2014 manual review required"
+    }
+  },
+  "eslint-plugin-react-features": {
+    "required-attributes": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-direct-mutation-state": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-optimization": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-set-state": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-this-in-sfc": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-access-state-in-setstate": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-children-prop": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-danger": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-string-refs": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unknown-property": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "checked-requires-onchange-or-readonly": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "default-props-match-prop-types": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "display-name": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-handler-names": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-max-depth": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-no-bind": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-no-literals": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-adjacent-inline-elements": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-arrow-function-lifecycle": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-did-mount-set-state": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-did-update-set-state": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-invalid-html-attribute": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-is-mounted": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-multi-comp": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-namespace": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-object-type-as-default-prop": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-redundant-should-component-update": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-render-return-value": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-typos": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unescaped-entities": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prefer-es6-class": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prefer-stateless-function": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "prop-types": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "react-in-jsx-scope": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-default-props": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "require-render-return": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "sort-comp": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "state-in-constructor": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "static-property-placement": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "hooks-exhaustive-deps": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-no-target-blank": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-no-script-url": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "jsx-no-duplicate-props": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-danger-with-children": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-deprecated": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-find-dom-node": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unsafe": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "void-dom-elements-no-children": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "react-class-to-hooks": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unnecessary-rerenders": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "react-render-optimization": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "react-no-inline-functions": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-default-test-id": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-data-slot": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-is-prefix-prop": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-inline-style": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-raw-color-literal": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-arbitrary-token-class": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-kind-prop-discriminator": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-wrapper-sub-component": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-reliability": {
+    "no-unhandled-promise": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "no-silent-errors": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-missing-error-context": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "error-message": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-missing-null-checks": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-type-narrowing": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-network-timeout": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-await-in-loop": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-jsdoc-terminator-in-example": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-secure-coding": {
+    "no-graphql-injection": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-xxe-injection": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-xpath-injection": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-ldap-injection": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-directive-injection": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-format-string-injection": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "opt-in"
+    },
+    "detect-non-literal-regexp": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-redos-vulnerable-regex": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-regex-construction": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "detect-object-injection": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-deserialization": {
+      "environment": "universal",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "no-insecure-comparison": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-improper-sanitization": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-improper-type-validation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-missing-authentication": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+    },
+    "no-privilege-escalation": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-weak-password-recovery": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "require-backend-authorization": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+    },
+    "no-hardcoded-credentials": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-data-exposure": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-pii-in-logs": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-unlimited-resource-allocation": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unchecked-loop-condition": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "detect-weak-password-validation": {
+      "environment": "universal",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-electron-security-issues": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "opt-in",
+      "deprecated": "Use a dedicated electron-security plugin \u2014 Electron requires framework-specific context"
+    },
+    "no-hardcoded-session-tokens": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-secure-defaults": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "owasp-top-10": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "Source not found \u2014 manual review required"
+    }
+  },
+  "eslint-plugin-vercel-ai-security": {
+    "require-validated-prompt": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-in-prompt": {
+      "environment": "vercel-ai",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-training-data-exposure": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-request-timeout": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-output-handling": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-tool-confirmation": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-system-prompt-leak": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-embedding-validation": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-output-validation": {
+      "environment": "vercel-ai",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in"
+    },
+    "require-max-tokens": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-max-steps": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-abort-signal": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-dynamic-system-prompt": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-tool-schema": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-hardcoded-api-keys": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-output-filtering": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-rag-content-validation": {
+      "environment": "vercel-ai",
+      "detection": "data-flow-lightweight",
+      "confidence": "review-prompt"
+    },
+    "require-error-handling": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "require-audit-logging": {
+      "environment": "vercel-ai",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    }
+  }
+}

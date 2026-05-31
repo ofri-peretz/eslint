@@ -41,6 +41,11 @@ import { requireExpressBodyParserLimits } from './rules/require-express-body-par
 import { noExpressUnsafeRegexRoute } from './rules/no-express-unsafe-regex-route';
 import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
+// Migrated from browser-security — these check server-side Express patterns, not browser APIs
+import { noMissingCorsCheck } from './rules/no-missing-cors-check';
+import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
+import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
+
 /**
  * Collection of all Express security ESLint rules
  */
@@ -67,6 +72,11 @@ export const rules: Record<
   'require-express-body-parser-limits': requireExpressBodyParserLimits,
   'no-express-unsafe-regex-route': noExpressUnsafeRegexRoute,
   'no-exposed-debug-endpoints': noExposedDebugEndpoints,
+
+  // Migrated from browser-security (server-side Express checks)
+  'no-missing-cors-check': noMissingCorsCheck,
+  'no-missing-csrf-protection': noMissingCsrfProtection,
+  'no-missing-security-headers': noMissingSecurityHeaders,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -103,6 +113,11 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/require-express-body-parser-limits': 'warn',
   'express-security/no-express-unsafe-regex-route': 'error',
   'express-security/no-exposed-debug-endpoints': 'error',
+
+  // Migrated from browser-security
+  'express-security/no-missing-cors-check': 'warn',
+  'express-security/no-missing-csrf-protection': 'warn',
+  'express-security/no-missing-security-headers': 'warn',
 };
 
 /**
