@@ -1,15 +1,4 @@
 ---
-title: "no-websocket-innerhtml"
-description: "title: no-websocket-innerhtml"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-websocket-innerhtml
 description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
 tags: ['security', 'browser']
@@ -18,11 +7,15 @@ severity: medium
 cwe: CWE-319
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> 🔒 Disallow using innerHTML with WebSocket message data
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> 🔒 Disallow using innerHTML with WebSocket message data
 
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
 **OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)

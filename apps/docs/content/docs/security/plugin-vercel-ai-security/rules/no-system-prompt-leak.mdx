@@ -1,6 +1,11 @@
 ---
-title: "no-system-prompt-leak"
-description: "title: no-system-prompt-leak"
+title: no-system-prompt-leak
+description: This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-system-prompt-leak
-description: This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-200
-autofix: false
----
-
 > Prevents system prompts from being exposed in API responses or client code.
-
-This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
 
 ## 📊 Rule Details
 

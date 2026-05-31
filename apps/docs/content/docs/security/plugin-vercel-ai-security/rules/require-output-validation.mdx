@@ -1,6 +1,11 @@
 ---
-title: "require-output-validation"
-description: "title: require-output-validation"
+title: require-output-validation
+description: This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-707
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-output-validation
-description: This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-707
-autofix: false
----
-
 > Requires validation of AI output before displaying to users.
-
-This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
 
 ## 📊 Rule Details
 
@@ -35,8 +28,6 @@ This rule identifies code patterns where AI-generated output is displayed to use
 | **Config Default** | `off` (recommended), `error` (strict)                                                                |
 
 ## 🔍 What This Rule Detects
-
-This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
 
 ## ❌ Incorrect Code
 

@@ -1,15 +1,4 @@
 ---
-title: "require-auth-mechanism"
-description: "title: require-auth-mechanism"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-auth-mechanism
 description: Requires explicit authentication mechanism specification for MongoDB connections.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: high
 cwe: CWE-287
 owasp: "A07:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
-
-Requires explicit authentication mechanism specification for MongoDB connections.
-
-Requires explicit authentication mechanism specification for MongoDB connections.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

@@ -1,6 +1,11 @@
 ---
-title: "require-output-filtering"
-description: "title: require-output-filtering"
+title: require-output-filtering
+description: This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-output-filtering
-description: This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
-tags: ['security', 'ai']
-category: security
-severity: medium
-cwe: CWE-200
-autofix: false
----
-
 > Requires filtering of sensitive data returned by AI tools.
-
-This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
 
 ## 📊 Rule Details
 

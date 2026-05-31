@@ -1,15 +1,4 @@
 ---
-title: "no-ssrf"
-description: "description: Detect HTTP requests with user-controlled URLs (server-side request forgery)."
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-ssrf
 description: Detect HTTP requests with user-controlled URLs (server-side request forgery).
 tags: ['security', 'node-security', 'ssrf', 'owasp']
@@ -17,7 +6,13 @@ category: security
 cwe: CWE-918
 owasp: A10:2021
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** no-ssrf, SSRF, server-side request forgery, CWE-918, OWASP A10:2021, fetch, axios, http.request, internal services, ESLint rule
 > **CWE:** [CWE-918: Server-Side Request Forgery (SSRF)](https://cwe.mitre.org/data/definitions/918.html)

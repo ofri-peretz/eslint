@@ -1,6 +1,11 @@
 ---
-title: "require-max-age"
-description: "title: require-max-age"
+title: require-max-age
+description: This rule mandates maxAge in verify operations
+tags: ['security', 'jwt']
+category: security
+severity: medium
+cwe: CWE-294
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: require-max-age
-description: This rule mandates maxAge in verify operations
-tags: ['security', 'jwt']
-category: security
-severity: medium
-cwe: CWE-294
-autofix: false
----
-
 > Require maxAge option in verify operations to enforce token freshness
-
-This rule mandates maxAge in verify operations
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

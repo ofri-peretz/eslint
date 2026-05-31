@@ -1,15 +1,4 @@
 ---
-title: "no-unsafe-query"
-description: "title: no-unsafe-query"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-unsafe-query
 description: Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-943
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
-
-Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
-
-Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

@@ -1,6 +1,9 @@
 ---
-title: "error-message"
-description: "description: Enforce providing a message when creating built-in Error objects for better debugging"
+title: error-message
+description: Enforce providing a message when creating built-in Error objects for better debugging
+tags: ['quality', 'maintainability']
+category: quality
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: error-message
-description: Enforce providing a message when creating built-in Error objects for better debugging
-tags: ['quality', 'maintainability']
-category: quality
-autofix: suggestions
----
-
 > **Keywords:** Error, message, debugging, exception, throw, ESLint rule, error handling, LLM-optimized
-
-Enforce providing a message when creating built-in Error objects for better debugging
 
 Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
 

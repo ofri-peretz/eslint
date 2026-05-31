@@ -1,6 +1,11 @@
 ---
-title: "detect-non-literal-fs-filename"
-description: "title: detect-non-literal-fs-filename"
+title: detect-non-literal-fs-filename
+description: Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-22
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: detect-non-literal-fs-filename
-description: Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
-tags: ['security', 'node']
-category: security
-severity: medium
-cwe: CWE-22
-autofix: false
----
-
 > **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
-
-Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

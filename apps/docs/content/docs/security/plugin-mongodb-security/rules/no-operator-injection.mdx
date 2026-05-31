@@ -1,15 +1,4 @@
 ---
-title: "no-operator-injection"
-description: "title: no-operator-injection"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-operator-injection
 description: Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to...
 tags: ['security', 'mongodb']
@@ -18,11 +7,15 @@ severity: critical
 cwe: CWE-943
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to...
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
 
 Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` to bypass authentication or exfiltrate data.
 

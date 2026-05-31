@@ -1,15 +1,4 @@
 ---
-title: "require-schema-validation"
-description: "title: require-schema-validation"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: require-schema-validation
 description: Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-20
 owasp: "A04:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-20, input validation, Mongoose, schema, security
-
-Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
-
-Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

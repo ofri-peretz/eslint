@@ -1,15 +1,4 @@
 ---
-title: "no-select-sensitive-fields"
-description: "title: no-select-sensitive-fields"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-select-sensitive-fields
 description: Detects queries that may return sensitive fields like passwords, tokens, or API keys.
 tags: ['security', 'mongodb']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-200
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > **Keywords:** CWE-200, information exposure, password, Mongoose, security
-
-Detects queries that may return sensitive fields like passwords, tokens, or API keys.
-
-Detects queries that may return sensitive fields like passwords, tokens, or API keys.
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 

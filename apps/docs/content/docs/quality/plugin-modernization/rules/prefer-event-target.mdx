@@ -1,6 +1,9 @@
 ---
-title: "prefer-event-target"
-description: "title: prefer-event-target"
+title: prefer-event-target
+description: Prefer EventTarget over EventEmitter for isomorphic code
+tags: ['architecture', 'modernization']
+category: modernization
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: prefer-event-target
-description: Prefer EventTarget over EventEmitter for isomorphic code
-tags: ['architecture', 'modernization']
-category: modernization
-autofix: suggestions
----
-
 > **Keywords:** EventTarget, EventEmitter, browser, Node.js, events, ESLint rule, LLM-optimized
-
-Prefer EventTarget over EventEmitter for isomorphic code
 
 Prefer `EventTarget` over `EventEmitter` for isomorphic code. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 

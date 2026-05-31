@@ -1,6 +1,11 @@
 ---
-title: "no-select-all"
-description: "description: Discourages SELECT in favor of explicit column lists."
+title: no-select-all
+description: Discourages SELECT  in favor of explicit column lists.
+tags: ['security', 'postgres']
+category: security
+severity: medium
+cwe: CWE-693
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,19 +14,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: no-select-all
-description: Discourages SELECT  in favor of explicit column lists.
-tags: ['security', 'postgres']
-category: security
-severity: medium
-cwe: CWE-693
-autofix: false
----
-
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
-
-Discourages SELECT  in favor of explicit column lists.
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

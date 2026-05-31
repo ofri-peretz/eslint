@@ -1,6 +1,9 @@
 ---
-title: "prefer-template-literal"
-description: "title: prefer-template-literal"
+title: prefer-template-literal
+description: Prefer template literals over string concatenation with runtime values
+tags: ['architecture', 'modernization']
+category: modernization
+autofix: code
 type_aware: false
 type_aware_status: unaware
 ---
@@ -9,17 +12,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
----
-title: prefer-template-literal
-description: Prefer template literals over string concatenation with runtime values
-tags: ['architecture', 'modernization']
-category: modernization
-autofix: code
----
-
 > **Keywords:** template literal, string concatenation, plus operator, interpolation, ESLint rule, ES2015, auto-fix, LLM-optimized
-
-Prefer template literals over string concatenation with runtime values
 
 Prefer template literals over string concatenation with `+` when at least one operand is a runtime value. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 
@@ -35,7 +28,7 @@ Prefer template literals over string concatenation with `+` when at least one op
 
 ## Rule Details
 
-Template literals with `${}` interpolation are more readable and less error-prone than concatenating strings with `+`. This rule flags any `+` expression that mixes string literals with runtime values (variables, member expressions, function calls, etc.) and rewrites the entire chain as a single template literal.
+Template literals with string interpolation are more readable and less error-prone than concatenating strings with `+`. This rule flags any `+` expression that mixes string literals with runtime values (variables, member expressions, function calls, etc.) and rewrites the entire chain as a single template literal.
 
 Pure string-literal concatenation (`"foo" + "bar"`) and numeric addition (`1 + 2`) are intentionally ignored.
 
@@ -43,7 +36,7 @@ Pure string-literal concatenation (`"foo" + "bar"`) and numeric addition (`1 + 2
 
 | Issue                    | Impact                                     | Solution                       |
 | ------------------------ | ------------------------------------------ | ------------------------------ |
-| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use `\`...\${expr}...\``       |
+| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use template literals with interpolation  |
 | 🐛 **Implicit coercion** | `+` coerces operands unpredictably         | Interpolation is unambiguous   |
 | 🔄 **Consistency**       | Multiple string-building styles in codebase | Standardize on template literals |
 

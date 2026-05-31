@@ -1,15 +1,4 @@
 ---
-title: "no-worker-message-innerhtml"
-description: "title: no-worker-message-innerhtml"
-type_aware: false
-type_aware_status: unaware
----
-
-import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
-
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
 title: no-worker-message-innerhtml
 description: Disallow using innerHTML with Web Worker message data.
 tags: ['security', 'browser']
@@ -18,13 +7,15 @@ severity: medium
 cwe: CWE-79
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 > No Worker Message Innerhtml
-
-Disallow using innerHTML with Web Worker message data.
-
-Disallow using innerHTML with Web Worker message data.
 
 ## ⚠️ Security Issue
 

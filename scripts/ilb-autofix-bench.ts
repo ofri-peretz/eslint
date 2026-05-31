@@ -154,7 +154,7 @@ function extractFirstIncorrectSnippet(pluginDir, ruleName) {
   const docPath = path.join(PACKAGES_DIR, pluginDir, 'docs', 'rules', `${ruleName}.md`);
   if (!fs.existsSync(docPath)) return null;
   const md = fs.readFileSync(docPath, 'utf-8');
-  const headerIdx = md.search(/^##\s*(?:❌|🚫|🔴)?\s*(?:Incorrect|Bad|Anti-pattern)/im);
+  const headerIdx = md.search(/^#{2,3}\s*(?:❌|🚫|🔴)?\s*(?:Incorrect|Bad|Anti-pattern)/im);
   if (headerIdx < 0) return null;
   const rest = md.slice(headerIdx);
   const fence = rest.match(/```(?:[a-zA-Z]+)?\n([\s\S]*?)```/);

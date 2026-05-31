@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T04:47:15.482Z",
+  "generatedAt": "2026-05-30T21:59:26.915Z",
   "rules": [
     {
       "plugin": "eslint-plugin-browser-security",
@@ -8,8 +8,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 261
     },
     {
       "plugin": "eslint-plugin-conventions",
@@ -18,8 +18,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-conventions/src/tests/conventions/consistent-existence-index-check.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 25
     },
     {
       "plugin": "eslint-plugin-conventions",
@@ -28,8 +28,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-conventions/src/tests/conventions/no-console-spaces.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 217
     },
     {
       "plugin": "eslint-plugin-conventions",
@@ -38,8 +38,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-dependency-version-strategy.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 189
     },
     {
       "plugin": "eslint-plugin-conventions",
@@ -48,8 +48,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-conventions/src/tests/deprecation/no-deprecated-api.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 98
     },
     {
       "plugin": "eslint-plugin-import-next",
@@ -198,8 +198,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/no-permissive-cors-response.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 521
     },
     {
       "plugin": "eslint-plugin-modernization",
@@ -208,8 +208,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modernization/src/tests/prefer-at.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 197
     },
     {
       "plugin": "eslint-plugin-modernization",
@@ -218,8 +218,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modernization/src/tests/prefer-event-target.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 131
     },
     {
       "plugin": "eslint-plugin-modernization",
@@ -228,8 +228,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modernization/src/tests/prefer-template-literal.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 171
     },
     {
       "plugin": "eslint-plugin-modularity",
@@ -238,8 +238,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modularity/src/tests/enforce-naming.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 213
     },
     {
       "plugin": "eslint-plugin-modularity",
@@ -248,8 +248,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-modularity/src/tests/no-mutable-exports.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 86
     },
     {
       "plugin": "eslint-plugin-operability",
@@ -258,8 +258,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-operability/src/tests/operability/no-console-log.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 240
     },
     {
       "plugin": "eslint-plugin-react-a11y",
@@ -268,8 +268,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-react-a11y/src/tests/alt-text.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 413
     },
     {
       "plugin": "eslint-plugin-react-features",
@@ -298,8 +298,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-target-blank.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 98
     },
     {
       "plugin": "eslint-plugin-react-features",
@@ -308,8 +308,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-react-features/src/tests/react/required-attributes.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 150
     },
     {
       "plugin": "eslint-plugin-secure-coding",
@@ -318,8 +318,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 293
     },
     {
       "plugin": "eslint-plugin-secure-coding",
@@ -328,8 +328,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 515
     },
     {
       "plugin": "eslint-plugin-secure-coding",
@@ -338,8 +338,8 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 275
     },
     {
       "plugin": "eslint-plugin-secure-coding",
@@ -348,14 +348,14 @@
       "fixerKind": "code",
       "hasFixerTest": true,
       "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/no-unsafe-deserialization.test.ts",
-      "hasIncorrectSnippet": false,
-      "snippetLength": 0
+      "hasIncorrectSnippet": true,
+      "snippetLength": 42
     }
   ],
   "summary": {
     "fixableRules": 35,
     "withFixerTest": 35,
     "withoutFixerTest": 0,
-    "snippetsExtracted": 0
+    "snippetsExtracted": 19
   }
 }
