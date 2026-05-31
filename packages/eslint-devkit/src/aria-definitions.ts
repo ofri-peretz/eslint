@@ -180,6 +180,34 @@ export const ARIA_UNSUPPORTED_ELEMENTS = new Set([
   'track',
 ]);
 
+/**
+ * Global ARIA properties valid on every element regardless of role.
+ * Per WAI-ARIA 1.2 § 6.2 "Global States and Properties".
+ */
+export const GLOBAL_ARIA_PROPS = new Set([
+  'aria-atomic',
+  'aria-busy',
+  'aria-controls',
+  'aria-current',
+  'aria-describedby',
+  'aria-details',
+  'aria-disabled',
+  'aria-dropeffect',
+  'aria-errormessage',
+  'aria-flowto',
+  'aria-grabbed',
+  'aria-haspopup',
+  'aria-hidden',
+  'aria-invalid',
+  'aria-keyshortcuts',
+  'aria-label',
+  'aria-labelledby',
+  'aria-live',
+  'aria-owns',
+  'aria-relevant',
+  'aria-roledescription',
+]);
+
 // Mapping of roles to supported ARIA properties
 export const ROLE_SUPPORTED_ARIA_PROPS: Record<string, Set<string>> = {
   alert: new Set([

@@ -31,6 +31,9 @@ describe('interactive-supports-focus', () => {
         { code: '<div role="button" tabIndex={0} onClick={handler}></div>' },
         { code: '<div role="link" tabIndex={0} onClick={handler}></div>' },
         { code: '<div></div>' },
+        // Interactive ARIA role — AT/browser keyboard model handles focus; tabIndex not required
+        { code: '<div role="button" onClick={handler} />' },
+        { code: '<div role="menuitem" onClick={handler} />' },
       ],
       invalid: [],
     });
@@ -40,8 +43,9 @@ describe('interactive-supports-focus', () => {
     ruleTester.run('invalid - non-focusable interactives', interactiveSupportsFocus, {
       valid: [],
       invalid: [
-        { code: '<div role="button" onClick={handler}></div>', errors: [{ messageId: 'missingTabIndex' }] },
-        { code: '<div role="link" onClick={handler}></div>', errors: [{ messageId: 'missingTabIndex' }] },
+        // No role: div with onClick but no tabIndex — must be focusable
+        { code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingTabIndex' }] },
+        { code: '<span onKeyDown={handler}></span>', errors: [{ messageId: 'missingTabIndex' }] },
       ],
     });
   });

@@ -44,6 +44,16 @@ describe('role-supports-aria-props', () => {
         {
           code: '<div role="button" aria-pressed="false"></div>',
         },
+        // Global ARIA props valid on any role (regression: was flagged on button/link)
+        {
+          code: '<button role="button" aria-label="Close dialog"></button>',
+        },
+        {
+          code: '<a role="link" aria-current="page" href="/home">Home</a>',
+        },
+        {
+          code: '<div role="button" aria-describedby="tooltip-id" aria-pressed="false"></div>',
+        },
         {
           code: '<div role="alert" aria-atomic="true"></div>',
         },

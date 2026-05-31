@@ -2,6 +2,8 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import oxlint from 'eslint-plugin-oxlint';
 import tseslint from 'typescript-eslint';
 import localPlugin from './tools/eslint-rules/index.js';
+import reactA11y from 'eslint-plugin-react-a11y';
+import reactFeatures from 'eslint-plugin-react-features';
 
 // Dogfood the meta-package. `componentApi` is a flat-config array binding
 // the react-features componentApi preset (R5/R6/R8/R11/R12/R18/R19) under
@@ -142,6 +144,32 @@ export default [
     },
     rules: {
       'local/changelog-format': 'error',
+    },
+  },
+
+  // ── react-a11y + react-features — UI / Storybook / docs surfaces ────────
+  {
+    files: [
+      'packages/ui/src/**/*.{ts,tsx}',
+      'apps/storybook/src/**/*.{ts,tsx}',
+      'apps/docs/src/**/*.{ts,tsx}',
+    ],
+    plugins: {
+      'react-a11y': reactA11y,
+      'react-features': reactFeatures,
+    },
+    rules: {
+      ...reactA11y.configs.recommended.rules,
+      ...reactFeatures.configs.recommended.rules,
+      // Component-API rules for the DS surface only
+    },
+  },
+  {
+    // Component-API rules for DS primitives only (stricter)
+    files: ['packages/ui/src/primitives/**/*.tsx'],
+    plugins: { 'react-features': reactFeatures },
+    rules: {
+      ...reactFeatures.configs.componentApi.rules,
     },
   },
 

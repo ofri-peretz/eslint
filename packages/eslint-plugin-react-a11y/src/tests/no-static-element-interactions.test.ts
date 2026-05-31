@@ -27,6 +27,7 @@ describe('no-static-element-interactions', () => {
       valid: [
         { code: '<button onClick={handler}>Click</button>' },
         { code: '<a href="#" onClick={handler}>Link</a>' },
+        // Interactive ARIA role — element is semantically interactive, not static
         { code: '<div role="button" onClick={handler}></div>' },
         { code: '<div role="link" onClick={handler}></div>' },
         { code: '<div></div>' },
@@ -41,6 +42,9 @@ describe('no-static-element-interactions', () => {
       invalid: [
         { code: '<div onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
         { code: '<span onClick={handler}></span>', errors: [{ messageId: 'noStaticInteraction' }] },
+        // Non-interactive roles don't make the element interactive
+        { code: '<div role="presentation" onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
+        { code: '<div role="none" onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
       ],
     });
   });
