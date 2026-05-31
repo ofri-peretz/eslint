@@ -43,6 +43,73 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
+## Why no one else does this
+
+Generic SQL injection detectors flag string concatenation wherever they see it — but they have no knowledge of how each database client parameterizes queries. They can tell you "this string was built with `+`"; they cannot tell you whether it was ever passed to `client.query()` or whether the driver's parameterization convention was respected.
+
+`pg/no-unsafe-query` knows the `pg` (node-postgres) driver's contract specifically:
+
+- **API surface:** it only fires on `.query()` calls — on `client.query()`, `pool.query()`, or any object whose method is named `query`.
+- **Parameterization convention:** `pg` uses `$1, $2, …` positional placeholders with a second-argument array. A call that has a second argument is already parameterized; the rule stays silent.
+- **Variable assignment taint tracking:** the rule maintains a taint map across the function scope. If a variable is assigned an unsafe string (`const sql = "SELECT..." + id`) and that variable is later passed to `.query(sql)`, the call is flagged — even though the concatenation and the query call are on separate lines.
+
+No generic SQL injection linter has all three of these constraints encoded together. The result is far fewer false positives (parameterized calls never fire) and far fewer false negatives (split-line taint is caught).
+
+## What gets caught
+
+### Direct string concatenation
+
+```javascript
+// Flagged: concatenation directly inside .query()
+const result = await client.query(
+  "SELECT * FROM users WHERE id = " + userId
+);
+```
+
+### Template literal with interpolation
+
+```javascript
+// Flagged: template literal with a runtime expression inside .query()
+const result = await client.query(
+  `SELECT * FROM users WHERE id = ${userId}`
+);
+```
+
+### Variable assignment taint (split-line)
+
+```javascript
+// Flagged: the variable was tainted by unsafe construction
+// before it was passed to .query()
+const sql = "SELECT * FROM users WHERE name = '" + userName + "'";
+await pool.query(sql);
+```
+
+The rule tracks `sql` through the `VariableDeclarator` and flags the `.query(sql)` call even though there is no concatenation on that line.
+
+## What doesn't fire (zero FPs)
+
+### Positional placeholders — the pg parameterization contract
+
+```javascript
+// Safe: second argument provides the values array
+const result = await client.query(
+  "SELECT * FROM users WHERE id = $1",
+  [userId]
+);
+```
+
+### Object form with `text` + `values`
+
+```javascript
+// Safe: object-form query — text is a static string, values is the array
+const result = await pool.query({
+  text: "SELECT * FROM users WHERE name = $1",
+  values: [userName],
+});
+```
+
+Both forms satisfy `pg`'s parameterization contract. Neither fires a lint error.
+
 ## Rule Details
 
 SQL injection is one of the most critical security vulnerabilities. This rule detects potentially unsafe SQL query construction in `pg` driver calls.
