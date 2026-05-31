@@ -235,7 +235,9 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       
       // A02:2021 – Cryptographic Failures
       'secure-coding/no-hardcoded-credentials': 'error',
-      'secure-coding/no-sensitive-data-exposure': 'error',
+      // Demoted from 'error': naming-heuristic detection (fires on variable names
+      // that sound sensitive). Cannot be enforcement-grade per I3 invariant.
+      'secure-coding/no-sensitive-data-exposure': 'warn',
       
       // A03:2021 – Injection
       'secure-coding/no-graphql-injection': 'error',

@@ -66,7 +66,7 @@ function containsSensitiveData(
 export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-exposure',
   meta: {
-    type: 'problem',
+    type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-sensitive-data-exposure.md',
       description: 'Detects PII/credentials in logs, responses, or error messages',
