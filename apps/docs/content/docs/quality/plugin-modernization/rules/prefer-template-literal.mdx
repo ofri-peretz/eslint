@@ -62,6 +62,26 @@ const message = `Error: ${err.message}`;
 const url = "https://" + "example.com";
 ```
 
+## Auto-fix
+
+ESLint can fix this automatically. Running `eslint --fix` rewrites the concatenation chain into a single template literal — no manual edits required.
+
+**Before**
+
+```js
+const msg = "Hello, " + name + "!";
+const path = "/api/v1/" + resource + "/" + id;
+```
+
+**After**
+
+```js
+const msg = `Hello, ${name}!`;
+const path = `/api/v1/${resource}/${id}`;
+```
+
+The fixer joins all operands into one template literal, promoting any plain string segments to static parts and wrapping runtime values in `${...}` expressions.
+
 ## Configuration Examples
 
 ### Basic Usage
