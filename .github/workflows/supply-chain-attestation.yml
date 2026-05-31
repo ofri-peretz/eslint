@@ -91,7 +91,7 @@ jobs:
       # ───────── SBOM (CycloneDX + SPDX) ─────────────────────────────────
       - name: Generate SBOM (CycloneDX) per package
         run: |
-          npm install -g @cyclonedx/cyclonedx-npm
+          npm install -g @cyclonedx/cyclonedx-npm@4.2.1
           mkdir -p artifacts/sbom
           for PKG in ${{ steps.targets.outputs.list }}; do
             DIR="packages/$PKG"
