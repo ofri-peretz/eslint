@@ -54,6 +54,9 @@ export interface TrackedEventMap {
   // caught something. `follow` (Dev.to) and `star` (GitHub) tracked separately
   // so we can see which conversion the rule-page traffic actually takes.
   'rule_page:cta_click': { action: 'star' | 'follow'; plugin: string; rule: string };
+  // Footer CTA on non-rule docs pages (DocsFooterCTA): getting-started,
+  // concepts, guides — the evaluator audience. `slug` identifies which doc.
+  'docs_page:cta_click': { action: 'star' | 'follow'; slug: string };
   // Stats / scorecard page CTAs (star, install, docs links).
   'stats:cta_click': { action: 'star' | 'plugin_install' | 'plugin_docs'; plugin?: string };
   // Flagship / scorecard page CTAs.

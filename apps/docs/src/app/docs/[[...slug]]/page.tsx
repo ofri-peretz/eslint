@@ -9,6 +9,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import { RuleValueCTA } from '@/components/docs/rule-value-cta';
+import { DocsFooterCTA } from '@/components/docs/docs-footer-cta';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import type { MDXComponents } from 'mdx/types';
 import type { ReactElement } from 'react';
@@ -55,7 +56,9 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
         <MDX components={getMDXComponents()} />
         {isRulePage && ruleName ? (
           <RuleValueCTA plugin={rulePlugin} rule={ruleName} />
-        ) : null}
+        ) : (
+          <DocsFooterCTA slug={slug.join('/')} />
+        )}
       </DocsBody>
     </DocsPage>
   );

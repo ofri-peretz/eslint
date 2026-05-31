@@ -39,4 +39,15 @@ describe('rule-page conversion CTA lock', () => {
     const analytics = read('lib/analytics.ts');
     expect(analytics).toMatch(/'rule_page:cta_click':\s*\{[^}]*action:\s*'star'\s*\|\s*'follow'/);
   });
+
+  it('renders DocsFooterCTA on every non-rule docs page, instrumented', () => {
+    const page = read('app/docs/[[...slug]]/page.tsx');
+    expect(page).toMatch(/import\s+\{\s*DocsFooterCTA\s*\}/);
+    expect(page).toMatch(/<DocsFooterCTA\s+slug=/);
+    const cta = read('components/docs/docs-footer-cta.tsx');
+    expect(cta).toContain('https://github.com/ofri-peretz/eslint');
+    expect(cta).toContain('https://dev.to/ofri-peretz');
+    const analytics = read('lib/analytics.ts');
+    expect(analytics).toMatch(/'docs_page:cta_click':\s*\{[^}]*action:\s*'star'\s*\|\s*'follow'/);
+  });
 });
