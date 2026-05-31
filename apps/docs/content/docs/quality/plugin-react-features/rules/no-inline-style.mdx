@@ -1,0 +1,70 @@
+---
+title: "no-inline-style"
+description: "No inline `style={{}}` except for CSS-variable assignment (R18)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+No inline `style={{...}}` for static styling. The only permitted case is CSS-variable assignment (`style={{ "--snp-x": x }}`) for genuinely dynamic values that cannot be expressed as a Tailwind class. Everything else belongs in Tailwind utility classes.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Bypasses design tokens** | Inline styles skip the token layer entirely | Use Tailwind classes wired to tokens |
+| **Not responsive** | Inline styles cannot use `md:`/`lg:` variants | Move to class-based styling |
+| **Dark-mode gaps** | Inline styles don't respond to `dark:` variants | Use semantic Tailwind tokens |
+
+## Permitted Pattern
+
+CSS-variable assignment is allowed because it bridges the token layer to computed dynamic values:
+
+```tsx
+// Allowed: assigning a CSS variable for a dynamic value
+<div style={{ "--progress": `${pct}%` }} className="w-[var(--progress)]" />
+```
+
+## Examples
+
+### Incorrect
+
+```tsx
+// Static values in inline style — move to Tailwind
+<div style={{ padding: "16px", borderRadius: "8px" }}>...</div>
+
+// Mixed static and dynamic — still flagged (static prop present)
+<div style={{ color: "#fff", opacity: isVisible ? 1 : 0 }}>...</div>
+```
+
+### Correct
+
+```tsx
+// Use Tailwind classes for static values
+<div className="p-4 rounded-lg">...</div>
+
+// CSS variables for dynamic computed values
+<div style={{ "--opacity": isVisible ? 1 : 0 }} className="opacity-[var(--opacity)]">...</div>
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-inline-style": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
