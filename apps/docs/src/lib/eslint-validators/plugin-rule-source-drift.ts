@@ -28,7 +28,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 
 export interface Finding {
   plugin: string;
@@ -141,10 +141,16 @@ export function validatePluginRuleSourceDrift(
 
     // ---- Canonical: docs/rules/<rule>.md ------------------------------------
     const docsRulesDir = join(pkgRoot, 'docs', 'rules');
+    // Recurse: rule docs may be organized into sub-category folders
+    // (e.g. react-features/docs/rules/component-api/<rule>.md). The rule NAME
+    // is the file basename — index.ts exports the same bare name (the
+    // `component-api/` form is a categorized alias, dropped by
+    // extractCanonicalRuleNames), and MDX/meta/README all use the bare name.
     const documentedRules = existsSync(docsRulesDir)
-      ? readdirSync(docsRulesDir)
+      ? readdirSync(docsRulesDir, { recursive: true })
+          .map((f) => String(f))
           .filter((f) => f.endsWith('.md'))
-          .map((f) => f.replace(/\.md$/, ''))
+          .map((f) => basename(f).replace(/\.md$/, ''))
           .toSorted()
       : [];
     if (documentedRules.length === 0) {
