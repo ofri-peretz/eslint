@@ -1124,6 +1124,11 @@
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
     },
+    "no-shell-injection": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
     "detect-suspicious-dependencies": {
       "environment": "node",
       "detection": "structural-api",
@@ -2032,6 +2037,12 @@
       "detection": "structural-pattern",
       "confidence": "opt-in",
       "notes": "Source not found \u2014 manual review required"
+    },
+    "recommended-strict": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "NOT a rule \u2014 this is a named config preset (configs['recommended-strict']). The scope-audit regex picks it up as a rule due to its object-value form; this entry silences the false-positive I1 finding."
     }
   },
   "eslint-plugin-vercel-ai-security": {

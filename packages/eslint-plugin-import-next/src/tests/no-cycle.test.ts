@@ -2,7 +2,7 @@
  * Tests for no-cycle rule with Mocks
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, afterAll, vi, beforeAll } from 'vitest';
+import { describe, afterAll, vi, beforeAll, it } from 'vitest';
 
 // Use vi.hoisted to ensure mocks are available in factory
 const mocks = vi.hoisted(() => {
@@ -52,7 +52,8 @@ import { noCycle } from '../rules/no-cycle';
 
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
-// Note: RuleTester.it is intentionally not set - let RuleTester create its own tests
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
 
 const ruleTester = new RuleTester({
   languageOptions: {

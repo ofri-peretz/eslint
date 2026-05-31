@@ -26,6 +26,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       // plugin-scope reorg (general security concern, not Node-runtime
       // specific); it's registered there now, not here.
       'no-ssrf',
+      'no-shell-injection',
       'detect-suspicious-dependencies',
       'lock-file',
       'no-dynamic-dependency-loading',
