@@ -23,8 +23,14 @@ describe('eslint-plugin-express-security plugin interface', () => {
       'require-express-body-parser-limits',
       'no-express-unsafe-regex-route',
       'no-exposed-debug-endpoints',
+      // Migrated from browser-security by the plugin-scope reorg — these are
+      // server-side Express checks (correct environment per the scope audit).
+      'no-missing-cors-check',
+      'no-missing-csrf-protection',
+      'no-missing-security-headers',
+      'no-user-controlled-redirect',
     ]);
-    expect(ruleKeys.length).toBe(10);
+    expect(ruleKeys.length).toBe(14);
   });
 
   describe('configurations', () => {
