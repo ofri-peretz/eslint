@@ -37,6 +37,35 @@ This plugin provides General secure coding practices and OWASP compliance for Ja
 npm install eslint-plugin-secure-coding --save-dev
 ```
 
+**Add to your `eslint.config.mjs` — one line activates 16 security rules:**
+
+```js
+import securePlugin from 'eslint-plugin-secure-coding';
+
+export default [
+  // Balanced: catches critical issues as errors, lower-confidence rules as warnings
+  ...securePlugin.configs.recommended,
+
+  // Zero-tolerance: same 16 rules, all promoted to error (good for CI gates)
+  // ...securePlugin.configs['recommended-strict'],
+];
+```
+
+**Or if you use a legacy `.eslintrc.json`:**
+
+```json
+{
+  "extends": ["plugin:secure-coding/recommended"]
+}
+```
+
+> **Using `recommended` already?** Extend your coverage with domain-specific plugins:
+> [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) (crypto, eval, buffer) ·
+> [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) (JWT auth) ·
+> [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) (Express middleware)
+
+---
+
 ## Benchmarks vs competitors (CWE-798 ground truth)
 `no-hardcoded-credentials` is part of the [ILB-Flagship benchmark suite](../../benchmarks/suites/ilb-flagship). On the labeled CWE-798 fixture set (Juliet-style: 2 vulnerable + 2 safe files, ground-truthed):
 
@@ -52,8 +81,9 @@ The competitor's entropy-only detection catches the high-entropy API-key shape b
 ## ⚙️ Configuration Presets
 | Preset                | Description                                                     |
 | :-------------------- | :-------------------------------------------------------------- |
-| `recommended`         | Balanced security for most projects (Web + key Mobile security) |
-| `strict`              | Maximum security enforcement (all rules as errors)              |
+| `recommended`         | 16 core rules — critical issues as `error`, lower-confidence as `warn` |
+| `recommended-strict`  | Same 16 rules as `recommended`, all promoted to `error` — for CI gates |
+| `strict`              | All rules as `error` — maximum coverage including experimental rules |
 | `owasp-top-10`        | OWASP Top 10 Web 2021 compliance focused                        |
 | `owasp-mobile-top-10` | OWASP Mobile Top 10 2024 compliance focused                     |
 
