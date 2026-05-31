@@ -17,6 +17,10 @@ open-source repositories, hand-labeled ground-truth fixtures, and adversarial ed
   are reproducible. Raw JSON artifacts live in `benchmark-results/` at the repo root.
 </Callout>
 
+<Callout type="info">
+  If the benchmark numbers are useful, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it's the signal that keeps this infrastructure maintained.
+</Callout>
+
 ## Headline results
 
 <Cards>
@@ -100,6 +104,37 @@ For comparison: the closest ecosystem peer on `secure-coding/no-hardcoded-creden
 scores Precision 100% / Recall 50% / F1 0.67 on the same labeled fixtures (it misses
 the "credential stored in a `const` before use" pattern).
 
+## AI-generated code security (ILB-AI)
+
+Static analysis matters most where code volume is exploding fastest: AI codegen. The
+**ILB-AI** tier generates code from frontier models and scores it with these same rules.
+
+Across **700 AI-generated functions** from five models, **63% shipped a security finding.**
+The per-model vulnerability rate (lower is better):
+
+| Model | Vulnerable rate |
+| :--- | ---: |
+| Claude Haiku 4.5 | 48.6% |
+| Claude Sonnet 4.5 | 62.1% |
+| Gemini 2.5 Flash | 63.6% |
+| Claude Opus 4.6 | 65.0% |
+| Gemini 2.5 Pro | 72.9% |
+
+On *realistic, structured* tasks the gap narrows sharply. Running the same prompt through
+each vendor's CLI across four domains (NestJS, JWT, MongoDB, a general injection API) and
+linting both outputs is a near dead heat — 1 Gemini win, 2 ties, 1 split — and **both
+frontier models skip the same hardening** (algorithm allowlists, JWT `aud`/`iss`
+validation, query projections), because a feature prompt never names it. Frontier models
+avoid the *catastrophic* classes (injection, `eval`, hardcoded credentials) but
+consistently miss the defense-in-depth layer — exactly the negative space deterministic
+linting closes.
+
+Full write-ups, each with the reproducible config:
+
+- [Claude vs Gemini across 4 security domains — a dead heat, and the hardening 63% of AI code skips](https://dev.to/ofri-peretz/claude-vs-gemini-across-4-security-domains-a-dead-heat-and-the-hardening-63-of-ai-code-skips-mpp)
+- [Same NestJS prompt: Claude got 6 security errors, Gemini got 2](https://dev.to/ofri-peretz/i-ran-the-same-nestjs-prompt-on-claude-and-gemini-one-got-6-security-errors-heres-what-both-1fnf)
+- [Aggregate benchmarks lie — what 700 AI functions look like by security domain](https://dev.to/ofri-peretz/aggregate-benchmarks-lie-heres-what-700-ai-functions-look-like-by-security-domain-1hgj)
+
 ## What ILB is
 
 The **Interlace Linter Benchmark** is an open measurement framework built into this
@@ -110,6 +145,8 @@ monorepo. It has four tiers:
   Numbers are reproducible: `npm run ilb:wild`.
 - **ILB-Flagship** — latency + head-to-head overlap on 10 flagship rules against
   competitor plugins on the same repos. Includes cold vs warm (ESLint cache) timing.
+- **ILB-AI** — generates code from frontier models (Claude, Gemini) and scores it with
+  the rule set; the AI-codegen security tier above.
 - **ILB-Arena / ILB-Juliet** — ground-truth P/R/F1 from hand-labeled CWE fixtures.
 
 All bench outputs are checked in to `benchmark-results/` as JSON. The raw SARIF for

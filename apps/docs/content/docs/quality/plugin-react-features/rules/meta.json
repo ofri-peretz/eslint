@@ -25,12 +25,18 @@
     "no-did-mount-set-state",
     "no-did-update-set-state",
     "no-direct-mutation-state",
+    "no-arbitrary-token-class",
+    "no-default-test-id",
     "no-find-dom-node",
+    "no-inline-style",
     "no-invalid-html-attribute",
     "no-is-mounted",
+    "no-is-prefix-prop",
+    "no-kind-prop-discriminator",
     "no-multi-comp",
     "no-namespace",
     "no-object-type-as-default-prop",
+    "no-raw-color-literal",
     "no-redundant-should-component-update",
     "no-render-return-value",
     "no-set-state",
@@ -55,6 +61,8 @@
     "sort-comp",
     "state-in-constructor",
     "static-property-placement",
-    "void-dom-elements-no-children"
+    "void-dom-elements-no-children",
+    "no-wrapper-sub-component",
+    "require-data-slot"
   ]
 }
