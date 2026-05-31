@@ -15,6 +15,7 @@ import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
+import { noShellInjection } from './rules/no-shell-injection';
 
 // Migrated rules from secure-coding
 import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
@@ -59,6 +60,7 @@ export const rules: Record<
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
   'no-ssrf': noSsrf,
+  'no-shell-injection': noShellInjection,
 
   // Migrated rules
   'detect-suspicious-dependencies': detectSuspiciousDependencies,
@@ -116,6 +118,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-arbitrary-file-access': 'error',
   'node-security/no-data-in-temp-storage': 'error',
   'node-security/no-ssrf': 'warn',
+  'node-security/no-shell-injection': 'error',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',

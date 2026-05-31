@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-05-31",
   "totalPlugins": 19,
-  "totalRules": 406,
-  "oxlintCompatible": 406,
+  "totalRules": 407,
+  "oxlintCompatible": 407,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1311,7 +1311,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 34,
+      "ruleCount": 35,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1435,6 +1435,12 @@
         },
         {
           "name": "no-sha1-hash",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-shell-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

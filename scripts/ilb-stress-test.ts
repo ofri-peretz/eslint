@@ -580,6 +580,67 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-shell-injection',
+    shortRuleName: 'no-shell-injection',
+    cases: [
+      {
+        label: 'TP: exec with template literal expression',
+        // eslint-disable-next-line no-template-curly-in-string -- string is a description of buggy code, not an interpolated template
+        hypothesis: 'exec(`git clone ${userRepo}`) — template expression in command → fire',
+        expected: 'fire',
+        code: `
+          const { exec } = require('child_process');
+          function cloneRepo(userRepo) {
+            exec(\`git clone \${userRepo}\`);
+          }
+        `,
+      },
+      {
+        label: 'TP: execSync with string concatenation',
+        hypothesis: 'execSync("rm -rf " + path) — concat in command → fire',
+        expected: 'fire',
+        code: `
+          const { execSync } = require('child_process');
+          function cleanup(path) {
+            execSync('rm -rf ' + path);
+          }
+        `,
+      },
+      {
+        label: 'FP: exec with literal string',
+        hypothesis: 'exec("ls -la") — literal command, no injection surface',
+        expected: 'silent',
+        code: `
+          const { exec } = require('child_process');
+          exec('ls -la /tmp');
+        `,
+      },
+      {
+        label: 'FP: spawn with args array',
+        hypothesis: 'spawn("git", [userRepo]) — args array is the safe parameterized form',
+        expected: 'silent',
+        code: `
+          const { spawn } = require('child_process');
+          function cloneRepo(userRepo) {
+            spawn('git', ['clone', userRepo]);
+          }
+        `,
+      },
+      {
+        label: 'FP: exec with plain variable — indirect, no visible concat',
+        hypothesis: 'exec(command) — indirect variable reference, data-flow out of scope',
+        expected: 'silent',
+        code: `
+          const { exec } = require('child_process');
+          const command = buildSafeCommand(input);
+          exec(command);
+        `,
+      },
+    ],
+  },
+  {
     pluginName: 'eslint-plugin-jwt',
     pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
     fullRuleName: 'jwt/no-algorithm-none',

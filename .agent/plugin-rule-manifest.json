@@ -340,7 +340,7 @@
     "require-authenticated-encryption": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-key-length": {
       "environment": "universal",
@@ -707,12 +707,12 @@
     "require-algorithm-whitelist": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-decode-without-verify": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-weak-secret": {
       "environment": "jwt",
@@ -722,7 +722,7 @@
     "require-expiration": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-hardcoded-secret": {
       "environment": "jwt",
@@ -1123,6 +1123,11 @@
       "environment": "node",
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
+    },
+    "no-shell-injection": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     },
     "detect-suspicious-dependencies": {
       "environment": "node",
@@ -1788,12 +1793,14 @@
     "no-unnecessary-rerenders": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "opt-in",
+      "notes": " \u2014 fires on every inline object/array/function prop; too broad for recommended, belongs in performance preset"
     },
     "react-render-optimization": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "opt-in",
+      "notes": " \u2014 fires on every inline object/array/function prop; too broad for recommended, belongs in performance preset"
     },
     "react-no-inline-functions": {
       "environment": "universal",
@@ -2032,6 +2039,12 @@
       "detection": "structural-pattern",
       "confidence": "opt-in",
       "notes": "Source not found \u2014 manual review required"
+    },
+    "recommended-strict": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in",
+      "notes": "NOT a rule \u2014 this is a named config preset (configs['recommended-strict']). The scope-audit regex picks it up as a rule due to its object-value form; this entry silences the false-positive I1 finding."
     }
   },
   "eslint-plugin-vercel-ai-security": {
@@ -2083,17 +2096,17 @@
     "require-max-tokens": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-max-steps": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-abort-signal": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "opt-in"
+      "confidence": "enforcement"
     },
     "no-dynamic-system-prompt": {
       "environment": "vercel-ai",
@@ -2103,7 +2116,7 @@
     "require-tool-schema": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-hardcoded-api-keys": {
       "environment": "vercel-ai",
