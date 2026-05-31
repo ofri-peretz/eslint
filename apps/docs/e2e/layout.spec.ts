@@ -301,4 +301,71 @@ test.describe('Visual Regression Tests', () => {
       });
     });
   });
+
+  test.describe('Horizontal overflow guard', () => {
+    // Fast, deterministic layout lock — NO screenshots, so it is cheap and
+    // never flaky (unlike pixel-diff VRT). Fails if a page scrolls horizontally
+    // at mobile width, i.e. the "text/tables went off the screen" regression
+    // class. The failure message names the worst leaking element so it is
+    // debuggable in one read. Each case is a single page load + one eval.
+    const PAGES = [
+      '/',
+      '/stats',
+      '/scorecard',
+      '/docs/getting-started',
+      '/docs/security/plugin-jwt/rules/no-algorithm-none',
+    ];
+
+    for (const path of PAGES) {
+      test(`no horizontal overflow at ${BREAKPOINTS.mobile.width}px — ${path}`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(BREAKPOINTS.mobile);
+        await page.goto(path);
+        await page.waitForLoadState('networkidle');
+
+        const result = await page.evaluate(() => {
+          const inner = window.innerWidth;
+          const docScroll = document.documentElement.scrollWidth;
+          // Worst element whose content overflows its box AND is not
+          // scroll-clipped (overflow-x: visible) — the real leak. Scrollable
+          // containers (overflow-x: auto/scroll, e.g. wide tables, code blocks)
+          // are intended and excluded.
+          let worst: {
+            over: number;
+            tag: string;
+            cls: string;
+            text: string;
+          } | null = null;
+          for (const el of Array.from(
+            document.querySelectorAll<HTMLElement>('*'),
+          )) {
+            if (
+              el.clientWidth > 30 &&
+              el.scrollWidth > el.clientWidth + 3 &&
+              getComputedStyle(el).overflowX === 'visible'
+            ) {
+              const over = el.scrollWidth - el.clientWidth;
+              if (!worst || over > worst.over) {
+                worst = {
+                  over,
+                  tag: el.tagName,
+                  cls: String(el.className).slice(0, 60),
+                  text: (el.textContent || '').trim().slice(0, 50),
+                };
+              }
+            }
+          }
+          return { inner, docScroll, worst };
+        });
+
+        expect(
+          result.docScroll,
+          `Page scrolls horizontally at mobile width — worst leaking element: ${JSON.stringify(
+            result.worst,
+          )}`,
+        ).toBeLessThanOrEqual(result.inner + 2);
+      });
+    }
+  });
 });
