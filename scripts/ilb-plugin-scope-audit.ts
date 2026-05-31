@@ -395,8 +395,7 @@ function generateManifest(): Record<string, Record<string, {
       else if (envs.length === 1) environment = envs[0];
       else {
         // Multiple env signals — use the most specific non-universal one
-        const specific = envs.filter(e => e !== 'universal');
-        environment = specific[0] ?? 'universal';
+        environment = envs.find(e => e !== 'universal') ?? 'universal';
       }
 
       // Check for environment violation

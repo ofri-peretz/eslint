@@ -1793,12 +1793,14 @@
     "no-unnecessary-rerenders": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "opt-in",
+      "notes": " \u2014 fires on every inline object/array/function prop; too broad for recommended, belongs in performance preset"
     },
     "react-render-optimization": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "opt-in",
+      "notes": " \u2014 fires on every inline object/array/function prop; too broad for recommended, belongs in performance preset"
     },
     "react-no-inline-functions": {
       "environment": "universal",

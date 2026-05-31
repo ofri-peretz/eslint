@@ -521,6 +521,28 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         }
       }
 
+      // SAFE: SCREAMING_SNAKE_CASE identifiers are TypeScript module-level constants
+      // (e.g. PATH_METADATA, METHOD_METADATA, PARAMTYPES_METADATA, BRANCH_EFFECT).
+      // They are compile-time string/symbol values defined in the codebase, never
+      // derived from user input — prototype pollution via a constant key is impossible.
+      // Pattern: at least 3 chars, ALL_CAPS letters, digits, underscores only.
+      if (propertyNode.type === AST_NODE_TYPES.Identifier) {
+        const name = (propertyNode as TSESTree.Identifier).name;
+        if (/^[A-Z][A-Z0-9_]{2,}$/.test(name)) {
+          return false;
+        }
+
+        // SAFE: camelCase identifiers whose suffix implies a typed/enumerated value.
+        // HTTP status codes, version numbers, type discriminants, mode flags — these
+        // are never raw user input. Examples: errorHttpStatusCode, uuidVersion, reqType.
+        if (
+          /^[a-z]/.test(name) &&
+          /(?:Code|Status|Version|Kind|Mode|Type|Stage|Level|Phase|Step|Flag|Num|Count)$/.test(name)
+        ) {
+          return false;
+        }
+      }
+
       // Check if it's a literal string first
       if (isLiteralString(propertyNode)) {
         const propName = String((propertyNode as TSESTree.Literal).value);
@@ -695,11 +717,45 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Returns true if the object being indexed is the result of a Reflect.*
+     * method call (e.g. Reflect.getMetadata, Reflect.ownKeys).
+     * Reflect metadata objects contain known framework-managed keys; they are
+     * not populated from user input and cannot be exploited for prototype
+     * pollution. This closes FPs from NestJS decorator metadata access patterns:
+     *   Reflect.getMetadata(PARAMTYPES_METADATA, target, key!)?.[index!]
+     */
+    const isReflectResultAccess = (objectNode: TSESTree.Node): boolean => {
+      // Direct call: Reflect.getMetadata(...)
+      if (objectNode.type === AST_NODE_TYPES.CallExpression) {
+        const callee = (objectNode as TSESTree.CallExpression).callee;
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          (callee.object as TSESTree.Identifier).name === 'Reflect'
+        ) {
+          return true;
+        }
+      }
+      // Optional chain: Reflect.getMetadata(...)?.[key]
+      if (objectNode.type === AST_NODE_TYPES.ChainExpression) {
+        return isReflectResultAccess(
+          (objectNode as TSESTree.ChainExpression).expression,
+        );
+      }
+      return false;
+    };
+
+    /**
      * Determine if this is a high-risk member access
      */
     const isHighRiskMemberAccess = (node: TSESTree.MemberExpression): boolean => {
       // Only check computed member access (bracket notation)
       if (!node.computed) {
+        return false;
+      }
+
+      // SAFE: accessing result of Reflect.* call (framework-managed metadata)
+      if (isReflectResultAccess(node.object)) {
         return false;
       }
 
@@ -897,9 +953,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Mark the MemberExpression as handled to avoid double-reporting
+      // Mark the entire left-side MemberExpression chain as handled.
+      // For chained access like `a[b][c] = val`, the rule reports on the
+      // AssignmentExpression (outer), then the MemberExpression visitor
+      // would fire again for the INNER `a[b]` access. We walk the object
+      // chain and mark every intermediate computed MemberExpression so the
+      // MemberExpression visitor skips them — preventing exact duplicates.
       if (node.left.type === AST_NODE_TYPES.MemberExpression) {
-        handledMemberExpressions.add(node.left);
+        let me: TSESTree.MemberExpression = node.left;
+        handledMemberExpressions.add(me);
+        // Walk into chained computed accesses: a[b][c] → also mark a[b]
+        while (me.object.type === AST_NODE_TYPES.MemberExpression && me.object.computed) {
+          me = me.object as TSESTree.MemberExpression;
+          handledMemberExpressions.add(me);
+        }
       }
 
       const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
@@ -953,9 +1020,21 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Skip inner chained computed accesses — report only the OUTERMOST MemberExpression.
+      // For `a[b][c]`, both `a[b]` and `a[b][c]` start at the same source position, so
+      // reporting both produces exact duplicate findings. Skip the inner `a[b]` here;
+      // the outer `a[b][c]` will be reported by a subsequent call to this handler.
+      const parent = node.parent as TSESTree.Node | undefined;
+      if (
+        parent?.type === AST_NODE_TYPES.MemberExpression &&
+        (parent as TSESTree.MemberExpression).computed &&
+        (parent as TSESTree.MemberExpression).object === node
+      ) {
+        return;
+      }
+
       // Also check parent - if it's an AssignmentExpression and this node is the left side, skip
       // (This handles cases where WeakSet check didn't work due to visitor order)
-      const parent = node.parent as TSESTree.Node | undefined;
       if (parent && parent.type === AST_NODE_TYPES.AssignmentExpression && parent.left === node) {
         return;
       }

@@ -266,9 +266,9 @@ export const configs = {
       'react-features/jsx-no-duplicate-props': 'error',
       'react-features/no-danger-with-children': 'error',
       'react-features/no-deprecated': 'warn',
-      // Performance
-      'react-features/no-unnecessary-rerenders': 'warn',
-      'react-features/react-render-optimization': 'warn',
+      // Performance rules are opt-in: they flag inline objects/arrays/functions which
+      // are very common patterns in React codebases. They belong in the performance
+      // preset, not recommended — the FP rate in general codebases is too high.
     },
   } satisfies TSESLint.FlatConfig.Config,
 
