@@ -25,7 +25,7 @@ type RuleOptions = [Options?];
 export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
   name: 'require-abort-signal',
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-abort-signal.md',
       description: 'Require AbortSignal for streaming AI calls to enable proper cleanup',

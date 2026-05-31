@@ -84,14 +84,14 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'jwt/no-algorithm-confusion': 'error',
 
   // HIGH - Verification and secrets
-  'jwt/require-algorithm-whitelist': 'warn',
-  'jwt/no-decode-without-verify': 'warn',
+  'jwt/require-algorithm-whitelist': 'error',
+  'jwt/no-decode-without-verify': 'error',
   'jwt/no-weak-secret': 'error',
   'jwt/no-hardcoded-secret': 'error',
   'jwt/no-timestamp-manipulation': 'error', // LightSEC 2025
 
   // MEDIUM - Best practices
-  'jwt/require-expiration': 'warn',
+  'jwt/require-expiration': 'error',
   'jwt/no-sensitive-payload': 'warn',
 };
 

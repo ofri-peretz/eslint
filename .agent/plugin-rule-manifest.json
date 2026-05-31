@@ -340,7 +340,7 @@
     "require-authenticated-encryption": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-key-length": {
       "environment": "universal",
@@ -707,12 +707,12 @@
     "require-algorithm-whitelist": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-decode-without-verify": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-weak-secret": {
       "environment": "jwt",
@@ -722,7 +722,7 @@
     "require-expiration": {
       "environment": "jwt",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-hardcoded-secret": {
       "environment": "jwt",
@@ -2083,17 +2083,17 @@
     "require-max-tokens": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-max-steps": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "require-abort-signal": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "opt-in"
+      "confidence": "enforcement"
     },
     "no-dynamic-system-prompt": {
       "environment": "vercel-ai",
@@ -2103,7 +2103,7 @@
     "require-tool-schema": {
       "environment": "vercel-ai",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-hardcoded-api-keys": {
       "environment": "vercel-ai",
