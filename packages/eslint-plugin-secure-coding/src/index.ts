@@ -145,8 +145,8 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // High - Regex vulnerabilities
   'secure-coding/detect-non-literal-regexp': 'warn',
   // Demoted 2026-05-09 — 91% Edge ratio.
-  'secure-coding/no-redos-vulnerable-regex': 'warn',
-  'secure-coding/no-unsafe-regex-construction': 'warn',
+  'secure-coding/no-redos-vulnerable-regex': 'error',
+  'secure-coding/no-unsafe-regex-construction': 'error',
 
   // High - Prototype pollution
   'secure-coding/detect-object-injection': 'warn',

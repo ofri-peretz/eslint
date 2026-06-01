@@ -112,7 +112,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Added in 4.1.0. Set to 'warn' in `recommended` to avoid breaking
   // adopters who already use the preset and have legacy `Buffer()` calls.
   // Promote to 'error' on the next major bump.
-  'node-security/no-deprecated-buffer': 'warn',
+  'node-security/no-deprecated-buffer': 'error',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
@@ -131,7 +131,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-static-iv': 'error',
   'node-security/no-ecb-mode': 'error',
   'node-security/no-math-random-crypto': 'error',
-  'node-security/no-cryptojs': 'warn',
+  'node-security/no-cryptojs': 'error',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

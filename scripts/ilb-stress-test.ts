@@ -893,6 +893,116 @@ const CASES: RuleSpec[] = [
       },
     ],
   },
+  // ── MongoDB Security (zero OSS corpus activation — verifying rules work) ──
+  {
+    pluginName: 'eslint-plugin-mongodb-security',
+    pluginEntry: 'packages/eslint-plugin-mongodb-security/src/index.ts',
+    fullRuleName: 'mongodb-security/no-unsafe-query',
+    shortRuleName: 'no-unsafe-query',
+    cases: [
+      {
+        label: 'TP: $where with template literal — NoSQL injection',
+        hypothesis: '$where with dynamic content fires CWE-943',
+        expected: 'fire',
+        code: `
+          db.collection('users').find({ $where: \`this.age > \${minAge}\` });
+        `,
+      },
+      {
+        label: 'TP: $expr with user input',
+        hypothesis: '$expr with dynamic value fires',
+        expected: 'fire',
+        code: `
+          db.collection('orders').find({ $expr: { $gt: [userValue, '$total'] } });
+        `,
+      },
+      {
+        label: 'FP: static $where with literal string',
+        hypothesis: 'Literal $where with no interpolation is safe',
+        expected: 'silent',
+        code: `
+          db.collection('users').find({ $where: 'this.age > 18' });
+        `,
+      },
+    ],
+  },
+  // ── secure-coding/no-redos extra FP cases (anchored/bounded patterns) ────
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-redos-vulnerable-regex',
+    shortRuleName: 'no-redos-vulnerable-regex',
+    cases: [
+      {
+        label: 'TP: catastrophic backtracking — (a+)+ pattern',
+        hypothesis: 'Nested unbounded quantifier is always a ReDoS risk',
+        expected: 'fire',
+        code: `const re = /(a+)+$/;`,
+      },
+      {
+        label: 'TP: exponential backtracking — (a|aa)+ pattern',
+        hypothesis: 'Alternation with overlap + unbounded quantifier',
+        expected: 'fire',
+        code: `const re = /(a|aa)+b/;`,
+      },
+      {
+        label: 'FP: simple anchored pattern — safe',
+        hypothesis: 'Anchored regex with no unbounded quantifier is safe',
+        expected: 'silent',
+        code: `const re = /^[a-z]{1,20}$/;`,
+      },
+      {
+        label: 'FP: email regex without backtracking risk',
+        hypothesis: 'Character class repetition without nesting is safe',
+        expected: 'silent',
+        code: `const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.][a-zA-Z]{2,}$/;`,
+      },
+    ],
+  },
+  // ── reliability/no-silent-errors (just promoted to error) ────────────────
+  {
+    pluginName: 'eslint-plugin-reliability',
+    pluginEntry: 'packages/eslint-plugin-reliability/src/index.ts',
+    fullRuleName: 'reliability/no-silent-errors',
+    shortRuleName: 'no-silent-errors',
+    cases: [
+      {
+        label: 'TP: empty catch block — swallows all errors',
+        hypothesis: 'catch(e) {} hides bugs in production',
+        expected: 'fire',
+        code: `
+          try {
+            riskyOperation();
+          } catch (e) {}
+        `,
+      },
+      {
+        label: 'TP: catch with only comment — still silent',
+        hypothesis: 'Commenting out error handling is still wrong',
+        expected: 'fire',
+        code: `
+          try {
+            parse(data);
+          } catch (e) {
+            // TODO: handle this
+          }
+        `,
+      },
+      {
+        label: 'FP: catch with actual handler',
+        hypothesis: 'Catch that logs and rethrows is correct',
+        expected: 'silent',
+        code: `
+          try {
+            riskyOperation();
+          } catch (e) {
+            logger.error(e);
+            throw e;
+          }
+        `,
+      },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
