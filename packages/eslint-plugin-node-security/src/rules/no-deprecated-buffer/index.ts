@@ -39,7 +39,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> = createRul
       cwe: 'CWE-676',
       cvss: 7.5,
     },
-    hasSuggestions: true,
+    fixable: 'code',
     messages: {
       deprecatedBufferConstructor: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -75,22 +75,51 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> = createRul
       );
     }
 
+    /**
+     * Returns the safe replacement for new Buffer(args):
+     *   new Buffer(number) → Buffer.alloc(number)
+     *   new Buffer(...)    → Buffer.from(...)
+     */
+    function getBufferReplacement(args: TSESTree.CallExpressionArgument[]): string {
+      if (
+        args.length === 1 &&
+        args[0].type === AST_NODE_TYPES.Literal &&
+        typeof (args[0] as TSESTree.Literal).value === 'number'
+      ) {
+        return 'Buffer.alloc';
+      }
+      return 'Buffer.from';
+    }
+
     return {
       // Catches `new Buffer(size)` / `new Buffer(arr)` / `new Buffer('str')`
       NewExpression(node) {
         if (!isBufferIdentifier(node.callee)) return;
+        const replacement = getBufferReplacement(node.arguments);
         context.report({
           node,
           messageId: 'deprecatedBufferConstructor',
+          fix(fixer) {
+            // Replace `new Buffer` with `Buffer.from` or `Buffer.alloc`,
+            // removing the `new` keyword in the process.
+            const sourceCode = context.sourceCode;
+            const newToken = sourceCode.getFirstToken(node)!;
+            const calleeEnd = node.callee.range![1];
+            return fixer.replaceTextRange([newToken.range[0], calleeEnd], replacement);
+          },
         });
       },
 
       // Catches `Buffer(size)` (factory call without `new`)
       CallExpression(node) {
         if (!isBufferIdentifier(node.callee)) return;
+        const replacement = getBufferReplacement(node.arguments);
         context.report({
           node,
           messageId: 'deprecatedBufferCall',
+          fix(fixer) {
+            return fixer.replaceText(node.callee, replacement);
+          },
         });
       },
     };

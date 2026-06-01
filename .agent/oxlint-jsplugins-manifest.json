@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-31",
+  "generatedAt": "2026-06-01",
   "totalPlugins": 19,
-  "totalRules": 407,
-  "oxlintCompatible": 407,
+  "totalRules": 408,
+  "oxlintCompatible": 408,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2331,7 +2331,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 27,
+      "ruleCount": 28,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -2437,6 +2437,12 @@
         },
         {
           "name": "no-sensitive-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-template-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
