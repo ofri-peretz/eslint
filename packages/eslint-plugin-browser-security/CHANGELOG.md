@@ -1,5 +1,22 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.2.4
+
+### Patch Changes
+
+- [#141](https://github.com/ofri-peretz/eslint/pull/141) [`38ab670`](https://github.com/ofri-peretz/eslint/commit/38ab670a0221684f4fd3d5dc3c05ddec7458ca2b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix: remove false `meta.fixable: 'code'` declarations from 21 rules that had no `fix()` function
+
+  Rules that declared `fixable: 'code'` in their ESLint meta without an actual `fix()` implementation would show the ⚡ auto-fix icon in editors and CI formatters but apply no change when `--fix` was run. This patch removes the misleading declaration from:
+  - `browser-security/no-clickjacking`
+  - `import-next/first`, `named`, `no-barrel-import`, `no-import-module-exports`, `no-namespace`
+  - `node-security/no-buffer-overread`, `no-unsafe-dynamic-require`, `no-zip-slip`
+  - `react-features/react-no-inline-functions`
+  - `reliability/no-jsdoc-terminator-in-example` (uses `suggest`, not auto-fix; corrected to `hasSuggestions: true` only)
+  - `secure-coding/no-directive-injection`, `no-electron-security-issues`, `no-graphql-injection`, `no-improper-sanitization`, `no-improper-type-validation`, `no-ldap-injection`, `no-unchecked-loop-condition`, `no-unlimited-resource-allocation`, `no-weak-password-recovery`, `no-xpath-injection`
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ### Bug Fixes
 
 - align codecov component IDs with full package names ([2831b968](https://github.com/ofri-peretz/eslint/commit/2831b968))

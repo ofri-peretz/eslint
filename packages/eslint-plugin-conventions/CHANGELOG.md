@@ -1,3 +1,39 @@
+## 4.1.0
+
+### Minor Changes
+
+- [#129](https://github.com/ofri-peretz/eslint/pull/129) [`90b970c`](https://github.com/ofri-peretz/eslint/commit/90b970c547f867ee79ec393ecb4da3f3e22f11f0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Three new rules at `error` severity enforcing the Observability cluster of the design philosophies (ANALYTICS_PHILOSOPHY.md + UTM_PHILOSOPHY.md):
+  - **`utm-taxonomy`** — `utm_source` and `utm_medium` query-param values in any URL string literal must match the fixed taxonomy. Free-text values (`Blog`, `blog_v2`, `BLOG`) destroy joinability in PostHog and are forbidden.
+  - **`no-raw-cross-property-href`** — Hand-written `<a href="https://*.interlace.tools/…">` and `<a href="https://ofriperetz.dev/…">` JSX literals are flagged. The blessed escape hatch is the per-property `buildUtmHref()` helper from `lib/utm.ts`.
+  - **`analytics-event-naming`** — Vendor-neutral. Matches `<obj>.capture()` (PostHog), `<obj>.track()` (Segment / Mixpanel / Amplitude), and bare `track()` (our primitive). Event names must follow `category:object_action` (lowercase snake_case) with action from a fixed verb list; `$`-prefixed reserved events are exempt; template-literal event names are forbidden.
+
+  Also fixes `compareVersions` in `expiring-todo-comments` to normalise wildcards (`24.x` in `engines.node`) — without this, `parseSemver` returned `null` and the comparator falsely matched every `>= engine TODO` as expired.
+
+- [#148](https://github.com/ofri-peretz/eslint/pull/148) [`82718c2`](https://github.com/ofri-peretz/eslint/commit/82718c282895710d42c36d4679fb24d47f1c35c7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - feat(no-magic-numbers): add conventions/no-magic-numbers — closes prob_magic_numbers ILB-Arena-Quality FN
+
+  Flags numeric literals that lack a named constant, catching the magic number
+  code smell that makes intent unclear.
+
+  **Built-in allowlist:** `-1, 0, 1, 2` are always allowed as universally idiomatic.
+
+  **Context-aware skips (by default):**
+  - `const` / `export const` declarations — the literal IS the named constant
+  - Array index access: `items[3]` (`ignoreArrayIndexes: true`)
+  - Default parameter values: `function f(n = 1000) {}`
+  - TypeScript enum initializers: `enum Status { Active = 1 }`
+  - Numeric object property keys: `{ 404: 'Not Found' }`
+
+  **Options:** `ignore`, `ignoreArrayIndexes`, `ignoreDefaultValues`, `ignoreEnums`, `ignoreBitwiseExpressions`.
+
+  Added at `warn` severity in `conventions/recommended`.
+
+### Patch Changes
+
+- [#154](https://github.com/ofri-peretz/eslint/pull/154) [`62e67a1`](https://github.com/ofri-peretz/eslint/commit/62e67a154a858b284899e17cfe39606e6bc08427) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-magic-numbers`: add extract-const suggestion fixer. IDEs now offer a one-click "Extract to named constant" action that inserts a `const MAGIC_<value>` declaration before the containing statement and replaces the literal.
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ## 4.0.7 (2026-02-09)
 
 This was a version bump only for eslint-plugin-conventions to align it with other projects, there were no code changes.
