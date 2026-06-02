@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-06-01",
+  "generatedAt": "2026-06-02",
   "totalPlugins": 19,
-  "totalRules": 408,
-  "oxlintCompatible": 408,
+  "totalRules": 409,
+  "oxlintCompatible": 409,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1311,7 +1311,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 36,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1381,6 +1381,12 @@
         },
         {
           "name": "no-deprecated-cipher-method",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-algorithm-selection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

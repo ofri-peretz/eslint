@@ -25,6 +25,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       // no-pii-in-logs removed 2026-05-31: duplicate of secure-coding/no-pii-in-logs
       'no-ssrf',
       'no-shell-injection',
+      'no-dynamic-algorithm-selection',
       'detect-suspicious-dependencies',
       'lock-file',
       'no-dynamic-dependency-loading',
