@@ -80,23 +80,31 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
 
         if (!hasInteractiveHandler) return;
 
-        // If it has a role, it might be valid (e.g., img role="button")
-        const hasRole = node.attributes.some(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+        // Only interactive ARIA roles exempt the element from this rule.
+        // Non-interactive roles (presentation, none, img, group) do NOT exempt it.
+        const INTERACTIVE_ARIA_ROLES = new Set([
+          'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+          'option', 'radio', 'searchbox', 'switch', 'tab', 'textbox', 'treeitem',
+          'combobox', 'gridcell', 'listbox', 'slider', 'spinbutton',
+        ]);
+
+        const roleAttr = node.attributes.find(
+          (attr): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role',
         );
-
-        if (!hasRole) {
-             context.report({
-                 node,
-                 messageId: 'noInteraction',
-                 data: {
-                     element
-                 }
-             });
+        if (roleAttr) {
+          const roleValue =
+            roleAttr.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
         }
+
+        context.report({
+          node,
+          messageId: 'noInteraction',
+          data: { element },
+        });
       },
     };
   },

@@ -94,10 +94,21 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         const openingElement = node.openingElement;
         if (openingElement.name.type !== 'JSXIdentifier' || !labelTags.has(openingElement.name.name)) return;
 
+        // aria-label / aria-labelledby on the element itself provides an accessible
+        // name without requiring a paired <label> or htmlFor (WCAG 2.1 SC 1.3.1).
+        const hasAriaLabel = openingElement.attributes.some(
+          (attr): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            (attr.name.name === 'aria-label' || attr.name.name === 'aria-labelledby') &&
+            !!attr.value,
+        );
+        if (hasAriaLabel) return;
+
         // Check htmlFor
-        const hasHtmlFor = openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
+        const hasHtmlFor = openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
             (attr.name.name === 'htmlFor' || labelAttributes.includes(attr.name.name)) &&
             attr.value?.type === 'Literal'
         );

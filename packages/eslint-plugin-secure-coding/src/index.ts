@@ -27,6 +27,7 @@ import { noXpathInjection } from './rules/no-xpath-injection';
 import { noLdapInjection } from './rules/no-ldap-injection';
 import { noDirectiveInjection } from './rules/no-directive-injection';
 import { noFormatStringInjection } from './rules/no-format-string-injection';
+import { noTemplateInjection } from './rules/no-template-injection';
 
 // Security rules - Regex
 import { detectNonLiteralRegexp } from './rules/detect-non-literal-regexp';
@@ -79,6 +80,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-ldap-injection': noLdapInjection,
   'no-directive-injection': noDirectiveInjection,
   'no-format-string-injection': noFormatStringInjection,
+  'no-template-injection': noTemplateInjection,
 
   // Regex Safety & Stability (3 rules)
   'detect-non-literal-regexp': detectNonLiteralRegexp,
@@ -154,6 +156,9 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Credentials
   'secure-coding/no-hardcoded-credentials': 'error',
   'secure-coding/no-insecure-comparison': 'warn',
+
+  // Critical - Template injection
+  'secure-coding/no-template-injection': 'error',
 
   // Critical - Data integrity
   'secure-coding/no-improper-sanitization': 'error',
