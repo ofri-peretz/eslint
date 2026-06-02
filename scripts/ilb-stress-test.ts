@@ -1027,6 +1027,78 @@ const CASES: RuleSpec[] = [
       },
     ],
   },
+  // ── secure-coding/no-template-injection (new rule, 2026-06) ──────────────
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-template-injection',
+    shortRuleName: 'no-template-injection',
+    cases: [
+      {
+        label: 'TP: Handlebars.compile(variable) — dynamic template',
+        hypothesis: 'User-controlled template string = code injection risk, should fire',
+        expected: 'fire',
+        code: `Handlebars.compile(userTemplate)`,
+      },
+      {
+        label: 'TP: ejs.render(req.body.template, data) — request body template',
+        hypothesis: 'Request body as template argument = server-side template injection',
+        expected: 'fire',
+        code: `ejs.render(req.body.template, data)`,
+      },
+      {
+        label: 'TP: pug.compile(template literal with expression)',
+        hypothesis: 'Template literal with expression = injection surface',
+        expected: 'fire',
+        code: `pug.compile(\`h1 \${userTitle}\`)`,
+      },
+      {
+        label: 'FP: Handlebars.compile("<h1>{{title}}</h1>") — string literal',
+        hypothesis: 'Literal string template has no injection surface, should be silent',
+        expected: 'silent',
+        code: `Handlebars.compile('<h1>{{title}}</h1>')`,
+      },
+      {
+        label: 'FP: ejs.render literal template with data',
+        hypothesis: 'Literal template with dynamic data in second arg is safe pattern',
+        expected: 'silent',
+        code: `ejs.render('<p><%= name %></p>', { name: user.name })`,
+      },
+      {
+        label: 'FP: Template literal without expressions',
+        hypothesis: 'Template literal with no expressions is equivalent to a string literal',
+        expected: 'silent',
+        code: 'Handlebars.compile(`<h1>Static template</h1>`)',
+      },
+    ],
+  },
+  // ── jwt/require-expiration suggestion (verify suggestion is emitted) ──────
+  {
+    pluginName: 'eslint-plugin-jwt',
+    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    fullRuleName: 'jwt/require-expiration',
+    shortRuleName: 'require-expiration',
+    cases: [
+      {
+        label: 'TP: jwt.sign without expiresIn',
+        hypothesis: 'Missing expiresIn creates eternal token, should fire',
+        expected: 'fire',
+        code: `jwt.sign({ userId: 123 }, secret)`,
+      },
+      {
+        label: 'FP: jwt.sign with expiresIn in options',
+        hypothesis: 'expiresIn present = safe, should be silent',
+        expected: 'silent',
+        code: `jwt.sign({ userId: 123 }, secret, { expiresIn: '1h' })`,
+      },
+      {
+        label: 'FP: jwt.sign with exp claim in payload',
+        hypothesis: 'exp in payload provides expiration, should be silent',
+        expected: 'silent',
+        code: `jwt.sign({ userId: 123, exp: Math.floor(Date.now() / 1000) + 3600 }, secret)`,
+      },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
