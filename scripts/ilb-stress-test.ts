@@ -121,6 +121,30 @@ const CASES: RuleSpec[] = [
           }
         `,
       },
+      {
+        label: 'FP: ALLOWED.includes(key) guard before obj[key]',
+        hypothesis: 'hasPrecedingValidation() detects allowlist includes() check — should be silent',
+        expected: 'silent',
+        code: `
+          const ALLOWED_KEYS = ['name', 'email', 'age'];
+          function setField(obj, key, value) {
+            if (!ALLOWED_KEYS.includes(key)) throw new Error('invalid key');
+            obj[key] = value;
+          }
+        `,
+      },
+      {
+        label: 'FP: Set.has(key) guard before obj[key]',
+        hypothesis: 'Set membership check before bracket access should be treated as validation',
+        expected: 'silent',
+        code: `
+          const SAFE = new Set(['name', 'email']);
+          function read(obj, key) {
+            if (!SAFE.has(key)) return undefined;
+            return obj[key];
+          }
+        `,
+      },
     ],
   },
   {
