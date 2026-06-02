@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-06-02",
   "totalPlugins": 19,
-  "totalRules": 407,
-  "oxlintCompatible": 407,
+  "totalRules": 408,
+  "oxlintCompatible": 408,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1311,7 +1311,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 34,
+      "ruleCount": 35,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1381,6 +1381,12 @@
         },
         {
           "name": "no-deprecated-cipher-method",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-algorithm-selection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2686,26 +2692,17 @@
       "require-data-testid",
       "utm-taxonomy"
     ],
-    "crypto": [
-      "no-hardcoded-crypto-key",
-      "no-key-reuse",
-      "no-math-random-crypto",
-      "no-numeric-only-tokens",
-      "no-predictable-salt",
-      "no-web-crypto-export",
-      "require-authenticated-encryption",
-      "require-key-length",
-      "require-random-iv",
-      "require-secure-pbkdf2-digest",
-      "require-sufficient-length"
-    ],
     "express-security": [
       "no-cors-credentials-wildcard",
       "no-exposed-debug-endpoints",
       "no-express-unsafe-regex-route",
       "no-graphql-introspection-production",
       "no-insecure-cookie-options",
+      "no-missing-cors-check",
+      "no-missing-csrf-protection",
+      "no-missing-security-headers",
       "no-permissive-cors",
+      "no-user-controlled-redirect",
       "require-csrf-protection",
       "require-express-body-parser-limits",
       "require-helmet",
@@ -2885,9 +2882,9 @@
       "no-insecure-key-derivation",
       "no-insecure-rsa-padding",
       "no-math-random-crypto",
-      "no-pii-in-logs",
       "no-self-signed-certs",
       "no-sha1-hash",
+      "no-shell-injection",
       "no-ssrf",
       "no-static-iv",
       "no-timing-unsafe-compare",
