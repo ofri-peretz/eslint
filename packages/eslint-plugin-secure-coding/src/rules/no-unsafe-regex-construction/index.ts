@@ -329,6 +329,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
 
       // Check for user input without escaping
       if (isUserInputValue && !isEscapedValue) {
+        const patternText = context.sourceCode.getText(patternNode);
         context.report({
           node: patternNode,
           messageId: 'unsafeRegexConstruction',
@@ -340,7 +341,12 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'escapeUserInput',
-              fix: () => null,
+              // Wrap the raw input in an escapeRegExp() call so special chars are neutralized
+              fix: (fixer) =>
+                fixer.replaceText(
+                  patternNode,
+                  `escapeRegExp(${patternText})`,
+                ),
             },
             {
               messageId: 'validatePattern',
