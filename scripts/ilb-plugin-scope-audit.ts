@@ -260,8 +260,12 @@ function getRulesFromIndex(pluginDir: string): string[] {
   // Exclude lines where the key contains a slash — those are prefixed flagship config entries.
   const rules: string[] = [];
   for (const line of src.split('\n')) {
-    // Match: leading whitespace + quoted rule name + colon + non-quote (implementation ref)
-    const m = line.match(/^\s+['"]([a-z][a-z0-9-]*)['"]?\s*:\s*(?!['"])/);
+    // Match: leading whitespace + quoted rule name + colon + an implementation
+    // reference whose value STARTS WITH AN IDENTIFIER CHAR (e.g. `noEval`). This
+    // positively excludes string-literal config (`'rule': 'error'`) and object
+    // config presets (`'recommended-strict': {`). A negative lookahead is wrong
+    // here: `\s*(?!['"{])` lets `\s*` backtrack to zero and test the space.
+    const m = line.match(/^\s+['"]([a-z][a-z0-9-]*)['"]?\s*:\s*[a-zA-Z_$]/);
     if (!m) continue;
     const name = m[1];
     if (name.includes('/')) continue;         // prefixed config entry

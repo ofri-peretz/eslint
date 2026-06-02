@@ -388,10 +388,15 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   const docsRulesDir = path.join(pluginPath, 'docs', 'rules');
   let documentedNames: string[] = [];
   try {
+    // Recurse: rule docs may be organized into sub-category folders
+    // (e.g. react-features/docs/rules/component-api/<rule>.md). The rule NAME is
+    // the file basename — index.ts exports the same bare name. Mirrors the
+    // plugin-rule-source-drift validator so README + drift agree.
     documentedNames = fs
-      .readdirSync(docsRulesDir)
+      .readdirSync(docsRulesDir, { recursive: true })
+      .map((f) => String(f))
       .filter((f) => f.endsWith('.md'))
-      .map((f) => f.replace(/\.md$/, ''))
+      .map((f) => path.basename(f).replace(/\.md$/, ''))
       .toSorted();
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
