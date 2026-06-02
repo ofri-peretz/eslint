@@ -43,6 +43,21 @@ vi.mock('@interlace/eslint-devkit', () => {
     resolveImportPath: mocks.resolveImportPath,
     hasOnlyTypeImports: () => false,
     detectCycleFromImport: mocks.detectCycleFromImport,
+    // PR #180 replaced detectCycleFromImport with SCC-based detection
+    // (computeSCCsFromFile + findShortestCyclePath) but didn't update this mock.
+    // Bridge them to the existing detectCycleFromImport setup: put every file in
+    // one SCC so the SCC pre-filter never short-circuits, then let
+    // findShortestCyclePath do the real cyclic/non-cyclic discrimination.
+    computeSCCsFromFile: (
+      file: string,
+      opts: { cache: { sccIndex: Map<string, string> } },
+    ) => {
+      opts.cache.sccIndex.set(file, 'scc-0');
+    },
+    findShortestCyclePath: (src: string, tgt: string) => {
+      const cycles = mocks.detectCycleFromImport(src, tgt);
+      return cycles && cycles.length > 0 ? cycles[0] : null;
+    },
     getMinimalCycle: (c: any) => c, // eslint-disable-line @typescript-eslint/no-explicit-any
     getCycleHash: (c: any) => JSON.stringify(c), // eslint-disable-line @typescript-eslint/no-explicit-any
   };
