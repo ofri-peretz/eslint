@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-31",
+  "generatedAt": "2026-06-02",
   "totalPlugins": 19,
   "totalRules": 407,
   "oxlintCompatible": 407,
@@ -1311,7 +1311,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 34,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1417,12 +1417,6 @@
         },
         {
           "name": "no-math-random-crypto",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-pii-in-logs",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2331,7 +2325,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 27,
+      "ruleCount": 28,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -2437,6 +2431,12 @@
         },
         {
           "name": "no-sensitive-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-template-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

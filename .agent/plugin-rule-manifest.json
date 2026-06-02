@@ -1091,7 +1091,8 @@
     "no-deprecated-buffer": {
       "environment": "node",
       "detection": "structural-pattern",
-      "confidence": "enforcement"
+      "confidence": "review-prompt",
+      "notes": "Has deterministic autofix: new Buffer(x) \u2192 Buffer.from(x), new Buffer(n) \u2192 Buffer.alloc(n)"
     },
     "no-toctou-vulnerability": {
       "environment": "universal",
@@ -1173,7 +1174,7 @@
     "no-cryptojs": {
       "environment": "node",
       "detection": "structural-pattern",
-      "confidence": "enforcement"
+      "confidence": "review-prompt"
     },
     "no-cryptojs-weak-random": {
       "environment": "universal",
@@ -1857,7 +1858,7 @@
     "no-silent-errors": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "enforcement"
+      "confidence": "review-prompt"
     },
     "no-missing-error-context": {
       "environment": "universal",
@@ -1934,12 +1935,12 @@
     "no-redos-vulnerable-regex": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "enforcement"
+      "confidence": "review-prompt"
     },
     "no-unsafe-regex-construction": {
       "environment": "universal",
       "detection": "structural-pattern",
-      "confidence": "enforcement"
+      "confidence": "review-prompt"
     },
     "detect-object-injection": {
       "environment": "universal",
@@ -2045,6 +2046,12 @@
       "detection": "structural-pattern",
       "confidence": "opt-in",
       "notes": "NOT a rule \u2014 this is a named config preset (configs['recommended-strict']). The scope-audit regex picks it up as a rule due to its object-value form; this entry silences the false-positive I1 finding."
+    },
+    "no-template-injection": {
+      "environment": "universal",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on Handlebars/EJS/Pug/Mustache/Nunjucks .compile()/.render() with dynamic first arg. Zero rules covered template injection before this."
     }
   },
   "eslint-plugin-vercel-ai-security": {
