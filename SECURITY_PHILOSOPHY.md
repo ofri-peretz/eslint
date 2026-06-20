@@ -105,7 +105,7 @@ Adding a new third-party script is a tracked decision, not a drive-by.
 - **Never in URLs.** Emails, names, addresses, IDs that identify a person —
   not in the path or query string. URLs are logged everywhere
   (CDN, analytics, proxy, browser history); URL = breach surface.
-- **Masked in dev tools.** Email shows as `o***@snappy.com` in any UI
+- **Masked in dev tools.** Email shows as `o***@example.com` in any UI
   preview / Storybook story / log. Real address only visible after explicit
   user action.
 - **Redacted in logs.** Sentry / Datadog / app logs use scrubbing rules
