@@ -32,6 +32,7 @@ jobs:
     # Skip draft PRs -- review once a PR is opened or marked ready for review.
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check for Claude token
         id: token
