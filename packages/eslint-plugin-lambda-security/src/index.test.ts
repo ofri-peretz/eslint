@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ESLint } from 'eslint';
+import type { Linter } from 'eslint';
+import type { TSESLint } from '@interlace/eslint-devkit';
 import plugin, { rules, configs } from './index';
 
 describe('eslint-plugin-lambda-security plugin interface', () => {
@@ -115,11 +117,15 @@ describe('regression: shipped configs lint without an esquery selector crash', (
 };
 `;
 
-  const lint = (overrideConfig: unknown[]) =>
-    new ESLint({ overrideConfigFile: true, overrideConfig }).lintText(
-      TRIVIAL_HANDLER,
-      { filePath: 'handler.mjs' },
-    );
+  // Typed flat-config array so config-shape regressions at the call sites are
+  // caught at compile time. The single boundary cast bridges typescript-eslint's
+  // FlatConfig types to ESLint's own Linter.Config — the same bridge
+  // `@interlace/eslint-config` uses when it re-exports these configs.
+  const lint = (overrideConfig: TSESLint.FlatConfig.Config[]) =>
+    new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: overrideConfig as Linter.Config[],
+    }).lintText(TRIVIAL_HANDLER, { filePath: 'handler.mjs' });
 
   for (const configName of ['recommended', 'strict'] as const) {
     it(`'${configName}' config lints a trivial handler without throwing`, async () => {
