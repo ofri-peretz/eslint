@@ -1,11 +1,11 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-05-11T05:40:31.658Z",
+  "_lastUpdated": "2026-06-20T21:20:09.423Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",
+      "favorite_count": 9,
       "lang": "en",
-      "favorite_count": 0,
       "possibly_sensitive": false,
       "created_at": "2026-01-01T18:13:00.000Z",
       "display_text_range": [
@@ -13,7 +13,6 @@
         243
       ],
       "entities": {
-        "hashtags": [],
         "urls": [
           {
             "display_url": "dev.to/ofri-peretz/th…",
@@ -24,9 +23,7 @@
             ],
             "url": "https://t.co/5aWCclnWlG"
           }
-        ],
-        "user_mentions": [],
-        "symbols": []
+        ]
       },
       "id_str": "2006790779537121585",
       "text": "Onboarding to a new codebase? You need a security pulse check.\n\nHere is how to conduct a \"30-Minute Security Audit\" to find the glaring vulnerabilities before you write your first line of code.\n\n{ author: Ofri Peretz }\n\nhttps://t.co/5aWCclnWlG",
@@ -44,10 +41,10 @@
           "2006790779537121585"
         ],
         "editable_until_msecs": "1767294780000",
-        "is_edit_eligible": true,
-        "edits_remaining": "5"
+        "edits_remaining": "5",
+        "is_edit_eligible": true
       },
-      "conversation_count": 0,
+      "conversation_count": 1,
       "news_action_type": "conversation",
       "card": {
         "card_platform": {
@@ -67,21 +64,21 @@
           "photo_image_full_size_large": {
             "image_value": {
               "height": 419,
-              "width": 800,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=800x419"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=800x419",
+              "width": 800
             },
             "type": "IMAGE"
           },
           "thumbnail_image": {
             "image_value": {
-              "height": 200,
-              "width": 400,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=400x400"
+              "height": 168,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=400x400",
+              "width": 400
             },
             "type": "IMAGE"
           },
           "description": {
-            "string_value": "A data-driven protocol for assessing a new codebase in under 30 minutes. Use automated static analysis to generate immediate risk heatmaps for CTOs and VPs.",
+            "string_value": "How to turn an inherited Node.js codebase into a measurable risk heatmap in one ESLint run: the three plugins to install, the jq one-liner that ranks findings by rule, and how to read the result — 15...",
             "type": "STRING"
           },
           "domain": {
@@ -90,25 +87,25 @@
           },
           "thumbnail_image_large": {
             "image_value": {
-              "height": 300,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=600x600"
+              "height": 320,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=800x320_1",
+              "width": 762
             },
             "type": "IMAGE"
           },
           "summary_photo_image_small": {
             "image_value": {
               "height": 202,
-              "width": 386,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=386x202"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=386x202",
+              "width": 386
             },
             "type": "IMAGE"
           },
           "thumbnail_image_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=orig"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=orig",
+              "width": 1000
             },
             "type": "IMAGE"
           },
@@ -123,24 +120,24 @@
           "photo_image_full_size_small": {
             "image_value": {
               "height": 202,
-              "width": 386,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=386x202"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=386x202",
+              "width": 386
             },
             "type": "IMAGE"
           },
           "summary_photo_image_large": {
             "image_value": {
               "height": 419,
-              "width": 800,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=800x419"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=800x419",
+              "width": 800
             },
             "type": "IMAGE"
           },
           "thumbnail_image_small": {
             "image_value": {
-              "height": 72,
-              "width": 144,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=144x144"
+              "height": 60,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=144x144",
+              "width": 144
             },
             "type": "IMAGE"
           },
@@ -153,17 +150,17 @@
           },
           "thumbnail_image_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=png&name=2048x2048_2_exp"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
           "photo_image_full_size_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=orig"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=orig",
+              "width": 1000
             },
             "type": "IMAGE"
           },
@@ -175,8 +172,8 @@
           "photo_image_full_size": {
             "image_value": {
               "height": 314,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=600x314"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=600x314",
+              "width": 600
             },
             "type": "IMAGE"
           },
@@ -184,95 +181,47 @@
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 93.43,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
+                  }
                 },
                 {
+                  "percentage": 6.52,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
-                },
-                {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
-                  "rgb": {
-                    "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "blue": 127,
+                    "green": 117,
+                    "red": 116
+                  }
                 }
               ]
             },
             "type": "IMAGE_COLOR"
           },
           "title": {
-            "string_value": "The 30-Minute Security Audit: A Static Analysis Protocol for Onboarding",
+            "string_value": "I Inherited a 3,000-Line Codebase. One ESLint Run Found 26 Critical Security Bugs.",
             "type": "STRING"
           },
           "summary_photo_image_color": {
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 93.43,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
+                  }
                 },
                 {
+                  "percentage": 6.52,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
-                },
-                {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
-                  "rgb": {
-                    "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "blue": 127,
+                    "green": 117,
+                    "red": 116
+                  }
                 }
               ]
             },
@@ -280,17 +229,17 @@
           },
           "summary_photo_image_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=png&name=2048x2048_2_exp"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
           "summary_photo_image": {
             "image_value": {
               "height": 314,
-              "width": 600,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=600x314"
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=600x314",
+              "width": 600
             },
             "type": "IMAGE"
           },
@@ -298,44 +247,20 @@
             "image_color_value": {
               "palette": [
                 {
+                  "percentage": 93.43,
                   "rgb": {
-                    "blue": 43,
-                    "green": 21,
-                    "red": 25
-                  },
-                  "percentage": 86.6
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
+                  }
                 },
                 {
+                  "percentage": 6.52,
                   "rgb": {
-                    "blue": 147,
-                    "green": 70,
-                    "red": 51
-                  },
-                  "percentage": 4.35
-                },
-                {
-                  "rgb": {
-                    "blue": 68,
-                    "green": 70,
-                    "red": 29
-                  },
-                  "percentage": 2.43
-                },
-                {
-                  "rgb": {
-                    "blue": 52,
-                    "green": 26,
-                    "red": 66
-                  },
-                  "percentage": 2.1
-                },
-                {
-                  "rgb": {
-                    "blue": 113,
-                    "green": 178,
-                    "red": 38
-                  },
-                  "percentage": 1.01
+                    "blue": 127,
+                    "green": 117,
+                    "red": 116
+                  }
                 }
               ]
             },
@@ -343,9 +268,9 @@
           },
           "photo_image_full_size_x_large": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=png&name=2048x2048_2_exp"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
@@ -356,9 +281,9 @@
           },
           "summary_photo_image_original": {
             "image_value": {
-              "height": 500,
-              "width": 1000,
-              "url": "https://pbs.twimg.com/card_img/2053224166216585224/91YZihno?format=jpg&name=orig"
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2066131405546078208/oiKf5IP8?format=jpg&name=orig",
+              "width": 1000
             },
             "type": "IMAGE"
           }
@@ -366,7 +291,7 @@
       },
       "isEdited": false,
       "isStaleEdit": false,
-      "_cachedAt": "2026-05-11T00:30:55.910Z"
+      "_cachedAt": "2026-06-20T21:20:08.921Z"
     }
   }
 }
