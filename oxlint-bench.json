@@ -1,0 +1,6 @@
+{
+  "jsPlugins": ["eslint-plugin-import-next/oxlint"],
+  "rules": {
+    "import-next/no-cycle": "error"
+  }
+}

@@ -2,7 +2,7 @@
   "name": "@interlace/benchmarks",
   "version": "1.0.0",
   "private": true,
-  "description": "Reproducible benchmarks for ESLint plugins — performance, FN/FP accuracy, and AI security",
+  "description": "Reproducible benchmarks for ESLint plugins \u2014 performance, FN/FP accuracy, and AI security",
   "type": "module",
   "scripts": {
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
@@ -78,5 +78,9 @@
     "eslint-plugin-vue": "^10.7.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "exports": {
+    "./lib/flagship-snapshot": "./lib/flagship-snapshot.ts",
+    "./lib/median": "./lib/median.ts"
   }
 }
