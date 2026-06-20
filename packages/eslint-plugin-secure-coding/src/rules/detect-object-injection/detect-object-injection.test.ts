@@ -414,14 +414,13 @@ describe('detect-object-injection', () => {
           code: 'obj.users[userId] = data;',
           errors: [{ messageId: 'objectInjection' }],
         },
-        // Chained bracket access (dangerous) - reports on both bracket accesses
+        // Chained bracket access (dangerous) — the rule de-dups chained
+        // computed access to a single report on the assignment (it marks
+        // intermediate MemberExpressions handled and reports only the
+        // outermost; see the rule's checkAssignmentExpression/checkMemberExpression).
         {
           code: 'obj[key1][key2] = value;',
-          // Multiple bracket accesses - reports on each dangerous access
-          errors: [
-            { messageId: 'objectInjection' },
-            { messageId: 'objectInjection' },
-          ],
+          errors: [{ messageId: 'objectInjection' }],
         },
         // Computed property from function (dangerous)
         {

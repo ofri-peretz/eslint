@@ -20,6 +20,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-ldap-injection',
       'no-directive-injection',
       'no-format-string-injection',
+      'no-template-injection',
       'detect-non-literal-regexp',
       'no-redos-vulnerable-regex',
       'no-unsafe-regex-construction',
@@ -45,7 +46,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-hardcoded-session-tokens',
       'require-secure-defaults',
     ]);
-    expect(ruleKeys.length).toBe(27);
+    expect(ruleKeys.length).toBe(28);
   });
 
   describe('configurations', () => {
