@@ -1,3 +1,19 @@
+## 2.1.6
+
+### Patch Changes
+
+- [#180](https://github.com/ofri-peretz/eslint/pull/180) [`5650ecd`](https://github.com/ofri-peretz/eslint/commit/5650ecde72b6157f94a2accef18f48c33e9b5605) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix: role-aware false-positive reduction in three Base UI / headless UI rules
+
+  click-events-have-key-events, interactive-supports-focus, and
+  no-static-element-interactions now recognize interactive ARIA roles
+  (button, link, menuitem, combobox, etc.) and skip reporting when an
+  element explicitly declares one. This eliminates false positives on
+  Base UI and other headless-component patterns where `<div role="button">`
+  is the correct composition technique.
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ## 2.1.5 (2026-02-09)
 
 This was a version bump only for eslint-plugin-react-a11y to align it with other projects, there were no code changes.
@@ -66,4 +82,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Visual & Distraction Rules (3)**: `no-distracting-elements`, `no-missing-aria-labels`, `no-redundant-roles`
 - **Role Rules (3)**: `role-has-required-aria-props`, `role-supports-aria-props`, `prefer-tag-over-role`
 - **Scope Rule (1)**: `scope`
-
