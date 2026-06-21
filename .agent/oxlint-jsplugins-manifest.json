@@ -2876,6 +2876,7 @@
       "no-data-in-temp-storage",
       "no-deprecated-buffer",
       "no-deprecated-cipher-method",
+      "no-dynamic-algorithm-selection",
       "no-dynamic-dependency-loading",
       "no-dynamic-require",
       "no-ecb-mode",
