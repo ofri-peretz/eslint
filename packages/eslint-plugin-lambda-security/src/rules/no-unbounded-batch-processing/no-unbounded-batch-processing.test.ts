@@ -178,3 +178,63 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
     },
   ],
 });
+
+// Regression lock — function-exit `:exit` selector (ESLint 9 "Unknown class
+// name: exit" crash). The exit report fires from three SEPARATE listeners after
+// the fix split the comma-joined
+// 'ArrowFunctionExpression:exit, FunctionExpression:exit, FunctionDeclaration:exit'
+// key (ESLint strips only a trailing ':exit', so the comma form leaks ':exit'
+// into esquery and throws). Exercise all three function node types: a
+// reintroduced comma-joined selector crashes here, and a dropped per-node-type
+// listener stops that case reporting.
+ruleTester.run(
+  'no-unbounded-batch-processing (function-exit selector regression)',
+  noUnboundedBatchProcessing,
+  {
+    valid: [
+      // Clean handler of each node type — exit listeners run, no crash, no FP.
+      {
+        code: `export const handler = async (event) => {
+          return { statusCode: 200, body: event.body };
+        };`,
+      },
+      {
+        code: `export const handler = async function (event) {
+          return { statusCode: 200, body: event.body };
+        };`,
+      },
+      {
+        code: `async function handler(event) {
+          return { statusCode: 200, body: event.body };
+        }`,
+      },
+    ],
+    invalid: [
+      // Unbounded Records iteration reports once per node type.
+      {
+        code: `export const handler = async (event) => {
+          for (const record of event.Records) {
+            await processRecord(record);
+          }
+        };`,
+        errors: [{ messageId: 'unboundedBatch' }],
+      },
+      {
+        code: `export const handler = async function (event) {
+          for (const record of event.Records) {
+            await processRecord(record);
+          }
+        };`,
+        errors: [{ messageId: 'unboundedBatch' }],
+      },
+      {
+        code: `async function handler(event) {
+          for (const record of event.Records) {
+            await processRecord(record);
+          }
+        }`,
+        errors: [{ messageId: 'unboundedBatch' }],
+      },
+    ],
+  },
+);
