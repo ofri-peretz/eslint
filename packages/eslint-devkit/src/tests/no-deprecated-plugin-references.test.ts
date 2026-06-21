@@ -24,7 +24,7 @@
  *                       recommends, the deprecation).
  *   - benchmarks/FP_FN_REMEDIATION_TRACKER.md, docs/META_HYGIENE.md — dated
  *                       remediation / per-plugin stats tables.
- *   - the no-math-random-crypto changeset + migration doc — explain the move.
+ *   - .changeset/** (ephemeral notes → CHANGELOG) + migration doc — describe the move.
  */
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
@@ -57,7 +57,10 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       /^distribution\//,
       'benchmarks/FP_FN_REMEDIATION_TRACKER.md',
       'docs/META_HYGIENE.md',
-      /^\.changeset\/node-security-no-math-random-crypto\.md$/,
+      // Any changeset — ephemeral release notes that get folded into
+      // CHANGELOG.md (already allowlisted above). They *describe* the
+      // deprecation/removal; they never *recommend* the dead plugin to users.
+      /^\.changeset\//,
       'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
     ],
     importAllowlist: [THIS_TEST],
