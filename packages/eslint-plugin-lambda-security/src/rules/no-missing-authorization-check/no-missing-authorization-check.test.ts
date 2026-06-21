@@ -222,3 +222,57 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
     },
   ],
 });
+
+// Regression lock — function-exit `:exit` selector (ESLint 9 "Unknown class
+// name: exit" crash). The exit report fires from three SEPARATE listeners after
+// the fix split the comma-joined
+// 'ArrowFunctionExpression:exit, FunctionExpression:exit, FunctionDeclaration:exit'
+// key (ESLint strips only a trailing ':exit', so the comma form leaks ':exit'
+// into esquery and throws). Exercise all three function node types: a
+// reintroduced comma-joined selector crashes here, and a dropped per-node-type
+// listener stops that case reporting.
+ruleTester.run(
+  'no-missing-authorization-check (function-exit selector regression)',
+  noMissingAuthorizationCheck,
+  {
+    valid: [
+      // Clean handler of each node type — exit listeners run, no crash, no FP.
+      {
+        code: `export const handler = async (event) => {
+          return { statusCode: 200, body: 'ok' };
+        };`,
+      },
+      {
+        code: `export const handler = async function (event) {
+          return { statusCode: 200, body: 'ok' };
+        };`,
+      },
+      {
+        code: `async function handler(event) {
+          return { statusCode: 200, body: 'ok' };
+        }`,
+      },
+    ],
+    invalid: [
+      // Sensitive op + no auth check reports once per node type.
+      {
+        code: `export const handler = async (event) => {
+          await db.query('DELETE FROM users');
+        };`,
+        errors: [{ messageId: 'missingAuthCheck' }],
+      },
+      {
+        code: `export const handler = async function (event) {
+          await db.query('DELETE FROM users');
+        };`,
+        errors: [{ messageId: 'missingAuthCheck' }],
+      },
+      {
+        code: `async function handler(event) {
+          await db.query('DELETE FROM users');
+        }`,
+        errors: [{ messageId: 'missingAuthCheck' }],
+      },
+    ],
+  },
+);

@@ -182,3 +182,57 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
     },
   ],
 });
+
+// Regression lock — function-exit `:exit` selector (ESLint 9 "Unknown class
+// name: exit" crash). The exit report fires from three SEPARATE listeners after
+// the fix split the comma-joined
+// 'ArrowFunctionExpression:exit, FunctionExpression:exit, FunctionDeclaration:exit'
+// key (ESLint strips only a trailing ':exit', so the comma form leaks ':exit'
+// into esquery and throws). Exercise all three function node types: a
+// reintroduced comma-joined selector crashes here, and a dropped per-node-type
+// listener stops that case reporting.
+ruleTester.run(
+  'require-timeout-handling (function-exit selector regression)',
+  requireTimeoutHandling,
+  {
+    valid: [
+      // Clean handler of each node type — exit listeners run, no crash, no FP.
+      {
+        code: `export const handler = async (event, context) => {
+          return { statusCode: 200 };
+        };`,
+      },
+      {
+        code: `export const handler = async function (event, context) {
+          return { statusCode: 200 };
+        };`,
+      },
+      {
+        code: `async function handler(event, context) {
+          return { statusCode: 200 };
+        }`,
+      },
+    ],
+    invalid: [
+      // External call + no timeout handling reports once per node type.
+      {
+        code: `export const handler = async (event, context) => {
+          await fetch('https://api.example.com');
+        };`,
+        errors: [{ messageId: 'missingTimeoutHandling' }],
+      },
+      {
+        code: `export const handler = async function (event, context) {
+          await fetch('https://api.example.com');
+        };`,
+        errors: [{ messageId: 'missingTimeoutHandling' }],
+      },
+      {
+        code: `async function handler(event, context) {
+          await fetch('https://api.example.com');
+        }`,
+        errors: [{ messageId: 'missingTimeoutHandling' }],
+      },
+    ],
+  },
+);
