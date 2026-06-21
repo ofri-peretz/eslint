@@ -40,8 +40,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-613',
       cvss: 5,
     },
-    fixable: undefined,
-    hasSuggestions: false,
+    hasSuggestions: true,
     messages: {
       missingExpiration: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -141,10 +140,27 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Report missing expiration
+        // Report missing expiration — suggest adding expiresIn to the options object
+        const optionsArg3 = node.arguments[2];
         context.report({
           node,
           messageId: 'missingExpiration',
+          suggest: [
+            {
+              messageId: 'addExpiration',
+              fix(fixer) {
+                const sourceCode = context.sourceCode;
+                if (optionsArg3 && optionsArg3.type === 'ObjectExpression') {
+                  // Options object exists but lacks expiresIn — insert property
+                  const openBrace = sourceCode.getFirstToken(optionsArg3)!;
+                  return fixer.insertTextAfter(openBrace, ' expiresIn: \'1h\',');
+                }
+                // No options arg — insert { expiresIn: '1h' } as third argument
+                const lastArg = node.arguments[node.arguments.length - 1];
+                return fixer.insertTextAfter(lastArg, ', { expiresIn: \'1h\' }');
+              },
+            },
+          ],
         });
       },
     };
