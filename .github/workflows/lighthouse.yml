@@ -35,7 +35,7 @@ on:
       - "apps/docs/lighthouserc.json"
   workflow_dispatch:
   schedule:
-    - cron: "5 4 * * 0"
+    - cron: "5 4 * * 3" # Wed 04:05 UTC — weekly (staggered off the Sunday burst)
 
 concurrency:
   group: lighthouse-${{ github.ref }}

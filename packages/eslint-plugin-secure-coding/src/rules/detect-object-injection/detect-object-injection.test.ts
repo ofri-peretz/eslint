@@ -414,14 +414,15 @@ describe('detect-object-injection', () => {
           code: 'obj.users[userId] = data;',
           errors: [{ messageId: 'objectInjection' }],
         },
-        // Chained bracket access (dangerous) - reports on both bracket accesses
+        // Chained bracket access (dangerous) — still flagged, but reported once.
+        // The dedup added in #183 (checkAssignmentExpression walks the chain and
+        // marks every intermediate computed access handled; checkMemberExpression
+        // reports "only the OUTERMOST") collapses `a[b][c]` to a single finding
+        // per statement to avoid duplicate findings at the same source position.
+        // The vulnerability is still caught — one objectInjection report.
         {
           code: 'obj[key1][key2] = value;',
-          // Multiple bracket accesses - reports on each dangerous access
-          errors: [
-            { messageId: 'objectInjection' },
-            { messageId: 'objectInjection' },
-          ],
+          errors: [{ messageId: 'objectInjection' }],
         },
         // Computed property from function (dangerous)
         {

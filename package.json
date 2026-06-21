@@ -29,7 +29,7 @@
     "lint:workflows:actionlint": "actionlint",
     "changeset": "changeset",
     "changeset:status": "changeset status --since=origin/main",
-    "changeset:version": "changeset version && npm install --package-lock-only",
+    "changeset:version": "changeset version && tsx scripts/sync-source-versions.ts && npm install --package-lock-only",
     "release:status": "tsx scripts/release-status.ts",
     "release:reconcile": "tsx scripts/reconcile-tags.ts",
     "release:reconcile:backfill": "tsx scripts/reconcile-tags.ts --backfill-missing",

@@ -3130,6 +3130,7 @@
       "no-privilege-escalation",
       "no-redos-vulnerable-regex",
       "no-sensitive-data-exposure",
+      "no-template-injection",
       "no-unchecked-loop-condition",
       "no-unlimited-resource-allocation",
       "no-unsafe-deserialization",
