@@ -152,19 +152,21 @@ function findImportReferences(term: string): Hit[] {
   ]);
 }
 
-function reportViolations(
+// Builds the failure message (with file:line detail). Passed as the custom
+// message to `expect(...).toEqual([])`, so it's only surfaced when the
+// assertion fails — one assertion, no separate throw, no redundant check.
+function violationMessage(
   kind: string,
   pluginName: string,
   successor: string,
   violations: Hit[],
-): void {
-  if (violations.length === 0) return;
+): string {
   const detail = violations.map((v) => `  ${v.file}:${v.line}  ${v.snippet}`).join('\n');
-  throw new Error(
+  return (
     `Found ${violations.length} ${kind} of deprecated/deleted \`${pluginName}\`. ` +
-      `Use \`${successor}\` (which now ships the cryptography rules). ` +
-      `If a reference is intentional (historical record), add the file to the relevant allowlist in this test.\n` +
-      `${detail}`,
+    `Use \`${successor}\` (which now ships the cryptography rules). ` +
+    `If a reference is intentional (historical record), add the file to the relevant allowlist in this test.\n` +
+    `${detail}`
   );
 }
 
@@ -174,16 +176,20 @@ describe('No Deprecated Plugin References', () => {
       const violations = findMarkdownReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.allowlist),
       );
-      reportViolations('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations);
-      expect(violations).toEqual([]);
+      expect(
+        violations,
+        violationMessage('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations),
+      ).toEqual([]);
     });
 
     it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
       const violations = findImportReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.importAllowlist),
       );
-      reportViolations('import reference(s)', plugin.name, plugin.successor, violations);
-      expect(violations).toEqual([]);
+      expect(
+        violations,
+        violationMessage('import reference(s)', plugin.name, plugin.successor, violations),
+      ).toEqual([]);
     });
   }
 });
