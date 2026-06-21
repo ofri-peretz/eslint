@@ -208,7 +208,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-credentials.md',
       description: 'Detects hardcoded passwords, API keys, tokens, and other sensitive credentials',
       cwe: 'CWE-798',
-      cvss: 9.5,
+      cvss: 9.8,
       confidence: 'medium',
     },
     fixable: 'code',

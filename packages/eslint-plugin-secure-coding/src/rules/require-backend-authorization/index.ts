@@ -26,7 +26,7 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/require-backend-authorization.md',
       description: 'Require server-side authorization checks',
       cwe: 'CWE-602',
-      cvss: 9.5,
+      cvss: 6.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

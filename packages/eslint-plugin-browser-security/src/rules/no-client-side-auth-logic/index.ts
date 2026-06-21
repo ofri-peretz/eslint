@@ -26,7 +26,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-client-side-auth-logic.md',
       description: 'Prevent authentication logic in client code',
       cwe: 'CWE-602',
-      cvss: 9.5,
+      cvss: 6.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
