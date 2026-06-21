@@ -88,14 +88,16 @@ export function syncVersionsInContent(
       const current = findMatch[1];
       result = result.replace(pattern.regex, `$1${targetVersion}$2`);
 
-      // Verify the rewrite actually landed. If the value still differs from the
-      // target, the replacement regex did not fire on what findRegex matched —
-      // surface it as an error instead of silently shipping a mis-synced file.
+      // Confirm the rewrite landed: it's a success ONLY if the value is now the
+      // target. Anything else — still drifted, or the structure no longer
+      // matches (the replace mangled or dropped it) — means the replace regex
+      // diverged from findRegex; record an error instead of silently shipping a
+      // mis-synced file.
       const after = result.match(pattern.findRegex);
-      if (after && after[1] !== targetVersion) {
-        errs.push({ pattern: pattern.name, detectedVersion: current });
-      } else {
+      if (after && after[1] === targetVersion) {
         upd.push({ pattern: pattern.name, oldVersion: current });
+      } else {
+        errs.push({ pattern: pattern.name, detectedVersion: current });
       }
     }
   }
@@ -182,6 +184,12 @@ function processPackage(pkg: { name: string; path: string; version: string }): v
  * Main function
  */
 function main(): void {
+  // Reset the module-level accumulators so a second call in the same process
+  // doesn't accumulate stale counts. The is-main guard prevents this today, but
+  // keep main() idempotent for anyone testing it end-to-end.
+  updates.length = 0;
+  syncErrors.length = 0;
+
   console.log(`🔄 ${isDryRun ? '[DRY RUN] ' : ''}Syncing source code versions...\n`);
 
   const packages = getPackages();

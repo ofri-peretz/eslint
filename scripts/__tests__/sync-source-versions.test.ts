@@ -61,4 +61,20 @@ describe('syncVersionsInContent', () => {
     expect(errors[0]).toMatchObject({ pattern: 'divergent', detectedVersion: '1.0.0' });
     expect(content).toBe('TAG=1.0.0'); // unchanged — and NOT reported as a successful update
   });
+
+  // One call can hit multiple patterns: a good one must still be applied while a
+  // diverged one is flagged — so the rewrite isn't lost AND the run still fails.
+  it('accumulates both an update and an error when patterns are mixed', () => {
+    const mixed: typeof VERSION_PATTERNS = [
+      VERSION_PATTERNS[1]!, // 'VERSION constant' — rewrites successfully
+      { name: 'divergent', findRegex: /TAG=([\d.]+)/, regex: /THIS_WILL_NEVER_MATCH/ },
+    ];
+    const src = `export const VERSION = '0.1.0';\nTAG=0.1.0`;
+    const { content, updates, errors } = syncVersionsInContent(src, '1.0.0', mixed);
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({ pattern: 'VERSION constant', oldVersion: '0.1.0' });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({ pattern: 'divergent', detectedVersion: '0.1.0' });
+    expect(content).toContain("VERSION = '1.0.0'"); // the good rewrite still landed
+  });
 });
