@@ -9,12 +9,27 @@ name: Storybook Tests
 #
 # This is the per-component axe scan that complements the route-level scan
 # in `a11y.yml` — together they form Layers 1 and 4 of UX_PHILOSOPHY.md.
+# It is the sole Storybook a11y gate: the former storybook-a11y.yml ran a
+# strict subset (axe-only, `test-storybook:ci`) of this same test-runner
+# config, so it was folded in here to stop scanning every story twice.
 #
-# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
-# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+# Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, a
+# post-merge run on main (catches a lockfile re-hoist breaking the build),
+# and a weekly Thursday cron for drift. See AGENTS.md "Promotion gate".
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  # Post-merge verification on main — a lockfile change that re-hoists
+  # storybook's vite can break the build with no PR-time signal. Absorbed
+  # from the former storybook-a11y.yml.
+  push:
+    branches: [main]
+    paths:
+      - 'packages/ui/**'
+      - 'apps/storybook/**'
+      - 'apps/docs/src/**'
+      - 'package-lock.json'
+      - '.github/workflows/storybook.yml'
   pull_request:
     branches: [main]
     types: [ready_for_review, labeled, synchronize]
@@ -22,10 +37,11 @@ on:
       - 'packages/ui/**'
       - 'apps/storybook/**'
       - 'apps/docs/**'
+      - 'package-lock.json'
       - '.github/workflows/storybook.yml'
   workflow_dispatch:
   schedule:
-    - cron: "10 4 * * 0"
+    - cron: "10 4 * * 4" # Thu 04:10 UTC — weekly drift (staggered off the Sunday burst)
 
 concurrency:
   group: storybook-${{ github.ref }}
