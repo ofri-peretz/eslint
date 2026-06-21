@@ -10,7 +10,6 @@
 const secureCodingModule = await import('./packages/eslint-plugin-secure-coding/src/index.ts');
 const nodeSecurityModule = await import('./packages/eslint-plugin-node-security/src/index.ts');
 const pgModule = await import('./packages/eslint-plugin-pg/src/index.ts');
-const cryptoModule = await import('./packages/eslint-plugin-crypto/src/index.ts');
 const expressModule = await import('./packages/eslint-plugin-express-security/src/index.ts');
 const browserModule = await import('./packages/eslint-plugin-browser-security/src/index.ts');
 const jwtModule = await import('./packages/eslint-plugin-jwt/src/index.ts');
@@ -24,7 +23,6 @@ const normalize = (m) => m.default || m;
 const secureCoding = normalize(secureCodingModule);
 const nodeSecurity = normalize(nodeSecurityModule);
 const pg = normalize(pgModule);
-const crypto = normalize(cryptoModule);
 const expressSecurity = normalize(expressModule);
 const browserSecurity = normalize(browserModule);
 const jwt = normalize(jwtModule);
@@ -49,7 +47,6 @@ export default [
       'secure-coding': secureCoding,
       'node-security': nodeSecurity,
       pg,
-      crypto,
       'express-security': expressSecurity,
       'browser-security': browserSecurity,
       jwt,
@@ -62,7 +59,6 @@ export default [
       ...allRulesError('secure-coding', secureCoding),
       ...allRulesError('node-security', nodeSecurity),
       ...allRulesError('pg', pg),
-      ...allRulesError('crypto', crypto),
       ...allRulesError('express-security', expressSecurity),
       ...allRulesError('browser-security', browserSecurity),
       ...allRulesError('jwt', jwt),
