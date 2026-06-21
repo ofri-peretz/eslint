@@ -355,6 +355,7 @@ function generateManifest(): Record<string, Record<string, {
   confidence: string;
   notes?: string;
   violation?: string;
+  deprecated?: boolean;
 }>> {
   const manifest: Record<string, Record<string, {
     environment: string;
@@ -362,6 +363,7 @@ function generateManifest(): Record<string, Record<string, {
     confidence: string;
     notes?: string;
     violation?: string;
+    deprecated?: boolean;
   }>> = {};
 
   for (const pluginDir of listPlugins()) {
@@ -543,7 +545,7 @@ function main() {
     console.log('  PLUGIN SCOPE AUDIT');
     console.log('══════════════════════════════════════════════════════════════════════\n');
     for (const f of findings) {
-      const prefix = f.pluginDir ?? f.plugin;
+      const prefix = f.plugin;
       console.log(`  ❌ [${f.invariant}] ${prefix}/${f.rule}`);
       console.log(`     ${f.detail}`);
     }

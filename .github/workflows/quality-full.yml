@@ -30,7 +30,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # `opened`/`reopened` so a PR created directly as non-draft (single push,
+    # no later `synchronize`) still runs the heavy gate — otherwise it can be
+    # required by branch protection yet never report. The `gate` job below
+    # still skips drafts unless they carry the `run-full-ci` label.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * 0"
