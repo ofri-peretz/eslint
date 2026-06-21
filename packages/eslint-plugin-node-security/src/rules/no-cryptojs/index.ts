@@ -35,7 +35,7 @@ export const noCryptojs = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-cryptojs.md',
       description: 'Disallow deprecated crypto-js library (use native crypto instead)',
       cwe: 'CWE-1104',
-      cvss: 5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

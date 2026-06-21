@@ -34,7 +34,7 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-env-logging.md',
       description: 'Detects logging of process.env which may expose secrets',
       cwe: 'CWE-532',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

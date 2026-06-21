@@ -104,7 +104,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detect XML External Entity (XXE) injection vulnerabilities',
       url: 'https://cwe.mitre.org/data/definitions/611.html',
       cwe: 'CWE-611',
-      cvss: 9.5,
+      cvss: 9.1,
     },
     messages: {
       xxeInjection: formatLLMMessage({

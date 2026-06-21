@@ -71,7 +71,7 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-sensitive-data-exposure.md',
       description: 'Detects PII/credentials in logs, responses, or error messages',
       cwe: 'CWE-532',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

@@ -63,7 +63,7 @@ export const noTemplateInjection = createRule<[], MessageIds>({
       description:
         'Disallow dynamic strings as template arguments to server-side template engines (CWE-94)',
       cwe: 'CWE-94',
-      cvss: 9.1,
+      cvss: 9.8,
     },
     messages: {
       templateInjection: formatLLMMessage({

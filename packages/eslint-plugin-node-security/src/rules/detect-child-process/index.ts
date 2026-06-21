@@ -181,7 +181,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-child-process.md',
       description: 'Detects child_process usage that may allow command injection',
       cwe: 'CWE-78',
-      cvss: 9.5,
+      cvss: 9.8,
       confidence: 'medium',
     },
     messages: {

@@ -38,7 +38,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
       description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
       cwe: 'CWE-697',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     fixable: 'code',
     hasSuggestions: true,
