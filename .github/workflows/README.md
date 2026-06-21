@@ -29,7 +29,6 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 
 | Workflow | Cadence |
 | :--- | :--- |
-| [`cve-sync.yml`](./cve-sync.yml) | Every 3 days — pulls latest CWE/CVE data |
 | [`docs-data.yml`](./docs-data.yml) | Refreshes derived docs data (rule tables, plugin stats) |
 | [`npm-token-health.yml`](./npm-token-health.yml) | NPM token expiry check (Granular Access Tokens cap at 90 days) |
 | [`check-links.yml`](./check-links.yml) | Markdown link integrity sweep |
