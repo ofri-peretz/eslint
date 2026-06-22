@@ -53,7 +53,10 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       description:
         'Disallow dynamic algorithm names in Node.js crypto functions (CWE-327)',
       cwe: 'CWE-327',
-      cvss: 7.4,
+      // Match the CVSS the finding emits: the message sets no per-message
+      // cvss, so it inherits CWE_MAPPING['CWE-327'] (7.5) via enrichFromCWE.
+      // Locked by security-cvss-docs-consistency.lock.test.ts.
+      cvss: 7.5,
     },
     messages: {
       dynamicAlgorithm: formatLLMMessage({
