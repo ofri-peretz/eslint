@@ -103,7 +103,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description: 'Detects eval(variable) which can allow an attacker to run arbitrary code',
       cwe: 'CWE-95',
-      cvss: 9.5,
+      cvss: 9.8,
       confidence: 'high',
     },
     messages: {

@@ -152,7 +152,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-missing-authentication.md',
       description: 'Detects missing authentication checks in route handlers',
       cwe: 'CWE-287',
-      cvss: 9.5,
+      cvss: 9.8,
     },
     hasSuggestions: true,
     messages: {

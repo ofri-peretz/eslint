@@ -29,7 +29,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-unsafe-dynamic-require.md',
       description: 'Prevent unsafe dynamic require() calls that could enable code injection',
       cwe: 'CWE-95',
-      cvss: 9.5,
+      cvss: 9.8,
     },
     hasSuggestions: false,
     messages: {

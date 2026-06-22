@@ -51,7 +51,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow eval(), Function(), and other code execution patterns',
       cwe: 'CWE-95',
-      cvss: 9.5,
+      cvss: 9.8,
     },
     hasSuggestions: true,
     messages: {

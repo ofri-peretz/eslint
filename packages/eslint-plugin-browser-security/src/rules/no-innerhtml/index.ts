@@ -76,7 +76,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow dangerous innerHTML/outerHTML assignments that can lead to XSS',
       cwe: 'CWE-79',
-      cvss: 9.5,
+      cvss: 6.1,
       confidence: 'medium',
     },
     hasSuggestions: true,
