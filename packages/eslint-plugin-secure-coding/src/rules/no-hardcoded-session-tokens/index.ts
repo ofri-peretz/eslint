@@ -26,7 +26,7 @@ export const noHardcodedSessionTokens = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-session-tokens.md',
       description: 'Detect hardcoded session/JWT tokens',
       cwe: 'CWE-798',
-      cvss: 9.5,
+      cvss: 9.8,
     },
     messages: {
       violationDetected: formatLLMMessage({

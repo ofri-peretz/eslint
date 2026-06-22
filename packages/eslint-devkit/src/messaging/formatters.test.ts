@@ -15,6 +15,7 @@ import {
   getSecurityBenchmarks,
   toSARIF,
 } from './formatters';
+import { CWE_MAPPING } from './constants';
 import type {
   LLMMessageOptions,
   EnterpriseMessageOptions,
@@ -767,5 +768,48 @@ describe('formatters', () => {
       const result = toSARIF(options);
       expect(result.level).toBe('none');
     });
+  });
+});
+
+/**
+ * Regression lock — the CVSS a security rule emits is sourced here, not in the
+ * rule. When a rule's message sets a `cwe` but no per-message `cvss`,
+ * `enrichFromCWE` fills it from `CWE_MAPPING[cwe].cvss`, and THAT is what the
+ * emitted lint finding (and every machine consumer) reads. A rule's
+ * `meta.docs.cvss` must therefore match this emitted value.
+ *
+ * CWE-798 is pinned to 9.8 because the published article
+ * hardcoded-secrets-ai-agents-autofix.md quotes `CVSS:9.8` as authoritative —
+ * lowering CWE_MAPPING would silently invalidate that article and every
+ * already-shipped finding. See eslint/CLAUDE.md → "Lock everything you fix."
+ */
+describe('CWE→CVSS enrichment contract (lock)', () => {
+  it('CWE-798 enriches to CVSS:9.8 (authoritative — do not lower)', () => {
+    expect(CWE_MAPPING['CWE-798'].cvss).toBe(9.8);
+    const result = formatLLMMessage({
+      icon: '🔒',
+      issueName: 'Hard-coded Credential',
+      cwe: 'CWE-798',
+      description: 'Hard-coded credential detected',
+      severity: 'CRITICAL',
+      fix: 'Use environment variable',
+      documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
+    });
+    expect(result).toContain('CVSS:9.8');
+  });
+
+  it('a per-message cvss overrides the CWE_MAPPING default', () => {
+    const result = formatLLMMessage({
+      icon: '🔒',
+      issueName: 'Hard-coded Credential',
+      cwe: 'CWE-798',
+      cvss: 7.5,
+      description: 'Hard-coded credential detected',
+      severity: 'HIGH',
+      fix: 'Use environment variable',
+      documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
+    });
+    expect(result).toContain('CVSS:7.5');
+    expect(result).not.toContain('CVSS:9.8');
   });
 });

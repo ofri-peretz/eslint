@@ -40,7 +40,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "20 4 * * 0"
+    - cron: "20 4 * * 2" # Tue 04:20 UTC — weekly (staggered off the Sunday burst)
 
 concurrency:
   group: ilb-bench-${{ github.ref }}

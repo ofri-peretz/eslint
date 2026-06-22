@@ -34,7 +34,7 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-cryptojs-weak-random.md',
       description: 'Disallow crypto-js WordArray.random() (CVE-2020-36732)',
       cwe: 'CWE-338',
-      cvss: 9.5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {
