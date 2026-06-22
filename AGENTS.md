@@ -297,7 +297,7 @@ it. Drop the label or mark the PR ready-for-review when you're confident.
 |------|------|---------|-----------|
 | `NPM_TOKEN`         | secret | First-publish fallback (existing packages use OIDC Trusted Publishers) | optional |
 | `CODECOV_TOKEN`     | secret | Coverage uploads (`codecov.yml`)                                       | optional |
-| `NVD_API_KEY`       | secret | CWE/CVE data sync (`cve-sync.yml`)                                     | optional |
+| `NVD_API_KEY`       | secret | CWE/CVE data sync (manual via CLI)                                     | optional |
 | `DEV_TO_API_KEY`    | secret | dev.to article sync (`docs-data.yml`)                                  | optional |
 | `RELEASE_BOT_PAT`   | secret | Self-approve Version PR so auto-merge can land it without manual click | optional |
 | `SCORECARD_REPO_TOKEN` | secret | Branch-protection check in OSSF Scorecard                           | optional |

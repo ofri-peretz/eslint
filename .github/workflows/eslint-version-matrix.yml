@@ -32,10 +32,11 @@ on:
       - 'scripts/ilb-*.ts'
       - '.github/workflows/eslint-version-matrix.yml'
   schedule:
-    # Downgraded from nightly to weekly Sunday — quota conservation. Drift
-    # still surfaces in time for the weekly engineering review, and any
-    # promoted PR runs the full matrix via the `run-full-ci` label gate.
-    - cron: '30 4 * * 0'
+    # Downgraded from nightly to weekly — quota conservation. Drift still
+    # surfaces in time for the weekly engineering review, and any promoted
+    # PR runs the full matrix via the `run-full-ci` label gate. Moved to
+    # Saturday to stagger off the Sunday-morning weekly-cron burst.
+    - cron: '30 4 * * 6' # Sat 04:30 UTC
   workflow_dispatch:
 
 concurrency:

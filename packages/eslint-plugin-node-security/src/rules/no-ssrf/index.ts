@@ -192,7 +192,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
       description:
         'Flags HTTP calls whose URL argument is an identifier with a user-input-sounding name — a heuristic prompt for code review, not a proof of SSRF',
       cwe: 'CWE-918',
-      cvss: 4.0,
+      cvss: 9.1,
     },
     messages: {
       ssrfVulnerability: formatLLMMessage({

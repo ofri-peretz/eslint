@@ -1240,6 +1240,12 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    },
+    "no-dynamic-algorithm-selection": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "crypto.createHash/Hmac/Cipher with dynamic first arg. Attacker controls algorithm = downgrade attack. Static literals are already checked by no-weak-hash-algorithm."
     }
   },
   "eslint-plugin-operability": {
