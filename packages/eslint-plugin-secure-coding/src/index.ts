@@ -122,7 +122,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-secure-coding',
-    version: '3.3.0',
+    version: '3.3.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
