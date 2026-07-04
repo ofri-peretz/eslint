@@ -176,7 +176,7 @@ All ESLint rules must meet these criteria before release:
 | Criterion          | Requirement                                |
 | ------------------ | ------------------------------------------ |
 | **Conceptual Fit** | Rule belongs in the correct plugin         |
-| **Test Coverage**  | ≥90% line coverage                         |
+| **Test Coverage**  | 100% target, ratchet-enforced (QUALITY_STANDARDS.md §2) |
 | **Performance**    | O(n) complexity, single-pass AST traversal |
 | **Documentation**  | Rule docs with examples, OWASP mapping     |
 

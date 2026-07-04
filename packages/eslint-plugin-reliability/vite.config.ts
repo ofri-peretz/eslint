@@ -14,8 +14,12 @@ export default defineConfig(() => ({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
+      enabled: true,
       reportsDirectory: '../../coverage/packages/eslint-plugin-reliability',
       provider: 'v8' as const,
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 82, statements: 80, functions: 96, branches: 72 },
     },
   },
 }));
