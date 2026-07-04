@@ -33,8 +33,13 @@ type RuleOptions = [Options?];
 /**
  * Check whether a comment line is inside an @example block.
  * We track this by scanning line-by-line for @example / next-tag boundaries.
+ *
+ * Exported for direct Layer-2 unit testing: a real parser terminates the
+ * enclosing block comment at the first star-slash sequence, so a comment
+ * value containing one can never reach this function through a
+ * normally-parsed file.
  */
-function findTerminatorsInExamples(commentText: string): number[] {
+export function findTerminatorsInExamples(commentText: string): number[] {
   const lines = commentText.split('\n');
   let inExample = false;
   const offsets: number[] = [];

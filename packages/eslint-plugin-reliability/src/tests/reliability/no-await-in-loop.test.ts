@@ -131,4 +131,41 @@ describe('no-await-in-loop', () => {
       ],
     });
   });
+  describe('Loop Variants and Operation Analysis', () => {
+    ruleTester.run('loop-type and callee-shape coverage', noAwaitInLoop, {
+      valid: [],
+      invalid: [
+        // for-in loop with await
+        {
+          code: 'async function f(obj) { for (const k in obj) { await handle(k); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        // Member-expression callee — operation name comes from the property
+        {
+          code: 'async function f(xs) { for (const x of xs) { await api.fetch(x); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        // Computed member callee — property is not an Identifier
+        {
+          code: 'async function f(xs) { for (const x of xs) { await api["get"](x); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        // Callee is itself a call — neither Identifier nor MemberExpression
+        {
+          code: 'async function f(xs) { for (const x of xs) { await (pick())(x); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        // push side effect forces the sequential suggestion path
+        {
+          code: 'async function f(xs) { const out = []; for (const x of xs) { out.push(x); await save(x); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+        // Sparse array literal → null entries in AST child arrays
+        {
+          code: 'async function f(xs) { for (const x of xs) { const pair = [, x]; await g(pair); } }',
+          errors: [{ messageId: 'awaitInLoop' }],
+        },
+      ],
+    });
+  });
 });
