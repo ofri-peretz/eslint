@@ -202,6 +202,22 @@ async function headStatus(url: string) {
 }
 
 /**
+ * Exit-code policy for the sync run.
+ *
+ * Only hard-fail when a tweet could not be fetched at all AND has no
+ * cached fallback (`failedWithoutFallback`) — that's the case that
+ * renders "Tweet not found" in production. An unreachable card *image*
+ * on an already-cached tweet is advisory: Twitter deletes/rotates
+ * `pbs.twimg.com/card_img/*` assets upstream and no amount of
+ * re-running the build can bring them back, so failing the build just
+ * wedges every deploy behind an upstream 404 we cannot fix
+ * (regression: 2026-07-04, tweet 2006790779537121585).
+ */
+function shouldFailSync(failedWithoutFallback: number, _unreachableCardImages: number) {
+  return failedWithoutFallback > 0;
+}
+
+/**
  * Main sync function
  */
 async function main() {
@@ -235,6 +251,7 @@ async function main() {
   let fetched = 0;
   let cached = 0;
   let failed = 0;
+  let failedWithoutFallback = 0;
   
   for (const id of Array.from(allTweetIds)) {
     // Check if we can use cached version
@@ -268,19 +285,23 @@ async function main() {
       } else {
         console.error(`  ✗ ${id}: Tweet not found (deleted or private?)`);
         failed++;
-        
+
         // Keep old cached version if available
         if (cache.tweets[id]) {
           console.log(`     ↳ Keeping stale cache as fallback`);
+        } else {
+          failedWithoutFallback++;
         }
       }
     } catch (error) {
       console.error(`  ✗ ${id}: API error - ${(error as Error).message}`);
       failed++;
-      
+
       // Keep old cached version if available
       if (cache.tweets[id]) {
         console.log(`     ↳ Keeping stale cache as fallback`);
+      } else {
+        failedWithoutFallback++;
       }
     }
     
@@ -293,10 +314,12 @@ async function main() {
 
   // Verify every cached preview image URL is live. Twitter rotates
   // `pbs.twimg.com/card_img/*` IDs faster than our 7-day TTL, so a "fresh"
-  // cache can still hold a 404 URL. Fail loudly so the issue surfaces
-  // pre-deploy instead of after prod renders an empty card. The lock test
-  // catches the structural case (URL missing from JSON) at PR time;
-  // this HEAD check catches the dynamic case (URL present but 404).
+  // cache can still hold a 404 URL. This check is ADVISORY: when Twitter
+  // deletes a card image upstream, re-running the build can never fix it,
+  // so a hard failure here just wedges every deploy (2026-07-04). We warn
+  // loudly and keep the stale entry — the card renders text-only until a
+  // human swaps the embed. The lock test still catches the structural
+  // case (URL missing from JSON) at PR time.
   console.log(`\n🔎 Verifying cached preview image URLs are live…`);
   let unreachable = 0;
   for (const [id, t] of Object.entries(cache.tweets)) {
@@ -309,7 +332,8 @@ async function main() {
     if (status >= 200 && status < 300) {
       console.log(`  ✓ ${id}: card image OK (${status})`);
     } else {
-      console.error(`  ✗ ${id}: card image unreachable (HTTP ${status}) — ${url}`);
+      console.warn(`  ⚠ ${id}: card image unreachable (HTTP ${status}) — ${url}`);
+      console.warn(`     ↳ Keeping stale cache entry; the card renders without a preview image until the embed is replaced.`);
       unreachable++;
     }
   }
@@ -320,14 +344,16 @@ async function main() {
   console.log(`   Failed: ${failed}`);
   console.log(`   Unreachable card images: ${unreachable}`);
 
-  if (failed > 0 || unreachable > 0) {
-    if (failed > 0) {
-      console.log(`\n⚠️  ${failed} tweet(s) could not be fetched.`);
-    }
-    if (unreachable > 0) {
-      console.log(`\n⚠️  ${unreachable} cached card image URL(s) returned non-2xx.`);
-      console.log(`   Re-run with --force; if the failure repeats, the tweet's preview image was removed upstream.`);
-    }
+  if (failed > 0) {
+    console.log(`\n⚠️  ${failed} tweet(s) could not be fetched.`);
+  }
+  if (unreachable > 0) {
+    console.log(`\n⚠️  ${unreachable} cached card image URL(s) returned non-2xx (upstream deleted/rotated).`);
+    console.log(`   Advisory only — the build proceeds with the stale cache entry.`);
+  }
+
+  if (shouldFailSync(failedWithoutFallback, unreachable)) {
+    console.error(`\n❌ ${failedWithoutFallback} tweet(s) failed to fetch with NO cached fallback — these would render "Tweet not found" in production.`);
     process.exit(1);
   }
 }
@@ -340,4 +366,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { extractTweetIds, loadCache, saveCache, getCardImageUrl, mergePreservedCardImages };
+export { extractTweetIds, loadCache, saveCache, getCardImageUrl, mergePreservedCardImages, shouldFailSync };
