@@ -37,7 +37,11 @@ export default defineConfig({
     // Use vmThreads for better performance
     pool: 'vmThreads',
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 96, statements: 95, functions: 98, branches: 90 },
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
@@ -51,12 +55,6 @@ export default defineConfig({
         functions: [80, 90],
         statements: [80, 90],
       },
-      thresholds: {
-        lines: 80,
-        branches: 70,
-        functions: 80,
-        statements: 80
-      }
     },
     reporters: ['default', 'junit'],
     outputFile: {
