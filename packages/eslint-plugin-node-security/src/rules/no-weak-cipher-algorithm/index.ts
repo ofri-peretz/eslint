@@ -119,7 +119,7 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-cipher-algorithm.md',
       description: 'Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish)',
       cwe: 'CWE-327',
-      cvss: 9.5,
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

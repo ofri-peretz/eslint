@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-features",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "ESLint React rules for modern react features, hooks, and patterns.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -70,7 +70,7 @@
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   },

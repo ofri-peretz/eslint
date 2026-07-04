@@ -444,6 +444,14 @@ describe('HeroSection: Structure Lock', () => {
       // Negative lock — the previous value must not return.
       expect(heroSource).not.toMatch(/<p[^>]*\bmb-10\b[^>]*>/);
     });
+
+    it('tagline uses `max-w-3xl` (NOT `max-w-2xl`) — wide daylight sky regressed the narrow version', () => {
+      // The daylight surface (added in #118) made max-w-2xl look pinched
+      // against the open sky. max-w-3xl (48rem) reads proportional on both
+      // the light sky and the dark cosmic background.
+      expect(heroSource).toMatch(/<p[^>]*\bmax-w-3xl\b[^>]*>/);
+      expect(heroSource).not.toMatch(/<p[^>]*\bmax-w-2xl\b[^>]*>/);
+    });
   });
 });
 

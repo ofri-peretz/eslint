@@ -28,7 +28,7 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/detect-mixed-content.md',
       description: 'Detect HTTP resources in HTTPS pages',
       cwe: 'CWE-311',
-      cvss: 5,
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

@@ -38,7 +38,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       description:
         'Require expiration claim (exp) or expiresIn option in JWT signing',
       cwe: 'CWE-613',
-      cvss: 5,
+      cvss: 5.4,
     },
     fixable: undefined,
     hasSuggestions: false,

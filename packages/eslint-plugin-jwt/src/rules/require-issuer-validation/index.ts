@@ -30,7 +30,7 @@ export const requireIssuerValidation = createRule<RuleOptions, MessageIds>({
       description:
         'Require issuer (iss) claim validation in JWT verify operations',
       cwe: 'CWE-287',
-      cvss: 5,
+      cvss: 9.8,
     },
     fixable: undefined,
     hasSuggestions: false,

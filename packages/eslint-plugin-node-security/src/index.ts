@@ -16,6 +16,7 @@ import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
 import { noShellInjection } from './rules/no-shell-injection';
+import { noDynamicAlgorithmSelection } from './rules/no-dynamic-algorithm-selection';
 
 // Migrated rules from secure-coding
 import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
@@ -61,6 +62,7 @@ export const rules: Record<
   'no-data-in-temp-storage': noDataInTempStorage,
   'no-ssrf': noSsrf,
   'no-shell-injection': noShellInjection,
+  'no-dynamic-algorithm-selection': noDynamicAlgorithmSelection,
 
   // Migrated rules
   'detect-suspicious-dependencies': detectSuspiciousDependencies,
@@ -92,7 +94,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.2.0',
+    version: '4.3.0',
   },
   rules,
 };
@@ -119,6 +121,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-data-in-temp-storage': 'error',
   'node-security/no-ssrf': 'warn',
   'node-security/no-shell-injection': 'error',
+  'node-security/no-dynamic-algorithm-selection': 'error',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',

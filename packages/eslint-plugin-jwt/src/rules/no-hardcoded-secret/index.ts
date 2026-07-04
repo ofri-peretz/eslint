@@ -38,7 +38,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow hardcoded secrets in JWT sign/verify operations',
       cwe: 'CWE-798',
-      cvss: 7.5,
+      cvss: 9.8,
     },
     fixable: undefined,
     hasSuggestions: false,

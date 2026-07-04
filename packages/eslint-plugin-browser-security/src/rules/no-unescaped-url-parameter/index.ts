@@ -124,7 +124,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unescaped-url-parameter.md',
       description: 'Detects unescaped URL parameters',
       cwe: 'CWE-79',
-      cvss: 7.5,
+      cvss: 6.1,
     },
     hasSuggestions: true,
     messages: {
