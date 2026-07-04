@@ -25,7 +25,15 @@ const DEVTO_URL = 'https://dev.to/ofri-peretz';
 
 export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string }) {
   return (
-    <aside className="mt-10 rounded-lg border border-fd-border bg-fd-muted/30 p-5">
+    // A labeled <section> (role=region), not <aside>: this callout renders
+    // inside the page's <main> landmark, and axe's strict
+    // `landmark-complementary-is-top-level` rule (correctly) requires
+    // complementary landmarks to be top-level. A named region is valid nested
+    // and keeps the callout discoverable in the AT landmark list.
+    <section
+      aria-label="Support this project"
+      className="mt-10 rounded-lg border border-fd-border bg-fd-muted/30 p-5"
+    >
       <p className="text-sm text-fd-muted-foreground">
         <strong className="font-semibold text-fd-foreground">
           Did this rule catch something?
@@ -69,7 +77,7 @@ export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string })
           Star on GitHub
         </Button>
       </div>
-    </aside>
+    </section>
   );
 }
 
