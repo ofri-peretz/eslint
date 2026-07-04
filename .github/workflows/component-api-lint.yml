@@ -20,6 +20,12 @@ on:
     paths:
       - 'packages/ui/**/*.tsx'
       - 'packages/eslint-plugin-react-features/**'
+      # The lint step resolves plugins through the root flat config and
+      # the @interlace/eslint-config preset — a bad edit to either can
+      # crash every lint run (e.g. the duplicate react-features plugin
+      # registration, 2026-07-04), so config changes must run this gate.
+      - 'eslint.config.mjs'
+      - 'packages/eslint-config-interlace/**'
       - '.github/workflows/component-api-lint.yml'
   push:
     branches: [main]

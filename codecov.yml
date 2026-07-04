@@ -8,12 +8,10 @@ coverage:
   status:
     project:
       default:
-        target: auto
-        threshold: 5%
+        target: 100%
     patch:
       default:
-        target: auto
-        threshold: 5%
+        target: 100%
 
 comment:
   layout: 'header, diff, flags, components'
@@ -35,7 +33,7 @@ component_management:
   default_rules:
     statuses:
       - type: project
-        target: auto
+        target: 100%
         branches:
           - '!main'
   individual_components:
@@ -48,9 +46,9 @@ component_management:
         - packages/eslint-plugin-secure-coding/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-crypto
       name: 'eslint-plugin-crypto'
@@ -58,9 +56,9 @@ component_management:
         - packages/eslint-plugin-crypto/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-jwt
       name: 'eslint-plugin-jwt'
@@ -68,9 +66,9 @@ component_management:
         - packages/eslint-plugin-jwt/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-pg
       name: 'eslint-plugin-pg'
@@ -78,9 +76,9 @@ component_management:
         - packages/eslint-plugin-pg/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
         - type: patch
-          target: 75%
+          target: 100%
 
     - component_id: eslint-plugin-mongodb-security
       name: 'eslint-plugin-mongodb-security'
@@ -88,9 +86,9 @@ component_management:
         - packages/eslint-plugin-mongodb-security/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-node-security
       name: 'eslint-plugin-node-security'
@@ -98,9 +96,9 @@ component_management:
         - packages/eslint-plugin-node-security/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
@@ -111,7 +109,7 @@ component_management:
         - packages/eslint-plugin-express-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-nestjs-security
       name: 'eslint-plugin-nestjs-security'
@@ -119,7 +117,7 @@ component_management:
         - packages/eslint-plugin-nestjs-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-lambda-security
       name: 'eslint-plugin-lambda-security'
@@ -127,7 +125,7 @@ component_management:
         - packages/eslint-plugin-lambda-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-browser-security
       name: 'eslint-plugin-browser-security'
@@ -135,7 +133,7 @@ component_management:
         - packages/eslint-plugin-browser-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # AI Security Plugins
@@ -146,7 +144,7 @@ component_management:
         - packages/eslint-plugin-vercel-ai-security/**
       statuses:
         - type: project
-          target: 90%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Governance & Quality Plugins
@@ -157,7 +155,7 @@ component_management:
         - packages/eslint-plugin-conventions/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-maintainability
       name: 'eslint-plugin-maintainability'
@@ -165,7 +163,7 @@ component_management:
         - packages/eslint-plugin-maintainability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-modernization
       name: 'eslint-plugin-modernization'
@@ -173,7 +171,7 @@ component_management:
         - packages/eslint-plugin-modernization/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-modularity
       name: 'eslint-plugin-modularity'
@@ -181,7 +179,7 @@ component_management:
         - packages/eslint-plugin-modularity/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-operability
       name: 'eslint-plugin-operability'
@@ -189,7 +187,7 @@ component_management:
         - packages/eslint-plugin-operability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-reliability
       name: 'eslint-plugin-reliability'
@@ -197,7 +195,7 @@ component_management:
         - packages/eslint-plugin-reliability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Core Packages
@@ -208,7 +206,7 @@ component_management:
         - packages/eslint-devkit/**
       statuses:
         - type: project
-          target: 70%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Utility & Feature Plugins
@@ -219,7 +217,7 @@ component_management:
         - packages/eslint-plugin-import-next/**
       statuses:
         - type: project
-          target: 75%
+          target: 100%
 
     - component_id: eslint-plugin-react-features
       name: 'eslint-plugin-react-features'

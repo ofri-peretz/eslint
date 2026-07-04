@@ -7,7 +7,11 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 91, statements: 88, functions: 94, branches: 78 },
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],

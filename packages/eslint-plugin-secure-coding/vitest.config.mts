@@ -39,7 +39,11 @@ export default defineConfig({
     // pool: 'forks',
     pool: 'vmThreads',
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 89, statements: 88, functions: 97, branches: 78 },
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
@@ -47,12 +51,6 @@ export default defineConfig({
       ignoreClassMethods: ['context.report'],
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],
-      thresholds: {
-        lines: 80,
-        branches: 70,
-        functions: 80,
-        statements: 80
-      }
     },
     reporters: ['default', 'verbose'],
     // outputFile: {

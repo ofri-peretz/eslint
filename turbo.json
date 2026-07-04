@@ -35,6 +35,7 @@
         "tsconfig.spec.json",
         "vitest.config.mts",
         "vitest.config.ts",
+        "vite.config.ts",
         "package.json"
       ],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
@@ -48,6 +49,7 @@
         "tsconfig.spec.json",
         "vitest.config.mts",
         "vitest.config.ts",
+        "vite.config.ts",
         "package.json"
       ],
       "outputs": ["coverage/**"]
