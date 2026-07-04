@@ -348,9 +348,3 @@ export function clearResolverCache() {
   oxcResolverCache.clear();
   tsconfigPathCache.clear();
 }
-// Lines 322-324: Defensive error handling for truly exceptional cases
-// These lines handle unexpected exceptions from resolution logic that are:
-// 1. Difficult to reproduce in tests (would require mocking library functions to throw)
-// 2. Represent proper defensive programming practices
-// 3. Ensure the resolver never crashes with unhandled exceptions
-// Coverage: Intentionally uncovered as these are edge case error paths

@@ -47,7 +47,15 @@ export default defineConfig({
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      // Benchmarks are excluded like tests: they run under `vitest bench`,
+      // not `vitest run`, so the unit suite can never exercise them.
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.test.ts',
+        '**/*.bench.ts',
+        '**/__benchmarks__/**',
+      ],
       // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
       clean: true,
     },

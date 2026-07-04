@@ -95,6 +95,20 @@ export function detectResolvers(
 }
 
 /**
+ * Comparator for resolver priority ordering. Known resolver names sort by
+ * their position in the priority list; unknown names sort last (999).
+ *
+ * Extracted from `generateRecommendedConfig` so the unknown-name fallback is
+ * directly unit-testable (detectResolvers only ever emits known names).
+ */
+export function compareResolverPriority(aName: string, bName: string): number {
+  const priorityOrder = ['typescript', 'webpack', 'vite', 'rollup', 'css'];
+  const aIndex = priorityOrder.indexOf(aName);
+  const bIndex = priorityOrder.indexOf(bName);
+  return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+}
+
+/**
  * Generate recommended ESLint resolver configuration
  */
 export function generateRecommendedConfig(workspaceRoot: string): {
@@ -118,12 +132,9 @@ export function generateRecommendedConfig(workspaceRoot: string): {
 
   // Prioritize resolvers
   // oxlint-disable-next-line no-array-sort
-  const prioritized = availableResolvers.sort((a, b) => {
-    const priorityOrder = ['typescript', 'webpack', 'vite', 'rollup', 'css'];
-    const aIndex = priorityOrder.indexOf(a.name);
-    const bIndex = priorityOrder.indexOf(b.name);
-    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-  });
+  const prioritized = availableResolvers.sort((a, b) =>
+    compareResolverPriority(a.name, b.name),
+  );
 
   // Create prioritized resolver configuration
   const resolverConfig: Record<string, unknown> = {};

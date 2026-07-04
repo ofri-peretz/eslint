@@ -393,47 +393,11 @@ export function hasSafeAnnotation(
     current = current.parent as TSESTree.Node | undefined;
   }
 
-  // Find the containing function/method and check its JSDoc comments
-  current = node;
-  while (current) {
-    if (
-      current.type === 'FunctionDeclaration' ||
-      current.type === 'FunctionExpression' ||
-      current.type === 'ArrowFunctionExpression' ||
-      current.type === 'MethodDefinition'
-    ) {
-      // Check for JSDoc comments
-      const comments = sourceCode.getCommentsBefore(current);
-      for (const comment of comments) {
-        if (comment.type === 'Block' && comment.value.startsWith('*')) {
-          // JSDoc comment
-          const commentText = comment.value.toLowerCase();
-          if (
-            allAnnotations.some((ann) =>
-              commentText.includes(ann.toLowerCase()),
-            )
-          ) {
-            return true;
-          }
-        }
-      }
-
-      // Also check inline comments
-      const leadingComments = sourceCode.getCommentsBefore(current);
-      for (const comment of leadingComments) {
-        const commentText = comment.value.toLowerCase();
-        if (
-          allAnnotations.some((ann) => commentText.includes(ann.toLowerCase()))
-        ) {
-          return true;
-        }
-      }
-      break; // Only check the innermost function
-    }
-
-    current = current.parent as TSESTree.Node | undefined;
-  }
-
+  // NOTE: a second pass that re-checked the innermost function's JSDoc was
+  // removed as provably redundant: the walk above already inspects the
+  // comments before every ancestor on the same parent chain — including the
+  // containing function/method — before breaking at the function boundary,
+  // and with the same annotation predicate.
   return false;
 }
 
@@ -777,12 +741,10 @@ export type SafetyChecker = ReturnType<typeof createSafetyChecker>;
  * 
  * ```typescript
  * // Instead of this (3-5 lines each, 75+ occurrences):
- * /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester *\/
  * if (safetyChecker.isSafe(node, context)) {
  *   return;
  * }
- * /* c8 ignore stop *\/
- * 
+ *
  * // Use this (1 line):
  * if (shouldSkipForSafety(safetyChecker, node, context)) return;
  * ```
@@ -799,7 +761,6 @@ export type SafetyChecker = ReturnType<typeof createSafetyChecker>;
  * }
  * ```
  */
-/* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
 export function shouldSkipForSafety(
   safetyChecker: SafetyChecker,
   node: TSESTree.Node,
@@ -807,7 +768,6 @@ export function shouldSkipForSafety(
 ): boolean {
   return safetyChecker.isSafe(node, context);
 }
-/* c8 ignore stop */
 
 // ============================================================================
 // AST TRAVERSAL UTILITIES
