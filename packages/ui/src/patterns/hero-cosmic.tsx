@@ -183,7 +183,7 @@ export function HeroCosmic({
           </h1>
 
           {tagline ? (
-            <p className="mx-auto mb-16 max-w-2xl text-lg leading-relaxed text-slate-700 drop-shadow dark:text-purple-100/90 md:text-xl">
+            <p className="mx-auto mb-16 max-w-3xl text-lg leading-relaxed text-slate-700 drop-shadow dark:text-purple-100/90 md:text-xl">
               {tagline}
             </p>
           ) : null}
