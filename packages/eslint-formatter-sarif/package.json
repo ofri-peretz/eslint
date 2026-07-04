@@ -22,5 +22,9 @@
   ],
   "peerDependencies": {
     "eslint": ">=8.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   }
 }

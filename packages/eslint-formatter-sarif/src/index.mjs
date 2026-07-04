@@ -25,7 +25,7 @@ import fs from 'node:fs';
 const SARIF_SCHEMA_URI = 'https://json.schemastore.org/sarif-2.1.0.json';
 const SARIF_VERSION = '2.1.0';
 
-function readPackageVersion() {
+export function readPackageVersion() {
   try {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const pkg = JSON.parse(fs.readFileSync(path.join(here, '..', 'package.json'), 'utf8'));
@@ -41,7 +41,7 @@ const FORMATTER_VERSION = readPackageVersion();
  * Map ESLint severity (1 warn / 2 error) to SARIF level.
  * SARIF levels: none | note | warning | error.
  */
-function severityToSarifLevel(severity) {
+export function severityToSarifLevel(severity) {
   if (severity === 2) return 'error';
   if (severity === 1) return 'warning';
   return 'none';
@@ -52,7 +52,7 @@ function severityToSarifLevel(severity) {
  * Includes Interlace-specific fields (cwe, cvss, asvs, ssdf, capec) under
  * the `properties` bag so downstream tooling can pivot on them.
  */
-function ruleToReportingDescriptor(ruleId, meta = {}) {
+export function ruleToReportingDescriptor(ruleId, meta = {}) {
   const docs = meta.docs ?? {};
   const properties = {};
 
@@ -92,7 +92,7 @@ function ruleToReportingDescriptor(ruleId, meta = {}) {
 /**
  * Build a SARIF `result` object from a single ESLint message.
  */
-function messageToSarifResult(message, filePath) {
+export function messageToSarifResult(message, filePath) {
   if (!message.ruleId) {
     // Parse errors and other non-rule diagnostics — emit as toolExecutionNotifications instead
     return null;
@@ -142,7 +142,7 @@ function messageToSarifResult(message, filePath) {
   return result;
 }
 
-function pathToFileUri(p) {
+export function pathToFileUri(p) {
   if (!p) return '';
   // Prefer relative paths; SARIF consumers (GHAS) expect uriBaseId-relative URIs.
   const cwd = process.cwd();
@@ -153,7 +153,7 @@ function pathToFileUri(p) {
   return p.split(path.sep).join('/');
 }
 
-function buildToolExecutionNotifications(results) {
+export function buildToolExecutionNotifications(results) {
   const notifications = [];
   for (const r of results) {
     for (const m of r.messages ?? []) {
