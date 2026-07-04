@@ -76,7 +76,8 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
-            INTERACTIVE_HANDLERS.has(attr.name?.name ?? '')
+            // `attr.name` is always present on a JSXAttribute — no fallback needed.
+            INTERACTIVE_HANDLERS.has(attr.name.name)
         );
 
         if (!hasInteractiveHandler) return;

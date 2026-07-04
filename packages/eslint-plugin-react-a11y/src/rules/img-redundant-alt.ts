@@ -61,7 +61,9 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
       components = DEFAULT_COMPONENTS,
       words = DEFAULT_REDUNDANT_WORDS,
     } = options ?? ({} as Options);
-    const redundantWords: string[] = (words ?? DEFAULT_REDUNDANT_WORDS).map((word: string) => word.toLowerCase());
+    // `words` always has a value here: the destructuring default above already
+    // falls back to DEFAULT_REDUNDANT_WORDS when options omit it.
+    const redundantWords: string[] = words.map((word: string) => word.toLowerCase());
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {

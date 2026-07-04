@@ -59,7 +59,7 @@ function isInteractiveRole(role: string, allowedRoles: string[]): boolean {
  * Check if tabindex value is allowed on non-interactive elements
  * Only tabindex="-1" is allowed on non-interactive elements
  */
-function isAllowedTabindex(tabindex: string | number): boolean {
+export function isAllowedTabindex(tabindex: string | number): boolean {
   const numValue = typeof tabindex === 'string' ? parseInt(tabindex, 10) : tabindex;
   return numValue === -1;
 }
@@ -67,7 +67,7 @@ function isAllowedTabindex(tabindex: string | number): boolean {
 /**
  * Check if role attribute is a literal string
  */
-function isLiteralRole(roleAttr: TSESTree.JSXAttribute | undefined, allowExpressionValues: boolean): boolean {
+export function isLiteralRole(roleAttr: TSESTree.JSXAttribute | undefined, allowExpressionValues: boolean): boolean {
   if (!roleAttr || !roleAttr.value) return false;
 
   // If expressions are not allowed, only literal strings are valid
@@ -83,7 +83,7 @@ function isLiteralRole(roleAttr: TSESTree.JSXAttribute | undefined, allowExpress
 /**
  * Get role value from attribute
  */
-function getRoleValue(roleAttr: TSESTree.JSXAttribute | undefined): string | null {
+export function getRoleValue(roleAttr: TSESTree.JSXAttribute | undefined): string | null {
   if (!roleAttr || !roleAttr.value) return null;
 
   if (roleAttr.value.type === 'Literal' && typeof roleAttr.value.value === 'string') {
