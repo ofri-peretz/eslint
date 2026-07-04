@@ -54,7 +54,7 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       # Composite setup: node from .nvmrc + cached node_modules + cached
       # Turbo + cached Next.js / Storybook build artifacts. Skips `npm ci`
