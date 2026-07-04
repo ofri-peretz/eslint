@@ -92,9 +92,7 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
     /**
      * Check if expression is a data source call
      */
-    function isDataSourceCall(node: TSESTree.Node): string | null {
-      if (node.type !== 'CallExpression') return null;
-      
+    function isDataSourceCall(node: TSESTree.CallExpression): string | null {
       const callee = sourceCode.getText(node.callee);
       for (const pattern of dataSourcePatterns) {
         if (callee.toLowerCase().includes(pattern.toLowerCase())) {
@@ -107,9 +105,7 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
     /**
      * Check if expression is wrapped in a filter function
      */
-    function isFilteredCall(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression') return false;
-      
+    function isFilteredCall(node: TSESTree.CallExpression): boolean {
       const callee = sourceCode.getText(node.callee);
       return filterFunctions.some((filter: string) => 
         callee.toLowerCase().includes(filter.toLowerCase())

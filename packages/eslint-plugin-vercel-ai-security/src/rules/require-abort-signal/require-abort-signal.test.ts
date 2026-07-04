@@ -82,3 +82,26 @@ ruleTester.run('require-abort-signal', requireAbortSignal, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: argument shapes and key shapes
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-abort-signal (coverage gaps)', requireAbortSignal, {
+  valid: [
+    // no arguments — nothing to check
+    { code: `streamText();` },
+    // non-object first argument — nothing to check
+    { code: `streamText(cfg);` },
+    // spread property skipped, real abortSignal still found
+    { code: `streamText({ ...opts, abortSignal: controller.signal });` },
+    // string-literal 'signal' key resolves via String(key.value)
+    { code: `streamText({ 'signal': controller.signal, prompt: 'x' });` },
+  ],
+  invalid: [
+    // computed key resolves to null — abortSignal not found
+    {
+      code: `streamText({ [getKey()]: controller.signal, prompt: 'x' });`,
+      errors: [{ messageId: 'missingAbortSignal' }],
+    },
+  ],
+});

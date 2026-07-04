@@ -18,6 +18,7 @@ export default defineConfig({
     watch: false,
     include: [
       'src/**/*.test.ts',
+      'src/**/*.spec.ts',
     ],
     // Setting `exclude` replaces vitest's defaults — spread them back in and
     // add build-artifact dirs so stale outputs can never shadow real tests.
@@ -45,7 +46,7 @@ export default defineConfig({
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      exclude: ['node_modules/', 'dist/', '**/*.test.ts', '**/*.spec.ts'],
       ignoreClassMethods: ['context.report'],
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],

@@ -207,3 +207,28 @@ ruleTester.run('no-sensitive-in-prompt', noSensitiveInPrompt, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: key shapes, member/binary edge branches
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-sensitive-in-prompt (coverage gaps)', noSensitiveInPrompt, {
+  valid: [
+    // spread-only options object
+    { code: `generateText({ ...opts });` },
+    // string-literal key is skipped (keyName resolves to null)
+    { code: `generateText({ 'prompt': password });` },
+    // computed member access — property is not an Identifier
+    { code: `generateText({ prompt: user['password'] });` },
+    // member access to a non-sensitive property
+    { code: `generateText({ prompt: user.displayName });` },
+    // concatenation of two non-sensitive operands
+    { code: `generateText({ prompt: 'a' + 'b' });` },
+  ],
+  invalid: [
+    // sensitive value on the right side of concatenation
+    {
+      code: `generateText({ prompt: 'user data: ' + password });`,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+  ],
+});

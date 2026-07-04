@@ -114,9 +114,7 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
     /**
      * Check if expression is wrapped in validation
      */
-    function isValidated(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression') return false;
-      
+    function isValidated(node: TSESTree.CallExpression): boolean {
       const callee = sourceCode.getText(node.callee);
       return validatorFunctions.some((fn: string) => 
         callee.toLowerCase().includes(fn.toLowerCase())

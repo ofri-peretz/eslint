@@ -111,3 +111,26 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: argument shapes and key shapes
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
+  valid: [
+    // no arguments — nothing to check
+    { code: `generateText();` },
+    // non-object first argument — nothing to check
+    { code: `generateText(cfg);` },
+    // string-literal 'max_tokens' key resolves via String(key.value)
+    { code: `generateText({ 'max_tokens': 100, prompt: 'x' });` },
+    // spread property skipped, real maxTokens still found
+    { code: `generateText({ ...opts, maxTokens: 100 });` },
+  ],
+  invalid: [
+    // computed key resolves to null — maxTokens not found
+    {
+      code: `generateText({ [getKey()]: 100, prompt: 'x' });`,
+      errors: [{ messageId: 'missingMaxTokens' }],
+    },
+  ],
+});
