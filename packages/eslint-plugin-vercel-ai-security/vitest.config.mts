@@ -40,8 +40,8 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
-      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
-      thresholds: { lines: 90, statements: 85, functions: 83, branches: 81 },
+      // Pinned at the 100% policy target — this branch is the integration target for the test wave.
+      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
