@@ -59,6 +59,10 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       // explain the eslint-plugin-crypto → node-security consolidation.
       /^\.changeset\/node-security-no-math-random-crypto\.md$/,
       'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
+      // PRE_PUBLISH_INTEGRITY_GATE.md documents that eslint-plugin-crypto is
+      // out of scope for the dist-integrity gate (no local package.json —
+      // a build-artifact-only dir), mirroring this test's own exclusion.
+      'docs/PRE_PUBLISH_INTEGRITY_GATE.md',
     ],
   },
 ];
