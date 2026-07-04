@@ -20,7 +20,11 @@ export default defineConfig({
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 92, statements: 87, functions: 95, branches: 81 },
       reporter: ['json', 'text', 'lcov'],
       reportOnFailure: true,
       reportsDirectory: './coverage',

@@ -21,7 +21,11 @@ export default defineConfig({
     testTimeout: 30000, // Increase timeout for tests that require file system resolution
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
+      thresholds: { lines: 88, statements: 86, functions: 94, branches: 78 },
       reporter: ['json', 'text', 'lcov'],
       reportOnFailure: true,
       reportsDirectory: './coverage',
