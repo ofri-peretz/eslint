@@ -54,6 +54,19 @@ interface DuplicationGroup {
   commonPattern: string;
 }
 
+/**
+ * Build the generic extracted-function name suggested for a duplication group.
+ * Shared by the unified-function template and the report data so the two can
+ * never drift apart.
+ */
+export function buildGenericName(firstFunctionName: string): string {
+  const baseName = firstFunctionName.replace(
+    /^(handle|process|get|set|create|update|delete)/,
+    '',
+  );
+  return `handle${baseName || 'Generic'}`;
+}
+
 export const identicalFunctions = createRule<RuleOptions, MessageIds>({
   name: 'identical-functions',
   meta: {
@@ -136,12 +149,11 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
     const {
       minLines = 3,
       similarityThreshold = 0.9,
       ignoreTestFiles = true,
-    }: Options = options || {};
+    }: Options = context.options[0] || {};
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -181,10 +193,9 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     function calculateSimilarity(str1: string, str2: string): number {
       if (str1 === str2) return 1.0;
 
+      // str1 !== str2 here, so the longer string is never empty.
       const longer = str1.length > str2.length ? str1 : str2;
       const shorter = str1.length > str2.length ? str2 : str1;
-
-      if (longer.length === 0) return 1.0;
 
       const editDistance = levenshteinDistance(longer, shorter);
       return (longer.length - editDistance) / longer.length;
@@ -275,35 +286,6 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Generate unified function suggestion
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    function generateUnifiedFunction(group: DuplicationGroup): string {
-      const firstFunc = group.functions[0];
-
-      // Analyze parameter differences
-      const allParams = new Set<string>();
-      group.functions.forEach((func) =>
-        func.params.forEach((p) => allParams.add(p)),
-      );
-
-      // Generate generic function name
-      const baseName = firstFunc.name.replace(
-        /^(handle|process|get|set|create|update|delete)/,
-        '',
-      );
-      const genericName = `handle${baseName || 'Generic'}`;
-
-      // If functions differ only in constant values, extract as parameter
-      const paramList = Array.from(allParams);
-      if (paramList.length > firstFunc.params.length) {
-        paramList.push('options');
-      }
-
-      return `function ${genericName}(${paramList.join(', ')}) {\n  ${firstFunc.body.trim()}\n}`;
-    }
-
-    /**
      * Suggest refactoring approach
      */
     // oxlint-disable-next-line consistent-function-scoping
@@ -383,7 +365,6 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
 
       groups.forEach((group) => {
         const refactoringApproach = suggestRefactoringApproach(group);
-        const unifiedFunction = generateUnifiedFunction(group);
 
         const primaryFunction = group.functions[0];
         const similarityPercent = Math.round(group.similarityScore * 100);
@@ -401,9 +382,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
             {
               messageId: 'extractGeneric' as const,
               data: {
-                functionName:
-                  unifiedFunction.match(/function (\w+)/)?.[1] ||
-                  'handleGeneric',
+                functionName: buildGenericName(primaryFunction.name),
               },
               fix: () => null,
             },
