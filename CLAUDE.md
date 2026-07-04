@@ -62,8 +62,12 @@ making concurrent changes.
   referenced in source.
 - **Tweet cache HEAD-check** — `scripts/sync-tweet-cache.ts` HEADs
   every cached `card.binding_values.photo_image_full_size_large` URL
-  after sync and exits 1 on non-2xx. Twitter rotates these URLs
-  faster than our 7-day TTL, so a "fresh" cache can still hold a 404.
+  after sync and warns on non-2xx (advisory: Twitter rotates/deletes
+  these URLs faster than our 7-day TTL and upstream 404s can't be
+  fixed by re-running the build, so they must never wedge a deploy —
+  see `shouldFailSync` + its lock in `social-embeds-integrity.test.ts`).
+  The script still exits 1 when a tweet can't be fetched AND has no
+  cached fallback (the "Tweet not found in production" case).
 
 If you add a new homepage section, a new external-data dependency, or
 a new visual primitive, add a matching lock in the same PR.
