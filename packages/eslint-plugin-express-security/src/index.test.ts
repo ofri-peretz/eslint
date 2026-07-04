@@ -76,3 +76,22 @@ describe('eslint-plugin-express-security plugin interface', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: sub-export surfaces
+// ---------------------------------------------------------------------------
+import oxlint from './oxlint';
+import * as typeExports from './types';
+
+describe('oxlint sub-export', () => {
+  it('exposes the plugin object directly (module.exports = plugin)', () => {
+    expect(oxlint).toBe(plugin);
+    expect(Object.keys(oxlint.rules || {})).toHaveLength(14);
+  });
+});
+
+describe('types sub-export', () => {
+  it('is a type-only module with no runtime exports', () => {
+    expect(Object.keys(typeExports)).toEqual([]);
+  });
+});

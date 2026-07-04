@@ -100,3 +100,27 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('require-rate-limiting (coverage wave)', requireRateLimiting, {
+  valid: [
+    // rate-limiter referenced as an identifier without a call
+    { code: `const app = express(); app.use(rateLimiter);` },
+    // rate-limiter factory call
+    { code: `const app = express(); app.use(limiter());` },
+  ],
+  invalid: [
+    // identifier middleware that is not a rate limiter
+    {
+      code: `const app = express(); app.use(logger);`,
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
+    // called middleware that is not a rate limiter
+    {
+      code: `const app = express(); app.use(morgan());`,
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
+  ],
+});

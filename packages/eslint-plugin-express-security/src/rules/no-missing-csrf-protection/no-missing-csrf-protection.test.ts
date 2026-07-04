@@ -220,3 +220,55 @@ describe('no-missing-csrf-protection', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-missing-csrf-protection (coverage wave)', noMissingCsrfProtection, {
+  valid: [
+    // fewer than two arguments — not a route registration
+    { code: `app.post('/incomplete');` },
+    // invalid regex ignore pattern falls back to substring matching (matches '(')
+    { code: `app.post('/a', handler);`, options: [{ ignorePatterns: ['('] }] },
+    // custom csrfMiddlewarePatterns recognized in the chain
+    {
+      code: `app.post('/x', mycsrfCheck, handler);`,
+      options: [{ csrfMiddlewarePatterns: ['mycsrf'] }],
+    },
+    // custom protectedMethods — GET not protected
+    { code: `app.get('/read', handler);`, options: [{ protectedMethods: ['post'] }] },
+  ],
+  invalid: [
+    // invalid regex ignore pattern that does not match as a substring either
+    {
+      code: `app.post('/b', handler);`,
+      options: [{ ignorePatterns: ['[zz'] }],
+      errors: [
+        {
+          messageId: 'missingCsrfProtection',
+          suggestions: [
+            {
+              messageId: 'addCsrfValidation',
+              output: `app.post('/b', csrf(), handler);`,
+            },
+          ],
+        },
+      ],
+    },
+    // suggestion inserts csrf() after the path argument
+    {
+      code: `app.post('/transfer', handler);`,
+      errors: [
+        {
+          messageId: 'missingCsrfProtection',
+          suggestions: [
+            {
+              messageId: 'addCsrfValidation',
+              output: `app.post('/transfer', csrf(), handler);`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});

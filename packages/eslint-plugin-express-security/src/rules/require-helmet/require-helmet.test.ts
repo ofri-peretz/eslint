@@ -139,3 +139,43 @@ ruleTester.run('require-helmet', requireHelmet, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('require-helmet (coverage wave)', requireHelmet, {
+  valid: [
+    // app.use(helmet) — identifier reference without a call
+    { code: `const app = express(); app.use(helmet);` },
+    // call-of-a-call that is not require('express')()
+    { code: `f()();` },
+    // require()() with no module argument
+    { code: `require()();` },
+    // require(identifier)()
+    { code: `require(moduleName)();` },
+    // require of a different module
+    { code: `require('lodash')();` },
+    // alternative middleware referenced as an identifier
+    {
+      code: `const app = express(); app.use(secureHeaders);`,
+      options: [{ alternativeMiddleware: ['secureHeaders'] }],
+    },
+  ],
+  invalid: [
+    // require('express')() pattern creates an app without helmet
+    {
+      code: `const app = require('express')(); app.listen(3000);`,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
+    // identifier middleware that is not helmet
+    {
+      code: `const app = express(); app.use(morgan);`,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
+    // literal + identifier middleware args, none of them helmet
+    {
+      code: `const app = express(); app.use('/api', apiRouter);`,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
+  ],
+});

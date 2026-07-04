@@ -96,3 +96,53 @@ describe('no-missing-security-headers', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-missing-security-headers (coverage wave)', noMissingSecurityHeaders, {
+  valid: [
+    // bare call — callee is not a member expression
+    { code: `setHeader('X-Frame-Options', 'DENY');` },
+    // member method that is not a header setter
+    { code: `res.json({ ok: true });` },
+    // all required headers set inside a function scope — checked, no report
+    {
+      code: `
+        function handler(req, res) {
+          res.setHeader('Content-Security-Policy', "default-src 'self'");
+          res.setHeader('X-Frame-Options', 'DENY');
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+        }
+      `,
+    },
+  ],
+  invalid: [
+    // res.set() without arguments — header name is unknown, all headers missing
+    { code: `res.set();`, errors: [{ messageId: 'missingSecurityHeader' }] },
+    // dynamic header name cannot be tracked
+    {
+      code: `res.setHeader(headerName, 'value');`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    // function declaration scope with only one of the required headers
+    {
+      code: `
+        function handler(req, res) {
+          res.setHeader('X-Frame-Options', 'DENY');
+        }
+      `,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    // function expression scope
+    {
+      code: `app.get('/a', function (req, res) { res.setHeader('X-Frame-Options', 'DENY'); });`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    // arrow function scope
+    {
+      code: `app.get('/a', (req, res) => { res.setHeader('X-Frame-Options', 'DENY'); });`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+  ],
+});

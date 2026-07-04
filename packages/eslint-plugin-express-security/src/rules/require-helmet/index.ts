@@ -74,7 +74,6 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
     }
 
     // app.use(helmet) without call (unlikely but possible)
-    /* c8 ignore next 3 */
     if (arg.type === 'Identifier' && arg.name === 'helmet') {
       return true;
     }
@@ -96,7 +95,6 @@ function isAlternativeMiddleware(
         return true;
       }
     }
-    /* c8 ignore next 3 */
     if (arg.type === 'Identifier' && alternatives.includes(arg.name)) {
       return true;
     }
@@ -171,7 +169,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
       assumeHelmetMiddleware: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = false, alternativeMiddleware = [], assumeHelmetMiddleware = false } =
       options as Options;
 
@@ -206,7 +204,6 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for require('express')() pattern
-        /* c8 ignore next 15 */
         if (
           callee.type === 'CallExpression' &&
           callee.callee.type === 'Identifier' &&

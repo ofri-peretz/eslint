@@ -120,3 +120,41 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-cors-credentials-wildcard (coverage wave)', noCorsCredentialsWildcard, {
+  valid: [
+    // cors() with no arguments — nothing to inspect
+    { code: `cors();` },
+    // cors(identifier) — config is not an inline object literal
+    { code: `const c = cors(corsOptions);` },
+    // app.use(cors(identifier)) — inner config is not an object literal
+    { code: `app.use(cors(corsOptions));` },
+    // allowInTests: true + test filename disables the rule entirely
+    {
+      code: `app.use(cors({ origin: '*', credentials: true }));`,
+      options: [{ allowInTests: true }],
+      filename: 'server.test.ts',
+    },
+    // wildcard origin without credentials — only one condition met
+    { code: `app.use(cors({ origin: '*' }));` },
+    // credentials without a wildcard origin
+    { code: `app.use(cors({ origin: 'https://a.com', credentials: true }));` },
+  ],
+  invalid: [
+    // allowInTests: true but NON-test filename — still reported
+    {
+      code: `app.use(cors({ origin: '*', credentials: true }));`,
+      options: [{ allowInTests: true }],
+      filename: 'server.ts',
+      errors: [{ messageId: 'credentialsWildcard' }],
+    },
+    // origin: true (reflected origin) + credentials: true
+    {
+      code: `cors({ origin: true, credentials: true });`,
+      errors: [{ messageId: 'credentialsWildcard' }],
+    },
+  ],
+});

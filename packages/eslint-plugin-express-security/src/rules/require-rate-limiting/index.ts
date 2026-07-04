@@ -59,8 +59,8 @@ function isRateLimitMiddleware(
   for (const arg of node.arguments) {
     // rateLimit() or limiter()
     if (arg.type === 'CallExpression' && arg.callee.type === 'Identifier') {
-      if (allPatterns.some((p) => arg.callee.type === 'Identifier' && 
-          arg.callee.name.toLowerCase().includes(p.toLowerCase()))) {
+      const calleeName = arg.callee.name.toLowerCase();
+      if (allPatterns.some((p) => calleeName.includes(p.toLowerCase()))) {
         return true;
       }
     }
@@ -141,7 +141,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
       assumeRateLimiting: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = false, alternativeMiddleware = [], assumeRateLimiting = false } =
       options as Options;
 

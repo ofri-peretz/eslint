@@ -132,7 +132,7 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ allowInTests: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
@@ -148,13 +148,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
 
         // Check for app.get(), router.post(), etc.
-        /* c8 ignore next 2 */
         if (callee.type !== 'MemberExpression') {
           return;
         }
 
         const property = callee.property;
-        /* c8 ignore next 2 */
         if (property.type !== 'Identifier') {
           return;
         }
@@ -165,7 +163,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
 
         // Check the route argument (first argument)
         const routeArg = node.arguments[0];
-        /* c8 ignore next 2 */
         if (!routeArg) {
           return;
         }

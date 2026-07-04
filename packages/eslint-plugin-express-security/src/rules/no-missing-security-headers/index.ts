@@ -103,9 +103,8 @@ function checkFunctionForSecurityHeaders(
     }
   }
 
-  if (scopeNode) {
-    collectHeaders(scopeNode);
-  }
+  // scopeNode is always set at this point (function scope or program fallback)
+  collectHeaders(scopeNode);
 
   // Return missing headers
   return requiredHeaders.filter(header => !setHeaders.has(header));
@@ -183,12 +182,12 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
 requiredHeaders = DEFAULT_REQUIRED_HEADERS,
       ignoreInTests = true,
     
-}: Options = options || {};
+}: Options = options as Options;
 
     const filename = context.filename;
     const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);

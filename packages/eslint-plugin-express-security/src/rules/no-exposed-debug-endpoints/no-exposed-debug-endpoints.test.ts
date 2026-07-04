@@ -41,3 +41,37 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-exposed-debug-endpoints (coverage wave)', noExposedDebugEndpoints, {
+  valid: [
+    // ignoreFiles matching the current filename disables the rule
+    {
+      code: `app.get('/debug', handler);`,
+      options: [{ ignoreFiles: ['scripts/'] }],
+      filename: '/project/scripts/dev-server.ts',
+    },
+    // route path is a variable, not a literal
+    { code: `app.get(routePath, handler);` },
+    // route path is a non-string literal
+    { code: `app.get(42, handler);` },
+    // literal only *contains* a debug path — Literal handler needs exact match
+    { code: `const x = '/debugging-guide';` },
+  ],
+  invalid: [
+    // exact-match literal outside any call
+    { code: `const p = '/debug';`, errors: [{ messageId: 'violationDetected' }] },
+    // literal inside a non-express call
+    { code: `log('/admin');`, errors: [{ messageId: 'violationDetected' }] },
+    // literal in an express call but not as the path argument
+    { code: `app.get('/safe', '/debug');`, errors: [{ messageId: 'violationDetected' }] },
+    // custom endpoints option replaces the default list
+    {
+      code: `app.get('/internal-metrics', handler);`,
+      options: [{ endpoints: ['/internal-metrics'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

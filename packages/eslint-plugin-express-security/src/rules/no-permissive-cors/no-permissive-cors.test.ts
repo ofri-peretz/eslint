@@ -132,3 +132,30 @@ describe('no-permissive-cors', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-permissive-cors (coverage wave)', noPermissiveCors, {
+  valid: [
+    // app.use(cors(identifier)) — config is not an inline object
+    { code: `app.use(cors(corsOptions));` },
+    // standalone cors(identifier)
+    { code: `cors(corsOptions);` },
+    // origin: true allowed when allowOriginTrue is set
+    { code: `cors({ origin: true });`, options: [{ allowOriginTrue: true }] },
+    // credentials with an explicit origin — not permissive
+    {
+      code: `cors({ origin: 'https://a.com', credentials: true });`,
+      options: [{ allowOriginTrue: true }],
+    },
+  ],
+  invalid: [
+    // credentials: true + origin: true is still flagged even with allowOriginTrue
+    {
+      code: `cors({ origin: true, credentials: true });`,
+      options: [{ allowOriginTrue: true }],
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+  ],
+});
