@@ -81,10 +81,10 @@
     "@interlace/eslint-devkit": "^1.4.1"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^3.0.67",
+    "@ai-sdk/openai": "^4.0.7",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "ai": "^6.0.193"
+    "ai": "^7.0.15"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

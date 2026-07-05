@@ -311,7 +311,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.67.0', maxKnown: '1.67.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.72.0', maxKnown: '1.72.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -324,7 +324,7 @@ const VERIFIED_OXLINT_RANGE = { min: '1.67.0', maxKnown: '1.67.x' };
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
   'plugins.js': '3caddca8054c7d91c6e0b5bacaba2a5c6f05fb2e9fa7b8c7226550f1d0c8061c',
-  'plugins-dev.js': '050aec642a2c03884a217fecdd8644815d50f41650f2b083bce5e86cd2e9a157',
+  'plugins-dev.js': '2a807b471439a84b73673c0046a18e83692921118383b07add4d31369e2660d6',
   // lint.js and bindings.js are platform-specific (macOS vs Linux); excluded from
   // cross-platform hash verification. Plugin API surface (plugins.js, plugins-dev.js)
   // is sufficient to confirm the JS plugin contract is intact.
