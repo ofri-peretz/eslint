@@ -50,7 +50,7 @@
     "typecheck:benchmarks": "tsc --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -181,6 +181,8 @@
     "ilb:flagship:smoke": "tsx benchmarks/suites/ilb-flagship/smoke.ts",
     "verify:artifact": "tsx scripts/verify-published-artifact.ts",
     "verify:artifact:all": "tsx scripts/verify-published-artifact.ts --all",
+    "verify:dist-integrity": "tsx scripts/verify-dist-integrity.ts",
+    "verify:dist-integrity:release": "tsx scripts/verify-dist-integrity.ts --require-built",
     "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
   },
   "keywords": [
