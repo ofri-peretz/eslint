@@ -215,7 +215,10 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
 
     // Generate suggested filename
     function getSuggestedName(basename: string, nameWithoutExt: string, targetCase: CaseType): string {
-      let transformed: string;
+      // Initialized to the untransformed name; every valid CaseType below
+      // overwrites it. (An unknown case never reaches here — matchesCase
+      // returns true for unknown cases, so no rename is ever suggested.)
+      let transformed: string = nameWithoutExt;
       switch (targetCase) {
         case 'camelCase':
           transformed = toCamelCase(nameWithoutExt);
@@ -229,8 +232,6 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
         case 'snakeCase':
           transformed = toSnakeCase(nameWithoutExt);
           break;
-        default:
-          transformed = nameWithoutExt;
       }
 
       // Add back the extension
