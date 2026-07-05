@@ -190,25 +190,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
-    /**
-     * Check if JSON.parse is being called on event property
-     */
-    function isJsonParseOfEventBody(node: TSESTree.CallExpression): boolean {
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.object.type === AST_NODE_TYPES.Identifier &&
-        node.callee.object.name === 'JSON' &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'parse' &&
-        node.arguments.length > 0
-      ) {
-        const arg = node.arguments[0];
-        if (arg.type === AST_NODE_TYPES.MemberExpression) {
-          return isEventPropertyAccess(arg) !== null;
-        }
-      }
-      return false;
-    }
+    // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
+    // here, but it was dead code: `JSON.parse(...)` always satisfies
+    // `isValidationCall` first ('parse' is in VALIDATION_INDICATORS), so the
+    // early return above it made it unreachable for every possible AST.
 
     // Determine whether THIS file looks like Lambda code at all. We're
     // strict: a function parameter is only treated as a Lambda event if
@@ -319,10 +304,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
       ) {
         if (!isLambdaSignature(node.params, node)) return;
-        const first = node.params[0];
-        if (first.type === AST_NODE_TYPES.Identifier) {
-          eventParameters.add(first.name);
-        }
+        // isLambdaSignature already guarantees params[0] is an Identifier
+        // (it returns false otherwise), so a type-narrowing cast is safe here.
+        const first = node.params[0] as TSESTree.Identifier;
+        eventParameters.add(first.name);
       },
 
       // Check for Middy with validation middleware
@@ -375,16 +360,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           isValidationCall(parent)
         ) {
           return;
-        }
-
-        // Case: const body = JSON.parse(event.body); schema.parse(body); - track this
-        if (
-          parent?.type === AST_NODE_TYPES.CallExpression &&
-          isJsonParseOfEventBody(parent)
-        ) {
-          // We need to check if this variable is later validated
-          // For now, flag it as potentially dangerous
-          // A more sophisticated analysis would track variable flow
         }
 
         // Case: Direct use without validation - DANGER
