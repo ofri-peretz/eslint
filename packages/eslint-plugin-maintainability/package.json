@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-maintainability",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "ESLint rules for reducing cognitive load and ensuring code readability.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
