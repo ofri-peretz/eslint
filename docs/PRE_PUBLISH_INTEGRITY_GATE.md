@@ -74,8 +74,8 @@ root _is_ `dist/`) and runs the same two assertions as the vitest lock:
 2. every rule is a well-formed `RuleModule` (`meta.type` + `create()`).
 
 It uses whatever `eslint` is installed, so CI can run it once per supported
-major. `eslint-plugin-crypto` is out of scope (no local `package.json` — a
-build-artifact-only dir), mirroring the vitest lock's documented exclusion.
+major. Any `eslint-plugin-*` directory without a local `package.json` is a
+stale/manifest-less leftover, not a real package, and is skipped.
 
 ```bash
 npm run build                          # produce packages/*/dist

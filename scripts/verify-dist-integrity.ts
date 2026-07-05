@@ -96,9 +96,9 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  // Published, non-private plugins on disk. `eslint-plugin-crypto` has no local
-  // package.json (build-artifact-only dir) and is intentionally out of scope —
-  // mirrors the exclusion documented in the vitest lock.
+  // Published, non-private plugins on disk. A directory without a local
+  // package.json is a stale/manifest-less leftover, not a real package, and
+  // is out of scope for this gate.
   const published: string[] = [];
   const noManifest: string[] = [];
   for (const dir of readdirSync(PACKAGES_DIR)) {
