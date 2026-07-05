@@ -3,13 +3,13 @@
  * CWE-346: Origin Validation Error
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import * as vitest from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noMissingCorsCheck } from './index';
 
 // Configure RuleTester for Vitest
-RuleTester.afterAll = afterAll;
-RuleTester.it = it;
+RuleTester.afterAll = vitest.afterAll;
+RuleTester.it = vitest.it;
 RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
@@ -27,8 +27,8 @@ const ruleTester = new RuleTester({
   },
 });
 
-describe('no-missing-cors-check', () => {
-  describe('Valid Code', () => {
+vitest.describe('no-missing-cors-check', () => {
+  vitest.describe('Valid Code', () => {
     ruleTester.run('valid - proper CORS validation', noMissingCorsCheck, {
       valid: [
         // CORS with origin validation
@@ -69,7 +69,7 @@ describe('no-missing-cors-check', () => {
     });
   });
 
-  describe('Invalid Code - Wildcard Origin', () => {
+  vitest.describe('Invalid Code - Wildcard Origin', () => {
     ruleTester.run('invalid - wildcard CORS origin', noMissingCorsCheck, {
       valid: [],
       invalid: [
@@ -95,7 +95,7 @@ describe('no-missing-cors-check', () => {
     });
   });
 
-  describe('Invalid Code - CORS Headers', () => {
+  vitest.describe('Invalid Code - CORS Headers', () => {
     ruleTester.run('invalid - wildcard CORS header', noMissingCorsCheck, {
       valid: [],
       invalid: [
@@ -119,7 +119,7 @@ describe('no-missing-cors-check', () => {
     });
   });
 
-  describe('Options', () => {
+  vitest.describe('Options', () => {
     ruleTester.run('options - allowInTests', noMissingCorsCheck, {
       valid: [
         {
@@ -163,7 +163,7 @@ describe('no-missing-cors-check', () => {
     });
   });
 
-  describe('Edge Cases', () => {
+  vitest.describe('Edge Cases', () => {
     ruleTester.run('edge cases - non-wildcard literal', noMissingCorsCheck, {
       valid: [
         {
@@ -394,7 +394,7 @@ describe('no-missing-cors-check', () => {
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
-import { describe, expect, it } from 'vitest';
+import { expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 
 ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
@@ -479,8 +479,8 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
 // Layer 2: synthetic AST — a parser always parents nodes up to Program, so the
 // "ancestor chain ends without a Program" break is only reachable with a
 // hand-built node (parent: null).
-describe('no-missing-cors-check (layer 2: synthetic AST)', () => {
-  it('stops the scope walk when the ancestor chain ends without a Program node', () => {
+vitest.describe('no-missing-cors-check (layer 2: synthetic AST)', () => {
+  vitest.it('stops the scope walk when the ancestor chain ends without a Program node', () => {
     const { listeners, reports } = createWithMockContext(noMissingCorsCheck, {
       sourceText: 'app.use(cors(config))',
     });
