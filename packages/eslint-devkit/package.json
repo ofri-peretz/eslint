@@ -1,6 +1,6 @@
 {
   "name": "@interlace/eslint-devkit",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "TypeScript utilities for building LLM-optimized ESLint plugins - AST helpers, type utilities, security benchmarks, and SARIF output",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -77,7 +77,7 @@
   },
   "dependencies": {
     "@typescript-eslint/utils": "^7.0.0 || ^8.0.0",
-    "oxc-resolver": "^11.20.0"
+    "oxc-resolver": "^11.23.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",

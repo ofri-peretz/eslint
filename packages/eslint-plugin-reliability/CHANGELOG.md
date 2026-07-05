@@ -1,5 +1,31 @@
 ## [3.1.3] - 2026-05-03
 
+## 3.1.4
+
+### Patch Changes
+
+- [#141](https://github.com/ofri-peretz/eslint/pull/141) [`38ab670`](https://github.com/ofri-peretz/eslint/commit/38ab670a0221684f4fd3d5dc3c05ddec7458ca2b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix: remove false `meta.fixable: 'code'` declarations from 21 rules that had no `fix()` function
+
+  Rules that declared `fixable: 'code'` in their ESLint meta without an actual `fix()` implementation would show the ⚡ auto-fix icon in editors and CI formatters but apply no change when `--fix` was run. This patch removes the misleading declaration from:
+  - `browser-security/no-clickjacking`
+  - `import-next/first`, `named`, `no-barrel-import`, `no-import-module-exports`, `no-namespace`
+  - `node-security/no-buffer-overread`, `no-unsafe-dynamic-require`, `no-zip-slip`
+  - `react-features/react-no-inline-functions`
+  - `reliability/no-jsdoc-terminator-in-example` (uses `suggest`, not auto-fix; corrected to `hasSuggestions: true` only)
+  - `secure-coding/no-directive-injection`, `no-electron-security-issues`, `no-graphql-injection`, `no-improper-sanitization`, `no-improper-type-validation`, `no-ldap-injection`, `no-unchecked-loop-condition`, `no-unlimited-resource-allocation`, `no-weak-password-recovery`, `no-xpath-injection`
+
+- [#143](https://github.com/ofri-peretz/eslint/pull/143) [`213cde1`](https://github.com/ofri-peretz/eslint/commit/213cde190ff2aea49ca7c1b533170940f879d9b4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix(no-missing-null-checks): eliminate 53 false positives via three new narrowing patterns
+
+  Rules that were recognized as null guards are now correctly identified as safe:
+  1. **Truthy if guard** — `if (obj) { obj.prop }` — direct truthy check proves non-null. Also covers chains: `if (response)` protects `response.data.items`.
+  2. **Short-circuit AND** — `obj && obj.prop` — right side of `&&` only runs when left is truthy.
+  3. **Ternary consequent** — `obj ? obj.prop : fallback` — truthy test guards the consequent.
+
+  Also: bumped `beforeAll` timeout to 30 seconds in 7 compatibility test files (`__compatibility__/*.spec.ts`). Native-addon packages routinely exceed the previous 10-second default on a cold ESM load.
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ### Bug Fixes
 
 - `no-missing-null-checks`: exempt provably-non-null identifiers (built-in singletons like `Math`, `JSON`, `console`, error classes; catch-clause params; constructor results; top-level imports) from the null-check requirement. Eliminates a large class of false positives without weakening real coverage.

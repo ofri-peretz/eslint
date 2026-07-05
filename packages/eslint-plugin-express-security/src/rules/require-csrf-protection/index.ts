@@ -145,7 +145,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       description:
         'Require CSRF protection middleware for state-changing HTTP methods',
       cwe: 'CWE-352',
-      cvss: 7.5,
+      cvss: 8.8,
     },
     hasSuggestions: true,
     messages: {

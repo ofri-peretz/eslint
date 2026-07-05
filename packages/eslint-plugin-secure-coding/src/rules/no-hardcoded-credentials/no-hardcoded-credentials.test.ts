@@ -3,7 +3,8 @@
  * CWE-798: Use of Hard-coded Credentials
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
+import { Linter, type Rule } from 'eslint';
 import parser from '@typescript-eslint/parser';
 import { noHardcodedCredentials } from './index';
 
@@ -642,6 +643,60 @@ describe('no-hardcoded-credentials', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * Regression lock — the machine-readable finding and the docs metadata must
+ * report the SAME CVSS. `formatLLMMessage` → `enrichFromCWE` bakes
+ * `CWE_MAPPING['CWE-798'].cvss` into the emitted message at construction time
+ * (the rule sets no per-message cvss), so a stale `meta.docs.cvss` silently
+ * disagrees with what the rule actually emits — exactly the bug this locks.
+ * The published article hardcoded-secrets-ai-agents-autofix.md quotes
+ * `CVSS:9.8` as authoritative, so 9.8 is the source of truth.
+ * The ecosystem-wide version of this invariant lives in
+ * security-cvss-docs-consistency.lock.test.ts.
+ */
+describe('no-hardcoded-credentials — CVSS docs/message consistency (lock)', () => {
+  // CVSS the rule emits in its real finding, via ESLint's Linter API (the same
+  // path used to verify the original mismatch).
+  function emittedCvss(): number {
+    const messages = new Linter().verify(
+      `const apiKey = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';`,
+      {
+        languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
+        plugins: {
+          sec: {
+            rules: {
+              'no-hardcoded-credentials':
+                noHardcodedCredentials as unknown as Rule.RuleModule,
+            },
+          },
+        },
+        rules: { 'sec/no-hardcoded-credentials': 'error' },
+      },
+    );
+    const finding = messages.find(
+      (m) => m.ruleId === 'sec/no-hardcoded-credentials',
+    );
+    if (!finding) throw new Error('rule emitted no finding for the fixture');
+    const match = /CVSS:(\d+(?:\.\d+)?)/.exec(finding.message);
+    if (!match)
+      throw new Error(`no CVSS token in emitted message: ${finding.message}`);
+    return Number(match[1]);
+  }
+
+  const docsCvss = (
+    noHardcodedCredentials.meta.docs as unknown as { cvss?: number }
+  ).cvss;
+
+  it('emitted finding CVSS equals meta.docs.cvss', () => {
+    expect(emittedCvss()).toBe(docsCvss);
+  });
+
+  it('the agreed CWE-798 score is 9.8 (CWE_MAPPING + article authoritative)', () => {
+    expect(docsCvss).toBe(9.8);
+    expect(emittedCvss()).toBe(9.8);
   });
 });
 

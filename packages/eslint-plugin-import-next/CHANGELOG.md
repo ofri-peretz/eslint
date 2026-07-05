@@ -1,5 +1,39 @@
 ## [2.3.6] - 2026-05-03
 
+## 2.3.7
+
+### Patch Changes
+
+- [#141](https://github.com/ofri-peretz/eslint/pull/141) [`38ab670`](https://github.com/ofri-peretz/eslint/commit/38ab670a0221684f4fd3d5dc3c05ddec7458ca2b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix: remove false `meta.fixable: 'code'` declarations from 21 rules that had no `fix()` function
+
+  Rules that declared `fixable: 'code'` in their ESLint meta without an actual `fix()` implementation would show the ⚡ auto-fix icon in editors and CI formatters but apply no change when `--fix` was run. This patch removes the misleading declaration from:
+  - `browser-security/no-clickjacking`
+  - `import-next/first`, `named`, `no-barrel-import`, `no-import-module-exports`, `no-namespace`
+  - `node-security/no-buffer-overread`, `no-unsafe-dynamic-require`, `no-zip-slip`
+  - `react-features/react-no-inline-functions`
+  - `reliability/no-jsdoc-terminator-in-example` (uses `suggest`, not auto-fix; corrected to `hasSuggestions: true` only)
+  - `secure-coding/no-directive-injection`, `no-electron-security-issues`, `no-graphql-injection`, `no-improper-sanitization`, `no-improper-type-validation`, `no-ldap-injection`, `no-unchecked-loop-condition`, `no-unlimited-resource-allocation`, `no-weak-password-recovery`, `no-xpath-injection`
+
+- [#186](https://github.com/ofri-peretz/eslint/pull/186) [`edf208d`](https://github.com/ofri-peretz/eslint/commit/edf208d67ac2357312c97d8964fcf6a462e407eb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Consolidation cleanup — no rule behavior change:
+  - **react-features**: the README rules table now lists the 8 `componentApi`
+    preset rules. The README generator (`sync-readme-rules.ts`) and the
+    `plugin-rule-source-drift` validator now recurse into nested
+    `docs/rules/<category>/` subfolders, so every documented rule is advertised
+    consistently (previously the nested componentApi docs were silently dropped,
+    which an earlier `readme` exception had papered over — that exception is now
+    removed in favour of the real fix).
+  - **node-security**: remove the orphaned `no-pii-in-logs` rule source — the rule
+    was migrated to `eslint-plugin-secure-coding` and is no longer exported here;
+    the dead source was still compiling into `dist`.
+  - **import-next**: restore the `no-cycle` unit test after [#180](https://github.com/ofri-peretz/eslint/issues/180)'s SCC refactor
+    (`computeSCCsFromFile` + `findShortestCyclePath` are now bridged in the mock).
+
+  Also fixes `scripts/ilb-plugin-scope-audit.ts` to stop mis-reading config-preset
+  keys (`'recommended-strict': {`) as rules.
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ### Changed
 
 - `no-cycle` rewritten to per-import targeted DFS (replaces upfront full-graph BFS+Tarjan SCC). The `nonCyclicFiles` cache provides O(1) rejection after first visit; only files along the actual DFS path are read. Detection parity with the previous algorithm is preserved.

@@ -1099,6 +1099,39 @@ const CASES: RuleSpec[] = [
       },
     ],
   },
+  // ── node-security/no-dynamic-algorithm-selection (new rule, 2026-06) ─────
+  {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-dynamic-algorithm-selection',
+    shortRuleName: 'no-dynamic-algorithm-selection',
+    cases: [
+      {
+        label: 'TP: crypto.createHash(variable) — dynamic algorithm',
+        hypothesis: 'Attacker can supply weak algorithm like MD5 or SHA1',
+        expected: 'fire',
+        code: `crypto.createHash(userAlgorithm)`,
+      },
+      {
+        label: 'TP: crypto.createCipheriv(config.algo, key, iv) — config-sourced',
+        hypothesis: 'Config-controlled algorithm = algorithm confusion risk',
+        expected: 'fire',
+        code: `crypto.createCipheriv(config.algorithm, key, iv)`,
+      },
+      {
+        label: 'FP: crypto.createHash("sha256") — literal',
+        hypothesis: 'Literal string algorithm is safe (no-weak-hash-algorithm handles weak literals)',
+        expected: 'silent',
+        code: `crypto.createHash("sha256")`,
+      },
+      {
+        label: 'FP: crypto.createHmac static template literal',
+        hypothesis: 'Static template literal = no injection surface',
+        expected: 'silent',
+        code: 'crypto.createHmac(`sha512`, secret)',
+      },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------

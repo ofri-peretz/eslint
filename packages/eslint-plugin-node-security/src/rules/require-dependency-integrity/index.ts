@@ -26,7 +26,7 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-dependency-integrity.md',
       description: 'Require SRI (Subresource Integrity) for CDN resources',
       cwe: 'CWE-494',
-      cvss: 7.5,
+      cvss: 8.1,
     },
     messages: {
       violationDetected: formatLLMMessage({

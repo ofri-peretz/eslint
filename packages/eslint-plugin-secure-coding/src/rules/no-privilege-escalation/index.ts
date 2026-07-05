@@ -164,7 +164,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-privilege-escalation.md',
       description: 'Detects potential privilege escalation vulnerabilities',
       cwe: 'CWE-269',
-      cvss: 7.5,
+      cvss: 8.8,
     },
     hasSuggestions: true,
     messages: {

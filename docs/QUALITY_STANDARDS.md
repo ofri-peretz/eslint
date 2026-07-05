@@ -100,14 +100,25 @@ if (node.value.includes('password') || node.value.includes('secret')) {
 
 ## 2. Test Coverage Requirements
 
-### Minimum Thresholds
+### Coverage Policy: 100% (ratchet-enforced)
 
-| Metric     | Minimum | Target | Blocking? |
-| ---------- | ------- | ------ | :-------: |
-| Lines      | 90%     | 95%+   |    ✅     |
-| Branches   | 75%     | 85%+   |    ⚠️     |
-| Functions  | 95%     | 100%   |    ✅     |
-| Statements | 90%     | 95%+   |    ✅     |
+| Metric     | Policy Target | Enforced Today | Blocking? |
+| ---------- | :-----------: | -------------- | :-------: |
+| Lines      |     100%      | Ratchet floor  |    ✅     |
+| Branches   |     100%      | Ratchet floor  |    ✅     |
+| Functions  |     100%      | Ratchet floor  |    ✅     |
+| Statements |     100%      | Ratchet floor  |    ✅     |
+
+**The target is 100% on all four metrics for every published package.**
+
+**Ratchet mechanism (never-regress en route to 100):** each package pins
+`coverage.thresholds` in its vitest/vite config at its measured coverage,
+floored to the whole percent (snapshot: 2026-07-04). Coverage is always
+collected (`coverage.enabled: true`), so the required Quality gate fails on
+any regression below a package's floor. Floors may only be raised — never
+lowered. When a package reaches 100 on a metric, its floor becomes 100 and
+stays there. The gap between each floor and 100 is tracked as the work queue
+for the test-writing wave.
 
 ### Verification Command
 
@@ -145,19 +156,25 @@ Every rule MUST have tests covering:
    - Functions < 90%
    - Large blocks of uncovered code
 
-2. **Acceptable gaps** (document with `c8 ignore`):
-   - Safety checker early returns (see §6)
-   - File system operations
-   - Runtime-only conditions
+2. **Annotation debt** (legacy only — see below):
+   - Existing `c8 ignore` blocks are tracked as annotation debt and will be
+     reproduced-or-deleted during the 100% test wave
 
 3. **NOT acceptable** (must fix):
    - Main rule logic uncovered
    - Error reporting paths uncovered
    - Option handling uncovered
 
-### c8/v8 Ignore Best Practices
+### c8/v8 Ignore Comments: BANNED
 
-Use coverage ignore comments **only** for structurally untestable code:
+Coverage-ignore annotations (`/* v8 ignore */`, `/* istanbul ignore */`,
+`/* c8 ignore */`) are **banned going forward** — do not add new ones.
+They hide real coverage gaps behind the reported percentages. Existing
+annotations are inventoried as annotation debt and will be
+reproduced-or-deleted during the 100% test wave: either the guarded code
+gets a real test, or the code is removed.
+
+Legacy guidance (kept for context while the debt is worked off):
 
 ```typescript
 // ✅ CORRECT: Safety checker that requires JSDoc context
@@ -191,11 +208,9 @@ Is the code covered?
 ├── YES → No action needed
 └── NO → Can the code be tested via RuleTester?
     ├── YES → Add missing test cases
-    └── NO → Why not?
-        ├── JSDoc/annotation requirement → ✅ Use c8 ignore with explanation
-        ├── File system access → ✅ Use c8 ignore with explanation
-        ├── Runtime-only condition → ✅ Use c8 ignore with explanation
-        └── Dead code / unreachable → ❌ REMOVE the code
+    └── NO → Can it be tested another way (unit test, mock, harness)?
+        ├── YES → Add the test — new c8 ignore comments are banned
+        └── NO → Dead code / unreachable → ❌ REMOVE the code
 ```
 
 > **Reference**: See RULETESTER-COVERAGE-LIMITATIONS.md (planned) for detailed patterns.

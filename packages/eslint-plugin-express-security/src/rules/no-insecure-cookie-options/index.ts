@@ -87,7 +87,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       description:
         'Require secure cookie flags (httpOnly, secure, sameSite) in Express.js',
       cwe: 'CWE-614',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

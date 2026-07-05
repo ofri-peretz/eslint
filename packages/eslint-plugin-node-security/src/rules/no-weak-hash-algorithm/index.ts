@@ -108,7 +108,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-hash-algorithm.md',
       description: 'Disallow weak hash algorithms (MD5, SHA1, MD4)',
       cwe: 'CWE-327',
-      cvss: 9.5,
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
