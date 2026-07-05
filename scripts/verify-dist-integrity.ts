@@ -87,8 +87,17 @@ const requireBuilt = process.argv.includes('--require-built');
 async function main(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const eslintMod: any = repoRequire('eslint');
-  const ESLint = eslintMod.ESLint;
   const eslintVersion: string = repoRequire('eslint/package.json').version;
+  // ESLint 9/10 made flat config the default `ESLint` export. ESLint 8's
+  // `ESLint` is still the eslintrc-based class — it rejects the flat-config
+  // shaped options used below (e.g. `overrideConfigFile: true`) with
+  // "Invalid Options". Under 8, use the dedicated flat-config class instead.
+  const eslintMajor = Number.parseInt(eslintVersion, 10);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ESLint: any =
+    eslintMajor >= 9
+      ? eslintMod.ESLint
+      : repoRequire('eslint/use-at-your-own-risk').FlatESLint;
   if (!ESLint) {
     console.error(
       'verify-dist-integrity: could not load ESLint from the repo root.',
