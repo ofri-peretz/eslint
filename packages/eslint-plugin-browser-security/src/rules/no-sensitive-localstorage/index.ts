@@ -166,7 +166,6 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
         ) {
           const keyArg = node.arguments[0];
 
-          /* c8 ignore next 3 - Guard for missing key argument */
           if (!keyArg) {
             return;
           }
@@ -206,7 +205,6 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
         }
 
         const obj = node.left.object;
-        /* c8 ignore next 3 - Guard for non-storage objects */
         if (obj.type !== AST_NODE_TYPES.Identifier || !storageObjects.includes(obj.name)) {
           return;
         }

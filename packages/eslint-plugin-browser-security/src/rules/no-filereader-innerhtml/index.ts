@@ -187,7 +187,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           return true;
         }
         // Check nested
-        /* c8 ignore next - Recursive call for deeply nested expressions */
         return referencesFileReaderResult(node.object, eventName);
       }
       return false;
@@ -228,7 +227,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      /* c8 ignore start - Exit handler cleanup, not testable with RuleTester */
       'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
         const { isHandler } = isFileReaderOnloadAssignment(node);
         if (isHandler) {
@@ -236,7 +234,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           eventParamName = null;
         }
       },
-      /* c8 ignore stop */
 
       CallExpression(node: TSESTree.CallExpression) {
         // Check if entering addEventListener handler
@@ -275,7 +272,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      /* c8 ignore start - Exit handler cleanup, not testable with RuleTester */
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         const { isHandler } = isFileReaderAddEventListener(node);
         if (isHandler) {
@@ -283,7 +279,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           eventParamName = null;
         }
       },
-      /* c8 ignore stop */
     };
   },
 });
