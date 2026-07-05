@@ -1,5 +1,46 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.2.5
+
+### Patch Changes
+
+- [#220](https://github.com/ofri-peretz/eslint/pull/220) [`ad8416d`](https://github.com/ofri-peretz/eslint/commit/ad8416d4db196bf0b24942ddabbfaefb0cae7bab) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix runtime crashes when linting realistic AWS Lambda handlers under ESLint 9.
+
+  The published `1.2.3` tarball was a **stale build**: its rules still threw on the
+  generated lambda-ai-corpus handlers, even though source had already been fixed.
+  This republishes the corrected build and locks it with a regression test.
+  - **`no-error-swallowing`** no longer throws `RangeError: Maximum call stack size
+exceeded`. The old build walked the catch-block AST by hand and recursed through
+    the cyclic `node.parent` reference; source now uses `sourceCode.getText()` + a
+    regex.
+  - **`require-timeout-handling`**, **`no-missing-authorization-check`**, and
+    **`no-unbounded-batch-processing`** no longer throw `Error: Unknown class name:
+exit`. They used a grouped `:exit` selector (`'A:exit, B:exit, C:exit'`); ESLint
+    only strips the trailing `:exit`, so esquery received a bare `:exit`. Source now
+    uses one listener key per node type.
+  - `plugin.meta.version` is now read from `package.json` instead of a hardcoded
+    string, so a build can no longer mislabel its own version (1.2.3 embedded
+    `1.1.0`).
+
+- [#213](https://github.com/ofri-peretz/eslint/pull/213) [`391dbe6`](https://github.com/ofri-peretz/eslint/commit/391dbe6b39f78d549379218567cb959649f8c614) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Align every security rule's `meta.docs.cvss` to the CVSS its finding actually
+  emits. The emitted machine-readable message sources its `CVSS:x` from
+  `CWE_MAPPING` via `formatLLMMessage` → `enrichFromCWE`, but the static
+  `meta.docs.cvss` documentation field had drifted on 45 rules across these 7
+  plugins — e.g. `no-hardcoded-credentials` documented `9.5` while emitting
+  `CVSS:9.8` (the value the published article and SARIF/LLM consumers already
+  read).
+
+  This corrects the **documentation metadata only** — no emitted finding changes.
+  Locked by `security-cvss-docs-consistency.lock.test.ts` (cross-plugin: every
+  security rule's `meta.docs.cvss` must equal the CVSS it emits), the
+  `no-hardcoded-credentials` rule lock (real ESLint `Linter` emission), and a
+  devkit `enrichFromCWE` contract test pinning `CWE-798 → 9.8`.
+
+  Follow-up (not in scope): 50 security rules document a CVSS that never appears
+  in any emitted message (their messages carry no CWE), and several rules emit the
+  generic CWE score where a rule-specific score may be warranted — both change
+  emitted output and are separate decisions.
+
 ## 1.2.4
 
 ### Patch Changes
