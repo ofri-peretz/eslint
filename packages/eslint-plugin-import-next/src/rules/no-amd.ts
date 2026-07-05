@@ -83,7 +83,6 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
     function shouldAllow(): boolean {
       // Check if the call is in an allowed pattern
       return allow.some((pattern: string) => {
-        /* v8 ignore next -- defensive check, filename always provided by ESLint */
         if (!filename) return false;
 
         // Support glob patterns like **/legacy/**

@@ -80,10 +80,7 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
 
       MemberExpression(node: TSESTree.MemberExpression) {
         // Check if accessing property of default import
-        if (
-          node.object.type !== AST_NODE_TYPES.Identifier ||
-          !defaultImports.has(node.object.name)
-        ) {
+        if (node.object.type !== AST_NODE_TYPES.Identifier) {
           return;
         }
 

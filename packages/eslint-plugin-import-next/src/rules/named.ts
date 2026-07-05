@@ -85,12 +85,10 @@ export const named = createRule<RuleOptions, MessageIds>({
           
           if (!moduleSymbol) return;
 
-          if (moduleSymbol) {
-            context.report({
-              node: node.imported,
-              messageId: 'named',
-            });
-          }
+          context.report({
+            node: node.imported,
+            messageId: 'named',
+          });
         }
       },
     };

@@ -133,11 +133,10 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
             },
             fix(fixer: TSESLint.RuleFixer) {
               // Calculate the subpath within the package
+              // subPath is never '' or '.': the package root is found by walking
+              // UP from the resolved path's parent, so it is a strict ancestor.
               const subPath = path.relative(importPackageRoot, resolvedPath);
-              const newImport =
-                subPath && subPath !== '.'
-                  ? `${packageName}/${subPath.replace(/\.[^/.]+$/, '')}`
-                  : packageName;
+              const newImport = `${packageName}/${subPath.replace(/\.[^/.]+$/, '')}`;
               return fixer.replaceText(source, `'${newImport}'`);
             },
           });

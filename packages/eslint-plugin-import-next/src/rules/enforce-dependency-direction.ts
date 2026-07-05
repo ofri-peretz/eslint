@@ -243,32 +243,28 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
 
       // For relative imports, check the import path string directly for layer patterns
       // This works for test cases where paths like '../infrastructure/repository' contain the layer
+      // The early return above guarantees importPath starts with '.' here.
       let targetLayer: string | null = null;
 
-      if (importPath.startsWith('.')) {
-        // Check if import path contains layer patterns
-        // e.g., '../infrastructure/repository' -> extract 'infrastructure'
-        const segments = importPath.split(/[/\\]/);
-        for (const segment of segments) {
-          if (layerPatterns.includes(segment.toLowerCase())) {
-            targetLayer = segment.toLowerCase();
+      // Check if import path contains layer patterns
+      // e.g., '../infrastructure/repository' -> extract 'infrastructure'
+      const segments = importPath.split(/[/\\]/);
+      for (const segment of segments) {
+        if (layerPatterns.includes(segment.toLowerCase())) {
+          targetLayer = segment.toLowerCase();
+          break;
+        }
+      }
+
+      // Fallback: try regex matching
+      if (!targetLayer) {
+        for (const pattern of layerPatterns) {
+          const regex = new RegExp(`[/\\\\]${pattern}[/\\\\]`, 'i');
+          if (regex.test(importPath)) {
+            targetLayer = pattern;
             break;
           }
         }
-
-        // Fallback: try regex matching
-        if (!targetLayer) {
-          for (const pattern of layerPatterns) {
-            const regex = new RegExp(`[/\\\\]${pattern}[/\\\\]`, 'i');
-            if (regex.test(importPath)) {
-              targetLayer = pattern;
-              break;
-            }
-          }
-        }
-      } else {
-        // For absolute or external imports, try to extract layer
-        targetLayer = extractLayer(importPath, layerPatterns);
       }
 
       const targetOrder = getLayerOrder(targetLayer, layers);
@@ -290,8 +286,10 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'dependencyDirectionViolation',
           data: {
-            sourceLayer: sourceLayer || 'unknown',
-            targetLayer: targetLayer || 'unknown',
+            // Both are guaranteed non-null here: sourceOrder/targetOrder >= 0
+            // implies the layers were resolved (see the guard above).
+            sourceLayer: sourceLayer as string,
+            targetLayer: targetLayer as string,
           },
           suggest: [
             {
