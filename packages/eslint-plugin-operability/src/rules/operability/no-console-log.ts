@@ -364,6 +364,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
 
         /**
          * Determine the target logger method to use based on severityMap.
+         * The guard above already returned unless `effectiveSeverityMap[methodName]`
+         * is truthy, so no fallback is needed here.
          *
          * @example
          * Default: console.log → logger.log, console.debug → logger.debug
@@ -371,8 +373,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
          * @example
          * With severityMap: { log: 'info' } → console.log → logger.info, console.debug → logger.debug
          */
-        const targetLoggerMethod =
-          effectiveSeverityMap[methodName] || methodName;
+        const targetLoggerMethod = effectiveSeverityMap[methodName];
 
         /**
          * Generate fix based on the configured strategy.
