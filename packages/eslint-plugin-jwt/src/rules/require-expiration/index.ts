@@ -15,7 +15,7 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   isSignOperation,
   getOptionsArgument,
@@ -150,7 +150,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
               messageId: 'addExpiration',
               fix(fixer) {
                 const sourceCode = context.sourceCode;
-                if (optionsArg3 && optionsArg3.type === 'ObjectExpression') {
+                if (optionsArg3 && optionsArg3.type === AST_NODE_TYPES.ObjectExpression) {
                   // Options object exists but lacks expiresIn — insert property
                   const openBrace = sourceCode.getFirstToken(optionsArg3)!;
                   return fixer.insertTextAfter(openBrace, ' expiresIn: \'1h\',');

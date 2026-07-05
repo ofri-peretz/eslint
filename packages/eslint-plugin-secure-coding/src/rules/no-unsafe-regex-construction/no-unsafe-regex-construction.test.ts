@@ -57,7 +57,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp(escapeRegExp(userInput));',
+                  output: 'const regex = new RegExp((userInput).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },
@@ -72,7 +72,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const pattern = new RegExp(escapeRegExp(`^${userPattern}$`));',
+                  output: 'const pattern = new RegExp((`^${userPattern}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },
@@ -87,7 +87,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp(escapeRegExp(req.query.pattern));',
+                  output: 'const regex = new RegExp((req.query.pattern).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },
@@ -102,7 +102,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp(escapeRegExp(getPattern()));',
+                  output: 'const regex = new RegExp((getPattern()).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },
@@ -200,7 +200,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp(escapeRegExp(unknownEscape(userInput)));',
+                  output: 'const regex = new RegExp((unknownEscape(userInput)).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },
@@ -229,7 +229,7 @@ describe('no-unsafe-regex-construction', () => {
               suggestions: [
                 {
                   messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp(escapeRegExp(`^${input}$`));',
+                  output: 'const regex = new RegExp((`^${input}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
                 },
               ],
             },

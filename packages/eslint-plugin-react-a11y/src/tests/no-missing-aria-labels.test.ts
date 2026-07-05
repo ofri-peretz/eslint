@@ -71,6 +71,17 @@ describe('no-missing-aria-labels', () => {
           code: '<button><Icon /></button>',
           errors: [{ messageId: 'missingAriaLabel' }],
         },
+        // Same icon-only case wrapped in a JSX expression container — must
+        // still be flagged; only string-like expressions (Literal,
+        // TemplateLiteral, Identifier) are treated as text content.
+        {
+          code: '<button>{<Icon />}</button>',
+          errors: [{ messageId: 'missingAriaLabel' }],
+        },
+        {
+          code: '<button>{true}</button>',
+          errors: [{ messageId: 'missingAriaLabel' }],
+        },
         {
           code: '<input type="text" />',
           errors: [{ messageId: 'missingAriaLabel' }],

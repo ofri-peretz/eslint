@@ -48,10 +48,18 @@ function hasAriaLabel(node: TSESTree.JSXOpeningElement): boolean {
 function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
   return jsxElement.children.some((child) => {
     if (child.type === 'JSXText') return child.value.trim().length > 0;
-    // {expression} containers: if they're not JSXEmptyExpression, assume text
+    // {expression} containers: only expressions that plausibly render as
+    // visible text (e.g. {label}, {'Close'}, {`Item ${n}`}, {5}) are
+    // exempted. A JSXElement (e.g. {<Icon />}) has no accessible name of
+    // its own; React also renders booleans/null/undefined as nothing, so a
+    // literal like {true} or {null} isn't text content either — only
+    // string/number literals are.
     if (
       child.type === 'JSXExpressionContainer' &&
-      child.expression.type !== 'JSXEmptyExpression'
+      (child.expression.type === 'TemplateLiteral' ||
+        child.expression.type === 'Identifier' ||
+        (child.expression.type === 'Literal' &&
+          (typeof child.expression.value === 'string' || typeof child.expression.value === 'number')))
     )
       return true;
     return false;
