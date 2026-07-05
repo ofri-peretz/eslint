@@ -50,6 +50,13 @@ function Button({
   ...props
 }: ButtonProps) {
   const element = useRender({
+    // `<button />` here is only a render-shape hint for useRender; the
+    // consumer's children / aria-label reach the DOM via the `props` object
+    // below, not as JSX children of this element. Unscoped disable: this
+    // file is also linted in isolation (reference-primitives.test.ts)
+    // against only the component-api rule set, which doesn't know the
+    // react-a11y plugin namespace.
+    // eslint-disable-next-line
     render: render ?? <button />,
     props: {
       'data-slot': 'button',

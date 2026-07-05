@@ -321,6 +321,15 @@ describe('no-unknown-property', () => {
         {
           code: '<div {...{ className: "test" }} />',
         },
+        // Custom components define their own prop contract — every prop is
+        // "unknown" to the DOM by design, so the rule only applies to
+        // intrinsic (lowercase) elements.
+        {
+          code: '<Box surface="card" radius="lg" border />',
+        },
+        {
+          code: '<BaseMenu.Positioner sideOffset={4} align="start" />',
+        },
       ],
       invalid: [
         // Invalid attribute with spread

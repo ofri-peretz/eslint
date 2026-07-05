@@ -39,24 +39,28 @@ function PaginationItem(props: React.ComponentProps<'li'>) {
 }
 
 type PaginationLinkProps = {
-  isActive?: boolean;
+  active?: boolean;
   size?: VariantProps<typeof buttonVariants>['size'];
 } & React.ComponentProps<'a'>;
 
 function PaginationLink({
   className,
-  isActive,
+  active,
   size = 'icon',
   ...props
 }: PaginationLinkProps) {
   return (
+    // Content and href are supplied by the consumer via {...props} (this is
+    // a bare navigable link primitive); the rules can't see through the
+    // spread.
+    // eslint-disable-next-line react-a11y/anchor-has-content, react-a11y/control-has-associated-label, react-a11y/anchor-is-valid
     <a
-      aria-current={isActive ? 'page' : undefined}
+      aria-current={active ? 'page' : undefined}
       data-slot="pagination-link"
-      data-active={isActive}
+      data-active={active}
       className={cn(
         buttonVariants({
-          variant: isActive ? 'outline' : 'ghost',
+          variant: active ? 'outline' : 'ghost',
           size,
         }),
         className,
