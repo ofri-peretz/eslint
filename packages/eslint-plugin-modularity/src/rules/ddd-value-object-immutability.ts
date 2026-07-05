@@ -46,22 +46,12 @@ function isValueObject(
 }
 
 /**
- * Check if property has readonly modifier
+ * Check if property has readonly modifier.
+ * The rule only visits classes, so only PropertyDefinition can reach here
+ * (the former TSPropertySignature branch was unreachable dead code).
  */
-function hasReadonlyModifier(
-  node: TSESTree.PropertyDefinition | TSESTree.TSPropertySignature
-): boolean {
-  if (node.type === 'PropertyDefinition') {
-    return node.readonly === true;
-  }
-  
-  /* v8 ignore start -- TSPropertySignature is for interfaces, rule only processes classes */
-  if (node.type === 'TSPropertySignature') {
-    return node.readonly === true;
-  }
-  
-  return false;
-  /* v8 ignore stop */
+function hasReadonlyModifier(node: TSESTree.PropertyDefinition): boolean {
+  return node.readonly === true;
 }
 
 /**

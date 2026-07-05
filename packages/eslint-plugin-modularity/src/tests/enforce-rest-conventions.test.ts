@@ -67,4 +67,29 @@ describe('enforce-rest-conventions', () => {
       invalid: [],
     });
   });
+
+  describe('callee and argument shapes (coverage edges)', () => {
+    ruleTester.run('non-member callees, computed properties, non-path args', enforceRestConventions, {
+      valid: [
+        // Plain identifier call: callee is not a MemberExpression at all
+        { code: 'doWork();' },
+        // Computed member access: property is not an Identifier
+        { code: "app['get']('/user', handler);" },
+        // First argument is not a string literal
+        { code: 'app.get(handler);' },
+        // Path does not start with a slash
+        { code: "app.get('user', handler);" },
+        // Root path with length 1
+        { code: "app.get('/', handler);" },
+        // res.status(...) enters the status-code branch (currently informational only)
+        { code: 'res.status(200);' },
+        // checkStatusCodes disabled short-circuits the status branch
+        {
+          code: 'res.status(999);',
+          options: [{ checkStatusCodes: false }],
+        },
+      ],
+      invalid: [],
+    });
+  });
 });

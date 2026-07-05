@@ -87,4 +87,30 @@ describe('no-external-api-calls-in-utils', () => {
       ],
     });
   });
+
+  describe('callee shape edges', () => {
+    ruleTester.run('computed and nested member callees', noExternalApiCallsInUtils, {
+      valid: [
+        // Computed member callee: property is not an Identifier, not a network call
+        {
+          code: "obj['get'](url);",
+          filename: '/src/utils/dynamic.ts',
+        },
+        // IIFE callee is neither Identifier nor MemberExpression
+        {
+          code: '(function () { return 1; })();',
+          filename: '/src/utils/iife.ts',
+        },
+      ],
+      invalid: [
+        // Nested member object: objectName resolves to '' but the method name
+        // alone ("get") matches the default network methods
+        {
+          code: 'client.api.get(url);',
+          filename: '/src/utils/nested.ts',
+          errors: [{ messageId: 'externalApiCallInUtils' }],
+        },
+      ],
+    });
+  });
 });

@@ -117,4 +117,28 @@ describe('ddd-value-object-immutability', () => {
       ],
     });
   });
+
+  describe('coverage edge cases', () => {
+    ruleTester.run('anonymous classes and constructor overloads', dddValueObjectImmutability, {
+      valid: [
+        // Anonymous class expression: no id, rule bails out
+        { code: 'const money = class {};' },
+        // Constructor overload signature (TSEmptyBodyFunctionExpression value)
+        // is skipped; the implementation constructor freezes the instance.
+        {
+          code: `
+            class PriceValue {
+              private readonly amount: number;
+              constructor(a: number);
+              constructor(a: number) {
+                this.amount = a;
+                Object.freeze(this);
+              }
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });

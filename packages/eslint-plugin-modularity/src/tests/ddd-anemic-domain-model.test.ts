@@ -356,6 +356,156 @@ describe('ddd-anemic-domain-model', () => {
     });
   });
 
+  describe('classifier edge cases (coverage: getter/setter + delegation classifiers)', () => {
+    ruleTester.run('edge-case member shapes', dddAnemicDomainModel, {
+      valid: [
+        // TS method overload signatures: value is TSEmptyBodyFunctionExpression,
+        // so both classifiers bail out and the signature is not counted; the
+        // two-statement implementation counts as a business method.
+        {
+          code: `
+            class Order {
+              place(id: string): void;
+              place(id: number): void;
+              place(id: string | number): void {
+                this.validate(id);
+                this.commit(id);
+              }
+            }
+          `,
+        },
+        // String-literal method key: methodName resolves to '' in classifiers
+        {
+          code: `
+            class Order {
+              'total'() { return this.a + this.b; }
+            }
+          `,
+        },
+        // Empty method body: isSimpleGetterSetter returns false, counts as business
+        {
+          code: `
+            class Order {
+              getTotal() {}
+            }
+          `,
+        },
+        // get-prefixed method whose single statement is a bare return (no argument)
+        {
+          code: `
+            class Order {
+              getStatus() { return; }
+            }
+          `,
+        },
+        // set-prefixed method whose single statement is a call, not an assignment;
+        // also exercises the void-call-with-Identifier-callee path in isPureDelegation
+        {
+          code: `
+            class Order {
+              setStatus(s) { validate(s); }
+            }
+          `,
+        },
+        // Computed this-property in return delegation: propName '' -> business logic
+        {
+          code: `
+            class Order {
+              save() { return this['repository'].save(this); }
+            }
+          `,
+        },
+        // Delegation-shaped return where the object is \`this\` directly
+        {
+          code: `
+            class Order {
+              refresh() { return this.compute(); }
+            }
+          `,
+        },
+        // Void call with computed callee property: methodName '' -> not delegation
+        {
+          code: `
+            class Order {
+              touch() { this.helper['run'](1); }
+            }
+          `,
+        },
+        // Void call on computed this-property: propName '' -> not delegation
+        {
+          code: `
+            class Order {
+              flush() { this['repository'].save(this); }
+            }
+          `,
+        },
+        // Void call on built-in collection method is business logic
+        {
+          code: `
+            class Order {
+              addItem(i) { this.items.push(i); }
+            }
+          `,
+        },
+        // Void call on a plain identifier object is not this.<service> delegation
+        {
+          code: `
+            class Order {
+              run() { service.exec(); }
+            }
+          `,
+        },
+        // Computed method key in countBusinessMethods: methodName '' still counts
+        {
+          code: `
+            class Order {
+              ['compute']() {
+                const t = this.x;
+                return t;
+              }
+            }
+          `,
+        },
+        // Static block member is neither MethodDefinition nor PropertyDefinition
+        {
+          code: `
+            class Order {
+              static { }
+              compute() { return this.x + 1; }
+            }
+          `,
+        },
+        // Capitalized service-pattern property names in return delegation:
+        // userRepository / authService / httpApi hit the capitalized includes()
+        // operands, so all three methods are delegation... which makes the class
+        // anemic — pair them with one business method to keep it valid.
+        {
+          code: `
+            class Order {
+              persist() { return this.userRepository.save(this); }
+              authorize() { return this.authService.check(this); }
+              send() { return this.httpApi.post(this); }
+              computeTotal() { return this.a + this.b; }
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // Computed property name on the delegated call: methodName '' is not a
+        // built-in, this.repository matches the service pattern -> delegation,
+        // so the class has zero business methods.
+        {
+          code: `
+            class Order {
+              save() { return this.repository['save'](this); }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+      ],
+    });
+  });
+
   describe('DTO pattern matching', () => {
     ruleTester.run('custom dto patterns', dddAnemicDomainModel, {
       valid: [
