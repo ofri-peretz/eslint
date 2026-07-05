@@ -89,9 +89,10 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    // `options` is always an object here (`|| {}` above), so no second fallback.
     const {
-allowComplexLifecycle = false 
-}: Options = options || {};
+allowComplexLifecycle = false
+}: Options = options;
 
     const sourceCode = context.sourceCode;
 

@@ -256,9 +256,9 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
         analyzeNode(body);
       }
 
-      components.set(componentName, {
+      const componentData = {
         name: componentName,
-        type: node.type === 'ArrowFunctionExpression' ? 'arrow' : 'function',
+        type: node.type === 'ArrowFunctionExpression' ? ('arrow' as const) : ('function' as const),
         node,
         propsCount,
         hasExpensiveComputations,
@@ -266,13 +266,11 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
         hasInlineFunctions,
         renderStatements,
         linesOfCode,
-      });
+      };
+      components.set(componentName, componentData);
 
       // Analyze and suggest optimizations
-      const componentData = components.get(componentName);
-      if (componentData) {
-        analyzeComponentOptimizations(componentName, componentData);
-      }
+      analyzeComponentOptimizations(componentName, componentData);
     }
 
     function analyzeClassComponent(node: TSESTree.ClassDeclaration) {
