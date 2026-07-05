@@ -130,12 +130,10 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         // Check for jwt.decode() pattern
         if (isDecodeOperation(node)) {
-          /* c8 ignore start -- hasSafeAnnotation requires ESLint comment simulation in tests */
           // Check for safe annotations
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -146,12 +144,10 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
 
         // Check for jwt-decode library usage
         if (isJwtDecodeLibrary(node)) {
-          /* c8 ignore start -- hasSafeAnnotation requires ESLint comment simulation in tests */
           // Check for safe annotations
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
