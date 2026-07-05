@@ -50,16 +50,6 @@ component_management:
         - type: patch
           target: 100%
 
-    - component_id: eslint-plugin-crypto
-      name: 'eslint-plugin-crypto'
-      paths:
-        - packages/eslint-plugin-crypto/**
-      statuses:
-        - type: project
-          target: 100%
-        - type: patch
-          target: 100%
-
     - component_id: eslint-plugin-jwt
       name: 'eslint-plugin-jwt'
       paths:
@@ -206,6 +196,26 @@ component_management:
         - packages/eslint-devkit/**
       statuses:
         - type: project
+          target: 100%
+
+    - component_id: eslint-formatter
+      name: 'eslint-formatter'
+      paths:
+        - packages/eslint-formatter/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-formatter-sarif
+      name: 'eslint-formatter-sarif'
+      paths:
+        - packages/eslint-formatter-sarif/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────

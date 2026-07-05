@@ -5,15 +5,17 @@ name: Upload Coverage to Codecov
 # Runs every package's `test` task with coverage via Turbo, uploads lcov +
 # JUnit results to Codecov for badges + Test Analytics.
 #
-# Trigger: manual (workflow_dispatch). Schedule is intentionally disabled —
-# coverage is regenerated on demand to conserve runner quota.
+# Trigger: weekly schedule (keeps the dashboard from going stale) + manual
+# workflow_dispatch for on-demand runs (e.g. right after a coverage-focused merge).
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  schedule:
+    - cron: "0 6 * * 1" # every Monday 06:00 UTC
   workflow_dispatch:
     inputs:
       filter:
-        description: "Turbo filter (e.g. eslint-plugin-crypto). Empty = all packages."
+        description: "Turbo filter (e.g. eslint-plugin-pg). Empty = all packages."
         required: false
         type: string
         default: ""
