@@ -141,7 +141,6 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === 'sha1'
         ) {
-          /* c8 ignore next 12 -- sha1() call pattern requires specific import tracking */
           context.report({
             node,
             messageId: 'sha1Deprecated',

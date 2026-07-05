@@ -304,3 +304,226 @@ describe('detect-child-process', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Coverage-completion wave: dual-layer tests for previously untested branches.
+// Layer 1: RuleTester fixtures through the real parser.
+// Layer 2: direct unit tests of module-level helpers.
+// ---------------------------------------------------------------------------
+import { expect } from 'vitest';
+import { generateRefactoringSteps } from './index';
+import type { CommandPattern } from './index';
+
+describe('detect-child-process — coverage completion', () => {
+  describe('argument-shape edge cases', () => {
+    ruleTester.run('zero-arg and non-literal second-arg calls', detectChildProcess, {
+      valid: [
+        // Second arg is a plain Literal (not an array) — hasOnlyLiteralArgs=true, execFile has no shell
+        {
+          code: `const cp = require('child_process'); cp.execFile('ls', '-l');`,
+        },
+        // spawn all-literal with NO options arg — default shell:false is safe
+        {
+          code: `const cp = require('child_process'); cp.spawn('ls', ['-l']);`,
+        },
+        // spawn all-literal with explicit { shell: false }
+        {
+          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: false });`,
+        },
+        // spawn all-literal with options object without a shell property
+        {
+          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { cwd: '/tmp' });`,
+        },
+        // spawn all-literal with non-object options arg (identifier) — treated as default shell:false
+        {
+          code: `const legacyOpts = getOpts(); const cp = require('child_process'); cp.spawn('ls', ['-l'], legacyOpts);`,
+        },
+      ],
+      invalid: [
+        // exec() with zero arguments — hasOnlyLiteralArgs returns false on empty args
+        {
+          code: `const cp = require('child_process'); cp.exec();`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // execFile with object (non-array, non-literal) second arg — dynamic
+        {
+          code: `const cp = require('child_process'); cp.execFile('ls', { cwd: '/' });`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // exec with literal command + callback — not "only literal args", allowLiteralStrings off
+        {
+          code: `const cp = require('child_process'); cp.exec('ls -l', function (err, out) {});`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // spawn all-literal but shell: true — unsafe
+        {
+          code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: true });`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('allowLiteralStrings option', () => {
+    ruleTester.run('legacy allowLiteralStrings path', detectChildProcess, {
+      valid: [
+        // Literal exec + callback allowed only via the legacy option
+        {
+          code: `const cp = require('child_process'); cp.exec('ls -l', function (err, out) {});`,
+          options: [{ allowLiteralStrings: true }],
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('additionalMethods option (no COMMAND_PATTERNS entry)', () => {
+    ruleTester.run('custom method reported with fallback metadata', detectChildProcess, {
+      valid: [],
+      invalid: [
+        // 'doExec' has no COMMAND_PATTERNS entry: exercises the pattern=null fallbacks
+        {
+          code: `const { doExec } = require('child_process'); doExec(userInput);`,
+          options: [{ additionalMethods: ['doExec'] }],
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('allowlist guard-clause variants', () => {
+    ruleTester.run('generic guards and ancestor guards', detectChildProcess, {
+      valid: [
+        // Pattern 1: call inside `if (ALLOWED.includes(arg))` ancestor
+        {
+          code: `
+            const { execFile } = require('child_process');
+            function go(fmt) {
+              if (ALLOWED.includes(fmt)) {
+                execFile('convert', [fmt]);
+              }
+            }
+          `,
+        },
+        // Pattern 2 generic guard: includes() WITHOUT args + identifier call arg
+        {
+          code: `
+            const { execFile } = require('child_process');
+            function run(tool) {
+              if (!getAllowed().includes()) {
+                throw new Error('nope');
+              }
+              execFile(tool);
+            }
+          `,
+        },
+        // Pattern 2 generic guard: bare ReturnStatement consequent + array arg with identifier
+        {
+          code: `
+            const { execFile } = require('child_process');
+            function run2(tool) {
+              if (!getAllowed().includes()) return;
+              execFile('convert', [tool]);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('import tracking (ESM)', () => {
+    ruleTester.run('import declarations', detectChildProcess, {
+      valid: [
+        // Non-child_process import is ignored
+        {
+          code: `import fs from 'fs'; fs.readFile(userPath);`,
+        },
+      ],
+      invalid: [
+        // Named import
+        {
+          code: `import { exec } from 'child_process'; exec(cmd);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // Default import alias
+        {
+          code: `import cp from 'child_process'; cp.exec(cmd);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // Namespace import alias
+        {
+          code: `import * as child from 'child_process'; child.execSync(cmd);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('require tracking (CJS)', () => {
+    ruleTester.run('require declarator variants', detectChildProcess, {
+      valid: [
+        // Declarator without init
+        {
+          code: `let pending; pending = 1;`,
+        },
+        // require() with no argument
+        {
+          code: `const cp = require(); cp.exec('ls');`,
+        },
+        // require(dynamic) — not a literal
+        {
+          code: `const cp = require(moduleName); cp.exec('ls');`,
+        },
+        // require of a different module — alias NOT tracked
+        {
+          code: `const cp = require('fs'); cp.exec(userCmd);`,
+        },
+        // Destructured require of a different module
+        {
+          code: `const { exec } = require('os'); exec(userCmd);`,
+        },
+      ],
+      invalid: [
+        // Alias tracked from require('child_process')
+        {
+          code: `const cp = require('child_process'); cp.exec(userCmd);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // Destructured with default value (AssignmentPattern) — falls back to key name
+        {
+          code: `const { exec = fallbackExec } = require('child_process'); exec(cmd);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('generateRefactoringSteps (unit)', () => {
+    const pattern = (method: string): CommandPattern => ({
+      method,
+      dangerous: true,
+      vulnerability: 'command-injection',
+      safeAlternatives: ['x'],
+      example: { bad: 'b', good: ['g'] },
+      effort: '1 minute',
+    });
+
+    it('returns method-specific steps for every known method', () => {
+      expect(generateRefactoringSteps(pattern('exec'))).toContain('Replace exec() with execFile() or spawn()');
+      expect(generateRefactoringSteps(pattern('execSync'))).toContain('Replace exec() with execFile() or spawn()');
+      expect(generateRefactoringSteps(pattern('spawn'))).toContain('cross-spawn for cross-platform safety');
+      expect(generateRefactoringSteps(pattern('execFile'))).toContain('Replace execFile() with spawn() for better security');
+      expect(generateRefactoringSteps(pattern('execFileSync'))).toContain('Replace execFileSync() with spawnSync() for better security');
+      expect(generateRefactoringSteps(pattern('spawnSync'))).toContain('Handle synchronous execution properly');
+      expect(generateRefactoringSteps(pattern('fork'))).toContain('Replace fork() with spawn() for Node.js scripts');
+      expect(generateRefactoringSteps(pattern('forkSync'))).toContain('Replace forkSync() with spawnSync() for Node.js scripts');
+    });
+
+    it('returns generic steps for a method without a dedicated case', () => {
+      const steps = generateRefactoringSteps(pattern('customExec'));
+      expect(steps).toContain('Identify the specific command execution need');
+      expect(steps).toContain('Test with malicious inputs');
+    });
+  });
+});

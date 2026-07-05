@@ -103,7 +103,6 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function reportThirdPartyLib(node: TSESTree.Node, library: string) {
-      /* c8 ignore next 15 -- suggestions with fix: () => null cannot be tested with RuleTester */
       context.report({
         node,
         messageId: 'preferNative',

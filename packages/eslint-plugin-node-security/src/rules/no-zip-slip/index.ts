@@ -370,12 +370,16 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             if (['extractAllTo', 'unzip'].includes(methodName)) {
               // Destination is the first argument
               destArg = args[0];
-            } else if (archiveFunctions.includes(methodName)) {
-              // For other archive functions, destination is typically the second argument
+            } else {
+              // For other archive functions, destination is typically the
+              // second argument. isArchiveExtraction() already guaranteed
+              // methodName is listed in archiveFunctions for member callees.
               destArg = args.length >= 2 ? args[1] : undefined;
             }
-          } else if (node.callee.type === 'Identifier' && archiveFunctions.includes(node.callee.name)) {
-            // For standalone functions like extractArchive(file, dest)
+          } else {
+            // For standalone functions like extractArchive(file, dest);
+            // isArchiveExtraction() already guaranteed the callee is an
+            // Identifier naming an archive function.
             destArg = args.length >= 2 ? args[1] : undefined;
           }
 
@@ -405,10 +409,12 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             }
             // For safe relative paths, don't report any error
 
-            // Additionally report dangerous destination for dangerous destinations
-            if (isDestDangerous) {
+            // Additionally report dangerous destination for dangerous destinations.
+            // `isDestDangerous` implies `destArg` is a string Literal (destText
+            // is derived from it), so no `|| node` fallback is needed here.
+            if (isDestDangerous && destArg) {
               context.report({
-                node: destArg || node,
+                node: destArg,
                 messageId: 'dangerousArchiveDestination',
                 data: {
                   filePath: filename,

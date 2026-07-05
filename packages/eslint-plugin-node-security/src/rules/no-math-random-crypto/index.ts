@@ -159,7 +159,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         }
 
         // Check function names
-        /* c8 ignore next 6 -- FunctionDeclaration with id.name matching pattern requires specific context */
         if (current.type === AST_NODE_TYPES.FunctionDeclaration && current.id) {
           const funcName = current.id.name;
           if (CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName))) {
@@ -228,7 +227,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         }
         current = current.parent;
       }
-      /* c8 ignore next -- unreachable when called from valid AST context */
       return null;
     }
 

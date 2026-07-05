@@ -173,6 +173,92 @@ const COMMAND_PATTERNS: CommandPattern[] = [
   }
 ];
 
+/**
+ * Generate refactoring steps based on the pattern.
+ *
+ * Module-scope (rather than inline in `create()`) so the `default` branch —
+ * unreachable through COMMAND_PATTERNS, which only contains methods with
+ * dedicated cases — is directly unit-testable.
+ */
+export const generateRefactoringSteps = (pattern: CommandPattern): string => {
+  switch (pattern.method) {
+    case 'exec':
+    case 'execSync':
+      return [
+        '   1. Replace exec() with execFile() or spawn()',
+        '   2. Split command and arguments into separate array elements',
+        '   3. Use {shell: false} option to prevent shell interpretation',
+        '   4. Validate and sanitize all user inputs',
+        '   5. Consider using execa library for better security'
+      ].join('\n');
+
+    case 'spawn':
+      return [
+        '   1. Ensure first argument is a safe, validated command path',
+        '   2. Pass arguments as separate array elements',
+        '   3. Use {shell: false} to prevent shell injection',
+        '   4. Validate command exists and is executable',
+        '   5. Consider using cross-spawn for cross-platform safety'
+      ].join('\n');
+
+    case 'execFile':
+      return [
+        '   1. Replace execFile() with spawn() for better security',
+        '   2. Validate command path before execution',
+        '   3. Ensure arguments are properly sanitized',
+        '   4. Use {shell: false} option',
+        '   5. Consider using execa library'
+      ].join('\n');
+
+    case 'execFileSync':
+      return [
+        '   1. Replace execFileSync() with spawnSync() for better security',
+        '   2. Validate command path before execution',
+        '   3. Ensure arguments are properly sanitized',
+        '   4. Use {shell: false} option',
+        '   5. Consider using execa library'
+      ].join('\n');
+
+    case 'spawnSync':
+      return [
+        '   1. Ensure first argument is a safe, validated command path',
+        '   2. Pass arguments as separate array elements',
+        '   3. Use {shell: false} to prevent shell injection',
+        '   4. Validate command exists and is executable',
+        '   5. Handle synchronous execution properly'
+      ].join('\n');
+
+    case 'fork':
+      return [
+        '   1. Replace fork() with spawn() for Node.js scripts',
+        '   2. Validate script path exists and is readable',
+        '   3. Use spawn(\'node\', [scriptPath], options) instead',
+        '   4. Add proper error handling',
+        '   5. Consider using child_process.execFile() for simple scripts'
+      ].join('\n');
+
+    case 'forkSync':
+      return [
+        '   1. Replace forkSync() with spawnSync() for Node.js scripts',
+        '   2. Validate script path exists and is readable',
+        '   3. Use spawnSync(\'node\', [scriptPath], options) instead',
+        '   4. Add proper error handling and synchronous waiting',
+        '   5. Consider using child_process.execFileSync() for simple scripts'
+      ].join('\n');
+
+    default:
+      return [
+        '   1. Identify the specific command execution need',
+        '   2. Choose appropriate child_process method',
+        '   3. Use argument arrays instead of string interpolation',
+        '   4. Add comprehensive input validation',
+        '   5. Test with malicious inputs'
+      ].join('\n');
+  }
+};
+
+export type { CommandPattern };
+
 export const detectChildProcess = createRule<RuleOptions, MessageIds>({
   name: 'detect-child-process',
   meta: {
@@ -305,7 +391,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       allowLiteralStrings = false,
       allowLiteralSpawn = false,
       additionalMethods = [],
-    }: Options = options || {};
+    }: Options = options;
 
     /**
      * Child process methods that can be dangerous (Set for O(1) lookup)
@@ -526,22 +612,16 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Extract command and arguments for analysis
+     * Extract command and arguments for analysis.
+     * `method` comes from getChildProcessCall, which already resolved the
+     * callee shape — re-deriving it here would duplicate that logic behind
+     * an unreachable defensive branch.
      */
-    const extractCommandInfo = (node: TSESTree.CallExpression): {
-      method: string;
+    const extractCommandInfo = (node: TSESTree.CallExpression, method: string): {
       args: string;
       pattern: CommandPattern | null;
       isDynamic: boolean;
     } => {
-      let method = 'unknown';
-      if (node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier') {
-        method = node.callee.property.name;
-      } else if (node.callee.type === 'Identifier') {
-        method = node.callee.name;
-      }
-
       const sourceCode = context.sourceCode;
       const args = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
 
@@ -550,88 +630,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // Check if arguments contain dynamic content
       const isDynamic = node.arguments.some((arg: TSESTree.Node) => containsDynamicStrings(arg));
 
-      return { method, args, pattern, isDynamic };
-    };
-
-    /**
-     * Generate refactoring steps based on the pattern
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const generateRefactoringSteps = (pattern: CommandPattern): string => {
-      switch (pattern.method) {
-        case 'exec':
-        case 'execSync':
-          return [
-            '   1. Replace exec() with execFile() or spawn()',
-            '   2. Split command and arguments into separate array elements',
-            '   3. Use {shell: false} option to prevent shell interpretation',
-            '   4. Validate and sanitize all user inputs',
-            '   5. Consider using execa library for better security'
-          ].join('\n');
-
-        case 'spawn':
-          return [
-            '   1. Ensure first argument is a safe, validated command path',
-            '   2. Pass arguments as separate array elements',
-            '   3. Use {shell: false} to prevent shell injection',
-            '   4. Validate command exists and is executable',
-            '   5. Consider using cross-spawn for cross-platform safety'
-          ].join('\n');
-
-        case 'execFile':
-          return [
-            '   1. Replace execFile() with spawn() for better security',
-            '   2. Validate command path before execution',
-            '   3. Ensure arguments are properly sanitized',
-            '   4. Use {shell: false} option',
-            '   5. Consider using execa library'
-          ].join('\n');
-
-        case 'execFileSync':
-          return [
-            '   1. Replace execFileSync() with spawnSync() for better security',
-            '   2. Validate command path before execution',
-            '   3. Ensure arguments are properly sanitized',
-            '   4. Use {shell: false} option',
-            '   5. Consider using execa library'
-          ].join('\n');
-
-        case 'spawnSync':
-          return [
-            '   1. Ensure first argument is a safe, validated command path',
-            '   2. Pass arguments as separate array elements',
-            '   3. Use {shell: false} to prevent shell injection',
-            '   4. Validate command exists and is executable',
-            '   5. Handle synchronous execution properly'
-          ].join('\n');
-
-        case 'fork':
-          return [
-            '   1. Replace fork() with spawn() for Node.js scripts',
-            '   2. Validate script path exists and is readable',
-            '   3. Use spawn(\'node\', [scriptPath], options) instead',
-            '   4. Add proper error handling',
-            '   5. Consider using child_process.execFile() for simple scripts'
-          ].join('\n');
-
-        case 'forkSync':
-          return [
-            '   1. Replace forkSync() with spawnSync() for Node.js scripts',
-            '   2. Validate script path exists and is readable',
-            '   3. Use spawnSync(\'node\', [scriptPath], options) instead',
-            '   4. Add proper error handling and synchronous waiting',
-            '   5. Consider using child_process.execFileSync() for simple scripts'
-          ].join('\n');
-
-        default:
-          return [
-            '   1. Identify the specific command execution need',
-            '   2. Choose appropriate child_process method',
-            '   3. Use argument arrays instead of string interpolation',
-            '   4. Add comprehensive input validation',
-            '   5. Test with malicious inputs'
-          ].join('\n');
-      }
+      return { args, pattern, isDynamic };
     };
 
     /**
@@ -692,7 +691,8 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { method, args, pattern, isDynamic } = extractCommandInfo(node);
+      const { method } = detected;
+      const { args, pattern, isDynamic } = extractCommandInfo(node, method);
 
       // ALWAYS safe: exec/execSync called with a single string literal that
       // contains no interpolation — there is no user input to inject. The

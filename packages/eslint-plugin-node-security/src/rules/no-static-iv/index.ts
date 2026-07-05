@@ -108,7 +108,6 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         ) {
           randomIvVariables.add(node.id.name);
         }
-        /* c8 ignore next 4 -- standalone randomBytes call requires specific import pattern */
         if (
           init.callee.type === AST_NODE_TYPES.Identifier &&
           init.callee.name === 'randomBytes'
@@ -157,7 +156,6 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         if (firstArg?.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string') {
           reportStaticIv(ivArg);
         }
-        /* c8 ignore next 7 -- ArrayExpression with all numeric literals is rare pattern */
         // Check for new Uint8Array([...])
         if (firstArg?.type === AST_NODE_TYPES.ArrayExpression) {
           const allLiterals = firstArg.elements.every(
