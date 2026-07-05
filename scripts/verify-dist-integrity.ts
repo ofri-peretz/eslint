@@ -236,8 +236,20 @@ async function main(): Promise<void> {
       const results = await eslint.lintText('const _x = 1;\n', {
         filePath: 'probe.tsx',
       });
-      const ignored = results[0]?.messages?.some((m: { message: string }) =>
-        /File ignored because no matching configuration/.test(m.message),
+      if (results.length !== 1) {
+        console.error(
+          `✗ ${name} → configs.${preset}: expected 1 lint result, got ${results.length} — resolution could not be verified`,
+        );
+        failures += 1;
+        continue;
+      }
+      // Version-agnostic: ESLint 9/10's flat-config message is "no matching
+      // configuration"; ESLint 8's FlatESLint says "matching ignore pattern".
+      // Both are ruleId-less warnings, so match on that shape rather than
+      // pinning to one major's exact wording.
+      const ignored = results[0].messages.some(
+        (m: { ruleId: string | null; message: string }) =>
+          m.ruleId === null && /ignored/i.test(m.message),
       );
       if (ignored) {
         console.error(

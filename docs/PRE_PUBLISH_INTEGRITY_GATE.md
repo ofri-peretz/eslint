@@ -53,7 +53,7 @@ and **never resolves the rules**, so the namespace bug sails straight through a
 naive `lintText` probe.
 
 Both the vitest lock and the dist gate therefore **prepend a
-`files: ['**/\*.{js,jsx,ts,tsx,cjs,mjs}']`matcher**, strip any preset-internal`files`/`ignores`, and additionally assert the probe file was **not** ignored —
+`files: ['**/\*.{js,jsx,ts,tsx,cjs,mjs}']` matcher**, strip any preset-internal `files`/`ignores`, and additionally assert the probe file was **not** ignored —
 so the resolution check can never silently degrade back into a no-op.
 
 > Verified empirically (2026-06): under both `eslint@9.39` and `eslint@10.4`,
@@ -88,7 +88,7 @@ mode) a published plugin had no `dist/` · `2` setup error.
 
 ## CI wiring (implemented)
 
-`.github/workflows/release.yml` runs a **`integrity`** job between `build` and
+`.github/workflows/release.yml` runs an **`integrity`** job between `build` and
 `publish`:
 
 - `needs: [detect, build]`; `publish` now `needs: [detect, build, integrity]`,
