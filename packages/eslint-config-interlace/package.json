@@ -22,9 +22,6 @@
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "src/",
     "dist/",
