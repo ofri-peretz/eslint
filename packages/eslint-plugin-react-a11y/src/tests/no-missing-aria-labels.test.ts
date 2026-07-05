@@ -43,9 +43,17 @@ describe('no-missing-aria-labels', () => {
         },
         // Test files (if ignoreInTests is true)
         {
-          code: '<button>Click</button>',
+          code: '<button><Icon /></button>',
           filename: 'test.spec.tsx',
           options: [{ ignoreInTests: true }],
+        },
+        // Text children provide an accessible name — no aria-label needed.
+        {
+          code: '<button>Click</button>',
+        },
+        // title attribute also provides an accessible name.
+        {
+          code: '<button title="Close dialog"></button>',
         },
       ],
       invalid: [],
@@ -56,8 +64,22 @@ describe('no-missing-aria-labels', () => {
     ruleTester.run('invalid - elements without ARIA labels', noMissingAriaLabels, {
       valid: [],
       invalid: [
+        // Icon-only button — no text child, no aria-label/aria-labelledby/title,
+        // so it has no accessible name. (Buttons WITH text children, e.g.
+        // `<button>Click</button>`, are exempted — see hasTextContent() below.)
         {
-          code: '<button>Click</button>',
+          code: '<button><Icon /></button>',
+          errors: [{ messageId: 'missingAriaLabel' }],
+        },
+        // Same icon-only case wrapped in a JSX expression container — must
+        // still be flagged; only string-like expressions (Literal,
+        // TemplateLiteral, Identifier) are treated as text content.
+        {
+          code: '<button>{<Icon />}</button>',
+          errors: [{ messageId: 'missingAriaLabel' }],
+        },
+        {
+          code: '<button>{true}</button>',
           errors: [{ messageId: 'missingAriaLabel' }],
         },
         {
@@ -79,15 +101,17 @@ describe('no-missing-aria-labels', () => {
   describe('Options', () => {
     ruleTester.run('options - ignoreInTests', noMissingAriaLabels, {
       valid: [
+        // Icon-only button (no accessible name) is still valid here because
+        // ignoreInTests exempts test files — not because of text content.
         {
-          code: '<button>Click</button>',
+          code: '<button><Icon /></button>',
           filename: 'test.spec.tsx',
           options: [{ ignoreInTests: true }],
         },
       ],
       invalid: [
         {
-          code: '<button>Click</button>',
+          code: '<button><Icon /></button>',
           filename: 'test.spec.tsx',
           options: [{ ignoreInTests: false }],
           errors: [{ messageId: 'missingAriaLabel' }],
@@ -104,7 +128,7 @@ describe('no-missing-aria-labels', () => {
       ],
       invalid: [
         {
-          code: '<button>Click</button>',
+          code: '<button><Icon /></button>',
           options: [{ requireLabels: ['button', 'input'] }],
           errors: [{ messageId: 'missingAriaLabel' }],
         },

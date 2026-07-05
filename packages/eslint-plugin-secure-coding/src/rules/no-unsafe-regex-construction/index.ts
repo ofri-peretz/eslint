@@ -25,6 +25,11 @@ type MessageIds =
   | 'useSafeLibrary'
   | 'avoidDynamicFlags';
 
+// Inline regex-metacharacter escape, appended to the flagged expression by the
+// `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
+// code, so the fix must be self-contained rather than calling one.
+const INLINE_ESCAPE_SUFFIX = '.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")';
+
 export interface Options {
   /** Allow literal string patterns. Default: false */
   allowLiterals?: boolean;
@@ -329,6 +334,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
 
       // Check for user input without escaping
       if (isUserInputValue && !isEscapedValue) {
+        const patternText = context.sourceCode.getText(patternNode);
         context.report({
           node: patternNode,
           messageId: 'unsafeRegexConstruction',
@@ -340,7 +346,15 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'escapeUserInput',
-              fix: () => null,
+              // Append an inline regex-metacharacter escape so special chars are neutralized.
+              // Parenthesize patternText first: it's spliced in as-is (could be any
+              // expression, e.g. a lower-precedence one), so `.replace(...)` must bind
+              // to the whole expression, not just its last operand.
+              fix: (fixer) =>
+                fixer.replaceText(
+                  patternNode,
+                  `(${patternText})${INLINE_ESCAPE_SUFFIX}`,
+                ),
             },
             {
               messageId: 'validatePattern',
