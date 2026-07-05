@@ -73,31 +73,35 @@ describe('no-unknown-property', () => {
   });
 
   describe('Custom Components', () => {
-    ruleTester.run('custom components accept arbitrary props', noUnknownProperty, {
-      valid: [
-        // Uppercase JSX names are custom components — arbitrary props allowed
-        {
-          code: '<Box surface="card" radius="lg" border />',
-        },
-        {
-          code: '<Stack direction="column" gap={4} />',
-        },
-        // Member-expression components
-        {
-          code: '<Motion.div surface="card" whileHover={{ scale: 1.1 }} />',
-        },
-      ],
-      invalid: [
-        // Same prop names on a lowercase DOM tag still fire
-        {
-          code: '<div surface="card" tone="brand" />',
-          errors: [
-            { messageId: 'noUnknownProperty' },
-            { messageId: 'noUnknownProperty' },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'custom components accept arbitrary props',
+      noUnknownProperty,
+      {
+        valid: [
+          // Uppercase JSX names are custom components — arbitrary props allowed
+          {
+            code: '<Box surface="card" radius="lg" border />',
+          },
+          {
+            code: '<Stack direction="column" gap={4} />',
+          },
+          // Member-expression components
+          {
+            code: '<Motion.div surface="card" whileHover={{ scale: 1.1 }} />',
+          },
+        ],
+        invalid: [
+          // Same prop names on a lowercase DOM tag still fire
+          {
+            code: '<div surface="card" tone="brand" />',
+            errors: [
+              { messageId: 'noUnknownProperty' },
+              { messageId: 'noUnknownProperty' },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid HTML Attributes', () => {
@@ -320,15 +324,6 @@ describe('no-unknown-property', () => {
         // Dynamic attributes
         {
           code: '<div {...{ className: "test" }} />',
-        },
-        // Custom components define their own prop contract — every prop is
-        // "unknown" to the DOM by design, so the rule only applies to
-        // intrinsic (lowercase) elements.
-        {
-          code: '<Box surface="card" radius="lg" border />',
-        },
-        {
-          code: '<BaseMenu.Positioner sideOffset={4} align="start" />',
         },
       ],
       invalid: [
