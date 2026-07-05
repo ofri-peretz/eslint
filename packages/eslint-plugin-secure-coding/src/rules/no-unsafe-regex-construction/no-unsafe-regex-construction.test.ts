@@ -51,22 +51,62 @@ describe('no-unsafe-regex-construction', () => {
         // Identifier user input
         {
           code: 'const regex = new RegExp(userInput);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp(escapeRegExp(userInput));',
+                },
+              ],
+            },
+          ],
         },
         // Template literal with expressions
         {
           code: 'const pattern = new RegExp(`^${userPattern}$`);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const pattern = new RegExp(escapeRegExp(`^${userPattern}$`));',
+                },
+              ],
+            },
+          ],
         },
         // Member expression (e.g., req.query.pattern)
         {
           code: 'const regex = new RegExp(req.query.pattern);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp(escapeRegExp(req.query.pattern));',
+                },
+              ],
+            },
+          ],
         },
         // Function call with untrusted function
         {
           code: 'const regex = new RegExp(getPattern());',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp(escapeRegExp(getPattern()));',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -154,7 +194,17 @@ describe('no-unsafe-regex-construction', () => {
         {
           code: 'const regex = new RegExp(unknownEscape(userInput));',
           options: [{ trustedEscapingFunctions: ['myCustomEscape'] }],
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp(escapeRegExp(unknownEscape(userInput)));',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -173,7 +223,17 @@ describe('no-unsafe-regex-construction', () => {
         // Template literal with expressions is unsafe
         {
           code: 'const regex = new RegExp(`^${input}$`);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp(escapeRegExp(`^${input}$`));',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
