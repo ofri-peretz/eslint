@@ -54,7 +54,7 @@ on:
         type: boolean
         default: false
       dist-tag:
-        description: "NPM distribution tag."
+        description: 'NPM distribution tag.'
         required: false
         type: choice
         options: [latest, next, beta, rc, alpha]
@@ -68,8 +68,8 @@ permissions:
   contents: read
 
 env:
-  TURBO_TELEMETRY_DISABLED: "1"
-  TURBO_CONCURRENCY: "4"
+  TURBO_TELEMETRY_DISABLED: '1'
+  TURBO_CONCURRENCY: '4'
   # Turbo Remote Cache — see quality.yml for setup notes. Pulls build
   # artefacts the Quality Gate already produced for the same SHA, so the
   # release "build affected" stage usually returns instantly.
@@ -95,7 +95,7 @@ jobs:
           fetch-tags: true
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
 
       - name: Diff local versions vs npm
         id: detect
@@ -180,18 +180,68 @@ jobs:
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 2.5 — Pre-publish ecosystem-integrity gate against the BUILT dist/.
+  #
+  # The vitest `ecosystem-integrity.test.ts` lock runs against workspace
+  # SOURCE (its vitest config aliases every plugin to `src/index.ts`), so it
+  # can't catch a stale/mis-built artifact — the exact failure mode that
+  # shipped broken `recommended` builds of maintainability/operability to npm
+  # while their source was already fixed. This job re-runs the same assertions
+  # against the freshly-built `dist/` from STAGE 2, under EVERY supported
+  # ESLint major (8/9/10 per docs/ESLINT_VERSION_SUPPORT.md). A
+  # plugin-key ↔ rule-prefix mismatch throws "Could not find plugin …" here
+  # and blocks the publish fan-out. See docs/PRE_PUBLISH_INTEGRITY_GATE.md.
+  # ─────────────────────────────────────────────────────────────────────────
+  integrity:
+    name: Dist integrity (eslint-${{ matrix.eslint }})
+    needs: [detect, build]
+    if: needs.detect.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        # Every supported ESLint major. Installed with `--no-save` so the
+        # lockfile is never touched (verified: hash-identical, git-clean).
+        eslint: ['8', '9', '10']
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+
+      - name: Restore dist artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: packages/
+
+      - name: Install ESLint ${{ matrix.eslint }} (no lockfile churn)
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-audit --no-fund "eslint@^${{ matrix.eslint }}"
+          node -e "console.log('eslint@' + require('eslint/package.json').version)"
+
+      - name: Run dist integrity gate
+        # --require-built: every published plugin MUST have a built dist/ here,
+        # since STAGE 2 just built them. A missing dist/ is a hard release stop.
+        run: npm run verify:dist-integrity:release
+
+  # ─────────────────────────────────────────────────────────────────────────
   # STAGE 3 — Publish each package in parallel (matrix fan-out).
   # ─────────────────────────────────────────────────────────────────────────
   publish:
     name: Publish ${{ matrix.name }}@${{ matrix.version }}
-    needs: [detect, build]
+    needs: [detect, build, integrity]
     if: needs.detect.outputs.count != '0'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
     permissions:
-      contents: write   # for git tag push
-      id-token: write   # for npm Trusted Publishers (OIDC)
+      contents: write # for git tag push
+      id-token: write # for npm Trusted Publishers (OIDC)
     strategy:
       # Don't cancel siblings on a single publish failure — partial releases
       # are recoverable, but losing successful publishes to a sibling's failure
@@ -231,7 +281,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
+          NPM_CONFIG_PROVENANCE: 'true'
           # On workflow_dispatch, inputs.* carry user-supplied values.
           # On push, they default to false / "latest" (real release).
           DRY_RUN: ${{ inputs.dry-run || false }}
