@@ -405,11 +405,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         if (isRecoveryRelated(functionName)) {
           // Check for token expiration
           if (!hasTokenExpiration(node)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.id,
@@ -423,11 +421,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
 
           // Check for rate limiting (very basic check)
           if (!functionText.includes('limit') && !functionText.includes('rate')) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.id,
@@ -495,11 +491,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               !testText.includes('token') && !testText.includes('code') &&
               !testText.includes('otp') && !testText.includes('sms')) {
 
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: test,

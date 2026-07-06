@@ -181,4 +181,57 @@ describe('no-weak-password-recovery', () => {
       ],
     });
   });
+
+  describe('Coverage — no-init declarator, anonymous function, binary-expression weak pattern, safe-annotation branches, real weak-verification fire', () => {
+    ruleTester.run('coverage matrix', noWeakPasswordRecovery, {
+      valid: [
+        // VariableDeclarator with no initializer at all — early return
+        // before any recovery-name check.
+        'let passwordResetToken;',
+        // Anonymous FunctionDeclaration (node.id === null) — only valid as
+        // a default export; early return before any name check.
+        'export default function() {};',
+        // @secure-recovery annotation makes safetyChecker.isSafe() return
+        // true for the CallExpression predictable-token-generation branch.
+        `
+        /** @secure-recovery */
+        const passwordResetToken = generatePredictableToken();
+        `,
+        // Same annotation, BinaryExpression weak-pattern branch.
+        `
+        /** @secure-recovery */
+        const passwordResetToken = Date.now() + salt;
+        `,
+        // Same annotation on the logging call — safetyChecker.isSafe()
+        // true for the CallExpression sensitive-logging branch.
+        `
+        /** @secure-recovery */
+        console.log("Token:", passwordResetToken);
+        `,
+      ],
+      invalid: [
+        // BinaryExpression weak-pattern branch, no annotation — actually
+        // reports (the sibling CallExpression variant is already tested
+        // above; this file never previously exercised the
+        // BinaryExpression arm of the if/else at all).
+        {
+          code: 'const passwordResetToken = Date.now() + salt;',
+          errors: [{ messageId: 'insufficientTokenEntropy' }],
+        },
+        // Weak recovery verification actually firing: the condition text
+        // itself must be recovery-related (password+reset) AND mention
+        // 'email' AND omit verify/token/code/otp/sms. A bare
+        // recovery-named identifier as the whole test satisfies this —
+        // the previous "Weak Recovery Verification" describe block left
+        // its invalid[] empty because its attempted fixtures used
+        // `user.email`, whose condition text ('user.email') isn't itself
+        // recovery-named, so isRecoveryRelated() never returned true and
+        // the check block was skipped entirely.
+        {
+          code: 'if (passwordResetEmail) { doSomething(); }',
+          errors: [{ messageId: 'weakRecoveryVerification' }],
+        },
+      ],
+    });
+  });
 });
