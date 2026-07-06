@@ -644,6 +644,270 @@ describe('no-hardcoded-credentials', () => {
       ],
     });
   });
+
+  describe('Coverage — custom patterns, ambiguous API key, label context, credential-name context', () => {
+    ruleTester.run('coverage matrix', noHardcodedCredentials, {
+      valid: [
+        // customPatterns: an invalid regex must be caught (try/catch) and
+        // skipped rather than crash the rule.
+        {
+          code: 'const value = "anything-at-all-not-a-real-secret-1234567890";',
+          options: [{ customPatterns: [{ pattern: '[', type: 'Broken' }] }],
+        },
+        // isLabelContext — array elements: `labels` var makes array entries
+        // UI text, not credentials.
+        {
+          code: 'const labels = ["Enter password"];',
+        },
+        // isLabelContext — assignment: input.type = "password" is a UI
+        // form-field type, not a credential.
+        {
+          code: 'input.type = "password";',
+        },
+        // isLabelContext — string-literal object key matching a label name.
+        {
+          code: 'const x = { "placeholder": "Enter your password here" };',
+        },
+        // isLabelContext — setAttribute/getAttribute second arg is UI text.
+        {
+          code: 'el.setAttribute("type", "password");',
+        },
+        {
+          code: 'el.getAttribute("placeholder");',
+        },
+      ],
+      invalid: [
+        // customPatterns: a matching custom pattern fires with the
+        // user-supplied type label.
+        {
+          code: 'const value = "CUSTOM-SECRET-9f8e7d6c5b4a";',
+          options: [{ customPatterns: [{ pattern: '^CUSTOM-SECRET-', type: 'Custom secret' }] }],
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'VALUE', credentialType: 'Custom secret' },
+                  output: 'const value = process.env.VALUE || \'CUSTOM-SECRET-9f8e7d6c5b4a\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Custom secret' },
+                  output: 'const value = await getSecret(\'value\');',
+                },
+              ],
+            },
+          ],
+        },
+        // Generic 32+-char alphanumeric actually hits the EARLIER
+        // `secretKey` structural check (length>=32 + hex/base64-ish
+        // shape) before reaching the generic-ambiguous-apikey branch —
+        // type is 'Secret key', not 'API key'. Ground-truthed via direct
+        // Linter.verify(), not guessed.
+        {
+          code: 'const apiKey = "aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: 'Secret key' },
+                  output: 'const apiKey = process.env.API_KEY || \'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Secret key' },
+                  output: 'const apiKey = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via a Property key (Identifier):
+        // context-positive path for a value with no structural pattern
+        // match, gated by detectPasswords through the object-key name.
+        // NOTE (ground-truthed): the suggestion's `data.credentialType`
+        // reads the raw `type` (empty here), not the report's `finalType`
+        // ('Credential value') — that's a real, pre-existing asymmetry in
+        // the rule's report vs suggest data, not a test mistake.
+        {
+          code: 'const config = { password: "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'PASSWORD', credentialType: '' },
+                  output: 'const config = { password: process.env.PASSWORD || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { password: await getSecret(\'password\') };',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via a Property key (string
+        // literal, not Identifier). envVarName generation only special-
+        // cases an Identifier key, so a literal key falls back to the
+        // default API_KEY.
+        {
+          code: 'const config = { "password": "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const config = { "password": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { "password": await getSecret(\'api_key\') };',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via AssignmentExpression
+        // (obj.password = "...") — also not envVarName-special-cased,
+        // falls back to API_KEY.
+        {
+          code: 'this.password = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'this.password = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'this.password = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext fallthrough to 'other' — a
+        // credential-named variable that matches none of the
+        // password/token/database/apikey suffix patterns, so the option
+        // gates never apply (always honoured). VariableDeclarator IS
+        // envVarName-special-cased, so this one does get a real name.
+        {
+          code: 'const credentials = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'CREDENTIALS', credentialType: '' },
+                  output: 'const credentials = process.env.CREDENTIALS || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const credentials = await getSecret(\'credentials\');',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — array elements: `const secrets = ['SuperSecretPhrase!!']`
+        // walks up through the ArrayExpression to the credential-named
+        // var ('secrets' -> singular 'secret' matches). ArrayExpression
+        // isn't envVarName-special-cased -> API_KEY fallback.
+        {
+          code: 'const secrets = ["SuperSecretPhrase!!"];',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const secrets = [process.env.API_KEY || \'SuperSecretPhrase!!\'];',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const secrets = [await getSecret(\'api_key\')];',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — AssignmentExpression with a plain
+        // Identifier left-hand side (not MemberExpression). Note: a bare
+        // `secretValue` does NOT match matches() (must end in one of the
+        // exact credential suffixes, e.g. 'secret' — 'secretValue' ends
+        // in 'value', not 'secret') — ground-truthed to emit NO error;
+        // `mySecret` (ends in 'secret') is the real positive fixture.
+        {
+          code: 'let mySecret; mySecret = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'let mySecret; mySecret = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'let mySecret; mySecret = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — Property with a string-literal key (not
+        // Identifier), e.g. `{ 'secretKey': '...' }`.
+        {
+          code: 'const config = { "secretKey": "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const config = { "secretKey": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { "secretKey": await getSecret(\'api_key\') };',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    // Ground-truthed negative: 'secretValue' doesn't match matches() at
+    // all (must END in a credential suffix; 'Value' doesn't qualify), so
+    // this is a genuinely valid case, not a bug.
+    ruleTester.run('secretValue name does not match credential suffix', noHardcodedCredentials, {
+      valid: [
+        { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+      ],
+      invalid: [],
+    });
+  });
 });
 
 /**
