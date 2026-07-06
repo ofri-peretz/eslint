@@ -357,9 +357,17 @@ describe('no-unlimited-resource-allocation', () => {
             const buf = safeAlloc(userSize);
           `,
         },
-        // Disabled validation requirement
+        // Disabled validation requirement — with `requireResourceValidation:
+        // false`, unvalidated user-controlled sizes are no longer flagged
+        // (proves the option actually gates the userControlledResourceSize
+        // check; req.query.size is real user input and would be reported
+        // by default, see the paired invalid case below).
         {
-          code: 'const buf = Buffer.alloc(someSize);',
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
           options: [{ requireResourceValidation: false }],
         },
         // @safe annotation directly on the userControlledResourceSize path
@@ -492,6 +500,51 @@ describe('no-unlimited-resource-allocation', () => {
         {
           code: 'const buf = Buffer.alloc(customSize);',
           options: [{ userInputVariables: ['customSize'] }],
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('config - requireResourceValidation toggle', noUnlimitedResourceAllocation, {
+      valid: [
+        // Disabling the option suppresses the userControlledResourceSize
+        // check for both Buffer.alloc() and new Buffer(), even though the
+        // size argument is unvalidated user input.
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+      ],
+      invalid: [
+        // Same code, option left at its default (true) — still flagged.
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          options: [{ requireResourceValidation: true }],
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
+          options: [{ requireResourceValidation: true }],
           errors: [
             {
               messageId: 'userControlledResourceSize',

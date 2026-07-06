@@ -245,7 +245,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+      // `allowLiterals` is accepted for backward-compatible schema/options
+      // parity (see comment near `isTypedUnionAccess` usage below) but no
+      // longer changes runtime behavior, so it is intentionally unused here.
+      allowLiterals: _allowLiterals = false,
       dangerousProperties = ['__proto__', 'prototype', 'constructor'],
     }: Options = options || {};
 

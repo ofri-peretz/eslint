@@ -354,8 +354,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (args.length > 0) {
             const sizeArg = args[0];
 
-            // Check if size comes from user input (but skip if validated)
-            if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg) && !hasSizeValidation(node)) {
+            // Check if size comes from user input (but skip if validated).
+            // When `requireResourceValidation` is disabled, callers have opted
+            // out of the "must call a validator" requirement entirely, so this
+            // branch is skipped regardless of whether validation is present.
+            if (
+              requireResourceValidation &&
+              sizeArg.type !== 'SpreadElement' &&
+              isUserInput(sizeArg) &&
+              !hasSizeValidation(node)
+            ) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
@@ -640,8 +648,15 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (args.length > 0) {
             const sizeArg = args[0];
 
-            // Check if size comes from user input (but skip if validated)
-            if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg) && !hasSizeValidation(node)) {
+            // Check if size comes from user input (but skip if validated).
+            // Disabling `requireResourceValidation` opts out of this check
+            // entirely, mirroring the CallExpression Buffer.alloc() branch.
+            if (
+              requireResourceValidation &&
+              sizeArg.type !== 'SpreadElement' &&
+              isUserInput(sizeArg) &&
+              !hasSizeValidation(node)
+            ) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
