@@ -559,13 +559,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-        // SAFE: Literal strings that are NOT dangerous properties (if allowLiterals is true)
-        if (allowLiterals) {
-          return false;
-        }
-        
-        // If allowLiterals is false, non-dangerous literal strings are still considered safe
-        // (they're static and known at compile time)
+        // Unreachable: isTypedUnionAccess() unconditionally returns true for any
+        // literal string (see its own isLiteralString short-circuit above), so
+        // every non-dangerous literal already returned false at the check above
+        // regardless of `allowLiterals`. The option is preserved in the public
+        // schema/options for backward compatibility, but no longer changes
+        // this function's outcome — both branches always returned `false`.
         return false;
       }
 
@@ -645,20 +644,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       let propertyNode: TSESTree.Node;
       let isAssignment = false;
 
+      // Note: the `node.left.type !== MemberExpression` / plain-MemberExpression
+      // shapes are the only two forms ever passed in — every call site
+      // (isHighRiskAssignment / isHighRiskMemberAccess and their two
+      // downstream checkAssignmentExpression / checkMemberExpression callers)
+      // already guards on the same discriminants before calling this
+      // function, so a "neither shape matched" fallback is unreachable dead
+      // code. The `if`/`else if` below is kept (rather than a non-null
+      // assertion) purely for TypeScript exhaustiveness over the declared
+      // union parameter type.
       if (node.type === AST_NODE_TYPES.AssignmentExpression && node.left.type === AST_NODE_TYPES.MemberExpression) {
         // Assignment: obj[key] = value
         object = sourceCode.getText(node.left.object);
         property = sourceCode.getText(node.left.property);
         propertyNode = node.left.property;
         isAssignment = true;
-      } else if (node.type === AST_NODE_TYPES.MemberExpression) {
-        // Access: obj[key]
-        object = sourceCode.getText(node.object);
-        property = sourceCode.getText(node.property);
-        propertyNode = node.property;
-        isAssignment = false;
       } else {
-        return { object: '', property: '', propertyNode: node, isAssignment: false, pattern: null };
+        // Access: obj[key]. By contract with every call site, `node` is a
+        // plain MemberExpression whenever the branch above doesn't match.
+        const memberNode = node as TSESTree.MemberExpression;
+        object = sourceCode.getText(memberNode.object);
+        property = sourceCode.getText(memberNode.property);
+        propertyNode = memberNode.property;
+        isAssignment = false;
       }
 
       // Check if property matches dangerous patterns
@@ -1067,7 +1075,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * benchmarks/AUDIT_PATTERNS.md §3.4 ("equivalent merger patterns").
      */
     const checkObjectAssignSpread = (node: TSESTree.CallExpression) => {
-      if (isInCodemodContext) return;
+      // Note: no isInCodemodContext guard here — the sole call site (the
+      // CallExpression listener below) already returns before invoking this
+      // function when isInCodemodContext is true, so a duplicate check here
+      // would be unreachable dead code.
       if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
       const callee = node.callee;
       const objectIsObject =

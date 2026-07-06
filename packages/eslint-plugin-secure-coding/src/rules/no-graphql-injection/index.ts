@@ -319,10 +319,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
             const key = `${callee.object.name}.${callee.property.name}`;
             if (safeMemberCallers.has(key)) return true;
           }
-          // Direct function call
-          if (callee.type === 'Identifier' && safeMemberCallers.has(callee.name)) {
-            return true;
-          }
           break; // Stop at first enclosing call
         }
 
@@ -371,9 +367,18 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * Find keyword at word boundary in text. Returns index or -1.
      * Uses simple character checks instead of regex \b.
      */
+    // NOTE: this loop always terminates via one of its two internal `return`
+    // statements: `text.indexOf` eventually returns -1 for any finite input,
+    // and each successful-but-boundary-failing match only advances `pos` by 1
+    // (never past `text.length`) before the next `indexOf` call runs. There is
+    // no fallthrough path once the `while` condition becomes false, so the
+    // loop is written with `while (true)` + internal returns instead of a
+    // trailing `return -1` that static analysis (and coverage) would flag as
+    // dead code.
     const findKeywordAtBoundary = (text: string, keyword: string, startFrom = 0): number => {
       let pos = startFrom;
-      while (pos < text.length) {
+      // oxlint-disable-next-line no-constant-condition
+      while (true) {
         const idx = text.indexOf(keyword, pos);
         if (idx === -1) return -1;
 
@@ -384,7 +389,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (beforeOk && afterOk) return idx;
         pos = idx + 1;
       }
-      return -1;
     };
 
     /**
@@ -660,11 +664,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // Check for introspection queries
         const lowerQuery = queryText.toLowerCase();
         if (!allowIntrospection && (lowerQuery.includes('__schema') || lowerQuery.includes('__type'))) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -708,11 +710,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // String concatenation in GraphQL queries is dangerous
-        /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
         if (safetyChecker.isSafe(node, context)) {
           return;
         }
-        /* c8 ignore stop */
 
         context.report({
           node,

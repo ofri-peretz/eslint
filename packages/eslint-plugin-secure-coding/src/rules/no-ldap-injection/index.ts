@@ -56,6 +56,37 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
+/**
+ * Check if LDAP filter contains dangerous patterns.
+ *
+ * Extracted to module scope (from inside `create()`) for direct unit
+ * testability — this function is pure and captures no closure state.
+ */
+export function containsDangerousLdapFilter(filterText: string): boolean {
+  // Dangerous LDAP filter patterns
+  const dangerousPatterns = [
+    /\*\)$/,     // Ending with *) to match everything
+    /\|\)$/,     // Ending with |) for OR operations
+    /&\)$/,      // Ending with &) for AND operations
+    /!\)$/,      // Ending with !) for NOT operations
+    /\*\|\*/,    // *|* pattern for matching everything
+    /\*&\*/,     // *&* pattern
+    /\*!/,       // NOT operations that could be exploited
+  ];
+
+  return dangerousPatterns.some(pattern => pattern.test(filterText));
+}
+
+/**
+ * Check if string contains LDAP filter interpolation.
+ *
+ * Extracted to module scope (from inside `create()`) for direct unit
+ * testability — this function is pure and captures no closure state.
+ */
+export function containsLdapInterpolation(text: string): boolean {
+  return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
+}
+
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-ldap-injection',
   meta: {
@@ -242,33 +273,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if LDAP filter contains dangerous patterns
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const containsDangerousLdapFilter = (filterText: string): boolean => {
-      // Dangerous LDAP filter patterns
-      const dangerousPatterns = [
-        /\*\)$/,     // Ending with *) to match everything
-        /\|\)$/,     // Ending with |) for OR operations
-        /&\)$/,      // Ending with &) for AND operations
-        /!\)$/,      // Ending with !) for NOT operations
-        /\*\|\*/,    // *|* pattern for matching everything
-        /\*&\*/,     // *&* pattern
-        /\*!/,       // NOT operations that could be exploited
-      ];
-
-      return dangerousPatterns.some(pattern => pattern.test(filterText));
-    };
-
-    /**
-     * Check if string contains LDAP filter interpolation
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const containsLdapInterpolation = (text: string): boolean => {
-      return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
-    };
-
-    /**
      * Check if LDAP input is from untrusted source
      */
     const isUntrustedLdapInput = (inputNode: TSESTree.Node): boolean => {
@@ -343,11 +347,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
 
         // Check if filter argument comes from untrusted input (like req.query.filter)
         if (isUntrustedLdapInput(filterArg)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(filterArg, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: filterArg,
@@ -365,30 +367,29 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           });
         } else if (filterArg.type === 'TemplateLiteral' && filterArg.expressions.length > 0) {
           // Special handling for template literals with any expressions in LDAP calls
-          // This is a more aggressive check for LDAP injection in function calls
-          const hasAnyExpression = filterArg.expressions.some(() => true);
-          if (hasAnyExpression) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
-            if (safetyChecker.isSafe(filterArg, context)) {
-              return;
-            }
-            /* c8 ignore stop */
-
-            context.report({
-              node: filterArg,
-              messageId: 'unescapedLdapInput',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-              suggest: [
-                {
-                  messageId: 'useLdapEscaping',
-                  fix: () => null,
-                },
-              ],
-            });
+          // This is a more aggressive check for LDAP injection in function calls.
+          // NOTE: the `expressions.length > 0` guard above already guarantees at
+          // least one interpolated expression is present, so a further
+          // `.some(() => true)` check was always trivially true and has been
+          // removed as provably dead code (behavior-unchanged).
+          if (safetyChecker.isSafe(filterArg, context)) {
+            return;
           }
+
+          context.report({
+            node: filterArg,
+            messageId: 'unescapedLdapInput',
+            data: {
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+            },
+            suggest: [
+              {
+                messageId: 'useLdapEscaping',
+                fix: () => null,
+              },
+            ],
+          });
         }
       },
 
@@ -417,11 +418,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         // Check if assigned value contains dangerous LDAP patterns
         if (node.init.type === 'Literal' && typeof node.init.value === 'string') {
           if (containsDangerousLdapFilter(node.init.value)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node.init, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.init,
@@ -444,11 +443,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             );
 
             if (hasUntrustedInterpolation) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node.init, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: node.init,
@@ -469,11 +466,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
 
           // Check for dangerous patterns in template literals
           if (containsDangerousLdapFilter(fullText)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node.init, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.init,
@@ -502,11 +497,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             };
 
             if (hasUntrustedInput(node.init.left) || hasUntrustedInput(node.init.right)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node.init, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: node.init,
@@ -527,11 +520,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             }
           }
         } else if (isUntrustedLdapInput(node.init) && !isLdapInputEscaped(node.init)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node.init, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: node.init,

@@ -193,11 +193,12 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    // `options` is always an object here (defaulted just above), so a
+    // second `|| {}` fallback could never fire — removed as dead code.
     const {
-allowLiterals = false,
-      maxPatternLength = 100
-    
-}: Options = options || {};
+      allowLiterals = false,
+      maxPatternLength = 100,
+    }: Options = options;
 
     /**
      * Check if a node is a literal string (potentially safe)
@@ -335,49 +336,34 @@ allowLiterals = false,
         ].join('\n');
       }
 
-      switch (vulnerability.vulnerability) {
-        case 'redos':
-          return [
-            '   1. Avoid nested quantifiers and backreferences',
-            '   2. Use possessive quantifiers: *+, ++, ?+',
-            '   3. Restructure regex to be more specific',
-            '   4. Test with potentially malicious inputs',
-            '   5. Consider safe-regex library validation'
-          ].join('\n');
-
-        case 'injection':
-          return [
-            '   1. Escape user input before RegExp construction',
-            '   2. Use RegExp.escape() if available',
-            '   3. Validate input against allowed character sets',
-            '   4. Add length limits to prevent oversized patterns',
-            '   5. Use static patterns when possible'
-          ].join('\n');
-
-        default:
-          return [
-            '   1. Identify the specific regex use case',
-            '   2. Choose appropriate safe alternative',
-            '   3. Add input validation and escaping',
-            '   4. Test thoroughly with edge cases',
-            '   5. Monitor performance in production'
-          ].join('\n');
-      }
+      // Every `RegExpPattern` constructed in this module has
+      // `vulnerability: 'redos'` (see REGEXP_PATTERNS above and the two
+      // object literals returned from `detectVulnerability`) — there is no
+      // code path that ever produces `'injection'` or another value, so
+      // this is the only reachable case. Kept as a direct return (not a
+      // switch) to avoid unreachable branches that no test could ever hit.
+      return [
+        '   1. Avoid nested quantifiers and backreferences',
+        '   2. Use possessive quantifiers: *+, ++, ?+',
+        '   3. Restructure regex to be more specific',
+        '   4. Test with potentially malicious inputs',
+        '   5. Consider safe-regex library validation'
+      ].join('\n');
     };
 
     /**
      * Determine overall risk level
      */
+    // Every `RegExpPattern` ever constructed in this module (REGEXP_PATTERNS
+    // entries, and the two object literals in `detectVulnerability`) sets
+    // `riskLevel` to only `'high'` or `'critical'` — never `'medium'` or
+    // `'low'` — so those two branches are the only reachable outcomes.
     const determineRiskLevel = (vulnerability: RegExpPattern, pattern: string): string => {
       if (vulnerability.riskLevel === 'critical' || hasReDoSPatterns(pattern)) {
         return 'CRITICAL';
       }
 
-      if (vulnerability.riskLevel === 'high') {
-        return 'HIGH';
-      }
-
-      return 'MEDIUM';
+      return 'HIGH';
     };
 
     /**
@@ -404,19 +390,13 @@ allowLiterals = false,
 
       const vulnerability = detectVulnerability(pattern, isDynamic);
 
-      // If no specific vulnerability detected but it's dynamic, still warn
-      const effectiveVulnerability = vulnerability || (isDynamic ? {
-        pattern: 'dynamic',
-        dangerous: true,
-        vulnerability: 'redos' as const,
-        safeAlternative: 'Use static RegExp patterns',
-        example: {
-          bad: pattern,
-          good: '/^safe-pattern$/'
-        },
-        effort: '10-15 minutes',
-        riskLevel: 'medium' as const
-      } : null);
+      // `detectVulnerability` always returns non-null when `isDynamic` is
+      // true (either a matched REGEXP_PATTERNS entry or its own generic
+      // "dynamic" object), so `vulnerability` can only be null when
+      // `isDynamic` is false — meaning a synthetic `isDynamic ? {...} :
+      // null` fallback here could never construct the object literal it
+      // used to; it always reduced to `null`. Removed as dead code.
+      const effectiveVulnerability = vulnerability;
 
       if (!effectiveVulnerability) {
         return;
@@ -471,27 +451,29 @@ allowLiterals = false,
 
       const pattern = node.regex.pattern;
 
-      // Check for ReDoS patterns
+      // Check for ReDoS patterns. `detectVulnerability(pattern, false)`
+      // re-tests the identical `hasReDoSPatterns(pattern)` condition just
+      // checked above (see its `isDynamic === false` branch) and always
+      // returns non-null when that's true — so `vulnerability` here can
+      // never be null. No `if (vulnerability)` guard, to avoid an
+      // unreachable false branch.
       if (hasReDoSPatterns(pattern)) {
-        const vulnerability = detectVulnerability(pattern, false);
+        const vulnerability = detectVulnerability(pattern, false)!;
+        const riskLevel = determineRiskLevel(vulnerability, pattern);
+        const steps = generateRefactoringSteps(vulnerability);
 
-        if (vulnerability) {
-          const riskLevel = determineRiskLevel(vulnerability, pattern);
-          const steps = generateRefactoringSteps(vulnerability);
-
-          context.report({
-            node,
-            messageId: 'regexpReDoS',
-            data: {
-              pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
-              riskLevel,
-              vulnerability: vulnerability.vulnerability,
-              safeAlternative: vulnerability.safeAlternative,
-              steps,
-              effort: vulnerability.effort
-            }
-          });
-        }
+        context.report({
+          node,
+          messageId: 'regexpReDoS',
+          data: {
+            pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
+            riskLevel,
+            vulnerability: vulnerability.vulnerability,
+            safeAlternative: vulnerability.safeAlternative,
+            steps,
+            effort: vulnerability.effort
+          }
+        });
       }
     };
 

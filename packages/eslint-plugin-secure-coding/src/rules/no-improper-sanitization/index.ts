@@ -335,11 +335,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             callee.property.name === 'replace') {
 
           if (isIncompleteReplaceSanitization(node)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,
@@ -378,11 +376,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               }
 
               if (hasUserInput) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node,
@@ -424,11 +420,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                                    rightText.includes('input');
 
                 if (hasUserInput) {
-                  /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                   if (safetyChecker.isSafe(node, context)) {
                     return;
                   }
-                  /* c8 ignore stop */
 
                   context.report({
                     node: right,
@@ -518,11 +512,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                             text.includes('&amp;');
 
           if (hasDangerousChars && !hasEscaping) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,

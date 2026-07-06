@@ -216,11 +216,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check if the node is a validated/sanitized variable
-        if (safeNode.type === 'Identifier' && validatedVariables.has(safeNode.name)) {
-          return true;
-        }
-
         // For CallExpression nodes, check if first argument is safe
         if (safeNode.type === 'CallExpression' && safeNode.arguments.length > 0) {
           const firstArg = safeNode.arguments[0];
@@ -442,11 +437,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                                      (formatArg.type === 'BinaryExpression' && hasUserInputInExpression(formatArg));
 
         if (isFormatFromUserInput && !isConsoleMethod(node)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: formatArg,
@@ -466,11 +459,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           );
 
           if (hasUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: formatArg,
@@ -488,11 +479,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           const hasUserInput = hasUserInputInExpression(formatArg);
 
           if (hasUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: formatArg,
@@ -546,11 +535,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           if (!hasSpecifiersInFormat && args.length === 2 && isConsoleMethod(node)) {
             // Don't report
           } else if (hasSpecifiersInFormat && hasUserInputInArgs) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             // Choose message ID based on format string type
             const messageId = firstArg.type === 'Literal' ? 'unsafeFormatSpecifier' : 'missingFormatValidation';
@@ -651,11 +638,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         if (isInDangerousContext && containsFormatSpecifiers(text)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -710,11 +695,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           }
 
           if (isAssignedToVariable) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,
@@ -766,11 +749,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           );
 
           if (hasSpecifiers && hasUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.init,
@@ -791,11 +772,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           const hasUserInput = hasUserInputInExpression(node.init);
 
           if (hasSpecifiers && hasUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.init,
