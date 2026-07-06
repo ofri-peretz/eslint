@@ -256,7 +256,7 @@
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "^1.72.0",
-    "eslint-plugin-unicorn": "^70.0.0",
+    "eslint-plugin-unicorn": "^71.0.0",
     "express": "^5.2.1",
     "get-tsconfig": "^4.14.0",
     "helmet": "^8.2.0",

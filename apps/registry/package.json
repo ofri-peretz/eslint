@@ -14,7 +14,7 @@
   "dependencies": {
     "@interlace/ui": "*",
     "next": "^16.2.10",
-    "posthog-js": "^1.396.6",
+    "posthog-js": "^1.396.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
