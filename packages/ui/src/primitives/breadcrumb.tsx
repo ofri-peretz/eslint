@@ -124,10 +124,7 @@ type BreadcrumbLinkProps = React.ComponentProps<'a'> & {
 
 const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
   ({ asChild, className, children, ...props }, ref) => {
-    const baseClass = cn(
-      'hover:text-foreground transition-colors',
-      className,
-    );
+    const baseClass = cn('hover:text-foreground transition-colors', className);
 
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<{
@@ -143,6 +140,9 @@ const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
     }
 
     return (
+      // href is supplied by the consumer via {...props} (this primitive is
+      // a bare navigable link); the rule can't see through the spread.
+      // eslint-disable-next-line react-a11y/anchor-is-valid
       <a ref={ref} data-slot="breadcrumb-link" className={baseClass} {...props}>
         {children}
       </a>
@@ -159,10 +159,12 @@ interface BreadcrumbPageProps extends React.ComponentProps<'span'> {}
 const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPageProps>(
   ({ className, ...props }, ref) => {
     return (
+      // No role="link" — the WAI-ARIA APG breadcrumb pattern treats the
+      // current page as plain text, not a disabled link (ARIA doesn't
+      // define a real "disabled link" semantic; aria-current="page" is
+      // the correct and sufficient signal here).
       <span
         ref={ref}
-        role="link"
-        aria-disabled="true"
         aria-current="page"
         data-slot="breadcrumb-page"
         className={cn('text-foreground font-medium', className)}
