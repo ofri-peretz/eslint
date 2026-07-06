@@ -3,7 +3,14 @@
  */
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe, it, afterAll } from 'vitest';
 import { noHardcodedSessionTokens } from './index';
+
+// Configure RuleTester for Vitest
+RuleTester.afterAll = afterAll;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+RuleTester.describe = describe;
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -22,6 +29,15 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
     // Short strings (not tokens)
     { code: "const id = 'abc'" },
     { code: "const x = 1" },
+    // Starts with 'eyJ' and is long enough, but has no dots at all
+    // (exercises the `match(...) || []` null-match fallback branch).
+    { code: `const x = 'eyJ${'a'.repeat(60)}'` },
+    // A bare string literal not inside a VariableDeclarator at all
+    // (exercises the `parent?.type === 'VariableDeclarator'` false branch).
+    { code: "['abcdefghijklmnop'];" },
+    // A bare string literal used as a call argument (parent is CallExpression,
+    // not VariableDeclarator) - additional coverage for the same branch.
+    { code: "console.log('abcdefghijklmnop');" },
   ],
 
   invalid: [

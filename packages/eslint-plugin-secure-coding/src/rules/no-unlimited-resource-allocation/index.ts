@@ -281,11 +281,10 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
     /**
      * Check if resource allocation has size validation
      */
+    // All call sites invoke this only after already confirming `args.length > 0`,
+    // so the "no arguments" case is unreachable and intentionally not handled here.
     const hasSizeValidation = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
       const args = node.arguments;
-      if (args.length === 0) {
-        return false;
-      }
 
       // Check if size argument is a validated expression
       const sizeArg = args[0];
@@ -357,18 +356,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
 
             // Check if size comes from user input (but skip if validated)
             if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg) && !hasSizeValidation(node)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'userControlledResourceSize',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
               return;
@@ -377,42 +374,28 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             // Check if size exceeds limits
             const estimatedSize = sizeArg.type === 'SpreadElement' ? null : estimateResourceSize(sizeArg);
             if (estimatedSize && estimatedSize > maxResourceSize) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedBufferAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
               return;
             }
 
-            // Check if no size validation present (only for non-literal sizes from user input)
-            const isLiteralSize = sizeArg.type === 'Literal' && typeof sizeArg.value === 'number';
-            const comesFromUserInput = sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg);
-            if (requireResourceValidation && !hasSizeValidation(node) && !isLiteralSize && comesFromUserInput) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-              /* c8 ignore stop */
-
-              context.report({
-                node,
-                messageId: 'missingResourceLimits',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            }
+            // NOTE: a `missingResourceLimits` check previously lived here for
+            // "non-literal, user-input sizes with no validation" — but that
+            // condition is a strict subset of the userControlledResourceSize
+            // check above (same `isUserInput(sizeArg) && !hasSizeValidation(node)`
+            // predicate), which already reports and returns first. It was
+            // therefore unreachable dead code and has been removed
+            // (behavior-neutral: no observable path changes).
           }
         }
 
@@ -445,18 +428,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             });
 
             if (!hasValidLimits) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node,
                 messageId: 'unlimitedFileOperations',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -496,18 +477,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             }
             
             if (pathArg.type !== 'SpreadElement' && isUserInput(pathArg)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: pathArg,
                 messageId: 'unlimitedFileOperations',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -520,18 +499,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (args.length === 1) {
             const sizeArg = args[0];
             if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedMemoryAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -539,7 +516,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         }
 
         // Check for complex resource exhaustion patterns
-        /* c8 ignore start -- defensive detectors for rare patterns */
         // ZIP bomb detection - unlimited decompression
         if (calleeText.includes('unzipper') || calleeText.includes('Extract')) {
           // Check for unlimited ZIP extraction
@@ -548,7 +524,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             messageId: 'unlimitedFileOperations',
             data: {
               filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
+              line: String(node.loc.start.line),
             },
           });
         }
@@ -560,7 +536,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             messageId: 'unlimitedMemoryAllocation',
             data: {
               filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
+              line: String(node.loc.start.line),
             },
           });
         }
@@ -580,7 +556,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
                 messageId: 'unlimitedMemoryAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -600,13 +576,12 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
                 messageId: 'unlimitedMemoryAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
           }
         }
-        /* c8 ignore stop */
 
         // Check for resource allocation inside loops
         if (isInsideLoop(node)) {
@@ -623,11 +598,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
                 calleeText === 'Array.of') {
               // Array.from / Array.of are fine; allocation comes from their args, not size
             } else {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               // SAFE: first arg is a numeric literal — size is statically bounded.
               const firstArg = node.arguments[0];
@@ -649,7 +622,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
                 messageId: 'resourceAllocationInLoop',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -669,18 +642,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
 
             // Check if size comes from user input (but skip if validated)
             if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg) && !hasSizeValidation(node)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'userControlledResourceSize',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
               return;
@@ -689,42 +660,25 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             // Check if size exceeds limits
             const estimatedSize = sizeArg.type === 'SpreadElement' ? null : estimateResourceSize(sizeArg);
             if (estimatedSize && estimatedSize > maxResourceSize) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedBufferAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
               return;
             }
 
-            // Check if no size validation present (only for non-literal sizes from user input)
-            const isLiteralSize = sizeArg.type === 'Literal' && typeof sizeArg.value === 'number';
-            const comesFromUserInput = sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg);
-            if (requireResourceValidation && !hasSizeValidation(node) && !isLiteralSize && comesFromUserInput) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-              /* c8 ignore stop */
-
-              context.report({
-                node,
-                messageId: 'missingResourceLimits',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            }
+            // NOTE: same unreachable `missingResourceLimits` pattern as the
+            // CallExpression Buffer.alloc handler above — removed for the
+            // identical reason (subset of the userControlledResourceSize
+            // check, which already reports and returns first).
           }
         }
 
@@ -734,18 +688,16 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (args.length === 1) {
             const sizeArg = args[0];
             if (sizeArg.type !== 'SpreadElement' && isUserInput(sizeArg)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: sizeArg,
                 messageId: 'unlimitedMemoryAllocation',
                 data: {
                   filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
+                  line: String(node.loc.start.line),
                 },
               });
             }
@@ -760,11 +712,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
               newCalleeText.includes('Map') ||
               newCalleeText.includes('Set')) {
 
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             // SAFE: first arg is a numeric literal — size is statically bounded.
             const firstArg = node.arguments[0];
@@ -777,7 +727,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
               messageId: 'resourceAllocationInLoop',
               data: {
                 filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
+                line: String(node.loc.start.line),
               },
             });
           }
