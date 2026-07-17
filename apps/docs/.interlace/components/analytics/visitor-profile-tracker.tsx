@@ -84,7 +84,8 @@ const STUDENT_PATH_RE = /^\/(learn|articles\/getting-started|articles\/intro)/i;
 function inferProfileFromUtmSource(utmSource: string | null, landingPath: string): VisitorProfile | null {
   if (!utmSource) return null;
   switch (utmSource.toLowerCase()) {
-    case "dev_to":
+    case "devto":
+    case "dev_to": // legacy spelling — taxonomy standardized on 'devto'
     case "dev.to":
     case "github":
     case "npm":
