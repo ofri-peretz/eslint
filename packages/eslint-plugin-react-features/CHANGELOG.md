@@ -1,5 +1,14 @@
 ## [1.1.4] - 2026-05-03
 
+## 1.2.1
+
+### Patch Changes
+
+- [#229](https://github.com/ofri-peretz/eslint/pull/229) [`acc81a7`](https://github.com/ofri-peretz/eslint/commit/acc81a74d0c329027bf6011f5db4b1bf9beba650) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unknown-property` no longer fires on custom React components. The rule now
+  only checks host (lowercase DOM) elements, matching upstream
+  `react/no-unknown-property` — uppercase and member-expression JSX names
+  (`<Box surface="card">`, `<Motion.div />`) accept arbitrary props.
+
 ## 1.2.0
 
 ### Minor Changes

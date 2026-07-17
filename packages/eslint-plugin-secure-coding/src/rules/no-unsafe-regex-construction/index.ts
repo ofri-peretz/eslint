@@ -18,7 +18,17 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeRegexConstruction';
+type MessageIds =
+  | 'unsafeRegexConstruction'
+  | 'escapeUserInput'
+  | 'validatePattern'
+  | 'useSafeLibrary'
+  | 'avoidDynamicFlags';
+
+// Inline regex-metacharacter escape, appended to the flagged expression by the
+// `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
+// code, so the fix must be self-contained rather than calling one.
+const INLINE_ESCAPE_SUFFIX = '.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")';
 
 export interface Options {
   /** Allow literal string patterns. Default: false */
@@ -168,6 +178,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-400',
       cvss: 7.5,
     },
+    hasSuggestions: true,
     messages: {
       unsafeRegexConstruction: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -177,6 +188,39 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: '{{fix}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
+      escapeUserInput: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Escape User Input',
+        description: 'Escape user input for regex',
+        severity: 'LOW',
+        // oxlint-disable-next-line no-template-curly-in-string
+        fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
+      }),
+      validatePattern: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Pattern',
+        description: 'Validate pattern against whitelist',
+        severity: 'LOW',
+        fix: 'Validate pattern before creating RegExp',
+        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
+      useSafeLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use safe-regex',
+        description: 'Use safe-regex library for validation',
+        severity: 'LOW',
+        fix: 'if (safeRegex(pattern)) { new RegExp(pattern) }',
+        documentationLink: 'https://github.com/substack/safe-regex',
+      }),
+      avoidDynamicFlags: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Static Flags',
+        description: 'Use static flags instead of dynamic',
+        severity: 'LOW',
+        fix: 'new RegExp(pattern, "gi") with static flags',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
       }),
     },
     schema: [
@@ -260,6 +304,12 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
               details: `Pattern length (${patternLength}) exceeds maximum (${maxPatternLength})`,
               fix: 'Split into smaller patterns or validate length',
             },
+            suggest: [
+              {
+                messageId: 'validatePattern',
+                fix: () => null,
+              },
+            ],
           });
           return;
         }
@@ -274,6 +324,12 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
               details: 'Literal regex patterns should be avoided for security. Use variables instead.',
               fix: 'Use a variable or RegExp constructor with a string variable',
             },
+            suggest: [
+              {
+                messageId: 'validatePattern',
+                fix: () => null,
+              },
+            ],
           });
           return;
         }
@@ -281,6 +337,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
 
       // Check for user input without escaping
       if (isUserInputValue && !isEscapedValue) {
+        const patternText = context.sourceCode.getText(patternNode);
         context.report({
           node: patternNode,
           messageId: 'unsafeRegexConstruction',
@@ -289,6 +346,28 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
             details: 'User input in regex pattern can lead to ReDoS or injection attacks',
             fix: 'Escape special characters before using in regex',
           },
+          suggest: [
+            {
+              messageId: 'escapeUserInput',
+              // Append an inline regex-metacharacter escape so special chars are neutralized.
+              // Parenthesize patternText first: it's spliced in as-is (could be any
+              // expression, e.g. a lower-precedence one), so `.replace(...)` must bind
+              // to the whole expression, not just its last operand.
+              fix: (fixer) =>
+                fixer.replaceText(
+                  patternNode,
+                  `(${patternText})${INLINE_ESCAPE_SUFFIX}`,
+                ),
+            },
+            {
+              messageId: 'validatePattern',
+              fix: () => null,
+            },
+            {
+              messageId: 'useSafeLibrary',
+              fix: () => null,
+            },
+          ],
         });
       }
 
@@ -302,6 +381,12 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
             details: 'Dynamic flags can lead to unexpected behavior or security issues',
             fix: 'Use static flags instead of dynamic flags',
           },
+          suggest: [
+            {
+              messageId: 'avoidDynamicFlags',
+              fix: () => null,
+            },
+          ],
         });
       }
     }

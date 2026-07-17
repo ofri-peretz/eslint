@@ -44,7 +44,7 @@ export const Default: Story = {
           <PaginationLink href="#">1</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink href="#" active>
             2
           </PaginationLink>
         </PaginationItem>

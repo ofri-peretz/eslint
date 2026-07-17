@@ -50,6 +50,10 @@ function Button({
   ...props
 }: ButtonProps) {
   const element = useRender({
+    // `<button />` here is only a render-shape hint for useRender; the
+    // consumer's children / aria-label reach the DOM via the `props` object
+    // below, not as JSX children of this element.
+    // eslint-disable-next-line react-a11y/control-has-associated-label, react-a11y/no-missing-aria-labels
     render: render ?? <button />,
     props: {
       'data-slot': 'button',

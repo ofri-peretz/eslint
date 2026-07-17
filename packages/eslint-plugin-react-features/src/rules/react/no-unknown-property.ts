@@ -122,6 +122,13 @@ export const noUnknownProperty = createRule<[], MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        // Only host (DOM) elements have a fixed property set. Custom
+        // components (<Box />, <Motion.div />) accept arbitrary props.
+        const elementName = node.parent.name;
+        if (elementName.type !== 'JSXIdentifier' || !/^[a-z]/.test(elementName.name)) {
+          return;
+        }
+
         if (node.name.type === 'JSXIdentifier') {
           const propName = node.name.name;
 

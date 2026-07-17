@@ -166,15 +166,10 @@ export default [
       // (only `no-default-test-id` is a hard error). These surfaced on
       // 2026-07-04 when the duplicate-plugin crash was fixed and the
       // rules actually ran for the first time since #180:
-      // - no-unknown-property fires on custom-component props
-      //   (<Box surface radius border>, <Stack direction gap>) — it
-      //   should only check lowercase DOM tags. Rule fix tracked in
-      //   eslint-plugin-react-features.
       // - jsx-key flags index keys on static decorative arrays
       //   (meteors.tsx) that never reorder.
       // - anchor-has-content can't see children forwarded via a
       //   {...props} spread (pagination-link).
-      'react-features/no-unknown-property': 'warn',
       'react-features/jsx-key': 'warn',
       'react-a11y/anchor-has-content': 'warn',
     },

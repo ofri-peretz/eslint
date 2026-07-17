@@ -7,6 +7,10 @@ import { cn } from '../lib/cn.js';
 
 function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
+    // htmlFor (or a nested control) is supplied by the consumer via
+    // {...props}; the rule only recognizes a literal htmlFor attribute, not
+    // one from a spread.
+    // eslint-disable-next-line react-a11y/label-has-associated-control
     <label
       data-slot="label"
       className={cn(

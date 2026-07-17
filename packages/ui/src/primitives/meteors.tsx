@@ -102,6 +102,12 @@ function Meteors({
         opacity: Number(rand(OPACITY_MIN, OPACITY_MAX).toFixed(2)),
       })),
     );
+    // The flagged names (length/top/left/animationDuration/animationDelay/
+    // trail/opacity) are object-literal property keys inside the generated
+    // MeteorMeta above, not free-variable references, and `rand` is a
+    // module-level stable function — none of them are real reactive
+    // dependencies.
+    // eslint-disable-next-line react-features/hooks-exhaustive-deps
   }, [number, reduced]);
 
   if (reduced) return null;
@@ -117,14 +123,17 @@ function Meteors({
       )}
       {...rest}
     >
-      {meteors.map((m, idx) => (
+      {/* The array is fully regenerated (never spliced/reordered) on every
+          `number`/`reduced` change, and meteors carry no natural id — the
+          position itself is a stable key for this list's lifetime. */}
+      {meteors.map((m, meteorIndex) => (
         <span
-          key={idx}
+          key={meteorIndex}
           className={cn(
             'pointer-events-none absolute rotate-[215deg] animate-meteor rounded-full bg-slate-300 dark:bg-slate-200',
             'shadow-[0_0_2px_1px_var(--color-meteor-glow)]',
             'h-[1px] w-[1px]',
-            "before:absolute before:top-1/2 before:left-0 before:h-px before:w-[var(--trail)] before:-translate-y-1/2",
+            'before:absolute before:top-1/2 before:left-0 before:h-px before:w-[var(--trail)] before:-translate-y-1/2',
             'before:bg-linear-to-r before:from-slate-300 before:via-slate-300/70 before:to-transparent',
             'dark:before:from-slate-200 dark:before:via-slate-200/80',
             "before:content-['']",
