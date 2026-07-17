@@ -98,8 +98,8 @@ component_management:
     statuses:
       - type: project
         target: 100%
-        branches:
-          - '!main'
+      - type: patch
+        target: 100%
   individual_components:
     # ─────────────────────────────────────────────────────────────────────────
     # Security Plugins (Primary)
@@ -164,6 +164,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-nestjs-security
       name: 'eslint-plugin-nestjs-security'
@@ -171,6 +173,8 @@ component_management:
         - packages/eslint-plugin-nestjs-security/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     - component_id: eslint-plugin-lambda-security
@@ -180,6 +184,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-browser-security
       name: 'eslint-plugin-browser-security'
@@ -187,6 +193,8 @@ component_management:
         - packages/eslint-plugin-browser-security/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -199,6 +207,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Governance & Quality Plugins
@@ -210,6 +220,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-maintainability
       name: 'eslint-plugin-maintainability'
@@ -217,6 +229,8 @@ component_management:
         - packages/eslint-plugin-maintainability/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     - component_id: eslint-plugin-modernization
@@ -226,6 +240,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-modularity
       name: 'eslint-plugin-modularity'
@@ -233,6 +249,8 @@ component_management:
         - packages/eslint-plugin-modularity/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     - component_id: eslint-plugin-operability
@@ -242,6 +260,8 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-reliability
       name: 'eslint-plugin-reliability'
@@ -249,6 +269,8 @@ component_management:
         - packages/eslint-plugin-reliability/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -260,6 +282,8 @@ component_management:
         - packages/eslint-devkit/**
       statuses:
         - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     - component_id: eslint-formatter
@@ -292,16 +316,28 @@ component_management:
       statuses:
         - type: project
           target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-react-features
       name: 'eslint-plugin-react-features'
       paths:
         - packages/eslint-plugin-react-features/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-react-a11y
       name: 'eslint-plugin-react-a11y'
       paths:
         - packages/eslint-plugin-react-a11y/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
 
     # NOTE: cli is an infrastructure package without tests - excluded
 
