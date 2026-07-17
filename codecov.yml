@@ -19,6 +19,9 @@ coverage:
 # carryforward: true — if a plugin isn't in the current run, use last known value
 # ═══════════════════════════════════════════════════════════════════════════════
 flags:
+  eslint-devkit:
+    paths: [packages/eslint-devkit/]
+    carryforward: true
   eslint-plugin-browser-security:
     paths: [packages/eslint-plugin-browser-security/]
     carryforward: true
