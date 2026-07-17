@@ -6,6 +6,7 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import { Linter, type Rule } from 'eslint';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noHardcodedCredentials } from './index';
 
 // Configure RuleTester for Vitest
@@ -908,6 +909,85 @@ describe('no-hardcoded-credentials', () => {
       invalid: [],
     });
   });
+
+  describe('Coverage — isTestFile filename patterns, remaining label/credential-context branches', () => {
+    ruleTester.run('isTestFile filename patterns', noHardcodedCredentials, {
+      valid: [
+        // Each fixture's filename avoids every earlier pattern in the OR
+        // chain so the short-circuit actually reaches this one.
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.fixture.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.mock.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__tests__/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__mocks__/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/test/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/tests/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/fixtures/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/mocks/foo.ts', options: [{ allowInTests: true }] },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('label and credential context - remaining branches', noHardcodedCredentials, {
+      valid: [
+        // isLabelContext: Property with an Identifier key that's directly
+        // in LABEL_CONTEXT_NAMES ('type').
+        { code: 'const config = { type: "password" };' },
+        // isLabelContext: Property key isn't label-typed, but the
+        // enclosing object's own variable is 'labels' — the Property
+        // fallback recursion (walks Property -> ObjectExpression ->
+        // VariableDeclarator).
+        { code: 'const labels = { foo: "SuperSecretPhrase!!" };' },
+        // isLabelContext: MemberExpression call whose method name is
+        // neither setAttribute nor getAttribute — false branch of that
+        // check, falls through to "not a label", then the value/context
+        // don't look like a credential either.
+        { code: 'el.someOtherMethod("type", "just-a-plain-value-not-a-secret");' },
+        // isCredentialContext: AssignmentExpression to a MemberExpression
+        // property whose name doesn't match any credential suffix.
+        { code: 'this.randomThing = "just a plain long value";' },
+        // isCredentialContext: AssignmentExpression to a bare Identifier
+        // whose name doesn't match any credential suffix.
+        { code: 'let randomVar; randomVar = "just a plain long value";' },
+        // isCredentialContext: Property with an Identifier key that
+        // doesn't match any credential suffix.
+        { code: 'const config = { randomField: "just a plain long value" };' },
+        // isCredentialContext: Property with a string-Literal key that
+        // doesn't match any credential suffix.
+        { code: 'const config = { "randomField": "just a plain long value" };' },
+        // Template literal (no interpolation) whose text doesn't look like
+        // a credential.
+        { code: '`just a plain safe string`;' },
+        // Template literal WITH interpolation whose quasi parts don't look
+        // like a credential.
+        { code: '`Hello ${name}, welcome!`;' },
+      ],
+      invalid: [
+        // process.env fallback skip-check: the left side of `||` is not a
+        // `process.env.X` MemberExpression, so the exemption doesn't
+        // apply and a structurally-obvious credential still reports.
+        {
+          code: 'const apiKey = someOtherFallback || "AKIA1234567890ABCDEF";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: 'AWS access key' },
+                  output: 'const apiKey = someOtherFallback || process.env.API_KEY || \'AKIA1234567890ABCDEF\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'AWS access key' },
+                  output: 'const apiKey = someOtherFallback || await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
 
 /**
@@ -961,6 +1041,144 @@ describe('no-hardcoded-credentials — CVSS docs/message consistency (lock)', ()
   it('the agreed CWE-798 score is 9.8 (CWE_MAPPING + article authoritative)', () => {
     expect(docsCvss).toBe(9.8);
     expect(emittedCvss()).toBe(9.8);
+  });
+});
+
+// Layer 2: raw unit tests against rule.create() with a mock context, for the
+// "no grandparent" defensive fallback branches in isLabelContext's
+// ObjectExpression/ArrayExpression arms and isCredentialContext's
+// ArrayExpression arm. Every real TSESTree node's parent chain terminates at
+// Program, so a real ObjectExpression/ArrayExpression parsed from source
+// code always has a `.parent` — these branches only exist to guard against a
+// detached/synthetic AST fragment, which is exactly what a mock-context node
+// is.
+describe('Layer 2 - mock context', () => {
+  it('isLabelContext returns false when the enclosing ObjectExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string',
+      parent: { type: 'ObjectExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string',
+      parent: { type: 'ArrayExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isCredentialContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string of decent length',
+      parent: { type: 'ArrayExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext recurses to the grandparent when the enclosing ObjectExpression has one', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: {
+        type: 'ObjectExpression',
+        parent: { type: 'VariableDeclarator', id: { type: 'Identifier', name: 'labels' } },
+      },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns true for a JSXAttribute parent', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: { type: 'JSXAttribute' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns false when parent is undefined (top-level literal) and a structural match still reports', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: undefined,
+    });
+
+    expect(reports).toHaveLength(1);
+  });
+
+  it('isCredentialContext returns false when parent is undefined, gating off an ambiguous match', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC',
+      parent: undefined,
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext Property fallback does not recurse when the Property has no ObjectExpression parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    node.parent = {
+      type: 'Property',
+      key: { type: 'Identifier', name: 'foo' },
+      value: node,
+      parent: undefined,
+    };
+
+    literal(node);
+
+    expect(reports).toHaveLength(1);
+  });
+
+  it('isLabelContext Property fallback does not recurse when the enclosing ObjectExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    node.parent = {
+      type: 'Property',
+      key: { type: 'Identifier', name: 'foo' },
+      value: node,
+      parent: { type: 'ObjectExpression' },
+    };
+
+    literal(node);
+
+    expect(reports).toHaveLength(1);
   });
 });
 

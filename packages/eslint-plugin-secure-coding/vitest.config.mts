@@ -47,7 +47,7 @@ export default defineConfig({
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      exclude: ['node_modules/', 'dist/', '**/*.test.ts', 'src/types/**'],
       ignoreClassMethods: ['context.report'],
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],

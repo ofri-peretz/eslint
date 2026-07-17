@@ -302,5 +302,115 @@ describe('no-privilege-escalation', () => {
       invalid: [],
     });
   });
+
+  describe('Coverage - branch gaps', () => {
+    // id 2 false arm: IfStatement ancestor WITHOUT role pattern, then role check further up
+    ruleTester.run('coverage - nested IfStatement without role pattern', noPrivilegeEscalation, {
+      valid: [
+        { code: 'if (hasRole(user)) { if (x > 5) { user.role = req.body.role; } }' },
+      ],
+      invalid: [],
+    });
+
+    // id 5 false arm: ConditionalExpression ancestor without role pattern, role check further up
+    ruleTester.run('coverage - ConditionalExpression without role pattern', noPrivilegeEscalation, {
+      valid: [
+        { code: 'if (hasRole(user)) { const r = isActive ? (user.role = req.body.role) : null; }' },
+      ],
+      invalid: [],
+    });
+
+    // id 9+10 false arms: CallExpression with non-role Identifier callee (both Identifier branch
+    // and MemberExpression branch miss, since callee is an Identifier that doesn't match patterns)
+    ruleTester.run('coverage - CallExpression with non-role callee', noPrivilegeEscalation, {
+      valid: [
+        { code: 'if (hasRole(user)) { doSomething(user.role = req.body.role); }' },
+      ],
+      invalid: [],
+    });
+
+    // id 12 false arm: CallExpression with MemberExpression callee, property doesn't match role patterns
+    ruleTester.run('coverage - MemberExpression callee non-role property (line 142 false arm)', noPrivilegeEscalation, {
+      valid: [
+        { code: 'if (hasRole(user)) { obj.doSomething(user.role = req.body.role); }' },
+      ],
+      invalid: [],
+    });
+
+    // id 23 false arm: AssignmentExpression where left is not MemberExpression
+    ruleTester.run('coverage - AssignmentExpression non-MemberExpression left', noPrivilegeEscalation, {
+      valid: [
+        { code: 'role = req.body.role;' },
+      ],
+      invalid: [],
+    });
+
+    // id 25 false arm: MemberExpression property name not in role/permission list
+    ruleTester.run('coverage - AssignmentExpression non-role property', noPrivilegeEscalation, {
+      valid: [
+        { code: 'user.name = req.body.name;' },
+      ],
+      invalid: [],
+    });
+
+    // id 39 true arm: checkObjectExpression in test file (early return)
+    ruleTester.run('coverage - ObjectExpression in test file', noPrivilegeEscalation, {
+      valid: [
+        { code: 'updateUser({ role: req.body.role });', filename: 'test.spec.ts', options: [{ allowInTests: true }] },
+      ],
+      invalid: [],
+    });
+
+    // id 40 false arm: SpreadElement (not Property) skips the Property+Identifier check
+    ruleTester.run('coverage - ObjectExpression with SpreadElement', noPrivilegeEscalation, {
+      valid: [
+        { code: 'updateUser({ ...req.body });' },
+      ],
+      invalid: [],
+    });
+
+    // id 42 false arm: Property with key not in role list
+    ruleTester.run('coverage - ObjectExpression with non-role property key', noPrivilegeEscalation, {
+      valid: [
+        { code: 'updateUser({ name: req.body.name });' },
+      ],
+      invalid: [],
+    });
+
+    // id 43 true arm: matchesIgnorePattern returns true for object property
+    ruleTester.run('coverage - ObjectExpression with ignore pattern match', noPrivilegeEscalation, {
+      valid: [
+        { code: 'updateUser({ role: req.body.role });', options: [{ ignorePatterns: ['role'] }] },
+      ],
+      invalid: [],
+    });
+
+    // id 44 false arm: containsUserInput returns false for object property value
+    ruleTester.run('coverage - ObjectExpression with non-user-input value', noPrivilegeEscalation, {
+      valid: [
+        { code: 'updateUser({ role: "admin" });' },
+      ],
+      invalid: [],
+    });
+
+    // id 45 false arm: isInsideRoleCheck returns true for ObjectExpression context
+    ruleTester.run('coverage - ObjectExpression inside role check', noPrivilegeEscalation, {
+      valid: [
+        { code: 'if (hasRole(user)) { updateUser({ role: req.body.role }); }' },
+      ],
+      invalid: [],
+    });
+
+    // id 45 true arm: ObjectExpression with role property + user input, NOT inside role check → report
+    ruleTester.run('coverage - ObjectExpression privilege escalation report', noPrivilegeEscalation, {
+      valid: [],
+      invalid: [
+        {
+          code: 'updateUser({ role: req.body.role });',
+          errors: [{ messageId: 'privilegeEscalation' }],
+        },
+      ],
+    });
+  });
 });
 

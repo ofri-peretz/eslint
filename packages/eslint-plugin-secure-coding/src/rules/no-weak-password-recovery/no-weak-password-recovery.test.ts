@@ -3,8 +3,9 @@
  * Security: CWE-640 (Weak Password Recovery Mechanism)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noWeakPasswordRecovery } from './index';
 
 // Configure RuleTester for Vitest
@@ -208,6 +209,24 @@ describe('no-weak-password-recovery', () => {
         /** @secure-recovery */
         console.log("Token:", passwordResetToken);
         `,
+        // Same annotation on a recovery-named function with an expiration
+        // check present (so the missingTokenExpiration branch is skipped)
+        // but no rate-limit keyword — safetyChecker.isSafe() true for the
+        // FunctionDeclaration missing-rate-limit branch.
+        `
+        /** @secure-recovery */
+        function handlePasswordReset(email) {
+          if (token.hasExpired()) return;
+          resetPassword();
+        }
+        `,
+        // Same annotation on the weak-verification IfStatement —
+        // safetyChecker.isSafe() true for the weakRecoveryVerification
+        // branch.
+        `
+        /** @secure-recovery */
+        if (passwordResetEmail) { doSomething(); }
+        `,
       ],
       invalid: [
         // BinaryExpression weak-pattern branch, no annotation — actually
@@ -232,6 +251,136 @@ describe('no-weak-password-recovery', () => {
           errors: [{ messageId: 'weakRecoveryVerification' }],
         },
       ],
+    });
+  });
+
+  describe('Coverage — VariableDeclarator init-type/weak-pattern false branches, recovery-logging reset/code alternatives, weak-verification false branch', () => {
+    ruleTester.run('coverage matrix 2', noWeakPasswordRecovery, {
+      valid: [
+        // Recovery-named variable whose init is neither a CallExpression nor
+        // a BinaryExpression (a plain numeric Literal) — false branch of the
+        // `else if (node.init.type === 'BinaryExpression')` check.
+        'const passwordResetToken = 12345;',
+        // BinaryExpression init that matches none of the weak patterns
+        // (Date.now()/Math.random()/timestamp/new Date()) — false branch of
+        // `weakPatterns.some(...)`.
+        'const passwordResetToken = a + b;',
+        // Recovery-related IfStatement test text that also mentions
+        // 'token' — false branch of the weak-verification condition chain
+        // (the `!testText.includes('token')` arm specifically).
+        'if (passwordResetEmailToken) { doSomething(); }',
+      ],
+      invalid: [
+        // Recovery-related via the 'pwd' + 'reset' keyword pair (not the
+        // literal substring 'password') — exercises the `argText.includes
+        // ('reset')` arm of the OR-chain, which 'token'/'password' checks
+        // never reach on their own.
+        {
+          code: 'console.log("value:", pwdResetCode);',
+          errors: [{ messageId: 'recoveryLoggingSensitiveData' }],
+        },
+        // Recovery-related via 'pwd' + 'recover' — exercises the
+        // `argText.includes('code')` arm specifically.
+        {
+          code: 'logger.error("data:", pwdRecoveryCode);',
+          errors: [{ messageId: 'recoveryLoggingSensitiveData' }],
+        },
+      ],
+    });
+  });
+
+  // Layer 2: raw unit tests against rule.create() with a mock context, for
+  // the `node.loc?.start.line ?? 0` defensive fallback in every report call
+  // site — a real parser always populates `loc`, so no RuleTester fixture
+  // can ever take that branch. Note: the mock context's `sourceCode.getText`
+  // stub ignores its node argument and always returns the fixed
+  // `sourceText` configured per test.
+  describe('Layer 2 - mock context', () => {
+    it('predictableRecoveryToken report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery);
+      const variableDeclarator = listeners.VariableDeclarator as (node: unknown) => void;
+
+      variableDeclarator({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'passwordResetToken' },
+        init: {
+          type: 'CallExpression',
+          callee: { type: 'Identifier', name: 'generatePredictableToken' },
+          arguments: [],
+        },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('insufficientTokenEntropy report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
+        sourceText: 'Date.now() + salt',
+      });
+      const variableDeclarator = listeners.VariableDeclarator as (node: unknown) => void;
+
+      variableDeclarator({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'passwordResetToken' },
+        init: { type: 'BinaryExpression' },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('missingTokenExpiration and missingRateLimit reports both fall back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
+        sourceText: 'function handlePasswordReset(email) { resetPassword(); }',
+      });
+      const functionDeclaration = listeners.FunctionDeclaration as (node: unknown) => void;
+
+      functionDeclaration({
+        type: 'FunctionDeclaration',
+        id: { type: 'Identifier', name: 'handlePasswordReset' },
+      });
+
+      expect(reports).toHaveLength(2);
+      expect(reports[0].messageId).toBe('missingTokenExpiration');
+      expect(reports[0].data?.line).toBe('0');
+      expect(reports[1].messageId).toBe('missingRateLimit');
+      expect(reports[1].data?.line).toBe('0');
+    });
+
+    it('recoveryLoggingSensitiveData report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
+        sourceText: 'passwordResetToken',
+      });
+      const callExpression = listeners.CallExpression as (node: unknown) => void;
+
+      callExpression({
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'console' },
+          property: { type: 'Identifier', name: 'log' },
+        },
+        arguments: [{ type: 'Identifier', name: 'passwordResetToken' }],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('weakRecoveryVerification report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
+        sourceText: 'passwordResetEmail',
+      });
+      const ifStatement = listeners.IfStatement as (node: unknown) => void;
+
+      ifStatement({
+        type: 'IfStatement',
+        test: { type: 'Identifier', name: 'passwordResetEmail' },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
     });
   });
 });

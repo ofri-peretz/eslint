@@ -18,15 +18,7 @@
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { 
-  formatLLMMessage, 
-  MessageIcons,
-  hasParserServices,
-  getParserServices,
-  getTypeOfNode,
-  isUnionOfSafeStringLiterals,
-  getStringLiteralValues,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -250,7 +242,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // longer changes runtime behavior, so it is intentionally unused here.
       allowLiterals: _allowLiterals = false,
       dangerousProperties = ['__proto__', 'prototype', 'constructor'],
-    }: Options = options || {};
+    }: Options = options;
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
@@ -302,70 +294,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       );
     })();
 
-    // Check if TypeScript parser services are available for type-aware checking
-    const hasTypeInfo = hasParserServices(context);
-    const parserServices = hasTypeInfo ? getParserServices(context) : null;
-
     /**
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
       return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string';
-    };
-
-    /**
-     * Check if a property is part of a typed union (safe access)
-     * 
-     * Type-Aware Enhancement:
-     * When TypeScript parser services are available, we can check if a variable
-     * is typed as a union of string literals (e.g., 'name' | 'email').
-     * Such accesses are safe because the values are statically constrained.
-     * 
-     * @example
-     * // This is now detected as SAFE (no false positive):
-     * const key: 'name' | 'email' = getKey();
-     * obj[key] = value;
-     * 
-     * // This is still detected as DANGEROUS:
-     * const key: string = getUserInput();
-     * obj[key] = value;
-     */
-    const isTypedUnionAccess = (propertyNode: TSESTree.Node): boolean => {
-      // Check if property is a literal string (typed access like obj['name'])
-      if (isLiteralString(propertyNode)) {
-        return true; // Literal strings are safe - they're typed at compile time
-      }
-
-      // Type-aware check: If we have TypeScript type information, check if the
-      // property key is constrained to a union of safe string literals
-      /* c8 ignore start -- TypeScript parser services often unavailable in RuleTester */
-      if (parserServices && propertyNode.type === AST_NODE_TYPES.Identifier) {
-        try {
-          const type = getTypeOfNode(propertyNode, parserServices);
-          
-          // Check if the type is a union of safe string literals
-          // (excludes '__proto__', 'prototype', 'constructor')
-          if (isUnionOfSafeStringLiterals(type, dangerousProperties)) {
-            return true; // Safe - statically constrained to safe values
-          }
-          
-          // Also check for single string literal type (e.g., const key: 'name' = ...)
-          const literalValues = getStringLiteralValues(type);
-          if (literalValues && literalValues.length === 1) {
-            // Single literal - safe if not dangerous
-            if (!dangerousProperties.includes(literalValues[0])) {
-              return true;
-            }
-          }
-        } catch {
-          // If type checking fails, fall back to treating as potentially dangerous
-          // This can happen with malformed AST or missing type information
-        }
-      }
-      /* c8 ignore stop */
-
-      // Without type information, treat all identifiers as potentially dangerous
-      return false;
     };
 
     /**
@@ -509,11 +442,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
-      // SAFE: Numeric literals (array index access like items[0], items[1])
-      if (propertyNode.type === AST_NODE_TYPES.Literal && typeof propertyNode.value === 'number') {
-        return false;
-      }
-
       // SAFE: Common numeric index variable names (i, j, k, index, idx, n)
       // These are typically loop counters for array access
       if (propertyNode.type === AST_NODE_TYPES.Identifier) {
@@ -556,19 +484,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           return true;
         }
         
-      // SAFE: Typed union access (obj[typedKey] where typedKey is 'primary' | 'secondary')
-        // Only safe if it's NOT a dangerous property
-      if (isTypedUnionAccess(propertyNode)) {
-        return false;
-      }
-
-        // Unreachable: isTypedUnionAccess() unconditionally returns true for any
-        // literal string (see its own isLiteralString short-circuit above), so
-        // every non-dangerous literal already returned false at the check above
-        // regardless of `allowLiterals`. The option is preserved in the public
-        // schema/options for backward compatibility, but no longer changes
-        // this function's outcome — both branches always returned `false`.
-        return false;
+      return false; // safe non-dangerous literal
       }
 
       // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
@@ -970,14 +886,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // would fire again for the INNER `a[b]` access. We walk the object
       // chain and mark every intermediate computed MemberExpression so the
       // MemberExpression visitor skips them — preventing exact duplicates.
-      if (node.left.type === AST_NODE_TYPES.MemberExpression) {
-        let me: TSESTree.MemberExpression = node.left;
+      // isHighRiskAssignment already verified node.left.type === 'MemberExpression'
+      let me = node.left as TSESTree.MemberExpression;
+      handledMemberExpressions.add(me);
+      // Walk into chained computed accesses: a[b][c] → also mark a[b]
+      while (me.object.type === AST_NODE_TYPES.MemberExpression && me.object.computed) {
+        me = me.object as TSESTree.MemberExpression;
         handledMemberExpressions.add(me);
-        // Walk into chained computed accesses: a[b][c] → also mark a[b]
-        while (me.object.type === AST_NODE_TYPES.MemberExpression && me.object.computed) {
-          me = me.object as TSESTree.MemberExpression;
-          handledMemberExpressions.add(me);
-        }
       }
 
       const { object, property, isAssignment, pattern } = extractPropertyAccess(node);

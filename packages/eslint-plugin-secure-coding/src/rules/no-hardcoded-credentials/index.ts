@@ -361,7 +361,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectTokens = true,
       detectDatabaseStrings = true,
       customPatterns = [],
-    }: Options = options || {};
+    }: Options = options;
 
     const filename = context.filename;
     const isTestFile = allowInTests && (
@@ -510,19 +510,22 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
      * the options never gate (e.g. `credentials`, `auth`).
      */
     function inferCredentialTypeFromContext(
-      parent: TSESTree.Node | undefined,
+      // Non-optional: the sole caller only reaches here after
+      // isCredentialContext(node, parent) has already returned true, which
+      // requires a truthy parent.
+      parent: TSESTree.Node,
     ): 'password' | 'token' | 'database' | 'apikey' | 'other' {
       const name = (() => {
-        if (!parent) return '';
         if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
           return (parent.id as TSESTree.Identifier).name.toLowerCase();
         }
         if (parent.type === 'Property') {
           const key = (parent as TSESTree.Property).key;
           if (key.type === 'Identifier') return (key as TSESTree.Identifier).name.toLowerCase();
-          if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
-            return ((key as TSESTree.Literal).value as string).toLowerCase();
-          }
+          // isCredentialContext's own Property check only returns true for
+          // an Identifier key (handled above) or a string-Literal key, so
+          // whatever remains here is always the latter.
+          return String((key as TSESTree.Literal).value).toLowerCase();
         }
         if (parent.type === 'AssignmentExpression') {
           const left = (parent as TSESTree.AssignmentExpression).left;
@@ -680,7 +683,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // honour the option.
       if (!finalIsCredential && value.length >= detectionOptions.minLength &&
           isCredentialContext(node, parent)) {
-        const ctxType = inferCredentialTypeFromContext(parent);
+        // isCredentialContext(node, parent) just returned true, which
+        // requires a truthy parent.
+        const ctxType = inferCredentialTypeFromContext(parent!);
         const optionAllows =
           (ctxType === 'password' && detectionOptions.detectPasswords) ||
           (ctxType === 'token' && detectionOptions.detectTokens) ||

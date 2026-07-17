@@ -477,12 +477,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           }
         } else if (formatArg.type === 'BinaryExpression' && formatArg.operator === '+') {
           const hasUserInput = hasUserInputInExpression(formatArg);
-
           if (hasUserInput) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-
             context.report({
               node: formatArg,
               messageId: 'formatStringInjection',
@@ -553,15 +551,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'escapeFormatString',
                   fix: (fixer: TSESLint.RuleFixer) => {
-                    // Find the argument that needs escaping
-                    // This is a bit heuristic, we try to find the first user input argument
-                    for (let i = 1; i < node.arguments.length; i++) {
-                      const arg = node.arguments[i];
-                      if (isUserInputNode(arg)) {
-                        return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
-                      }
-                    }
-                    return null;
+                    const arg = node.arguments.slice(1).find(a => isUserInputNode(a))!;
+                    return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
                   },
                 },
               ],

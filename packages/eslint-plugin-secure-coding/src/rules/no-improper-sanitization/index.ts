@@ -466,7 +466,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             left.property.type === 'Identifier' &&
             ['innerHTML', 'outerHTML'].includes(left.property.name)
           ) {
-            const literalValue = typeof node.value === 'string' ? node.value : '';
+            const literalValue = node.value;
             const hasDangerousMarkup = /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(literalValue);
             if (!hasDangerousMarkup) {
               return;

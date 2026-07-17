@@ -635,6 +635,172 @@ describe('no-format-string-injection', () => {
     });
   });
 
+  describe('Coverage - branch gaps', () => {
+    // ── getMemberExpressionName ──────────────────────────────────────────────
+
+    // id 15 arm[1]: computed property on Identifier object → getMemberExpressionName returns ''
+    ruleTester.run('coverage - computed property on Identifier object', noFormatStringInjection, {
+      valid: [{ code: 'util.format("User: %s", config["format"])' }],
+      invalid: [],
+    });
+
+    // id 16 arm[1]: object is CallExpression (neither Identifier nor MemberExpression)
+    ruleTester.run('coverage - CallExpression object in member expr', noFormatStringInjection, {
+      valid: [{ code: 'util.format("User: %s", getConfig().format)' }],
+      invalid: [],
+    });
+
+    // ids 16 arm[0] + 17 arm[0]: nested MemberExpression with Identifier property
+    ruleTester.run('coverage - nested MemberExpression Identifier property', noFormatStringInjection, {
+      valid: [{ code: 'util.format("User: %s", service.config.format)' }],
+      invalid: [],
+    });
+
+    // id 17 arm[1]: nested MemberExpression with computed property → returns ''
+    ruleTester.run('coverage - nested MemberExpression computed property', noFormatStringInjection, {
+      valid: [{ code: 'util.format("User: %s", service.config["format"])' }],
+      invalid: [],
+    });
+
+    // ── isInputValidated ─────────────────────────────────────────────────────
+
+    // id 27 arm[0]: trusted sanitizer IS the format arg node itself (not an ancestor)
+    ruleTester.run('coverage - isInputValidated: sanitizer is the direct format arg', noFormatStringInjection, {
+      valid: [{ code: 'util.format(sanitize(userMessage), value)' }],
+      invalid: [],
+    });
+
+    // ── containsFormatSpecifiersInExpression / hasUserInputInExpression ──────
+    // Called from the VariableDeclarator handler for BinaryExpression inits.
+
+    // id 32 arm[0], id 33 arm[2], id 38 arm[0]: right is Literal string with specifier; left is user input
+    ruleTester.run('coverage - VarDecl BinaryExpr right Literal has specifier', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'let formatStr = userInput + "%s"', errors: [{ messageId: 'formatStringInjection' }] }],
+    });
+
+    // id 33 arm[1]: right is Literal but non-string (number) — typeof check short-circuits
+    ruleTester.run('coverage - VarDecl BinaryExpr right is numeric literal', noFormatStringInjection, {
+      valid: [{ code: 'let formatStr = userInput + 42' }],
+      invalid: [],
+    });
+
+    // ids 34 arm[0], 35 arm[1]: left IS BinaryExpression WITH specifiers
+    ruleTester.run('coverage - VarDecl BinaryExpr nested left has specifier', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'let formatStr = ("safe" + "%s") + userInput', errors: [{ messageId: 'formatStringInjection' }] }],
+    });
+
+    // ids 36 arm[0], 37 arm[1]: right IS BinaryExpression WITH specifiers
+    ruleTester.run('coverage - VarDecl BinaryExpr nested right has specifier', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'let formatStr = userInput + ("static" + "%s")', errors: [{ messageId: 'formatStringInjection' }] }],
+    });
+
+    // id 42 arm[1]: right IS BinaryExpression but no user input inside
+    ruleTester.run('coverage - VarDecl BinaryExpr nested right has no user input', noFormatStringInjection, {
+      valid: [{ code: 'let formatStr = "%s" + ("static" + "text")' }],
+      invalid: [],
+    });
+
+    // ids 40 arm[0], 41 arm[1]: left IS BinaryExpression WITH user input inside
+    ruleTester.run('coverage - VarDecl BinaryExpr nested left contains user input', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'let formatStr = (userInput + "prefix") + "%s"', errors: [{ messageId: 'formatStringInjection' }] }],
+    });
+
+    // ── CallExpression handler ───────────────────────────────────────────────
+
+    // id 66 arm[1]: Identifier format arg whose name doesn't include format/template/pattern
+    ruleTester.run('coverage - Identifier format arg without format-hint name', noFormatStringInjection, {
+      valid: [{ code: 'util.format(myVar, req.body.value)' }],
+      invalid: [],
+    });
+
+    // id 70 arm[0]: console method with non-format-hint Identifier → don't report
+    ruleTester.run('coverage - console.log with non-format Identifier is silent', noFormatStringInjection, {
+      valid: [{ code: 'console.log(myVar, req.body.value)' }],
+      invalid: [],
+    });
+
+    // ── Literal handler ──────────────────────────────────────────────────────
+
+    // ids 80 arm[3], 81 arm[1], 82 arm[1], 86 arm[0], 93 arm[1]:
+    // Literal with specifier is the right side of a + assigned to user-input-named var,
+    // but it's NOT in a format-function call position → isInDangerousContext=FALSE → no report
+    ruleTester.run('coverage - Literal in BinaryExpression assigned to req var, not dangerous', noFormatStringInjection, {
+      valid: [{ code: 'const req = "User: " + "%s"' }],
+      invalid: [],
+    });
+
+    // ids 86 arm[0], 90 arm[0], 92 arm[0], 94 arm[1], 95 arm[0]:
+    // Literal inside format-function call, outer var name is user-input-like → report
+    ruleTester.run('coverage - Literal inside format-call assigned to req-named var', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'const req = sprintf("%s value", "static")', errors: [{ messageId: 'missingFormatValidation' }] }],
+    });
+
+    // id 94 arm[0]: @safe-format directly before the Literal suppresses the Literal-handler report
+    ruleTester.run('coverage - @safe-format before Literal inside format call', noFormatStringInjection, {
+      valid: [{ code: 'const req = sprintf(/** @safe-format */ "%s value", "static")' }],
+      invalid: [],
+    });
+
+    // ── BinaryExpression else-if block (console-method path) ────────────────
+
+    // Branch 57 arm 1: else-if entered but no user input in BinaryExpression
+    ruleTester.run('coverage - BinaryExpression else-if: no user input in expression', noFormatStringInjection, {
+      valid: [{ code: 'util.format("prefix: " + staticSuffix, data)' }],
+      invalid: [],
+    });
+
+    // Branch 58 arm 0: @safe-format suppresses BinaryExpression else-if report (console path)
+    ruleTester.run('coverage - @safe-format suppresses BinaryExpression console.log', noFormatStringInjection, {
+      valid: [
+        {
+          code: `
+            const message = req.body.message;
+            /** @safe-format */ console.log('User: ' + message);
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    // Branch 66 arm 1: firstArg is a Literal string without format specifiers
+    ruleTester.run('coverage - Literal firstArg without format specifiers', noFormatStringInjection, {
+      valid: [{ code: 'util.format("nospecifiers", req.body.value)' }],
+      invalid: [],
+    });
+
+    // ── TemplateLiteral handler ──────────────────────────────────────────────
+
+    // ids 98 arm[1], 103 arm[1]: TemplateLiteral is NOT args[0] of format call AND
+    // is NOT assigned to a variable → neither isFormatString nor isAssignedToVariable fires
+    ruleTester.run('coverage - TemplateLiteral as non-first format-call arg', noFormatStringInjection, {
+      valid: [{ code: 'util.format("static %s", `${req.body.value}`)' }],
+      invalid: [],
+    });
+
+    // id 117 arm[1]: TemplateLiteral has user input but NO format specifiers → VarDecl handler silent
+    // (TemplateLiteral visitor still reports because hasUserInput=TRUE & isAssignedToVariable=TRUE)
+    ruleTester.run('coverage - VarDecl TemplateLiteral: user input but no specifiers', noFormatStringInjection, {
+      valid: [],
+      invalid: [{ code: 'const formatStr = `${req.body.value}`', errors: [{ messageId: 'formatStringInjection' }] }],
+    });
+
+    // id 118 arm[0]: VarDecl TemplateLiteral with specifiers + user input → both visitors report
+    ruleTester.run('coverage - VarDecl TemplateLiteral: specifiers + user input → both visitors report', noFormatStringInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const formatStr = `%s: ${req.body.value}`',
+          errors: [{ messageId: 'formatStringInjection' }, { messageId: 'formatStringInjection' }],
+        },
+      ],
+    });
+  });
+
   // Layer 2: raw unit tests against rule.create() with a mock context, for
   // safetyChecker.isSafe() internal branches that no RuleTester fixture can
   // reach (the `safeNode` passed to isSafe is always a CallExpression/Literal/
@@ -777,6 +943,172 @@ describe('no-format-string-injection', () => {
       // specifier-based report path entirely (no isSafe() call needed here) —
       // asserting zero reports still exercises the isFormatSafe branch.
       expect(reports).toHaveLength(0);
+    });
+
+    // ── ?? 0 fallback paths (no loc on node) ────────────────────────────────
+
+    it('id 59: loc-fallback for BinaryExpression console-method path (no loc on CallExpression)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      // First prime dangerousVariables with 'message' via VariableDeclarator
+      (listeners.VariableDeclarator as (n: unknown) => void)({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'message' },
+        init: {
+          type: 'MemberExpression',
+          object: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'body' },
+            computed: false,
+          },
+          property: { type: 'Identifier', name: 'message' },
+          computed: false,
+        },
+      });
+      (listeners.CallExpression as (n: unknown) => void)({
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'console' },
+          property: { type: 'Identifier', name: 'log' },
+          computed: false,
+        },
+        arguments: [
+          {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: { type: 'Literal', value: 'User: ' },
+            right: { type: 'Identifier', name: 'message' },
+          },
+        ],
+        // no loc → ?? 0
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 50: loc-fallback for userControlledFormatString (no loc on CallExpression)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      (listeners.CallExpression as (n: unknown) => void)({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'sprintf' },
+        arguments: [
+          { type: 'Identifier', name: 'userInput' },
+          { type: 'Identifier', name: 'value' },
+        ],
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 54: loc-fallback for TemplateLiteral formatArg (no loc on CallExpression)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      (listeners.CallExpression as (n: unknown) => void)({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'sprintf' },
+        arguments: [
+          {
+            type: 'TemplateLiteral',
+            expressions: [{ type: 'Identifier', name: 'userInput' }],
+            quasis: [{ value: { raw: '' } }, { value: { raw: '' } }],
+          },
+        ],
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 76: loc-fallback for unsafeFormatSpecifier report (no loc on CallExpression)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      (listeners.CallExpression as (n: unknown) => void)({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'sprintf' },
+        arguments: [
+          { type: 'Literal', value: '%s', raw: '"%s"' },
+          { type: 'Identifier', name: 'userInput' },
+        ],
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 95: loc-fallback for missingFormatValidation in Literal handler (no loc on Literal)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+
+      const callExpr: Record<string, unknown> = {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'sprintf' },
+        arguments: [],
+      };
+      const varDecl: Record<string, unknown> = {
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'req' },
+        init: callExpr,
+        parent: undefined,
+      };
+      callExpr.parent = varDecl;
+      const literal: Record<string, unknown> = {
+        type: 'Literal',
+        value: '%s value',
+        parent: callExpr,
+      };
+      (callExpr.arguments as unknown[]).push(literal);
+
+      (listeners.Literal as (n: unknown) => void)(literal);
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 105: loc-fallback for TemplateLiteral handler assigned to variable (no loc on TemplateLiteral)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+
+      const templateLit: Record<string, unknown> = {
+        type: 'TemplateLiteral',
+        expressions: [{ type: 'Identifier', name: 'userInput' }],
+        quasis: [],
+      };
+      const varDecl: Record<string, unknown> = {
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'formatStr' },
+        init: templateLit,
+        parent: undefined,
+      };
+      templateLit.parent = varDecl;
+
+      (listeners.TemplateLiteral as (n: unknown) => void)(templateLit);
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 118: loc-fallback for TemplateLiteral init in VariableDeclarator handler (no loc on VariableDeclarator)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      (listeners.VariableDeclarator as (n: unknown) => void)({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'formatStr' },
+        init: {
+          type: 'TemplateLiteral',
+          quasis: [{ value: { raw: '%s: ' } }, { value: { raw: '' } }],
+          expressions: [{ type: 'Identifier', name: 'userInput' }],
+        },
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('id 124: loc-fallback for BinaryExpression init in VariableDeclarator handler (no loc on VariableDeclarator)', () => {
+      const { listeners, reports } = createWithMockContext(noFormatStringInjection);
+      (listeners.VariableDeclarator as (n: unknown) => void)({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'formatStr' },
+        init: {
+          type: 'BinaryExpression',
+          operator: '+',
+          left: { type: 'Literal', value: '%s', raw: '"%s"' },
+          right: { type: 'Identifier', name: 'userInput' },
+        },
+      });
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
     });
   });
 });

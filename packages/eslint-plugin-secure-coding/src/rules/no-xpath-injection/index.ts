@@ -207,7 +207,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       xpathFunctions = ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'],
-      safeXpathConstructors = ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'],
       xpathValidationFunctions = ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'],
       trustedSanitizers = [],
       trustedAnnotations = [],
@@ -370,24 +369,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * Check if XPath is constructed safely
-     */
-    const isSafeXpathConstruction = (node: TSESTree.Node): boolean => {
-      let current: TSESTree.Node | undefined = node;
-
-      while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            safeXpathConstructors.includes(current.callee.name)) {
-          return true;
-        }
-        current = current.parent as TSESTree.Node;
-      }
-
-      return false;
-    };
-
     return {
       // Check XPath function calls
       CallExpression(node: TSESTree.CallExpression) {
@@ -539,34 +520,26 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if either side contains XPath-like patterns
-        const leftText = sourceCode.getText(node.left);
-        const rightText = sourceCode.getText(node.right);
+        // Check if untrusted input is involved
+        const leftUntrusted = isUntrustedXpathInput(node.left) && !isXpathInputValidated(node.left) && !(node.left.type === 'Identifier' && validatedVariables.has(node.left.name));
+        const rightUntrusted = isUntrustedXpathInput(node.right) && !isXpathInputValidated(node.right) && !(node.right.type === 'Identifier' && validatedVariables.has(node.right.name));
 
-        if ((leftText.includes('/') || leftText.includes('[')) ||
-            (rightText.includes('/') || rightText.includes('['))) {
-
-          // Check if untrusted input is involved
-          const leftUntrusted = isUntrustedXpathInput(node.left) && !isXpathInputValidated(node.left) && !(node.left.type === 'Identifier' && validatedVariables.has(node.left.name));
-          const rightUntrusted = isUntrustedXpathInput(node.right) && !isXpathInputValidated(node.right) && !(node.right.type === 'Identifier' && validatedVariables.has(node.right.name));
-
-          if (leftUntrusted || rightUntrusted) {
-            // FALSE POSITIVE REDUCTION
-            if (safetyChecker.isSafe(node, context) || hasSafeAnnotationOnStatement(node)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: 'xpathInjection',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-                severity: 'HIGH',
-                safeAlternative: 'Use parameterized XPath construction with input validation',
-              },
-            });
+        if (leftUntrusted || rightUntrusted) {
+          // FALSE POSITIVE REDUCTION
+          if (safetyChecker.isSafe(node, context) || hasSafeAnnotationOnStatement(node)) {
+            return;
           }
+
+          context.report({
+            node,
+            messageId: 'xpathInjection',
+            data: {
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+              severity: 'HIGH',
+              safeAlternative: 'Use parameterized XPath construction with input validation',
+            },
+          });
         }
       },
 
@@ -607,13 +580,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               },
             });
           }
-        } else if (isUntrustedXpathInput(node.init) && !isSafeXpathConstruction(node.init)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
-          if (safetyChecker.isSafe(node.init, context)) {
-            return;
-          }
-          /* c8 ignore stop */
-
+        } else if (isUntrustedXpathInput(node.init)) {
           context.report({
             node: node.init,
             messageId: 'xpathInjection',

@@ -1090,5 +1090,45 @@ describe('detect-object-injection', () => {
       invalid: [],
     });
   });
+
+  describe('Coverage - branch gaps', () => {
+    ruleTester.run('numeric-literal property, bitwise-numeric, Number call, return-guard, for-loop counter, chained computed read', detectObjectInjection, {
+      valid: [
+        // isDangerousPropertyAccess: numeric Literal early exit (branch 37)
+        'const x = obj[0];',
+        // isNumericKey: BinaryExpression bitwise op (branch 85)
+        'const x = arr[y | 0];',
+        // isNumericKey: Number() call (branch 88)
+        'const x = arr[Number(z)];',
+        // hasPrecedingValidation: guard if with { return } body (branch 27 — ReturnStatement arm)
+        'function f(obj, key) { if (!allowed.includes(key)) { return; } return obj[key]; }',
+        // isLoopCounterIdentifier: for-loop with numeric initializer (branches 97-98)
+        'function f(arr, n) { for (let loopVar = 0; loopVar < n; loopVar++) { arr[loopVar]; } }',
+      ],
+      invalid: [
+        // isLoopCounterIdentifier: for-loop variable with no initializer → !init → false → flagged (branch 96)
+        {
+          code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // MemberExpression visitor: inner of chained computed read is skipped (branches 125-126).
+        // Only the outer a[b][c] is reported (1 error), inner a[b] is silently skipped.
+        {
+          code: 'const val = a[b][c];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // isNumericKey: BinaryExpression with non-numeric operator (+) — false arm of op check (branch 81)
+        {
+          code: 'const x = arr[a + 1];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // isNumericKey: CallExpression with non-Identifier callee (MemberExpression) — false arm (branch 84)
+        {
+          code: 'const x = arr[obj.method()];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+  });
 });
 
