@@ -262,9 +262,11 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: npm
 
-      # OIDC-capable npm CLI ships in npm@>=11.5; runner ships an older one.
-      - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest
+      # ponytail: no `npm install -g npm@latest` — OIDC/provenance needs npm
+      # >= 11.5, and the .nvmrc-pinned Node (24.13 → npm 11.6.2) already ships
+      # it. The upgrade was redundant AND flaky (npm@latest is a moving target;
+      # it broke every publish job in run 29604777079). If .nvmrc ever drops
+      # below Node bundling npm 11.5, re-pin npm here instead of chasing latest.
 
       - name: Restore dist artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
