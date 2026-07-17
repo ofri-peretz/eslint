@@ -3,8 +3,10 @@
  * Quality: Detects unsafe type narrowing patterns
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noUnsafeTypeNarrowing } from '../../rules/reliability/no-unsafe-type-narrowing';
 
 RuleTester.afterAll = afterAll;
@@ -254,6 +256,35 @@ const value = data as unknown as string;`,
         },
       ],
       invalid: [],
+    });
+  });
+  describe('Double assertions through concrete types', () => {
+    ruleTester.run('inner assertion to a concrete type is safe', noUnsafeTypeNarrowing, {
+      valid: [
+        // Double assertion whose inner type is neither unknown nor any —
+        // TSC checks this normally, the rule stays silent
+        { code: 'const y = x as string as number;', filename: 'src/app.ts' },
+      ],
+      invalid: [],
+    });
+  });
+
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: options null fallback', () => {
+    it('does not report a safe assertion when options is null', () => {
+      const { listeners, reports } = createWithMockContext(noUnsafeTypeNarrowing, {
+        options: [null],
+      });
+      const node = {
+        type: 'TSAsExpression',
+        expression: { type: 'Identifier', name: 'x' },
+        typeAnnotation: { type: 'TSNumberKeyword' },
+      } as unknown as TSESTree.TSAsExpression;
+      (listeners['TSAsExpression'] as (n: TSESTree.TSAsExpression) => void)(node);
+      expect(reports).toHaveLength(0);
     });
   });
 });

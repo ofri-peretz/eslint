@@ -85,26 +85,11 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
         const preferredTag = ROLE_TO_TAG_MAPPING[roleValue];
         if (!preferredTag) return;
 
-        // Don't flag if the element is already the preferred semantic element
-        if (elementName === preferredTag.split('[')[0]) return; // Handle cases like 'input[type="checkbox"]'
-
-        // Special handling for input types
-        if (preferredTag.includes('input[type=')) {
-          const inputType = preferredTag.match(/input\[type="([^"]+)"\]/)?.[1];
-          if (inputType) {
-            // Check if there's a type attribute that matches
-            const typeAttr = node.attributes.find(
-              (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-              attr.type === 'JSXAttribute' &&
-              attr.name.type === 'JSXIdentifier' &&
-              attr.name.name === 'type' &&
-              attr.value?.type === 'Literal' &&
-              attr.value.value === inputType
-            );
-
-            if (typeAttr && elementName === 'input') return; // Already correct
-          }
-        }
+        // Don't flag if the element is already the preferred semantic element.
+        // Comparing against the tag before '[' also accepts every input variant
+        // (`input[type="checkbox"]` etc.) on an <input> element, so no separate
+        // type-attribute matching is needed here.
+        if (elementName === preferredTag.split('[')[0]) return;
 
         // Report the issue
         context.report({

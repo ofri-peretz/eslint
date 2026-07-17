@@ -3,8 +3,10 @@
  * Error Handling: Detects thrown errors without context
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noMissingErrorContext } from '../../rules/error-handling/no-missing-error-context';
 
 RuleTester.afterAll = afterAll;
@@ -161,6 +163,79 @@ describe('no-missing-error-context', () => {
           errors: [{ messageId: 'missingErrorContext' }],
         },
       ],
+    });
+  });
+  describe('Custom Error Classes and Stack Traces', () => {
+    ruleTester.run('custom error constructor arguments', noMissingErrorContext, {
+      valid: [
+        // Non-string argument to a custom *Error class — the constructor
+        // argument IS the context
+        { code: 'throw new UserNotFoundError(userId);', filename: 'src/app.ts' },
+        // Template literal thrown directly carries interpolated context
+        { code: 'throw `failed for ${id}`;', filename: 'src/app.ts' },
+      ],
+      invalid: [
+        // Non-string argument to the BASE Error class proves nothing
+        {
+          code: 'throw new Error(someVar);',
+          filename: 'src/app.ts',
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+      ],
+    });
+
+    ruleTester.run('stack trace requirement', noMissingErrorContext, {
+      valid: [
+        // *Error-suffixed class satisfies the stack-trace requirement
+        {
+          code: "throw new CustomError('x');",
+          filename: 'src/app.ts',
+          options: [{ requireMessage: false, requireStackTrace: true }],
+        },
+      ],
+      invalid: [
+        // Non-Error constructor has no guaranteed stack trace
+        {
+          code: "throw new Foo('x');",
+          filename: 'src/app.ts',
+          options: [{ requireMessage: false, requireStackTrace: true }],
+          errors: [{ messageId: 'missingErrorContext' }],
+        },
+      ],
+    });
+  });
+
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: throw without an argument (synthetic AST)', () => {
+    // `throw;` is a SyntaxError in JS, so node.argument === null can only be
+    // produced synthetically.
+    it('reports missing message for an argument-less throw (options null fallback)', () => {
+      const { listeners, reports } = createWithMockContext(noMissingErrorContext, {
+        options: [null],
+      });
+      const node = { type: 'ThrowStatement', argument: null } as unknown as TSESTree.ThrowStatement;
+      (listeners['ThrowStatement'] as (n: TSESTree.ThrowStatement) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({
+        messageId: 'missingErrorContext',
+        data: { missing: 'message' },
+      });
+    });
+
+    it('reports missing message and stack trace when both are required', () => {
+      const { listeners, reports } = createWithMockContext(noMissingErrorContext, {
+        options: [{ requireMessage: true, requireStackTrace: true }],
+      });
+      const node = { type: 'ThrowStatement', argument: null } as unknown as TSESTree.ThrowStatement;
+      (listeners['ThrowStatement'] as (n: TSESTree.ThrowStatement) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({
+        messageId: 'missingErrorContext',
+        data: { missing: 'message and stack trace' },
+      });
     });
   });
 });

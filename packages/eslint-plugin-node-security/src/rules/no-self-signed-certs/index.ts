@@ -126,7 +126,6 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
           node.right.type === AST_NODE_TYPES.Literal &&
           (node.right.value === '0' || node.right.value === 0)
         ) {
-          /* c8 ignore next 10 -- process.env.NODE_TLS_REJECT_UNAUTHORIZED pattern requires complex AST */
           context.report({
             node,
             messageId: 'insecureTls',

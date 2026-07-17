@@ -300,8 +300,11 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
           // Check for Array.isArray validation
           if (testText.includes('Array.isArray(') && testText.includes(collectionText)) {
-            // Also check for length validation
-            if (testText.includes('.length') && (testText.includes('<') || testText.includes('>') || testText.includes('<=') || testText.includes('>='))) {
+            // Also check for length validation. Only `<`/`>` need checking:
+            // any text containing `<=` or `>=` already contains `<`/`>` as a
+            // substring, so those two extra disjuncts could never be the
+            // deciding factor (dead code, removed rather than tested around).
+            if (testText.includes('.length') && (testText.includes('<') || testText.includes('>'))) {
               return true;
             }
           }
@@ -415,20 +418,25 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Estimate loop iterations from static analysis
+     * Estimate loop iterations from static analysis.
+     *
+     * Only ever called from the ForStatement visitor below with its own
+     * `node`, so `loop` is always a ForStatement in practice; the parameter
+     * type reflects that (a prior `TSESTree.ForStatement | WhileStatement |
+     * DoWhileStatement` signature carried a redundant `loop.type ===
+     * 'ForStatement'` guard around the whole body that could never be
+     * false through any real call site).
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const estimateIterations = (loop: TSESTree.ForStatement | TSESTree.WhileStatement | TSESTree.DoWhileStatement): number | null => {
-      if (loop.type === 'ForStatement') {
-        // Try to parse for loop bounds
-        const test = loop.test;
-        if (test && test.type === 'BinaryExpression') {
-          // Look for patterns like i < limit or i <= limit
-          if ((test.operator === '<' || test.operator === '<=' || test.operator === '>' || test.operator === '>=')) {
-            const right = test.right;
-            if (right.type === 'Literal' && typeof right.value === 'number') {
-              return Math.abs(right.value);
-            }
+    const estimateIterations = (loop: TSESTree.ForStatement): number | null => {
+      // Try to parse for loop bounds
+      const test = loop.test;
+      if (test && test.type === 'BinaryExpression') {
+        // Look for patterns like i < limit or i <= limit
+        if ((test.operator === '<' || test.operator === '<=' || test.operator === '>' || test.operator === '>=')) {
+          const right = test.right;
+          if (right.type === 'Literal' && typeof right.value === 'number') {
+            return Math.abs(right.value);
           }
         }
       }
@@ -489,11 +497,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
               // Flag excessive recursion or specific dangerous patterns
               if (callCount > maxRecursionDepth || currentFunction === 'recursiveFunc' || isTreeTraversal) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 reportedRecursion.add(functionName);
                 context.report({
@@ -544,11 +550,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for user-controlled loop conditions
         if (involvesUserInput(test)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: test,
@@ -563,11 +567,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for complex DoS patterns (regex loops, pagination, etc.)
         if (checkComplexDoSPatterns(test)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: test,
@@ -589,11 +591,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
               varName.toLowerCase().includes('active') ||
               varName.toLowerCase().includes('enabled')) {
             // This could be a state-dependent infinite loop
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: test,
@@ -612,11 +612,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       ForStatement(node: TSESTree.ForStatement) {
         // Check for for(;;) infinite loops
         if (!node.test && !node.update) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -631,11 +629,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for missing test condition (for(;condition;))
         if (!node.test) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -650,11 +646,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for user-controlled loop bounds
         if (involvesUserInput(node.test)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: node.test,
@@ -669,11 +663,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for complex DoS patterns in for loops
         if (checkComplexDoSPatterns(node.test) || checkComplexDoSPatternsInScope(node.test)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: node.test,
@@ -689,11 +681,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         // Check for potentially large iteration counts
         const estimatedIterations = estimateIterations(node);
         if (estimatedIterations && estimatedIterations > maxStaticIterations) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: node.test,
@@ -712,11 +702,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for user-controlled conditions
         if (involvesUserInput(test)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: test,
@@ -736,11 +724,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         // Check if iterating over user-controlled collections
         if (involvesUserInput(right)) {
           // This could be problematic if the collection is very large
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: right,
@@ -766,11 +752,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             return; // Collection is validated, safe to iterate
           }
 
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: right,

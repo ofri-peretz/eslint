@@ -139,3 +139,26 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
   ],
 });
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: key shapes for tools/maxSteps detection
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
+  valid: [
+    // string-literal 'tools' key is NOT recognized — rule bails before maxSteps check
+    { code: `generateText({ 'tools': myTools, prompt: 'x' });` },
+    // spread-only options object
+    { code: `generateText({ ...opts });` },
+    // string-literal 'maxSteps' key resolves via String(key.value)
+    { code: `generateText({ tools: myTools, 'maxSteps': 3 });` },
+    // snake_case max_steps also accepted
+    { code: `generateText({ tools: myTools, max_steps: 3 });` },
+  ],
+  invalid: [
+    // computed key resolves to null — maxSteps not found
+    {
+      code: `generateText({ tools: myTools, [getKey()]: 3 });`,
+      errors: [{ messageId: 'missingMaxSteps' }],
+    },
+  ],
+});

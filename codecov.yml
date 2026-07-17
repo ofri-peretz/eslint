@@ -2,7 +2,7 @@
 # https://docs.codecov.com/docs/codecov-yaml
 
 coverage:
-  precision: 2
+  precision: 0
   round: down
   range: '70...100'
   status:
@@ -12,6 +12,70 @@ coverage:
     patch:
       default:
         target: 100%
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FLAGS — per-plugin uploads (used for badge URLs)
+# Badge URL: https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<name>
+# carryforward: true — if a plugin isn't in the current run, use last known value
+# ═══════════════════════════════════════════════════════════════════════════════
+flags:
+  eslint-plugin-browser-security:
+    paths: [packages/eslint-plugin-browser-security/]
+    carryforward: true
+  eslint-plugin-conventions:
+    paths: [packages/eslint-plugin-conventions/]
+    carryforward: true
+  eslint-plugin-express-security:
+    paths: [packages/eslint-plugin-express-security/]
+    carryforward: true
+  eslint-plugin-import-next:
+    paths: [packages/eslint-plugin-import-next/]
+    carryforward: true
+  eslint-plugin-jwt:
+    paths: [packages/eslint-plugin-jwt/]
+    carryforward: true
+  eslint-plugin-lambda-security:
+    paths: [packages/eslint-plugin-lambda-security/]
+    carryforward: true
+  eslint-plugin-maintainability:
+    paths: [packages/eslint-plugin-maintainability/]
+    carryforward: true
+  eslint-plugin-modernization:
+    paths: [packages/eslint-plugin-modernization/]
+    carryforward: true
+  eslint-plugin-modularity:
+    paths: [packages/eslint-plugin-modularity/]
+    carryforward: true
+  eslint-plugin-mongodb-security:
+    paths: [packages/eslint-plugin-mongodb-security/]
+    carryforward: true
+  eslint-plugin-nestjs-security:
+    paths: [packages/eslint-plugin-nestjs-security/]
+    carryforward: true
+  eslint-plugin-node-security:
+    paths: [packages/eslint-plugin-node-security/]
+    carryforward: true
+  eslint-plugin-operability:
+    paths: [packages/eslint-plugin-operability/]
+    carryforward: true
+  eslint-plugin-pg:
+    paths: [packages/eslint-plugin-pg/]
+    carryforward: true
+  eslint-plugin-react-a11y:
+    paths: [packages/eslint-plugin-react-a11y/]
+    carryforward: true
+  eslint-plugin-react-features:
+    paths: [packages/eslint-plugin-react-features/]
+    carryforward: true
+  eslint-plugin-reliability:
+    paths: [packages/eslint-plugin-reliability/]
+    carryforward: true
+  eslint-plugin-secure-coding:
+    paths: [packages/eslint-plugin-secure-coding/]
+    carryforward: true
+  eslint-plugin-vercel-ai-security:
+    paths: [packages/eslint-plugin-vercel-ai-security/]
+    carryforward: true
 
 comment:
   layout: 'header, diff, flags, components'
@@ -44,16 +108,6 @@ component_management:
       name: 'eslint-plugin-secure-coding'
       paths:
         - packages/eslint-plugin-secure-coding/**
-      statuses:
-        - type: project
-          target: 100%
-        - type: patch
-          target: 100%
-
-    - component_id: eslint-plugin-crypto
-      name: 'eslint-plugin-crypto'
-      paths:
-        - packages/eslint-plugin-crypto/**
       statuses:
         - type: project
           target: 100%
@@ -206,6 +260,26 @@ component_management:
         - packages/eslint-devkit/**
       statuses:
         - type: project
+          target: 100%
+
+    - component_id: eslint-formatter
+      name: 'eslint-formatter'
+      paths:
+        - packages/eslint-formatter/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-formatter-sarif
+      name: 'eslint-formatter-sarif'
+      paths:
+        - packages/eslint-formatter-sarif/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
           target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────

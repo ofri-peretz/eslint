@@ -171,10 +171,13 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     context: Readonly<TSESLint.RuleContext<MessageIds, RuleOptions>>,
     [options]: readonly [Options?],
   ) {
+    // `options` is guaranteed defined here: createRule's RuleCreator wrapper
+    // (@typescript-eslint/utils applyDefault) always seeds it from
+    // `defaultOptions` above, so it can never be undefined at runtime.
     const {
       safeParserOptions = ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
       xmlValidationFunctions = ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
-    } = options || {};
+    } = options!;
 
     const filename = context.filename;
 

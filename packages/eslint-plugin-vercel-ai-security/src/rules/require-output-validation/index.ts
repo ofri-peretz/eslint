@@ -83,9 +83,6 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
     const displayPatterns = options.displayPatterns ?? [
       'render', 'display', 'show', 'send', 'respond',
     ];
-    const validatorFunctions = options.validatorFunctions ?? [
-      'validate', 'verify', 'check', 'sanitize',
-    ];
 
     const sourceCode = context.sourceCode;
 
@@ -94,18 +91,6 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
 
     // Track variables that hold AI results
     const aiResultVariables = new Set<string>();
-
-    /**
-     * Check if expression is validated
-     */
-    function isValidated(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression') return false;
-      
-      const callee = sourceCode.getText(node.callee);
-      return validatorFunctions.some((fn: string) => 
-        callee.toLowerCase().includes(fn.toLowerCase())
-      );
-    }
 
     /**
      * Check if expression accesses AI output
@@ -147,7 +132,10 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
 
         // Check arguments for unvalidated AI output
         for (const arg of node.arguments) {
-          if (isAIOutput(arg) && !isValidated(arg)) {
+          // NOTE: `isAIOutput` only matches MemberExpression/Identifier nodes,
+          // so a wrapped call like `render(validate(result.text))` never
+          // reaches here — validated output is inherently not flagged.
+          if (isAIOutput(arg)) {
             context.report({
               node: arg,
               messageId: 'unvalidatedOutput',
@@ -159,7 +147,7 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
           if (arg.type === 'ObjectExpression') {
             for (const prop of arg.properties) {
               if (prop.type !== 'Property') continue;
-              if (isAIOutput(prop.value) && !isValidated(prop.value)) {
+              if (isAIOutput(prop.value)) {
                 context.report({
                   node: prop.value,
                   messageId: 'unvalidatedOutput',

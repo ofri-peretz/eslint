@@ -424,6 +424,14 @@ describe('detect-object-injection', () => {
           code: 'obj[key1][key2] = value;',
           errors: [{ messageId: 'objectInjection' }],
         },
+        // Three-level-deep chain — forces the chain-walking `while` loop in
+        // checkAssignmentExpression to execute its body more than once
+        // (marking both `a[b]` and `a[b][c]` as handled) before exiting on
+        // the innermost non-computed-MemberExpression object (`a`).
+        {
+          code: 'a[b][c][d] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
         // Computed property from function (dangerous)
         {
           code: 'obj[getKey()] = value;',
@@ -578,6 +586,548 @@ describe('detect-object-injection', () => {
         },
       ],
       invalid: [],
+    });
+  });
+
+  /**
+   * Codemod / AST-walker context detection.
+   * Covers both the filename-pattern branches and the import-source scan
+   * (which must be exercised via a real ImportDeclaration for every listed
+   * package, plus a negative case where an import exists but matches none).
+   */
+  describe('Codemod / AST-walker context detection', () => {
+    ruleTester.run('filename under a codemods directory is skipped', detectObjectInjection, {
+      valid: [
+        {
+          code: 'obj[userInput] = value;',
+          filename: '/repo/tools/codemods/rename.ts',
+        },
+        {
+          code: 'obj[userInput] = value;',
+          filename: '/repo/tools/codemod/rename.ts',
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('filename matching the *codemod.ts pattern is skipped', detectObjectInjection, {
+      valid: [
+        {
+          code: 'obj[userInput] = value;',
+          filename: '/repo/tools/rename.codemod.ts',
+        },
+        {
+          code: 'obj[userInput] = value;',
+          filename: '/repo/tools/rename.codemod.mjs',
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('each recognized AST-tool import marks the file as codemod context', detectObjectInjection, {
+      valid: [
+        { code: "import x from '@babel/types';\nobj[userInput] = value;", filename: '/repo/a.ts' },
+        { code: "import x from '@babel/traverse';\nobj[userInput] = value;", filename: '/repo/b.ts' },
+        { code: "import x from 'recast';\nobj[userInput] = value;", filename: '/repo/c.ts' },
+        { code: "import x from 'jscodeshift';\nobj[userInput] = value;", filename: '/repo/d.ts' },
+        { code: "import x from 'eslint';\nobj[userInput] = value;", filename: '/repo/e.ts' },
+        { code: "import x from 'estree-walker';\nobj[userInput] = value;", filename: '/repo/f.ts' },
+        { code: "import x from 'ast-types';\nobj[userInput] = value;", filename: '/repo/g.ts' },
+        { code: "import x from 'esrap';\nobj[userInput] = value;", filename: '/repo/h.ts' },
+        { code: "import x from 'unist-util-visit';\nobj[userInput] = value;", filename: '/repo/i.ts' },
+        // startsWith('@typescript-eslint/') subpath match
+        { code: "import x from '@typescript-eslint/utils';\nobj[userInput] = value;", filename: '/repo/j.ts' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run(
+      'an unrelated import does not suppress detection (scan continues past non-matches)',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: "import React from 'react';\nobj[userInput] = value;",
+            filename: '/repo/component.ts',
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+  });
+
+  /**
+   * hasPrecedingValidation — exercise the negated-includes recursion, the
+   * hasOwnProperty.call() args[1]-mismatch false path, and the non-block
+   * (unbraced) early-exit consequent shape.
+   */
+  describe('hasPrecedingValidation edge cases', () => {
+    ruleTester.run('negated includes() check (!ARRAY.includes(key)) with early throw is safe', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            const ALLOWED = ['light', 'dark'];
+            function setTheme(userTheme) {
+              if (!ALLOWED.includes(userTheme)) throw new Error('bad theme');
+              config[userTheme] = true;
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run(
+      'hasOwnProperty.call() whose second argument is NOT the key identifier still flags access',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
+              function get(obj, key) {
+                if (Object.prototype.hasOwnProperty.call(obj, 'literalOtherName')) {
+                  return obj[key];
+                }
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run(
+      'obj.hasOwnProperty(key) or Object.hasOwn(obj, key) whose key argument is NOT the accessed identifier still flags access',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
+              function get(obj, key) {
+                if (obj.hasOwnProperty('literalOtherName')) {
+                  return obj[key];
+                }
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          {
+            code: `
+              function get(obj, key) {
+                if (Object.hasOwn(obj, 'literalOtherName')) {
+                  return obj[key];
+                }
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run(
+      'unbraced (non-block) throw or return consequent still counts as an early exit',
+      detectObjectInjection,
+      {
+        valid: [
+          {
+            code: `
+              const ALLOWED = ['a', 'b'];
+              function setValue(key, value) {
+                if (!ALLOWED.includes(key)) return;
+                store[key] = value;
+              }
+            `,
+          },
+        ],
+        invalid: [],
+      },
+    );
+  });
+
+  /**
+   * isNumericKey — cover the remaining bitwise/arithmetic operators and the
+   * loop-counter identifier resolution edge cases.
+   */
+  describe('isNumericKey coverage', () => {
+    ruleTester.run('bitwise and arithmetic coercions on the key are treated as numeric', detectObjectInjection, {
+      valid: [
+        { code: 'const v = arr[x | 0];' },
+        { code: 'const v = arr[x & 0xff];' },
+        { code: 'const v = arr[x ^ 1];' },
+        { code: 'const v = arr[x << 1];' },
+        { code: 'const v = arr[x >> 1];' },
+        { code: 'const v = arr[x >>> 0];' },
+        { code: 'const v = arr[x * 2];' },
+        { code: 'const v = arr[x / 2];' },
+        { code: 'const v = arr[x % 2];' },
+        { code: 'const v = arr[x - 1];' },
+        { code: 'const v = arr[Number(x)];' },
+        { code: 'const v = arr[parseInt(x, 10)];' },
+        { code: 'const v = arr[parseFloat(x)];' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run(
+      'a for-loop identifier whose initializer is NOT a numeric literal is still flagged',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          // Uses "cursor" (not in the numericIndexNames safe-list of i/j/k/index/idx/n/len)
+          // so the access must be judged by isLoopCounterIdentifier's numeric-init check,
+          // not short-circuited earlier by the common-index-name allowlist.
+          {
+            code: `
+              for (let cursor = getStart(); cursor < 10; cursor++) {
+                obj[cursor] = value;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run(
+      'an identifier declared outside any for-statement init is still flagged',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
+              let cursor = getDynamicKey();
+              obj[cursor] = value;
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+  });
+
+  /**
+   * isForInOrObjectKeysKey — negative paths: a for...of over a plain array
+   * (not Object.keys/entries) must NOT be treated as a safe iteration key.
+   */
+  describe('isForInOrObjectKeysKey negative paths', () => {
+    ruleTester.run('for...of over a plain array is not a safe iteration key', detectObjectInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            for (const key of someArray) {
+              obj[key] = value;
+            }
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run('for...of over Object.values (not keys or entries) is not a safe iteration key', detectObjectInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            for (const key of Object.values(obj)) {
+              target[key] = 1;
+            }
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run(
+      'a for...in loop reusing a pre-declared variable (no fresh VariableDeclaration) is not a safe iteration key',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            // `key` is a pre-declared function parameter, not a fresh
+            // `for (const key in obj)` binding, so it is never treated as a
+            // safe iteration key — both the assignment (target[key]) and the
+            // read (obj[key]) are flagged.
+            code: `
+              function copy(key, obj, target) {
+                for (key in obj) {
+                  target[key] = obj[key];
+                }
+              }
+            `,
+            errors: [
+              { messageId: 'objectInjection' },
+              { messageId: 'objectInjection' },
+            ],
+          },
+        ],
+      },
+    );
+  });
+
+  /**
+   * isPrototypelessObject — the array-spread ("[...array]") detection branch,
+   * exercised with a non-numeric, non-validated key so the access reaches
+   * this check instead of short-circuiting earlier on isNumericKey.
+   */
+  describe('isPrototypelessObject array-spread pattern', () => {
+    ruleTester.run('a variable initialized from an array spread is treated as prototype-less', detectObjectInjection, {
+      valid: [
+        {
+          code: `
+            const merged = [...baseArray];
+            merged[dynamicKey] = value;
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
+   * isReflectResultAccess — direct call, optional-chain recursion (true and
+   * false paths), and a plain (non-Reflect) object to confirm the negative.
+   */
+  describe('isReflectResultAccess (Reflect metadata access)', () => {
+    ruleTester.run('Reflect.getMetadata(...) result access is safe', detectObjectInjection, {
+      valid: [
+        {
+          code: "const v = Reflect.getMetadata(PARAMTYPES_METADATA, target)[dynamicIndex];",
+        },
+        // Optional-chain form: Reflect.getMetadata(...)?.[key]. Note the whole
+        // expression is wrapped in a single outer ChainExpression here, so the
+        // MemberExpression visitor's `node.object` is still the plain
+        // CallExpression (direct-call branch) — this does NOT exercise the
+        // ChainExpression recursion itself (see the parenthesized cases below
+        // for that), but it does confirm the optional-chain member access is
+        // still recognized as safe end-to-end.
+        {
+          code: "const v = Reflect.getMetadata(PARAMTYPES_METADATA, target)?.[dynamicIndex];",
+        },
+        // Parenthesized optional-chain object: `(Reflect?.getMetadata(...))`
+        // becomes its own standalone ChainExpression, so `node.object` really
+        // IS a ChainExpression here — this exercises the recursive branch
+        // (lines 740-744) on its TRUE path (recurses into a Reflect call).
+        {
+          code: "const v = (Reflect?.getMetadata(PARAMTYPES_METADATA, target))[dynamicIndex];",
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run(
+      'a non-optional-chain non-Reflect call is still flagged (direct-call recursion base case false)',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const v = getMetadata(target)?.[dynamicIndex];',
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run(
+      'a parenthesized optional-chain object that is NOT a Reflect call is still flagged (recursion false path)',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            // `node.object` is a standalone ChainExpression (same shape as the
+            // safe case above) but its inner call is NOT `Reflect.*`, so the
+            // recursive call falls through to the final `return false`.
+            code: 'const v = (getMetadata?.(target))[dynamicIndex];',
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    // NOTE: unlike the read-access path (isHighRiskMemberAccess), the
+    // assignment path (isHighRiskAssignment) does NOT call
+    // isReflectResultAccess — Reflect-metadata assignment targets are still
+    // flagged. This documents that real, current behavior.
+    ruleTester.run(
+      'Reflect metadata ASSIGNMENT (not read) is still flagged — isHighRiskAssignment has no Reflect exemption',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'Reflect.getMetadata(META_KEY, target)[dynamicIndex] = value;',
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+  });
+
+  /**
+   * isDangerousPropertyAccess — non-number Literal keys (boolean), and the
+   * SCREAMING_SNAKE_CASE / camelCase-typed-suffix identifier allowlists.
+   */
+  describe('isDangerousPropertyAccess literal/identifier edge cases', () => {
+    ruleTester.run('a boolean literal key is NOT treated as a safe numeric index', detectObjectInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'obj[true] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run('SCREAMING_SNAKE_CASE identifiers are treated as safe compile-time constants', detectObjectInjection, {
+      valid: [
+        { code: 'obj[STATUS_CODE] = value;' },
+        { code: 'const v = obj[PARAMTYPES_METADATA];' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('camelCase identifiers with a typed or enumerated suffix are treated as safe', detectObjectInjection, {
+      valid: [
+        { code: 'obj[errorHttpStatusCode] = value;' },
+        { code: 'obj[retryCount] = value;' },
+        { code: 'const v = obj[reqType];' },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
+   * isHighRiskAssignment's own isNumericKey / ChainExpression call sites —
+   * these mirror isHighRiskMemberAccess's checks but run on the ASSIGNMENT
+   * side (obj[key] = value), which is a structurally different call path.
+   */
+  describe('isNumericKey and Reflect checks on the assignment side', () => {
+    ruleTester.run('unary-plus coerced key is treated as numeric on assignment', detectObjectInjection, {
+      valid: [
+        { code: 'arr[+x] = value;' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('unary-plus coerced key is treated as numeric on read access', detectObjectInjection, {
+      valid: [
+        { code: 'const v = arr[+x];' },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
+   * Object.assign(target, untrustedSource) / spread-merge equivalent-injection
+   * detection (checkObjectAssignSpread). This whole visitor path was
+   * previously untested — cover: the ObjectExpression-first-arg short
+   * circuit (true and false), the tainted-vs-safe source classification
+   * (single tainted, mixed safe+tainted, and all-safe short-circuit), and
+   * the test-file suppression that reaches this specific visitor.
+   */
+  describe('Object.assign / spread-merge object-injection detection', () => {
+    ruleTester.run('Object.assign with a fresh object-literal target is always safe', detectObjectInjection, {
+      valid: [
+        // First argument is a fresh ObjectExpression -- no taint risk regardless of sources.
+        { code: 'Object.assign({}, source);' },
+        { code: 'Object.assign({}, untrustedSource, anotherSource);' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('Object.assign onto a non-literal target with an untrusted source is flagged', detectObjectInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'Object.assign(target, source);',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Mixed sources: one safe (object literal), one tainted (identifier) --
+        // the tainted one alone is enough to trigger the report.
+        {
+          code: "Object.assign(target, { a: 1 }, source);",
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run('Object.assign whose extra sources are all literals or object-expressions is safe', detectObjectInjection, {
+      valid: [
+        // Every source after the target is an ObjectExpression or Literal --
+        // anyTaintedSource is false, so the function returns before reporting.
+        { code: "Object.assign(target, { a: 1 }, 'literal-string');" },
+        { code: "Object.assign(target, 'just-a-string');" },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('Object.assign is not flagged when the callee is not Object.assign', detectObjectInjection, {
+      valid: [
+        { code: 'Foo.assign(target, source);' },
+        { code: 'Object.notAssign(target, source);' },
+        { code: "Object['assign'](target, source);" },
+        { code: 'plainCall(target, source);' },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('Object.assign inside a test file is suppressed like all other checks', detectObjectInjection, {
+      valid: [
+        {
+          code: 'Object.assign(target, source);',
+          filename: '/repo/src/utils.test.ts',
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Coverage - branch gaps', () => {
+    ruleTester.run('numeric-literal property, bitwise-numeric, Number call, return-guard, for-loop counter, chained computed read', detectObjectInjection, {
+      valid: [
+        // isDangerousPropertyAccess: numeric Literal early exit (branch 37)
+        'const x = obj[0];',
+        // isNumericKey: BinaryExpression bitwise op (branch 85)
+        'const x = arr[y | 0];',
+        // isNumericKey: Number() call (branch 88)
+        'const x = arr[Number(z)];',
+        // hasPrecedingValidation: guard if with { return } body (branch 27 — ReturnStatement arm)
+        'function f(obj, key) { if (!allowed.includes(key)) { return; } return obj[key]; }',
+        // isLoopCounterIdentifier: for-loop with numeric initializer (branches 97-98)
+        'function f(arr, n) { for (let loopVar = 0; loopVar < n; loopVar++) { arr[loopVar]; } }',
+      ],
+      invalid: [
+        // isLoopCounterIdentifier: for-loop variable with no initializer → !init → false → flagged (branch 96)
+        {
+          code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // MemberExpression visitor: inner of chained computed read is skipped (branches 125-126).
+        // Only the outer a[b][c] is reported (1 error), inner a[b] is silently skipped.
+        {
+          code: 'const val = a[b][c];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // isNumericKey: BinaryExpression with non-numeric operator (+) — false arm of op check (branch 81)
+        {
+          code: 'const x = arr[a + 1];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // isNumericKey: CallExpression with non-Identifier callee (MemberExpression) — false arm (branch 84)
+        {
+          code: 'const x = arr[obj.method()];',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
     });
   });
 });

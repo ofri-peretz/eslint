@@ -14,11 +14,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'missingAriaLabel'
-  | 'addAriaLabel'
-  | 'addAriaLabelledby'
-  | 'addVisibleLabel';
+type MessageIds = 'missingAriaLabel';
 
 export interface Options {
   /** Ignore in test files. Default: true */
@@ -74,7 +70,6 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-missing-aria-labels.md',
       description: 'Detects elements missing ARIA labels',
     },
-    hasSuggestions: true,
     messages: {
       missingAriaLabel: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
@@ -83,30 +78,6 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Add aria-label or aria-labelledby attribute',
         documentationLink: 'https://www.w3.org/WAI/ARIA/apg/',
-      }),
-      addAriaLabel: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add aria-label',
-        description: 'Add aria-label attribute',
-        severity: 'LOW',
-        fix: 'aria-label="descriptive text"',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-label',
-      }),
-      addAriaLabelledby: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add aria-labelledby',
-        description: 'Add aria-labelledby attribute',
-        severity: 'LOW',
-        fix: 'aria-labelledby="id-of-label-element"',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-labelledby',
-      }),
-      addVisibleLabel: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Visible Label',
-        description: 'Add visible label element',
-        severity: 'LOW',
-        fix: '<label htmlFor="input-id">Label text</label>',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label',
       }),
     },
     schema: [
@@ -175,20 +146,6 @@ ignoreInTests = true,
           data: {
             element: elementName,
           },
-          suggest: [
-            {
-              messageId: 'addAriaLabel',
-              fix: () => null,
-            },
-            {
-              messageId: 'addAriaLabelledby',
-              fix: () => null,
-            },
-            {
-              messageId: 'addVisibleLabel',
-              fix: () => null,
-            },
-          ],
         });
       }
     }

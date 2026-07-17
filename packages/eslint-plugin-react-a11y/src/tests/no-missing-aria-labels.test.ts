@@ -55,6 +55,10 @@ describe('no-missing-aria-labels', () => {
         {
           code: '<button title="Close dialog"></button>',
         },
+        // Expression containers with identifier/string/number are also text content.
+        {
+          code: '<button>{label}</button>',
+        },
       ],
       invalid: [],
     });

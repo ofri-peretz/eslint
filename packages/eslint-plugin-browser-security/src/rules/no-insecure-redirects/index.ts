@@ -112,11 +112,9 @@ function isRedirectValidated(
   const nodeStart = node.loc?.start;
   const nodeEnd = node.loc?.end;
 
-  /* c8 ignore start -- Guard clause: loc is always present in RuleTester */
   if (!nodeStart || !nodeEnd || !program) {
     return false;
   }
-  /* c8 ignore stop */
 
   // Check for validation function calls before this redirect
   const validationPatterns = [

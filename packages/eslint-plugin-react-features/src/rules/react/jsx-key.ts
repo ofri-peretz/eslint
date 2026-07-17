@@ -147,28 +147,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Pattern 3: React.Children.map(children, fn) or Children.map(children, fn)
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
-        callee.property.name === 'map'
-      ) {
-        const obj = callee.object;
-        // Children.map()
-        if (obj.type === 'Identifier' && obj.name === 'Children') {
-          return true;
-        }
-        // React.Children.map()
-        if (
-          obj.type === 'MemberExpression' &&
-          obj.object.type === 'Identifier' &&
-          obj.object.name === 'React' &&
-          obj.property.type === 'Identifier' &&
-          obj.property.name === 'Children'
-        ) {
-          return true;
-        }
-      }
+      // NOTE: React.Children.map(children, fn) / Children.map(children, fn)
+      // are already matched by Pattern 1 above — any member call named `map`
+      // returns true there, so no separate pattern is needed.
 
       return false;
     }

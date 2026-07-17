@@ -64,7 +64,6 @@ function isPermissiveCorsConfig(
   if (/\bcredentials\s*:\s*true\b/.test(text)) {
     // If credentials are enabled, origin cannot be '*' (browser blocks this)
     // but origin: true with credentials is dangerous
-    /* c8 ignore next 7 */
     if (/\borigin\s*:\s*true\b/.test(text)) {
       return {
         isPermissive: true,
@@ -193,7 +192,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       allowedOrigins: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
       allowInTests = false,
       allowOriginTrue = false,
@@ -231,7 +230,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           
           if (isStandaloneCorsCall(node)) {
             corsCallNode = node;
-          } else if (isAppUseCors(node)) {
+          } else {
+            // Guaranteed app.use(cors(...)) by the isAppUseCors guard above
             corsCallNode = node.arguments[0] as TSESTree.CallExpression;
           }
           

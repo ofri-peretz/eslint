@@ -241,9 +241,11 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    // Narrowed binding: the early return above guarantees sourceTeam is non-null,
+    // and closures cannot rely on that narrowing without re-checking.
+    const owningTeam = sourceTeam;
+
     function checkImport(node: TSESTree.ImportDeclaration | TSESTree.ImportExpression | TSESTree.CallExpression) {
-      // Guard for TypeScript - sourceTeam is checked before this function is registered
-      if (!sourceTeam) return;
 
       let importPath: string | null = null;
 
@@ -284,12 +286,12 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
       }
 
       // Same team - always allowed
-      if (targetTeam.team === sourceTeam.team) {
+      if (targetTeam.team === owningTeam.team) {
         return;
       }
 
       // Check if target team is in allowed dependencies
-      const allowedDeps = sourceTeam.allowedDependencies || [];
+      const allowedDeps = owningTeam.allowedDependencies || [];
       if (allowedDeps.includes(targetTeam.team)) {
         return;
       }
@@ -299,7 +301,7 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'unauthorizedTeamImport',
         data: {
-          sourceTeam: sourceTeam.team,
+          sourceTeam: owningTeam.team,
           targetTeam: targetTeam.team,
           importPath,
         },

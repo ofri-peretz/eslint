@@ -28,6 +28,17 @@ describe('no-template-injection', () => {
       { code: 'ejs.escape(userInput)' },
       // renderFile with a file path variable is a separate concern (CWE-22)
       { code: 'ejs.render("<p>Static</p>", data)' },
+      // Callee is not a MemberExpression at all (plain function call)
+      { code: 'compile(userTemplate)' },
+      // Callee object is not a plain Identifier (e.g. a call expression or member chain)
+      { code: 'getEngine().compile(userTemplate)' },
+      { code: 'Handlebars.utils.compile(userTemplate)' },
+      // Callee property is computed / not a plain Identifier (e.g. bracket access)
+      { code: 'Handlebars[methodName](userTemplate)' },
+      { code: 'Handlebars["compile"](userTemplate)' },
+      // Known engine + known method, but called with zero arguments
+      { code: 'Handlebars.compile()' },
+      { code: 'ejs.render()' },
     ],
     invalid: [
       // Dynamic variable — injection surface

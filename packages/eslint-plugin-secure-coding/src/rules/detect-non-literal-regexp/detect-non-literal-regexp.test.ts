@@ -35,6 +35,14 @@ describe('detect-non-literal-regexp', () => {
         },
         // Note: This rule is very strict and detects ReDoS patterns even in literals
         // Most regex patterns will trigger the rule, so we only test non-RegExp code as valid
+        // `new RegExp()` with zero arguments: `extractPattern` returns a
+        // null patternNode, empty pattern, and isDynamic: false, so
+        // `detectVulnerability('', false)` finds nothing and reports
+        // nothing — exercises the "no arguments" false branches in
+        // extractPattern.
+        {
+          code: 'new RegExp();',
+        },
       ],
       invalid: [],
     });
@@ -180,6 +188,68 @@ describe('detect-non-literal-regexp', () => {
         // This should trigger the no vulnerability case, but still report due to dynamic nature
         {
           code: 'new RegExp(userInput);',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+
+    // `detectVulnerability`'s dynamic-argument loop matches the *source
+    // text* of the pattern argument against each REGEXP_PATTERNS regex.
+    // `a++` is a dynamic (non-literal) argument whose text matches the
+    // "nested wildcard/quantifier" entry (`.*\+\+.*`), so it returns that
+    // REGEXP_PATTERNS object directly (not the generic dynamic fallback) —
+    // this exercises the early `return vuln` inside the loop and, because
+    // that object's `pattern` field is the regex source (not the literal
+    // string `'dynamic'`), also exercises the `case 'redos'` branch in
+    // `generateRefactoringSteps` (every constructed vulnerability has
+    // `vulnerability: 'redos'`, so this is the only reachable switch arm).
+    ruleTester.run('dynamic argument text matches a REGEXP_PATTERNS entry directly', detectNonLiteralRegexp, {
+      valid: [],
+      invalid: [
+        {
+          code: 'new RegExp(a++);',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+
+    // allowLiterals lets short, non-ReDoS literals through, but the rule
+    // still checks literals for nested-quantifier ReDoS patterns even when
+    // allowLiterals is true (the early-return guard requires
+    // `!hasReDoSPatterns(pattern)`) — exercises the true branch of that
+    // guard.
+    ruleTester.run('allowLiterals still flags literal patterns with nested quantifiers', detectNonLiteralRegexp, {
+      valid: [],
+      invalid: [
+        {
+          code: 'new RegExp("(a+)+b");',
+          options: [{ allowLiterals: true }],
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+
+    // Dynamic pattern text longer than 30 chars — exercises the truncation
+    // branch (`pattern.length > 30`) in the report `data.pattern` for the
+    // dynamic-RegExp path.
+    ruleTester.run('dynamic pattern text over 30 chars gets truncated in report data', detectNonLiteralRegexp, {
+      valid: [],
+      invalid: [
+        {
+          code: 'new RegExp(someVeryLongUserInputVariableName123456789);',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+
+    // Literal regex (not RegExp(...)) with a nested-quantifier ReDoS
+    // pattern longer than 30 characters — exercises the same truncation
+    // branch inside `checkLiteralRegExp`'s report data.
+    ruleTester.run('literal ReDoS pattern over 30 chars gets truncated in report data', detectNonLiteralRegexp, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const pattern = /(a+)+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/;',
           errors: [{ messageId: 'regexpReDoS' }],
         },
       ],

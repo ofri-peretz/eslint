@@ -108,16 +108,10 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Check for 'this.element' pattern
-      if (
-        obj.type === 'MemberExpression' &&
-        obj.object.type === 'ThisExpression' &&
-        obj.property.type === 'Identifier' &&
-        obj.property.name === 'element'
-      ) {
-        return true;
-      }
-
+      // NOTE: a dedicated `this.element` check used to live here, but it was
+      // unreachable: any `<obj>.element.innerText` access (including
+      // `this.element.innerText`) is already accepted by the known-DOM-object
+      // property list above ('element' is in that list).
       return false;
     }
 

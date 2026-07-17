@@ -132,7 +132,7 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
             context.report({
               node: declaratorNode,
               messageId: 'missingRevoke',
-              suggest: [{ messageId: 'addRevocation', fix: /* c8 ignore next */ () => null }],
+              suggest: [{ messageId: 'addRevocation', fix: () => null }],
             });
           }
         }

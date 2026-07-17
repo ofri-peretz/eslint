@@ -522,12 +522,6 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       sourceImport: ImportInfo,
     ): { messageId: MessageIds; data: Record<string, string> } {
       switch (strategy) {
-        case 'module-split':
-          return {
-            messageId: 'moduleSplit',
-            data: generateModuleSplitMessage(cycle),
-          };
-
         case 'direct-import':
           return {
             messageId: 'directImport',
@@ -547,6 +541,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           };
 
         default:
+          // 'module-split' (and the impossible fall-through) both split.
           return {
             messageId: 'moduleSplit',
             data: generateModuleSplitMessage(cycle),

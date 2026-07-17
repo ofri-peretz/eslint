@@ -45,13 +45,12 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value;
-        if (!imports.has(source)) {
-          imports.set(source, []);
+        let sourceNodes = imports.get(source);
+        if (!sourceNodes) {
+          sourceNodes = [];
+          imports.set(source, sourceNodes);
         }
-        const sourceNodes = imports.get(source);
-        if (sourceNodes) {
-          sourceNodes.push(node);
-        }
+        sourceNodes.push(node);
       },
       'Program:exit'() {
         for (const nodes of imports.values()) {

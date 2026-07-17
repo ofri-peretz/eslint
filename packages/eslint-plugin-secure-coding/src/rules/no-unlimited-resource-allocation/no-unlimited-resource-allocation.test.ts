@@ -54,6 +54,108 @@ describe('no-unlimited-resource-allocation', () => {
         {
           code: `fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
         },
+        // Same static path construction, but using `path.resolve` instead of
+        // `path.join` - exercises the `pathArg.callee.property.name === 'resolve'`
+        // side of that binary-expr (only `'join'` was previously exercised).
+        {
+          code: `fs.readFileSync(path.resolve(__dirname, 'data', 'users.json'));`,
+        },
+        // Buffer.alloc with a spread element as its (only) argument -
+        // exercises the true side of `sizeArg.type === 'SpreadElement'` in
+        // the size-estimation ternary (the estimate short-circuits to null
+        // rather than attempting to statically analyze a spread).
+        {
+          code: `const buf = Buffer.alloc(...sizeArgs);`,
+        },
+        // `new Buffer(...)` with a spread element argument - exercises the
+        // same true side of `sizeArg.type === 'SpreadElement'`, but in the
+        // NewExpression handler's size-estimation ternary.
+        {
+          code: `const buf = new Buffer(...sizeArgs);`,
+        },
+        // A CallExpression whose callee is itself a NewExpression, but not
+        // `new Buffer` - exercises the false branches of `isNewBuffer`'s
+        // `callee.callee.type === 'Identifier' && callee.callee.name === 'Buffer'`
+        // checks (the callee is a `new Foo()` result, not `new Buffer`).
+        {
+          code: `(new Foo())(req.query.size);`,
+        },
+        // Same shape, but the outer callee's inner callee is not even an
+        // Identifier (it's a MemberExpression) - exercises the
+        // `callee.callee.type === 'Identifier'` false branch directly.
+        {
+          code: `(new obj.Foo())(req.query.size);`,
+        },
+        // `Buffer.alloc()` called with zero arguments - exercises the false
+        // side of `args.length > 0` in the CallExpression Buffer handler.
+        {
+          code: `const buf = Buffer.alloc();`,
+        },
+        // `fs.readFile()` called with zero arguments - exercises the false
+        // side of `args.length > 0` in the fs-operations handler.
+        {
+          code: `fs.readFile();`,
+        },
+        // `path.join()` (zero args) inside an fs call - exercises the false
+        // side of `pathArgs.length > 0` in the static-path-construction
+        // safety check (falls through to the normal untrusted-input check,
+        // but `path.join()` itself isn't user input so nothing is reported).
+        {
+          code: `fs.readFile(path.join(), callback);`,
+        },
+        // `Array(x, y)` called with two arguments (not exactly one) -
+        // exercises the false side of `args.length === 1` in the
+        // CallExpression Array-constructor handler.
+        {
+          code: `const arr = Array(10, 20);`,
+        },
+        // `Array(localVar)` where `localVar` is not user input - exercises
+        // the false side of `isUserInput(sizeArg)` in the same handler.
+        {
+          code: `const arr = Array(localVar);`,
+        },
+        // A `.set(...)`-named call whose source text happens to mention
+        // `Buffer.alloc` but with fewer than 2 arguments - exercises the
+        // false side of `args.length >= 2` in the cache-growth detector
+        // (the callee text "resetCache" contains the substring "set").
+        {
+          code: `resetCache(Buffer.alloc(10));`,
+        },
+        // A `.set(...)`-named call with 2+ arguments whose full source text
+        // mentions `Buffer.alloc` (via the first argument) but whose value
+        // argument (second) does not mention "Buffer.alloc"/"length" -
+        // exercises the false side of
+        // `valueText.includes('Buffer.alloc') && valueText.includes('length')`
+        // in the cache-growth detector.
+        {
+          code: `resetCache(Buffer.alloc(10), plainValue);`,
+        },
+        // `arr.map()` called with zero arguments - exercises the false side
+        // of `args.length > 0` in the recursive-data-structure detector.
+        {
+          code: `arr.map();`,
+        },
+        // `new Buffer()` called with zero arguments - exercises the false
+        // side of `args.length > 0` in the NewExpression Buffer handler.
+        {
+          code: `const buf2 = new Buffer();`,
+        },
+        // `new Array(a, b)` (two arguments, not exactly one) - exercises the
+        // false side of `args.length === 1` in the NewExpression
+        // Array-constructor handler.
+        {
+          code: `const arr2 = new Array(10, 20);`,
+        },
+        // `new Date(...)` inside a loop - callee text matches none of
+        // Buffer/Array/Map/Set, exercising the false side of that
+        // composite OR-chain in the NewExpression loop-allocation check.
+        {
+          code: `
+            for (let i = 0; i < 10; i++) {
+              const d = new Date(dynamicValue);
+            }
+          `,
+        },
       ],
       invalid: [],
     });
@@ -255,10 +357,112 @@ describe('no-unlimited-resource-allocation', () => {
             const buf = safeAlloc(userSize);
           `,
         },
-        // Disabled validation requirement
+        // Disabled validation requirement — with `requireResourceValidation:
+        // false`, unvalidated user-controlled sizes are no longer flagged
+        // (proves the option actually gates the userControlledResourceSize
+        // check; req.query.size is real user input and would be reported
+        // by default, see the paired invalid case below).
         {
-          code: 'const buf = Buffer.alloc(someSize);',
+          code: 'const buf = Buffer.alloc(req.query.size);',
           options: [{ requireResourceValidation: false }],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+        // @safe annotation directly on the userControlledResourceSize path
+        // (Buffer.alloc with unvalidated user input) - exercises the
+        // safetyChecker.isSafe() early-return for CallExpression Buffer.alloc.
+        {
+          code: `
+            /** @safe */
+            const buf = Buffer.alloc(req.query.size);
+          `,
+        },
+        // @safe annotation on an oversized literal buffer allocation -
+        // exercises the safetyChecker.isSafe() early-return on the
+        // unlimitedBufferAllocation path (CallExpression).
+        {
+          code: `
+            /** @safe */
+            const largeBuf = Buffer.alloc(1024 * 1024 * 100);
+          `,
+        },
+        // @safe annotation on a multer() config without limits - exercises
+        // the safetyChecker.isSafe() early-return on the
+        // unlimitedFileOperations (multer) path.
+        {
+          code: `
+            /** @safe */
+            const upload = multer({ dest: "./uploads" });
+          `,
+        },
+        // @safe annotation on an fs read/write call whose path is user
+        // input - exercises the safetyChecker.isSafe() early-return on the
+        // unlimitedFileOperations (fs) path.
+        {
+          code: `
+            /** @safe */
+            fs.readFile(req.query.file, callback);
+          `,
+        },
+        // @safe annotation on an Array(userInput) call expression -
+        // exercises the safetyChecker.isSafe() early-return on the
+        // unlimitedMemoryAllocation (Array call) path.
+        {
+          code: `
+            /** @safe */
+            const arr = Array(req.body.size);
+          `,
+        },
+        // @safe annotation on a dynamic-size CallExpression allocation
+        // inside a loop - exercises the safetyChecker.isSafe() early-return
+        // on the resourceAllocationInLoop (CallExpression) path.
+        {
+          code: `
+            /** @safe */
+            for (let i = 0; i < 10; i++) {
+              const buf = Buffer.alloc(userSize);
+            }
+          `,
+        },
+        // @safe annotation on `new Buffer(userInput)` - exercises the
+        // safetyChecker.isSafe() early-return on the
+        // userControlledResourceSize path (NewExpression).
+        {
+          code: `
+            /** @safe */
+            const buf3 = new Buffer(req.query.size);
+          `,
+        },
+        // @safe annotation on an oversized literal `new Buffer(...)` -
+        // exercises the safetyChecker.isSafe() early-return on the
+        // unlimitedBufferAllocation path (NewExpression).
+        {
+          code: `
+            /** @safe */
+            const largeBuf2 = new Buffer(1024 * 1024 * 100);
+          `,
+        },
+        // @safe annotation on `new Array(userInput)` - exercises the
+        // safetyChecker.isSafe() early-return on the
+        // unlimitedMemoryAllocation path (NewExpression).
+        {
+          code: `
+            /** @safe */
+            const arr2 = new Array(req.body.size);
+          `,
+        },
+        // @safe annotation on a dynamic-size `new` allocation inside a loop
+        // - exercises the safetyChecker.isSafe() early-return on the
+        // resourceAllocationInLoop path (NewExpression).
+        {
+          code: `
+            /** @safe */
+            for (let i = 0; i < 10; i++) {
+              const m = new Map(dynamicEntries);
+            }
+          `,
         },
       ],
       invalid: [],
@@ -296,6 +500,51 @@ describe('no-unlimited-resource-allocation', () => {
         {
           code: 'const buf = Buffer.alloc(customSize);',
           options: [{ userInputVariables: ['customSize'] }],
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('config - requireResourceValidation toggle', noUnlimitedResourceAllocation, {
+      valid: [
+        // Disabling the option suppresses the userControlledResourceSize
+        // check for both Buffer.alloc() and new Buffer(), even though the
+        // size argument is unvalidated user input.
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
+          options: [{ requireResourceValidation: false }],
+        },
+      ],
+      invalid: [
+        // Same code, option left at its default (true) — still flagged.
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+        {
+          code: 'const buf = Buffer.alloc(req.query.size);',
+          options: [{ requireResourceValidation: true }],
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+        {
+          code: 'const buffer = new Buffer(req.query.size);',
+          options: [{ requireResourceValidation: true }],
           errors: [
             {
               messageId: 'userControlledResourceSize',
@@ -476,6 +725,12 @@ describe('no-unlimited-resource-allocation', () => {
         {
           code: 'const upload = multer();',
         },
+        // Multer with a direct top-level `fileSize` property (non-standard
+        // but still recognized as a valid limit) - exercises the
+        // `prop.key.name === 'fileSize'` true-return branch.
+        {
+          code: 'const upload = multer({ fileSize: 1000 });',
+        },
       ],
       invalid: [
         // Multer with options but no limits
@@ -486,6 +741,14 @@ describe('no-unlimited-resource-allocation', () => {
         // Multer with limits property but empty/wrong (edge case)
         {
           code: 'const upload = multer({ limits: {} });',
+          errors: [{ messageId: 'unlimitedFileOperations' }],
+        },
+        // Multer options object containing a spread element (not a
+        // `Property` node) alongside a non-Identifier computed key -
+        // exercises the `prop.type !== 'Property' || prop.key.type !== 'Identifier'`
+        // early-return-false branch inside hasValidLimits' predicate.
+        {
+          code: 'const upload = multer({ ...baseOptions, [computedKey]: true, dest: "./uploads" });',
           errors: [{ messageId: 'unlimitedFileOperations' }],
         },
       ],
@@ -504,6 +767,37 @@ describe('no-unlimited-resource-allocation', () => {
             }
           `,
         },
+        // `new Set(dynamicEntries)` in a loop is exercised as an *invalid*
+        // case just below (it must reach the report path so the `Set`
+        // sub-check of the callee-text OR-chain gets evaluated - `Buffer`,
+        // `Array`, and `Map` are all false for this callee, so only `Set`
+        // decides whether the OR is entered at all).
+        // Assignment to array element in loop, with a *dynamic* (non-literal)
+        // size - exercises the true side of the
+        // `parent.type === 'AssignmentExpression' && parent.left.type === 'MemberExpression'`
+        // pre-allocated-pattern branch (the literal-size early-return above
+        // does NOT apply here, since the size isn't a numeric literal).
+        {
+          code: `
+            const buffers = [];
+            for (let i = 0; i < 10; i++) {
+              buffers[i] = Buffer.alloc(dynamicSize);
+            }
+          `,
+        },
+        // Array.isArray call inside a loop - exercises the true side of the
+        // `calleeText === 'Array.isArray'` safe-detector exception (this
+        // callee text also contains "Array", so it would otherwise match the
+        // loop-allocation callee-text prefilter).
+        {
+          code: `
+            for (let i = 0; i < 10; i++) {
+              if (Array.isArray(dynamicValue)) {
+                // no-op
+              }
+            }
+          `,
+        },
       ],
       invalid: [
         // Dynamic-size allocation in loop without assignment (still risky)
@@ -511,6 +805,18 @@ describe('no-unlimited-resource-allocation', () => {
           code: `
             for (let i = 0; i < 10; i++) {
               const b = Buffer.alloc(userSize);
+            }
+          `,
+          errors: [{ messageId: 'resourceAllocationInLoop' }],
+        },
+        // `new Set(dynamicEntries)` inside a loop, not assigned to an array
+        // element and not annotated `@safe` - reaches the report path so
+        // the `newCalleeText.includes('Set')` branch of the callee-text
+        // OR-chain is actually evaluated (Buffer/Array/Map are all false).
+        {
+          code: `
+            for (let i = 0; i < 10; i++) {
+              const s = new Set(dynamicEntries);
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],
@@ -529,6 +835,32 @@ describe('no-unlimited-resource-allocation', () => {
         // Subtraction
         {
           code: 'const buf = Buffer.alloc(2000 - 1000);',
+        },
+        // Unsupported binary operator (modulo) - estimateResourceSize's
+        // switch falls through to `default: return null`, so the size is
+        // untracked and treated as safe (no static bound to compare).
+        {
+          code: 'const buf = Buffer.alloc(2048 % 100);',
+        },
+        // A BinaryExpression size argument where one operand is not
+        // statically resolvable (a local, non-user-input identifier) -
+        // exercises the false side of `left !== null && right !== null` in
+        // estimateResourceSize (the recursive estimate for `unknownVar` is
+        // null, so the whole expression's size is untracked).
+        {
+          code: 'const buf = Buffer.alloc(localMultiplier * 100);',
+        },
+        // Division by a literal zero - exercises the `right !== 0 ? ... : null`
+        // false branch in estimateResourceSize's division case; the estimate
+        // becomes null, so there's nothing to compare against maxResourceSize.
+        {
+          code: 'const buf = Buffer.alloc(2048 / 0);',
+        },
+        // A binary expression whose estimated size is exactly 0 - exercises
+        // the falsy side of `estimatedSize && estimatedSize > maxResourceSize`
+        // (0 is a valid estimate but is falsy, so the check short-circuits).
+        {
+          code: 'const buf = Buffer.alloc(1000 - 1000);',
         },
       ],
       invalid: [

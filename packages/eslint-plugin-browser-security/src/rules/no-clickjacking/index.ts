@@ -327,11 +327,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           }
 
           if (hasSrc && srcValue && !isTrustedSource(srcValue)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node.openingElement,
@@ -384,11 +382,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
             }
 
             if (isFrameManipulation) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node,
@@ -412,11 +408,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           if ((text.includes('style=') || text.includes('css')) &&
               hasTransparentStyles(text)) {
 
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,
@@ -436,11 +430,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           const text = sourceCode.getText(node).toLowerCase();
 
           if (text.includes('style') && hasTransparentStyles(text)) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,

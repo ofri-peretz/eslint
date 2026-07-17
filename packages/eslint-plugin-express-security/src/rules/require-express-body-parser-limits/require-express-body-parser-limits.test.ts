@@ -97,3 +97,66 @@ ruleTester.run('require-express-body-parser-limits', requireExpressBodyParserLim
   ],
 });
 
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('require-express-body-parser-limits (coverage wave)', requireExpressBodyParserLimits, {
+  valid: [
+    // bare call — callee is not a member expression
+    { code: `json({ limit: '1mb' });` },
+    // deep member — object is not an identifier
+    { code: `foo.bar.json();` },
+    // object is neither express nor bodyParser
+    { code: `myParser.json();` },
+    // computed property — not an identifier
+    { code: `express['json']();` },
+    // property is not a body-parser method
+    { code: `express.static('public');` },
+    // options argument is not an object literal
+    { code: `express.json(parserOptions);` },
+    // numeric limit — isExcessiveLimit only handles string literals
+    { code: `express.json({ limit: 102400 });` },
+    // identifier limit value
+    { code: `express.json({ limit: MAX_BODY });` },
+    // reasonable string limit
+    { code: `express.json({ limit: '100kb' });` },
+  ],
+  invalid: [
+    // no options at all — suggestion rewrites the whole call
+    {
+      code: `express.json();`,
+      errors: [
+        {
+          messageId: 'missingLimit',
+          suggestions: [
+            { messageId: 'addLimit', output: `express.json({ limit: '100kb' });` },
+          ],
+        },
+      ],
+    },
+    // empty options object — fix cannot insert after a property, returns null
+    { code: `express.json({});`, errors: [{ messageId: 'missingLimit' }] },
+    // options without limit — suggestion appends after the last property
+    {
+      code: `express.json({ type: 'application/json' });`,
+      errors: [
+        {
+          messageId: 'missingLimit',
+          suggestions: [
+            {
+              messageId: 'addLimit',
+              output: `express.json({ type: 'application/json', limit: '100kb' });`,
+            },
+          ],
+        },
+      ],
+    },
+    // custom excessiveLimits matched case-insensitively
+    {
+      code: `express.json({ limit: '5GB' });`,
+      options: [{ excessiveLimits: ['5gb'] }],
+      errors: [{ messageId: 'excessiveLimit' }],
+    },
+  ],
+});

@@ -219,23 +219,22 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         'decorators' in node &&
         Array.isArray((node as { decorators?: unknown[] }).decorators)
       ) {
-        const decorators = (node as { decorators?: unknown[] }).decorators;
-        if (decorators) {
-          for (const decorator of decorators) {
-            const dec = decorator as TSESTree.Decorator;
-            if (
-              (dec.expression.type === 'CallExpression' &&
-                dec.expression.callee.type === 'Identifier' &&
-                dec.expression.callee.name === 'deprecated') ||
-              (dec.expression.type === 'Identifier' &&
-                dec.expression.name === 'deprecated')
-            ) {
-              deprecatedItems.set(name, {
-                location: node,
-                reason: 'Marked with @deprecated decorator',
-              });
-              break;
-            }
+        // The Array.isArray guard above proves decorators is an array.
+        const decorators = (node as { decorators: unknown[] }).decorators;
+        for (const decorator of decorators) {
+          const dec = decorator as TSESTree.Decorator;
+          if (
+            (dec.expression.type === 'CallExpression' &&
+              dec.expression.callee.type === 'Identifier' &&
+              dec.expression.callee.name === 'deprecated') ||
+            (dec.expression.type === 'Identifier' &&
+              dec.expression.name === 'deprecated')
+          ) {
+            deprecatedItems.set(name, {
+              location: node,
+              reason: 'Marked with @deprecated decorator',
+            });
+            break;
           }
         }
       }
@@ -251,6 +250,8 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       const deprecationInfo = deprecatedItems.get(name);
       if (!deprecationInfo) return;
 
+      const { replacement } = deprecationInfo;
+
       context.report({
         node,
         messageId: 'deprecatedUsage',
@@ -265,20 +266,16 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
             ? `Replace with ${deprecationInfo.replacement}`
             : 'Find modern replacement in documentation',
         },
-        suggest: deprecationInfo.replacement
+        suggest: replacement
           ? [
               {
                 messageId: 'deprecatedUsage',
                 fix(fixer: TSESLint.RuleFixer) {
-                  return fixer.replaceText(
-                    node,
-                    deprecationInfo.replacement ||
-                      'Check documentation for replacement',
-                  );
+                  return fixer.replaceText(node, replacement);
                 },
                 data: {
-                  replacement: deprecationInfo.replacement,
-                  suggestion: `Replace with ${deprecationInfo.replacement}`,
+                  replacement,
+                  suggestion: `Replace with ${replacement}`,
                 },
               },
             ]
@@ -377,9 +374,10 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
       // Check for usage of deprecated items
       MemberExpression(node: TSESTree.MemberExpression) {
+        // No has() pre-check: reportDeprecatedUsage bails out when the
+        // object name has no recorded deprecation info.
         if (
           node.object.type === 'Identifier' &&
-          deprecatedItems.has(node.object.name) &&
           node.property.type === 'Identifier'
         ) {
           reportDeprecatedUsage(

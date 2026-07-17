@@ -211,7 +211,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
     }
 
     function getGroupRank(importType: string): number {
-      const index = options.groups?.indexOf(importType) ?? -1;
+      const index = options.groups.indexOf(importType);
       return index !== -1 ? index : 999;
     }
 
@@ -222,17 +222,11 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       let end = node.range[1];
 
       const commentsBefore = sourceCode.getCommentsBefore(node);
-      // Check if comments belong to this import (e.g. on previous lines, not detached)
+      // getCommentsBefore only returns comments strictly between the previous
+      // non-comment token and this node, so they always belong to this import —
+      // include them all in the range.
       if (commentsBefore.length > 0) {
-        const lastComment = commentsBefore[commentsBefore.length - 1];
-        const tokenBefore = sourceCode.getTokenBefore(node);
-
-        // If comment is between previous token and this node
-        if (!tokenBefore || tokenBefore.range[1] <= lastComment.range[0]) {
-          // Simple heuristic: include all preceding comments that are contiguous with the import
-          // This is tricky, but we'll take all commentsBefore for now to be safe
-          start = commentsBefore[0].range[0];
-        }
+        start = commentsBefore[0].range[0];
       }
 
       // Include semicolon if present

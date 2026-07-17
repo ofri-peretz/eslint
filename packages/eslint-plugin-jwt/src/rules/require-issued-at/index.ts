@@ -128,12 +128,10 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // For explicit payload objects without iat, report if strict
-        if (payloadArg.type === 'ObjectExpression' && !payloadHasIat(payloadArg)) {
-          // jsonwebtoken adds iat by default, so only report if it looks like
-          // they're building the payload manually and might be using a library
-          // that doesn't add iat automatically
-        }
+        // For explicit payload objects without iat we intentionally do not
+        // report — jsonwebtoken adds iat by default. (A dead empty `if` that
+        // re-checked !payloadHasIat(payloadArg) — always true after the early
+        // return above — was removed as unreachable-by-construction.)
 
         // Note: jsonwebtoken adds iat by default, so we don't flag by default
         // This rule primarily catches explicit noTimestamp: true usage

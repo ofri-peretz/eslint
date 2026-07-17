@@ -127,7 +127,7 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
       allowInDevelopment: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = true } = options as Options;
 
     const filename = context.filename;
@@ -164,13 +164,11 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
 
         // Get the options/config argument
         const configArg = node.arguments[0];
-        /* c8 ignore next 2 */
         if (!configArg || configArg.type !== 'ObjectExpression') {
           return;
         }
 
         // Check if there's a production guard
-        /* c8 ignore next 2 */
         if (hasProductionGuard(configArg, sourceCode)) {
           return;
         }
@@ -194,7 +192,6 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
       NewExpression(node: TSESTree.NewExpression) {
         const callee = node.callee;
 
-        /* c8 ignore next 2 */
         if (
           callee.type !== 'Identifier' ||
           !['ApolloServer', 'GraphQLServer'].includes(callee.name)
@@ -203,7 +200,6 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
         }
 
         const configArg = node.arguments[0];
-        /* c8 ignore next 2 */
         if (!configArg || configArg.type !== 'ObjectExpression') {
           return;
         }

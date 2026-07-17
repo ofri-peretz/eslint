@@ -149,7 +149,7 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'authTokenInCookie',
-              suggest: [{ messageId: 'useHttpOnlyCookie', fix: /* c8 ignore next */ () => null }],
+              suggest: [{ messageId: 'useHttpOnlyCookie', fix: () => null }],
             });
           }
         }

@@ -101,7 +101,6 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
     }
     // Skip unknown identifiers to avoid FPs
     // Names like 'server', 'customApi', 'controller' are not Express
-    /* c8 ignore next */
     return false;
   }
 
@@ -128,11 +127,9 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
 
   // Member expression: this.app, this.router - skip to avoid FPs
   if (obj.type === 'MemberExpression') {
-    /* c8 ignore next */
     return false;
   }
 
-  /* c8 ignore next */
   return false;
 }
 
@@ -201,7 +198,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
       allowInTests = false,
       protectedMethods = DEFAULT_PROTECTED_METHODS,
@@ -231,7 +228,6 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         try {
           return new RegExp(pattern).test(route);
         } catch {
-          /* c8 ignore next */
           return route.includes(pattern);
         }
       });

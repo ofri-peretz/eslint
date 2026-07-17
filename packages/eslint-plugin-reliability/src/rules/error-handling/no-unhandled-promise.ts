@@ -91,8 +91,13 @@ const SYNC_NAMESPACE_OBJECTS = new Set<string>([
  * `Math.floor`, etc.) — those structurally never return promises and
  * firing on them produces FPs. Keeping the default as "could be a
  * promise" preserves recall on user-defined async functions.
+ *
+ * Exported for direct Layer-2 unit testing: the non-CallExpression early
+ * return is only reachable when called with a non-call node (kept for the
+ * future `checkIdentifier` listener), which the current CallExpression-only
+ * listener never produces.
  */
-function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
+export function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
   if (node.type !== 'CallExpression') return false;
   const callee = (node as TSESTree.CallExpression).callee;
 
@@ -192,8 +197,13 @@ function isInsidePromiseCallback(node: TSESTree.CallExpression): boolean {
 
 /**
  * Check if promise is handled (has .catch, .then, or is in try/catch)
+ *
+ * Exported for direct Layer-2 unit testing: the Identifier branch is only
+ * reachable when called with an Identifier node (kept for the future
+ * `checkIdentifier` listener), which the current CallExpression-only
+ * listener never produces.
  */
-function isPromiseHandled(node: TSESTree.Node): boolean {
+export function isPromiseHandled(node: TSESTree.Node): boolean {
   // For identifiers, check if they're used in a promise chain
   if (node.type === 'Identifier') {
     const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;

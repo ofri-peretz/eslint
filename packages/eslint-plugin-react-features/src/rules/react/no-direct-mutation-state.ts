@@ -133,8 +133,9 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
                 column: 0
               });
               const lineText = sourceCode.getText().slice(lineStart, start);
-              const indentMatch = lineText.match(/^(\s*)/);
-              const indent = indentMatch ? indentMatch[1] : '';
+              // Leading-whitespace run — computed without a regex null-check
+              // branch (`/^\s*/` can never fail to match).
+              const indent = lineText.slice(0, lineText.length - lineText.trimStart().length);
               return fixer.insertTextBefore(node, `// TODO: Use setState instead of direct mutation\n${indent}`);
             },
           },
@@ -149,8 +150,9 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
                 column: 0
               });
               const lineText = sourceCode.getText().slice(lineStart, start);
-              const indentMatch = lineText.match(/^(\s*)/);
-              const indent = indentMatch ? indentMatch[1] : '';
+              // Leading-whitespace run — computed without a regex null-check
+              // branch (`/^\s*/` can never fail to match).
+              const indent = lineText.slice(0, lineText.length - lineText.trimStart().length);
               return fixer.insertTextBefore(node, `// TODO: Use functional setState for immutable updates\n${indent}`);
             },
           },

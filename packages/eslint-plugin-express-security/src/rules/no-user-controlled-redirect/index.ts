@@ -101,9 +101,10 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const extraResNames = new Set(options.responseObjects ?? []);
-    const extraReqNames = new Set(options.requestObjects ?? []);
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    const { responseObjects, requestObjects } = options as Options;
+    const extraResNames = new Set(responseObjects ?? []);
+    const extraReqNames = new Set(requestObjects ?? []);
 
     /**
      * Returns true if `node` is a member expression whose root object is a

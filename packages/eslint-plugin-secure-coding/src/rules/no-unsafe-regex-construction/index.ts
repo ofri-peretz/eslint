@@ -257,11 +257,14 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+    // `options` is always an object here (defaulted by the destructuring
+    // parameter above), so a second `|| {}` fallback could never fire —
+    // removed as dead code.
     const {
       allowLiterals = true,
       maxPatternLength = 100,
       trustedEscapingFunctions = ['escapeRegex', 'escape', 'sanitize'],
-    }: Options = options || {};
+    }: Options = options;
 
     const sourceCode = context.sourceCode;
 

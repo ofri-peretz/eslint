@@ -776,8 +776,9 @@ export function computeSCCsFromFile(
 
   // First pass: discover all reachable files (breadth-first for efficiency)
   while (filesToProcess.length > 0) {
-    const file = filesToProcess.pop();
-    if (!file) continue;
+    // pop() cannot return undefined here: the loop guard ensures the stack
+    // is non-empty and every pushed path is a non-empty string.
+    const file = filesToProcess.pop() as string;
     if (visited.has(file)) continue;
     visited.add(file);
 
@@ -894,17 +895,22 @@ function tarjanStrongConnect(
       state.lowlinks.set(
         file,
         Math.min(
-          state.lowlinks?.get(file) ?? 0,
-          state.lowlinks?.get(successor) ?? 0,
+          // `file`'s lowlink is always set at function entry above.
+          state.lowlinks.get(file) as number,
+          // The successor's lowlink can be missing when the recursive call
+          // returned early on the depth limit before initializing it.
+          state.lowlinks.get(successor) ?? 0,
         ),
       );
     } else if (state.onStack.has(successor)) {
-      // Successor is in stack and hence in the current SCC
+      // Successor is in stack and hence in the current SCC.
+      // Both values are guaranteed: `file` got a lowlink at function entry,
+      // and an on-stack successor always received an index before pushing.
       state.lowlinks.set(
         file,
         Math.min(
-          state.lowlinks.get(file) ?? 0,
-          state.indices.get(successor) ?? 0,
+          state.lowlinks.get(file) as number,
+          state.indices.get(successor) as number,
         ),
       );
     }
@@ -914,14 +920,15 @@ function tarjanStrongConnect(
   // If file is a root node, pop the stack and generate an SCC
   if (lowlink === index) {
     const scc: string[] = [];
-    let w: string | undefined;
+    let w: string;
     do {
-      w = state.stack.pop();
-      if (w) {
-        state.onStack.delete(w);
-        scc.push(w);
-      }
-    } while (w && w !== file);
+      // The stack always contains `file` at this point (it was pushed at
+      // function entry), so pop() cannot return undefined before the loop
+      // terminates at `w === file`.
+      w = state.stack.pop() as string;
+      state.onStack.delete(w);
+      scc.push(w);
+    } while (w !== file);
 
     // Only store SCCs (single nodes aren't cycles, but we track them for completeness)
     state.sccs.push(scc);
@@ -1128,8 +1135,10 @@ export function detectCycleFromImport(
     // Known non-cyclic from previous lint file visits
     if (cache.nonCyclicFiles.has(file)) return;
 
-    // Early exit when only first cycle needed
-    if (!reportAllCycles && allCycles.length > 0) return;
+    // NOTE: no `!reportAllCycles && allCycles.length > 0` early-exit here —
+    // it would be unreachable: the import loop below performs the identical
+    // check (and breaks) before every recursive dfs() call, and the root
+    // call always happens before any cycle can have been recorded.
 
     visited.add(file);
     pathStack.push(file);

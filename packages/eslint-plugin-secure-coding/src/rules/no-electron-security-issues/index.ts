@@ -360,11 +360,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
 
         // Check if channel is allowed
         if (allowedIpcChannels.length > 0 && !allowedIpcChannels.includes(channel)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node: channelArg,
@@ -439,11 +437,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
 
           // Check for Node.js API usage in renderer files
           if (isRendererFile() && isNodeApiCall(node)) {
-          /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
-          /* c8 ignore stop */
 
           context.report({
             node,
@@ -475,11 +471,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
               if (preloadPath.includes('node_modules') ||
                   preloadPath.includes('http') ||
                   preloadPath.includes('remote')) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node: node.right,

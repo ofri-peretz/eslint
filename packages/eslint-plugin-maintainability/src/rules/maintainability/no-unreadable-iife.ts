@@ -103,23 +103,25 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     } = options || {};
 
     // oxlint-disable-next-line consistent-function-scoping
-    function isIIFE(node: TSESTree.CallExpression): boolean {
+    function getIifeFunctionNode(
+      node: TSESTree.CallExpression,
+    ): TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | null {
       // Check if this is a call expression with a function expression or arrow function
       // Note: In typescript-eslint AST, parentheses don't create a separate node type,
       // so (function(){})() will have callee.type === 'FunctionExpression' directly
       if (node.callee.type === 'FunctionExpression' ||
           node.callee.type === 'ArrowFunctionExpression') {
-        return true;
+        return node.callee;
       }
 
-      // Check for unary operator IIFEs like !function(){}(), +function(){}(), void function(){}()
+      // Check for unary operator IIFEs like (!function(){})(), (+function(){})(), (void function(){})()
       if (node.callee.type === 'UnaryExpression' &&
           (node.callee.argument.type === 'FunctionExpression' ||
            node.callee.argument.type === 'ArrowFunctionExpression')) {
-        return true;
+        return node.callee.argument;
       }
 
-      return false;
+      return null;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -200,22 +202,10 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    function analyzeIIFE(node: TSESTree.CallExpression) {
-      let functionNode: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | null = null;
-
-      if (node.callee.type === 'FunctionExpression' ||
-          node.callee.type === 'ArrowFunctionExpression') {
-        functionNode = node.callee;
-      } else if (node.callee.type === 'UnaryExpression' &&
-                 (node.callee.argument.type === 'FunctionExpression' ||
-                  node.callee.argument.type === 'ArrowFunctionExpression')) {
-        functionNode = node.callee.argument;
-      }
-
-      if (!functionNode) {
-        return;
-      }
-
+    function analyzeIIFE(
+      node: TSESTree.CallExpression,
+      functionNode: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression,
+    ) {
       const body = functionNode.body;
       const statementCount = countStatements(body);
       const nestingDepth = calculateDepth(body);
@@ -278,8 +268,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (isIIFE(node)) {
-          analyzeIIFE(node);
+        const functionNode = getIifeFunctionNode(node);
+        if (functionNode) {
+          analyzeIIFE(node, functionNode);
         }
       },
     };

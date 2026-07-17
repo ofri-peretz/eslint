@@ -3,8 +3,9 @@
  * Security: CWE-611 (XML External Entity Injection)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noXxeInjection } from './index';
 
 // Configure RuleTester for Vitest
@@ -117,6 +118,129 @@ describe('no-xxe-injection', () => {
           errors: [{ messageId: 'unsafeXmlParser' }],
         },
       ],
+    });
+  });
+
+  describe('Coverage — bare constructor-name call, null secure-option value, ancestor-validated input, file-read source detection, zero-arg parse call, literal XXE payload', () => {
+    ruleTester.run('coverage matrix', noXxeInjection, {
+      valid: [
+        // Secure parser option value of literal `null` (not just `false`) —
+        // hasSecureParserOptions' second true-branch.
+        'parser.parse(xmlString, { noent: null });',
+        // Input itself IS the validation call — isXmlInputValidated matches
+        // on the very first loop iteration and returns true immediately.
+        // isUntrustedXmlSource then falls into the non-Identifier
+        // file-read-detection loop, walks to Program without a match, and
+        // returns false (the loop-exhausted fallthrough).
+        'parser.parse(validateXml(req.body));',
+        // Zero-argument parsing call — early return before any source or
+        // options analysis runs.
+        'parser.parseFromString();',
+      ],
+      invalid: [
+        // Bare (non-`new`) call to a parser constructor name — the
+        // Identifier-callee branch of isXmlParsingCall, distinct from the
+        // NewExpression handler already covered elsewhere.
+        {
+          code: 'DOMParser(xmlString);',
+          errors: [{ messageId: 'untrustedXmlSource' }],
+        },
+        // Non-Identifier xmlSource whose ancestor chain includes a
+        // file-read call — isUntrustedXmlSource's loop matches on the
+        // first iteration and returns true.
+        {
+          code: 'parser.parseFromString(fs.readFileSync(path), "text/xml");',
+          errors: [{ messageId: 'untrustedXmlSource' }],
+        },
+        // String literal containing a real XXE payload (ENTITY + SYSTEM).
+        {
+          code: `const xml = "<!ENTITY xxe SYSTEM 'file:///etc/passwd'>";`,
+          errors: [{ messageId: 'xxeInjection' }],
+        },
+        // A leading SpreadElement in the options object is not a `Property`
+        // node — exercises the false branch of that type-guard in both
+        // hasDangerousParserOptions and hasSecureParserOptions before the
+        // loop reaches the real `resolveExternals` property.
+        {
+          code: 'parser.parse(xmlString, { ...base, resolveExternals: true });',
+          errors: [
+            { messageId: 'untrustedXmlSource' },
+            { messageId: 'externalEntityEnabled' },
+          ],
+        },
+      ],
+    });
+  });
+
+  // Layer 2: raw unit tests against rule.create() with a mock context, for
+  // the `node.loc?.start.line ?? 0` defensive fallback in each report call —
+  // a real parser always populates `loc`, so no RuleTester fixture can ever
+  // take that branch.
+  describe('Layer 2 - mock context', () => {
+    it('CallExpression untrustedXmlSource report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXxeInjection);
+      const callExpression = listeners.CallExpression as (node: unknown) => void;
+
+      callExpression({
+        type: 'CallExpression',
+        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
+        arguments: [{ type: 'Identifier', name: 'xmlInput', parent: undefined }],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('CallExpression externalEntityEnabled report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXxeInjection);
+      const callExpression = listeners.CallExpression as (node: unknown) => void;
+
+      callExpression({
+        type: 'CallExpression',
+        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
+        arguments: [
+          { type: 'Identifier', name: 'cleanXml', parent: undefined },
+          {
+            type: 'ObjectExpression',
+            properties: [
+              {
+                type: 'Property',
+                key: { type: 'Identifier', name: 'resolveExternals' },
+                value: { type: 'Literal', value: true },
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('NewExpression unsafeXmlParser report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXxeInjection);
+      const newExpression = listeners.NewExpression as (node: unknown) => void;
+
+      newExpression({
+        type: 'NewExpression',
+        callee: { type: 'Identifier', name: 'DOMParser' },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('Literal xxeInjection report falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXxeInjection);
+      const literal = listeners.Literal as (node: unknown) => void;
+
+      literal({
+        type: 'Literal',
+        value: '<!ENTITY xxe SYSTEM "file:///etc/passwd">',
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
     });
   });
 });

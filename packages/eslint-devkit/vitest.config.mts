@@ -39,15 +39,23 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
-      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
-      thresholds: { lines: 88, statements: 87, functions: 81, branches: 88 },
+      // Pinned at the 100% policy target — this branch is the integration target for the test wave.
+      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
       // json for Codecov, text for console, html for local dev
       reporter: ['json', 'text', 'lcov'],
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      // Benchmarks are excluded like tests: they run under `vitest bench`,
+      // not `vitest run`, so the unit suite can never exercise them.
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.test.ts',
+        '**/*.bench.ts',
+        '**/__benchmarks__/**',
+      ],
       // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
       clean: true,
     },

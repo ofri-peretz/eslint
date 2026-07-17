@@ -309,3 +309,51 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('require-csrf-protection (coverage wave)', requireCsrfProtection, {
+  valid: [
+    // lusca.csrf() recognized as global CSRF middleware
+    { code: `app.use(lusca.csrf()); app.post('/transfer', handler);` },
+    // member callee that is not lusca.csrf
+    { code: `app.use(other.csrf());` },
+    // lusca method that is not csrf
+    { code: `app.use(lusca.xframe());` },
+    // deep member callee — object is not an identifier
+    { code: `app.use(ns.security.csrf());` },
+    // unknown factory call — not an Express object
+    { code: `getApp().post('/x', handler);` },
+    // Router() on a non-express namespace
+    { code: `foo.Router().post('/x', handler);` },
+    // this.app member — skipped to avoid false positives
+    { code: `this.app.post('/x', handler);` },
+    // ignorePatterns regex match
+    {
+      code: `app.post('/webhook/stripe', handler);`,
+      options: [{ ignorePatterns: ['^/webhook'] }],
+    },
+    // invalid regex ignore pattern falls back to substring inclusion
+    { code: `app.post('/a[b', handler);`, options: [{ ignorePatterns: ['['] }] },
+    // csurf-named identifier middleware sets the global flag
+    { code: `app.use(csurfMiddleware); app.post('/transfer', handler);` },
+  ],
+  invalid: [
+    // non-CSRF middleware identifiers do not set the global flag
+    {
+      code: `app.use(logger); app.post('/transfer', handler);`,
+      errors: [{ messageId: 'missingCsrf' }],
+    },
+    // non-literal route argument cannot match ignore patterns
+    {
+      code: `app.post(routeVar, handler);`,
+      options: [{ ignorePatterns: ['^/x'] }],
+      errors: [{ messageId: 'missingCsrf' }],
+    },
+    // express() result used directly
+    { code: `express().post('/t', handler);`, errors: [{ messageId: 'missingCsrf' }] },
+    // express.Router() result used directly
+    { code: `express.Router().post('/t', handler);`, errors: [{ messageId: 'missingCsrf' }] },
+  ],
+});

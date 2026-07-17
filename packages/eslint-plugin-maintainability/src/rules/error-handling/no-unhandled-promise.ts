@@ -34,7 +34,7 @@ type RuleOptions = [Options?];
  * which functions return promises. The isPromiseHandled function will filter out
  * non-promise calls that are inside handled promise chains.
  */
-function isPromiseExpression(node: TSESTree.Node): boolean {
+export function isPromiseExpression(node: TSESTree.Node): boolean {
   // Function calls that might return promises
   if (node.type === 'CallExpression') {
     return true;
@@ -51,7 +51,9 @@ function isPromiseExpression(node: TSESTree.Node): boolean {
 /**
  * Check if a CallExpression is inside a promise chain callback
  */
-function isInsidePromiseCallback(node: TSESTree.CallExpression): boolean {
+export function isInsidePromiseCallback(
+  node: TSESTree.CallExpression,
+): boolean {
   let current: TSESTree.Node | null = node;
   let depth = 0;
   const maxDepth = 10;
@@ -101,7 +103,7 @@ function isInsidePromiseCallback(node: TSESTree.CallExpression): boolean {
 /**
  * Check if promise is handled (has .catch, .then, or is in try/catch)
  */
-function isPromiseHandled(node: TSESTree.Node): boolean {
+export function isPromiseHandled(node: TSESTree.Node): boolean {
   // For identifiers, check if they're used in a promise chain
   if (node.type === 'Identifier') {
     const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;

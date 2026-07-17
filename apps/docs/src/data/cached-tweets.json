@@ -1,10 +1,10 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-05-24T02:40:43.043Z",
+  "_lastUpdated": "2026-07-17T01:39:03.763Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",
-      "favorite_count": 0,
+      "favorite_count": 9,
       "lang": "en",
       "possibly_sensitive": false,
       "created_at": "2026-01-01T18:13:00.000Z",
@@ -44,7 +44,7 @@
         "edits_remaining": "5",
         "is_edit_eligible": true
       },
-      "conversation_count": 0,
+      "conversation_count": 1,
       "news_action_type": "conversation",
       "card": {
         "card_platform": {
@@ -61,6 +61,43 @@
         "name": "summary_large_image",
         "url": "https://t.co/5aWCclnWlG",
         "binding_values": {
+          "description": {
+            "string_value": "A data-driven protocol for assessing a new codebase in under 30 minutes. Use automated static analysis to generate immediate risk heatmaps for CTOs and VPs.",
+            "type": "STRING"
+          },
+          "domain": {
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "site": {
+            "scribe_key": "publisher_id",
+            "type": "USER",
+            "user_value": {
+              "id_str": "2735246778",
+              "path": []
+            }
+          },
+          "creator": {
+            "type": "USER",
+            "user_value": {
+              "id_str": "2006844490255052802",
+              "path": []
+            }
+          },
+          "vanity_url": {
+            "scribe_key": "vanity_url",
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "title": {
+            "string_value": "The 30-Minute Security Audit: A Static Analysis Protocol for Onboarding",
+            "type": "STRING"
+          },
+          "card_url": {
+            "scribe_key": "card_url",
+            "string_value": "https://t.co/5aWCclnWlG",
+            "type": "STRING"
+          },
           "photo_image_full_size_large": {
             "image_value": {
               "height": 400,
@@ -76,14 +113,6 @@
               "width": 400
             },
             "type": "IMAGE"
-          },
-          "description": {
-            "string_value": "A data-driven protocol for assessing a new codebase in under 30 minutes. Use automated static analysis to generate immediate risk heatmaps for CTOs and VPs.",
-            "type": "STRING"
-          },
-          "domain": {
-            "string_value": "dev.to",
-            "type": "STRING"
           },
           "thumbnail_image_large": {
             "image_value": {
@@ -109,14 +138,6 @@
             },
             "type": "IMAGE"
           },
-          "site": {
-            "scribe_key": "publisher_id",
-            "type": "USER",
-            "user_value": {
-              "id_str": "2735246778",
-              "path": []
-            }
-          },
           "photo_image_full_size_small": {
             "image_value": {
               "height": 202,
@@ -141,13 +162,6 @@
             },
             "type": "IMAGE"
           },
-          "creator": {
-            "type": "USER",
-            "user_value": {
-              "id_str": "2006844490255052802",
-              "path": []
-            }
-          },
           "thumbnail_image_x_large": {
             "image_value": {
               "height": 400,
@@ -163,11 +177,6 @@
               "width": 800
             },
             "type": "IMAGE"
-          },
-          "vanity_url": {
-            "scribe_key": "vanity_url",
-            "string_value": "dev.to",
-            "type": "STRING"
           },
           "photo_image_full_size": {
             "image_value": {
@@ -207,10 +216,6 @@
               ]
             },
             "type": "IMAGE_COLOR"
-          },
-          "title": {
-            "string_value": "The 30-Minute Security Audit: A Static Analysis Protocol for Onboarding",
-            "type": "STRING"
           },
           "summary_photo_image_color": {
             "image_color_value": {
@@ -298,11 +303,6 @@
             },
             "type": "IMAGE"
           },
-          "card_url": {
-            "scribe_key": "card_url",
-            "string_value": "https://t.co/5aWCclnWlG",
-            "type": "STRING"
-          },
           "summary_photo_image_original": {
             "image_value": {
               "height": 400,
@@ -315,7 +315,7 @@
       },
       "isEdited": false,
       "isStaleEdit": false,
-      "_cachedAt": "2026-05-24T02:40:42.539Z"
+      "_cachedAt": "2026-07-17T01:39:03.257Z"
     }
   }
 }

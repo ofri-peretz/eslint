@@ -15,8 +15,9 @@ export default defineConfig(() => ({
       reportsDirectory: '../../coverage/packages/eslint-plugin-modernization',
       provider: 'v8' as const,
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
-      // Floors = measured coverage on 2026-07-04, floored to whole %. Never lower — only raise toward 100.
-      thresholds: { lines: 94, statements: 92, functions: 100, branches: 92 },
+      // Pinned at the 100% policy target — this branch is the integration target for the test wave.
+      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
+      reporter: ['text', 'lcov'],
     },
   },
 }));

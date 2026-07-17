@@ -112,7 +112,6 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
           if (algorithm.includes('-ecb') || algorithm.endsWith('ecb')) {
             const gcmReplacement = algorithm.replace(/-?ecb$/, '-gcm');
             
-            /* c8 ignore next 18 -- suggestions require output assertions which are impractical for dynamic fixes */
             context.report({
               node: algorithmArg,
               messageId: 'ecbMode',

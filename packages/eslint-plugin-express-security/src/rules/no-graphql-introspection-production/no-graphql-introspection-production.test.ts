@@ -111,3 +111,48 @@ ruleTester.run('no-graphql-introspection-production', noGraphqlIntrospectionProd
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-graphql-introspection-production (coverage wave)', noGraphqlIntrospectionProduction, {
+  valid: [
+    // graphqlHTTP with no config argument
+    { code: `graphqlHTTP();` },
+    // graphqlHTTP with a non-object config
+    { code: `graphqlHTTP(config);` },
+    // production guard in the call path
+    { code: `graphqlHTTP({ schema: schema, introspection: process.env.NODE_ENV !== 'production' });` },
+    // no introspection setting in the call path
+    { code: `graphqlHTTP({ schema: schema });` },
+    // NewExpression with a non-Identifier callee
+    { code: `new foo.ApolloServer({ introspection: true });` },
+    // NewExpression with an unrelated Identifier callee
+    { code: `new SomethingElse({ introspection: true });` },
+    // ApolloServer with no config argument
+    { code: `new ApolloServer();` },
+    // ApolloServer with a non-object config
+    { code: `new ApolloServer(config);` },
+    // CallExpression whose callee is an unrelated NewExpression
+    { code: `new foo.Bar()();` },
+    // production guard via isProduction naming
+    { code: `new ApolloServer({ introspection: !isProduction });` },
+  ],
+  invalid: [
+    // plain createServer() call with introspection enabled
+    {
+      code: `createServer({ introspection: true });`,
+      errors: [{ messageId: 'graphqlIntrospection' }],
+    },
+    // invoking the result of new GraphQLServer(...) — NewExpression handler reports once
+    {
+      code: `new GraphQLServer({ introspection: true })();`,
+      errors: [{ messageId: 'graphqlIntrospection' }],
+    },
+    // graphqlHTTP with introspection enabled
+    {
+      code: `graphqlHTTP({ introspection: true });`,
+      errors: [{ messageId: 'graphqlIntrospection' }],
+    },
+  ],
+});

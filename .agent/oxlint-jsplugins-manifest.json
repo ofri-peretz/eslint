@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-06-02",
+  "generatedAt": "2026-07-17",
   "totalPlugins": 19,
   "totalRules": 408,
   "oxlintCompatible": 408,
@@ -2343,7 +2343,7 @@
           "name": "detect-object-injection",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": true
+          "isTypeAware": false
         },
         {
           "name": "detect-weak-password-validation",

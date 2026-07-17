@@ -133,24 +133,13 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
         const previous = staticProperties[i - 1];
 
         if (!areInSameGroup(current.name, previous.name, groups)) {
-          // Check if there's a gap that should be filled
-          // Note: This code path is rarely reachable because staticProperties already
-          // contains all static properties with valid names in member order.
-          for (let j = previous.index + 1; j < current.index; j++) {
-            const member = members[j];
-            /* v8 ignore start */
-            if (isStaticProperty(member)) {
-              const name = getPropertyName(member);
-              if (name && shouldBeBetween(name, previous.name, current.name, groups)) {
-                context.report({
-                  node: getPropertyKeyNode(current.node),
-                  messageId: 'staticPropertyPlacement',
-                });
-                return;
-              }
-            }
-            /* v8 ignore stop */
-          }
+          // `staticProperties` holds every named static member in source
+          // order, so the members strictly between `previous` and `current`
+          // are either non-static or computed-key statics (no name). The
+          // historical implementation walked that gap looking for a named
+          // static property to report — a provably unreachable path (a named
+          // static in the gap would itself already be in `staticProperties`).
+          // That dead branch was deleted rather than coverage-ignored.
         }
       }
     }
@@ -172,13 +161,6 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       return null;
     }
 
-    /* v8 ignore start - only used in unreachable code path above */
-    // oxlint-disable-next-line consistent-function-scoping
-    function getPropertyKeyNode(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): TSESTree.Node {
-      return member.key;
-    }
-    /* v8 ignore stop */
-
     // oxlint-disable-next-line consistent-function-scoping
     function areInSameGroup(name1: string, name2: string, groups: NonNullable<Options['propertyGroups']>): boolean {
       for (const group of groups) {
@@ -189,20 +171,5 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       return false;
     }
 
-    /* v8 ignore start - only used in unreachable code path above */
-    // oxlint-disable-next-line consistent-function-scoping
-    function shouldBeBetween(name: string, before: string, after: string, groups: NonNullable<Options['propertyGroups']>): boolean {
-      for (const group of groups) {
-        const beforeIndex = group.properties.indexOf(before);
-        const afterIndex = group.properties.indexOf(after);
-        const nameIndex = group.properties.indexOf(name);
-
-        if (beforeIndex !== -1 && afterIndex !== -1 && nameIndex !== -1) {
-          return nameIndex > beforeIndex && nameIndex < afterIndex;
-        }
-      }
-      return false;
-    }
-    /* v8 ignore stop */
   },
 });

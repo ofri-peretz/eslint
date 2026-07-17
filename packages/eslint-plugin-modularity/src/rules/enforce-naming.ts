@@ -114,10 +114,12 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // `context.options[0] || {}` guarantees a truthy object, so no extra
+    // `|| {}` fallback is needed on the destructure below.
     const options = context.options[0] || {};
     const {
-domain = 'general', terms = [] 
-}: Options = options || {};
+domain = 'general', terms = []
+}: Options = options;
 
     // Early return if no terms configured
     if (!terms || terms.length === 0) {

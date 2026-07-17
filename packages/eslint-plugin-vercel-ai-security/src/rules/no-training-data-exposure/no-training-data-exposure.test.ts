@@ -87,3 +87,24 @@ ruleTester.run('no-training-data-exposure', noTrainingDataExposure, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: key shapes for the Property listener
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-training-data-exposure (coverage gaps)', noTrainingDataExposure, {
+  valid: [
+    // computed key with a call expression resolves keyName to null
+    { code: `const cfg = { [getKey()]: true };` },
+    // training flag disabled — value is not `true`
+    { code: `const cfg = { allowTraining: false };` },
+    // training key with a non-boolean literal value
+    { code: `const cfg = { trainingMode: 'off' };` },
+  ],
+  invalid: [
+    // string-literal key resolves via String(key.value) and reports
+    {
+      code: `const cfg = { 'training': true };`,
+      errors: [{ messageId: 'trainingDataExposure' }],
+    },
+  ],
+});

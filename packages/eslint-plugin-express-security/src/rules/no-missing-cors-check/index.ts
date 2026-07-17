@@ -120,7 +120,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options]
   ) {
     const {
       allowInTests = false,
@@ -348,9 +348,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 while (current) {
                   if (current.type === 'Program' || current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') {
                     // Search for variable declarations in this scope
-                    const scopeBody = current.type === 'Program' ? current.body : 
-                                     (current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') ? 
-                                     (current.body.type === 'BlockStatement' ? current.body.body : []) : [];
+                    const scopeBody = current.type === 'Program' ? current.body :
+                                     (current.body.type === 'BlockStatement' ? current.body.body : []);
                     
                     for (const stmt of scopeBody) {
                       if (stmt.type === 'VariableDeclaration') {

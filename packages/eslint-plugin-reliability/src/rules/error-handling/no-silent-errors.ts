@@ -36,7 +36,6 @@ type RuleOptions = [Options?];
 function isEmptyCatchBlock(catchClause: TSESTree.CatchClause): boolean {
   const body = catchClause.body;
 
-  /* v8 ignore next 3 -- defensive: catch clause body is always BlockStatement in valid JS */
   if (!body || body.type !== 'BlockStatement') {
     return true;
   }
@@ -67,7 +66,6 @@ function hasExplanatoryComment(
   const comments = sourceCode.getAllComments();
   const catchStart = catchClause.loc?.start;
 
-  /* v8 ignore next 3 -- defensive: catch clause always has location, and no comments = no match */
   if (!catchStart || !comments.length) {
     return false;
   }

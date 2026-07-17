@@ -104,9 +104,10 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    // `options` is always an object here (`|| {}` above), so no second fallback.
     const {
-attributes = [], ignoreComponents = [] 
-}: Options = options || {};
+attributes = [], ignoreComponents = []
+}: Options = options;
 
     /**
      * Get element name from JSX opening element

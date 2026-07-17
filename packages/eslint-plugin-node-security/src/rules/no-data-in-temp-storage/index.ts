@@ -102,11 +102,6 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
             // Only flag if parent is assignment or variable declaration
             const parent = node.parent;
             if (parent?.type === 'VariableDeclarator' || parent?.type === 'AssignmentExpression') {
-              // Avoid double reporting if it's already handled by CallExpression
-              if (parent.type === 'VariableDeclarator' || parent.type === 'AssignmentExpression') {
-                 // Check if it's the first argument of an fs call which is handled above
-                 // Actually the Literal listener here catches it regardless of being in fs call or not if it's in a VariableDeclarator
-              }
               report(node);
             }
           }

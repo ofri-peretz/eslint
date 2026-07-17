@@ -103,9 +103,9 @@ function checkFunctionForSecurityHeaders(
     }
   }
 
-  if (scopeNode) {
-    collectHeaders(scopeNode);
-  }
+  // scopeNode is always set: either the enclosing function or (fallback
+  // above) the Program node itself.
+  collectHeaders(scopeNode);
 
   // Return missing headers
   return requiredHeaders.filter(header => !setHeaders.has(header));
