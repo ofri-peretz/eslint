@@ -1,5 +1,11 @@
 ## [4.1.0] - 2026-05-03
 
+## 4.4.1
+
+### Patch Changes
+
+- [#225](https://github.com/ofri-peretz/eslint/pull/225) [`34ff5a8`](https://github.com/ofri-peretz/eslint/commit/34ff5a8e6f5126c5d1c0a524759e0af2b5476b46) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - CI-only: pin all coverage thresholds at 100% (integration target, merges last).
+
 ## 4.4.0
 
 ### Minor Changes
