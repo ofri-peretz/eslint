@@ -91,7 +91,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-express-security',
-    version: '1.3.1',
+    version: '1.3.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
