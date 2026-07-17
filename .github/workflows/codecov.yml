@@ -68,13 +68,24 @@ jobs:
             echo "has_junit=$([ -n "$JUNIT" ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Rewrite lcov SF paths to repo-root-relative
+        if: steps.find.outputs.has_lcov == 'true'
+        run: |
+          # Vitest runs per-package so SF: lines are package-relative (e.g. SF:src/rules/foo.ts).
+          # Codecov component_management uses repo-root paths (packages/<pkg>/**).
+          # Prepend the package directory so components and overall tree both match.
+          for lcov in packages/*/coverage/lcov.info; do
+            [ -f "$lcov" ] || continue
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            sed -i "s|^SF:|SF:packages/${pkg}/|g" "$lcov"
+          done
+
       - name: Upload combined coverage to Codecov
         if: steps.find.outputs.has_lcov == 'true'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-          # Auto-discovers packages/*/coverage/lcov.info for the overall badge.
 
       - name: Upload per-package coverage flags to Codecov
         if: steps.find.outputs.has_lcov == 'true'
