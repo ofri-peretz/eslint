@@ -29,7 +29,7 @@ export default defineConfig({
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      exclude: ['node_modules/', 'dist/', '**/*.test.ts', 'src/types/**'],
       clean: true,
     },
     reporters: ['default', 'junit'],
