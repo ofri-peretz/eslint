@@ -2,14 +2,18 @@
 name: Upload Coverage to Codecov
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Runs every package's `test` task with coverage via Turbo, uploads lcov +
-# JUnit results to Codecov for badges + Test Analytics.
+# Runs every package's `test:coverage` task via Turbo, uploads lcov + JUnit
+# results to Codecov for badges + Test Analytics.
 #
-# Trigger: weekly schedule (keeps the dashboard from going stale) + manual
-# workflow_dispatch for on-demand runs (e.g. right after a coverage-focused merge).
+# Triggers:
+#   • push to main — keeps badges fresh after every merge
+#   • weekly schedule — guards against silent drift (stale Turbo cache)
+#   • workflow_dispatch — on-demand after a coverage-focused branch
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: "0 6 * * 1" # every Monday 06:00 UTC
   workflow_dispatch:
@@ -36,16 +40,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
 
       - name: Run tests with coverage
         env:
           FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
         run: |
-          # `test:coverage` falls back to `test` if a package doesn't define it.
           npx turbo run test:coverage $FILTER_ARG --continue || \
             npx turbo run test $FILTER_ARG --continue
 
@@ -53,8 +59,8 @@ jobs:
         id: find
         run: |
           set -euo pipefail
-          LCOV=$(find packages -path '*/coverage/lcov.info' -type f | head -200)
-          JUNIT=$(find packages -name 'junit.xml' -o -name 'test-report.junit.xml' 2>/dev/null | head -200)
+          LCOV=$(find packages -path '*/coverage/lcov.info' -type f | sort | head -200)
+          JUNIT=$(find packages \( -name 'junit.xml' -o -name 'test-report.junit.xml' \) 2>/dev/null | head -200)
           {
             echo "lcov<<EOF"; echo "$LCOV"; echo "EOF"
             echo "junit<<EOF"; echo "$JUNIT"; echo "EOF"
@@ -62,13 +68,32 @@ jobs:
             echo "has_junit=$([ -n "$JUNIT" ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Upload coverage to Codecov
+      - name: Upload combined coverage to Codecov
         if: steps.find.outputs.has_lcov == 'true'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-          # Codecov v5 auto-discovers lcov.info under packages/*/coverage.
+          # Auto-discovers packages/*/coverage/lcov.info for the overall badge.
+
+      - name: Upload per-package coverage flags to Codecov
+        if: steps.find.outputs.has_lcov == 'true'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          # Each package gets its own flag so per-plugin badge URLs work:
+          # https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<flag>
+          pip3 install --quiet codecov-cli
+          for lcov in packages/*/coverage/lcov.info; do
+            [ -f "$lcov" ] || continue
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            echo "→ uploading $pkg …"
+            codecovcli upload-process \
+              --token "$CODECOV_TOKEN" \
+              --flag "$pkg" \
+              --file "$lcov" \
+              --name "$pkg" || true
+          done
 
       - name: Upload test results (Test Analytics)
         if: steps.find.outputs.has_junit == 'true'
@@ -102,7 +127,7 @@ jobs:
               elif [ "$pct" -ge 60 ]; then emoji="🟡"
               else emoji="🔴"
               fi
-              echo "- $emoji **$pkg**: ${pct}% ($hit/$total lines)" >> "$GITHUB_STEP_SUMMARY"
+              echo "- $emoji **$pkg**: ${pct}% ($hit/$total lines) | [badge](https://codecov.io/gh/${{ github.repository }}/graph/badge.svg?flag=$pkg)" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           [ "$found" = true ] || echo "_No coverage reports found._" >> "$GITHUB_STEP_SUMMARY"
