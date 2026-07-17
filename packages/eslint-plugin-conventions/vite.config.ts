@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
 export default defineConfig(() => ({
   root: __dirname,
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   cacheDir: '../../node_modules/.vite/packages/eslint-plugin-conventions',
     // Uncomment this if you are using workers.
   // worker: {

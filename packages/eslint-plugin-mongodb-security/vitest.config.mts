@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   test: {
     name: 'eslint-plugin-mongodb-security',
     globals: true,

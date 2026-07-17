@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 /**
  * Vitest configuration for eslint-plugin-pg package
@@ -11,6 +12,10 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   root: __dirname,
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
     test: {
     globals: true,
     environment: 'node',
