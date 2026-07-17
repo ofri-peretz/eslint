@@ -39,7 +39,8 @@ export function inferVisitorProfile({
   landingPath,
 }: InferenceInput): VisitorProfile {
   switch (utm.source) {
-    case 'dev_to':
+    case 'devto':
+    case 'dev_to': // legacy spelling — taxonomy standardized on 'devto'
     case 'github':
     case 'npm':
       return 'developer';
