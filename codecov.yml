@@ -359,5 +359,3 @@ ignore:
   - '**/*.config.ts'
   - '**/*.config.mts'
   - '**/vitest.global-setup.ts'
-  # Plugin entry points (configuration code, not tested)
-  - 'packages/*/src/index.ts'
