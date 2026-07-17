@@ -45,8 +45,8 @@ in `source` and `medium`; structured-slug-form is allowed in `campaign`,
 
 | Slot           | Values                                                                                                                       | Example                       |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `utm_source`   | `ofriperetz_dev` `interlace` `eslint_docs` `serverless_docs` `ds` `storybook` `dev_to` `github` `npm` `x` `linkedin` `email` | `utm_source=ofriperetz_dev`   |
-| `utm_medium`   | `blog` `docs` `landing` `social` `email` `referral` `cli`                                                                    | `utm_medium=blog`             |
+| `utm_source`   | `ofriperetz_dev` `interlace` `eslint_docs` `serverless_docs` `ds` `storybook` `devto` `github` `npm` `x` `linkedin` `email`  | `utm_source=ofriperetz_dev`   |
+| `utm_medium`   | `article` `blog` `docs` `landing` `social` `email` `referral` `cli`                                                          | `utm_medium=blog`             |
 | `utm_campaign` | slug, derived from the content piece                                                                                         | `utm_campaign=flagship_rules` |
 | `utm_content`  | slug, names the placement on the source page                                                                                 | `utm_content=hero_cta`        |
 | `utm_term`     | free-form, optional (paid search, rarely used here)                                                                          | —                             |
@@ -54,6 +54,15 @@ in `source` and `medium`; structured-slug-form is allowed in `campaign`,
 The `utm_source` and `utm_medium` value sets are checked at build time by
 the `conventions/utm-taxonomy` ESLint rule. Adding a new value edits the
 rule first, the taxonomy table second, the call site third.
+
+> **Deprecated: `dev_to` → `devto` (2026-07-17).** The blog's `/go/`
+> redirect handler routes by `article_platforms.platform === utm_source`,
+> and those platform rows are stored as `'devto'` — the un-underscored form
+> is load-bearing and every published article link already carries it.
+> `dev_to` never shipped in a real link and is no longer in the taxonomy;
+> the ESLint rule flags it. Runtime consumers (visitor-profile inference)
+> still accept `dev_to` on inbound URLs so historical links keep
+> classifying correctly.
 
 ---
 
@@ -77,9 +86,9 @@ re-merge automatically.
 ### 2. `utm_source` is the property, `utm_medium` is the channel
 
 The two slots are independent. A link from a dev.to article counts as
-`utm_source=dev_to&utm_medium=blog` — dev.to is the property, blog is the
-channel. Conflating them (`utm_source=dev_to_blog`) destroys both axes of
-attribution.
+`utm_source=devto&utm_medium=article` — dev.to is the property, article is
+the channel. Conflating them (`utm_source=devto_article`) destroys both
+axes of attribution.
 
 ### 3. Strip from the URL after capture
 
