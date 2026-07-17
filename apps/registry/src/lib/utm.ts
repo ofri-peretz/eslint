@@ -11,7 +11,7 @@ export type UtmSource =
   | 'serverless_docs'
   | 'ds'
   | 'storybook'
-  | 'dev_to'
+  | 'devto'
   | 'github'
   | 'npm'
   | 'x'
@@ -19,6 +19,7 @@ export type UtmSource =
   | 'email';
 
 export type UtmMedium =
+  | 'article'
   | 'blog'
   | 'docs'
   | 'landing'
