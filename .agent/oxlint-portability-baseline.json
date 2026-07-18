@@ -1,38 +1,38 @@
 {
-  "recordedAt": "2026-05-09",
+  "recordedAt": "2026-07-18",
   "tolerancePct": 1,
-  "totalRules": 386,
+  "totalRules": 405,
   "typeAware": 4,
-  "oxlintReady": 397,
+  "oxlintReady": 405,
   "oxlintBlocked": 0,
-  "fixDegraded": 93,
+  "fixDegraded": 75,
   "perPlugin": {
     "eslint-plugin-browser-security": {
       "ruleCount": 45,
       "ready": 45,
       "blocked": 0,
-      "fixDegraded": 7,
+      "fixDegraded": 6,
       "typeAware": 0
     },
     "eslint-plugin-conventions": {
-      "ruleCount": 10,
-      "ready": 10,
+      "ruleCount": 15,
+      "ready": 15,
       "blocked": 0,
-      "fixDegraded": 7,
+      "fixDegraded": 8,
       "typeAware": 0
     },
     "eslint-plugin-express-security": {
-      "ruleCount": 10,
-      "ready": 10,
+      "ruleCount": 13,
+      "ready": 13,
       "blocked": 0,
-      "fixDegraded": 2,
+      "fixDegraded": 4,
       "typeAware": 0
     },
     "eslint-plugin-import-next": {
       "ruleCount": 55,
       "ready": 55,
       "blocked": 0,
-      "fixDegraded": 25,
+      "fixDegraded": 20,
       "typeAware": 3
     },
     "eslint-plugin-jwt": {
@@ -57,17 +57,17 @@
       "typeAware": 0
     },
     "eslint-plugin-modernization": {
-      "ruleCount": 3,
-      "ready": 3,
+      "ruleCount": 4,
+      "ready": 4,
       "blocked": 0,
-      "fixDegraded": 2,
+      "fixDegraded": 3,
       "typeAware": 0
     },
     "eslint-plugin-modularity": {
-      "ruleCount": 5,
-      "ready": 5,
+      "ruleCount": 6,
+      "ready": 6,
       "blocked": 0,
-      "fixDegraded": 1,
+      "fixDegraded": 2,
       "typeAware": 0
     },
     "eslint-plugin-mongodb-security": {
@@ -85,10 +85,10 @@
       "typeAware": 0
     },
     "eslint-plugin-node-security": {
-      "ruleCount": 33,
-      "ready": 33,
+      "ruleCount": 34,
+      "ready": 34,
       "blocked": 0,
-      "fixDegraded": 11,
+      "fixDegraded": 8,
       "typeAware": 0
     },
     "eslint-plugin-operability": {
@@ -113,10 +113,10 @@
       "typeAware": 0
     },
     "eslint-plugin-react-features": {
-      "ruleCount": 53,
-      "ready": 53,
+      "ruleCount": 61,
+      "ready": 61,
       "blocked": 0,
-      "fixDegraded": 7,
+      "fixDegraded": 8,
       "typeAware": 0
     },
     "eslint-plugin-reliability": {
@@ -130,7 +130,7 @@
       "ruleCount": 27,
       "ready": 27,
       "blocked": 0,
-      "fixDegraded": 15,
+      "fixDegraded": 5,
       "typeAware": 1
     },
     "eslint-plugin-vercel-ai-security": {
