@@ -49,12 +49,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout control-room repo (private)
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           repository: ofri-peretz/agents
           token: ${{ secrets.AGENTS_REPO_PAT }}
           fetch-depth: 1
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
       # `npm install` instead of `npm ci`: the lockfile is generated on
@@ -90,7 +90,7 @@ jobs:
       # the email notification + a persistent visible record.
       - name: Notify on failure
         if: failure()
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const title = `[CI failure] ${context.workflow} — ${context.ref}`;

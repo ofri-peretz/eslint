@@ -94,7 +94,7 @@ jobs:
         run: |
           # Each package gets its own flag so per-plugin badge URLs work:
           # https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<flag>
-          pip3 install --quiet codecov-cli
+          pip3 install --quiet codecov-cli==11.3.1
           for lcov in packages/*/coverage/lcov.info; do
             [ -f "$lcov" ] || continue
             pkg=$(basename "$(dirname "$(dirname "$lcov")")")

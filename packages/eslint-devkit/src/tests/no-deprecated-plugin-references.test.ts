@@ -62,6 +62,8 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       // deprecation/removal; they never *recommend* the dead plugin to users.
       /^\.changeset\//,
       'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
+      // TS7 migration plan references the deprecated plugin in historical context.
+      '.agent/TS7_MIGRATION_PLAN.md',
     ],
     importAllowlist: [THIS_TEST],
   },

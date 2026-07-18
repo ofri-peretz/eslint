@@ -113,7 +113,7 @@ jobs:
           echo "✓ Project config reset: rootDirectory=$ROOT_DIRECTORY, build/output/install/framework → null (use local vercel.json)"
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@56.3.2
 
       - name: Pull Vercel environment (${{ inputs.target }})
         run: vercel pull --yes --environment=${{ inputs.target }} --token="$VERCEL_TOKEN"
