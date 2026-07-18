@@ -89,7 +89,7 @@ describe('extractReadmeRuleNames', () => {
 describe('plugin rule-source drift across the canonical registry', () => {
   it('every plugin has identical rule names across src/index.ts, docs/rules, README, MDX, and meta.json', () => {
     const plugins = loadRegistry();
-    expect(plugins.length).toBe(20);
+    expect(plugins.length).toBe(19);
 
     const findings = validatePluginRuleSourceDrift({
       monorepoRoot: MONOREPO_ROOT,

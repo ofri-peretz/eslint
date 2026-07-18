@@ -79,7 +79,6 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-import-next':       ['universal'],
   'eslint-plugin-react-a11y':        ['universal'],   // React is universal (Next, Vite, Remix…)
   'eslint-plugin-react-features':    ['universal'],
-  'eslint-plugin-crypto':            ['universal', 'node'], // crypto APIs exist in both
 };
 
 // ── Environment signal patterns ─────────────────────────────────────────────

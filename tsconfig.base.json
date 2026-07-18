@@ -39,9 +39,6 @@
       "eslint-plugin-pg": [
         "packages/eslint-plugin-pg/src/index.ts"
       ],
-      "eslint-plugin-crypto": [
-        "packages/eslint-plugin-crypto/src/index.ts"
-      ],
       "eslint-plugin-jwt": [
         "packages/eslint-plugin-jwt/src/index.ts"
       ],

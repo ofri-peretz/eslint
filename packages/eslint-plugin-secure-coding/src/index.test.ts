@@ -84,7 +84,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       expect(configs['owasp-top-10'].plugins?.['secure-coding']).toBeDefined();
       
       const owaspRules = configs['owasp-top-10'].rules || {};
-      expect(owaspRules['secure-coding/no-missing-authentication']).toBe('error');
+      expect(owaspRules['secure-coding/no-hardcoded-credentials']).toBe('error');
     });
   });
 });

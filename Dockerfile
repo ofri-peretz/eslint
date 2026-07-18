@@ -39,7 +39,6 @@ RUN npm install -g --no-fund --no-audit \
       @interlace/eslint-plugin-secure-coding@latest \
       @interlace/eslint-plugin-browser-security@latest \
       @interlace/eslint-plugin-node-security@latest \
-      @interlace/eslint-plugin-crypto@latest \
       @interlace/eslint-plugin-jwt@latest \
       @interlace/eslint-plugin-express-security@latest \
       @interlace/eslint-plugin-lambda-security@latest \

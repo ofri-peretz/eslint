@@ -550,7 +550,6 @@ async function runBenchmark() {
       "eslint-plugin-browser-security": getInstalledVersion(
         "eslint-plugin-browser-security",
       ),
-      "eslint-plugin-crypto": getInstalledVersion("eslint-plugin-crypto"),
       "eslint-plugin-mongodb-security": getInstalledVersion(
         "eslint-plugin-mongodb-security",
       ),

@@ -44,9 +44,7 @@ const TYPE_AWARENESS_MAP = loadTypeAwarenessMap();
 
 // Packages whose READMEs are hand-maintained (e.g. carry a deprecation banner).
 // The generator skips these entirely so it never rewrites or "fixes" them.
-const DEPRECATED_PACKAGES = new Set<string>([
-    'eslint-plugin-crypto', // Consolidated into eslint-plugin-node-security (2026-05-10)
-]);
+const DEPRECATED_PACKAGES = new Set<string>([]);
 
 // Get all directories in packages/
 const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
@@ -58,10 +56,6 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
 // Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
-    // Kept for description-lock validation even though crypto is in
-    // DEPRECATED_PACKAGES (the generator skips it; the description still
-    // pins what the package historically claims to do).
-    'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
     'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',

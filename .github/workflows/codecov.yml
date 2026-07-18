@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       filter:
-        description: "Turbo filter (e.g. eslint-plugin-crypto). Empty = all packages."
+        description: "Turbo filter (e.g. eslint-plugin-pg). Empty = all packages."
         required: false
         type: string
         default: ""

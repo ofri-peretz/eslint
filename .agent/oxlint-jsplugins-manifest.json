@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-05-29",
-  "totalPlugins": 20,
-  "totalRules": 413,
-  "oxlintCompatible": 413,
+  "generatedAt": "2026-07-18",
+  "totalPlugins": 19,
+  "totalRules": 405,
+  "oxlintCompatible": 405,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -386,86 +386,11 @@
       ]
     },
     {
-      "package": "eslint-plugin-crypto",
-      "short": "crypto",
-      "shim": "tools/oxlint-plugins/interlace-crypto.cjs",
-      "subpath": "eslint-plugin-crypto/oxlint",
-      "ruleCount": 11,
-      "rules": [
-        {
-          "name": "no-hardcoded-crypto-key",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-key-reuse",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-math-random-crypto",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-numeric-only-tokens",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-predictable-salt",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-web-crypto-export",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-authenticated-encryption",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-key-length",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-random-iv",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-secure-pbkdf2-digest",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-sufficient-length",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-express-security",
       "short": "express-security",
       "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
       "subpath": "eslint-plugin-express-security/oxlint",
-      "ruleCount": 10,
+      "ruleCount": 13,
       "rules": [
         {
           "name": "no-cors-credentials-wildcard",
@@ -493,6 +418,24 @@
         },
         {
           "name": "no-insecure-cookie-options",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-cors-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-csrf-protection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-security-headers",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2730,19 +2673,6 @@
       "prefer-dom-node-text-content",
       "require-data-testid",
       "utm-taxonomy"
-    ],
-    "crypto": [
-      "no-hardcoded-crypto-key",
-      "no-key-reuse",
-      "no-math-random-crypto",
-      "no-numeric-only-tokens",
-      "no-predictable-salt",
-      "no-web-crypto-export",
-      "require-authenticated-encryption",
-      "require-key-length",
-      "require-random-iv",
-      "require-secure-pbkdf2-digest",
-      "require-sufficient-length"
     ],
     "express-security": [
       "no-cors-credentials-wildcard",

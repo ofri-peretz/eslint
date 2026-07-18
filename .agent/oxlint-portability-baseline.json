@@ -1,7 +1,7 @@
 {
   "recordedAt": "2026-05-09",
   "tolerancePct": 1,
-  "totalRules": 397,
+  "totalRules": 386,
   "typeAware": 4,
   "oxlintReady": 397,
   "oxlintBlocked": 0,
@@ -19,13 +19,6 @@
       "ready": 10,
       "blocked": 0,
       "fixDegraded": 7,
-      "typeAware": 0
-    },
-    "eslint-plugin-crypto": {
-      "ruleCount": 11,
-      "ready": 11,
-      "blocked": 0,
-      "fixDegraded": 5,
       "typeAware": 0
     },
     "eslint-plugin-express-security": {

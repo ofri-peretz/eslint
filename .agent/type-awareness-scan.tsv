@@ -222,7 +222,6 @@ node-security	no-timing-unsafe-compare	unaware
 node-security	lock-file	unaware	
 node-security	no-toctou-vulnerability	unaware	
 node-security	no-ecb-mode	unaware	
-node-security	no-pii-in-logs	unaware	
 node-security	prefer-native-crypto	unaware	
 node-security	no-self-signed-certs	unaware	
 node-security	no-cryptojs	unaware	

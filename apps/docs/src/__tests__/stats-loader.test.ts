@@ -71,19 +71,10 @@ const mockPluginStats = {
       version: '1.0.0',
       published: true,
     },
-    {
-      name: 'eslint-plugin-crypto',
-      rules: 10,
-      description: '(Deprecated) Merged into node-security',
-      category: 'security',
-      version: '2.1.1',
-      published: false,
-      deprecated: true,
-    },
   ],
-  totalRules: 106,
+  totalRules: 96,
   totalPlugins: 5,
-  allPluginsCount: 6,
+  allPluginsCount: 5,
   generatedAt: '2026-02-01T12:00:00.000Z',
 };
 
@@ -153,8 +144,8 @@ describe('stats-loader unit tests', () => {
       const result = await loadPluginStats();
 
       expect(result).not.toBeNull();
-      expect(result?.plugins).toHaveLength(6);
-      expect(result?.totalRules).toBe(106);
+      expect(result?.plugins).toHaveLength(5);
+      expect(result?.totalRules).toBe(96);
       expect(result?.totalPlugins).toBe(5);
     });
 
@@ -214,9 +205,9 @@ describe('stats-loader unit tests', () => {
       const { getEcosystemStats } = await import('../lib/stats-loader');
       const result = await getEcosystemStats();
 
-      expect(result.plugins.total).toBe(6);
+      expect(result.plugins.total).toBe(5);
       expect(result.plugins.published).toBe(5);
-      expect(result.rules.total).toBe(106);
+      expect(result.rules.total).toBe(96);
       expect(result.coverage.average).toBe(85);
       expect(result.lastUpdated).toBe('2026-02-01T12:00:00.000Z');
     });
@@ -245,9 +236,8 @@ describe('stats-loader unit tests', () => {
       const { getEcosystemStats } = await import('../lib/stats-loader');
       const result = await getEcosystemStats();
 
-      // Security: browser-security, jwt, crypto (3) + framework: express-security (1) = 4
-      // (crypto is marked as security category even though deprecated)
-      expect(result.plugins.security).toBe(4);
+      // Security: browser-security, jwt (2) + framework: express-security (1) = 3
+      expect(result.plugins.security).toBe(3);
       // Quality: conventions, maintainability (2)
       expect(result.plugins.quality).toBe(2);
       // Framework: express-security (1)
@@ -286,7 +276,6 @@ describe('stats-loader unit tests', () => {
       const { getDisplayStats } = await import('../lib/stats-loader');
       const result = await getDisplayStats();
 
-      // mockPluginStats has 5 published plugins (crypto is unpublished)
       expect(result.plugins).toBe(5);
     });
   });

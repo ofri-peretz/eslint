@@ -23,8 +23,11 @@ describe('eslint-plugin-express-security plugin interface', () => {
       'require-express-body-parser-limits',
       'no-express-unsafe-regex-route',
       'no-exposed-debug-endpoints',
+      'no-missing-cors-check',
+      'no-missing-csrf-protection',
+      'no-missing-security-headers',
     ]);
-    expect(ruleKeys.length).toBe(10);
+    expect(ruleKeys.length).toBe(13);
   });
 
   describe('configurations', () => {

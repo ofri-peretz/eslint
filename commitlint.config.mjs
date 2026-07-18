@@ -29,7 +29,7 @@ function listChildren(dir) {
 }
 
 // Strip "eslint-plugin-" prefix so commit scope can be the short form
-// (e.g. `feat(crypto): ...` rather than `feat(eslint-plugin-crypto): ...`).
+// (e.g. `feat(node-security): ...` rather than `feat(eslint-plugin-node-security): ...`).
 function shortScope(name) {
   return name.replace(/^eslint-plugin-/, '');
 }

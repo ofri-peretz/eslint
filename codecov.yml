@@ -52,16 +52,6 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: eslint-plugin-crypto
-      name: 'eslint-plugin-crypto'
-      paths:
-        - packages/eslint-plugin-crypto/**
-      statuses:
-        - type: project
-          target: 85%
-        - type: patch
-          target: 80%
-
     - component_id: eslint-plugin-jwt
       name: 'eslint-plugin-jwt'
       paths:

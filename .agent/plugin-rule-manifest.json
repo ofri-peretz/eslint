@@ -306,63 +306,6 @@
       "confidence": "review-prompt"
     }
   },
-  "eslint-plugin-crypto": {
-    "no-hardcoded-crypto-key": {
-      "environment": "node",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-key-reuse": {
-      "environment": "universal",
-      "detection": "data-flow-lightweight",
-      "confidence": "review-prompt"
-    },
-    "no-math-random-crypto": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-numeric-only-tokens": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "no-predictable-salt": {
-      "environment": "node",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-web-crypto-export": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "require-authenticated-encryption": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "require-key-length": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "require-random-iv": {
-      "environment": "universal",
-      "detection": "data-flow-lightweight",
-      "confidence": "review-prompt"
-    },
-    "require-secure-pbkdf2-digest": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-sufficient-length": {
-      "environment": "universal",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    }
-  },
   "eslint-plugin-express-security": {
     "require-helmet": {
       "environment": "express",
