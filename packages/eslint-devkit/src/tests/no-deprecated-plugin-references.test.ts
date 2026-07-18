@@ -89,6 +89,8 @@ const SHARED_EXCLUDES = [
   '--exclude-dir=coverage',
   '--exclude-dir=benchmark-results',
   '--exclude-dir=results',
+  '--exclude-dir=.claude',
+  '--exclude-dir=.agent',
 ];
 
 interface Hit {
