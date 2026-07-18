@@ -112,7 +112,7 @@ jobs:
         run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
 
   typecheck:
-    name: Typecheck (Turbo)
+    name: Typecheck (whole-graph tsgo)
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
@@ -122,8 +122,12 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - name: Typecheck via Turbo
-        run: npx turbo run typecheck ${{ env.TURBO_FILTER_ARGS }}
+      - name: Typecheck (whole-graph tsgo / TS7 native)
+        # One `tsgo --build tsconfig.solution.json` over the full plugin graph
+        # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
+        # here; per-package tsgo pays Go startup 21× and loses to TS6.
+        # typescript-eslint stays on typescript@6.0.3. See TS7_MIGRATION_PLAN.md.
+        run: npm run typecheck
 
   portability:
     name: Portability Audit
@@ -181,7 +185,7 @@ jobs:
             echo "|---|---|---|"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
-            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`turbo run typecheck\` (affected on PRs) |"
+            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo ""
             echo "_Run \`npm run ci:local\` to mirror these gates locally before promoting a PR._"
