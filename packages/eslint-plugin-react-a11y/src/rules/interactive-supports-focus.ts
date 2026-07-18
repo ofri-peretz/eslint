@@ -76,20 +76,31 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
-            INTERACTIVE_HANDLERS.has(attr.name?.name ?? '')
+            // `attr.name` is always present on a JSXAttribute — no fallback needed.
+            INTERACTIVE_HANDLERS.has(attr.name.name)
         );
 
         if (!hasInteractiveHandler) return;
 
-        // Check if it has a role that makes it interactive (button, link, etc.)
-        // Role check logic removed to simplify and avoid unused vars - handler check is sufficient for now
-        
-        // Note: We check for role but primarily we check for interactive handlers.
-        // Even with a role, if it has handlers, it should likely be focusable.
-        // But if it has an interactive role, it DEFINITELY should be focusable.
-        
-        // If role is present and interactive, we might want to check tabIndex.
-        // But for now, we stick to the handler check as primary trigger.
+        // Elements with interactive ARIA roles inherit focus management from the AT/framework
+        // (e.g. role="button" gets Tab focus from the browser's keyboard model)
+        const INTERACTIVE_ARIA_ROLES = new Set([
+          'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+          'option', 'radio', 'searchbox', 'switch', 'tab', 'textbox', 'treeitem',
+          'combobox', 'gridcell', 'listbox', 'slider', 'spinbutton',
+        ]);
+
+        const roleAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role'
+        );
+        if (roleAttr) {
+          const roleValue =
+            roleAttr.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
+        }
 
         // Check tabIndex
         const tabIndex = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 

@@ -43,7 +43,7 @@ type RuleOptions = [Options?];
 /**
  * Check cookie options object for security flags
  */
-function checkCookieOptions(
+export function checkCookieOptions(
   node: TSESTree.ObjectExpression,
   sourceCode: TSESLint.SourceCode,
   options: Options
@@ -87,7 +87,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       description:
         'Require secure cookie flags (httpOnly, secure, sameSite) in Express.js',
       cwe: 'CWE-614',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {
@@ -150,7 +150,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       acceptableSameSiteValues: ['strict', 'lax'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;

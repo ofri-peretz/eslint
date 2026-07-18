@@ -260,4 +260,41 @@ describe('enforce-naming', () => {
       ],
     });
   });
+
+  describe('non-identifier declaration shapes (early-return paths)', () => {
+    const terms = [
+      { incorrect: 'user', correct: 'customer', context: 'ecommerce' },
+    ];
+
+    ruleTester.run('skips nodes without a plain identifier name', enforceNaming, {
+      valid: [
+        // VariableDeclarator with a destructuring pattern id is skipped
+        { code: 'const { userName } = obj;', options: [{ terms }] },
+        // Anonymous default-exported function has no id
+        { code: 'export default function () { return 1; }', options: [{ terms }] },
+        // Anonymous default-exported class has no id
+        { code: 'export default class { }', options: [{ terms }] },
+        // Computed property key is skipped
+        { code: "class Acct { ['user'] = 1; }", options: [{ terms }] },
+        // Computed method key is skipped
+        { code: "class Acct { ['user']() {} }", options: [{ terms }] },
+        // A term whose `incorrect` is neither string nor RegExp never matches
+        {
+          code: 'const item = 1;',
+          options: [{ terms: [{ incorrect: {}, correct: 'customer', context: 'x' }] }],
+        },
+      ],
+      invalid: [
+        // Empty term context falls back to the configured domain in the message
+        {
+          code: 'const user = 1;',
+          options: [{ domain: 'retail', terms: [{ incorrect: 'user', correct: 'customer', context: '' }] }],
+          errors: [{
+            messageId: 'wrongTerminology',
+            suggestions: [{ messageId: 'useDomainTerm', output: 'const customer = 1;' }],
+          }],
+        },
+      ],
+    });
+  });
 });

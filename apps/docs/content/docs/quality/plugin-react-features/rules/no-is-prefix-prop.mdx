@@ -1,0 +1,62 @@
+---
+title: "no-is-prefix-prop"
+description: "Boolean props must not be prefixed with `is` (R8)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+Boolean props default to `false` and their name should describe the true state directly. The `is` prefix is redundant noise: `looped` reads naturally, `isLooped` does not. This follows the same convention flagged by MUI's component API guidelines.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Redundant prefix** | `isOpen`, `isDisabled` are wordier than necessary | Rename to `open`, `disabled` |
+| **Inconsistency** | HTML uses `disabled`, `checked`, `open` — no `is` prefix | Match the platform convention |
+
+## Examples
+
+### Incorrect
+
+```tsx
+interface ButtonProps {
+  isDisabled: boolean;  // ❌ R8 — rename to `disabled`
+  isLoading: boolean;   // ❌ R8 — rename to `loading`
+}
+```
+
+### Correct
+
+```tsx
+interface ButtonProps {
+  disabled?: boolean;
+  loading?: boolean;
+}
+```
+
+## Suggestions
+
+This rule provides a **rename suggestion** (not an auto-fix) because renaming the prop has consumer-side blast radius — call sites must be updated manually.
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-is-prefix-prop": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

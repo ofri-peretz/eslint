@@ -1,0 +1,71 @@
+---
+title: "no-raw-color-literal"
+description: "No raw hex / rgb / hsl / oklch color literals in source — use design tokens (R19)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+No raw color literals (hex, rgb/rgba, hsl/hsla, oklch/oklab) in source. Colors must come from design tokens via CSS custom properties or Tailwind classes wired to them. This rule is scoped to JSX `style` / `className` attribute values and `cn()`/`clsx()` arguments to minimize false positives.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Bypasses token layer** | Hard-coded colors break dark-mode and theme switching | Use `var(--your-token)` or a semantic Tailwind class |
+| **Not auditable** | Raw colors are invisible to design-token audits | Every color should trace to a token |
+| **Drift over time** | Magic color values diverge from the design system | Centralize in the token definition |
+
+## Detected Patterns
+
+The rule flags: `#rrggbb`, `#rgb`, `rgb(...)`, `rgba(...)`, `hsl(...)`, `hsla(...)`, `oklch(...)`, `oklab(...)`.
+
+## Examples
+
+### Incorrect
+
+```tsx
+// In className
+<div className="text-[#1e293b]">...</div>
+
+// In style
+<div style={{ color: "#fff", background: "rgba(0,0,0,0.5)" }}>...</div>
+
+// In cn()
+const cls = cn("bg-[#f8fafc]", isActive && "border-[rgb(0,112,240)]");
+```
+
+### Correct
+
+```tsx
+// Semantic Tailwind classes backed by tokens
+<div className="text-foreground bg-card">...</div>
+
+// CSS variables for dynamic use
+<div style={{ color: "var(--color-brand)" }}>...</div>
+
+// Arbitrary values using CSS variables
+<div className="bg-[var(--color-surface)]">...</div>
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-raw-color-literal": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

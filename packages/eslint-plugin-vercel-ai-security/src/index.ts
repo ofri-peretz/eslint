@@ -164,7 +164,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-vercel-ai-security',
-    version: '1.3.5',
+    version: '1.3.6',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -202,17 +202,17 @@ const recommendedConfig: TSESLint.FlatConfig.Config = {
     'vercel-ai-security/require-tool-confirmation': 'error',
     
     // High - enabled as warnings
-    'vercel-ai-security/require-tool-schema': 'warn',
-    'vercel-ai-security/require-max-tokens': 'warn',
-    'vercel-ai-security/require-max-steps': 'warn',
+    'vercel-ai-security/require-tool-schema': 'error',
+    'vercel-ai-security/require-max-tokens': 'error',
+    'vercel-ai-security/require-max-steps': 'error',
     'vercel-ai-security/require-output-filtering': 'warn',
     'vercel-ai-security/require-rag-content-validation': 'warn',
     'vercel-ai-security/no-training-data-exposure': 'warn',
     'vercel-ai-security/require-request-timeout': 'warn',
-    
+
     // Medium - disabled by default
     'vercel-ai-security/require-error-handling': 'off',
-    'vercel-ai-security/require-abort-signal': 'off',
+    'vercel-ai-security/require-abort-signal': 'error',
     'vercel-ai-security/require-audit-logging': 'off',
     'vercel-ai-security/require-embedding-validation': 'off',
     'vercel-ai-security/require-output-validation': 'off',
@@ -246,7 +246,7 @@ const strictConfig: TSESLint.FlatConfig.Config = {
     'vercel-ai-security/require-embedding-validation': 'error',
     'vercel-ai-security/require-output-validation': 'error',
     'vercel-ai-security/require-error-handling': 'error',
-    'vercel-ai-security/require-abort-signal': 'warn',
+    'vercel-ai-security/require-abort-signal': 'error',
     'vercel-ai-security/require-audit-logging': 'warn',
   },
 } satisfies TSESLint.FlatConfig.Config;

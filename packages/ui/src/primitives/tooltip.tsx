@@ -10,13 +10,15 @@ function TooltipProvider({
   ...props
 }: React.ComponentProps<typeof BaseTooltip.Provider>) {
   return (
-    <BaseTooltip.Provider data-slot="tooltip-provider" delay={delay} {...props} />
+    <BaseTooltip.Provider
+      data-slot="tooltip-provider"
+      delay={delay}
+      {...props}
+    />
   );
 }
 
-function Tooltip({
-  ...props
-}: React.ComponentProps<typeof BaseTooltip.Root>) {
+function Tooltip({ ...props }: React.ComponentProps<typeof BaseTooltip.Root>) {
   return (
     <TooltipProvider>
       <BaseTooltip.Root data-slot="tooltip" {...props} />
@@ -50,7 +52,7 @@ function TooltipContent({
           {...props}
         >
           {children}
-          <BaseTooltip.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+          <BaseTooltip.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[var(--radius-2xs)]" />
         </BaseTooltip.Popup>
       </BaseTooltip.Positioner>
     </BaseTooltip.Portal>

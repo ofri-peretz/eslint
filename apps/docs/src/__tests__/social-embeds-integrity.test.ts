@@ -17,6 +17,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { getTweet } from 'react-tweet/api';
+import { shouldFailSync } from '../../scripts/sync-tweet-cache';
 
 // ============================================================================
 // Configuration
@@ -467,6 +468,33 @@ describe('Social Embeds - Cache Validation', () => {
       missing,
       `${missing.length} cached tweet(s) have a \`card\` field but no preview image URL — this renders an empty box where the article preview should be.`,
     ).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Tests: Sync-script exit policy (regression lock: 2026-07-04)
+// ============================================================================
+
+describe('sync-tweet-cache exit policy', () => {
+  // Regression lock — a cached tweet's upstream card image 404ing
+  // (Twitter deleted/rotated the pbs.twimg.com/card_img asset) used to
+  // hard-fail the docs build via `process.exit(1)`. That failure is
+  // unfixable by re-running the build, so it wedged every deploy. The
+  // policy is: unreachable card images on already-cached tweets are
+  // advisory (warn + keep the stale entry); only a fetch failure with
+  // NO cached fallback — i.e. "Tweet not found" would ship — fails.
+  it('does NOT fail the build for unreachable card images on cached tweets', () => {
+    expect(shouldFailSync(0, 1)).toBe(false);
+    expect(shouldFailSync(0, 5)).toBe(false);
+  });
+
+  it('does NOT fail the build when nothing went wrong', () => {
+    expect(shouldFailSync(0, 0)).toBe(false);
+  });
+
+  it('DOES fail the build when a tweet cannot be fetched and has no cached fallback', () => {
+    expect(shouldFailSync(1, 0)).toBe(true);
+    expect(shouldFailSync(2, 3)).toBe(true);
   });
 });
 

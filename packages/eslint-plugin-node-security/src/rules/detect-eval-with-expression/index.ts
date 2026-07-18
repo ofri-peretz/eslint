@@ -95,6 +95,66 @@ const EVAL_PATTERNS: EvalPattern[] = [
   }
 ];
 
+/**
+ * Generate refactoring steps based on pattern.
+ * Module-scope so it is directly unit-testable (Layer-2).
+ */
+export const generateRefactoringSteps = (pattern: EvalPattern | null): string => {
+  if (!pattern) {
+    return [
+      '   1. Remove eval() usage entirely',
+      '   2. Identify what the code is trying to achieve',
+      '   3. Use appropriate safe alternative (JSON.parse, Map, etc.)',
+      '   4. Add input validation if dynamic behavior needed',
+      '   5. Test thoroughly for edge cases'
+    ].join('\n');
+  }
+
+  switch (pattern.category) {
+    case 'json':
+      return [
+        '   1. Replace eval() with JSON.parse()',
+        '   2. Ensure input is valid JSON string',
+        '   3. Add try/catch for JSON parsing errors',
+        '   4. Consider using a JSON schema validator'
+      ].join('\n');
+
+    case 'math':
+      return [
+        '   1. Create whitelist of allowed Math functions',
+        '   2. Use direct function calls: Math.sin(x)',
+        '   3. Validate inputs are numbers',
+        '   4. Consider using a math expression parser library'
+      ].join('\n');
+
+    // oxlint-disable-next-line no-template-curly-in-string
+    case 'template':
+      return [
+        // oxlint-disable-next-line no-template-curly-in-string
+        '   1. Use template literals: `Hello ${name}`',
+        '   2. Sanitize variables before interpolation',
+        '   3. Use a template engine like Handlebars if complex',
+        '   4. Validate template structure'
+      ].join('\n');
+
+    case 'object':
+      return [
+        '   1. Use Map or plain object for key-value access',
+        '   2. Whitelist allowed property names',
+        '   3. Use hasOwnProperty() check',
+        '   4. Consider Object.create(null) for clean objects'
+      ].join('\n');
+
+    default:
+      return [
+        '   1. Identify the specific use case',
+        '   2. Find a safer alternative approach',
+        '   3. Add comprehensive input validation',
+        '   4. Use static analysis if possible'
+      ].join('\n');
+  }
+};
+
 export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
   name: 'detect-eval-with-expression',
   meta: {
@@ -103,7 +163,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description: 'Detects eval(variable) which can allow an attacker to run arbitrary code',
       cwe: 'CWE-95',
-      cvss: 9.5,
+      cvss: 9.8,
       confidence: 'high',
     },
     messages: {
@@ -231,7 +291,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       allowLiteralStrings = false,
       additionalEvalFunctions = [],
       strategy = 'auto'
-    }: Options = options || {};
+    }: Options = options;
 
     /**
      * All functions that can execute arbitrary code
@@ -288,66 +348,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         }
       }
       return null;
-    };
-
-    /**
-     * Generate refactoring steps based on pattern
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const generateRefactoringSteps = (pattern: EvalPattern | null): string => {
-      if (!pattern) {
-        return [
-          '   1. Remove eval() usage entirely',
-          '   2. Identify what the code is trying to achieve',
-          '   3. Use appropriate safe alternative (JSON.parse, Map, etc.)',
-          '   4. Add input validation if dynamic behavior needed',
-          '   5. Test thoroughly for edge cases'
-        ].join('\n');
-      }
-
-      switch (pattern.category) {
-        case 'json':
-          return [
-            '   1. Replace eval() with JSON.parse()',
-            '   2. Ensure input is valid JSON string',
-            '   3. Add try/catch for JSON parsing errors',
-            '   4. Consider using a JSON schema validator'
-          ].join('\n');
-
-        case 'math':
-          return [
-            '   1. Create whitelist of allowed Math functions',
-            '   2. Use direct function calls: Math.sin(x)',
-            '   3. Validate inputs are numbers',
-            '   4. Consider using a math expression parser library'
-          ].join('\n');
-
-        // oxlint-disable-next-line no-template-curly-in-string
-        case 'template':
-          return [
-            // oxlint-disable-next-line no-template-curly-in-string
-            '   1. Use template literals: `Hello ${name}`',
-            '   2. Sanitize variables before interpolation',
-            '   3. Use a template engine like Handlebars if complex',
-            '   4. Validate template structure'
-          ].join('\n');
-
-        case 'object':
-          return [
-            '   1. Use Map or plain object for key-value access',
-            '   2. Whitelist allowed property names',
-            '   3. Use hasOwnProperty() check',
-            '   4. Consider Object.create(null) for clean objects'
-          ].join('\n');
-
-        default:
-          return [
-            '   1. Identify the specific use case',
-            '   2. Find a safer alternative approach',
-            '   3. Add comprehensive input validation',
-            '   4. Use static analysis if possible'
-          ].join('\n');
-      }
     };
 
     /**

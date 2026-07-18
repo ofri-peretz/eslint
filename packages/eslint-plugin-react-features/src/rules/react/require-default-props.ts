@@ -120,7 +120,10 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
               });
             }
 
-            if (forbidDefaultForRequired && isRequired && hasDefault && defaultsMap) {
+            // `hasDefault` is intentionally not re-checked here: `get()`
+            // returning a value is the same condition, and this keeps the
+            // no-default arm of the lookup reachable.
+            if (forbidDefaultForRequired && isRequired && defaultsMap) {
               const defaultProp = defaultsMap.get(propName);
               if (defaultProp) {
                 context.report({

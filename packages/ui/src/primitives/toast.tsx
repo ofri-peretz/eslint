@@ -118,9 +118,7 @@ const ANIMATE_REDUCED =
 // the provider itself is a client surface; this file's `use client`
 // pragma scopes that boundary.
 // ─────────────────────────────────────────────────────────────────
-function ToastProvider(
-  props: React.ComponentProps<typeof BaseToast.Provider>,
-) {
+function ToastProvider(props: React.ComponentProps<typeof BaseToast.Provider>) {
   return <BaseToast.Provider data-slot="toast-provider" {...props} />;
 }
 
@@ -200,10 +198,11 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(function Toast(
   // ToastStaticCtx signals to sub-parts (Title, Description, Close) that
   // they should also render as plain HTML — Base UI's Title/Description/
   // Close require Toast.Root context which doesn't exist in the static path.
-  const { style: rawStyle, ...divProps } =
-    sharedProps as typeof sharedProps & {
-      style?: React.CSSProperties | ((state: unknown) => React.CSSProperties | undefined);
-    };
+  const { style: rawStyle, ...divProps } = sharedProps as typeof sharedProps & {
+    style?:
+      | React.CSSProperties
+      | ((state: unknown) => React.CSSProperties | undefined);
+  };
   const style = typeof rawStyle === 'function' ? undefined : rawStyle;
   return (
     <ToastStaticCtx.Provider value={true}>
@@ -223,9 +222,19 @@ type ToastTitleProps = React.ComponentProps<typeof BaseToast.Title>;
 const ToastTitle = React.forwardRef<HTMLHeadingElement, ToastTitleProps>(
   function ToastTitle({ className, ...props }, ref) {
     const isStatic = React.useContext(ToastStaticCtx);
-    const cls = cn('font-body text-ui font-semibold text-card-foreground', className);
+    const cls = cn(
+      'font-body text-ui font-semibold text-card-foreground',
+      className,
+    );
     if (isStatic) {
-      return <strong ref={ref as React.Ref<HTMLElement>} data-slot="toast-title" className={cls} {...(props as React.HTMLAttributes<HTMLElement>)} />;
+      return (
+        <strong
+          ref={ref as React.Ref<HTMLElement>}
+          data-slot="toast-title"
+          className={cls}
+          {...(props as React.HTMLAttributes<HTMLElement>)}
+        />
+      );
     }
     return (
       <BaseToast.Title
@@ -248,7 +257,14 @@ const ToastDescription = React.forwardRef<
   const isStatic = React.useContext(ToastStaticCtx);
   const cls = cn('font-body text-ui-sm text-muted-foreground', className);
   if (isStatic) {
-    return <p ref={ref} data-slot="toast-description" className={cls} {...(props as React.HTMLAttributes<HTMLParagraphElement>)} />;
+    return (
+      <p
+        ref={ref}
+        data-slot="toast-description"
+        className={cls}
+        {...(props as React.HTMLAttributes<HTMLParagraphElement>)}
+      />
+    );
   }
   return (
     <BaseToast.Description
@@ -286,7 +302,14 @@ const ToastClose = React.forwardRef<HTMLButtonElement, ToastCloseProps>(
     );
     if (isStatic) {
       return (
-        <button ref={ref} type="button" data-slot="toast-close" aria-label="Close" className={cls} {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+        <button
+          ref={ref}
+          type="button"
+          data-slot="toast-close"
+          aria-label="Close"
+          className={cls}
+          {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+        >
           {content}
         </button>
       );
@@ -342,10 +365,19 @@ function ToastTrigger({
       if (event.defaultPrevented) return;
       manager.add({ title, description, type: tone });
     },
+    // `event` is this callback's own parameter (not a free variable) and
+    // `type` is an object-literal key in `manager.add({ ..., type: tone })`
+    // above, not an identifier reference — neither belongs in the
+    // dependency array.
+    // eslint-disable-next-line react-features/hooks-exhaustive-deps
     [manager, onClick, title, description, tone],
   );
 
   const element = useRender({
+    // `<button type="button" />` here is only a render-shape hint for
+    // useRender; the consumer's children / aria-label reach the DOM via
+    // the `props` object below, not as JSX children of this element.
+    // eslint-disable-next-line react-a11y/control-has-associated-label, react-a11y/no-missing-aria-labels
     render: render ?? <button type="button" />,
     props: {
       'data-slot': 'toast-trigger',

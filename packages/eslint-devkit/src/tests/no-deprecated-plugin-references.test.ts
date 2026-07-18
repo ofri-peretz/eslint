@@ -1,26 +1,30 @@
 /**
  * No Deprecated Plugin References — regression guard.
  *
- * Enforces that deprecated plugins are not recommended anywhere in markdown
- * documentation. A failing case fingers the offending file:line so the
- * regression is easy to find and fix.
+ * Two layers:
+ *   1. Markdown/MDX — a deprecated plugin must not be *recommended* in docs.
+ *   2. Code/config  — a deleted plugin must not be *imported* anywhere
+ *      (`import` / `require` / dynamic `import(...)`). A stale
+ *      `await import('./packages/eslint-plugin-crypto/src/index.ts')` in a
+ *      `.mjs`/`.ts` config (e.g. eslint.benchmark.config.mjs) crashes every
+ *      consumer of that config — and the markdown-only scan can't see it. This
+ *      layer was added after that exact bug shipped: reverting the import
+ *      deletion must turn CI red (CLAUDE.md regression contract).
+ *
+ * Both layers finger the offending file:line so the regression is easy to fix.
  *
  * Why this exists: `eslint-plugin-crypto` was consolidated into
- * `eslint-plugin-node-security` on 2026-05-10. Any new mention of crypto in
- * a README/MDX outside the explicit allowlist re-introduces the deprecated
- * recommendation surface that we just cleaned up.
+ * `eslint-plugin-node-security` on 2026-05-10 and its package deleted. The
+ * cryptography rules now ship from node-security.
  *
- * Allowlist rationale (paths still permitted to mention the deprecated name):
+ * Markdown allowlist rationale (paths still permitted to mention the name):
  *   - CHANGELOG.md (any depth)   — historical release notes.
- *   - packages/eslint-plugin-crypto/** — the deprecated package's own files
- *                                       (which carry a deprecation banner).
- *   - apps/docs/content/docs/security/plugin-crypto/** — the deprecated
- *                                       package's docs (deprecation banner).
  *   - .agent/plugin-classification-graph.md — canonical deprecation registry.
- *   - distribution/** — dated audits, ecosystem analysis, exposure logs
- *                       (content that *discusses* the deprecation, not
- *                       recommends it).
- *   - benchmarks/FP_FN_REMEDIATION_TRACKER.md — dated remediation history.
+ *   - distribution/** — dated audits / ecosystem analysis (discusses, not
+ *                       recommends, the deprecation).
+ *   - benchmarks/FP_FN_REMEDIATION_TRACKER.md, docs/META_HYGIENE.md — dated
+ *                       remediation / per-plugin stats tables.
+ *   - .changeset/** (ephemeral notes → CHANGELOG) + migration doc — describe the move.
  */
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
@@ -32,9 +36,16 @@ const WORKSPACE_ROOT = path.resolve(__dirname, '../../../..');
 interface DeprecatedPlugin {
   name: string;
   successor: string;
-  /** Paths (relative to WORKSPACE_ROOT) where references are intentionally retained. */
+  /** Paths (relative to WORKSPACE_ROOT) where a *mention* in docs is intentionally retained. */
   allowlist: Array<string | RegExp>;
+  /** Paths where an *import* reference is intentionally retained (almost never — a deleted package can't be imported). */
+  importAllowlist: Array<string | RegExp>;
 }
+
+// This guard's own source necessarily contains the deprecated name (in this
+// table and in the import-grep pattern), so it must be allowlisted for the
+// import scan.
+const THIS_TEST = 'packages/eslint-devkit/src/tests/no-deprecated-plugin-references.test.ts';
 
 const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
   {
@@ -43,23 +54,20 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
     allowlist: [
       /(^|\/)CHANGELOG\.md$/,
       '.agent/plugin-classification-graph.md',
-      // `distribution/` holds dated audits, ecosystem analysis, and
-      // exposure logs — content that legitimately *discusses* the
-      // deprecation (rather than recommending the deprecated plugin).
-      // Allowlist the whole directory; EXPOSURE_AUDIT_LOG.md and
-      // EXPOSURE_IMPACT_REVIEW.md were two specific cases of this
-      // general pattern.
       /^distribution\//,
       'benchmarks/FP_FN_REMEDIATION_TRACKER.md',
-      // META_HYGIENE.md is a per-plugin meta-coverage stats table that
-      // legitimately enumerates every published plugin, including the
-      // deprecated crypto package, for historical comparison.
       'docs/META_HYGIENE.md',
-      // Changeset and migration doc for no-math-random-crypto legitimately
-      // explain the eslint-plugin-crypto → node-security consolidation.
-      /^\.changeset\/node-security-no-math-random-crypto\.md$/,
+      // Any changeset — ephemeral release notes that get folded into
+      // CHANGELOG.md (already allowlisted above). They *describe* the
+      // deprecation/removal; they never *recommend* the dead plugin to users.
+      /^\.changeset\//,
       'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
+      // The TS7 migration plan discusses whether the deprecated crypto plugin
+      // dir needs a devkit project reference — planning context, not a user
+      // recommendation. (The "migration doc" the allowlist rationale mentions.)
+      '.agent/TS7_MIGRATION_PLAN.md',
     ],
+    importAllowlist: [THIS_TEST],
   },
 ];
 
@@ -72,29 +80,28 @@ function isAllowed(relPath: string, allowlist: Array<string | RegExp>): boolean 
   return false;
 }
 
-/**
- * Returns a list of `relativePath:line` strings where `term` was found,
- * scoped to .md and .mdx files and excluding common build/output dirs.
- */
-function findMarkdownReferences(term: string): Array<{ file: string; line: number; snippet: string }> {
-  // grep -rn with explicit excludes; `|| true` lets the test handle "no match" cleanly.
-  const cmd = [
-    'grep -rn',
-    `"${term}"`,
-    '--include="*.md"',
-    '--include="*.mdx"',
-    '--exclude-dir=node_modules',
-    '--exclude-dir=dist',
-    '--exclude-dir=build',
-    '--exclude-dir=.turbo',
-    '--exclude-dir=.next',
-    '--exclude-dir=coverage',
-    '--exclude-dir=benchmark-results',
-    '--exclude-dir=results',
-    '.',
-    '2>/dev/null || true',
-  ].join(' ');
+const SHARED_EXCLUDES = [
+  '--exclude-dir=node_modules',
+  '--exclude-dir=dist',
+  '--exclude-dir=build',
+  '--exclude-dir=.turbo',
+  '--exclude-dir=.next',
+  '--exclude-dir=coverage',
+  '--exclude-dir=benchmark-results',
+  '--exclude-dir=results',
+  '--exclude-dir=.claude',
+  '--exclude-dir=.agent',
+];
 
+interface Hit {
+  file: string;
+  line: number;
+  snippet: string;
+}
+
+/** Run `grep -rn[E]` with the given args and parse `path:line:content` rows into hits. */
+function grepRepo(grepArgs: string[]): Hit[] {
+  const cmd = ['grep', ...grepArgs, '.', '2>/dev/null || true'].join(' ');
   const raw = execSync(cmd, {
     cwd: WORKSPACE_ROOT,
     encoding: 'utf-8',
@@ -104,8 +111,8 @@ function findMarkdownReferences(term: string): Array<{ file: string; line: numbe
   return raw
     .split('\n')
     .filter(Boolean)
-    .map((rawLine) => {
-      // grep output: "./path/to/file.md:42:line content"
+    .map((rawLine): Hit | null => {
+      // grep output: "./path/to/file:42:line content"
       const cleaned = rawLine.replace(/^\.\//, '');
       const firstColon = cleaned.indexOf(':');
       const secondColon = cleaned.indexOf(':', firstColon + 1);
@@ -116,28 +123,82 @@ function findMarkdownReferences(term: string): Array<{ file: string; line: numbe
       if (!Number.isFinite(line)) return null;
       return { file, line, snippet };
     })
-    .filter((x): x is { file: string; line: number; snippet: string } => x !== null);
+    .filter((x): x is Hit => x !== null);
+}
+
+/** Mentions of `term` in markdown/MDX. */
+function findMarkdownReferences(term: string): Hit[] {
+  return grepRepo([
+    '-rn',
+    `"${term}"`,
+    '--include="*.md"',
+    '--include="*.mdx"',
+    ...SHARED_EXCLUDES,
+  ]);
+}
+
+/**
+ * `import` / `require` / dynamic `import(...)` of `term` in code/config files.
+ * Matches the deprecated name only inside a quoted module specifier, so plain
+ * name mentions in JSON data, stories, or string literals are NOT flagged —
+ * only an actual (now broken) import is.
+ */
+function findImportReferences(term: string): Hit[] {
+  // (from|import|require) ...quote... <anything>eslint-plugin-crypto
+  const pattern = `(from|import|require)[[:space:]]*\\(?[[:space:]]*['\\"][^'\\"]*${term}`;
+  return grepRepo([
+    '-rnE',
+    `"${pattern}"`,
+    '--include="*.mjs"',
+    '--include="*.mts"',
+    '--include="*.cts"',
+    '--include="*.ts"',
+    '--include="*.tsx"',
+    '--include="*.js"',
+    '--include="*.cjs"',
+    '--include="*.jsx"',
+    ...SHARED_EXCLUDES,
+  ]);
+}
+
+// Builds the failure message (with file:line detail). Passed as the custom
+// message to `expect(...).toEqual([])`, so it's only surfaced when the
+// assertion fails — one assertion, no separate throw, no redundant check.
+function violationMessage(
+  kind: string,
+  pluginName: string,
+  successor: string,
+  violations: Hit[],
+): string {
+  const detail = violations.map((v) => `  ${v.file}:${v.line}  ${v.snippet}`).join('\n');
+  return (
+    `Found ${violations.length} ${kind} of deprecated/deleted \`${pluginName}\`. ` +
+    `Use \`${successor}\` (which now ships the cryptography rules). ` +
+    `If a reference is intentional (historical record), add the file to the relevant allowlist in this test.\n` +
+    `${detail}`
+  );
 }
 
 describe('No Deprecated Plugin References', () => {
   for (const plugin of DEPRECATED_PLUGINS) {
-    it(`should not reference ${plugin.name} outside the allowlist (use ${plugin.successor} instead)`, () => {
-      const hits = findMarkdownReferences(plugin.name);
-      const violations = hits.filter((hit) => !isAllowed(hit.file, plugin.allowlist));
+    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {
+      const violations = findMarkdownReferences(plugin.name).filter(
+        (hit) => !isAllowed(hit.file, plugin.allowlist),
+      );
+      expect(
+        violations,
+        violationMessage('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations),
+      ).toEqual([]);
+    });
 
-      if (violations.length > 0) {
-        const detail = violations
-          .map((v) => `  ${v.file}:${v.line}  ${v.snippet}`)
-          .join('\n');
-        const message =
-          `Found ${violations.length} non-allowlisted reference(s) to deprecated \`${plugin.name}\`. ` +
-          `Replace with \`${plugin.successor}\` (which now ships the cryptography rules). ` +
-          `If a reference is intentional (historical record), add the file to the allowlist in this test.\n` +
-          `${detail}`;
-        throw new Error(message);
-      }
-
-      expect(violations).toEqual([]);
+    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
+      const violations = findImportReferences(plugin.name).filter(
+        (hit) => !isAllowed(hit.file, plugin.importAllowlist),
+      );
+      expect(
+        violations,
+        violationMessage('import reference(s)', plugin.name, plugin.successor, violations),
+      ).toEqual([]);
     });
   }
 });

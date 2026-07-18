@@ -61,8 +61,10 @@ function isLightTheme(): boolean {
   // when the var is absent.
   const fgbg = process.env['COLORFGBG'];
   if (!fgbg) return false;
-  const parts = fgbg.split(';');
-  const bg = Number.parseInt(parts[parts.length - 1] ?? '', 10);
+  // Take the substring after the last ';' (the whole string when no ';'
+  // is present — same result `split(';').pop()` would give, without the
+  // unreachable `?? ''` fallback an indexed access would force).
+  const bg = Number.parseInt(fgbg.slice(fgbg.lastIndexOf(';') + 1), 10);
   return Number.isFinite(bg) && bg >= 7 && bg !== 8;
 }
 

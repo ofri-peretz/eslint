@@ -94,7 +94,6 @@ function containsInsecureProtocol(
 /**
  * Check if a string matches any ignore pattern
  */
-/* c8 ignore start -- ignore-pattern matching is defensive */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
   return patterns.some(pattern => {
     try {
@@ -105,7 +104,6 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
     }
   });
 }
-/* c8 ignore stop */
 
 export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   name: 'no-unencrypted-transmission',
@@ -226,11 +224,8 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck, secureAlternativesToUse);
       
       if (isInsecure) {
-        // Allow localhost URLs in test files
-        if (isTestFile && text.includes('localhost')) {
-          return;
-        }
-
+        // NOTE: localhost URLs in test files already returned above, so no
+        // second `isTestFile && localhost` check is needed here.
         const secureProtocol = secureAlternativesToUse[protocol.toLowerCase()] || 'secure protocol';
         const safeAlternative = `Use ${secureProtocol} instead of ${protocol}`;
 

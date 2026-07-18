@@ -91,3 +91,44 @@ ruleTester.run('no-express-unsafe-regex-route', noExpressUnsafeRegexRoute, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+ruleTester.run('no-express-unsafe-regex-route (coverage wave)', noExpressUnsafeRegexRoute, {
+  valid: [
+    // callee is not a member expression
+    { code: `get('/users/:id', handler);` },
+    // computed member access — property is a Literal, not an Identifier
+    { code: `app['get']('/users', handler);` },
+    // no route argument at all
+    { code: `app.get();` },
+    // new RegExp() without a pattern argument
+    { code: `app.get(new RegExp(), handler);` },
+    // new RegExp() with a non-string literal
+    { code: `app.get(new RegExp(42), handler);` },
+    // new RegExp() with an identifier pattern
+    { code: `app.get(new RegExp(pattern), handler);` },
+    // safe RegExp string
+    { code: `app.get(new RegExp('/safe/path'), handler);` },
+    // numeric literal route — not a string, not a regex
+    { code: `app.get(42, handler);` },
+    // identifier route
+    { code: `app.get(routeVar, handler);` },
+    // allowInTests: true + test filename
+    {
+      code: `app.get(/(a+)+$/, handler);`,
+      options: [{ allowInTests: true }],
+      filename: 'routes.spec.ts',
+    },
+  ],
+  invalid: [
+    // allowInTests: true but non-test filename — still reported
+    {
+      code: `app.get(/(a+)+$/, handler);`,
+      options: [{ allowInTests: true }],
+      filename: 'routes.ts',
+      errors: [{ messageId: 'unsafeRegexRoute' }],
+    },
+  ],
+});

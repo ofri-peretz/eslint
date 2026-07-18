@@ -51,7 +51,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
       description:
         'Require strong secrets (256+ bits) for HMAC-based JWT signing',
       cwe: 'CWE-326',
-      cvss: 7.5,
+      cvss: 5.9,
     },
     fixable: undefined,
     hasSuggestions: false,

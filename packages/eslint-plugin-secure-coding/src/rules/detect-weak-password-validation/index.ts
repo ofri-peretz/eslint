@@ -21,12 +21,12 @@ type RuleOptions = [Options?];
 export const detectWeakPasswordValidation = createRule<RuleOptions, MessageIds>({
   name: 'detect-weak-password-validation',
   meta: {
-    type: 'problem',
+    type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-weak-password-validation.md',
       description: 'Identify weak password requirements',
       cwe: 'CWE-521',
-      cvss: 9.5,
+      cvss: 5.3,
     },
     messages: {
       violationDetected: formatLLMMessage({

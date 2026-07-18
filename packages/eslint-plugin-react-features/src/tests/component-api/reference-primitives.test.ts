@@ -42,6 +42,17 @@ const RULES = {
   'no-wrapper-sub-component': noWrapperSubComponent,
 };
 
+// Reference primitives may carry scoped `eslint-disable-next-line
+// <plugin>/<rule>` comments for rules OUTSIDE this test's component-api
+// scope (e.g. a documented react-a11y false positive). ESLint's Linter
+// errors on a disable directive naming a rule it can't resolve at all —
+// so those rule names need a no-op stand-in registered here, purely so
+// the directive resolves; this test never enables or evaluates them.
+const noop = { create: () => ({}) };
+const EXTERNAL_RULE_NAMES: Record<string, string[]> = {
+  'react-a11y': ['control-has-associated-label', 'no-missing-aria-labels'],
+};
+
 const buildLinter = () => {
   const linter = new Linter();
   return linter;
@@ -71,6 +82,12 @@ describe('reference primitives — self-test', () => {
           'component-api': {
             rules: RULES,
           },
+          ...Object.fromEntries(
+            Object.entries(EXTERNAL_RULE_NAMES).map(([plugin, names]) => [
+              plugin,
+              { rules: Object.fromEntries(names.map((n) => [n, noop])) },
+            ]),
+          ),
         },
         rules: Object.fromEntries(
           Object.keys(RULES).map((k) => [`component-api/${k}`, 'error']),

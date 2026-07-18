@@ -77,7 +77,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-csrf-protection.md',
       description: 'Detects missing CSRF token validation in POST/PUT/DELETE requests',
       cwe: 'CWE-352',
-      cvss: 7.5,
+      cvss: 8.8,
     },
     hasSuggestions: true,
     messages: {
@@ -141,7 +141,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options]
   ) {
     const {
       allowInTests = false,
@@ -215,12 +215,10 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'addCsrfValidation',
                   fix(fixer: TSESLint.RuleFixer) {
-                    // Add CSRF middleware after the first argument (path)
-                    const firstArg = node.arguments[0];
-                    if (firstArg) {
-                      return fixer.insertTextAfter(firstArg, ', csrf()');
-                    }
-                    return null;
+                    // Add CSRF middleware after the first argument (path).
+                    // arguments[0] always exists: the arguments.length < 2
+                    // guard above returns before reporting.
+                    return fixer.insertTextAfter(node.arguments[0], ', csrf()');
                   },
                 },
               ],

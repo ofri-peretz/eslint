@@ -373,11 +373,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           }
 
           if (matchesUserInput) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                     return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                     node: left,
@@ -424,11 +422,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
               (right.type === 'Identifier' && isUserInput(right.name)) ||
               leftText.includes('null') || rightText.includes('null')) {
 
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: node,
@@ -467,11 +463,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           }
 
           if (involvesUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,
@@ -527,11 +521,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
 
         // NEW: Check for implicit truthiness check on user input
         if (test.type === 'Identifier' && isUserInput(test.name)) {
-             /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
              if (safetyChecker.isSafe(node, context)) {
                return;
              }
-             /* c8 ignore stop */
 
              context.report({
                  node: test,
@@ -557,11 +549,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
             if ((test.left.type === 'Identifier' && isUserInput(test.left.name)) ||
                 (test.right.type === 'Identifier' && isUserInput(test.right.name))) {
 
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: test,

@@ -16,7 +16,9 @@ export const VALID_UTM_SOURCES = new Set([
   'serverless_docs',
   'ds',
   'storybook',
-  'dev_to',
+  // `devto` (not `dev_to`): the blog's /go/ handler routes by
+  // `article_platforms.platform === utm_source`, stored as 'devto'.
+  'devto',
   'github',
   'npm',
   'x',
@@ -25,6 +27,7 @@ export const VALID_UTM_SOURCES = new Set([
 ]);
 
 export const VALID_UTM_MEDIUMS = new Set([
+  'article',
   'blog',
   'docs',
   'landing',

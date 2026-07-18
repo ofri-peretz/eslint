@@ -160,7 +160,7 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
       excessiveLimits: DEFAULT_EXCESSIVE_LIMITS,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
       allowInTests = false,
       excessiveLimits = DEFAULT_EXCESSIVE_LIMITS,
@@ -188,7 +188,6 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
         const property = callee.property;
 
         // Check if it's express.* or bodyParser.*
-        /* c8 ignore next 2 */
         if (object.type !== 'Identifier') {
           return;
         }
@@ -197,7 +196,6 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
           return;
         }
 
-        /* c8 ignore next 2 */
         if (property.type !== 'Identifier') {
           return;
         }
@@ -255,7 +253,6 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
                         ", limit: '100kb'"
                       );
                     }
-                    /* c8 ignore next */
                     return null;
                   },
                 },

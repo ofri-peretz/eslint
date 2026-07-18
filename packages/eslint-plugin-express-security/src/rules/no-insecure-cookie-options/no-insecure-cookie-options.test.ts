@@ -144,3 +144,69 @@ ruleTester.run('no-insecure-cookie-options', noInsecureCookieOptions, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Coverage wave: previously untested branches (annotation-debt removal)
+// ---------------------------------------------------------------------------
+import { describe, expect, it } from 'vitest';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { checkCookieOptions } from './index';
+
+ruleTester.run('no-insecure-cookie-options (coverage wave)', noInsecureCookieOptions, {
+  valid: [
+    // requireHttpOnly: false — httpOnly check skipped
+    {
+      code: `res.cookie('a', 'b', { secure: true, sameSite: 'strict' });`,
+      options: [{ requireHttpOnly: false }],
+    },
+    // requireSecure: false — secure check skipped
+    {
+      code: `res.cookie('a', 'b', { httpOnly: true, sameSite: 'strict' });`,
+      options: [{ requireSecure: false }],
+    },
+    // requireSameSite: false — sameSite check skipped
+    {
+      code: `res.cookie('a', 'b', { httpOnly: true, secure: true });`,
+      options: [{ requireSameSite: false }],
+    },
+    // options argument is not an object literal
+    { code: `res.cookie('a', 'b', cookieOptions);` },
+  ],
+  invalid: [
+    // custom acceptableSameSiteValues rejects 'lax'
+    {
+      code: `res.cookie('a', 'b', { httpOnly: true, secure: true, sameSite: 'lax' });`,
+      options: [{ acceptableSameSiteValues: ['strict'] }],
+      errors: [{ messageId: 'insecureCookie' }],
+    },
+  ],
+});
+
+// Layer 2: unit tests for the exported checkCookieOptions helper. The rule
+// pipeline always passes fully-merged options, so the acceptableSameSiteValues
+// fallback is only reachable by calling the helper directly.
+describe('checkCookieOptions (unit)', () => {
+  const fakeSourceCode = (text: string) =>
+    ({ getText: () => text }) as unknown as TSESLint.SourceCode;
+  const node = {} as TSESTree.ObjectExpression;
+
+  it('falls back to default acceptable sameSite values when the option is absent', () => {
+    const result = checkCookieOptions(
+      node,
+      fakeSourceCode("{ httpOnly: true, secure: true, sameSite: 'lax' }"),
+      {},
+    );
+    expect(result.issues).toEqual([]);
+    expect(result.hasSuggestions).toBe(false);
+  });
+
+  it('flags an unacceptable sameSite value against the default list', () => {
+    const result = checkCookieOptions(
+      node,
+      fakeSourceCode("{ httpOnly: true, secure: true, sameSite: 'none' }"),
+      {},
+    );
+    expect(result.issues).toEqual(["sameSite should be 'strict' or 'lax', not 'none'"]);
+    expect(result.hasSuggestions).toBe(true);
+  });
+});

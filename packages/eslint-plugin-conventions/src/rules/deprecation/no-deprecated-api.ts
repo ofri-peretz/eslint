@@ -103,7 +103,8 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { apis = [], warnDaysBeforeRemoval = 90 }: Options = options || {};
+    // `options` is always an object here (the `|| {}` above guarantees it).
+    const { apis = [], warnDaysBeforeRemoval = 90 }: Options = options;
 
     // Early return if no deprecated APIs configured
     if (!apis || apis.length === 0) {

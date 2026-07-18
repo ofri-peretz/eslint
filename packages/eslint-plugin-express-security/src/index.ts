@@ -46,6 +46,9 @@ import { noMissingCorsCheck } from './rules/no-missing-cors-check';
 import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
 import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
 
+// Structural redirect safety — structural-api, enforcement-grade
+import { noUserControlledRedirect } from './rules/no-user-controlled-redirect';
+
 /**
  * Collection of all Express security ESLint rules
  */
@@ -77,6 +80,9 @@ export const rules: Record<
   'no-missing-cors-check': noMissingCorsCheck,
   'no-missing-csrf-protection': noMissingCsrfProtection,
   'no-missing-security-headers': noMissingSecurityHeaders,
+
+  // Open redirect — structural-api (fires on res.redirect(req.query.*) AST shape)
+  'no-user-controlled-redirect': noUserControlledRedirect,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -85,7 +91,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-express-security',
-    version: '1.2.3',
+    version: '1.3.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -118,6 +124,9 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/no-missing-cors-check': 'warn',
   'express-security/no-missing-csrf-protection': 'warn',
   'express-security/no-missing-security-headers': 'warn',
+
+  // Open redirect — structural, CWE-601
+  'express-security/no-user-controlled-redirect': 'error',
 };
 
 /**

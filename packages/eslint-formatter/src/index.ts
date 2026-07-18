@@ -54,7 +54,7 @@ export { renderXML } from './renderers/xml';
  *
  * Priority: ESLINT_FORMAT_MODE env var > auto-detection
  */
-function resolveMode(): OutputMode {
+export function resolveMode(): OutputMode {
   const envMode = process.env['ESLINT_FORMAT_MODE'];
   if (envMode === 'human' || envMode === 'compact' || envMode === 'json' || envMode === 'ndjson' || envMode === 'xml') {
     return envMode;
@@ -73,14 +73,14 @@ function resolveMode(): OutputMode {
  * for token-budget: rough ratio is 1 token ≈ 4 chars across the
  * o200k_base / cl100k_base tokenizers we measure in ILB-Formatter.
  */
-function resolveCharBudget(): number | null {
+export function resolveCharBudget(): number | null {
   const raw = process.env['ESLINT_FORMAT_CHAR_BUDGET'];
   if (!raw) return null;
   const n = Number.parseInt(raw, 10);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function dispatchRender(mode: OutputMode, grouped: GroupedRule[], summary: LintSummary): string {
+export function dispatchRender(mode: OutputMode, grouped: GroupedRule[], summary: LintSummary): string {
   switch (mode) {
     case 'json': return renderJSON(grouped, summary);
     case 'ndjson': return renderNDJSON(grouped, summary);
@@ -99,7 +99,7 @@ function dispatchRender(mode: OutputMode, grouped: GroupedRule[], summary: LintS
  * see. A `truncationNotice` line is appended so consumers know output
  * was clipped.
  */
-function applyCharBudget(
+export function applyCharBudget(
   mode: OutputMode,
   grouped: GroupedRule[],
   summary: LintSummary,
@@ -126,7 +126,7 @@ function applyCharBudget(
  * Groups violations by rule and renders in the appropriate mode.
  * This is the function ESLint calls when using `-f @interlace/eslint-formatter`.
  */
-function formatter(results: LintResult[], context?: FormatterContext): string {
+export function formatter(results: LintResult[], context?: FormatterContext): string {
   const mode = resolveMode();
   const grouped = groupByRule(results, context, mode);
   const summary = computeSummary(results, grouped);

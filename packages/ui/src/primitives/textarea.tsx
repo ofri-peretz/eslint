@@ -90,13 +90,18 @@ const textareaVariants = cva(
 );
 
 interface TextareaProps
-  extends Omit<React.ComponentProps<'textarea'>, 'size'>,
+  extends
+    Omit<React.ComponentProps<'textarea'>, 'size'>,
     VariantProps<typeof textareaVariants> {}
 
 /** Multi-line text input. Server component (no hooks). */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, size, tone, resize, ...props }, ref) => {
     return (
+      // This primitive doesn't own accessible naming; consumers pair it
+      // with <Label htmlFor> (or their own aria-label) one level up, same
+      // as shadcn's Textarea.
+      // eslint-disable-next-line react-a11y/control-has-associated-label, react-a11y/no-missing-aria-labels
       <textarea
         ref={ref}
         data-slot="textarea"

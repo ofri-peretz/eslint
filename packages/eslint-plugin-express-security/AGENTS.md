@@ -27,7 +27,7 @@ nx lint eslint-plugin-express-security
 - Use `AST_NODE_TYPES` constants, never string literals for node types
 - Use `formatLLMMessage()` for all rule error messages
 - Include CWE, CVSS, OWASP in every security message
-- Use `c8 ignore` comments with documented reasons for untestable code
+- Coverage-ignore comments (`c8 ignore`, `v8 ignore`, `istanbul ignore`) are banned — write a test for the branch (synthetic AST / mock context if parser-unreachable) or delete it if dead
 - Single-pass AST traversal patterns (O(n) complexity)
 - Detect Express objects through heuristics (variable naming, import analysis)
 

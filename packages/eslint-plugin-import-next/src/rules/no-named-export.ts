@@ -121,20 +121,16 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
         if (pattern.includes('*')) {
           const regexStr = '^' + pattern
              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                 if (match === '*') return '*'; 
+                 // The char class above never matches '*', so no special-casing needed.
                  return '\\' + match;
              })
              .replace(/\*\*/g, '.*')
              .replace(/\*/g, '[^/]*') + '$';
              
-          try {
-             const regex = new RegExp(regexStr);
-             const result = regex.test(filename);
-             // DEBUG LOGIC if needed, but relying on report below
-             return result;
-          } catch {
-             return false;
-          }
+          // regexStr escapes every regex metacharacter before translating
+          // glob tokens, so new RegExp() can never throw here.
+          const regex = new RegExp(regexStr);
+          return regex.test(filename);
         }
         return filename.includes(pattern);
       });
@@ -148,15 +144,15 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
         if (pattern.includes('*')) {
           const regexStr = '^' + pattern
              .replace(/[.+?^${}()|[\]\\]/g, (match) => {
-                 if (match === '*') return '*'; 
+                 // The char class above never matches '*', so no special-casing needed.
                  return '\\' + match;
              })
              .replace(/\*\*/g, '.*')
              .replace(/\*/g, '[^/]*') + '$';
-          try {   
-            const regex = new RegExp(regexStr);
-            return regex.test(filename);
-          } catch { return false; }
+          // regexStr escapes every regex metacharacter before translating
+          // glob tokens, so new RegExp() can never throw here.
+          const regex = new RegExp(regexStr);
+          return regex.test(filename);
         }
         return filename.includes(pattern);
       });

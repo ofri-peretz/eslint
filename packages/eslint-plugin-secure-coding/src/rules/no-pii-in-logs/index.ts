@@ -23,7 +23,7 @@ type RuleOptions = [Options?];
 export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
   name: 'no-pii-in-logs',
   meta: {
-    type: 'problem',
+    type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-pii-in-logs.md',
       description: 'Prevent PII (email, SSN, credit cards) in console logs',

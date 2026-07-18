@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 /**
  * Vitest configuration for eslint-plugin-pg package
@@ -11,6 +12,10 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   root: __dirname,
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
     test: {
     globals: true,
     environment: 'node',
@@ -37,7 +42,11 @@ export default defineConfig({
     // Use vmThreads for better performance
     pool: 'vmThreads',
     coverage: {
+      enabled: true,
       provider: 'v8',
+      // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
+      // Pinned at the 100% policy target — this branch is the integration target for the test wave.
+      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
@@ -51,12 +60,6 @@ export default defineConfig({
         functions: [80, 90],
         statements: [80, 90],
       },
-      thresholds: {
-        lines: 80,
-        branches: 70,
-        functions: 80,
-        statements: 80
-      }
     },
     reporters: ['default', 'junit'],
     outputFile: {

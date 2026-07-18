@@ -3,8 +3,10 @@
  * Enforce providing a message when creating built-in Error objects
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { errorMessage } from '../../rules/error-handling/error-message';
 
 // Configure RuleTester for Vitest
@@ -547,6 +549,33 @@ describe('error-message', () => {
           ],
         },
       ],
+    });
+  });
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: checkErrorCreation with non-constructor nodes', () => {
+    it('ignores a node that is neither NewExpression nor CallExpression', () => {
+      const { listeners, reports } = createWithMockContext(errorMessage, {});
+      const node = { type: 'Identifier', name: 'Error' } as unknown as TSESTree.CallExpression;
+      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(node);
+      expect(reports).toHaveLength(0);
+    });
+
+    it('ignores a CallExpression whose callee is not an Identifier', () => {
+      const { listeners, reports } = createWithMockContext(errorMessage, {});
+      const node = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'errors' },
+          property: { type: 'Identifier', name: 'Error' },
+        },
+        arguments: [],
+      } as unknown as TSESTree.CallExpression;
+      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(node);
+      expect(reports).toHaveLength(0);
     });
   });
 });

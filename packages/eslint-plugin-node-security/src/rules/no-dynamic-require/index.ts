@@ -77,7 +77,6 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     const [options] = context.options;
     const {
       allowContexts = [],
-      allowPatterns = [],
     } = options || {};
 
     const filename = context.filename || '';
@@ -102,19 +101,6 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    /* v8 ignore start -- allowPatterns check is unreachable: static literals return early before this check */
-    function isAllowedPattern(requirePath: string): boolean {
-      return allowPatterns.some((pattern: string) => {
-        try {
-          const regex = new RegExp(pattern);
-          return regex.test(requirePath);
-        } catch {
-          return false;
-        }
-      });
-    }
-    /* v8 ignore stop */
-
     // oxlint-disable-next-line consistent-function-scoping
     function isStaticLiteral(node: TSESTree.Node): boolean {
       return node.type === 'Literal' && typeof node.value === 'string';
@@ -138,15 +124,6 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
             // Static requires are allowed
             return;
           }
-
-          /* v8 ignore start -- unreachable: static literals already returned above */
-          // Check allow patterns
-          if (requireArg.type === 'Literal' && typeof requireArg.value === 'string') {
-            if (isAllowedPattern(requireArg.value)) {
-              return;
-            }
-          }
-          /* v8 ignore stop */
 
           // Report dynamic require
           context.report({

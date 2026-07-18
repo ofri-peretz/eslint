@@ -51,22 +51,62 @@ describe('no-unsafe-regex-construction', () => {
         // Identifier user input
         {
           code: 'const regex = new RegExp(userInput);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((userInput).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
         // Template literal with expressions
         {
           code: 'const pattern = new RegExp(`^${userPattern}$`);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const pattern = new RegExp((`^${userPattern}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
         // Member expression (e.g., req.query.pattern)
         {
           code: 'const regex = new RegExp(req.query.pattern);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((req.query.pattern).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
         // Function call with untrusted function
         {
           code: 'const regex = new RegExp(getPattern());',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((getPattern()).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -154,7 +194,17 @@ describe('no-unsafe-regex-construction', () => {
         {
           code: 'const regex = new RegExp(unknownEscape(userInput));',
           options: [{ trustedEscapingFunctions: ['myCustomEscape'] }],
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((unknownEscape(userInput)).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -173,9 +223,62 @@ describe('no-unsafe-regex-construction', () => {
         // Template literal with expressions is unsafe
         {
           code: 'const regex = new RegExp(`^${input}$`);',
-          errors: [{ messageId: 'unsafeRegexConstruction' }],
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((`^${input}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
         },
       ],
+    });
+
+    // `isUserInput` treats a bare Identifier argument as unsafe user input
+    // regardless of its name — including the "safe-looking" names
+    // (`pattern`, `regex`, `regExp`, `regexp`) that the function explicitly
+    // special-cases (the special case still resolves to `true`, same as
+    // the general Identifier fallthrough, but it's a distinct statement
+    // that needs its own exercise for coverage).
+    ruleTester.run('bare identifier argument named like a safe pattern var is still flagged', noUnsafeRegexConstruction, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const regex = new RegExp(pattern);',
+          errors: [
+            {
+              messageId: 'unsafeRegexConstruction',
+              suggestions: [
+                {
+                  messageId: 'escapeUserInput',
+                  output: 'const regex = new RegExp((pattern).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // `isEscaped`'s parent-walk loop finds a trusted CallExpression that
+    // wraps the *entire* `new RegExp(...)` call, not just the pattern
+    // argument directly — e.g. `escapeRegex(new RegExp(userInput))`. Here
+    // `patternNode` (`userInput`) is not itself a trusted call (so the
+    // direct check fails), but walking up through its `.parent` chain
+    // reaches the outer `escapeRegex(...)` CallExpression at depth 1,
+    // exercising the walk's own trusted-function match (as opposed to the
+    // direct check at the top of `isEscaped`).
+    ruleTester.run('trusted function wraps the entire new RegExp(...) call', noUnsafeRegexConstruction, {
+      valid: [
+        {
+          code: 'const regex = escapeRegex(new RegExp(userInput));',
+        },
+      ],
+      invalid: [],
     });
   });
 });

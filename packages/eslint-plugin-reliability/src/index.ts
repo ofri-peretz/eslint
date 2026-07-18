@@ -45,7 +45,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-reliability',
-    version: '3.1.3',
+    version: '3.1.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -56,7 +56,7 @@ export const configs = {
       reliability: plugin,
     },
     rules: {
-      'reliability/no-silent-errors': 'warn',
+      'reliability/no-silent-errors': 'error',
       'reliability/no-missing-null-checks': 'warn',
       'reliability/require-network-timeout': 'error',
     },

@@ -57,8 +57,12 @@ export const rules = {
 
 export const plugin = {
   meta: {
-    name: '@interlace/eslint-plugin-maintainability',
-    version: '3.0.3',
+    // Unscoped, matching package.json `name` and every other plugin in the
+    // ecosystem (`eslint-plugin-*`). These packages are published WITHOUT the
+    // `@interlace` scope; a scoped name here drifts from how consumers install
+    // and reference the plugin. Locked in index.test.ts.
+    name: 'eslint-plugin-maintainability',
+    version: '3.0.6',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

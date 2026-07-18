@@ -15,7 +15,7 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   isSignOperation,
   getOptionsArgument,
@@ -38,10 +38,9 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       description:
         'Require expiration claim (exp) or expiresIn option in JWT signing',
       cwe: 'CWE-613',
-      cvss: 5,
+      cvss: 5.4,
     },
-    fixable: undefined,
-    hasSuggestions: false,
+    hasSuggestions: true,
     messages: {
       missingExpiration: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -141,10 +140,27 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Report missing expiration
+        // Report missing expiration — suggest adding expiresIn to the options object
+        const optionsArg3 = node.arguments[2];
         context.report({
           node,
           messageId: 'missingExpiration',
+          suggest: [
+            {
+              messageId: 'addExpiration',
+              fix(fixer) {
+                const sourceCode = context.sourceCode;
+                if (optionsArg3 && optionsArg3.type === AST_NODE_TYPES.ObjectExpression) {
+                  // Options object exists but lacks expiresIn — insert property
+                  const openBrace = sourceCode.getFirstToken(optionsArg3)!;
+                  return fixer.insertTextAfter(openBrace, ' expiresIn: \'1h\',');
+                }
+                // No options arg — insert { expiresIn: '1h' } as third argument
+                const lastArg = node.arguments[node.arguments.length - 1];
+                return fixer.insertTextAfter(lastArg, ', { expiresIn: \'1h\' }');
+              },
+            },
+          ],
         });
       },
     };

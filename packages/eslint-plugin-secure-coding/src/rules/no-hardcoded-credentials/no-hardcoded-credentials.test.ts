@@ -3,8 +3,10 @@
  * CWE-798: Use of Hard-coded Credentials
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
+import { Linter, type Rule } from 'eslint';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noHardcodedCredentials } from './index';
 
 // Configure RuleTester for Vitest
@@ -642,6 +644,541 @@ describe('no-hardcoded-credentials', () => {
         },
       ],
     });
+  });
+
+  describe('Coverage — custom patterns, ambiguous API key, label context, credential-name context', () => {
+    ruleTester.run('coverage matrix', noHardcodedCredentials, {
+      valid: [
+        // customPatterns: an invalid regex must be caught (try/catch) and
+        // skipped rather than crash the rule.
+        {
+          code: 'const value = "anything-at-all-not-a-real-secret-1234567890";',
+          options: [{ customPatterns: [{ pattern: '[', type: 'Broken' }] }],
+        },
+        // isLabelContext — array elements: `labels` var makes array entries
+        // UI text, not credentials.
+        {
+          code: 'const labels = ["Enter password"];',
+        },
+        // isLabelContext — assignment: input.type = "password" is a UI
+        // form-field type, not a credential.
+        {
+          code: 'input.type = "password";',
+        },
+        // isLabelContext — string-literal object key matching a label name.
+        {
+          code: 'const x = { "placeholder": "Enter your password here" };',
+        },
+        // isLabelContext — setAttribute/getAttribute second arg is UI text.
+        {
+          code: 'el.setAttribute("type", "password");',
+        },
+        {
+          code: 'el.getAttribute("placeholder");',
+        },
+      ],
+      invalid: [
+        // customPatterns: a matching custom pattern fires with the
+        // user-supplied type label.
+        {
+          code: 'const value = "CUSTOM-SECRET-9f8e7d6c5b4a";',
+          options: [{ customPatterns: [{ pattern: '^CUSTOM-SECRET-', type: 'Custom secret' }] }],
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'VALUE', credentialType: 'Custom secret' },
+                  output: 'const value = process.env.VALUE || \'CUSTOM-SECRET-9f8e7d6c5b4a\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Custom secret' },
+                  output: 'const value = await getSecret(\'value\');',
+                },
+              ],
+            },
+          ],
+        },
+        // Generic 32+-char alphanumeric actually hits the EARLIER
+        // `secretKey` structural check (length>=32 + hex/base64-ish
+        // shape) before reaching the generic-ambiguous-apikey branch —
+        // type is 'Secret key', not 'API key'. Ground-truthed via direct
+        // Linter.verify(), not guessed.
+        {
+          code: 'const apiKey = "aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: 'Secret key' },
+                  output: 'const apiKey = process.env.API_KEY || \'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Secret key' },
+                  output: 'const apiKey = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via a Property key (Identifier):
+        // context-positive path for a value with no structural pattern
+        // match, gated by detectPasswords through the object-key name.
+        // NOTE (ground-truthed): the suggestion's `data.credentialType`
+        // reads the raw `type` (empty here), not the report's `finalType`
+        // ('Credential value') — that's a real, pre-existing asymmetry in
+        // the rule's report vs suggest data, not a test mistake.
+        {
+          code: 'const config = { password: "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'PASSWORD', credentialType: '' },
+                  output: 'const config = { password: process.env.PASSWORD || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { password: await getSecret(\'password\') };',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via a Property key (string
+        // literal, not Identifier). envVarName generation only special-
+        // cases an Identifier key, so a literal key falls back to the
+        // default API_KEY.
+        {
+          code: 'const config = { "password": "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const config = { "password": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { "password": await getSecret(\'api_key\') };',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext via AssignmentExpression
+        // (obj.password = "...") — also not envVarName-special-cased,
+        // falls back to API_KEY.
+        {
+          code: 'this.password = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'this.password = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'this.password = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // inferCredentialTypeFromContext fallthrough to 'other' — a
+        // credential-named variable that matches none of the
+        // password/token/database/apikey suffix patterns, so the option
+        // gates never apply (always honoured). VariableDeclarator IS
+        // envVarName-special-cased, so this one does get a real name.
+        {
+          code: 'const credentials = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'CREDENTIALS', credentialType: '' },
+                  output: 'const credentials = process.env.CREDENTIALS || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const credentials = await getSecret(\'credentials\');',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — array elements: `const secrets = ['SuperSecretPhrase!!']`
+        // walks up through the ArrayExpression to the credential-named
+        // var ('secrets' -> singular 'secret' matches). ArrayExpression
+        // isn't envVarName-special-cased -> API_KEY fallback.
+        {
+          code: 'const secrets = ["SuperSecretPhrase!!"];',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const secrets = [process.env.API_KEY || \'SuperSecretPhrase!!\'];',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const secrets = [await getSecret(\'api_key\')];',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — AssignmentExpression with a plain
+        // Identifier left-hand side (not MemberExpression). Note: a bare
+        // `secretValue` does NOT match matches() (must end in one of the
+        // exact credential suffixes, e.g. 'secret' — 'secretValue' ends
+        // in 'value', not 'secret') — ground-truthed to emit NO error;
+        // `mySecret` (ends in 'secret') is the real positive fixture.
+        {
+          code: 'let mySecret; mySecret = "SuperSecretPhrase!!";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'let mySecret; mySecret = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'let mySecret; mySecret = await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+        // isCredentialContext — Property with a string-literal key (not
+        // Identifier), e.g. `{ 'secretKey': '...' }`.
+        {
+          code: 'const config = { "secretKey": "SuperSecretPhrase!!" };',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  output: 'const config = { "secretKey": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: '' },
+                  output: 'const config = { "secretKey": await getSecret(\'api_key\') };',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    // Ground-truthed negative: 'secretValue' doesn't match matches() at
+    // all (must END in a credential suffix; 'Value' doesn't qualify), so
+    // this is a genuinely valid case, not a bug.
+    ruleTester.run('secretValue name does not match credential suffix', noHardcodedCredentials, {
+      valid: [
+        { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Coverage — isTestFile filename patterns, remaining label/credential-context branches', () => {
+    ruleTester.run('isTestFile filename patterns', noHardcodedCredentials, {
+      valid: [
+        // Each fixture's filename avoids every earlier pattern in the OR
+        // chain so the short-circuit actually reaches this one.
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.fixture.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.mock.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__tests__/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__mocks__/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/test/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/tests/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/fixtures/foo.ts', options: [{ allowInTests: true }] },
+        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/mocks/foo.ts', options: [{ allowInTests: true }] },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('label and credential context - remaining branches', noHardcodedCredentials, {
+      valid: [
+        // isLabelContext: Property with an Identifier key that's directly
+        // in LABEL_CONTEXT_NAMES ('type').
+        { code: 'const config = { type: "password" };' },
+        // isLabelContext: Property key isn't label-typed, but the
+        // enclosing object's own variable is 'labels' — the Property
+        // fallback recursion (walks Property -> ObjectExpression ->
+        // VariableDeclarator).
+        { code: 'const labels = { foo: "SuperSecretPhrase!!" };' },
+        // isLabelContext: MemberExpression call whose method name is
+        // neither setAttribute nor getAttribute — false branch of that
+        // check, falls through to "not a label", then the value/context
+        // don't look like a credential either.
+        { code: 'el.someOtherMethod("type", "just-a-plain-value-not-a-secret");' },
+        // isCredentialContext: AssignmentExpression to a MemberExpression
+        // property whose name doesn't match any credential suffix.
+        { code: 'this.randomThing = "just a plain long value";' },
+        // isCredentialContext: AssignmentExpression to a bare Identifier
+        // whose name doesn't match any credential suffix.
+        { code: 'let randomVar; randomVar = "just a plain long value";' },
+        // isCredentialContext: Property with an Identifier key that
+        // doesn't match any credential suffix.
+        { code: 'const config = { randomField: "just a plain long value" };' },
+        // isCredentialContext: Property with a string-Literal key that
+        // doesn't match any credential suffix.
+        { code: 'const config = { "randomField": "just a plain long value" };' },
+        // Template literal (no interpolation) whose text doesn't look like
+        // a credential.
+        { code: '`just a plain safe string`;' },
+        // Template literal WITH interpolation whose quasi parts don't look
+        // like a credential.
+        { code: '`Hello ${name}, welcome!`;' },
+      ],
+      invalid: [
+        // process.env fallback skip-check: the left side of `||` is not a
+        // `process.env.X` MemberExpression, so the exemption doesn't
+        // apply and a structurally-obvious credential still reports.
+        {
+          code: 'const apiKey = someOtherFallback || "AKIA1234567890ABCDEF";',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'API_KEY', credentialType: 'AWS access key' },
+                  output: 'const apiKey = someOtherFallback || process.env.API_KEY || \'AKIA1234567890ABCDEF\';',
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'AWS access key' },
+                  output: 'const apiKey = someOtherFallback || await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+});
+
+/**
+ * Regression lock — the machine-readable finding and the docs metadata must
+ * report the SAME CVSS. `formatLLMMessage` → `enrichFromCWE` bakes
+ * `CWE_MAPPING['CWE-798'].cvss` into the emitted message at construction time
+ * (the rule sets no per-message cvss), so a stale `meta.docs.cvss` silently
+ * disagrees with what the rule actually emits — exactly the bug this locks.
+ * The published article hardcoded-secrets-ai-agents-autofix.md quotes
+ * `CVSS:9.8` as authoritative, so 9.8 is the source of truth.
+ * The ecosystem-wide version of this invariant lives in
+ * security-cvss-docs-consistency.lock.test.ts.
+ */
+describe('no-hardcoded-credentials — CVSS docs/message consistency (lock)', () => {
+  // CVSS the rule emits in its real finding, via ESLint's Linter API (the same
+  // path used to verify the original mismatch).
+  function emittedCvss(): number {
+    const messages = new Linter().verify(
+      `const apiKey = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';`,
+      {
+        languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
+        plugins: {
+          sec: {
+            rules: {
+              'no-hardcoded-credentials':
+                noHardcodedCredentials as unknown as Rule.RuleModule,
+            },
+          },
+        },
+        rules: { 'sec/no-hardcoded-credentials': 'error' },
+      },
+    );
+    const finding = messages.find(
+      (m) => m.ruleId === 'sec/no-hardcoded-credentials',
+    );
+    if (!finding) throw new Error('rule emitted no finding for the fixture');
+    const match = /CVSS:(\d+(?:\.\d+)?)/.exec(finding.message);
+    if (!match)
+      throw new Error(`no CVSS token in emitted message: ${finding.message}`);
+    return Number(match[1]);
+  }
+
+  const docsCvss = (
+    noHardcodedCredentials.meta.docs as unknown as { cvss?: number }
+  ).cvss;
+
+  it('emitted finding CVSS equals meta.docs.cvss', () => {
+    expect(emittedCvss()).toBe(docsCvss);
+  });
+
+  it('the agreed CWE-798 score is 9.8 (CWE_MAPPING + article authoritative)', () => {
+    expect(docsCvss).toBe(9.8);
+    expect(emittedCvss()).toBe(9.8);
+  });
+});
+
+// Layer 2: raw unit tests against rule.create() with a mock context, for the
+// "no grandparent" defensive fallback branches in isLabelContext's
+// ObjectExpression/ArrayExpression arms and isCredentialContext's
+// ArrayExpression arm. Every real TSESTree node's parent chain terminates at
+// Program, so a real ObjectExpression/ArrayExpression parsed from source
+// code always has a `.parent` — these branches only exist to guard against a
+// detached/synthetic AST fragment, which is exactly what a mock-context node
+// is.
+describe('Layer 2 - mock context', () => {
+  it('isLabelContext returns false when the enclosing ObjectExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string',
+      parent: { type: 'ObjectExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string',
+      parent: { type: 'ArrayExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isCredentialContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'just a plain string of decent length',
+      parent: { type: 'ArrayExpression' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext recurses to the grandparent when the enclosing ObjectExpression has one', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: {
+        type: 'ObjectExpression',
+        parent: { type: 'VariableDeclarator', id: { type: 'Identifier', name: 'labels' } },
+      },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns true for a JSXAttribute parent', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: { type: 'JSXAttribute' },
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext returns false when parent is undefined (top-level literal) and a structural match still reports', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+      parent: undefined,
+    });
+
+    expect(reports).toHaveLength(1);
+  });
+
+  it('isCredentialContext returns false when parent is undefined, gating off an ambiguous match', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    literal({
+      type: 'Literal',
+      value: 'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC',
+      parent: undefined,
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isLabelContext Property fallback does not recurse when the Property has no ObjectExpression parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    node.parent = {
+      type: 'Property',
+      key: { type: 'Identifier', name: 'foo' },
+      value: node,
+      parent: undefined,
+    };
+
+    literal(node);
+
+    expect(reports).toHaveLength(1);
+  });
+
+  it('isLabelContext Property fallback does not recurse when the enclosing ObjectExpression has no parent (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    node.parent = {
+      type: 'Property',
+      key: { type: 'Identifier', name: 'foo' },
+      value: node,
+      parent: { type: 'ObjectExpression' },
+    };
+
+    literal(node);
+
+    expect(reports).toHaveLength(1);
   });
 });
 

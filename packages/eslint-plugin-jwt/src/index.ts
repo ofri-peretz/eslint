@@ -69,7 +69,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt',
-    version: '2.2.3',
+    version: '2.2.6',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -84,14 +84,14 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'jwt/no-algorithm-confusion': 'error',
 
   // HIGH - Verification and secrets
-  'jwt/require-algorithm-whitelist': 'warn',
-  'jwt/no-decode-without-verify': 'warn',
+  'jwt/require-algorithm-whitelist': 'error',
+  'jwt/no-decode-without-verify': 'error',
   'jwt/no-weak-secret': 'error',
   'jwt/no-hardcoded-secret': 'error',
   'jwt/no-timestamp-manipulation': 'error', // LightSEC 2025
 
   // MEDIUM - Best practices
-  'jwt/require-expiration': 'warn',
+  'jwt/require-expiration': 'error',
   'jwt/no-sensitive-payload': 'warn',
 };
 

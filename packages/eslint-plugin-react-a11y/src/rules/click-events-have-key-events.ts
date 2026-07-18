@@ -18,6 +18,13 @@ type MessageIds = 'missingKeyboardEvent';
 
 type RuleOptions = [];
 
+// Interactive ARIA roles that handle keyboard interaction natively (via AT or JS framework)
+const INTERACTIVE_ARIA_ROLES = new Set([
+  'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+  'option', 'radio', 'searchbox', 'switch', 'tab', 'textbox', 'treeitem',
+  'combobox', 'gridcell', 'listbox', 'slider', 'spinbutton',
+]);
+
 export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   name: 'click-events-have-key-events',
   meta: {
@@ -67,6 +74,19 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
         // Native interactive elements handle keyboard click automatically.
         // But if it's a div/span with onClick, it needs keyboard listener.
         if (isInteractive) return;
+
+        // Elements with interactive ARIA roles handle keyboard via AT/framework
+        const roleAttr = node.attributes.find(
+          (attr): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role'
+        );
+        if (roleAttr) {
+          const roleValue =
+            roleAttr.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+          if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
+        }
 
         if (!hasKeyboardEvent) {
           context.report({

@@ -122,7 +122,6 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       const rightIsSecret = isSecretIdentifier(node.right);
 
       if (leftIsSecret || rightIsSecret) {
-        /* c8 ignore next 11 -- suggestions with fix: () => null cannot be tested with RuleTester */
         context.report({
           node,
           messageId: 'timingUnsafeCompare',

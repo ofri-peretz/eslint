@@ -2,6 +2,8 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import oxlint from 'eslint-plugin-oxlint';
 import tseslint from 'typescript-eslint';
 import localPlugin from './tools/eslint-rules/index.js';
+import reactA11y from 'eslint-plugin-react-a11y';
+import reactFeatures from 'eslint-plugin-react-features';
 
 // Dogfood the meta-package. `componentApi` is a flat-config array binding
 // the react-features componentApi preset (R5/R6/R8/R11/R12/R18/R19) under
@@ -145,15 +147,63 @@ export default [
     },
   },
 
+  // ── react-a11y + react-features — UI / Storybook / docs surfaces ────────
+  {
+    files: [
+      'packages/ui/src/**/*.{ts,tsx}',
+      'apps/storybook/src/**/*.{ts,tsx}',
+      'apps/docs/src/**/*.{ts,tsx}',
+    ],
+    plugins: {
+      'react-a11y': reactA11y,
+      'react-features': reactFeatures,
+    },
+    rules: {
+      ...reactA11y.configs.recommended.rules,
+      ...reactFeatures.configs.recommended.rules,
+      // Known false positives on the DS surface — keep as guidance
+      // (warn), not gate, matching the componentApi severity model
+      // (only `no-default-test-id` is a hard error). These surfaced on
+      // 2026-07-04 when the duplicate-plugin crash was fixed and the
+      // rules actually ran for the first time since #180:
+      // - jsx-key flags index keys on static decorative arrays
+      //   (meteors.tsx) that never reorder.
+      // - anchor-has-content can't see children forwarded via a
+      //   {...props} spread (pagination-link).
+      'react-features/jsx-key': 'warn',
+      'react-a11y/anchor-has-content': 'warn',
+    },
+  },
+  {
+    // Component-API rules for DS primitives only (stricter)
+    files: ['packages/ui/src/primitives/**/*.tsx'],
+    plugins: { 'react-features': reactFeatures },
+    rules: {
+      ...reactFeatures.configs.componentApi.rules,
+    },
+  },
+
   // ── @interlace/ui — componentApi floor (R5/R6/R8/R11/R12/R18/R19) ─────
   // Sourced from `@interlace/eslint-config`'s `componentApi` preset.
   // Scoped to UI primitives via `files` (the preset binds globally by
   // default; that's correct for consumer apps but too broad for an
   // ecosystem repo where most code isn't shared components).
-  ...componentApiPreset.map((c) => ({
-    ...c,
-    files: ['packages/ui/src/primitives/**/*.tsx'],
-  })),
+  //
+  // IMPORTANT: strip the preset's `plugins` key. The preset carries its
+  // own `react-features` plugin object (resolved through the
+  // meta-package's built dist), which is a DIFFERENT module instance
+  // than the `eslint-plugin-react-features` imported directly above.
+  // Flat config only allows re-registering a plugin name when it's the
+  // identical object — two instances under one namespace for the same
+  // files throws `ConfigError: Cannot redefine plugin "react-features"`
+  // and crashes every lint run (component-api-lint CI, 2026-07-04).
+  // The rules still resolve fine: the `react-features` namespace is
+  // already registered for these files by the blocks above.
+  ...componentApiPreset.map((c) => {
+    const scoped = { ...c, files: ['packages/ui/src/primitives/**/*.tsx'] };
+    delete scoped.plugins;
+    return scoped;
+  }),
 
   // ── oxlint integration ──────────────────────────────────────────────────
   // Disable ESLint rules that oxlint handles natively in Rust (50-100× faster).

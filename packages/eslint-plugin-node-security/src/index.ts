@@ -15,6 +15,8 @@ import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
+import { noShellInjection } from './rules/no-shell-injection';
+import { noDynamicAlgorithmSelection } from './rules/no-dynamic-algorithm-selection';
 
 // Migrated rules from secure-coding
 import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
@@ -59,6 +61,8 @@ export const rules: Record<
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
   'no-ssrf': noSsrf,
+  'no-shell-injection': noShellInjection,
+  'no-dynamic-algorithm-selection': noDynamicAlgorithmSelection,
 
   // Migrated rules
   'detect-suspicious-dependencies': detectSuspiciousDependencies,
@@ -90,7 +94,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.2.0',
+    version: '4.4.1',
   },
   rules,
 };
@@ -110,12 +114,14 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Added in 4.1.0. Set to 'warn' in `recommended` to avoid breaking
   // adopters who already use the preset and have legacy `Buffer()` calls.
   // Promote to 'error' on the next major bump.
-  'node-security/no-deprecated-buffer': 'warn',
+  'node-security/no-deprecated-buffer': 'error',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
   'node-security/no-data-in-temp-storage': 'error',
   'node-security/no-ssrf': 'warn',
+  'node-security/no-shell-injection': 'error',
+  'node-security/no-dynamic-algorithm-selection': 'error',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',
@@ -128,7 +134,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-static-iv': 'error',
   'node-security/no-ecb-mode': 'error',
   'node-security/no-math-random-crypto': 'error',
-  'node-security/no-cryptojs': 'warn',
+  'node-security/no-cryptojs': 'error',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

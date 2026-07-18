@@ -44,19 +44,9 @@ function getAccessibleText(element: TSESTree.JSXElement): string {
     return ariaLabel.value.value;
   }
 
-  // For img elements, use alt text
-  if (element.openingElement.name.type === 'JSXIdentifier' && element.openingElement.name.name === 'img') {
-    const altAttr = element.openingElement.attributes.find(
-      (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-        isJSXAttribute(attr) &&
-        attr.name.type === 'JSXIdentifier' &&
-        attr.name.name === 'alt',
-    );
-
-    if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value && altAttr.value.type === 'Literal' && typeof altAttr.value.value === 'string') {
-      return altAttr.value.value;
-    }
-  }
+  // NOTE: getAccessibleText is only ever invoked on <a> elements (the JSXElement
+  // listener returns early for every other tag), so no per-tag special-casing
+  // belongs here. <img> children are handled in extractTextFromChildren.
 
   // Extract text from children
   return extractTextFromChildren(element.children);

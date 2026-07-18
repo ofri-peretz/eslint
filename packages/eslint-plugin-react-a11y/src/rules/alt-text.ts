@@ -50,6 +50,15 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Anchor node after which ` alt="…"` gets inserted by the autofix/suggestions:
+ * the last attribute when one exists, else the element name itself.
+ */
+export const getAltInsertionAnchor = (
+  node: TSESTree.JSXOpeningElement
+): TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute | TSESTree.JSXTagNameExpression =>
+  node.attributes[node.attributes.length - 1] || node.name;
+
 export const altText = createRule<RuleOptions, MessageIds>({
   name: 'alt-text',
   meta: {
@@ -258,24 +267,19 @@ export const altText = createRule<RuleOptions, MessageIds>({
 
     const checkImg = (node: TSESTree.JSXOpeningElement) => {
       const altAttr = getAttr(node, 'alt');
-      const altVal = altAttr ? getStringValue(altAttr) : undefined;
 
-      if (altAttr) {
-        // alt present. Empty string = decorative (OK). Null = dynamic
-        // (user knows what they're doing — match jsx-a11y semantics). Non-empty = OK.
-        if (altVal === null || altVal === '' || (altVal && altVal.length > 0)) return;
-      }
+      // alt present in any form is acceptable: getStringValue is exhaustive —
+      // '' (boolean shorthand / empty = decorative), a non-empty string, or
+      // null (dynamic expression — user knows what they're doing, match
+      // jsx-a11y semantics). All three are OK, so the mere presence suffices.
+      if (altAttr) return;
 
       // No alt. role="presentation" means decorative — but the right answer is alt="".
       if (hasPresentationRole(node)) {
         context.report({
           node,
           messageId: 'preferEmptyAltOverPresentation',
-          fix: (fixer) => {
-            const lastAttr = node.attributes[node.attributes.length - 1];
-            const insertAfter = lastAttr || node.name;
-            return fixer.insertTextAfter(insertAfter, ' alt=""');
-          },
+          fix: (fixer) => fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
         });
         return;
       }
@@ -290,19 +294,12 @@ export const altText = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'addDescriptiveAlt',
-            fix: (fixer) => {
-              const lastAttr = node.attributes[node.attributes.length - 1];
-              const insertAfter = lastAttr || node.name;
-              return fixer.insertTextAfter(insertAfter, ' alt="TODO: Add descriptive text"');
-            },
+            fix: (fixer) =>
+              fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt="TODO: Add descriptive text"'),
           },
           {
             messageId: 'useEmptyAlt',
-            fix: (fixer) => {
-              const lastAttr = node.attributes[node.attributes.length - 1];
-              const insertAfter = lastAttr || node.name;
-              return fixer.insertTextAfter(insertAfter, ' alt=""');
-            },
+            fix: (fixer) => fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
           },
         ],
       });
@@ -318,17 +315,15 @@ export const altText = createRule<RuleOptions, MessageIds>({
 
     const checkArea = (node: TSESTree.JSXOpeningElement) => {
       if (hasAria(node, /* requireOptIn */ false)) return;
-      const altAttr = getAttr(node, 'alt');
-      const altVal = altAttr ? getStringValue(altAttr) : undefined;
-      if (altAttr && (altVal === '' || (altVal && altVal.length > 0) || altVal === null)) return;
+      // Any alt (empty, non-empty, or dynamic) is acceptable — see checkImg.
+      if (getAttr(node, 'alt')) return;
       context.report({ node, messageId: 'areaMissingAlternative' });
     };
 
     const checkInputImage = (node: TSESTree.JSXOpeningElement) => {
       if (hasAria(node, /* requireOptIn */ false)) return;
-      const altAttr = getAttr(node, 'alt');
-      const altVal = altAttr ? getStringValue(altAttr) : undefined;
-      if (altAttr && (altVal === '' || (altVal && altVal.length > 0) || altVal === null)) return;
+      // Any alt (empty, non-empty, or dynamic) is acceptable — see checkImg.
+      if (getAttr(node, 'alt')) return;
       context.report({ node, messageId: 'inputImageMissingAlternative' });
     };
 

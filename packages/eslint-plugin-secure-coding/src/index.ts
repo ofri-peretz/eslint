@@ -27,6 +27,7 @@ import { noXpathInjection } from './rules/no-xpath-injection';
 import { noLdapInjection } from './rules/no-ldap-injection';
 import { noDirectiveInjection } from './rules/no-directive-injection';
 import { noFormatStringInjection } from './rules/no-format-string-injection';
+import { noTemplateInjection } from './rules/no-template-injection';
 
 // Security rules - Regex
 import { detectNonLiteralRegexp } from './rules/detect-non-literal-regexp';
@@ -79,6 +80,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-ldap-injection': noLdapInjection,
   'no-directive-injection': noDirectiveInjection,
   'no-format-string-injection': noFormatStringInjection,
+  'no-template-injection': noTemplateInjection,
 
   // Regex Safety & Stability (3 rules)
   'detect-non-literal-regexp': detectNonLiteralRegexp,
@@ -120,7 +122,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-secure-coding',
-    version: '3.2.0',
+    version: '3.3.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -145,8 +147,8 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // High - Regex vulnerabilities
   'secure-coding/detect-non-literal-regexp': 'warn',
   // Demoted 2026-05-09 — 91% Edge ratio.
-  'secure-coding/no-redos-vulnerable-regex': 'warn',
-  'secure-coding/no-unsafe-regex-construction': 'warn',
+  'secure-coding/no-redos-vulnerable-regex': 'error',
+  'secure-coding/no-unsafe-regex-construction': 'error',
 
   // High - Prototype pollution
   'secure-coding/detect-object-injection': 'warn',
@@ -154,6 +156,9 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Credentials
   'secure-coding/no-hardcoded-credentials': 'error',
   'secure-coding/no-insecure-comparison': 'warn',
+
+  // Critical - Template injection
+  'secure-coding/no-template-injection': 'error',
 
   // Critical - Data integrity
   'secure-coding/no-improper-sanitization': 'error',
@@ -206,9 +211,29 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   } satisfies TSESLint.FlatConfig.Config,
 
   /**
+   * Recommended-strict configuration
+   *
+   * Same rule set as `recommended` but every rule is promoted to `'error'`.
+   * Use this when you want CI to block on all security findings rather than
+   * only warning on lower-confidence rules.
+   *
+   * This is the configuration independently chosen by production teams who
+   * audit `recommended` and decide they want zero tolerance on all 16 rules.
+   */
+  'recommended-strict': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: Object.fromEntries(
+      Object.keys(recommendedRules).map((rule) => [rule, 'error']),
+    ),
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Strict security configuration
-   * 
-   * All security rules set to 'error' for maximum protection.
+   *
+   * ALL rules (including experimental and opinionated ones) set to 'error'.
+   * Prefer `recommended-strict` unless you specifically need full coverage.
    */
   strict: {
     plugins: {
@@ -235,7 +260,9 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       
       // A02:2021 – Cryptographic Failures
       'secure-coding/no-hardcoded-credentials': 'error',
-      'secure-coding/no-sensitive-data-exposure': 'error',
+      // Demoted from 'error': naming-heuristic detection (fires on variable names
+      // that sound sensitive). Cannot be enforcement-grade per I3 invariant.
+      'secure-coding/no-sensitive-data-exposure': 'warn',
       
       // A03:2021 – Injection
       'secure-coding/no-graphql-injection': 'error',

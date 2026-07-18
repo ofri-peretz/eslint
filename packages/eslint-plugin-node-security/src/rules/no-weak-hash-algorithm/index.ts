@@ -108,7 +108,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-weak-hash-algorithm.md',
       description: 'Disallow weak hash algorithms (MD5, SHA1, MD4)',
       cwe: 'CWE-327',
-      cvss: 9.5,
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -211,28 +211,31 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const funcName = node.callee.name.toLowerCase();
         if (funcName === 'sha1' || funcName === 'md5' || funcName === 'md4') {
-          const weakPattern = findWeakHash(funcName, additionalWeakAlgorithms);
-          if (weakPattern) {
-            context.report({
-              node,
-              messageId: 'weakHashAlgorithm',
-              data: {
-                algorithm: weakPattern.name,
-                replacement: weakPattern.replacement,
-              },
-              suggest: [
-                {
-                  messageId: 'useSha256',
-                  fix: (fixer: TSESLint.RuleFixer) => {
-                    if (node.callee.type === AST_NODE_TYPES.Identifier) {
-                      return fixer.replaceText(node.callee, 'sha256');
-                    }
-                    return null;
-                  },
+          // funcName is one of sha1/md5/md4, each of which always matches a
+          // WEAK_HASH_PATTERNS entry, so findWeakHash cannot return null here.
+          const weakPattern = findWeakHash(
+            funcName,
+            additionalWeakAlgorithms
+          ) as WeakHashPattern;
+          context.report({
+            node,
+            messageId: 'weakHashAlgorithm',
+            data: {
+              algorithm: weakPattern.name,
+              replacement: weakPattern.replacement,
+            },
+            suggest: [
+              {
+                messageId: 'useSha256',
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  if (node.callee.type === AST_NODE_TYPES.Identifier) {
+                    return fixer.replaceText(node.callee, 'sha256');
+                  }
+                  return null;
                 },
-              ],
-            });
-          }
+              },
+            ],
+          });
         }
       }
     }

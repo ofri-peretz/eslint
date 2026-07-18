@@ -46,7 +46,7 @@ jobs:
       contents: write       # commit version bumps + CHANGELOGs
       pull-requests: write  # open / update the Version PR
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
@@ -55,7 +55,7 @@ jobs:
 
       - name: Open / refresh Version PR
         id: changesets
-        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
         with:
           # `version` runs `npm run changeset:version`, which bumps versions
           # AND regenerates the lockfile so the PR diff is complete.
@@ -65,6 +65,14 @@ jobs:
           # No `publish:` — release.yml does that on merge.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # changesets/action runs `git commit` + `git push origin
+          # HEAD:changeset-release/main` to open the Version PR. CI installs
+          # lefthook git hooks (npm ci → prepare), and the pre-push `changelog`
+          # gate then fails the bot's push — the version-bump commit has package
+          # changes but the changesets were just consumed by `changeset version`
+          # (and `shim-verify` flags dist it can't see). Disable lefthook for this
+          # automated push; the real gates run on the resulting Version PR.
+          LEFTHOOK: "0"
 
       # Closes the loop for solo-maintainer continuous delivery: once CI is
       # green, GitHub auto-squash-merges the Version PR. release.yml then fires
@@ -131,7 +139,7 @@ jobs:
       contents: read
       pull-requests: write   # post the advisory comment
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup

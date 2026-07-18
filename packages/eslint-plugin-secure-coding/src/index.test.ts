@@ -20,6 +20,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-ldap-injection',
       'no-directive-injection',
       'no-format-string-injection',
+      'no-template-injection', // added in #185
       'detect-non-literal-regexp',
       'no-redos-vulnerable-regex',
       'no-unsafe-regex-construction',
@@ -45,7 +46,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-hardcoded-session-tokens',
       'require-secure-defaults',
     ]);
-    expect(ruleKeys.length).toBe(27);
+    expect(ruleKeys.length).toBe(28);
   });
 
   describe('configurations', () => {
@@ -84,6 +85,9 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       expect(configs['owasp-top-10'].plugins?.['secure-coding']).toBeDefined();
       
       const owaspRules = configs['owasp-top-10'].rules || {};
+      // no-missing-authentication was removed from owasp-top-10 by the scope
+      // reorg (Express-specific → use eslint-plugin-express-security). Assert a
+      // rule that genuinely ships in this config instead.
       expect(owaspRules['secure-coding/no-hardcoded-credentials']).toBe('error');
     });
   });

@@ -3,8 +3,10 @@
  * Error Handling: Detects empty catch blocks
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noSilentErrors } from '../../rules/error-handling/no-silent-errors';
 
 RuleTester.afterAll = afterAll;
@@ -398,6 +400,68 @@ describe('no-silent-errors', () => {
           errors: [{ messageId: 'silentError' }],
         },
       ],
+    });
+  });
+  // ---------------------------------------------------------------------
+  // Layer 2 — direct unit tests for parser-unreachable branches
+  // ---------------------------------------------------------------------
+
+  describe('Layer 2: listeners with mock context', () => {
+    it('treats a catch clause without a BlockStatement body as empty (options null fallback)', () => {
+      // Valid JS always gives a catch clause a BlockStatement body; only a
+      // synthetic node reaches the defensive branch. options: [null] also
+      // drives the `options || {}` fallback in create().
+      const { listeners, reports } = createWithMockContext(noSilentErrors, {
+        options: [null],
+      });
+      const node = {
+        type: 'CatchClause',
+        body: null,
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
+      const suggest = (reports[0] as { suggest?: { messageId: string }[] }).suggest;
+      expect(suggest?.map((s) => s.messageId)).toEqual([
+        'addErrorLogging',
+        'addErrorHandling',
+        'rethrowError',
+      ]);
+    });
+
+    it('hasExplanatoryComment returns false for a catch clause without a location', () => {
+      const { listeners, reports, context } = createWithMockContext(noSilentErrors, {
+        options: [{ allowWithComment: true }],
+      });
+      Object.assign(context.sourceCode, {
+        getAllComments: () => [
+          { type: 'Line', value: 'intentional noop', loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 10 } } },
+        ],
+      });
+      const node = {
+        type: 'CatchClause',
+        body: { type: 'BlockStatement', body: [] },
+        loc: undefined,
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      // No location → the explanatory comment cannot be matched → report
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
+    });
+
+    it('hasExplanatoryComment returns false when there are no comments at all', () => {
+      const { listeners, reports, context } = createWithMockContext(noSilentErrors, {
+        options: [{ allowWithComment: true }],
+      });
+      Object.assign(context.sourceCode, { getAllComments: () => [] });
+      const node = {
+        type: 'CatchClause',
+        body: { type: 'BlockStatement', body: [] },
+        loc: { start: { line: 2, column: 0 }, end: { line: 2, column: 12 } },
+      } as unknown as TSESTree.CatchClause;
+      (listeners['CatchClause'] as (n: TSESTree.CatchClause) => void)(node);
+      expect(reports).toHaveLength(1);
+      expect(reports[0]).toMatchObject({ messageId: 'silentError' });
     });
   });
 });

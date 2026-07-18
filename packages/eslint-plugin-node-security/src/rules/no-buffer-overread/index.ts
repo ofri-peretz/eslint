@@ -633,11 +633,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             if (isUserControlledIndex(indexNode) && !isIndexValidated(indexNode)) {
               // Check if there's a bounds check in scope
               if (!hasBoundsCheck(bufferName, indexNode)) {
-                /* c8 ignore start -- safetyChecker.isSafe requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node,
@@ -653,11 +651,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
             // Check if there's any bounds validation
             if (!hasBoundsCheck(bufferName, indexNode) && !isIndexValidated(indexNode)) {
-            /* c8 ignore start -- safetyChecker.isSafe requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
               context.report({
                 node,
@@ -697,11 +693,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           // Check slice arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-            /* c8 ignore start -- safetyChecker.isSafe requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 continue;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: arg,
@@ -727,11 +721,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           // Check offset/length arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-              /* c8 ignore start -- safetyChecker.isSafe requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 continue;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: arg,

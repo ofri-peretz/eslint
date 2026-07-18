@@ -34,18 +34,6 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/**
- * Valid HTTP methods for REST
- */
-const VALID_HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
-
-/**
- * Check if HTTP method is valid
- */
-function isValidHttpMethod(method: string): boolean {
-  return VALID_HTTP_METHODS.has(method.toUpperCase());
-}
-
 export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
   name: 'enforce-rest-conventions',
   meta: {
@@ -121,10 +109,9 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
-checkHttpMethods = true,
       checkStatusCodes = true,
       checkResourceNaming = true,
-    
+
 }: Options = options || {};
 
 
@@ -141,21 +128,10 @@ checkHttpMethods = true,
           const httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
           
           if (httpMethods.includes(methodName)) {
-            // Check HTTP method
-            if (checkHttpMethods && !isValidHttpMethod(methodName)) {
-              context.report({
-                node: property,
-                messageId: 'restConventionViolation',
-                data: {
-                  violation: 'Invalid HTTP method',
-                  details: `"${methodName}" is not a valid REST HTTP method`,
-                },
-                suggest: [
-                  { messageId: 'useProperHttpMethod', fix: () => null },
-                ],
-              });
-            }
-            
+            // NOTE: every name in `httpMethods` is by construction a valid REST
+            // HTTP method, so a "checkHttpMethods" validation here was dead
+            // code and has been removed.
+
             // Check resource naming (first argument should be a path)
             if (checkResourceNaming && node.arguments.length > 0) {
               const pathArg = node.arguments[0];

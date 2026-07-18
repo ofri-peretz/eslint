@@ -38,7 +38,7 @@ export interface PluginEntry {
 }
 
 /**
- * Canonical 20-plugin registry. Order doesn't matter for correctness; alphabetical
+ * Canonical 19-plugin registry. Order doesn't matter for correctness; alphabetical
  * within each pillar keeps the changelog tables and registries deterministic.
  */
 export const PLUGINS: PluginEntry[] = [

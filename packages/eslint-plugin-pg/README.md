@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-pg.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-pg.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-pg" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -19,6 +19,10 @@
 ## Description
 
 This plugin provides Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).
+
+## Why pg-specific?
+
+A generic SQL injection linter can flag string concatenation wherever it appears, but it cannot know the parameterization convention for each database client. The `pg` (node-postgres) driver uses `$1, $2, …` positional placeholders with a second-argument array — a pattern no generic rule encodes. `eslint-plugin-pg` knows this contract: it only fires on `.query()` calls, it stays silent when a second argument (the values array) is present, and it tracks variable taint across assignment statements so that a split-line pattern like `const sql = "SELECT..." + id; client.query(sql)` is flagged even though the concatenation and the query call are on separate lines. The result is a rule with near-zero false positives on legitimate parameterized queries and reliable detection on the patterns that actually lead to SQL injection.
 
 ## Philosophy
 

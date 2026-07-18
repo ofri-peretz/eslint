@@ -1,5 +1,51 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.2.6
+
+### Patch Changes
+
+- [#225](https://github.com/ofri-peretz/eslint/pull/225) [`34ff5a8`](https://github.com/ofri-peretz/eslint/commit/34ff5a8e6f5126c5d1c0a524759e0af2b5476b46) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - CI-only: pin all coverage thresholds at 100% (integration target, merges last).
+
+## 1.2.5
+
+### Patch Changes
+
+- [#213](https://github.com/ofri-peretz/eslint/pull/213) [`391dbe6`](https://github.com/ofri-peretz/eslint/commit/391dbe6b39f78d549379218567cb959649f8c614) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Align every security rule's `meta.docs.cvss` to the CVSS its finding actually
+  emits. The emitted machine-readable message sources its `CVSS:x` from
+  `CWE_MAPPING` via `formatLLMMessage` → `enrichFromCWE`, but the static
+  `meta.docs.cvss` documentation field had drifted on 45 rules across these 7
+  plugins — e.g. `no-hardcoded-credentials` documented `9.5` while emitting
+  `CVSS:9.8` (the value the published article and SARIF/LLM consumers already
+  read).
+
+  This corrects the **documentation metadata only** — no emitted finding changes.
+  Locked by `security-cvss-docs-consistency.lock.test.ts` (cross-plugin: every
+  security rule's `meta.docs.cvss` must equal the CVSS it emits), the
+  `no-hardcoded-credentials` rule lock (real ESLint `Linter` emission), and a
+  devkit `enrichFromCWE` contract test pinning `CWE-798 → 9.8`.
+
+  Follow-up (not in scope): 50 security rules document a CVSS that never appears
+  in any emitted message (their messages carry no CWE), and several rules emit the
+  generic CWE score where a rule-specific score may be warranted — both change
+  emitted output and are separate decisions.
+
+## 1.2.4
+
+### Patch Changes
+
+- [#141](https://github.com/ofri-peretz/eslint/pull/141) [`38ab670`](https://github.com/ofri-peretz/eslint/commit/38ab670a0221684f4fd3d5dc3c05ddec7458ca2b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - fix: remove false `meta.fixable: 'code'` declarations from 21 rules that had no `fix()` function
+
+  Rules that declared `fixable: 'code'` in their ESLint meta without an actual `fix()` implementation would show the ⚡ auto-fix icon in editors and CI formatters but apply no change when `--fix` was run. This patch removes the misleading declaration from:
+  - `browser-security/no-clickjacking`
+  - `import-next/first`, `named`, `no-barrel-import`, `no-import-module-exports`, `no-namespace`
+  - `node-security/no-buffer-overread`, `no-unsafe-dynamic-require`, `no-zip-slip`
+  - `react-features/react-no-inline-functions`
+  - `reliability/no-jsdoc-terminator-in-example` (uses `suggest`, not auto-fix; corrected to `hasSuggestions: true` only)
+  - `secure-coding/no-directive-injection`, `no-electron-security-issues`, `no-graphql-injection`, `no-improper-sanitization`, `no-improper-type-validation`, `no-ldap-injection`, `no-unchecked-loop-condition`, `no-unlimited-resource-allocation`, `no-weak-password-recovery`, `no-xpath-injection`
+
+- Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
+  - @interlace/eslint-devkit@1.4.1
+
 ### Bug Fixes
 
 - align codecov component IDs with full package names ([2831b968](https://github.com/ofri-peretz/eslint/commit/2831b968))

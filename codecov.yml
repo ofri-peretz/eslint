@@ -2,18 +2,83 @@
 # https://docs.codecov.com/docs/codecov-yaml
 
 coverage:
-  precision: 2
+  precision: 0
   round: down
   range: '70...100'
   status:
     project:
       default:
-        target: auto
-        threshold: 5%
+        target: 100%
     patch:
       default:
-        target: auto
-        threshold: 5%
+        target: 100%
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FLAGS — per-plugin uploads (used for badge URLs)
+# Badge URL: https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<name>
+# carryforward: true — if a plugin isn't in the current run, use last known value
+# ═══════════════════════════════════════════════════════════════════════════════
+flags:
+  eslint-devkit:
+    paths: [packages/eslint-devkit/]
+    carryforward: true
+  eslint-plugin-browser-security:
+    paths: [packages/eslint-plugin-browser-security/]
+    carryforward: true
+  eslint-plugin-conventions:
+    paths: [packages/eslint-plugin-conventions/]
+    carryforward: true
+  eslint-plugin-express-security:
+    paths: [packages/eslint-plugin-express-security/]
+    carryforward: true
+  eslint-plugin-import-next:
+    paths: [packages/eslint-plugin-import-next/]
+    carryforward: true
+  eslint-plugin-jwt:
+    paths: [packages/eslint-plugin-jwt/]
+    carryforward: true
+  eslint-plugin-lambda-security:
+    paths: [packages/eslint-plugin-lambda-security/]
+    carryforward: true
+  eslint-plugin-maintainability:
+    paths: [packages/eslint-plugin-maintainability/]
+    carryforward: true
+  eslint-plugin-modernization:
+    paths: [packages/eslint-plugin-modernization/]
+    carryforward: true
+  eslint-plugin-modularity:
+    paths: [packages/eslint-plugin-modularity/]
+    carryforward: true
+  eslint-plugin-mongodb-security:
+    paths: [packages/eslint-plugin-mongodb-security/]
+    carryforward: true
+  eslint-plugin-nestjs-security:
+    paths: [packages/eslint-plugin-nestjs-security/]
+    carryforward: true
+  eslint-plugin-node-security:
+    paths: [packages/eslint-plugin-node-security/]
+    carryforward: true
+  eslint-plugin-operability:
+    paths: [packages/eslint-plugin-operability/]
+    carryforward: true
+  eslint-plugin-pg:
+    paths: [packages/eslint-plugin-pg/]
+    carryforward: true
+  eslint-plugin-react-a11y:
+    paths: [packages/eslint-plugin-react-a11y/]
+    carryforward: true
+  eslint-plugin-react-features:
+    paths: [packages/eslint-plugin-react-features/]
+    carryforward: true
+  eslint-plugin-reliability:
+    paths: [packages/eslint-plugin-reliability/]
+    carryforward: true
+  eslint-plugin-secure-coding:
+    paths: [packages/eslint-plugin-secure-coding/]
+    carryforward: true
+  eslint-plugin-vercel-ai-security:
+    paths: [packages/eslint-plugin-vercel-ai-security/]
+    carryforward: true
 
 comment:
   layout: 'header, diff, flags, components'
@@ -35,9 +100,9 @@ component_management:
   default_rules:
     statuses:
       - type: project
-        target: auto
-        branches:
-          - '!main'
+        target: 100%
+      - type: patch
+        target: 100%
   individual_components:
     # ─────────────────────────────────────────────────────────────────────────
     # Security Plugins (Primary)
@@ -48,9 +113,9 @@ component_management:
         - packages/eslint-plugin-secure-coding/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-jwt
       name: 'eslint-plugin-jwt'
@@ -58,9 +123,9 @@ component_management:
         - packages/eslint-plugin-jwt/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-pg
       name: 'eslint-plugin-pg'
@@ -68,9 +133,9 @@ component_management:
         - packages/eslint-plugin-pg/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
         - type: patch
-          target: 75%
+          target: 100%
 
     - component_id: eslint-plugin-mongodb-security
       name: 'eslint-plugin-mongodb-security'
@@ -78,9 +143,9 @@ component_management:
         - packages/eslint-plugin-mongodb-security/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     - component_id: eslint-plugin-node-security
       name: 'eslint-plugin-node-security'
@@ -88,9 +153,9 @@ component_management:
         - packages/eslint-plugin-node-security/**
       statuses:
         - type: project
-          target: 85%
+          target: 100%
         - type: patch
-          target: 80%
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
@@ -101,7 +166,9 @@ component_management:
         - packages/eslint-plugin-express-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-nestjs-security
       name: 'eslint-plugin-nestjs-security'
@@ -109,7 +176,9 @@ component_management:
         - packages/eslint-plugin-nestjs-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-lambda-security
       name: 'eslint-plugin-lambda-security'
@@ -117,7 +186,9 @@ component_management:
         - packages/eslint-plugin-lambda-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-browser-security
       name: 'eslint-plugin-browser-security'
@@ -125,7 +196,9 @@ component_management:
         - packages/eslint-plugin-browser-security/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # AI Security Plugins
@@ -136,7 +209,9 @@ component_management:
         - packages/eslint-plugin-vercel-ai-security/**
       statuses:
         - type: project
-          target: 90%
+          target: 100%
+        - type: patch
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Governance & Quality Plugins
@@ -147,7 +222,9 @@ component_management:
         - packages/eslint-plugin-conventions/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-maintainability
       name: 'eslint-plugin-maintainability'
@@ -155,7 +232,9 @@ component_management:
         - packages/eslint-plugin-maintainability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-modernization
       name: 'eslint-plugin-modernization'
@@ -163,7 +242,9 @@ component_management:
         - packages/eslint-plugin-modernization/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-modularity
       name: 'eslint-plugin-modularity'
@@ -171,7 +252,9 @@ component_management:
         - packages/eslint-plugin-modularity/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-operability
       name: 'eslint-plugin-operability'
@@ -179,7 +262,9 @@ component_management:
         - packages/eslint-plugin-operability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-reliability
       name: 'eslint-plugin-reliability'
@@ -187,7 +272,9 @@ component_management:
         - packages/eslint-plugin-reliability/**
       statuses:
         - type: project
-          target: 80%
+          target: 100%
+        - type: patch
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Core Packages
@@ -198,7 +285,29 @@ component_management:
         - packages/eslint-devkit/**
       statuses:
         - type: project
-          target: 70%
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-formatter
+      name: 'eslint-formatter'
+      paths:
+        - packages/eslint-formatter/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-formatter-sarif
+      name: 'eslint-formatter-sarif'
+      paths:
+        - packages/eslint-formatter-sarif/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
 
     # ─────────────────────────────────────────────────────────────────────────
     # Utility & Feature Plugins
@@ -209,17 +318,29 @@ component_management:
         - packages/eslint-plugin-import-next/**
       statuses:
         - type: project
-          target: 75%
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-react-features
       name: 'eslint-plugin-react-features'
       paths:
         - packages/eslint-plugin-react-features/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
 
     - component_id: eslint-plugin-react-a11y
       name: 'eslint-plugin-react-a11y'
       paths:
         - packages/eslint-plugin-react-a11y/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
 
     # NOTE: cli is an infrastructure package without tests - excluded
 
@@ -241,5 +362,3 @@ ignore:
   - '**/*.config.ts'
   - '**/*.config.mts'
   - '**/vitest.global-setup.ts'
-  # Plugin entry points (configuration code, not tested)
-  - 'packages/*/src/index.ts'

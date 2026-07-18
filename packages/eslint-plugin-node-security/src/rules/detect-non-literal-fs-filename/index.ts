@@ -93,6 +93,77 @@ const FS_OPERATIONS: FSOperation[] = [
   }
 ];
 
+/**
+ * Check if path has dangerous patterns like ../ or ..\
+ * Module-scope so it is directly unit-testable (Layer-2).
+ */
+const hasTraversalPatterns = (pathStr: string): boolean => {
+  return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
+};
+
+/**
+ * Generate refactoring steps based on the operation.
+ * Module-scope so the default arm (methods without a dedicated entry) is
+ * directly unit-testable (Layer-2).
+ */
+export const generateRefactoringSteps = (operation: FSOperation): string => {
+  switch (operation.method) {
+    case 'readFile':
+    case 'writeFile':
+      return [
+        '   1. Define a SAFE_DIR constant for allowed operations',
+        '   2. Use path.basename() to strip directory components',
+        '   3. Combine with SAFE_DIR: path.join(SAFE_DIR, path.basename(userPath))',
+        '   4. Optionally validate file extensions',
+        '   5. Add error handling for invalid paths'
+      ].join('\n');
+
+    case 'stat':
+      return [
+        '   1. Use path.resolve() to normalize the path',
+        '   2. Check if resolved path starts with allowed base directory',
+        '   3. Reject requests that escape the allowed directory',
+        '   4. Use path.relative() for additional validation',
+        '   5. Log security events for monitoring'
+      ].join('\n');
+
+    case 'readdir':
+      return [
+        '   1. Resolve the directory path: path.resolve(ALLOWED_DIRS, userDir)',
+        '   2. Validate resolved path starts with ALLOWED_DIRS',
+        '   3. Check directory exists and is readable',
+        '   4. Consider whitelisting allowed directories',
+        '   5. Add rate limiting to prevent enumeration attacks'
+      ].join('\n');
+
+    default:
+      return [
+        '   1. Identify the specific file operation needed',
+        '   2. Define safe base directories for operations',
+        '   3. Use path.resolve() and validate containment',
+        '   4. Sanitize user input (basename, extension validation)',
+        '   5. Add comprehensive error handling'
+      ].join('\n');
+  }
+};
+
+/**
+ * Determine risk level based on the operation and path.
+ * Module-scope so the non-dangerous fallback (no FS_OPERATIONS entry sets
+ * dangerous: false today) is directly unit-testable (Layer-2).
+ */
+export const determineRiskLevel = (operation: FSOperation, pathStr: string): string => {
+  if (hasTraversalPatterns(pathStr)) {
+    return 'CRITICAL';
+  }
+
+  if (operation.dangerous) {
+    return 'HIGH';
+  }
+
+  return 'MEDIUM';
+};
+
 export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   name: 'detect-non-literal-fs-filename',
   meta: {
@@ -193,7 +264,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
 allowLiterals = false,
       additionalMethods = []
     
-}: Options = options || {};
+}: Options = options;
 
     /**
      * File system methods that can be dangerous with user input
@@ -222,27 +293,15 @@ allowLiterals = false,
     };
 
     /**
-     * Check if path has dangerous patterns like ../ or ..\
+     * Extract path argument from fs call.
+     * `method` comes from checkFsCall, which already resolved the callee
+     * shape — re-deriving it here would hide an unreachable defensive branch.
      */
-    // oxlint-disable-next-line consistent-function-scoping
-    const hasTraversalPatterns = (pathStr: string): boolean => {
-      return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
-    };
-
-    /**
-     * Extract path argument from fs call
-     */
-    const extractPathArgument = (node: TSESTree.CallExpression): {
+    const extractPathArgument = (node: TSESTree.CallExpression, method: string): {
       path: string;
       pathNode: TSESTree.Node | null;
-      method: string;
       operation: FSOperation | null;
     } => {
-      const method = node.callee.type === AST_NODE_TYPES.MemberExpression &&
-                    node.callee.property.type === AST_NODE_TYPES.Identifier
-                      ? node.callee.property.name
-                      : 'unknown';
-
       const operation = FS_OPERATIONS.find(op => op.method === method) || null;
 
       // First argument is usually the path
@@ -250,7 +309,7 @@ allowLiterals = false,
       const sourceCode = context.sourceCode;
       const path = pathNode ? sourceCode.getText(pathNode) : '';
 
-      return { path, pathNode, method, operation };
+      return { path, pathNode, operation };
     };
 
     /**
@@ -480,66 +539,6 @@ allowLiterals = false,
     };
 
     /**
-     * Generate refactoring steps based on the operation
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const generateRefactoringSteps = (operation: FSOperation): string => {
-      switch (operation.method) {
-        case 'readFile':
-        case 'writeFile':
-          return [
-            '   1. Define a SAFE_DIR constant for allowed operations',
-            '   2. Use path.basename() to strip directory components',
-            '   3. Combine with SAFE_DIR: path.join(SAFE_DIR, path.basename(userPath))',
-            '   4. Optionally validate file extensions',
-            '   5. Add error handling for invalid paths'
-          ].join('\n');
-
-        case 'stat':
-          return [
-            '   1. Use path.resolve() to normalize the path',
-            '   2. Check if resolved path starts with allowed base directory',
-            '   3. Reject requests that escape the allowed directory',
-            '   4. Use path.relative() for additional validation',
-            '   5. Log security events for monitoring'
-          ].join('\n');
-
-        case 'readdir':
-          return [
-            '   1. Resolve the directory path: path.resolve(ALLOWED_DIRS, userDir)',
-            '   2. Validate resolved path starts with ALLOWED_DIRS',
-            '   3. Check directory exists and is readable',
-            '   4. Consider whitelisting allowed directories',
-            '   5. Add rate limiting to prevent enumeration attacks'
-          ].join('\n');
-
-        default:
-          return [
-            '   1. Identify the specific file operation needed',
-            '   2. Define safe base directories for operations',
-            '   3. Use path.resolve() and validate containment',
-            '   4. Sanitize user input (basename, extension validation)',
-            '   5. Add comprehensive error handling'
-          ].join('\n');
-      }
-    };
-
-    /**
-     * Determine risk level based on the operation and path
-     */
-    const determineRiskLevel = (operation: FSOperation, pathStr: string): string => {
-      if (hasTraversalPatterns(pathStr)) {
-        return 'CRITICAL';
-      }
-
-      if (operation.dangerous) {
-        return 'HIGH';
-      }
-
-      return 'MEDIUM';
-    };
-
-    /**
      * Check fs method calls for path traversal vulnerabilities
      */
     const checkFsCall = (node: TSESTree.CallExpression) => {
@@ -558,7 +557,8 @@ allowLiterals = false,
         return;
       }
 
-      const { path, pathNode, method, operation } = extractPathArgument(node);
+      const { path, pathNode, operation } = extractPathArgument(node, methodName);
+      const method = methodName;
 
       // Check if the path argument is dangerous
       if (!isDangerousPath(pathNode, path)) {

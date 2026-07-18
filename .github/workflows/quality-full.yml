@@ -21,9 +21,20 @@ run-name: >-
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  # Post-merge verification: the heavy gate is PR-gated for cost, so a merge
+  # (incl. an --admin / draft-merged PR that skipped it) could land broken on
+  # main and sit red only until the weekly cron. Running on push to main turns
+  # that into immediate detection. Non-PR events run the full battery via the
+  # gate job (event != pull_request → run=true).
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # `opened`/`reopened` so a PR created directly as non-draft (single push,
+    # no later `synchronize`) still runs the heavy gate — otherwise it can be
+    # required by branch protection yet never report. The `gate` job below
+    # still skips drafts unless they carry the `run-full-ci` label.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * 0"
@@ -77,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
@@ -91,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
@@ -101,18 +112,22 @@ jobs:
         run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
 
   typecheck:
-    name: Typecheck (Turbo)
+    name: Typecheck (whole-graph tsgo)
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - name: Typecheck via Turbo
-        run: npx turbo run typecheck ${{ env.TURBO_FILTER_ARGS }}
+      - name: Typecheck (whole-graph tsgo / TS7 native)
+        # One `tsgo --build tsconfig.solution.json` over the full plugin graph
+        # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
+        # here; per-package tsgo pays Go startup 21× and loses to TS6.
+        # typescript-eslint stays on typescript@6.0.3. See TS7_MIGRATION_PLAN.md.
+        run: npm run typecheck
 
   portability:
     name: Portability Audit
@@ -121,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -170,7 +185,7 @@ jobs:
             echo "|---|---|---|"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
-            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`turbo run typecheck\` (affected on PRs) |"
+            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo ""
             echo "_Run \`npm run ci:local\` to mirror these gates locally before promoting a PR._"

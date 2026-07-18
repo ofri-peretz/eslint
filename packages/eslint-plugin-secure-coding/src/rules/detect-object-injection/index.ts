@@ -18,15 +18,7 @@
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { 
-  formatLLMMessage, 
-  MessageIcons,
-  hasParserServices,
-  getParserServices,
-  getTypeOfNode,
-  isUnionOfSafeStringLiterals,
-  getStringLiteralValues,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -245,9 +237,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+      // `allowLiterals` is accepted for backward-compatible schema/options
+      // parity (see comment near `isTypedUnionAccess` usage below) but no
+      // longer changes runtime behavior, so it is intentionally unused here.
+      allowLiterals: _allowLiterals = false,
       dangerousProperties = ['__proto__', 'prototype', 'constructor'],
-    }: Options = options || {};
+    }: Options = options;
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
@@ -299,70 +294,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       );
     })();
 
-    // Check if TypeScript parser services are available for type-aware checking
-    const hasTypeInfo = hasParserServices(context);
-    const parserServices = hasTypeInfo ? getParserServices(context) : null;
-
     /**
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
       return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string';
-    };
-
-    /**
-     * Check if a property is part of a typed union (safe access)
-     * 
-     * Type-Aware Enhancement:
-     * When TypeScript parser services are available, we can check if a variable
-     * is typed as a union of string literals (e.g., 'name' | 'email').
-     * Such accesses are safe because the values are statically constrained.
-     * 
-     * @example
-     * // This is now detected as SAFE (no false positive):
-     * const key: 'name' | 'email' = getKey();
-     * obj[key] = value;
-     * 
-     * // This is still detected as DANGEROUS:
-     * const key: string = getUserInput();
-     * obj[key] = value;
-     */
-    const isTypedUnionAccess = (propertyNode: TSESTree.Node): boolean => {
-      // Check if property is a literal string (typed access like obj['name'])
-      if (isLiteralString(propertyNode)) {
-        return true; // Literal strings are safe - they're typed at compile time
-      }
-
-      // Type-aware check: If we have TypeScript type information, check if the
-      // property key is constrained to a union of safe string literals
-      /* c8 ignore start -- TypeScript parser services often unavailable in RuleTester */
-      if (parserServices && propertyNode.type === AST_NODE_TYPES.Identifier) {
-        try {
-          const type = getTypeOfNode(propertyNode, parserServices);
-          
-          // Check if the type is a union of safe string literals
-          // (excludes '__proto__', 'prototype', 'constructor')
-          if (isUnionOfSafeStringLiterals(type, dangerousProperties)) {
-            return true; // Safe - statically constrained to safe values
-          }
-          
-          // Also check for single string literal type (e.g., const key: 'name' = ...)
-          const literalValues = getStringLiteralValues(type);
-          if (literalValues && literalValues.length === 1) {
-            // Single literal - safe if not dangerous
-            if (!dangerousProperties.includes(literalValues[0])) {
-              return true;
-            }
-          }
-        } catch {
-          // If type checking fails, fall back to treating as potentially dangerous
-          // This can happen with malformed AST or missing type information
-        }
-      }
-      /* c8 ignore stop */
-
-      // Without type information, treat all identifiers as potentially dangerous
-      return false;
     };
 
     /**
@@ -506,17 +442,34 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
-      // SAFE: Numeric literals (array index access like items[0], items[1])
-      if (propertyNode.type === AST_NODE_TYPES.Literal && typeof propertyNode.value === 'number') {
-        return false;
-      }
-
       // SAFE: Common numeric index variable names (i, j, k, index, idx, n)
       // These are typically loop counters for array access
       if (propertyNode.type === AST_NODE_TYPES.Identifier) {
         const name = propertyNode.name;
         const numericIndexNames = new Set(['i', 'j', 'k', 'index', 'idx', 'n', 'len']);
         if (numericIndexNames.has(name)) {
+          return false;
+        }
+      }
+
+      // SAFE: SCREAMING_SNAKE_CASE identifiers are TypeScript module-level constants
+      // (e.g. PATH_METADATA, METHOD_METADATA, PARAMTYPES_METADATA, BRANCH_EFFECT).
+      // They are compile-time string/symbol values defined in the codebase, never
+      // derived from user input — prototype pollution via a constant key is impossible.
+      // Pattern: at least 3 chars, ALL_CAPS letters, digits, underscores only.
+      if (propertyNode.type === AST_NODE_TYPES.Identifier) {
+        const name = (propertyNode as TSESTree.Identifier).name;
+        if (/^[A-Z][A-Z0-9_]{2,}$/.test(name)) {
+          return false;
+        }
+
+        // SAFE: camelCase identifiers whose suffix implies a typed/enumerated value.
+        // HTTP status codes, version numbers, type discriminants, mode flags — these
+        // are never raw user input. Examples: errorHttpStatusCode, uuidVersion, reqType.
+        if (
+          /^[a-z]/.test(name) &&
+          /(?:Code|Status|Version|Kind|Mode|Type|Stage|Level|Phase|Step|Flag|Num|Count)$/.test(name)
+        ) {
           return false;
         }
       }
@@ -531,20 +484,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           return true;
         }
         
-      // SAFE: Typed union access (obj[typedKey] where typedKey is 'primary' | 'secondary')
-        // Only safe if it's NOT a dangerous property
-      if (isTypedUnionAccess(propertyNode)) {
-        return false;
-      }
-
-        // SAFE: Literal strings that are NOT dangerous properties (if allowLiterals is true)
-        if (allowLiterals) {
-          return false;
-        }
-        
-        // If allowLiterals is false, non-dangerous literal strings are still considered safe
-        // (they're static and known at compile time)
-        return false;
+      return false; // safe non-dangerous literal
       }
 
       // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
@@ -623,20 +563,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       let propertyNode: TSESTree.Node;
       let isAssignment = false;
 
+      // Note: the `node.left.type !== MemberExpression` / plain-MemberExpression
+      // shapes are the only two forms ever passed in — every call site
+      // (isHighRiskAssignment / isHighRiskMemberAccess and their two
+      // downstream checkAssignmentExpression / checkMemberExpression callers)
+      // already guards on the same discriminants before calling this
+      // function, so a "neither shape matched" fallback is unreachable dead
+      // code. The `if`/`else if` below is kept (rather than a non-null
+      // assertion) purely for TypeScript exhaustiveness over the declared
+      // union parameter type.
       if (node.type === AST_NODE_TYPES.AssignmentExpression && node.left.type === AST_NODE_TYPES.MemberExpression) {
         // Assignment: obj[key] = value
         object = sourceCode.getText(node.left.object);
         property = sourceCode.getText(node.left.property);
         propertyNode = node.left.property;
         isAssignment = true;
-      } else if (node.type === AST_NODE_TYPES.MemberExpression) {
-        // Access: obj[key]
-        object = sourceCode.getText(node.object);
-        property = sourceCode.getText(node.property);
-        propertyNode = node.property;
-        isAssignment = false;
       } else {
-        return { object: '', property: '', propertyNode: node, isAssignment: false, pattern: null };
+        // Access: obj[key]. By contract with every call site, `node` is a
+        // plain MemberExpression whenever the branch above doesn't match.
+        const memberNode = node as TSESTree.MemberExpression;
+        object = sourceCode.getText(memberNode.object);
+        property = sourceCode.getText(memberNode.property);
+        propertyNode = memberNode.property;
+        isAssignment = false;
       }
 
       // Check if property matches dangerous patterns
@@ -695,11 +644,45 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Returns true if the object being indexed is the result of a Reflect.*
+     * method call (e.g. Reflect.getMetadata, Reflect.ownKeys).
+     * Reflect metadata objects contain known framework-managed keys; they are
+     * not populated from user input and cannot be exploited for prototype
+     * pollution. This closes FPs from NestJS decorator metadata access patterns:
+     *   Reflect.getMetadata(PARAMTYPES_METADATA, target, key!)?.[index!]
+     */
+    const isReflectResultAccess = (objectNode: TSESTree.Node): boolean => {
+      // Direct call: Reflect.getMetadata(...)
+      if (objectNode.type === AST_NODE_TYPES.CallExpression) {
+        const callee = (objectNode as TSESTree.CallExpression).callee;
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          (callee.object as TSESTree.Identifier).name === 'Reflect'
+        ) {
+          return true;
+        }
+      }
+      // Optional chain: Reflect.getMetadata(...)?.[key]
+      if (objectNode.type === AST_NODE_TYPES.ChainExpression) {
+        return isReflectResultAccess(
+          (objectNode as TSESTree.ChainExpression).expression,
+        );
+      }
+      return false;
+    };
+
+    /**
      * Determine if this is a high-risk member access
      */
     const isHighRiskMemberAccess = (node: TSESTree.MemberExpression): boolean => {
       // Only check computed member access (bracket notation)
       if (!node.computed) {
+        return false;
+      }
+
+      // SAFE: accessing result of Reflect.* call (framework-managed metadata)
+      if (isReflectResultAccess(node.object)) {
         return false;
       }
 
@@ -897,9 +880,19 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Mark the MemberExpression as handled to avoid double-reporting
-      if (node.left.type === AST_NODE_TYPES.MemberExpression) {
-        handledMemberExpressions.add(node.left);
+      // Mark the entire left-side MemberExpression chain as handled.
+      // For chained access like `a[b][c] = val`, the rule reports on the
+      // AssignmentExpression (outer), then the MemberExpression visitor
+      // would fire again for the INNER `a[b]` access. We walk the object
+      // chain and mark every intermediate computed MemberExpression so the
+      // MemberExpression visitor skips them — preventing exact duplicates.
+      // isHighRiskAssignment already verified node.left.type === 'MemberExpression'
+      let me = node.left as TSESTree.MemberExpression;
+      handledMemberExpressions.add(me);
+      // Walk into chained computed accesses: a[b][c] → also mark a[b]
+      while (me.object.type === AST_NODE_TYPES.MemberExpression && me.object.computed) {
+        me = me.object as TSESTree.MemberExpression;
+        handledMemberExpressions.add(me);
       }
 
       const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
@@ -953,9 +946,21 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Skip inner chained computed accesses — report only the OUTERMOST MemberExpression.
+      // For `a[b][c]`, both `a[b]` and `a[b][c]` start at the same source position, so
+      // reporting both produces exact duplicate findings. Skip the inner `a[b]` here;
+      // the outer `a[b][c]` will be reported by a subsequent call to this handler.
+      const parent = node.parent as TSESTree.Node | undefined;
+      if (
+        parent?.type === AST_NODE_TYPES.MemberExpression &&
+        (parent as TSESTree.MemberExpression).computed &&
+        (parent as TSESTree.MemberExpression).object === node
+      ) {
+        return;
+      }
+
       // Also check parent - if it's an AssignmentExpression and this node is the left side, skip
       // (This handles cases where WeakSet check didn't work due to visitor order)
-      const parent = node.parent as TSESTree.Node | undefined;
       if (parent && parent.type === AST_NODE_TYPES.AssignmentExpression && parent.left === node) {
         return;
       }
@@ -988,7 +993,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * benchmarks/AUDIT_PATTERNS.md §3.4 ("equivalent merger patterns").
      */
     const checkObjectAssignSpread = (node: TSESTree.CallExpression) => {
-      if (isInCodemodContext) return;
+      // Note: no isInCodemodContext guard here — the sole call site (the
+      // CallExpression listener below) already returns before invoking this
+      // function when isInCodemodContext is true, so a duplicate check here
+      // would be unreachable dead code.
       if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
       const callee = node.callee;
       const objectIsObject =

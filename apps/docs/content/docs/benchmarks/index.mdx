@@ -1,0 +1,171 @@
+---
+title: Benchmarks
+description: How we measure rule quality — edge-case accuracy, scope correctness, and autofix coverage across 1.5M lines of real OSS code.
+icon: BarChart3
+---
+
+import { BarChart3, CheckCircle, ShieldCheck, Wrench } from 'lucide-react';
+
+# How we measure rule quality
+
+Every rule ships with a measurable quality claim. The numbers below come from the
+**Interlace Linter Benchmark (ILB)** — a reproducible suite that runs against real
+open-source repositories, hand-labeled ground-truth fixtures, and adversarial edge cases.
+
+<Callout type="info">
+  All results are generated from the benchmark infrastructure in this repository and
+  are reproducible. Raw JSON artifacts live in `benchmark-results/` at the repo root.
+</Callout>
+
+<Callout type="info">
+  If the benchmark numbers are useful, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it's the signal that keeps this infrastructure maintained.
+</Callout>
+
+## Headline results
+
+<Cards>
+  <Card title="57/57 edge cases pass" icon={<CheckCircle />}>
+    FP and FN stress tests across 16 security rules — 0 disagreements between expected
+    and actual behaviour.
+  </Card>
+  <Card title="0 scope violations" icon={<ShieldCheck />}>
+    All 414 rules are classified. The plugin-scope audit finds 0 placement violations —
+    every rule lives in the right plugin.
+  </Card>
+  <Card title="35/35 fixable rules verified" icon={<Wrench />}>
+    Every rule that ships a fixer has at least one test that asserts the corrected
+    output — 100% fixer-output test coverage.
+  </Card>
+</Cards>
+
+## Wild-corpus run (ILB-Wild, 2026-05-30)
+
+Rules were applied to **21 real OSS repositories** spanning 1,556,266 lines of
+TypeScript / JavaScript. Repos include Next.js (125K LOC), Vercel AI SDK (160K LOC),
+Webpack (158K LOC), Twenty CRM (419K LOC), the Serverless Framework (129K LOC), and
+fifteen others — frameworks, CMSes, AI toolkits, and serverless tooling.
+
+| Metric | Value |
+| :--- | ---: |
+| Repos exercised | 21 / 22 |
+| Total LOC scanned | 1,556,266 |
+| Total findings | 5,437 |
+| Average finding density | 3.49 / KLOC |
+
+Repos marked **FP corpus** (three.js, webpack, lodash, babel, react) are included
+specifically because they are unlikely to have real vulnerabilities — they exist to
+measure false-positive rate under adversarial conditions.
+
+## Edge-case stress test (ILB-Stress)
+
+The stress test runs **57 hand-written cases** against 16 rules. Each case encodes one
+of three hypotheses: a confirmed true positive (TP), a false-positive guard that should
+stay silent (FP), or a formerly-missed true positive recovered via audit (FN). All 57
+cases match expected behaviour.
+
+| Rule | TP cases | FP guards | FN recovered | All pass |
+| :--- | :---: | :---: | :---: | :---: |
+| `secure-coding/detect-object-injection` | 1 | 3 | 1 | ✓ |
+| `secure-coding/no-graphql-injection` | 1 | 2 | 1 | ✓ |
+| `secure-coding/no-hardcoded-credentials` | 1 | 2 | 1 | ✓ |
+| `secure-coding/no-redos-vulnerable-regex` | 1 | 2 | 1 | ✓ |
+| `secure-coding/no-unsafe-deserialization` | 1 | 2 | 1 | ✓ |
+| `secure-coding/no-unchecked-loop-condition` | 1 | 2 | — | ✓ |
+| `secure-coding/no-insecure-comparison` | 1 | 2 | — | ✓ |
+| `node-security/no-buffer-overread` | 1 | 2 | — | ✓ |
+| `node-security/detect-child-process` | 1 | 1 | 1 | ✓ |
+| `node-security/detect-non-literal-fs-filename` | 1 | 2 | — | ✓ |
+| `node-security/no-ssrf` | 3 | 3 | — | ✓ |
+| `jwt/no-algorithm-none` | 1 | 1 | 1 | ✓ |
+| `jwt/no-hardcoded-secret` | 1 | 1 | 1 | ✓ |
+| `browser-security/no-eval` | 2 | — | 1 | ✓ |
+| `browser-security/no-innerhtml` | 1 | 1 | 1 | ✓ |
+| `pg/no-unsafe-query` | 1 | 1 | 1 | ✓ |
+
+**FP guard** — a case the rule must stay silent on (e.g. bracket access on a typed
+array, a parameterized SQL query, a JWT secret loaded from `process.env`). These
+directly target the patterns that cause false positives in the generic alternatives.
+
+**FN recovered** — a pattern that bypasses naive detection (e.g. `Object.assign` for
+prototype pollution, `new Function()` as an eval alias, an indirect JWT secret in a
+`const`). Each recovered case corresponds to a documented audit fix shipped with the
+rule.
+
+## ILB-Flagship precision / recall
+
+Ground-truthed P/R/F1 numbers from hand-labeled fixtures (`benchmarks/corpus/CWE-NNN/{vulnerable,safe}`):
+
+| Rule | CWE | Precision | Recall | F1 |
+| :--- | :--- | :---: | :---: | :---: |
+| `pg/no-unsafe-query` | CWE-089 | 100% | 100% | 1.00 |
+| `secure-coding/no-hardcoded-credentials` | CWE-798 | 100% | 100% | 1.00 |
+
+For comparison: the closest ecosystem peer on `secure-coding/no-hardcoded-credentials`
+scores Precision 100% / Recall 50% / F1 0.67 on the same labeled fixtures (it misses
+the "credential stored in a `const` before use" pattern).
+
+## AI-generated code security (ILB-AI)
+
+Static analysis matters most where code volume is exploding fastest: AI codegen. The
+**ILB-AI** tier generates code from frontier models and scores it with these same rules.
+
+Across **700 AI-generated functions** from five models, **63% shipped a security finding.**
+The per-model vulnerability rate (lower is better):
+
+| Model | Vulnerable rate |
+| :--- | ---: |
+| Claude Haiku 4.5 | 48.6% |
+| Claude Sonnet 4.5 | 62.1% |
+| Gemini 2.5 Flash | 63.6% |
+| Claude Opus 4.6 | 65.0% |
+| Gemini 2.5 Pro | 72.9% |
+
+On *realistic, structured* tasks the gap narrows sharply. Running the same prompt through
+each vendor's CLI across four domains (NestJS, JWT, MongoDB, a general injection API) and
+linting both outputs is a near dead heat — 1 Gemini win, 2 ties, 1 split — and **both
+frontier models skip the same hardening** (algorithm allowlists, JWT `aud`/`iss`
+validation, query projections), because a feature prompt never names it. Frontier models
+avoid the *catastrophic* classes (injection, `eval`, hardcoded credentials) but
+consistently miss the defense-in-depth layer — exactly the negative space deterministic
+linting closes.
+
+Full write-ups, each with the reproducible config:
+
+- [Claude vs Gemini across 4 security domains — a dead heat, and the hardening 63% of AI code skips](https://dev.to/ofri-peretz/claude-vs-gemini-across-4-security-domains-a-dead-heat-and-the-hardening-63-of-ai-code-skips-mpp)
+- [Same NestJS prompt: Claude got 6 security errors, Gemini got 2](https://dev.to/ofri-peretz/i-ran-the-same-nestjs-prompt-on-claude-and-gemini-one-got-6-security-errors-heres-what-both-1fnf)
+- [Aggregate benchmarks lie — what 700 AI functions look like by security domain](https://dev.to/ofri-peretz/aggregate-benchmarks-lie-heres-what-700-ai-functions-look-like-by-security-domain-1hgj)
+
+## import-next/no-cycle vs eslint-plugin-import
+
+`import-next/no-cycle` runs head-to-head against `eslint-plugin-import`'s cycle detection on the Next.js source (131K LoC):
+
+| Metric | import-next | eslint-plugin-import |
+|---|---|---|
+| Cold lint time | 20.6 s | 25.9 s |
+| Warm lint time | 470 ms | 410 ms |
+| Findings (unique cycles) | 914 | 0 |
+| Recall vs reference | 93% (14/15 flagged files) | 0% |
+
+`eslint-plugin-import` finds zero cycles on the same codebase because it uses a fixed depth cap (default: 10) that misses deep dependency chains. `import-next/no-cycle` defaults to unlimited depth with a deduplication cache that keeps memory bounded.
+
+For full methodology and per-file breakdown, see the [import-next rule docs](/docs/imports/plugin-import-next/rules/no-cycle).
+
+## What ILB is
+
+The **Interlace Linter Benchmark** is an open measurement framework built into this
+monorepo. It has four tiers:
+
+- **ILB-Stress** — adversarial unit tests for FP/FN edge cases (this page, above).
+- **ILB-Wild** — runs the full rule set against real OSS repositories at pinned commits.
+  Numbers are reproducible: `npm run ilb:wild`.
+- **ILB-Flagship** — latency + head-to-head overlap on 10 flagship rules against
+  competitor plugins on the same repos. Includes cold vs warm (ESLint cache) timing.
+- **ILB-AI** — generates code from frontier models (Claude, Gemini) and scores it with
+  the rule set; the AI-codegen security tier above.
+- **ILB-Arena / ILB-Juliet** — ground-truth P/R/F1 from hand-labeled CWE fixtures.
+
+All bench outputs are checked in to `benchmark-results/` as JSON. The raw SARIF for
+the public submission is at `benchmark-results/interlace-2026-05-09.sarif`.
+
+The benchmark infrastructure is intentionally public. If you want to run the same
+numbers against your own plugin, the corpus and methodology are in `benchmarks/`.

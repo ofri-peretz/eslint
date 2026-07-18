@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-07-18",
+  "generatedAt": "2026-07-17",
   "totalPlugins": 19,
-  "totalRules": 405,
-  "oxlintCompatible": 405,
+  "totalRules": 408,
+  "oxlintCompatible": 408,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -390,7 +390,7 @@
       "short": "express-security",
       "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
       "subpath": "eslint-plugin-express-security/oxlint",
-      "ruleCount": 13,
+      "ruleCount": 14,
       "rules": [
         {
           "name": "no-cors-credentials-wildcard",
@@ -442,6 +442,12 @@
         },
         {
           "name": "no-permissive-cors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-user-controlled-redirect",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1305,7 +1311,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 34,
+      "ruleCount": 35,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1380,6 +1386,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-dynamic-algorithm-selection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-dynamic-dependency-loading",
           "portability": "compatible",
           "blockers": [],
@@ -1416,12 +1428,6 @@
           "isTypeAware": false
         },
         {
-          "name": "no-pii-in-logs",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
           "name": "no-self-signed-certs",
           "portability": "compatible",
           "blockers": [],
@@ -1429,6 +1435,12 @@
         },
         {
           "name": "no-sha1-hash",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-shell-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2319,7 +2331,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 27,
+      "ruleCount": 28,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -2331,7 +2343,7 @@
           "name": "detect-object-injection",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": true
+          "isTypeAware": false
         },
         {
           "name": "detect-weak-password-validation",
@@ -2425,6 +2437,12 @@
         },
         {
           "name": "no-sensitive-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-template-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2684,6 +2702,7 @@
       "no-missing-csrf-protection",
       "no-missing-security-headers",
       "no-permissive-cors",
+      "no-user-controlled-redirect",
       "require-csrf-protection",
       "require-express-body-parser-limits",
       "require-helmet",
@@ -2857,6 +2876,7 @@
       "no-data-in-temp-storage",
       "no-deprecated-buffer",
       "no-deprecated-cipher-method",
+      "no-dynamic-algorithm-selection",
       "no-dynamic-dependency-loading",
       "no-dynamic-require",
       "no-ecb-mode",
@@ -2865,6 +2885,7 @@
       "no-math-random-crypto",
       "no-self-signed-certs",
       "no-sha1-hash",
+      "no-shell-injection",
       "no-ssrf",
       "no-static-iv",
       "no-timing-unsafe-compare",
@@ -3110,6 +3131,7 @@
       "no-privilege-escalation",
       "no-redos-vulnerable-regex",
       "no-sensitive-data-exposure",
+      "no-template-injection",
       "no-unchecked-loop-condition",
       "no-unlimited-resource-allocation",
       "no-unsafe-deserialization",

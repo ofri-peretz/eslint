@@ -46,28 +46,88 @@ describe('require-expiration', () => {
       invalid: [
         {
           code: `jwt.sign(payload, secret);`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `jwt.sign(payload, secret, { expiresIn: '1h' });`,
+                },
+              ],
+            },
+          ],
         },
         {
           code: `jwt.sign(payload, secret, {});`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `jwt.sign(payload, secret, { expiresIn: '1h',});`,
+                },
+              ],
+            },
+          ],
         },
         {
           code: `jwt.sign(payload, secret, { algorithm: 'RS256' });`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `jwt.sign(payload, secret, { expiresIn: '1h', algorithm: 'RS256' });`,
+                },
+              ],
+            },
+          ],
         },
         {
           code: `jwt.sign({ sub: 'user', iat: Date.now() }, secret);`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `jwt.sign({ sub: 'user', iat: Date.now() }, secret, { expiresIn: '1h' });`,
+                },
+              ],
+            },
+          ],
         },
         {
           code: `sign(payload, key);`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `sign(payload, key, { expiresIn: '1h' });`,
+                },
+              ],
+            },
+          ],
         },
         // signJWT without expiration
         {
           code: `signJWT({ sub: 'user' }, key, { algorithm: 'RS256' });`,
-          errors: [{ messageId: 'missingExpiration' }],
+          errors: [
+            {
+              messageId: 'missingExpiration',
+              suggestions: [
+                {
+                  messageId: 'addExpiration',
+                  output: `signJWT({ sub: 'user' }, key, { expiresIn: '1h', algorithm: 'RS256' });`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });

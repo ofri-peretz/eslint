@@ -3,8 +3,9 @@
  * Security: CWE-643 (XPath Injection)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noXpathInjection } from './index';
 
 // Configure RuleTester for Vitest
@@ -402,12 +403,178 @@ describe('no-xpath-injection', () => {
     });
   });
 
-  /**
-   * TDD Tests: False Positive Reduction
-   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
-   * Currently these tests may fail - the rule needs to be updated to pass them.
-   * 
-   * Issue: Benchmark revealed FPs on non-XPath template literals
-   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
-   */
+  // Layer 1 — coverage gap fixtures
+  describe('Coverage - branch gaps', () => {
+    ruleTester.run('coverage gaps - valid', noXpathInjection, {
+      valid: [
+        // id 15: non-req MemberExpression init → isUntrustedXpathInput second-inner-if false arm
+        { code: 'const xpathQuery = foo.bar;' },
+        // id 21: destructured param → param.type !== Identifier → false arm
+        { code: 'function f({id}) { document.evaluate("//user[@name=" + id + "]", document); }' },
+        // id 22: isXpathInputValidated true arm — validation function wraps the template
+        { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
+        // id 31: XPath call with zero args → early return
+        { code: 'document.evaluate()' },
+        // id 35: dangerous literal XPath but @xpath-safe annotation
+        {
+          code: `/** @xpath-safe */
+document.evaluate("//users/..", document);`,
+        },
+        // id 42: untrusted identifier XPath but @xpath-safe annotation
+        {
+          code: `/** @xpath-safe */
+document.evaluate(userQuery, document);`,
+        },
+        // id 45: URL template literal → skip early return
+        { code: 'const t = `https://example.com/page`' },
+        // id 47: file-path template literal → skip early return
+        { code: 'const t = `/home/user/file`' },
+        // id 49: CSS selector template literal → skip early return
+        { code: 'const t = `[data-id="foo"]`' },
+        // id 51+52: query-string template literal → skip early return
+        { code: 'const t = `?id=123`' },
+        // id 62 true arm: dangerous XPath template but @xpath-safe annotation
+        {
+          code: `/** @xpath-safe */
+const xpath = \`//users/..\``,
+        },
+        // id 65+66: BinaryExpression with no '/' or '[' → early return
+        { code: 'const r = "hello" + userInput' },
+        // id 78: VariableDeclarator with no init → early return
+        { code: 'let xpathQuery;' },
+      ],
+      invalid: [
+        // id 11 arm 1: containsXpathInterpolation second arm ('..+..' pattern)
+        {
+          code: "const xpath = `//node[@id='a+b']`",
+          errors: [{ messageId: 'dangerousXpathExpression' }],
+        },
+        // id 11 arm 2: containsXpathInterpolation third arm ("..+.." pattern)
+        {
+          code: 'const xpath = `//node[@id="a+b"]`',
+          errors: [{ messageId: 'dangerousXpathExpression' }],
+        },
+        // id 55 false arm + id 62 false arm: no interpolation, dangerous XPath template
+        {
+          code: 'const xpath = `//users/..`',
+          errors: [{ messageId: 'dangerousXpathExpression' }],
+        },
+        // id 69+70: leftUntrusted = true (untrusted identifier on left of +)
+        {
+          code: 'const r = userInput + "//users/.."',
+          errors: [{ messageId: 'xpathInjection' }],
+        },
+      ],
+    });
+  });
+
+  // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback
+  describe('Layer 2 - mock context', () => {
+    it('CallExpression dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const callExpression = listeners.CallExpression as (n: unknown) => void;
+
+      callExpression({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'evaluate' },
+        arguments: [{ type: 'Literal', value: '//users/..' }],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('CallExpression unvalidatedXpathInput falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const callExpression = listeners.CallExpression as (n: unknown) => void;
+
+      callExpression({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'evaluate' },
+        arguments: [{ type: 'Identifier', name: 'userInput', parent: undefined }],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('TemplateLiteral unsafeXpathConcatenation falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection, {
+        sourceText: '`/users/user[@id="${userInput}"]`',
+      });
+      const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
+
+      templateLiteral({
+        type: 'TemplateLiteral',
+        parent: undefined,
+        expressions: [{ type: 'Identifier', name: 'userInput', parent: undefined }],
+        quasis: [],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('TemplateLiteral dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection, {
+        sourceText: '`//users/..`',
+      });
+      const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
+
+      templateLiteral({
+        type: 'TemplateLiteral',
+        parent: undefined,
+        expressions: [],
+        quasis: [],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('BinaryExpression xpathInjection falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection, {
+        sourceText: 'userInput + "//users/.."',
+      });
+      const binaryExpression = listeners.BinaryExpression as (n: unknown) => void;
+
+      binaryExpression({
+        type: 'BinaryExpression',
+        operator: '+',
+        left: { type: 'Identifier', name: 'userInput', parent: undefined },
+        right: { type: 'Literal', value: '//users/..' },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('VariableDeclarator dangerousXpathExpression falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const variableDeclarator = listeners.VariableDeclarator as (n: unknown) => void;
+
+      variableDeclarator({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'xpathQuery' },
+        init: { type: 'Literal', value: '//users/..' },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+
+    it('VariableDeclarator xpathInjection falls back to line 0 when loc is missing', () => {
+      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const variableDeclarator = listeners.VariableDeclarator as (n: unknown) => void;
+
+      variableDeclarator({
+        type: 'VariableDeclarator',
+        id: { type: 'Identifier', name: 'xpathQuery' },
+        init: { type: 'Identifier', name: 'userInput', parent: undefined },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.line).toBe('0');
+    });
+  });
 });

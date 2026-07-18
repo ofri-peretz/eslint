@@ -51,7 +51,7 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/prefer-native-crypto.md',
       description: 'Prefer native crypto over third-party libraries',
       cwe: 'CWE-1104',
-      cvss: 5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {
@@ -103,7 +103,6 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function reportThirdPartyLib(node: TSESTree.Node, library: string) {
-      /* c8 ignore next 15 -- suggestions with fix: () => null cannot be tested with RuleTester */
       context.report({
         node,
         messageId: 'preferNative',

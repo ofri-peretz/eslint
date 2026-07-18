@@ -34,7 +34,12 @@ describe('utm-taxonomy', () => {
         code: 'const url = "https://eslint.interlace.tools/?utm_source=ofriperetz_dev";',
       },
       {
-        code: 'const url = "https://eslint.interlace.tools/?utm_source=dev_to";',
+        code: 'const url = "https://eslint.interlace.tools/?utm_source=devto";',
+      },
+      // The live dev.to standard: /go/ routes by utm_source=devto, articles
+      // stamp utm_medium=article.
+      {
+        code: 'const url = "https://ofriperetz.dev/go/some-post?utm_source=devto&utm_medium=article";',
       },
       {
         code: 'const url = "https://eslint.interlace.tools/?utm_source=github&utm_medium=docs";',
@@ -66,6 +71,12 @@ describe('utm-taxonomy', () => {
       },
       {
         code: 'const url = "https://eslint.interlace.tools/?utm_source=facebook";',
+        errors: [{ messageId: 'invalidUtmSource' }],
+      },
+      // Deprecated spelling: the taxonomy standardized on `devto` (the /go/
+      // platform key). `dev_to` never shipped in a real link.
+      {
+        code: 'const url = "https://eslint.interlace.tools/?utm_source=dev_to";',
         errors: [{ messageId: 'invalidUtmSource' }],
       },
       {

@@ -75,7 +75,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
       description: 'Disallow Math.random() for cryptographic purposes',
       cwe: 'CWE-338',
-      cvss: 9.5,
+      cvss: 5.3,
       confidence: 'medium',
     },
     hasSuggestions: true,
@@ -155,7 +155,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         }
 
         // Check function names
-        /* c8 ignore next 6 -- FunctionDeclaration with id.name matching pattern requires specific context */
         if (current.type === AST_NODE_TYPES.FunctionDeclaration && current.id) {
           const funcName = current.id.name;
           if (CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName))) {
@@ -224,7 +223,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         }
         current = current.parent;
       }
-      /* c8 ignore next -- unreachable when called from valid AST context */
       return null;
     }
 

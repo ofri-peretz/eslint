@@ -1,4 +1,9 @@
 # Dependencies
+# Match BOTH the directory and a stray `node_modules` symlink — a
+# self-referential symlink was committed once (node_modules -> itself, ELOOP),
+# which broke binary resolution in CI + every fresh worktree. The no-slash form
+# also ignores a symlink so `git add -A` can never re-introduce it.
+node_modules
 node_modules/
 .pnp
 .pnp.js

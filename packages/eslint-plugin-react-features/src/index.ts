@@ -228,7 +228,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-react-features',
-    version: '1.1.4',
+    version: '1.2.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -266,9 +266,9 @@ export const configs = {
       'react-features/jsx-no-duplicate-props': 'error',
       'react-features/no-danger-with-children': 'error',
       'react-features/no-deprecated': 'warn',
-      // Performance
-      'react-features/no-unnecessary-rerenders': 'warn',
-      'react-features/react-render-optimization': 'warn',
+      // Performance rules are opt-in: they flag inline objects/arrays/functions which
+      // are very common patterns in React codebases. They belong in the performance
+      // preset, not recommended — the FP rate in general codebases is too high.
     },
   } satisfies TSESLint.FlatConfig.Config,
 

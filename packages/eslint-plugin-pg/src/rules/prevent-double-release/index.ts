@@ -258,28 +258,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
-    const doneCallbacks = new Map<TSESTree.Node, TSESTree.CallExpression[]>();
-    
     return {
-      CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'connect' &&
-          node.arguments.length === 1 &&
-          (node.arguments[0].type === AST_NODE_TYPES.ArrowFunctionExpression ||
-           node.arguments[0].type === AST_NODE_TYPES.FunctionExpression)
-        ) {
-          const callback = node.arguments[0] as TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression;
-          if (callback.params.length >= 3) {
-            const doneParam = callback.params[2];
-            if (doneParam.type === AST_NODE_TYPES.Identifier) {
-              doneCallbacks.set(callback, []);
-            }
-          }
-        }
-      },
-
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         const declaredVariables = context.sourceCode.getDeclaredVariables(node);
 
@@ -546,17 +525,6 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   }
                 }
               }
-            }
-          }
-        }
-      },
-
-      'Program:exit'() {
-        for (const [, calls] of doneCallbacks) {
-          if (calls.length > 1) {
-            calls.sort((a, b) => a.range[0] - b.range[0]);
-            for (let i = 1; i < calls.length; i++) {
-              context.report({ node: calls[i], messageId: 'doubleReleaseCallback' });
             }
           }
         }

@@ -102,13 +102,24 @@
   --spacing-xl: 4rem; /* 64px — desktop section vertical padding */
   --spacing-2xl: 6rem; /* 96px — hero / final-CTA breathing room */
 
-  /* ── Radius (8/12/16 three-step scale) ─────────────────────────────
-     PROMOTED from apps/registry/globals.css to the shared package so
-     rounded-sm/md/lg are DS-owned in every consumer (docs/storybook too),
-     not the Tailwind defaults (2/6/8px). */
+  /* ── Radius (2/4/8/12/16 five-step scale) ────────────────────────────
+     sm/md/lg PROMOTED from apps/registry/globals.css to the shared package
+     so rounded-sm/md/lg are DS-owned in every consumer (docs/storybook
+     too), not the Tailwind defaults (2/6/8px). 2xs/xs extend the scale
+     downward for compact controls (checkbox corners, a tooltip arrow's
+     diamond tip) that read as too round at the 8px floor. */
+  --radius-2xs: 0.125rem; /*  2px */
+  --radius-xs: 0.25rem; /*  4px */
   --radius-sm: 0.5rem; /*  8px */
   --radius-md: 0.75rem; /* 12px */
   --radius-lg: 1rem; /* 16px */
+
+  /* ── Control insets (not part of the spacing rhythm scale) ──────────
+     Pixel-level compensation constants for a specific control's border/
+     shadow geometry — NOT a step in the --spacing-* rhythm above, so they
+     live separately to avoid implying they're reusable spacing choices. */
+  --inset-control-sm: 0.1875rem; /* 3px — TabsList padding, leaves room for
+    the active tab's 1px border + shadow inside the pill */
 
   /* ── Container widths (LAYOUT #2 — four sizes only) ─────────────────
      Generates max-w-prose / max-w-content / max-w-wide. `full` = no max-width

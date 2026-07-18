@@ -136,7 +136,7 @@ const TYPE_IMPORT_REGEX = /import\s+type\s/;
  * Negative lookahead `(?!type[\s{])` excludes `export type ... from` —
  * those are erased at compile time and don't cause runtime cycles.
  */
-const EXPORT_FROM_REGEX = /(?:^|[\s;])export\s+(?!type[\s{])[\w*{}\s,]+from\s+['"]([^'"]+)['"]/gm;
+const EXPORT_FROM_REGEX = /export\s+\{[\s\S]*?\}\s+from\s+['"]([^'"]+)['"]/g;
 
 /**
  * Default extensions for import resolution.
@@ -237,6 +237,8 @@ export interface ImportInfo {
   source: string;
   /** Whether this is a dynamic import (import()) */
   dynamic?: boolean;
+  /** Whether this is a type-only import (import type {...}) — erased at compile time */
+  typeOnly?: boolean;
 }
 
 /**
@@ -634,16 +636,25 @@ export function getFileImports(
     // Track resolved paths to dedupe across the three regexes (a single file
     // may have both `import X from 'y'` and `export { X } from 'y'`).
     const seen = new Set<string>();
-    const pushImport = (importPath: string, dynamic = false) => {
+    const pushImport = (importPath: string, dynamic = false, typeOnly = false) => {
       const resolved = resolveImportPath(importPath, resolveOpts);
       if (resolved && fileExists(resolved, cache) && !seen.has(resolved)) {
         seen.add(resolved);
-        imports.push(dynamic ? { path: resolved, source: importPath, dynamic } : { path: resolved, source: importPath });
+        const info: ImportInfo = { path: resolved, source: importPath };
+        if (dynamic) info.dynamic = true;
+        if (typeOnly) info.typeOnly = true;
+        imports.push(info);
       }
     };
 
-    // Match ES6 static imports using pre-compiled regex
-    while ((match = IMPORT_REGEX.exec(content)) !== null) pushImport(match[1]);
+    // Match ES6 static imports using pre-compiled regex.
+    // Detect `import type { ... }` by checking if the full match starts with
+    // "import type" — these edges are erased at compile time and must not
+    // participate in the SCC graph (they cannot cause runtime cycles).
+    while ((match = IMPORT_REGEX.exec(content)) !== null) {
+      const isTypeImport = /^import\s+type[\s{]/.test(match[0]);
+      pushImport(match[1], false, isTypeImport);
+    }
 
     // Match re-exports (`export … from '…'`). Without this, cycles routed
     // through re-export-only files (a common pattern in barrel-heavy
@@ -735,10 +746,18 @@ export function computeSCCsFromFile(
   startFile: string,
   options: Omit<CycleDetectionOptions, 'reportAllCycles'>,
 ): SCCResult[] {
+  // Normalize to real path: on macOS /tmp is a symlink to /private/tmp.
+  // Without this, the starting file is keyed as /tmp/... while all imports
+  // resolve to /private/tmp/... — Tarjan's sees them as distinct nodes and
+  // misses cycles that cross the symlink boundary.
+  try { startFile = realpathSync(startFile); } catch { /* ignore broken symlinks */ }
+
   const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
 
-  // If SCC is already computed and valid, return cached result
-  if (cache.sccComputed && cache.sccs.length > 0) {
+  // If SCC already computed AND covers this file, return cached result.
+  // If not in the index, the file wasn't reachable from the previous root —
+  // fall through to extend the SCC from this new starting file.
+  if (cache.sccComputed && cache.sccs.length > 0 && cache.sccIndex.has(startFile)) {
     return cache.sccs;
   }
 
@@ -757,8 +776,9 @@ export function computeSCCsFromFile(
 
   // First pass: discover all reachable files (breadth-first for efficiency)
   while (filesToProcess.length > 0) {
-    const file = filesToProcess.pop();
-    if (!file) continue;
+    // pop() cannot return undefined here: the loop guard ensures the stack
+    // is non-empty and every pushed path is a non-empty string.
+    const file = filesToProcess.pop() as string;
     if (visited.has(file)) continue;
     visited.add(file);
 
@@ -769,7 +789,11 @@ export function computeSCCsFromFile(
       resolverSettings,
     });
     for (const imp of imports) {
-      if (!imp.dynamic && !visited.has(imp.path)) {
+      // Skip dynamic imports and type-only imports — type edges are erased at
+      // compile time and cannot form runtime cycles. Excluding them from the
+      // SCC graph produces a smaller, more accurate graph and eliminates FPs
+      // that would appear for `import type { Foo }` back-references.
+      if (!imp.dynamic && !imp.typeOnly && !visited.has(imp.path)) {
         filesToProcess.push(imp.path);
       }
     }
@@ -783,23 +807,47 @@ export function computeSCCsFromFile(
   }
 
   // Convert to SCCResult format
-  const results: SCCResult[] = state.sccs.map((files: string[]) => ({
+  const newResults: SCCResult[] = state.sccs.map((files: string[]) => ({
     files,
     hasCycle: files.length > 1,
   }));
 
-  // Cache the results
-  cache.sccs = results;
+  // MERGE into existing cache — never overwrite. When called from a new root
+  // file not previously reachable, we extend the global SCC rather than
+  // replacing it. Existing sccIndex entries are preserved so previously
+  // processed files retain their cycle membership information.
+  const offset = cache.sccs.length;
+  cache.sccs.push(...newResults);
   cache.sccComputed = true;
 
-  // Build reverse index for O(1) cycle membership lookup
-  for (let i = 0; i < results.length; i++) {
-    for (const file of results[i].files) {
-      cache.sccIndex.set(file, i);
+  for (let i = 0; i < newResults.length; i++) {
+    for (const file of newResults[i].files) {
+      if (!cache.sccIndex.has(file)) {
+        cache.sccIndex.set(file, offset + i);
+      }
     }
   }
 
-  return results;
+  // Update nonCyclicFiles from SCC results:
+  // - Singleton SCCs (hasCycle=false) → file is PROVABLY non-cyclic → add permanently
+  // - Multi-file cyclic SCCs → remove from nonCyclicFiles in case a previous pass
+  //   incorrectly marked them as non-cyclic (e.g., from an incomplete DFS)
+  //
+  // With nonCyclicFiles populated here from the authoritative SCC, the ImportDeclaration
+  // handler can use it as an O(1) fast path without needing to clear it per-file.
+  for (const result of newResults) {
+    if (result.hasCycle) {
+      for (const file of result.files) {
+        cache.nonCyclicFiles.delete(file);
+      }
+    } else {
+      for (const file of result.files) {
+        cache.nonCyclicFiles.add(file);
+      }
+    }
+  }
+
+  return cache.sccs;
 }
 
 /**
@@ -835,8 +883,9 @@ function tarjanStrongConnect(
   });
 
   for (const imp of imports) {
-    // Skip dynamic imports (they don't cause bundler issues)
-    if (imp.dynamic) continue;
+    // Skip dynamic and type-only imports — type edges are erased at compile
+    // time and must not participate in SCC graph edges.
+    if (imp.dynamic || imp.typeOnly) continue;
 
     const successor = imp.path;
 
@@ -846,17 +895,22 @@ function tarjanStrongConnect(
       state.lowlinks.set(
         file,
         Math.min(
-          state.lowlinks?.get(file) ?? 0,
-          state.lowlinks?.get(successor) ?? 0,
+          // `file`'s lowlink is always set at function entry above.
+          state.lowlinks.get(file) as number,
+          // The successor's lowlink can be missing when the recursive call
+          // returned early on the depth limit before initializing it.
+          state.lowlinks.get(successor) ?? 0,
         ),
       );
     } else if (state.onStack.has(successor)) {
-      // Successor is in stack and hence in the current SCC
+      // Successor is in stack and hence in the current SCC.
+      // Both values are guaranteed: `file` got a lowlink at function entry,
+      // and an on-stack successor always received an index before pushing.
       state.lowlinks.set(
         file,
         Math.min(
-          state.lowlinks.get(file) ?? 0,
-          state.indices.get(successor) ?? 0,
+          state.lowlinks.get(file) as number,
+          state.indices.get(successor) as number,
         ),
       );
     }
@@ -866,14 +920,15 @@ function tarjanStrongConnect(
   // If file is a root node, pop the stack and generate an SCC
   if (lowlink === index) {
     const scc: string[] = [];
-    let w: string | undefined;
+    let w: string;
     do {
-      w = state.stack.pop();
-      if (w) {
-        state.onStack.delete(w);
-        scc.push(w);
-      }
-    } while (w && w !== file);
+      // The stack always contains `file` at this point (it was pushed at
+      // function entry), so pop() cannot return undefined before the loop
+      // terminates at `w === file`.
+      w = state.stack.pop() as string;
+      state.onStack.delete(w);
+      scc.push(w);
+    } while (w !== file);
 
     // Only store SCCs (single nodes aren't cycles, but we track them for completeness)
     state.sccs.push(scc);
@@ -895,6 +950,67 @@ export function isFileInCycle(file: string, cache: FileSystemCache): boolean {
 
   const scc = cache.sccs[sccIndex];
   return scc && scc.hasCycle;
+}
+
+/**
+ * Find the shortest cycle path from targetFile back to sourceFile via BFS.
+ *
+ * This is the path-finding phase — called ONLY after the SCC pre-check
+ * confirms that sourceFile and targetFile are in the same SCC (meaning a
+ * cycle MUST exist). BFS guarantees the shortest cycle path is returned.
+ *
+ * Only traverses files within the same SCC (O(1) lookup per hop), so the
+ * worst-case work is proportional to the SCC size, not the entire graph.
+ *
+ * @param sourceFile - The file that contains the import (cycle closes here)
+ * @param targetFile - The file being imported (BFS starts here)
+ * @param options - Traversal options (workspaceRoot, barrelExports, cache, resolverSettings)
+ * @returns The cycle path [targetFile, ..., sourceFile], or null if not found
+ */
+export function findShortestCyclePath(
+  sourceFile: string,
+  targetFile: string,
+  options: Omit<CycleDetectionOptions, 'reportAllCycles' | 'maxDepth'> & { maxDepth?: number },
+): string[] | null {
+  const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
+
+  const srcSCC = cache.sccIndex.get(sourceFile);
+  if (srcSCC === undefined) return null;
+
+  // BFS from targetFile, looking for a path back to sourceFile
+  const queue: string[][] = [[targetFile]];
+  const visited = new Set<string>([targetFile]);
+
+  while (queue.length > 0) {
+    const path = queue.shift()!;
+    const current = path[path.length - 1];
+
+    const imports = getFileImports(current, {
+      workspaceRoot,
+      barrelExports,
+      cache,
+      resolverSettings,
+    });
+
+    for (const imp of imports) {
+      if (imp.dynamic || imp.typeOnly) continue;
+
+      if (imp.path === sourceFile) {
+        // Found the cycle — return the complete path
+        return [...path, sourceFile];
+      }
+
+      if (visited.has(imp.path)) continue;
+
+      // Only traverse files in the same SCC — anything else cannot reach sourceFile
+      if (cache.sccIndex.get(imp.path) !== srcSCC) continue;
+
+      visited.add(imp.path);
+      queue.push([...path, imp.path]);
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -962,6 +1078,12 @@ export function detectCycleFromImport(
   targetFile: string,
   options: CycleDetectionOptions,
 ): string[][] {
+  // Normalize paths: on macOS /tmp is a symlink to /private/tmp.
+  // ESLint provides the symlink path; resolved imports use the real path.
+  // Without normalization, `file === sourceFile` never matches in the DFS.
+  try { sourceFile = realpathSync(sourceFile); } catch { /* ignore */ }
+  try { targetFile = realpathSync(targetFile); } catch { /* ignore */ }
+
   const {
     maxDepth,
     reportAllCycles,
@@ -1013,8 +1135,10 @@ export function detectCycleFromImport(
     // Known non-cyclic from previous lint file visits
     if (cache.nonCyclicFiles.has(file)) return;
 
-    // Early exit when only first cycle needed
-    if (!reportAllCycles && allCycles.length > 0) return;
+    // NOTE: no `!reportAllCycles && allCycles.length > 0` early-exit here —
+    // it would be unreachable: the import loop below performs the identical
+    // check (and breaks) before every recursive dfs() call, and the root
+    // call always happens before any cycle can have been recorded.
 
     visited.add(file);
     pathStack.push(file);
@@ -1077,6 +1201,7 @@ export function findAllCircularDependencies(
   file: string,
   options: CycleDetectionOptions,
   currentPath: string[] = [],
+  // NOTE: depth=0 is the root call; normalization happens only there.
   depth = 0,
   visited: Set<string> = new Set(),
 ): string[][] {
@@ -1088,6 +1213,12 @@ export function findAllCircularDependencies(
     cache,
     resolverSettings,
   } = options;
+
+  // Normalize to real path at the root call (depth=0 only — recursive calls
+  // already receive normalised paths from the resolver's import resolution).
+  if (depth === 0) {
+    try { file = realpathSync(file); } catch { /* ignore broken symlinks */ }
+  }
 
   // OPTIMIZATION 1: Check if file is known to not be in any cycle
   // This is populated across the lint run — once a file is confirmed
@@ -1127,11 +1258,17 @@ export function findAllCircularDependencies(
     return [[...currentPath, file]];
   }
 
-  // OPTIMIZATION 3: Skip if already fully explored in this DFS tree
+  // OPTIMIZATION 3: Skip if already visited in this DFS run.
+  // `visited` is added BEFORE exploring children (below) to prevent
+  // infinite recursion through cyclic graphs. This is correct: if we
+  // encounter a file already on our `visited` set it means we've started
+  // exploring it from a sibling branch — we can safely skip it because
+  // the currentPath.includes() check above already handles the cycle case.
   if (visited.has(file)) {
     return [];
   }
 
+  // Mark visited BEFORE recursing to prevent infinite loops on cyclic graphs.
   visited.add(file);
 
   const imports = getFileImports(file, {

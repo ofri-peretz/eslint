@@ -289,11 +289,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             // Check if the expression contains user input
             const expressionText = sourceCode.getText(expression);
             if (userInputVariables.some(input => expressionText.includes(input))) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: attrValue,
@@ -320,11 +318,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
               // Check if directive value comes from user input
               if (expression.type === 'Identifier' && isUserInput(expression.name)) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node: attrValue,
@@ -350,11 +346,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
               const expression = attrValue.expression;
 
               if (expression.type === 'Identifier' && isUserInput(expression.name)) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node: attrValue,
@@ -383,11 +377,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           // Check if right side contains user input
           const rightText = sourceCode.getText(right);
           if (userInputVariables.some(input => rightText.includes(input))) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node: right,
@@ -426,11 +418,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
               // Check if template comes from user input
               if (templateArg.type === 'Identifier' && isUserInput(templateArg.name)) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node: templateArg,
@@ -451,11 +441,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
               const directiveName = args[0];
 
               if (directiveName.type === 'Identifier' && isUserInput(directiveName.name)) {
-                /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
-                /* c8 ignore stop */
 
                 context.report({
                   node: directiveName,
@@ -477,11 +465,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             const directiveName = args[0];
 
             if (directiveName.type === 'Identifier' && isUserInput(directiveName.name)) {
-              /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
-              /* c8 ignore stop */
 
               context.report({
                 node: directiveName,
@@ -536,11 +522,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           );
 
           if (hasUserInput) {
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,

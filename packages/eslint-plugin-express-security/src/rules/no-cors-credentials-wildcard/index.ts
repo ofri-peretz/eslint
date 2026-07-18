@@ -122,7 +122,7 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow credentials: true with wildcard CORS origin (CVE-2024-25124)',
       cwe: 'CWE-942',
-      cvss: 9.5,
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -166,7 +166,7 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
@@ -195,7 +195,7 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'useExplicitOrigins',
-                  fix: /* c8 ignore next */ () => null,
+                  fix: () => null,
                 },
               ],
             });

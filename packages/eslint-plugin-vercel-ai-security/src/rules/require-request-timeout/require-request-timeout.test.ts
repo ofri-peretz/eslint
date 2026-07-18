@@ -94,3 +94,25 @@ ruleTester.run('require-request-timeout', requireRequestTimeout, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: test-file skip, spread props, non-Identifier keys
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-request-timeout (coverage gaps)', requireRequestTimeout, {
+  valid: [
+    // allowInTests defaults to true — test files are skipped entirely
+    {
+      code: `generateText({ prompt: 'x' });`,
+      filename: 'call.test.ts',
+    },
+    // spread properties are skipped while a real timeout prop still counts
+    { code: `generateText({ ...opts, timeout: 5000, prompt: 'x' });` },
+  ],
+  invalid: [
+    // string-literal 'timeout' key is NOT recognized (keyName resolves to null)
+    {
+      code: `generateText({ 'timeout': 5000, prompt: 'x' });`,
+      errors: [{ messageId: 'missingTimeout' }],
+    },
+  ],
+});

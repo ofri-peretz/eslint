@@ -1,6 +1,6 @@
 {
   "name": "@interlace/eslint-config",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "One-extends meta-config for the Interlace ESLint ecosystem. Composes the 9 flagship-hosting plugins (10 rules) and the full 19-plugin recommended preset (security + code-quality + React) into a single import. Replaces the manual 11-plugin compose documented in .agent/flagship-rules.md.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -21,9 +21,6 @@
   },
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "files": [
     "src/",
@@ -62,28 +59,29 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.2.1",
-    "eslint-plugin-browser-security": "^1.2.3",
-    "eslint-plugin-conventions": "^4.0.7",
-    "eslint-plugin-express-security": "^1.2.3",
-    "eslint-plugin-import-next": "^2.3.6",
-    "eslint-plugin-jwt": "^2.2.3",
-    "eslint-plugin-lambda-security": "^1.2.3",
-    "eslint-plugin-maintainability": "^3.0.3",
-    "eslint-plugin-modernization": "^2.0.4",
-    "eslint-plugin-modularity": "^2.0.4",
-    "eslint-plugin-mongodb-security": "^8.2.3",
-    "eslint-plugin-nestjs-security": "^1.2.3",
-    "eslint-plugin-node-security": "^4.1.0",
-    "eslint-plugin-operability": "^3.0.5",
-    "eslint-plugin-pg": "^1.4.3",
-    "eslint-plugin-react-a11y": "^2.1.5",
-    "eslint-plugin-react-features": "^1.1.4",
-    "eslint-plugin-reliability": "^3.1.3",
-    "eslint-plugin-secure-coding": "^3.2.0",
-    "eslint-plugin-vercel-ai-security": "^1.3.5"
+    "@interlace/eslint-devkit": "^1.4.1",
+    "eslint-plugin-browser-security": "^1.2.6",
+    "eslint-plugin-conventions": "^4.2.0",
+    "eslint-plugin-express-security": "^1.3.2",
+    "eslint-plugin-import-next": "^2.3.7",
+    "eslint-plugin-jwt": "^2.2.6",
+    "eslint-plugin-lambda-security": "^1.2.6",
+    "eslint-plugin-maintainability": "^3.0.6",
+    "eslint-plugin-modernization": "^2.1.0",
+    "eslint-plugin-modularity": "^2.1.0",
+    "eslint-plugin-mongodb-security": "^8.2.4",
+    "eslint-plugin-nestjs-security": "^1.2.4",
+    "eslint-plugin-node-security": "^4.4.1",
+    "eslint-plugin-operability": "^3.0.8",
+    "eslint-plugin-pg": "^1.4.6",
+    "eslint-plugin-react-a11y": "^2.1.6",
+    "eslint-plugin-react-features": "^1.2.2",
+    "eslint-plugin-reliability": "^3.1.4",
+    "eslint-plugin-secure-coding": "^3.3.2",
+    "eslint-plugin-vercel-ai-security": "^1.3.6"
   },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
-  }
+  },
+  "private": true
 }

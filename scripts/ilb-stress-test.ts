@@ -121,6 +121,30 @@ const CASES: RuleSpec[] = [
           }
         `,
       },
+      {
+        label: 'FP: ALLOWED.includes(key) guard before obj[key]',
+        hypothesis: 'hasPrecedingValidation() detects allowlist includes() check — should be silent',
+        expected: 'silent',
+        code: `
+          const ALLOWED_KEYS = ['name', 'email', 'age'];
+          function setField(obj, key, value) {
+            if (!ALLOWED_KEYS.includes(key)) throw new Error('invalid key');
+            obj[key] = value;
+          }
+        `,
+      },
+      {
+        label: 'FP: Set.has(key) guard before obj[key]',
+        hypothesis: 'Set membership check before bracket access should be treated as validation',
+        expected: 'silent',
+        code: `
+          const SAFE = new Set(['name', 'email']);
+          function read(obj, key) {
+            if (!SAFE.has(key)) return undefined;
+            return obj[key];
+          }
+        `,
+      },
     ],
   },
   {
@@ -580,6 +604,67 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-shell-injection',
+    shortRuleName: 'no-shell-injection',
+    cases: [
+      {
+        label: 'TP: exec with template literal expression',
+        // eslint-disable-next-line no-template-curly-in-string -- string is a description of buggy code, not an interpolated template
+        hypothesis: 'exec(`git clone ${userRepo}`) — template expression in command → fire',
+        expected: 'fire',
+        code: `
+          const { exec } = require('child_process');
+          function cloneRepo(userRepo) {
+            exec(\`git clone \${userRepo}\`);
+          }
+        `,
+      },
+      {
+        label: 'TP: execSync with string concatenation',
+        hypothesis: 'execSync("rm -rf " + path) — concat in command → fire',
+        expected: 'fire',
+        code: `
+          const { execSync } = require('child_process');
+          function cleanup(path) {
+            execSync('rm -rf ' + path);
+          }
+        `,
+      },
+      {
+        label: 'FP: exec with literal string',
+        hypothesis: 'exec("ls -la") — literal command, no injection surface',
+        expected: 'silent',
+        code: `
+          const { exec } = require('child_process');
+          exec('ls -la /tmp');
+        `,
+      },
+      {
+        label: 'FP: spawn with args array',
+        hypothesis: 'spawn("git", [userRepo]) — args array is the safe parameterized form',
+        expected: 'silent',
+        code: `
+          const { spawn } = require('child_process');
+          function cloneRepo(userRepo) {
+            spawn('git', ['clone', userRepo]);
+          }
+        `,
+      },
+      {
+        label: 'FP: exec with plain variable — indirect, no visible concat',
+        hypothesis: 'exec(command) — indirect variable reference, data-flow out of scope',
+        expected: 'silent',
+        code: `
+          const { exec } = require('child_process');
+          const command = buildSafeCommand(input);
+          exec(command);
+        `,
+      },
+    ],
+  },
+  {
     pluginName: 'eslint-plugin-jwt',
     pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
     fullRuleName: 'jwt/no-algorithm-none',
@@ -727,6 +812,68 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
+    pluginName: 'eslint-plugin-express-security',
+    pluginEntry: 'packages/eslint-plugin-express-security/src/index.ts',
+    fullRuleName: 'express-security/no-user-controlled-redirect',
+    shortRuleName: 'no-user-controlled-redirect',
+    cases: [
+      {
+        label: 'TP: res.redirect(req.query.next) — direct user-controlled redirect',
+        hypothesis: 'Direct req.query access as redirect target → open redirect, should fire',
+        expected: 'fire',
+        code: `
+          app.get('/login', (req, res) => {
+            res.redirect(req.query.next);
+          });
+        `,
+      },
+      {
+        label: 'TP: res.redirect(req.body.url) — POST body redirect',
+        hypothesis: 'req.body access → user-controlled, should fire',
+        expected: 'fire',
+        code: `
+          app.post('/go', (req, res) => {
+            res.redirect(req.body.url);
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect("/dashboard") — literal target',
+        hypothesis: 'String literal redirect target is always safe',
+        expected: 'silent',
+        code: `
+          app.get('/home', (req, res) => {
+            res.redirect('/dashboard');
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect(next) — variable (indirect, not direct req access)',
+        hypothesis: 'Indirect variable not detected — conservative to avoid FPs',
+        expected: 'silent',
+        code: `
+          app.get('/go', (req, res) => {
+            const next = req.query.next;
+            res.redirect(next);
+          });
+        `,
+      },
+      {
+        label: 'FP: res.redirect(validated) — after allowlist check',
+        hypothesis: 'Validated redirect — rule does not fire (indirect assignment)',
+        expected: 'silent',
+        code: `
+          const ALLOWED = ['/home', '/dashboard', '/profile'];
+          app.get('/go', (req, res) => {
+            const target = req.query.next;
+            if (!ALLOWED.includes(target)) return res.redirect('/home');
+            res.redirect(target);
+          });
+        `,
+      },
+    ],
+  },
+  {
     pluginName: 'eslint-plugin-pg',
     pluginEntry: 'packages/eslint-plugin-pg/src/index.ts',
     fullRuleName: 'pg/no-unsafe-query',
@@ -767,6 +914,221 @@ const CASES: RuleSpec[] = [
             return pool.query(\`SELECT * FROM users WHERE id = \${id}\`);
           }
         `,
+      },
+    ],
+  },
+  // ── MongoDB Security (zero OSS corpus activation — verifying rules work) ──
+  {
+    pluginName: 'eslint-plugin-mongodb-security',
+    pluginEntry: 'packages/eslint-plugin-mongodb-security/src/index.ts',
+    fullRuleName: 'mongodb-security/no-unsafe-query',
+    shortRuleName: 'no-unsafe-query',
+    cases: [
+      {
+        label: 'TP: $where with template literal — NoSQL injection',
+        hypothesis: '$where with dynamic content fires CWE-943',
+        expected: 'fire',
+        code: `
+          db.collection('users').find({ $where: \`this.age > \${minAge}\` });
+        `,
+      },
+      {
+        label: 'TP: $expr with user input',
+        hypothesis: '$expr with dynamic value fires',
+        expected: 'fire',
+        code: `
+          db.collection('orders').find({ $expr: { $gt: [userValue, '$total'] } });
+        `,
+      },
+      {
+        label: 'FP: static $where with literal string',
+        hypothesis: 'Literal $where with no interpolation is safe',
+        expected: 'silent',
+        code: `
+          db.collection('users').find({ $where: 'this.age > 18' });
+        `,
+      },
+    ],
+  },
+  // ── secure-coding/no-redos extra FP cases (anchored/bounded patterns) ────
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-redos-vulnerable-regex',
+    shortRuleName: 'no-redos-vulnerable-regex',
+    cases: [
+      {
+        label: 'TP: catastrophic backtracking — (a+)+ pattern',
+        hypothesis: 'Nested unbounded quantifier is always a ReDoS risk',
+        expected: 'fire',
+        code: `const re = /(a+)+$/;`,
+      },
+      {
+        label: 'TP: exponential backtracking — (a|aa)+ pattern',
+        hypothesis: 'Alternation with overlap + unbounded quantifier',
+        expected: 'fire',
+        code: `const re = /(a|aa)+b/;`,
+      },
+      {
+        label: 'FP: simple anchored pattern — safe',
+        hypothesis: 'Anchored regex with no unbounded quantifier is safe',
+        expected: 'silent',
+        code: `const re = /^[a-z]{1,20}$/;`,
+      },
+      {
+        label: 'FP: email regex without backtracking risk',
+        hypothesis: 'Character class repetition without nesting is safe',
+        expected: 'silent',
+        code: `const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.][a-zA-Z]{2,}$/;`,
+      },
+    ],
+  },
+  // ── reliability/no-silent-errors (just promoted to error) ────────────────
+  {
+    pluginName: 'eslint-plugin-reliability',
+    pluginEntry: 'packages/eslint-plugin-reliability/src/index.ts',
+    fullRuleName: 'reliability/no-silent-errors',
+    shortRuleName: 'no-silent-errors',
+    cases: [
+      {
+        label: 'TP: empty catch block — swallows all errors',
+        hypothesis: 'catch(e) {} hides bugs in production',
+        expected: 'fire',
+        code: `
+          try {
+            riskyOperation();
+          } catch (e) {}
+        `,
+      },
+      {
+        label: 'TP: catch with only comment — still silent',
+        hypothesis: 'Commenting out error handling is still wrong',
+        expected: 'fire',
+        code: `
+          try {
+            parse(data);
+          } catch (e) {
+            // TODO: handle this
+          }
+        `,
+      },
+      {
+        label: 'FP: catch with actual handler',
+        hypothesis: 'Catch that logs and rethrows is correct',
+        expected: 'silent',
+        code: `
+          try {
+            riskyOperation();
+          } catch (e) {
+            logger.error(e);
+            throw e;
+          }
+        `,
+      },
+    ],
+  },
+  // ── secure-coding/no-template-injection (new rule, 2026-06) ──────────────
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-template-injection',
+    shortRuleName: 'no-template-injection',
+    cases: [
+      {
+        label: 'TP: Handlebars.compile(variable) — dynamic template',
+        hypothesis: 'User-controlled template string = code injection risk, should fire',
+        expected: 'fire',
+        code: `Handlebars.compile(userTemplate)`,
+      },
+      {
+        label: 'TP: ejs.render(req.body.template, data) — request body template',
+        hypothesis: 'Request body as template argument = server-side template injection',
+        expected: 'fire',
+        code: `ejs.render(req.body.template, data)`,
+      },
+      {
+        label: 'TP: pug.compile(template literal with expression)',
+        hypothesis: 'Template literal with expression = injection surface',
+        expected: 'fire',
+        code: `pug.compile(\`h1 \${userTitle}\`)`,
+      },
+      {
+        label: 'FP: Handlebars.compile("<h1>{{title}}</h1>") — string literal',
+        hypothesis: 'Literal string template has no injection surface, should be silent',
+        expected: 'silent',
+        code: `Handlebars.compile('<h1>{{title}}</h1>')`,
+      },
+      {
+        label: 'FP: ejs.render literal template with data',
+        hypothesis: 'Literal template with dynamic data in second arg is safe pattern',
+        expected: 'silent',
+        code: `ejs.render('<p><%= name %></p>', { name: user.name })`,
+      },
+      {
+        label: 'FP: Template literal without expressions',
+        hypothesis: 'Template literal with no expressions is equivalent to a string literal',
+        expected: 'silent',
+        code: 'Handlebars.compile(`<h1>Static template</h1>`)',
+      },
+    ],
+  },
+  // ── jwt/require-expiration suggestion (verify suggestion is emitted) ──────
+  {
+    pluginName: 'eslint-plugin-jwt',
+    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    fullRuleName: 'jwt/require-expiration',
+    shortRuleName: 'require-expiration',
+    cases: [
+      {
+        label: 'TP: jwt.sign without expiresIn',
+        hypothesis: 'Missing expiresIn creates eternal token, should fire',
+        expected: 'fire',
+        code: `jwt.sign({ userId: 123 }, secret)`,
+      },
+      {
+        label: 'FP: jwt.sign with expiresIn in options',
+        hypothesis: 'expiresIn present = safe, should be silent',
+        expected: 'silent',
+        code: `jwt.sign({ userId: 123 }, secret, { expiresIn: '1h' })`,
+      },
+      {
+        label: 'FP: jwt.sign with exp claim in payload',
+        hypothesis: 'exp in payload provides expiration, should be silent',
+        expected: 'silent',
+        code: `jwt.sign({ userId: 123, exp: Math.floor(Date.now() / 1000) + 3600 }, secret)`,
+      },
+    ],
+  },
+  // ── node-security/no-dynamic-algorithm-selection (new rule, 2026-06) ─────
+  {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-dynamic-algorithm-selection',
+    shortRuleName: 'no-dynamic-algorithm-selection',
+    cases: [
+      {
+        label: 'TP: crypto.createHash(variable) — dynamic algorithm',
+        hypothesis: 'Attacker can supply weak algorithm like MD5 or SHA1',
+        expected: 'fire',
+        code: `crypto.createHash(userAlgorithm)`,
+      },
+      {
+        label: 'TP: crypto.createCipheriv(config.algo, key, iv) — config-sourced',
+        hypothesis: 'Config-controlled algorithm = algorithm confusion risk',
+        expected: 'fire',
+        code: `crypto.createCipheriv(config.algorithm, key, iv)`,
+      },
+      {
+        label: 'FP: crypto.createHash("sha256") — literal',
+        hypothesis: 'Literal string algorithm is safe (no-weak-hash-algorithm handles weak literals)',
+        expected: 'silent',
+        code: `crypto.createHash("sha256")`,
+      },
+      {
+        label: 'FP: crypto.createHmac static template literal',
+        hypothesis: 'Static template literal = no injection surface',
+        expected: 'silent',
+        code: 'crypto.createHmac(`sha512`, secret)',
       },
     ],
   },

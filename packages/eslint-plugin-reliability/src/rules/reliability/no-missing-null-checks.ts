@@ -147,8 +147,13 @@ function isProvablyNonNullableIdentifier(
 
 /**
  * Check if property access has null/undefined check
+ *
+ * Exported for direct Layer-2 unit testing: the `node.optional` and
+ * ChainExpression early returns are defensive duplicates of checks both
+ * callers perform before invoking this helper, so they are unreachable
+ * through the rule's listeners.
  */
-function hasNullCheck(
+export function hasNullCheck(
   node: TSESTree.MemberExpression,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
@@ -533,7 +538,6 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
               },
             ],
           });
-          /* c8 ignore next 4 -- defensive error handling, hard to trigger in tests */
         } catch {
           // Silently skip if there's an error
           return;
@@ -546,7 +550,6 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
      * Only check if it's an actual method call, not just a property access
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
-      /* c8 ignore next 4 -- defensive type check, always true when called by ESLint visitor */
       // Ensure this is actually a CallExpression (not just a MemberExpression)
       if (node.type !== 'CallExpression') {
         return;
@@ -624,7 +627,6 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
                 },
               ],
             });
-            /* c8 ignore next 4 -- defensive error handling, hard to trigger in tests */
           } catch {
             // Silently skip if there's an error
             return;

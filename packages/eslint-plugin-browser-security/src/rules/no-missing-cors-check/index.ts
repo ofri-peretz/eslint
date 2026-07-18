@@ -347,10 +347,12 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 let current: TSESTree.Node | null = node;
                 while (current) {
                   if (current.type === 'Program' || current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') {
-                    // Search for variable declarations in this scope
-                    const scopeBody = current.type === 'Program' ? current.body : 
-                                     (current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') ? 
-                                     (current.body.type === 'BlockStatement' ? current.body.body : []) : [];
+                    // Search for variable declarations in this scope. The
+                    // enclosing `if` already narrowed `current` to Program or
+                    // one of the three function node types, so a non-Program
+                    // node here is always a function.
+                    const scopeBody = current.type === 'Program' ? current.body :
+                                     (current.body.type === 'BlockStatement' ? current.body.body : []);
                     
                     for (const stmt of scopeBody) {
                       if (stmt.type === 'VariableDeclaration') {

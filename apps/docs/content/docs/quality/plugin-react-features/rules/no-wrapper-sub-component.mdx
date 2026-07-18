@@ -1,0 +1,67 @@
+---
+title: "no-wrapper-sub-component"
+description: "Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+Ban pure-passthrough wrapper sub-components — function components whose entire body is `return <Primitive {...props} />;`. These wrappers add no structural behavior and force consumers to import through an indirection layer. Consumers should slot the primitive directly.
+
+A wrapper is exempt if it adds at least one literal attribute (`className`, `data-slot`, `aria-*`, `role`) or includes hook calls / computed values before returning — those are structural behaviors.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Extra indirection** | Consumers pay an import tax for a no-op wrapper | Delete the wrapper; export the primitive directly |
+| **Tree complexity** | An extra component node in devtools and the React tree | Slot the primitive; the call site is the composition point |
+| **API surface noise** | The sub-component name implies behavior that doesn't exist | If the sub-component must exist, give it structural behavior |
+
+## Examples
+
+### Incorrect
+
+```tsx
+// Pure passthrough — adds nothing
+function DialogTrigger(props) {
+  return <Trigger {...props} />;  // ❌ R12
+}
+
+// Arrow form
+const DialogTrigger = (props) => <Trigger {...props} />;  // ❌ R12
+```
+
+### Correct
+
+```tsx
+// Structural behavior added — data-slot makes this a real composition part
+function DialogTrigger(props) {
+  return <Trigger data-slot="trigger" {...props} />;  // ✅ adds behavior
+}
+
+// Or simply re-export the primitive directly
+export { Trigger as DialogTrigger };
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-wrapper-sub-component": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

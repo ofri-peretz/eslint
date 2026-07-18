@@ -1,7 +1,6 @@
 /**
  * ESLint Configuration for Interlace Security Ecosystem
- * Full security fleet: 10 plugins, 190 security rules
- * Note: Cryptography rules are covered by eslint-plugin-node-security
+ * Full security fleet: 10 plugins (the crypto rules now ship in node-security)
  */
 
 import secureCoding from "eslint-plugin-secure-coding";
@@ -19,7 +18,7 @@ export default [
   // Core security rules (23 rules)
   secureCoding.configs.recommended,
 
-  // Node.js security rules — fs, child_process, vm, crypto, etc. (31+ rules)
+  // Node.js security rules — fs, child_process, vm, etc. (31 rules)
   nodeSecurity.configs.recommended,
 
   // PostgreSQL security rules — SQL injection, connection hygiene (13 rules)

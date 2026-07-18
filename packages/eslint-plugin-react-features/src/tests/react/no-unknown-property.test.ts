@@ -72,6 +72,38 @@ describe('no-unknown-property', () => {
     });
   });
 
+  describe('Custom Components', () => {
+    ruleTester.run(
+      'custom components accept arbitrary props',
+      noUnknownProperty,
+      {
+        valid: [
+          // Uppercase JSX names are custom components — arbitrary props allowed
+          {
+            code: '<Box surface="card" radius="lg" border />',
+          },
+          {
+            code: '<Stack direction="column" gap={4} />',
+          },
+          // Member-expression components
+          {
+            code: '<Motion.div surface="card" whileHover={{ scale: 1.1 }} />',
+          },
+        ],
+        invalid: [
+          // Same prop names on a lowercase DOM tag still fire
+          {
+            code: '<div surface="card" tone="brand" />',
+            errors: [
+              { messageId: 'noUnknownProperty' },
+              { messageId: 'noUnknownProperty' },
+            ],
+          },
+        ],
+      },
+    );
+  });
+
   describe('Invalid HTML Attributes', () => {
     ruleTester.run('invalid HTML attributes', noUnknownProperty, {
       valid: [],

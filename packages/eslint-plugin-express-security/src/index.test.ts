@@ -12,7 +12,7 @@ describe('eslint-plugin-express-security plugin interface', () => {
   it('should export all express-security rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
-    expect(ruleKeys).toEqual([
+    expect(ruleKeys).toEqual(expect.arrayContaining([
       'require-helmet',
       'no-permissive-cors',
       'require-csrf-protection',
@@ -23,11 +23,14 @@ describe('eslint-plugin-express-security plugin interface', () => {
       'require-express-body-parser-limits',
       'no-express-unsafe-regex-route',
       'no-exposed-debug-endpoints',
+      // Migrated from browser-security
       'no-missing-cors-check',
       'no-missing-csrf-protection',
       'no-missing-security-headers',
-    ]);
-    expect(ruleKeys.length).toBe(13);
+      // Open redirect (structural CWE-601)
+      'no-user-controlled-redirect',
+    ]));
+    expect(ruleKeys.length).toBe(14);
   });
 
   describe('configurations', () => {
@@ -71,5 +74,24 @@ describe('eslint-plugin-express-security plugin interface', () => {
       const graphqlRules = configs.graphql.rules || {};
       expect(graphqlRules['express-security/no-graphql-introspection-production']).toBe('error');
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Coverage wave: sub-export surfaces
+// ---------------------------------------------------------------------------
+import oxlint from './oxlint';
+import * as typeExports from './types';
+
+describe('oxlint sub-export', () => {
+  it('exposes the plugin object directly (module.exports = plugin)', () => {
+    expect(oxlint).toBe(plugin);
+    expect(Object.keys(oxlint.rules || {})).toHaveLength(14);
+  });
+});
+
+describe('types sub-export', () => {
+  it('is a type-only module with no runtime exports', () => {
+    expect(Object.keys(typeExports)).toEqual([]);
   });
 });

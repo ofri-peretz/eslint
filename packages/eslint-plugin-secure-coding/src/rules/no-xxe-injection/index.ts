@@ -104,7 +104,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detect XML External Entity (XXE) injection vulnerabilities',
       url: 'https://cwe.mitre.org/data/definitions/611.html',
       cwe: 'CWE-611',
-      cvss: 9.5,
+      cvss: 9.1,
     },
     messages: {
       xxeInjection: formatLLMMessage({
@@ -171,10 +171,13 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     context: Readonly<TSESLint.RuleContext<MessageIds, RuleOptions>>,
     [options]: readonly [Options?],
   ) {
+    // `options` is guaranteed defined here: createRule's RuleCreator wrapper
+    // (@typescript-eslint/utils applyDefault) always seeds it from
+    // `defaultOptions` above, so it can never be undefined at runtime.
     const {
       safeParserOptions = ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
       xmlValidationFunctions = ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
-    } = options || {};
+    } = options!;
 
     const filename = context.filename;
 

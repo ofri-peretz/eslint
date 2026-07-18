@@ -95,9 +95,7 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
     /**
      * Check if expression is an embedding call
      */
-    function isEmbeddingCall(node: TSESTree.Node): string | null {
-      if (node.type !== 'CallExpression') return null;
-      
+    function isEmbeddingCall(node: TSESTree.CallExpression): string | null {
       const callee = sourceCode.getText(node.callee);
       for (const pattern of embeddingPatterns) {
         if (callee.toLowerCase().includes(pattern.toLowerCase())) {
@@ -110,9 +108,7 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
     /**
      * Check if expression is validated
      */
-    function isValidated(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression') return false;
-      
+    function isValidated(node: TSESTree.CallExpression): boolean {
       const callee = sourceCode.getText(node.callee);
       return validatorFunctions.some((fn: string) => 
         callee.toLowerCase().includes(fn.toLowerCase())
@@ -145,14 +141,16 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
                 if (valueNode.type === 'AwaitExpression') {
                   valueNode = valueNode.argument;
                 }
-                
-                const embeddingSource = isEmbeddingCall(valueNode);
-                if (embeddingSource && !isValidated(valueNode)) {
-                  context.report({
-                    node: prop.value,
-                    messageId: 'unvalidatedEmbedding',
-                    data: { source: embeddingSource },
-                  });
+
+                if (valueNode.type === 'CallExpression') {
+                  const embeddingSource = isEmbeddingCall(valueNode);
+                  if (embeddingSource && !isValidated(valueNode)) {
+                    context.report({
+                      node: prop.value,
+                      messageId: 'unvalidatedEmbedding',
+                      data: { source: embeddingSource },
+                    });
+                  }
                 }
               }
             }

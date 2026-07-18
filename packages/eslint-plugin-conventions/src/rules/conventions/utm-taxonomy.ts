@@ -34,7 +34,10 @@ const VALID_UTM_SOURCES = new Set([
   'serverless_docs',
   'ds',
   'storybook',
-  'dev_to',
+  // `devto` (not `dev_to`): the blog's /go/ redirect handler routes by
+  // `article_platforms.platform === utm_source`, and those rows are stored
+  // as 'devto'. The value is load-bearing — see UTM_PHILOSOPHY.md.
+  'devto',
   'github',
   'npm',
   'x',
@@ -43,6 +46,7 @@ const VALID_UTM_SOURCES = new Set([
 ]);
 
 const VALID_UTM_MEDIUMS = new Set([
+  'article',
   'blog',
   'docs',
   'landing',

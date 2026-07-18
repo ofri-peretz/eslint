@@ -371,9 +371,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         if (objectName === 'yaml' && memberName === 'safeLoad') {
           return true;
         }
-        if (objectName === 'js-yaml' && memberName === 'safeLoad') {
-          return true;
-        }
       }
 
       return false;
@@ -472,11 +469,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
           if (hasUntrustedInput) {
             // Even JSON.parse can be unsafe if used on complex objects that get eval'd later
-            /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
-            /* c8 ignore stop */
 
             context.report({
               node,

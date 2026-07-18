@@ -84,13 +84,12 @@ function isInsideAuthMiddleware(
       // Verify that current is actually an argument of this call
       const isArgument = callExpr.arguments.some((arg: TSESTree.CallExpressionArgument) => arg === current);
       if (!isArgument) {
-        // Not an argument, continue traversing
-        if ('parent' in current && current.parent) {
-          current = current.parent as TSESTree.Node;
-          continue;
-        } else {
-          break;
-        }
+        // Not an argument (e.g. `current` is the callee of this call, as in
+        // an IIFE) - continue traversing upward. `current.parent` is
+        // guaranteed truthy here because the enclosing `if` above already
+        // proved it (it matched `current.parent.type === 'CallExpression'`).
+        current = current.parent as TSESTree.Node;
+        continue;
       }
       
       const callee = callExpr.callee;
@@ -152,7 +151,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-missing-authentication.md',
       description: 'Detects missing authentication checks in route handlers',
       cwe: 'CWE-287',
-      cvss: 9.5,
+      cvss: 9.8,
     },
     hasSuggestions: true,
     messages: {
@@ -349,24 +348,20 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             let hasAuth = false;
             for (const arg of node.arguments) {
               const argText = sourceCode.getText(arg);
-              if (authMiddlewarePatterns.some(pattern => 
+              if (authMiddlewarePatterns.some(pattern =>
                 argText.toLowerCase().includes(pattern.toLowerCase())
               )) {
                 hasAuth = true;
                 break;
               }
-              
-              // Check if argument is a call to auth middleware
-              if (arg.type === 'CallExpression' && arg.callee.type === 'Identifier') {
-                const calleeName = arg.callee.name.toLowerCase();
-                if (authMiddlewarePatterns.some(pattern => 
-                  calleeName.includes(pattern.toLowerCase())
-                )) {
-                  hasAuth = true;
-                  break;
-                }
-              }
-              
+
+              // NOTE: a prior "is this argument a CallExpression whose callee
+              // name matches an auth pattern" check was removed as provably
+              // redundant: `argText` above is the full source text of `arg`,
+              // which for a CallExpression always begins with the callee's
+              // own text. Any pattern that matches `calleeName` therefore
+              // already matches `argText` and is caught by the check above.
+
               // Check if argument is an identifier assigned from auth middleware
               if (arg.type === 'Identifier' && isIdentifierFromAuthMiddleware(arg)) {
                 hasAuth = true;

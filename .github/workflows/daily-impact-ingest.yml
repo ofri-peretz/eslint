@@ -1,0 +1,119 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Daily Impact Ingest
+
+# Single source of truth for the North Star ratchet + impact metrics.
+# Pulls daily numbers from NPM + GitHub + dev.to (+ PostHog), upserts into
+# Supabase, then calls refresh_storefront_ratchet(). All consumer apps read
+# from the v_* views — only this workflow writes.
+#
+# WHY THIS LIVES IN THE PUBLIC ESLINT REPO (moved from ofri-peretz/agents,
+# 2026-07-17): (1) public repos have no GHA minutes quota, (2) this repo has
+# daily activity, so the 60-day scheduled-workflow auto-disable can never
+# silently kill the cron, (3) CI failures surface where the product work
+# happens. The ingest SCRIPTS stay in the private control-room repo and are
+# checked out at run time.
+#
+# Required repo secrets (https://github.com/ofri-peretz/eslint/settings/secrets/actions):
+#   AGENTS_REPO_PAT           — PAT with read access to ofri-peretz/agents
+#                                (private); used only for checkout + the
+#                                GitHub metrics collector
+#   SUPABASE_URL              — https://<project-ref>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY — full-access JWT; never exposed to frontend
+#   DEVTO_API_KEY             — generate at https://dev.to/settings/extensions;
+#                                daily-ingest skips dev.to gracefully if
+#                                missing/expired
+# Optional repo secret (collector skips gracefully if missing):
+#   POSTHOG_API_KEY           — personal API key (phx_...), read-only scope
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: daily-impact-ingest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Required so the on-failure step can open / comment on a ci-failure issue.
+  issues: write
+
+jobs:
+  ingest:
+    name: Ingest into Supabase
+    runs-on: ubuntu-latest
+    # Capped at 10 min: last observed successful run was ~3m20s in the agents
+    # repo; +1 min headroom for the cross-repo checkout. If runs creep past
+    # 7 min, parallelize the npm loop before bumping this cap.
+    timeout-minutes: 10
+    steps:
+      - name: Checkout control-room repo (private)
+        uses: actions/checkout@v7
+        with:
+          repository: ofri-peretz/agents
+          token: ${{ secrets.AGENTS_REPO_PAT }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # `npm install` instead of `npm ci`: the lockfile is generated on
+      # macOS dev machines and misses Linux-only optional deps, which makes
+      # ci fail. `npm install` drift-corrects on the runner.
+      - run: npm install --no-audit --no-fund --include=optional
+      - name: Run daily ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # PAT (not the auto token): the GitHub collector queries the
+          # private control-room + cross-repo GraphQL the auto token can't.
+          GITHUB_TOKEN: ${{ secrets.AGENTS_REPO_PAT }}
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: "428927"
+          POSTHOG_HOST: https://us.i.posthog.com
+        working-directory: footprint
+        run: npm run footprint:ingest
+
+      # Refresh the TRUE all-time npm download total (npm /downloads/range,
+      # ≤18-month window per package, network-resilient). Non-fatal under
+      # npm 429s (skips windows; the monotonic ratchet floors the cumulative).
+      - name: Refresh all-time npm downloads
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        working-directory: footprint
+        run: npm run footprint:alltime
+
+      # Unattended cron — silent failures are dangerous. Auto-open (or
+      # comment on existing) a GitHub issue tagged `ci-failure` so we get
+      # the email notification + a persistent visible record.
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = `[CI failure] ${context.workflow} — ${context.ref}`;
+            const body = [
+              `Workflow **${context.workflow}** failed.`,
+              ``,
+              `- Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              `- Trigger: ${context.eventName}`,
+              `- SHA: ${context.sha}`,
+            ].join('\n');
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'ci-failure',
+            });
+            const hit = existing.find(i => i.title === title);
+            if (hit) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: hit.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['ci-failure'],
+              });
+            }

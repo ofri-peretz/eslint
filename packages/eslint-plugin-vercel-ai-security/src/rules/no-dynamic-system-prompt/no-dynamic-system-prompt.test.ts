@@ -116,3 +116,20 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coverage-gap fixtures: argument shapes and non-Identifier keys
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt, {
+  valid: [
+    // no arguments at all
+    { code: `generateText();` },
+    // non-object first argument
+    { code: `generateText(cfg);` },
+    // spread-only options object
+    { code: `generateText({ ...cfg });` },
+    // string-literal 'system' key is skipped (keyName resolves to null)
+    { code: `generateText({ 'system': buildPrompt() });` },
+  ],
+  invalid: [],
+});

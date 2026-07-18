@@ -87,7 +87,7 @@ function isSharedModule(
 /**
  * Check if import violates domain boundaries
  */
-function violatesDomainBoundary(
+export function violatesDomainBoundary(
   sourceFile: string,
   importPath: string,
   options: Options,
@@ -112,9 +112,10 @@ function violatesDomainBoundary(
 
   // For relative imports, we need to resolve the path to get the actual target file
   // In tests, we can extract from the import path string directly
+  // The early return above guarantees importPath starts with '.' here.
   let targetDomain: string | null = null;
 
-  if (importPath.startsWith('.')) {
+  {
     // Check if import path contains domain patterns
     // e.g., '../../domains/order/service' -> extract 'order'
     // Try multiple patterns to find the domain
@@ -163,9 +164,6 @@ function violatesDomainBoundary(
         }
       }
     }
-  } else {
-    // For absolute or external imports, try to extract domain
-    targetDomain = extractDomain(importPath, domainPatterns);
   }
 
   // If no domain detected, allow

@@ -3,8 +3,9 @@
  * Security: Detects PII/credentials in logs, responses, or error messages
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noSensitiveDataExposure } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -256,6 +257,175 @@ describe('no-sensitive-data-exposure', () => {
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
       ],
+    });
+  });
+
+  describe('isLoggingCall - MemberExpression branch permutations', () => {
+    ruleTester.run('valid - computed member call (property is not an Identifier) is not a logging call', noSensitiveDataExposure, {
+      valid: [
+        // Exercises the false branch of `property.type === 'Identifier'`:
+        // a computed member call like console['log'](...) has a Literal
+        // property, not an Identifier.
+        {
+          code: `console['log']('password: 123456');`,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - non-Identifier object with a log-like method name is not a logging call', noSensitiveDataExposure, {
+      valid: [
+        // Exercises the false branch of `object.type === 'Identifier'`: the
+        // method name matches ("info") but the object itself is a nested
+        // MemberExpression, not a bare Identifier.
+        {
+          code: `app.logger.info('password: 123456');`,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - Identifier object with a name other than console or logger is not a logging call', noSensitiveDataExposure, {
+      valid: [
+        // Exercises the false branch of `objName === 'console' || objName === 'logger'`.
+        {
+          code: `myThing.log('password: 123456');`,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - non-MemberExpression, non-Identifier callee is not a logging call', noSensitiveDataExposure, {
+      valid: [
+        // Exercises the case where node.callee is neither a MemberExpression
+        // nor an Identifier (a CallExpression callee via IIFE-style call).
+        {
+          code: `(getLogger())('password: 123456');`,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Error argument shapes that are not flagged', () => {
+    ruleTester.run('valid - Error thrown with a non-"+" BinaryExpression argument is not flagged', noSensitiveDataExposure, {
+      valid: [
+        // Exercises the false branch of `arg.operator === '+'`.
+        {
+          code: `throw new Error('code: ' - 1);`,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('valid - Error with a plus BinaryExpression but no matching literal or identifier sides is not flagged', noSensitiveDataExposure, {
+      valid: [
+        // Left side is a non-string literal (number), right side is a
+        // non-matching identifier: neither the left-literal nor
+        // right-identifier sensitive-data branches fire.
+        {
+          code: `throw new Error(1 + count);`,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Layer 2 - synthetic nodes and defensive fallbacks (mock context)', () => {
+    it('falls back to {} when the options entry itself is null (options || {} branch)', () => {
+      // `[options = {}]` only substitutes the default for `undefined`, not
+      // `null` — the inner `options || {}` handles an explicit null entry,
+      // which a real parser/RuleTester options array cannot produce (schema
+      // validation rejects `null` for an object-typed option), so this is
+      // exercised directly against a mock context with `options: [null]`.
+      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
+        options: [null],
+      });
+
+      const node = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'console' },
+          property: { type: 'Identifier', name: 'log' },
+        },
+        arguments: [{ type: 'Literal', value: 'password: 123456' }],
+      };
+
+      (listeners['CallExpression'] as (n: unknown) => void)(node);
+
+      // With options falling back to {}, the default sensitivePatterns list
+      // still applies and checkConsoleLog still defaults to true, so the
+      // sensitive literal argument is still reported.
+      expect(reports).toHaveLength(1);
+      expect(reports[0].messageId).toBe('sensitiveDataExposure');
+    });
+
+    it('skips an Identifier argument with an empty name (arg.name truthiness branch)', () => {
+      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
+        options: [{}],
+      });
+
+      const node = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'console' },
+          property: { type: 'Identifier', name: 'log' },
+        },
+        // A synthetic Identifier with an empty `name` — unproducable by any
+        // real parser, but exercises the `&& arg.name` truthiness guard.
+        arguments: [{ type: 'Identifier', name: '' }],
+      };
+
+      (listeners['CallExpression'] as (n: unknown) => void)(node);
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('skips a "+" BinaryExpression Error argument with no right-hand side (arg.right truthiness branch)', () => {
+      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
+        options: [{}],
+      });
+
+      const node = {
+        type: 'NewExpression',
+        callee: { type: 'Identifier', name: 'Error' },
+        // A synthetic "+" BinaryExpression with no `right` operand at all —
+        // unproducable by any real parser, but exercises the `arg.right &&`
+        // truthiness guard ahead of the Identifier/name checks.
+        arguments: [
+          {
+            type: 'BinaryExpression',
+            operator: '+',
+            left: { type: 'Literal', value: 'ok' },
+            right: undefined,
+          },
+        ],
+      };
+
+      (listeners['NewExpression'] as (n: unknown) => void)(node);
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('skips a NewExpression with no callee (node.callee truthiness branch)', () => {
+      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
+        options: [{}],
+      });
+
+      const node = {
+        type: 'NewExpression',
+        // A synthetic NewExpression with no callee at all — unproducable by
+        // any real parser (`new` always has a callee), but exercises the
+        // `node.callee &&` truthiness guard.
+        callee: undefined,
+        arguments: [{ type: 'Literal', value: 'password leaked' }],
+      };
+
+      (listeners['NewExpression'] as (n: unknown) => void)(node);
+
+      expect(reports).toHaveLength(0);
     });
   });
 
