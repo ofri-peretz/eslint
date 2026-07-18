@@ -112,7 +112,7 @@ jobs:
         run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
 
   typecheck:
-    name: Typecheck (Turbo)
+    name: Typecheck (whole-graph tsgo)
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
