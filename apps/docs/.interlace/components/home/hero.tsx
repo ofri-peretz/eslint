@@ -144,7 +144,7 @@ export function Hero({
         ) : null}
       </h1>
 
-      <p className="max-w-2xl text-lg text-fd-muted-foreground md:text-xl">{tagline}</p>
+      <p className="max-w-3xl text-lg text-fd-muted-foreground md:text-xl">{tagline}</p>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
         <CtaLink cta={primaryCta} primary />

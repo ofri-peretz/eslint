@@ -91,6 +91,8 @@ function findMarkdownReferences(term: string): Array<{ file: string; line: numbe
     '--exclude-dir=coverage',
     '--exclude-dir=benchmark-results',
     '--exclude-dir=results',
+    '--exclude-dir=.claude',
+    '--exclude-dir=.agent',
     '.',
     '2>/dev/null || true',
   ].join(' ');
