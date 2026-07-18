@@ -62,6 +62,10 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       // deprecation/removal; they never *recommend* the dead plugin to users.
       /^\.changeset\//,
       'packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
+      // The TS7 migration plan discusses whether the deprecated crypto plugin
+      // dir needs a devkit project reference — planning context, not a user
+      // recommendation. (The "migration doc" the allowlist rationale mentions.)
+      '.agent/TS7_MIGRATION_PLAN.md',
     ],
     importAllowlist: [THIS_TEST],
   },
