@@ -1,0 +1,42 @@
+{
+  // Whole-graph typecheck entry point for the ESLint plugin library.
+  //
+  // Runs as ONE `tsgo --build` invocation (TypeScript 7 native / tsgo) over the
+  // full plugin dependency graph — eslint-devkit → each plugin → eslint-config.
+  // A single whole-graph build is what makes TS7 faster here; 21 separate per-
+  // package `tsgo` invocations would pay Go's process-startup cost 21× and end
+  // up slower than TS6. See .agent/TS7_MIGRATION_PLAN.md.
+  //
+  // typescript-eslint stays on typescript@6.0.3 (it supports <6.1.0 until
+  // TS 7.1); this file/tsgo is the `tsc` typecheck side of the side-by-side.
+  //
+  // @interlace/ui is intentionally excluded: it is a bundler-resolution React
+  // package with no workspace deps and keeps its own `tsc --noEmit` typecheck.
+  //
+  // Sync lock: src/__tests__/ts7-solution-graph-lock.test.ts asserts this list
+  // matches every composite plugin-graph package — add new packages here too.
+  "files": [],
+  "references": [
+    { "path": "./packages/eslint-devkit/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-browser-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-conventions/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-express-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-import-next/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-jwt/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-lambda-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-maintainability/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-modernization/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-modularity/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-mongodb-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-nestjs-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-node-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-operability/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-pg/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-react-a11y/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-react-features/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-reliability/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-secure-coding/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-config-interlace/tsconfig.lib.json" }
+  ]
+}

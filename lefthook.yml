@@ -42,7 +42,9 @@ pre-push:
   parallel: true
   commands:
     typecheck:
-      run: npx --no turbo run typecheck --output-logs=errors-only
+      # Whole-graph TS7 (tsgo) typecheck of the plugin graph + @interlace/ui.
+      # One tsgo --build over tsconfig.solution.json; see .agent/TS7_MIGRATION_PLAN.md.
+      run: npm run --silent typecheck
     build:
       run: npx --no turbo run build --output-logs=errors-only
     tests:
