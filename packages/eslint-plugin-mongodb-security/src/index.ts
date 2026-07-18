@@ -81,7 +81,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mongodb-security',
-    version: '8.2.4',
+    version: '8.2.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

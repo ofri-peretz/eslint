@@ -62,7 +62,7 @@ export const plugin = {
     // `@interlace` scope; a scoped name here drifts from how consumers install
     // and reference the plugin. Locked in index.test.ts.
     name: 'eslint-plugin-maintainability',
-    version: '3.0.6',
+    version: '3.0.7',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

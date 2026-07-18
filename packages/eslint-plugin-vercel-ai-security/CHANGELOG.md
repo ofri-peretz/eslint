@@ -1,3 +1,9 @@
+## 1.3.7
+
+### Patch Changes
+
+- [#252](https://github.com/ofri-peretz/eslint/pull/252) [`d67e395`](https://github.com/ofri-peretz/eslint/commit/d67e3953c2748ad36e6aebe0f24b1d04e518b4d0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix Codecov badge showing "unknown" — switch from flag to component URL format
+
 ## 1.3.6
 
 ### Patch Changes
