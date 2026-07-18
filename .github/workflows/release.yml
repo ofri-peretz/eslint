@@ -297,7 +297,7 @@ jobs:
             echo "::error::Missing $PKG_DIR — build artifact incomplete."
             exit 1
           fi
-          # tag format: <unscoped-name>@<version>, e.g. "eslint-plugin-crypto@1.2.3"
+          # tag format: <unscoped-name>@<version>, e.g. "eslint-plugin-node-security@1.2.3"
           tag_name="${PKG_NAME##*/}@${PKG_VER}"
 
           echo "═════════════════════════════════════════════════════════"

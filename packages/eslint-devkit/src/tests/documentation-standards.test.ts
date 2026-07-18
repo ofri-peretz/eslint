@@ -17,9 +17,9 @@ const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
 const PACKAGES_DIR = path.join(WORKSPACE_ROOT, 'packages');
 
 // List of valid plugin names in the Interlace ecosystem.
-// Deprecated plugins (e.g. eslint-plugin-crypto, consolidated into eslint-plugin-node-security)
-// are intentionally excluded — their docs hygiene is enforced separately and they are not
-// recommended in cross-plugin docs. See `no-deprecated-plugin-references.test.ts`.
+// Deprecated / removed plugins are intentionally excluded — their docs hygiene is enforced
+// separately and they are not recommended in cross-plugin docs.
+// See `no-deprecated-plugin-references.test.ts`.
 const VALID_PLUGINS = [
   'eslint-plugin-browser-security',
   'eslint-plugin-conventions',

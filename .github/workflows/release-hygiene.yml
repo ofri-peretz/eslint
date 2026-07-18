@@ -39,7 +39,7 @@ on:
         type: choice
         options: [report, backfill-missing, create-releases, full, cleanup-orphans]
       pkg:
-        description: "Limit to one package (e.g. eslint-plugin-crypto). Empty = all."
+        description: "Limit to one package (e.g. eslint-plugin-node-security). Empty = all."
         required: false
         default: ""
 

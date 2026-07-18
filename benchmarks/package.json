@@ -43,7 +43,6 @@
     "dotenv": "^17.2.4",
     "eslint-plugin-browser-security": "*",
     "eslint-plugin-conventions": "*",
-    "eslint-plugin-crypto": "*",
     "eslint-plugin-express-security": "*",
     "eslint-plugin-import-next": "*",
     "eslint-plugin-jwt": "*",
