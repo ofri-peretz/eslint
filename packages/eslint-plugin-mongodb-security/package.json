@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-mongodb-security",
-  "version": "8.2.4",
+  "version": "8.2.5",
   "description": "Security-focused ESLint plugin for MongoDB & Mongoose. Detects NoSQL injection, operator attacks, credential exposure, and ODM-specific vulnerabilities with AI-optimized fix guidance.",
   "type": "commonjs",
   "main": "./dist/src/index.js",

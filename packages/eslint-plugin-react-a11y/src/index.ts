@@ -150,7 +150,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-react-a11y',
-    version: '2.1.6',
+    version: '2.1.7',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
