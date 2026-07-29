@@ -160,6 +160,29 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       return aiOutputPatterns.some((pattern: string) => text.includes(pattern));
     }
 
+    /**
+     * Check an interpolated string for AI output.
+     *
+     * Descends into the *parts* that carry values — a template literal's
+     * `${...}` expressions and the operands of a `+` chain — instead of
+     * pattern-matching the node's whole source text. Text matching only ever
+     * caught `db.query(`... ${result.text}`)`; the tracked-binding case
+     * `const { text } = await generateText(...); db.query(`... ${text}`)`
+     * fell through, because the source reads `text` while the patterns look
+     * for `.text`. The eval and innerHTML branches already consulted
+     * aiBoundNames directly, so only the SQL branch had this gap.
+     */
+    function containsAIOutput(node: TSESTree.Node): boolean {
+      if (node.type === 'TemplateLiteral') {
+        return node.expressions.some(containsAIOutput);
+      }
+      if (node.type === 'BinaryExpression') {
+        // Nested chains: `'a' + b + c` parses as `('a' + b) + c`.
+        return containsAIOutput(node.left) || containsAIOutput(node.right);
+      }
+      return isLikelyAIOutput(node);
+    }
+
     return {
       // Track `const r = await generateText(...)` / `const { text } = ...` shapes
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
@@ -202,7 +225,7 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
           for (const arg of node.arguments) {
             if (arg.type === 'TemplateLiteral' || arg.type === 'BinaryExpression') {
               // Check if template/concatenation includes AI output
-              if (isLikelyAIOutput(arg)) {
+              if (containsAIOutput(arg)) {
                 context.report({
                   node: arg,
                   messageId: 'unsafeOutputInSQL',

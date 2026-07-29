@@ -15,6 +15,18 @@ import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace
 
 type MessageIds = 'missingMaxSteps';
 
+/**
+ * Option keys that bound the tool-calling loop.
+ * AI SDK v5+ replaced `maxSteps` with `stopWhen` (idiomatically `stopWhen: stepCountIs(n)`);
+ * the v4 names stay accepted so v4 codebases keep passing. Any `stopWhen` counts — every
+ * StopCondition terminates the loop, so requiring `stepCountIs` specifically would
+ * false-positive on the other built-ins (e.g. `hasToolCall`).
+ */
+const STEP_LIMIT_KEYS = new Set([
+  'stopWhen',              // v5+
+  'maxSteps', 'max_steps', // v4
+]);
+
 export interface Options {
   /** Default max steps to suggest */
   suggestedMaxSteps?: number;
@@ -28,7 +40,7 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-steps.md',
-      description: 'Require maxSteps limit for multi-step tool calling to prevent infinite loops',
+      description: 'Require a step limit (stopWhen / maxSteps) for multi-step tool calling to prevent infinite loops',
       cwe: 'CWE-834',
       cvss: 6.5,
     },
@@ -39,10 +51,10 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-834',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} with tools is missing maxSteps. Without a limit, tool calls can loop indefinitely.',
+        description: '{{function}} with tools is missing a step limit. Without a limit, tool calls can loop indefinitely.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add maxSteps option: {{function}}({ ..., maxSteps: 5 })',
+        fix: 'Add stopWhen option: {{function}}({ ..., stopWhen: stepCountIs(5) }) — on AI SDK v4 the option is maxSteps: 5',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
       }),
     },
@@ -93,15 +105,15 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         // Only check for maxSteps if tools are present
         if (!hasTools) return;
 
-        // Check if maxSteps is present
+        // Check if a step limit is present (v5+ stopWhen or v4 maxSteps)
         const hasMaxSteps = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' 
-            ? prop.key.name 
-            : prop.key.type === 'Literal' 
+          const keyName = prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'Literal'
               ? String(prop.key.value)
               : null;
-          return keyName === 'maxSteps' || keyName === 'max_steps';
+          return keyName !== null && STEP_LIMIT_KEYS.has(keyName);
         });
 
         if (!hasMaxSteps) {

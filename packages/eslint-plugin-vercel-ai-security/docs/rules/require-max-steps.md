@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: "This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit"
+description: "This rule identifies AI SDK calls that use tools but don't specify a step limit (stopWhen on v5+, maxSteps on v4)"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -12,7 +12,7 @@ autofix: false
 
 
 <!-- @rule-summary -->
-This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit
+This rule identifies AI SDK calls that use tools but don't specify a step limit (stopWhen on v5+, maxSteps on v4)
 <!-- @/rule-summary -->
 
 ## 📊 Rule Details
@@ -28,7 +28,7 @@ This rule identifies AI SDK calls that use tools but don't specify a maxSteps li
 
 ## 🔍 What This Rule Detects
 
-This rule identifies AI SDK calls that use tools but don't specify a `maxSteps` limit. Without limits, AI agents can enter infinite loops calling tools repeatedly.
+This rule identifies AI SDK calls that use tools but don't specify a step limit — `stopWhen` on AI SDK v5+, `maxSteps` on v4. Without limits, AI agents can enter infinite loops calling tools repeatedly.
 
 ## ❌ Incorrect Code
 
@@ -54,7 +54,9 @@ await streamText({
 ## ✅ Correct Code
 
 ```typescript
-// With maxSteps limit
+// AI SDK v5+ — bound the loop with a stop condition
+import { generateText, stepCountIs } from 'ai';
+
 await generateText({
   model: openai('gpt-4'),
   prompt: 'Research and summarize',
@@ -62,7 +64,7 @@ await generateText({
     search: searchTool,
     summarize: summarizeTool,
   },
-  maxSteps: 5,
+  stopWhen: stepCountIs(5),
 });
 
 // Bounded agent
@@ -70,9 +72,22 @@ await streamText({
   model: anthropic('claude-3'),
   prompt: 'Complete the task',
   tools: { search, write, deploy },
-  maxSteps: 10,
+  stopWhen: stepCountIs(10),
+});
+
+// AI SDK v4 — maxSteps, still accepted by this rule
+await generateText({
+  model: openai('gpt-4'),
+  prompt: 'Research and summarize',
+  tools: { search: searchTool },
+  maxSteps: 5,
 });
 ```
+
+> **SDK versions:** v4 used `maxSteps`; v5+ replaced it with `stopWhen`
+> (`stopWhen: stepCountIs(n)`). The rule accepts either, and treats any
+> `stopWhen` condition as a bound — `stepCountIs`, `hasToolCall`, or a custom
+> `StopCondition`.
 
 ## ⚙️ Options
 
