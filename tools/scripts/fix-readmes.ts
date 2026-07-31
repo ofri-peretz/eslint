@@ -329,9 +329,14 @@ function processPackage(pkg: string): void {
     // --- 4. RECONSTRUCT CONTENT ---
     const output: string[] = [];
 
-    // Header & Logo
+    // Header & Logos — Interlace mark + ESLint mark side by side. The UTM
+    // stamp on the Interlace link is added by `scripts/stamp-utm-links.ts`
+    // on a later pass; the ESLint link points at eslint.org (not an owned
+    // property) so it stays un-stamped.
     output.push('<p align="center">');
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>`);
+    output.push('  &nbsp;&nbsp;');
+    output.push(`  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>`);
     output.push('</p>');
     output.push('');
     output.push('<p align="center">');
@@ -486,6 +491,16 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 `);
     output.push(`<p align="center">`);
     output.push(`  <a href="https://eslint.interlace.tools/docs/${docsSubPath}"><img src="https://eslint.interlace.tools/images/og-${pluginName}.png" alt="ESLint Interlace Plugin" width="100%" /></a>`);
+    output.push(`</p>`);
+    output.push('');
+
+    // Closing footer — Interlace mark only (no ESLint mark here; that pairing
+    // lives in the header). Same light-pair asset as the header, smaller
+    // (~70px). The link below is bare; `scripts/stamp-utm-links.ts` stamps
+    // the per-package UTM campaign onto it in a later pass (same as the
+    // header link above).
+    output.push(`<p align="center">`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>`);
     output.push(`</p>`);
 
     fs.writeFileSync(readmePath, output.join('\n'));
