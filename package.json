@@ -162,6 +162,7 @@
     "ilb:diff:publish": "tsx scripts/ilb-diff-publish.ts",
     "scaffold:mcp": "tsx scripts/scaffold-mcp.ts",
     "ilb:mutate": "tsx benchmarks/suites/ilb-mutate/run.ts",
+    "ilb:remediation": "node benchmarks/suites/ilb-remediation/run.mjs",
     "ilb:iso25010:report": "tsx scripts/ilb-iso25010-report.ts",
     "ilb:kappa": "tsx scripts/ilb-kappa.ts",
     "ilb:smoke": "tsx scripts/ilb-smoke.ts",

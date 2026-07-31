@@ -35,7 +35,8 @@
         "ILB-Parser-Matrix",
         "ILB-Mutate",
         "ILB-Wild-Federated",
-        "ILB-Public-Submission"
+        "ILB-Public-Submission",
+        "ILB-Remediation"
       ],
       "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
     },

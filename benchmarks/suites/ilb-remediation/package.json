@@ -1,0 +1,12 @@
+{
+  "name": "@interlace/ilb-remediation-suite",
+  "private": true,
+  "description": "Pinned competitor dependencies for the ILB-Remediation bench. Version bumps here = benchVersion bump in run.mjs.",
+  "dependencies": {
+    "@microsoft/eslint-plugin-sdl": "1.1.0",
+    "eslint-plugin-no-unsanitized": "4.1.5",
+    "eslint-plugin-security": "4.0.1",
+    "eslint-plugin-security-node": "1.1.4",
+    "eslint-plugin-xss": "0.1.12"
+  }
+}
