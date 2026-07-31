@@ -65,9 +65,15 @@ function checkPlugin(pkg: string): Violation | null {
     cursor = idx + header.length;
   }
 
-  // 2. Prelude: logo + standard badges (HTML form, not markdown linked image).
-  if (!content.includes('eslint-interlace-logo-light.svg')) {
-    reasons.push('missing Interlace logo in prelude');
+  // 2. Prelude: dual logos (Interlace mark + ESLint mark, side by side) +
+  // standard badges (HTML form, not markdown linked image). Pre-2026-07-30
+  // READMEs carried a single co-branded lockup (`eslint-interlace-logo-light.svg`);
+  // that's accepted too so a not-yet-migrated README doesn't false-fail.
+  const hasDualLogo =
+    content.includes('icon-light.svg') && content.includes('eslint-logo.svg');
+  const hasLegacyLockup = content.includes('eslint-interlace-logo-light.svg');
+  if (!hasDualLogo && !hasLegacyLockup) {
+    reasons.push('missing Interlace + ESLint logos in prelude');
   }
   if (
     !content.includes('img.shields.io/npm/v/') ||
