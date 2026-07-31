@@ -1,5 +1,11 @@
 ## [8.3.0] - 2026-02-08
 
+## 8.2.7
+
+### Patch Changes
+
+- [#274](https://github.com/ofri-peretz/eslint/pull/274) [`acdd2ad`](https://github.com/ofri-peretz/eslint/commit/acdd2ad257c2d7b6559476d05f6cc9de48da14b5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Widen optional peer ranges to accept mongoose ^9 and mongodb driver ^7. The rules lint call patterns statically and never import either library, and the interface-compatibility suite passes against mongoose 9.7 / mongodb 7.5 — the old caps just broke `npm install` in current-major repos.
+
 ## 8.2.6
 
 ### Patch Changes

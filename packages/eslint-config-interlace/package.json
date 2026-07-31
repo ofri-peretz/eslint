@@ -69,7 +69,7 @@
     "eslint-plugin-maintainability": "^3.0.8",
     "eslint-plugin-modernization": "^2.1.2",
     "eslint-plugin-modularity": "^2.1.2",
-    "eslint-plugin-mongodb-security": "^8.2.6",
+    "eslint-plugin-mongodb-security": "^8.2.7",
     "eslint-plugin-nestjs-security": "^1.2.6",
     "eslint-plugin-node-security": "^4.4.3",
     "eslint-plugin-operability": "^3.0.10",
