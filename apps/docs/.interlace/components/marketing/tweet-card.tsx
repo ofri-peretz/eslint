@@ -291,10 +291,10 @@ export const MagicTweet = ({
   const tweetUrl = `https://x.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
 
   return (
-    <div className="block group cursor-pointer">
+    <div className="block group cursor-pointer w-full max-w-[32rem]">
       <div
         className={cn(
-          'relative flex h-full w-full max-w-lg flex-col gap-4 overflow-hidden',
+          'relative flex h-full w-full max-w-[32rem] flex-col gap-4 overflow-hidden',
           'rounded-3xl border border-fd-border bg-fd-card p-6',
           'shadow-lg shadow-fd-border/40',
           'transition-all duration-300 ease-out',

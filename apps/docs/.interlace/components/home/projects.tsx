@@ -51,7 +51,7 @@ export function Projects({ repos }: ProjectsProps) {
           Open Source
         </p>
         <h2 className="text-3xl font-semibold tracking-tight">Projects</h2>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
+        <p className="mt-3 max-w-[42rem] text-muted-foreground">
           OSS work I maintain. Stars and metadata pulled live from GitHub.
         </p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">

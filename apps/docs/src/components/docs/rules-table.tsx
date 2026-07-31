@@ -377,7 +377,7 @@ export async function RulesTable({ plugin, limit, compact: _compact, showLinks: 
                     {rule.name}
                   </Link>
                   {rule.description && (
-                    <p className="text-xs text-fd-muted-foreground mt-0.5 max-w-md">
+                    <p className="text-xs text-fd-muted-foreground mt-0.5 max-w-[28rem]">
                       {rule.description}
                     </p>
                   )}
