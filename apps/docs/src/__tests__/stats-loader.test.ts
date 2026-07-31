@@ -212,18 +212,27 @@ describe('stats-loader unit tests', () => {
       expect(result.lastUpdated).toBe('2026-02-01T12:00:00.000Z');
     });
 
-    it('should use default values when plugin stats are missing', async () => {
+    it('falls back to the committed manifest when the runtime read fails', async () => {
       const mockedFs = vi.mocked(fs);
       mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
 
       const { getEcosystemStats } = await import('../lib/stats-loader');
+      const committed = (await import('../data/plugin-stats.json')).default;
       const result = await getEcosystemStats();
 
-      // Should return defaults
-      expect(result.plugins.total).toBe(18);
-      expect(result.plugins.security).toBe(11);
-      expect(result.plugins.quality).toBe(9);
-      expect(result.rules.total).toBe(330);
+      // Fallback is the committed plugin-stats.json, never hand-typed numbers
+      expect(result.plugins.total).toBe(committed.allPluginsCount);
+      expect(result.plugins.security).toBe(
+        committed.plugins.filter((p) =>
+          ['security', 'framework'].includes(p.category),
+        ).length,
+      );
+      expect(result.plugins.quality).toBe(
+        committed.plugins.filter((p) =>
+          ['quality', 'architecture'].includes(p.category),
+        ).length,
+      );
+      expect(result.rules.total).toBe(committed.totalRules);
       expect(result.coverage.average).toBe(85);
     });
 
