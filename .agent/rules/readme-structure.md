@@ -25,7 +25,8 @@ BODY  (markdown, may contain shields.io badges in tables)
   11. ## Rules                            (legend + unified table with 🧠 column)
   12. ## 🔗 Related ESLint Plugins
   13. ## 📄 License
-  14. Footer image (centered <p>, HTML <a><img>)
+  14. Footer image (centered <p>, HTML <a><img> — OG banner)
+  15. Closing Interlace mark (centered <p>, HTML <a><img> — mark only, no ESLint mark here)
 ```
 
 Optional sections (`## 🙋 FAQ`, `## 💡 What You Get`, `## ⚡ Performance`, `## 🏢 Usage Example`, `## Why These Rules?`, `## 📊 Test Coverage`) live **between Configuration Presets (7) and Compatibility (10)**. Never below Rules. Never between Rules and Related Plugins.
@@ -48,13 +49,23 @@ Implications for authors:
 
 ### 1. Logo
 
+Two marks side by side — the Interlace mark and the ESLint mark — each linking
+to its own home. (Before 2026-07-30 this was a single co-branded lockup,
+`eslint-interlace-logo-light.svg`; that asset still exists on the docs site
+for older published npm versions but is no longer used by new READMEs.)
+
 ```markdown
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
 </p>
 ```
 
-No `# Title` H1 — the logo is the visual anchor.
+No `# Title` H1 — the logos are the visual anchor. The Interlace link gets a
+`utm_source=github&utm_medium=referral&utm_campaign=<package>` stamp from
+`scripts/stamp-utm-links.ts`; the ESLint link points at eslint.org (not an
+owned property) and stays un-stamped.
 
 ### 2. Tagline
 
@@ -209,7 +220,17 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 ```
 
-Must be the very last element. No content below.
+### 15. Closing Interlace mark
+
+```markdown
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+</p>
+```
+
+Interlace mark only — the ESLint mark pairing lives in the header (1), not
+here. Same light-pair asset as the header, smaller (~70px). Must be the very
+last element. No content below.
 
 ---
 

@@ -52,12 +52,14 @@ const MIT_LICENSE_HEADER = 'MIT License';
 const MIT_COPYRIGHT_PATTERN = /Copyright \(c\) \d{4} Ofri Peretz/;
 
 // Mandatory sections (regex patterns).
-// Title accepts either a markdown H1 (`# eslint-plugin-…`) or the centered
-// Interlace banner that the new README template opens with.
+// Title accepts either a markdown H1 (`# eslint-plugin-…`), the legacy
+// single co-branded lockup (`alt="ESLint Interlace Logo"`), or the current
+// dual-logo header (`alt="Interlace"` + `alt="ESLint"` side by side).
 const MANDATORY_SECTIONS = [
   {
     name: 'Title',
-    pattern: /(^#\s+eslint-plugin-|<img\s[^>]*alt="ESLint Interlace Logo")/m,
+    pattern:
+      /(^#\s+eslint-plugin-|<img\s[^>]*alt="ESLint Interlace Logo"|<img\s[^>]*alt="Interlace")/m,
   },
   { name: 'Rules Section', pattern: /##\s+.*Rules/i },
   { name: 'License Section', pattern: /##\s+.*License/i },
