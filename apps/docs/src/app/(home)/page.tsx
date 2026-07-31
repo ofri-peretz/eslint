@@ -541,7 +541,7 @@ function CatchCard({
     <Link
       href={href}
       aria-label={`${title} — ${cwe} — open rule ${ruleId}`}
-      className="group block rounded-xl border border-fd-border bg-fd-card p-6 hover:border-orange-500/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary transition-all"
+      className="group block min-w-0 rounded-xl border border-fd-border bg-fd-card p-6 hover:border-orange-500/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary transition-all"
     >
       <div className="flex items-baseline gap-2 mb-3 flex-wrap min-w-0">
         <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-mono font-medium text-orange-900 dark:text-orange-100 whitespace-nowrap shrink-0">
