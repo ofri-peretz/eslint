@@ -143,19 +143,46 @@ ${markSVG()}
 function findChrome() {
   const candidates = [
     process.env.CHROME_PATH,
+    // macOS
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    // Linux
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
   ].filter(Boolean);
   for (const c of candidates) {
     if (existsSync(c)) return c;
   }
+  // PATH lookup fallback (covers Linux CI images and non-default installs).
+  for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser']) {
+    try {
+      const found = execFileSync(process.platform === 'win32' ? 'where' : 'which', [bin], {
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+        .toString()
+        .trim()
+        .split('\n')[0];
+      if (found) return found;
+    } catch {
+      // not found on PATH, try the next candidate
+    }
+  }
   throw new Error(
-    'No headless-capable Chrome found. Set CHROME_PATH or install Google Chrome.',
+    'No headless-capable Chrome/Chromium found. Set CHROME_PATH or install Google Chrome.',
   );
 }
 
-function renderSVGToPNG(chrome, svg, outPngPath, tmpDir) {
-  const svgPath = path.join(tmpDir, `${path.basename(outPngPath, '.png')}.svg`);
+/**
+ * Render SVG straight to a raster image with headless Chrome's `--screenshot`
+ * flag, which infers the output format (PNG or JPEG) from the destination's
+ * file extension. This avoids a separate, platform-specific PNG->JPEG
+ * conversion step (e.g. macOS `sips`) entirely — the same Chrome invocation
+ * produces og-image.jpg and every og-<slug>.png, on any OS Chrome runs on.
+ */
+function renderSVGToImage(chrome, svg, outImagePath, tmpDir) {
+  const svgPath = path.join(tmpDir, `${path.basename(outImagePath).replace(/\.(png|jpe?g)$/i, '')}.svg`);
   writeFileSync(svgPath, svg, 'utf8');
   execFileSync(
     chrome,
@@ -164,7 +191,7 @@ function renderSVGToPNG(chrome, svg, outPngPath, tmpDir) {
       '--disable-gpu',
       '--hide-scrollbars',
       '--force-device-scale-factor=1',
-      `--screenshot=${outPngPath}`,
+      `--screenshot=${outImagePath}`,
       `--window-size=${W},${H}`,
       `file://${svgPath}`,
     ],
@@ -172,14 +199,13 @@ function renderSVGToPNG(chrome, svg, outPngPath, tmpDir) {
   );
 }
 
-function pngToJpeg(pngPath, jpegPath, quality = 90) {
-  execFileSync('sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', String(quality), pngPath, '--out', jpegPath], {
-    stdio: 'ignore',
-  });
-}
-
 function main() {
   const args = new Set(process.argv.slice(2));
+  if (args.has('--site-only') && args.has('--plugins-only')) {
+    throw new Error(
+      '--site-only and --plugins-only are mutually exclusive (together they generate nothing).',
+    );
+  }
   const doSite = !args.has('--plugins-only');
   const doPlugins = !args.has('--site-only');
 
@@ -192,10 +218,8 @@ function main() {
   try {
     if (doSite) {
       const svg = siteCardSVG();
-      const tmpPng = path.join(tmpDir, 'og-image.png');
-      renderSVGToPNG(chrome, svg, tmpPng, tmpDir);
       const outJpg = path.join(PUBLIC_DIR, 'og-image.jpg');
-      pngToJpeg(tmpPng, outJpg, 90);
+      renderSVGToImage(chrome, svg, outJpg, tmpDir);
       results.site = outJpg;
     }
 
@@ -204,7 +228,7 @@ function main() {
         const outPath = path.join(IMAGES_DIR, `og-${plugin.slug}.png`);
         const isNew = !existsSync(outPath);
         const svg = pluginCardSVG(plugin);
-        renderSVGToPNG(chrome, svg, outPath, tmpDir);
+        renderSVGToImage(chrome, svg, outPath, tmpDir);
         results.plugins.push({ slug: plugin.slug, pkg: plugin.package, path: outPath, isNew });
       }
     }
