@@ -3,6 +3,7 @@ import defaultMdxComponents from 'fumadocs-ui/mdx';
 import * as Twoslash from 'fumadocs-twoslash/ui';
 import { Mermaid } from '@/components/mdx/mermaid';
 import { InstallSnippet } from '@/components/mdx/install-snippet';
+import { Stat } from '@/components/mdx/stat';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
@@ -85,6 +86,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     pre: Pre, // Catches ```mermaid before fumadocs renders it as a code block
     Mermaid, // Diagram rendering (also usable as a direct MDX component)
     InstallSnippet, // Package-install snippet w/ PM switcher
+    Stat, // Plugin/rule counts from the generated numbers manifest — never hand-type them
     Steps, // Multi-step guides
     Step,
     Tabs, // Tabbed content

@@ -44,6 +44,25 @@ describe('Stats page: data integrity', () => {
     expect(typeof data.generatedAt).toBe('string');
   });
 
+  it('interlace-numbers.json has the manifest shape consumers depend on', () => {
+    const data = readJSON<{
+      schemaVersion: number;
+      source: string;
+      plugins: { total: number; security: number; quality: number; react: number };
+      rules: { total: number; security: number; quality: number; react: number };
+      generatedAt: string;
+    }>('interlace-numbers.json');
+    expect(data.schemaVersion).toBe(1);
+    expect(typeof data.source).toBe('string');
+    expect(typeof data.generatedAt).toBe('string');
+    for (const group of [data.plugins, data.rules]) {
+      for (const key of ['total', 'security', 'quality', 'react'] as const) {
+        expect(typeof group[key]).toBe('number');
+        expect(group[key]).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
   it('coverage-stats.json has the shape the page consumes', () => {
     const data = readJSON<{
       plugins: {

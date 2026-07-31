@@ -15,6 +15,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGES_DIR = join(__dirname, '../../../packages');
 const OUTPUT_FILE = join(__dirname, '../src/data/plugin-stats.json');
+const NUMBERS_FILE = join(__dirname, '../src/data/interlace-numbers.json');
 
 /**
  * Count rules by parsing the rules export in index.ts
@@ -87,6 +88,75 @@ export function getCategory(packageName: string) {
   return 'security';
 }
 
+/**
+ * Pillar mapping (canonical 3-tier used on every marketing surface):
+ *   security = category security | framework
+ *   quality  = category quality  | architecture
+ *   react    = category react
+ * Only published plugins count — this manifest is the single source of
+ * truth for every "N plugins / N rules" claim across repos (eslint docs,
+ * interlace landing, ofriperetz.dev blog). Consumers commit an exact copy
+ * and lock-test against it; never hand-type these numbers.
+ */
+export function buildNumbersManifest(
+  stats: Array<{ rules: number; category: string; published: boolean }>,
+  generatedAt: string,
+) {
+  const published = stats.filter(p => p.published);
+  const pillarOf = (category: string) =>
+    category === 'security' || category === 'framework' ? 'security'
+    : category === 'react' ? 'react'
+    : 'quality';
+  const count = (pillar: string) => published.filter(p => pillarOf(p.category) === pillar);
+  const rulesOf = (list: Array<{ rules: number }>) => list.reduce((sum, p) => sum + p.rules, 0);
+
+  const security = count('security');
+  const quality = count('quality');
+  const react = count('react');
+
+  return {
+    schemaVersion: 1,
+    source: 'https://github.com/ofri-peretz/eslint — apps/docs/scripts/sync-plugin-stats.ts',
+    plugins: {
+      total: published.length,
+      security: security.length,
+      quality: quality.length,
+      react: react.length,
+    },
+    rules: {
+      total: rulesOf(published),
+      security: rulesOf(security),
+      quality: rulesOf(quality),
+      react: rulesOf(react),
+    },
+    generatedAt,
+  };
+}
+
+/**
+ * Write JSON only when the data (ignoring generatedAt) changed, to prevent
+ * git churn. Read directly and catch missing/parse failures rather than
+ * `existsSync` + `readFileSync` (CodeQL: file system race condition).
+ */
+function writeIfChanged(filePath: string, label: string, data: Record<string, unknown>) {
+  try {
+    const existing = JSON.parse(readFileSync(filePath, 'utf-8'));
+    const existingData = { ...existing };
+    const newData = { ...data };
+    Reflect.deleteProperty(existingData, 'generatedAt');
+    Reflect.deleteProperty(newData, 'generatedAt');
+
+    if (JSON.stringify(existingData) === JSON.stringify(newData)) {
+      console.log(`\n✅ ${label} data unchanged, skipping write to prevent git churn.`);
+      return;
+    }
+  } catch {
+    // Missing or unparseable — fall through to write.
+  }
+  writeFileSync(filePath, JSON.stringify(data, null, 2));
+  console.log(`\n✅ Generated ${label}`);
+}
+
 async function main() {
   console.log('🔍 Scanning ESLint plugin packages...\n');
   
@@ -97,25 +167,16 @@ async function main() {
   const stats = [];
   let totalRules = 0;
 
-  const UNPUBLISHED_PLUGINS = new Set([
-    'eslint-plugin-react-features',
-    'eslint-plugin-react-a11y',
-    'eslint-plugin-architecture',
-    'eslint-plugin-quality'
-  ]);
-
   for (const packagePath of packages) {
     const metadata = getPackageMetadata(packagePath);
     if (!metadata) continue;
-    
+
     // Logic for 'published' status
     let published = true;
-    
+
     if (metadata.interlace?.docs === true) {
       published = true;
     } else if (metadata.interlace?.docs === false) {
-      published = false;
-    } else if (UNPUBLISHED_PLUGINS.has(metadata.name)) {
       published = false;
     } else if (metadata.private === true) {
       published = false;
@@ -157,6 +218,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
   };
 
+  const numbers = buildNumbersManifest(stats, output.generatedAt);
+
   // Ensure output directory exists
   const outputDir = dirname(OUTPUT_FILE);
   if (!existsSync(outputDir)) {
@@ -164,30 +227,8 @@ async function main() {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  // Compare with existing file to prevent unnecessary git diffs. Read
-  // directly and catch missing/parse failures rather than `existsSync` +
-  // `readFileSync` (CodeQL: "Potential file system race condition" — the
-  // file could be removed between the two calls).
-  let writeNeeded = true;
-  try {
-    const existing = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8'));
-    const existingData = { ...existing };
-    const newData = { ...output };
-    Reflect.deleteProperty(existingData, 'generatedAt');
-    Reflect.deleteProperty(newData, 'generatedAt');
-
-    if (JSON.stringify(existingData) === JSON.stringify(newData)) {
-      writeNeeded = false;
-      console.log(`\n✅ plugin-stats.json data unchanged, skipping write to prevent git churn.`);
-    }
-  } catch {
-    // Missing or unparseable — fall through to write.
-  }
-
-  if (writeNeeded) {
-    writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
-    console.log(`\n✅ Generated plugin-stats.json`);
-  }
+  writeIfChanged(OUTPUT_FILE, 'plugin-stats.json', output);
+  writeIfChanged(NUMBERS_FILE, 'interlace-numbers.json', numbers);
   console.log(`   Published: ${totalRules} rules across ${output.totalPlugins} plugins`);
   console.log(`   Total (incl. unpublished): ${stats.reduce((acc, p) => acc + p.rules, 0)} rules across ${stats.length} plugins`);
 }
