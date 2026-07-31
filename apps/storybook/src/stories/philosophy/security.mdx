@@ -8,8 +8,8 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Security-by-Design Philosophy (UI Surface)
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs) and
-[INTEROP_PHILOSOPHY.md](?path=/docs/philosophy-interop--docs), expanding the security
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs) and
+[INTEROP_PHILOSOPHY.md](?path=/docs/philosophy-reach-interop--docs), expanding the security
 surface that lives in the UI layer. This is not a substitute for our ESLint
 security plugins — those cover server-side, library-call, and data-handling
 hygiene. This document binds the **front-end** security contract: XSS,
@@ -121,8 +121,8 @@ Adding a new third-party script is a tracked decision, not a drive-by.
 
 ### 6. Forms protect against bot abuse without CAPTCHA
 
-Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-a11y--docs) §10 and
-[AUTH_PHILOSOPHY.md](?path=/docs/philosophy-auth--docs) §6. Bot defenses:
+Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-a11y--docs) §10 and
+[AUTH_PHILOSOPHY.md](?path=/docs/philosophy-trust-auth--docs) §6. Bot defenses:
 
 - Server-side rate limiting (token bucket per IP / per account).
 - Honeypot fields (hidden form fields that bots fill, humans don't).

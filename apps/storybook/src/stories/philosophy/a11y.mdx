@@ -8,7 +8,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Accessibility Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs), expanding
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs), expanding
 principle #1 (Adoption is friction subtraction) and #11 (Build with the
 ecosystem) into the accessibility surface. Accessibility is not a separate
 feature — it is the floor. A component that fails axe is a component that
@@ -109,7 +109,7 @@ Every page exposes:
 - A **skip-to-main** link as the first focusable element (`<a href="#main">`).
 - Landmark roles via semantic HTML: `<header>`, `<nav>`, `<main>`, `<aside>`,
   `<footer>` — at most one of each per page.
-- A single `<h1>` per page (cross-link to [SEO_PHILOSOPHY.md](?path=/docs/philosophy-seo--docs)).
+- A single `<h1>` per page (cross-link to [SEO_PHILOSOPHY.md](?path=/docs/philosophy-navigation-routing-seo--docs)).
 
 ### 6. Color is never the only signal
 
@@ -137,7 +137,7 @@ the size, not just visible icon dimensions.
 ### 8. Reduced motion is a contract
 
 Every animation respects `prefers-reduced-motion: reduce`. Cross-link to
-[MOTION_PHILOSOPHY.md](?path=/docs/philosophy-motion--docs).
+[MOTION_PHILOSOPHY.md](?path=/docs/philosophy-foundations-motion--docs).
 
 **Mechanics:**
 
@@ -147,7 +147,7 @@ Every animation respects `prefers-reduced-motion: reduce`. Cross-link to
 
 ### 9. Form accessibility (cross-link to FORM_PHILOSOPHY)
 
-Already covered in [FORM_PHILOSOPHY.md](?path=/docs/philosophy-form--docs) §9. Highlights:
+Already covered in [FORM_PHILOSOPHY.md](?path=/docs/philosophy-content-patterns-form--docs) §9. Highlights:
 
 - `<label htmlFor>` + `<input id>` pair on every field.
 - `aria-invalid="true"` + `aria-describedby="<error-id>"` on invalid inputs.

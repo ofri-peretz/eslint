@@ -1,15 +1,15 @@
 /**
  * MDX Frontmatter Validation Tests
- * 
+ *
  * These tests verify the integrity of MDX frontmatter metadata across
  * the Getting Started documentation section.
- * 
+ *
  * They prevent:
  * - Missing required fields (title, description)
  * - Invalid icon names
  * - Duplicate or placeholder descriptions
  * - Descriptions that are too short or too long
- * 
+ *
  * CRITICAL: These tests lock metadata structure to prevent build failures.
  */
 
@@ -34,35 +34,104 @@ const VALID_LUCIDE_ICONS = new Set([
   // ========================================
   // CURRENTLY USED IN MDX CONTENT
   // ========================================
-  'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Boxes', 'Brain',
-  'Cloud', 'Code2', 'Database', 'Download',
-  'FileCode', 'FileText', 'Gauge', 'GitBranch', 'GitFork', 'Globe',
-  'History', 'Key', 'KeyRound', 'Layers', 'Lightbulb', 'Map', 'Monitor',
-  'Network', 'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
-  'Shield', 'Terminal', 'TreeDeciduous', 'Users', 'Workflow',
+  'Accessibility',
+  'Activity',
+  'Bot',
+  'BookOpen',
+  'Boxes',
+  'Brain',
+  'Cloud',
+  'Code2',
+  'Database',
+  'Download',
+  'FileCode',
+  'FileText',
+  'Gauge',
+  'GitBranch',
+  'GitFork',
+  'Globe',
+  'History',
+  'Key',
+  'KeyRound',
+  'Layers',
+  'Lightbulb',
+  'Map',
+  'Monitor',
+  'Network',
+  'Puzzle',
+  'RefreshCw',
+  'Rocket',
+  'Server',
+  'Settings',
+  'Shield',
+  'Terminal',
+  'TreeDeciduous',
+  'Users',
+  'Workflow',
   'Wrench',
-  
+
   // ========================================
   // COMMON DOCUMENTATION ICONS
   // ========================================
-  'Book', 'Code', 'Package', 'Folder', 'File',
-  'Home', 'Menu', 'ChevronRight', 'ChevronDown', 'ArrowRight',
-  'ShieldCheck', 'Lock', 'AlertTriangle', 'CircleAlert',
-  'Sparkles', 'Zap', 'Laptop', 'Hammer', 'Cog',
-  'Check', 'CheckCircle', 'X', 'XCircle', 'Info',
-  'Play', 'Pause', 'Search', 'Filter',
-  'Image', 'Video', 'Eye', 'EyeOff',
+  'Book',
+  'Code',
+  'Package',
+  'Folder',
+  'File',
+  'Home',
+  'Menu',
+  'ChevronRight',
+  'ChevronDown',
+  'ArrowRight',
+  'ShieldCheck',
+  'Lock',
+  'AlertTriangle',
+  'CircleAlert',
+  'Sparkles',
+  'Zap',
+  'Laptop',
+  'Hammer',
+  'Cog',
+  'Check',
+  'CheckCircle',
+  'X',
+  'XCircle',
+  'Info',
+  'Play',
+  'Pause',
+  'Search',
+  'Filter',
+  'Image',
+  'Video',
+  'Eye',
+  'EyeOff',
   'MousePointer',
-  
+
   // ========================================
-  // DESIGN PHILOSOPHIES (apps/docs/content/docs/design/**)
+  // LEGACY: DESIGN PHILOSOPHY ICONS
   // ========================================
-  // Used by the projected `*_PHILOSOPHY.md` MDX pages. The icon map
-  // lives in `scripts/sync-philosophies.ts` (ICON_BY_SLUG). Keep these
-  // two lists aligned.
-  'Palette', 'MousePointerClick', 'Table', 'Link', 'ClipboardList',
-  'Languages', 'Plug', 'Keyboard', 'Layout', 'Loader', 'Wand2',
-  'ListOrdered', 'Type', 'Link2', 'BarChart3', 'Tag',
+  // These design-philosophy pages (apps/docs/content/docs/design/**)
+  // were removed — see docs/remove-design-system-section — because
+  // they leaked Interlace design-system content into this plugin-
+  // product docs site. Canonical home is now Storybook only
+  // (`scripts/sync-philosophies.ts` → apps/storybook). Kept here in
+  // case any legacy content still declares these icons.
+  'Palette',
+  'MousePointerClick',
+  'Table',
+  'Link',
+  'ClipboardList',
+  'Languages',
+  'Plug',
+  'Keyboard',
+  'Layout',
+  'Loader',
+  'Wand2',
+  'ListOrdered',
+  'Type',
+  'Link2',
+  'BarChart3',
+  'Tag',
 
   // ========================================
   // DEPRECATED ICONS (For migration warnings)
@@ -91,49 +160,51 @@ function extractFrontmatter(content: string): Frontmatter | null {
   if (!match) {
     return null;
   }
-  
+
   const frontmatter: Frontmatter = {};
   const lines = match[1].split('\n');
-  
+
   for (const line of lines) {
     const colonIndex = line.indexOf(':');
     if (colonIndex > 0) {
       const key = line.slice(0, colonIndex).trim();
       let value = line.slice(colonIndex + 1).trim();
-      
+
       // Remove quotes
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
-      
+
       frontmatter[key] = value;
     }
   }
-  
+
   return frontmatter;
 }
 
 function getAllMdxFiles(dir: string): string[] {
   const files: string[] = [];
-  
+
   if (!existsSync(dir)) {
     return files;
   }
-  
+
   const entries = readdirSync(dir);
-  
+
   for (const entry of entries) {
     const fullPath = join(dir, entry);
     const stat = statSync(fullPath);
-    
+
     if (stat.isDirectory() && entry !== '.plan') {
       files.push(...getAllMdxFiles(fullPath));
     } else if (entry.endsWith('.mdx')) {
       files.push(fullPath);
     }
   }
-  
+
   return files;
 }
 
@@ -147,7 +218,7 @@ function getRelativePath(fullPath: string): string {
 
 describe('MDX Frontmatter - Required Fields', () => {
   let mdxFiles: string[];
-  
+
   beforeAll(() => {
     mdxFiles = getAllMdxFiles(CONTENT_ROOT);
   });
@@ -159,19 +230,19 @@ describe('MDX Frontmatter - Required Fields', () => {
   describe('Every MDX file should have a title', () => {
     it('all files have title in frontmatter', () => {
       const missingTitle: string[] = [];
-      
+
       for (const file of mdxFiles) {
         const content = readFileSync(file, 'utf-8');
         const frontmatter = extractFrontmatter(content);
-        
+
         if (!frontmatter?.title || frontmatter.title.trim() === '') {
           missingTitle.push(getRelativePath(file));
         }
       }
-      
+
       expect(
         missingTitle,
-        `Files missing title: ${missingTitle.join(', ')}`
+        `Files missing title: ${missingTitle.join(', ')}`,
       ).toHaveLength(0);
     });
   });
@@ -179,19 +250,22 @@ describe('MDX Frontmatter - Required Fields', () => {
   describe('Every MDX file should have a description', () => {
     it('all files have description in frontmatter', () => {
       const missingDescription: string[] = [];
-      
+
       for (const file of mdxFiles) {
         const content = readFileSync(file, 'utf-8');
         const frontmatter = extractFrontmatter(content);
-        
-        if (!frontmatter?.description || frontmatter.description.trim() === '') {
+
+        if (
+          !frontmatter?.description ||
+          frontmatter.description.trim() === ''
+        ) {
           missingDescription.push(getRelativePath(file));
         }
       }
-      
+
       expect(
         missingDescription,
-        `Files missing description: ${missingDescription.join(', ')}`
+        `Files missing description: ${missingDescription.join(', ')}`,
       ).toHaveLength(0);
     });
   });
@@ -203,25 +277,25 @@ describe('MDX Frontmatter - Required Fields', () => {
 
 // Deprecated icons that should NOT be used (with their replacements)
 const DEPRECATED_ICONS: Record<string, string> = {
-  'HelpCircle': 'CircleHelp',
-  'AlertCircle': 'CircleAlert',
+  HelpCircle: 'CircleHelp',
+  AlertCircle: 'CircleAlert',
   // Add more deprecated icons here as Lucide updates
 };
 
 describe('MDX Frontmatter - Icon Validation', () => {
   let mdxFiles: string[];
-  
+
   beforeAll(() => {
     mdxFiles = getAllMdxFiles(CONTENT_ROOT);
   });
 
   it('icon names should be valid Lucide React icons', () => {
     const invalidIcons: { file: string; icon: string }[] = [];
-    
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
-      
+
       if (frontmatter?.icon) {
         const iconName = String(frontmatter.icon);
         if (!VALID_LUCIDE_ICONS.has(iconName)) {
@@ -232,21 +306,25 @@ describe('MDX Frontmatter - Icon Validation', () => {
         }
       }
     }
-    
+
     // Strict validation - fail if unknown icons are found
     expect(
       invalidIcons,
-      `Unknown icons detected. Add them to VALID_LUCIDE_ICONS or fix: ${JSON.stringify(invalidIcons, null, 2)}`
+      `Unknown icons detected. Add them to VALID_LUCIDE_ICONS or fix: ${JSON.stringify(invalidIcons, null, 2)}`,
     ).toHaveLength(0);
   });
 
   it('should not use deprecated Lucide icons', () => {
-    const deprecatedUsages: { file: string; icon: string; replacement: string }[] = [];
-    
+    const deprecatedUsages: {
+      file: string;
+      icon: string;
+      replacement: string;
+    }[] = [];
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
-      
+
       if (frontmatter?.icon) {
         const iconName = String(frontmatter.icon);
         if (DEPRECATED_ICONS[iconName]) {
@@ -258,10 +336,10 @@ describe('MDX Frontmatter - Icon Validation', () => {
         }
       }
     }
-    
+
     expect(
       deprecatedUsages,
-      `Deprecated icons found. Update to new names:\n${deprecatedUsages.map(d => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`
+      `Deprecated icons found. Update to new names:\n${deprecatedUsages.map((d) => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`,
     ).toHaveLength(0);
   });
 });
@@ -274,7 +352,7 @@ const CONTENT_ROOT_ALL = join(DOCS_ROOT, 'content');
 
 describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
   let allMdxFiles: string[];
-  
+
   beforeAll(() => {
     allMdxFiles = getAllMdxFiles(CONTENT_ROOT_ALL);
   });
@@ -285,11 +363,11 @@ describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
 
   it('ALL MDX files should use valid Lucide icons', () => {
     const invalidIcons: { file: string; icon: string }[] = [];
-    
+
     for (const file of allMdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
-      
+
       if (frontmatter?.icon) {
         const iconName = String(frontmatter.icon);
         if (!VALID_LUCIDE_ICONS.has(iconName)) {
@@ -300,20 +378,24 @@ describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
         }
       }
     }
-    
+
     expect(
       invalidIcons,
-      `Site-wide icon validation failed. Unknown icons:\n${invalidIcons.map(i => `  ${i.file}: "${i.icon}"`).join('\n')}\n\nAdd valid icons to VALID_LUCIDE_ICONS set.`
+      `Site-wide icon validation failed. Unknown icons:\n${invalidIcons.map((i) => `  ${i.file}: "${i.icon}"`).join('\n')}\n\nAdd valid icons to VALID_LUCIDE_ICONS set.`,
     ).toHaveLength(0);
   });
 
   it('NO MDX files should use deprecated Lucide icons', () => {
-    const deprecatedUsages: { file: string; icon: string; replacement: string }[] = [];
-    
+    const deprecatedUsages: {
+      file: string;
+      icon: string;
+      replacement: string;
+    }[] = [];
+
     for (const file of allMdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
-      
+
       if (frontmatter?.icon) {
         const iconName = String(frontmatter.icon);
         if (DEPRECATED_ICONS[iconName]) {
@@ -325,10 +407,10 @@ describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
         }
       }
     }
-    
+
     expect(
       deprecatedUsages,
-      `Deprecated icons found site-wide:\n${deprecatedUsages.map(d => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`
+      `Deprecated icons found site-wide:\n${deprecatedUsages.map((d) => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`,
     ).toHaveLength(0);
   });
 });
@@ -339,19 +421,20 @@ describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
 
 describe('MDX Frontmatter - Description Quality', () => {
   let mdxFiles: string[];
-  
+
   beforeAll(() => {
     mdxFiles = getAllMdxFiles(CONTENT_ROOT);
   });
 
   it('descriptions should be at least 20 characters', () => {
-    const tooShort: { file: string; description: string; length: number }[] = [];
-    
+    const tooShort: { file: string; description: string; length: number }[] =
+      [];
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
       const description = frontmatter?.description;
-      
+
       if (description && description.length < MIN_DESCRIPTION_LENGTH) {
         tooShort.push({
           file: getRelativePath(file),
@@ -360,21 +443,21 @@ describe('MDX Frontmatter - Description Quality', () => {
         });
       }
     }
-    
+
     expect(
       tooShort,
-      `Descriptions too short: ${tooShort.map(t => `${t.file} (${t.length} chars)`).join(', ')}`
+      `Descriptions too short: ${tooShort.map((t) => `${t.file} (${t.length} chars)`).join(', ')}`,
     ).toHaveLength(0);
   });
 
   it('descriptions should be at most 200 characters', () => {
     const tooLong: { file: string; length: number }[] = [];
-    
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
       const description = frontmatter?.description;
-      
+
       if (description && description.length > MAX_DESCRIPTION_LENGTH) {
         tooLong.push({
           file: getRelativePath(file),
@@ -382,10 +465,10 @@ describe('MDX Frontmatter - Description Quality', () => {
         });
       }
     }
-    
+
     expect(
       tooLong,
-      `Descriptions too long: ${tooLong.map(t => `${t.file} (${t.length} chars)`).join(', ')}`
+      `Descriptions too long: ${tooLong.map((t) => `${t.file} (${t.length} chars)`).join(', ')}`,
     ).toHaveLength(0);
   });
 
@@ -399,14 +482,14 @@ describe('MDX Frontmatter - Description Quality', () => {
       'tbd',
       'wip',
     ];
-    
+
     const placeholderDescriptions: { file: string; description: string }[] = [];
-    
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
       const description = frontmatter?.description?.toLowerCase() ?? '';
-      
+
       for (const placeholder of placeholders) {
         if (description.includes(placeholder)) {
           placeholderDescriptions.push({
@@ -417,24 +500,26 @@ describe('MDX Frontmatter - Description Quality', () => {
         }
       }
     }
-    
+
     expect(
       placeholderDescriptions,
-      `Placeholder descriptions found: ${placeholderDescriptions.map(p => p.file).join(', ')}`
+      `Placeholder descriptions found: ${placeholderDescriptions.map((p) => p.file).join(', ')}`,
     ).toHaveLength(0);
   });
 
   it('descriptions should not equal the title', () => {
     const sameAsTitleDescriptions: { file: string; title: string }[] = [];
-    
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
-      
+
       if (frontmatter?.title && frontmatter?.description) {
         const title = String(frontmatter.title).toLowerCase().trim();
-        const description = String(frontmatter.description).toLowerCase().trim();
-        
+        const description = String(frontmatter.description)
+          .toLowerCase()
+          .trim();
+
         if (title === description) {
           sameAsTitleDescriptions.push({
             file: getRelativePath(file),
@@ -443,10 +528,10 @@ describe('MDX Frontmatter - Description Quality', () => {
         }
       }
     }
-    
+
     expect(
       sameAsTitleDescriptions,
-      `Description equals title: ${sameAsTitleDescriptions.map(s => s.file).join(', ')}`
+      `Description equals title: ${sameAsTitleDescriptions.map((s) => s.file).join(', ')}`,
     ).toHaveLength(0);
   });
 });
@@ -457,19 +542,19 @@ describe('MDX Frontmatter - Description Quality', () => {
 
 describe('MDX Frontmatter - Uniqueness', () => {
   let mdxFiles: string[];
-  
+
   beforeAll(() => {
     mdxFiles = getAllMdxFiles(CONTENT_ROOT);
   });
 
   it('should not have duplicate descriptions across pages', () => {
     const descriptionMap = new Map<string, string[]>();
-    
+
     for (const file of mdxFiles) {
       const content = readFileSync(file, 'utf-8');
       const frontmatter = extractFrontmatter(content);
       const description = frontmatter?.description;
-      
+
       if (description) {
         const normalizedDesc = description.toLowerCase().trim();
         const existing = descriptionMap.get(normalizedDesc) ?? [];
@@ -477,18 +562,18 @@ describe('MDX Frontmatter - Uniqueness', () => {
         descriptionMap.set(normalizedDesc, existing);
       }
     }
-    
+
     const duplicates: { description: string; files: string[] }[] = [];
-    
+
     for (const [description, files] of descriptionMap) {
       if (files.length > 1) {
         duplicates.push({ description, files });
       }
     }
-    
+
     expect(
       duplicates,
-      `Duplicate descriptions found: ${duplicates.map(d => `"${d.description}" in [${d.files.join(', ')}]`).join('; ')}`
+      `Duplicate descriptions found: ${duplicates.map((d) => `"${d.description}" in [${d.files.join(', ')}]`).join('; ')}`,
     ).toHaveLength(0);
   });
 });
@@ -502,7 +587,7 @@ describe('MDX Frontmatter - Specific Pages', () => {
     const indexPath = join(CONTENT_ROOT, 'index.mdx');
     const content = readFileSync(indexPath, 'utf-8');
     const frontmatter = extractFrontmatter(content);
-    
+
     expect(frontmatter?.icon).toBe('Rocket');
   });
 
@@ -510,7 +595,7 @@ describe('MDX Frontmatter - Specific Pages', () => {
     const installPath = join(CONTENT_ROOT, 'installation.mdx');
     const content = readFileSync(installPath, 'utf-8');
     const frontmatter = extractFrontmatter(content);
-    
+
     expect(frontmatter?.icon).toBe('Download');
   });
 
@@ -518,7 +603,7 @@ describe('MDX Frontmatter - Specific Pages', () => {
     const configPath = join(CONTENT_ROOT, 'configuration.mdx');
     const content = readFileSync(configPath, 'utf-8');
     const frontmatter = extractFrontmatter(content);
-    
+
     expect(frontmatter?.icon).toBe('Settings');
   });
 });

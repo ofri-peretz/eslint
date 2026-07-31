@@ -8,14 +8,14 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Error & Empty-State Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs), expanding
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs), expanding
 principle #1 (Adoption is friction subtraction) into the failure path. Most
 products are judged by their happy paths and saved by their error paths. An
 error state that names the cause, names the fix, and preserves state is
 indistinguishable from a feature; an error state that says "Something went
 wrong" is indistinguishable from a bug.
 
-Pairs with [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs): loading,
+Pairs with [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-loading--docs): loading,
 error, and empty are the three states every async surface owes the user.
 
 ---
@@ -115,7 +115,7 @@ slow-network from broken-API. Three states minimum: `loading | error | empty
 | success`. Skeleton during loading; explicit error after a timeout (3s for
 most surfaces, 10s for heavy ones).
 
-**Mechanics:** see [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs) for the
+**Mechanics:** see [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-loading--docs) for the
 skeleton contract.
 
 ### 7. Error message tone is neutral, not apologetic
@@ -144,7 +144,7 @@ Loading → error → success must not shift adjacent content. Reserve space
 matching the destination geometry. Skeletons match exact dimensions;
 error/empty surfaces match too.
 
-**Cross-link:** [LAYOUT_PHILOSOPHY.md](?path=/docs/philosophy-layout--docs) §6 *Reserve
+**Cross-link:** [LAYOUT_PHILOSOPHY.md](?path=/docs/philosophy-foundations-layout--docs) §6 *Reserve
 space; never let content jump*.
 
 ### 10. Build with the ecosystem

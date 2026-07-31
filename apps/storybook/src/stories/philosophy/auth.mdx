@@ -8,7 +8,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Auth Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs), expanding
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs), expanding
 principle #1 (Adoption is friction subtraction) and #8 (Open the side door)
 into the authentication surface. Auth is where adoption is lost: every
 friction point (CAPTCHA, password reset, missing OAuth, broken deep-link
@@ -72,7 +72,7 @@ flow, and credential-stuffing attack vector.
 
 ### 3. Deep links survive the auth interruption
 
-Cross-link to [DEEP_LINKING_PHILOSOPHY.md](?path=/docs/philosophy-deep-linking--docs) §1
+Cross-link to [DEEP_LINKING_PHILOSOPHY.md](?path=/docs/philosophy-navigation-routing-deep-linking--docs) §1
 (Cold-load equivalence). When an unauthenticated user hits `/projects/42`:
 
 1. The router redirects to `/sign-in?returnTo=/projects/42`.
@@ -97,8 +97,8 @@ opt-in props, not hardcoded buttons. The auth pattern accepts a
 
 ### 5. Error messages name the fix (cross-link to FORM + ERROR)
 
-Cross-link to [FORM_PHILOSOPHY.md](?path=/docs/philosophy-form--docs) §3 and
-[ERROR_PHILOSOPHY.md](?path=/docs/philosophy-error--docs) §2. Auth errors are the most
+Cross-link to [FORM_PHILOSOPHY.md](?path=/docs/philosophy-content-patterns-form--docs) §3 and
+[ERROR_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-error--docs) §2. Auth errors are the most
 hostile failure surface — they are where users decide "this isn't worth it."
 
 | ❌ Diagnosis                | ✅ Fix                                                                       |
@@ -110,7 +110,7 @@ hostile failure surface — they are where users decide "this isn't worth it."
 
 ### 6. WCAG 2.2 — accessible authentication (SC 3.3.8, 3.3.9)
 
-Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-a11y--docs) §10. **No cognitive
+Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-a11y--docs) §10. **No cognitive
 function test in the primary path.** CAPTCHA is a regression unless paired
 with an alternative:
 
