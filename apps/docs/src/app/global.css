@@ -165,4 +165,33 @@
      light-theme flash during hydration (~12% white keeps the boundary
      legible on either surface). */
   --cta-secondary-bg: rgba(255, 255, 255, 0.12);
+
+  /* =========================================
+     BRAND MARK TOKENS
+     --------------------------------------------------------
+     Fills for the two inline brand marks, defined here so their JSX
+     call sites read `var(--*)` instead of raw hex literals (R19 /
+     `no-raw-color-literal` doctrine — same reasoning as --cta-*).
+
+     - --brand-mark-bar-*: the Interlace two-bar mark in the top nav
+       (`src/lib/layout.shared.tsx`). Theme-paired AA-safe set: light
+       surfaces get the deep pair, dark surfaces the bright pair.
+     - --eslint-mark-*: the official ESLint hexagon in the homepage
+       hero badge (`src/components/home/hero-section.tsx`). Colors are
+       ESLint's own — light theme keeps the purple pair, dark theme
+       uses their white/grey dark-variant fills (mirrors the
+       `prefers-color-scheme` block ESLint ships inside
+       `public/eslint-logo.svg`, but keyed to the site's `.dark`
+       class so the mark follows the THEME, not the OS). */
+  --brand-mark-bar-o: #a84c17;
+  --brand-mark-bar-g: #0a6b47;
+  --eslint-mark-outer: #4b32c3;
+  --eslint-mark-inner: #8080f2;
+}
+
+.dark {
+  --brand-mark-bar-o: #f4794a;
+  --brand-mark-bar-g: #0d9460;
+  --eslint-mark-outer: #ffffff;
+  --eslint-mark-inner: #999999;
 }

@@ -1,13 +1,25 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import Image from 'next/image';
 
 /**
  * Shared layout options for ESLint Interlace documentation
  * Used by both docs and homepage layouts.
  *
+ * Brand contract (nav slot):
+ * - The nav carries the Interlace identity only: the two-bar mark +
+ *   lowercase monospace wordmark "interlace". The ESLint hexagon lives in
+ *   the homepage hero (see `components/home/hero-section.tsx`), NOT here —
+ *   the old co-branded `eslint-interlace-logo*.svg` lockups stay in
+ *   `public/` because the npm READMEs hot-link them.
+ * - Mark geometry is the canonical Interlace mark (viewBox 0 0 100 100,
+ *   two rx-14 bars rotated -30° about the center). Bar fills read the
+ *   `--brand-mark-bar-*` tokens from `global.css` — theme-paired AA-safe
+ *   values keyed to the site's `.dark` class (fumadocs theme), not
+ *   `prefers-color-scheme`.
+ * - Wordmark is ALWAYS lowercase "interlace" in the site's mono stack.
+ *
  * a11y notes:
- * - Logo `<Image>` uses `alt=""` because the adjacent `<span>` already names
- *   the brand. Otherwise axe `image-redundant-alt` flags duplicate text.
+ * - Mark `<svg>` is `aria-hidden` because the adjacent `<span>` already
+ *   names the brand (same reasoning as the previous `alt=""` logo image).
  * - We deliberately do NOT use `githubUrl` from BaseLayoutProps — fumadocs
  *   renders that as an inline `<svg role="img">` without `<title>` /
  *   `aria-label`, tripping axe `svg-img-alt`. We instead push our own GitHub
@@ -19,23 +31,35 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <>
-          <Image
-            src="/eslint-interlace-logo.svg"
-            alt=""
-            width={24}
-            height={24}
-            className="dark:hidden"
-            priority
-          />
-          <Image
-            src="/eslint-interlace-logo-white.svg"
-            alt=""
-            width={24}
-            height={24}
-            className="hidden dark:block"
-            priority
-          />
-          <span className="font-semibold">ESLint Interlace</span>
+          <svg
+            viewBox="0 0 100 100"
+            width={22}
+            height={22}
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <g transform="rotate(-30 50 50)">
+              <rect
+                x="10"
+                y="18"
+                width="62"
+                height="28"
+                rx="14"
+                fill="var(--brand-mark-bar-o)"
+              />
+              <rect
+                x="28"
+                y="54"
+                width="62"
+                height="28"
+                rx="14"
+                fill="var(--brand-mark-bar-g)"
+              />
+            </g>
+          </svg>
+          <span className="font-mono font-semibold lowercase tracking-tight">
+            interlace
+          </span>
         </>
       ),
       transparentMode: 'top',
