@@ -1,11 +1,15 @@
 /**
  * sync-philosophies.ts
  *
- * Projects the 23 `*_PHILOSOPHY.md` documents at the repo root into two
- * consumer surfaces:
+ * Projects the 23 `*_PHILOSOPHY.md` documents at the repo root into
+ * Storybook MDX pages under `apps/storybook/src/stories/philosophy/` —
+ * the canonical home for Interlace design-system philosophy docs.
  *
- *   1. Fumadocs MDX pages under `apps/docs/content/docs/design/`
- *   2. Storybook MDX pages under `apps/storybook/src/stories/philosophy/`
+ * These are NOT projected into the ESLint plugin docs app
+ * (`apps/docs`) — that site is plugin-product documentation and must
+ * not surface design-system content. See the docs/remove-design-
+ * system-section change for the removal of the former
+ * `apps/docs/content/docs/design/` projection target.
  *
  * The repo-root `.md` files remain the single source of truth. The
  * generated MDX files carry a hash of their source in the header so a
@@ -13,22 +17,21 @@
  * re-running this script.
  *
  * Usage:
- *   npm run sync:philosophies            — regenerate (writes both surfaces)
- *   npm run sync:philosophies -- --check — exits non-zero if any output drifts
+ *   npm run sync:philosophies            — regenerate (writes Storybook)
+ *   npm run sync:philosophies -- --check — exits non-zero if output drifts
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const DOCS_OUT = path.join(REPO_ROOT, 'apps/docs/content/docs/design');
 const SB_OUT = path.join(REPO_ROOT, 'apps/storybook/src/stories/philosophy');
 
 const CHECK_MODE = process.argv.includes('--check');
 
-// Slug → lucide-react icon name. Used by Fumadocs frontmatter so each
-// sidebar entry gets a glyph. Order in the meta.json `pages` array is
-// independent from this map.
+// Slug → lucide-react icon name, retained on the Philosophy record for
+// any future consumer surface (no longer read by the Storybook-only
+// projection below).
 const ICON_BY_SLUG: Record<string, string> = {
   ux: 'Sparkles',
   layout: 'Layout',
@@ -120,10 +123,7 @@ const CATEGORY_BY_SLUG: Record<string, Category> = Object.fromEntries(
   CATEGORIES.flatMap((c) => c.slugs.map((s) => [s, c])),
 );
 
-const DOCS_ORDER: string[] = [
-  'index',
-  ...CATEGORIES.flatMap((c) => c.slugs),
-];
+const DOCS_ORDER: string[] = ['index', ...CATEGORIES.flatMap((c) => c.slugs)];
 
 interface Philosophy {
   /** Absolute path to the source `.md`. */
@@ -183,19 +183,13 @@ function deriveDescription(body: string): string {
   return 'Design philosophy.';
 }
 
-function rewriteCrossLinks(
-  markdown: string,
-  surface: 'docs' | 'storybook',
-): string {
+function rewriteCrossLinks(markdown: string): string {
   // Match `[label](FOO_PHILOSOPHY.md)` / `[label](./FOO_PHILOSOPHY.md)`
   // including optional `#anchor`.
   return markdown.replace(
     /\[([^\]]+)\]\(\.?\/?([A-Z][A-Z0-9_]*)_PHILOSOPHY\.md(#[^)]+)?\)/g,
-    (_match, label, name, anchor = '') => {
+    (_match, label, name) => {
       const targetSlug = slugFromFilename(`${name}_PHILOSOPHY.md`);
-      if (surface === 'docs') {
-        return `[${label}](/docs/design/${targetSlug}${anchor})`;
-      }
       // Storybook MDX page IDs follow `philosophy-<slug>--docs`.
       return `[${label}](?path=/docs/philosophy-${targetSlug}--docs)`;
     },
@@ -246,26 +240,8 @@ function loadPhilosophy(sourcePath: string): Philosophy {
   return { sourcePath, slug, title, description, body, hash, icon };
 }
 
-function renderDocsMdx(p: Philosophy): string {
-  const safeBody = escapeForMdx(rewriteCrossLinks(p.body, 'docs'));
-  // Fumadocs uses YAML frontmatter for title/description/icon. The
-  // hash header lives in an MDX comment so the renderer ignores it but
-  // the drift test can grep for it.
-  return `---
-title: ${JSON.stringify(p.title)}
-description: ${JSON.stringify(p.description)}
-icon: ${p.icon}
----
-{/* AUTO-GENERATED — run \`npm run sync:philosophies\` after editing the source.
-    source: ${path.relative(REPO_ROOT, p.sourcePath)}
-    hash: ${p.hash} */}
-
-${safeBody.trimEnd()}
-`;
-}
-
 function renderStorybookMdx(p: Philosophy): string {
-  const safeBody = escapeForMdx(rewriteCrossLinks(p.body, 'storybook'));
+  const safeBody = escapeForMdx(rewriteCrossLinks(p.body));
   const cat = CATEGORY_BY_SLUG[p.slug];
   // Storybook nests by `/` in the title — so "Philosophy/Foundations/UX"
   // becomes Philosophy → Foundations → UX in the sidebar. Falls back to
@@ -285,123 +261,6 @@ function renderStorybookMdx(p: Philosophy): string {
 
 ${safeBody.trimEnd()}
 `;
-}
-
-function renderDocsLanding(philosophies: Philosophy[]): string {
-  const bySlug = new Map(philosophies.map((p) => [p.slug, p]));
-  const icons = Array.from(
-    new Set(philosophies.map((p) => p.icon).filter(Boolean)),
-  ).sort();
-  const importLine = `import { ${icons.join(', ')} } from 'lucide-react';`;
-
-  // Render one `## <Category>` block per cluster, each with its own
-  // Cards grid. Philosophies that are mapped to a category but missing
-  // from the source set are skipped silently (defensive); philosophies
-  // that exist but have no category fall into a final "Other" block.
-  const seen = new Set<string>();
-  const categoryBlocks: string[] = [];
-
-  for (const cat of CATEGORIES) {
-    const members = cat.slugs
-      .map((s) => bySlug.get(s))
-      .filter((p): p is Philosophy => !!p);
-    if (members.length === 0) continue;
-    const cards = members
-      .map((p) => {
-        seen.add(p.slug);
-        return (
-          `  <Card title=${JSON.stringify(p.title)} icon={<${p.icon} />} href="/docs/design/${p.slug}">\n` +
-          `    ${escapeMdxInline(p.description)}\n` +
-          `  </Card>`
-        );
-      })
-      .join('\n');
-    categoryBlocks.push(
-      `## ${cat.label}\n\n${cat.hint}\n\n<Cards>\n${cards}\n</Cards>`,
-    );
-  }
-
-  const orphans = philosophies.filter((p) => !seen.has(p.slug));
-  if (orphans.length > 0) {
-    const cards = orphans
-      .map(
-        (p) =>
-          `  <Card title=${JSON.stringify(p.title)} icon={<${p.icon} />} href="/docs/design/${p.slug}">\n` +
-          `    ${escapeMdxInline(p.description)}\n` +
-          `  </Card>`,
-      )
-      .join('\n');
-    categoryBlocks.push(
-      `## Other\n\nUncategorised — add to a cluster in \`scripts/sync-philosophies.ts\`.\n\n<Cards>\n${cards}\n</Cards>`,
-    );
-  }
-
-  return `---
-title: Design
-description: The ${philosophies.length} contracts that govern look-and-feel across every Interlace surface.
-icon: Palette
----
-
-${importLine}
-
-# Design philosophies
-
-The Interlace design system is governed by **${philosophies.length} contracts**,
-grouped into ${CATEGORIES.length} clusters. Each contract lives at the
-monorepo root as a Markdown file and is the single source of truth; this
-section projects them so they're discoverable from inside the docs.
-
-If you're shipping a component change and can't point to the principle
-behind it, reconsider.
-
-${categoryBlocks.join('\n\n')}
-`;
-}
-
-function escapeMdxInline(s: string): string {
-  // Inline text inside <Card> — escape `<` and `{` to be safe.
-  return s.replace(/</g, '&lt;').replace(/\{/g, '&#123;');
-}
-
-function renderDocsMeta(philosophies: Philosophy[]): string {
-  const slugSet = new Set(philosophies.map((p) => p.slug));
-  // Fumadocs accepts `"---Header---"` entries in the `pages` array as
-  // sticky section separators in the sidebar (precedent: the
-  // `getting-started` meta.json already uses this pattern). We emit one
-  // separator per cluster header, then the cluster's slugs.
-  const pages: string[] = ['index'];
-  const placed = new Set<string>();
-  for (const cat of CATEGORIES) {
-    const members = cat.slugs.filter((s) => slugSet.has(s));
-    if (members.length === 0) continue;
-    pages.push(`---${cat.label}---`);
-    for (const s of members) {
-      pages.push(s);
-      placed.add(s);
-    }
-  }
-  // Append any orphans (new philosophy added without a category).
-  const orphans = philosophies
-    .map((p) => p.slug)
-    .filter((s) => !placed.has(s));
-  if (orphans.length > 0) {
-    pages.push('---Other---');
-    for (const s of orphans) pages.push(s);
-  }
-  return (
-    JSON.stringify(
-      {
-        title: 'Design',
-        description: 'Look-and-feel contracts',
-        icon: 'Palette',
-        root: true,
-        defaultOpen: false,
-        pages,
-      },
-      null,
-      4,
-    ) + '\n'
-  );
 }
 
 function renderStorybookIndex(philosophies: Philosophy[]): string {
@@ -455,9 +314,7 @@ ${blocks.join('\n\n')}
 }
 
 function writeIfChanged(file: string, content: string): boolean {
-  const existing = fs.existsSync(file)
-    ? fs.readFileSync(file, 'utf-8')
-    : null;
+  const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8') : null;
   if (existing === content) return false;
   if (CHECK_MODE) {
     process.stderr.write(`drift: ${path.relative(REPO_ROOT, file)}\n`);
@@ -477,13 +334,15 @@ function main(): void {
     .sort();
 
   if (sources.length === 0) {
-    process.stderr.write('error: no *_PHILOSOPHY.md files found at repo root\n');
+    process.stderr.write(
+      'error: no *_PHILOSOPHY.md files found at repo root\n',
+    );
     process.exit(1);
   }
 
   const philosophies = sources.map(loadPhilosophy);
-  // Order philosophies by DOCS_ORDER so landing-card grid and Storybook
-  // index list both render in the curated priority sequence.
+  // Order philosophies by DOCS_ORDER so the Storybook index list renders
+  // in the curated priority sequence.
   const orderIdx = (s: string) => {
     const i = DOCS_ORDER.indexOf(s);
     return i < 0 ? Number.MAX_SAFE_INTEGER : i;
@@ -493,20 +352,28 @@ function main(): void {
   let drift = 0;
 
   for (const p of philosophies) {
-    if (writeIfChanged(path.join(DOCS_OUT, `${p.slug}.mdx`), renderDocsMdx(p))) drift++;
-    if (writeIfChanged(path.join(SB_OUT, `${p.slug}.mdx`), renderStorybookMdx(p))) drift++;
+    if (
+      writeIfChanged(path.join(SB_OUT, `${p.slug}.mdx`), renderStorybookMdx(p))
+    )
+      drift++;
   }
 
-  if (writeIfChanged(path.join(DOCS_OUT, 'index.mdx'), renderDocsLanding(philosophies))) drift++;
-  if (writeIfChanged(path.join(DOCS_OUT, 'meta.json'), renderDocsMeta(philosophies))) drift++;
-  if (writeIfChanged(path.join(SB_OUT, 'Index.mdx'), renderStorybookIndex(philosophies))) drift++;
+  if (
+    writeIfChanged(
+      path.join(SB_OUT, 'Index.mdx'),
+      renderStorybookIndex(philosophies),
+    )
+  )
+    drift++;
 
   if (CHECK_MODE && drift > 0) {
-    process.stderr.write(`\n${drift} projection(s) drifted. Run \`npm run sync:philosophies\` to update.\n`);
+    process.stderr.write(
+      `\n${drift} projection(s) drifted. Run \`npm run sync:philosophies\` to update.\n`,
+    );
     process.exit(1);
   }
   process.stdout.write(
-    `\nsynced ${philosophies.length} philosophies → docs + storybook (${drift} changed)\n`,
+    `\nsynced ${philosophies.length} philosophies → storybook (${drift} changed)\n`,
   );
 }
 

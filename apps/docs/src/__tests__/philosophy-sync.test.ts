@@ -2,11 +2,18 @@
  * Drift gate for the philosophy projection.
  *
  * The 23 `*_PHILOSOPHY.md` files at the repo root are the single source
- * of truth. `scripts/sync-philosophies.ts` projects each into two
- * surfaces: `apps/docs/content/docs/design/<slug>.mdx` and
- * `apps/storybook/src/stories/philosophy/<slug>.mdx`. The generator
+ * of truth. `scripts/sync-philosophies.ts` projects each into
+ * `apps/storybook/src/stories/philosophy/<slug>.mdx` — the canonical
+ * home for Interlace design-system philosophy docs. The generator
  * embeds a SHA-256 prefix of the source content in each generated
  * file's header comment.
+ *
+ * NOTE: this projection used to also target
+ * `apps/docs/content/docs/design/<slug>.mdx` (the ESLint plugin docs
+ * site), but that surfaced design-system content on a plugin-product
+ * site and was removed — see docs/remove-design-system-section. The
+ * ESLint docs site no longer has a design-philosophy surface at all;
+ * point readers at https://storybook.interlace.tools instead.
  *
  * This test fails if a source `.md` is edited without re-running the
  * generator — the source's current hash won't match the hash baked
@@ -18,7 +25,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
-const DOCS_DIR = path.join(REPO_ROOT, 'apps/docs/content/docs/design');
 const SB_DIR = path.join(REPO_ROOT, 'apps/storybook/src/stories/philosophy');
 
 function slugFromFilename(file: string): string {
@@ -49,19 +55,6 @@ describe('philosophy projection drift', () => {
         .digest('hex')
         .slice(0, 12);
 
-      it('docs projection exists and matches source hash', () => {
-        const target = path.join(DOCS_DIR, `${slug}.mdx`);
-        expect(
-          fs.existsSync(target),
-          `missing docs projection: ${target} — run \`npm run sync:philosophies\``,
-        ).toBe(true);
-        const projected = fs.readFileSync(target, 'utf-8');
-        expect(
-          projected,
-          `docs projection drifted from source — run \`npm run sync:philosophies\``,
-        ).toContain(`hash: ${expectedHash}`);
-      });
-
       it('storybook projection exists and matches source hash', () => {
         const target = path.join(SB_DIR, `${slug}.mdx`);
         expect(
@@ -77,9 +70,15 @@ describe('philosophy projection drift', () => {
     });
   }
 
-  it('docs landing index + meta.json + storybook index are present', () => {
-    expect(fs.existsSync(path.join(DOCS_DIR, 'index.mdx'))).toBe(true);
-    expect(fs.existsSync(path.join(DOCS_DIR, 'meta.json'))).toBe(true);
+  it('storybook index is present', () => {
     expect(fs.existsSync(path.join(SB_DIR, 'Index.mdx'))).toBe(true);
+  });
+
+  it('does not project design-system philosophy pages into the ESLint plugin docs site', () => {
+    const removedDesignDir = path.join(
+      REPO_ROOT,
+      'apps/docs/content/docs/design',
+    );
+    expect(fs.existsSync(removedDesignDir)).toBe(false);
   });
 });
