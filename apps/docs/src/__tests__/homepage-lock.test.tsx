@@ -806,7 +806,9 @@ describe('Homepage: Visual Identity Lock', () => {
     });
 
     it('uses emerald accent for quality pillar', () => {
-      expect(homepageSource).toContain('text-emerald-600');
+      // Icon (decorative, large-shape 3:1) + AA action text (4.5:1 normal size).
+      expect(homepageSource).toContain('text-emerald-600 mb-6');
+      expect(homepageSource).toContain('text-emerald-700 dark:text-emerald-400');
     });
 
     it('uses gradient CTA styling', () => {

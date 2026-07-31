@@ -53,8 +53,11 @@ test.describe('Visual Regression Tests', () => {
         const match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
         if (match) {
           const [_, r, g, b] = match.map(Number);
-          // Brand orange has higher R than G; old violet had higher R/B than G
-          expect(r > g || b > g).toBe(true);
+          // Brand orange: warm hue ordering R > G > B. (The old violet lock
+          // accepted any saturated hue via `r > g || b > g`; this would
+          // silently pass a regression back to violet, where B > G.)
+          expect(r).toBeGreaterThan(g);
+          expect(g).toBeGreaterThanOrEqual(b);
         }
       }
     });
