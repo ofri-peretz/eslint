@@ -46,7 +46,9 @@ Output: `benchmarks/results/ilb-remediation/<date>.json` + a row appended to
 ## Fairness notes
 
 - Both sides are scanned with the same patterns; dead declarations are named
-  publicly on both sides (ours included — see the remediation tracker).
+  publicly on both sides (ours included — listed per-package in every result
+  file under `deadFixableDeclarations` / `deadSuggestionDeclarations`). The
+  target state is zero on our side: declared == implemented for every plugin.
 - SonarJS is excluded from v1.0: its security-rule subset is not mechanically
   separable from its 269 quality rules; including its whole-plugin remediation
   numbers would compare unlike scopes. Revisit in v1.1 with a defensible subset
