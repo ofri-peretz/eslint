@@ -53,21 +53,33 @@ describe('Top nav — Interlace mark + wordmark', () => {
   });
 });
 
-describe('Brand mark tokens — global.css theme pairs', () => {
+describe('Brand mark tokens — theme pairs', () => {
+  // The Interlace bar fills are ecosystem-shared and come from the synced
+  // baseline (`.interlace/css/brand.css`, authored in the agents repo);
+  // the ESLint hexagon fills stay app-owned in global.css.
   const cssPath = join(APP_ROOT, 'src/app/global.css');
+  const brandCssPath = join(APP_ROOT, '.interlace/css/brand.css');
   let css: string;
+  let brandCss: string;
 
   beforeAll(() => {
     css = readFileSync(cssPath, 'utf-8');
+    brandCss = readFileSync(brandCssPath, 'utf-8');
   });
 
-  it('Interlace bar tokens carry the AA-safe theme-paired values', () => {
+  it('Interlace bar tokens carry the AA-safe theme-paired values (synced baseline)', () => {
     // Light (deep pair) in :root…
-    expect(css).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
-    expect(css).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
+    expect(brandCss).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
+    expect(brandCss).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
     // …bright pair under .dark.
-    expect(css).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
-    expect(css).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
+    expect(brandCss).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
+    expect(brandCss).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
+  });
+
+  it('global.css imports the synced baseline so the fills resolve at runtime', () => {
+    expect(css).toMatch(/@import\s+'\.\.\/\.\.\/\.interlace\/css\/brand\.css'/);
+    // The app-owned duplicate block is gone — baseline is the single source.
+    expect(css).not.toContain('--brand-mark-bar-o:');
   });
 
   it('ESLint mark tokens carry the official untouched fills', () => {
