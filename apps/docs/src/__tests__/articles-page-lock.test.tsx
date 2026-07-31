@@ -396,7 +396,12 @@ describe('ArticlesClient: Test IDs Lock', () => {
 
 describe('ArticlesClient: Visual Identity Lock', () => {
   it('uses orange accent colors', () => {
-    expect(articlesSource).toContain('orange');
+    // Scoped to the concrete rebranded class strings (not a bare substring)
+    // so an unrelated 'orange' token can't mask a regression, and the old
+    // violet palette can't silently return.
+    expect(articlesSource).toContain('dark:!from-orange-950');
+    expect(articlesSource).toContain('dark:text-orange-300');
+    expect(articlesSource).not.toMatch(/purple|violet/);
   });
 
   it('uses fd-primary for brand consistency', () => {

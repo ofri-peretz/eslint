@@ -331,7 +331,7 @@ export default async function HomePage() {
                 ))}
               </div>
 
-              <div className="flex items-center text-emerald-600 font-medium">
+              <div className="flex items-center text-emerald-700 dark:text-emerald-400 font-medium">
                 Explore Quality <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
