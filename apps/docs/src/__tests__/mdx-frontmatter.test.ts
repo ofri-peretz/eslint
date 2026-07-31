@@ -55,11 +55,10 @@ const VALID_LUCIDE_ICONS = new Set([
   'MousePointer',
   
   // ========================================
-  // DESIGN PHILOSOPHIES (apps/docs/content/docs/design/**)
+  // EXTRA ALLOWED ICONS
   // ========================================
-  // Used by the projected `*_PHILOSOPHY.md` MDX pages. The icon map
-  // lives in `scripts/sync-philosophies.ts` (ICON_BY_SLUG). Keep these
-  // two lists aligned.
+  // Formerly used by the design-philosophy pages (section removed
+  // 2026-07-31); kept as allowed icons for future content.
   'Palette', 'MousePointerClick', 'Table', 'Link', 'ClipboardList',
   'Languages', 'Plug', 'Keyboard', 'Layout', 'Loader', 'Wand2',
   'ListOrdered', 'Type', 'Link2', 'BarChart3', 'Tag',

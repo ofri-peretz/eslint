@@ -2,8 +2,7 @@
  * Drift gate for the philosophy projection.
  *
  * The 23 `*_PHILOSOPHY.md` files at the repo root are the single source
- * of truth. `scripts/sync-philosophies.ts` projects each into two
- * surfaces: `apps/docs/content/docs/design/<slug>.mdx` and
+ * of truth. `scripts/sync-philosophies.ts` projects each into
  * `apps/storybook/src/stories/philosophy/<slug>.mdx`. The generator
  * embeds a SHA-256 prefix of the source content in each generated
  * file's header comment.
@@ -18,7 +17,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
-const DOCS_DIR = path.join(REPO_ROOT, 'apps/docs/content/docs/design');
 const SB_DIR = path.join(REPO_ROOT, 'apps/storybook/src/stories/philosophy');
 
 function slugFromFilename(file: string): string {
@@ -49,19 +47,6 @@ describe('philosophy projection drift', () => {
         .digest('hex')
         .slice(0, 12);
 
-      it('docs projection exists and matches source hash', () => {
-        const target = path.join(DOCS_DIR, `${slug}.mdx`);
-        expect(
-          fs.existsSync(target),
-          `missing docs projection: ${target} — run \`npm run sync:philosophies\``,
-        ).toBe(true);
-        const projected = fs.readFileSync(target, 'utf-8');
-        expect(
-          projected,
-          `docs projection drifted from source — run \`npm run sync:philosophies\``,
-        ).toContain(`hash: ${expectedHash}`);
-      });
-
       it('storybook projection exists and matches source hash', () => {
         const target = path.join(SB_DIR, `${slug}.mdx`);
         expect(
@@ -77,9 +62,16 @@ describe('philosophy projection drift', () => {
     });
   }
 
-  it('docs landing index + meta.json + storybook index are present', () => {
-    expect(fs.existsSync(path.join(DOCS_DIR, 'index.mdx'))).toBe(true);
-    expect(fs.existsSync(path.join(DOCS_DIR, 'meta.json'))).toBe(true);
+  it('storybook index is present', () => {
     expect(fs.existsSync(path.join(SB_DIR, 'Index.mdx'))).toBe(true);
+  });
+
+  it('the design/components doc sections stay deleted from the docs app', () => {
+    // Design-system content belongs to Storybook / ds.interlace.tools,
+    // not the ESLint docs. A projection reappearing here means a stale
+    // generator or an accidental restore.
+    const docsContent = path.join(REPO_ROOT, 'apps/docs/content/docs');
+    expect(fs.existsSync(path.join(docsContent, 'design'))).toBe(false);
+    expect(fs.existsSync(path.join(docsContent, 'components'))).toBe(false);
   });
 });

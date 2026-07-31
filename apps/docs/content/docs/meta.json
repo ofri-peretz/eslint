@@ -3,9 +3,7 @@
     "defaultOpen": true,
     "pages": [
         "getting-started",
-        "components",
         "benchmarks",
-        "design",
         "security",
         "quality",
         "integrations",
