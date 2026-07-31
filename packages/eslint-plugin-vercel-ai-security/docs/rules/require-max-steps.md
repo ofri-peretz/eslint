@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: "This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit"
+description: "This rule identifies AI SDK calls that use tools but don't specify a step limit (maxSteps or stopWhen)"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -12,7 +12,7 @@ autofix: false
 
 
 <!-- @rule-summary -->
-This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit
+This rule identifies AI SDK calls that use tools but don't specify a step limit (maxSteps or stopWhen)
 <!-- @/rule-summary -->
 
 ## 📊 Rule Details
@@ -28,7 +28,12 @@ This rule identifies AI SDK calls that use tools but don't specify a maxSteps li
 
 ## 🔍 What This Rule Detects
 
-This rule identifies AI SDK calls that use tools but don't specify a `maxSteps` limit. Without limits, AI agents can enter infinite loops calling tools repeatedly.
+This rule identifies AI SDK calls that use tools but don't specify a step limit. Without limits, AI agents can enter infinite loops calling tools repeatedly.
+
+Both idioms satisfy the rule:
+
+- **AI SDK v4**: `maxSteps: 5`
+- **AI SDK v5+**: `stopWhen: stepCountIs(5)` (v5 removed `maxSteps` in favor of `stopWhen`; some templates use `isStepCount`)
 
 ## ❌ Incorrect Code
 
@@ -54,7 +59,7 @@ await streamText({
 ## ✅ Correct Code
 
 ```typescript
-// With maxSteps limit
+// With maxSteps limit (AI SDK v4)
 await generateText({
   model: openai('gpt-4'),
   prompt: 'Research and summarize',
@@ -65,12 +70,28 @@ await generateText({
   maxSteps: 5,
 });
 
-// Bounded agent
+// Bounded agent (AI SDK v4)
 await streamText({
   model: anthropic('claude-3'),
   prompt: 'Complete the task',
   tools: { search, write, deploy },
   maxSteps: 10,
+});
+
+// AI SDK v5+: stopWhen replaces maxSteps
+await streamText({
+  model: 'openai/gpt-5',
+  messages,
+  tools: { getWeather },
+  stopWhen: stepCountIs(5),
+});
+
+// stopWhen also accepts an array of conditions
+await generateText({
+  model: openai('gpt-4'),
+  prompt: 'Complete the task',
+  tools: { search, write },
+  stopWhen: [stepCountIs(10), hasToolCall('finalize')],
 });
 ```
 
@@ -97,6 +118,17 @@ Unbounded tool loops can cause:
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
+
+### stopWhen Without a Step-Count Condition
+
+**Why**: Any `stopWhen` property satisfies the rule — the rule does not statically verify that the condition actually bounds step count.
+
+```typescript
+// ❌ NOT FLAGGED - stopWhen present but only stops on a tool call
+await generateText({ tools, stopWhen: hasToolCall('finalize') });
+```
+
+**Mitigation**: Include a `stepCountIs(n)` condition in `stopWhen` (alone or in an array).
 
 ### Options from Variable
 

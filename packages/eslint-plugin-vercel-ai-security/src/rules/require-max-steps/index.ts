@@ -39,10 +39,10 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-834',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} with tools is missing maxSteps. Without a limit, tool calls can loop indefinitely.',
+        description: '{{function}} with tools is missing a step limit. Without a limit, tool calls can loop indefinitely.',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add maxSteps option: {{function}}({ ..., maxSteps: 5 })',
+        fix: 'Add a step limit: {{function}}({ ..., stopWhen: stepCountIs(5) }) (v5+) or maxSteps: 5 (v4)',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
       }),
     },
@@ -93,15 +93,16 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         // Only check for maxSteps if tools are present
         if (!hasTools) return;
 
-        // Check if maxSteps is present
+        // Check if a step limit is present: maxSteps (v4) or stopWhen (v5+, e.g. stopWhen: stepCountIs(5))
         const hasMaxSteps = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' 
-            ? prop.key.name 
-            : prop.key.type === 'Literal' 
+          const keyName = prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'Literal'
               ? String(prop.key.value)
               : null;
-          return keyName === 'maxSteps' || keyName === 'max_steps';
+          // ponytail: any stopWhen counts — statically proving it bounds steps (arrays, custom conditions) isn't worth it; documented FN
+          return keyName === 'maxSteps' || keyName === 'max_steps' || keyName === 'stopWhen';
         });
 
         if (!hasMaxSteps) {
