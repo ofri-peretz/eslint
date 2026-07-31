@@ -26,10 +26,52 @@ export interface InterlaceLayoutConfig {
 }
 
 /**
+ * The canonical Interlace two-bar mark (viewBox 0 0 100 100, two rx-14 bars
+ * rotated -30° about the center). Bar fills read the `--brand-mark-bar-*`
+ * tokens from `css/brand.css` — theme-paired AA-safe values keyed to the
+ * site's `.dark` class, never raw hex in JSX. `aria-hidden` because the
+ * adjacent wordmark/title names the brand.
+ */
+export function InterlaceMark({ size = 22 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <g transform="rotate(-30 50 50)">
+        <rect
+          x="10"
+          y="18"
+          width="62"
+          height="28"
+          rx="14"
+          fill="var(--brand-mark-bar-o)"
+        />
+        <rect
+          x="28"
+          y="54"
+          width="62"
+          height="28"
+          rx="14"
+          fill="var(--brand-mark-bar-g)"
+        />
+      </g>
+    </svg>
+  );
+}
+
+/**
  * Create shared layout options for an Interlace docs site.
  *
  * Produces a `BaseLayoutProps` object consumed by both
  * `HomeLayout` and `DocsLayout` from fumadocs-ui.
+ *
+ * Nav brand contract: the nav carries the Interlace lockup — the two-bar
+ * mark (default logo, override via `config.logo`) plus the site title in
+ * the lowercase mono wordmark treatment.
  *
  * @example
  * ```ts
@@ -47,8 +89,10 @@ export function createBaseOptions(config: InterlaceLayoutConfig): BaseLayoutProp
     nav: {
       title: (
         <>
-          {config.logo}
-          <span className="font-semibold">{config.title}</span>
+          {config.logo ?? <InterlaceMark />}
+          <span className="font-mono font-semibold lowercase tracking-tight">
+            {config.title}
+          </span>
         </>
       ),
       transparentMode: 'top',

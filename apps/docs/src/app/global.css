@@ -17,6 +17,12 @@
    @interlace/ui so every consumer gets the same baseline. Brand colors
    (burnt-orange primary) below stay app-specific. */
 @import '@interlace/ui/styles/theme.css';
+/* Baseline brand layer synced from `interlace/docs-baseline` in the agents
+   repo (AUTO-GENERATED — edit there, then `npm run docs-baseline:sync`).
+   Source of the `--brand-mark-bar-*` fills the nav lockup reads
+   (see `src/lib/layout.shared.tsx` + nav-brand-lock.test.tsx). Its fd-token
+   values never win here: every app override below carries !important. */
+@import '../../.interlace/css/brand.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -174,13 +180,14 @@
   /* =========================================
      BRAND MARK TOKENS
      --------------------------------------------------------
-     Fills for the two inline brand marks, defined here so their JSX
+     Fills for the inline brand marks, defined via tokens so their JSX
      call sites read `var(--*)` instead of raw hex literals (R19 /
      `no-raw-color-literal` doctrine — same reasoning as --cta-*).
 
      - --brand-mark-bar-*: the Interlace two-bar mark in the top nav
-       (`src/lib/layout.shared.tsx`). Theme-paired AA-safe set: light
-       surfaces get the deep pair, dark surfaces the bright pair.
+       (`src/lib/layout.shared.tsx`) is NOT defined here — it comes from
+       the synced `.interlace/css/brand.css` (imported at top), the
+       ecosystem-wide source for the nav-lockup fills.
      - --eslint-mark-*: the official ESLint hexagon in the homepage
        hero badge (`src/components/home/hero-section.tsx`). Colors are
        ESLint's own — light theme keeps the purple pair, dark theme
@@ -188,15 +195,11 @@
        `prefers-color-scheme` block ESLint ships inside
        `public/eslint-logo.svg`, but keyed to the site's `.dark`
        class so the mark follows the THEME, not the OS). */
-  --brand-mark-bar-o: #a84c17;
-  --brand-mark-bar-g: #0a6b47;
   --eslint-mark-outer: #4b32c3;
   --eslint-mark-inner: #8080f2;
 }
 
 .dark {
-  --brand-mark-bar-o: #f4794a;
-  --brand-mark-bar-g: #0d9460;
   --eslint-mark-outer: #ffffff;
   --eslint-mark-inner: #999999;
 }

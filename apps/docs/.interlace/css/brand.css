@@ -170,6 +170,26 @@
 }
 
 /* =========================================
+   INTERLACE NAV LOCKUP — two-bar mark fills
+   =========================================
+ *
+ * Decorative fills for the canonical nav lockup: the two-bar Interlace mark
+ * next to the lowercase mono "interlace" wordmark. The inline SVG lives in
+ * `layouts/layout-options.tsx` (`InterlaceMark`); app-owned nav components
+ * (e.g. eslint's `layout.shared.tsx`) read the same tokens. Theme-paired
+ * AA-safe pairs keyed to `.dark` — light surfaces get the deep pair, dark
+ * surfaces the bright pair. Plain `:root` (not `@theme`): these are SVG
+ * `fill="var(--*)"` values, no Tailwind utility generation needed. */
+:root {
+  --brand-mark-bar-o: #a84c17;
+  --brand-mark-bar-g: #0a6b47;
+}
+.dark {
+  --brand-mark-bar-o: #f4794a;
+  --brand-mark-bar-g: #0d9460;
+}
+
+/* =========================================
    UX BEST PRACTICES — global resets
    =========================================
  *
