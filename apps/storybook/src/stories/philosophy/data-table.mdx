@@ -8,14 +8,14 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Data Table Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs), expanding
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs), expanding
 principle #1 (Adoption is friction subtraction), #5 (Discoverability beats
 memory), and #6 (Ease of use is performance) into the data-table surface.
 Data tables are where SaaS dashboards live or die: a table that doesn't sort,
 filter, paginate, or virtualize at scale is a table users actively avoid.
 
-Pairs with [PAGINATION_PHILOSOPHY.md](?path=/docs/philosophy-pagination--docs) (we already
-codified URL-state pagination) and [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs)
+Pairs with [PAGINATION_PHILOSOPHY.md](?path=/docs/philosophy-content-patterns-pagination--docs) (we already
+codified URL-state pagination) and [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-loading--docs)
 (skeleton + retry contract).
 
 ---
@@ -48,7 +48,7 @@ Ordered by leverage.
 ### 1. State lives in the URL
 
 Sort, filter, page, pageSize, column visibility, and grouping — all in the
-query string per [DEEP_LINKING_PHILOSOPHY.md](?path=/docs/philosophy-deep-linking--docs).
+query string per [DEEP_LINKING_PHILOSOPHY.md](?path=/docs/philosophy-navigation-routing-deep-linking--docs).
 The user can bookmark a filtered table, share it, refresh it.
 
 | Concern              | URL shape                                    |
@@ -86,7 +86,7 @@ filter configs; the URL maps to them via the schema.
 
 ### 4. Pagination is classic, not infinite
 
-Cross-link to [PAGINATION_PHILOSOPHY.md](?path=/docs/philosophy-pagination--docs). Tables
+Cross-link to [PAGINATION_PHILOSOPHY.md](?path=/docs/philosophy-content-patterns-pagination--docs). Tables
 default to **page-based pagination** with `page` + `pageSize` URL state.
 Infinite scroll is forbidden on data tables — users need to bookmark page 3
 and return.
@@ -130,8 +130,8 @@ This isn't free — column persistence + the headers' interactive layer cost
 
 ### 8. Loading / empty / error are first-class
 
-Cross-link to [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs) and
-[ERROR_PHILOSOPHY.md](?path=/docs/philosophy-error--docs).
+Cross-link to [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-loading--docs) and
+[ERROR_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-error--docs).
 
 - **Loading:** skeleton rows matching the column layout, never a centered
   spinner. Skeleton row count matches expected pageSize.
@@ -143,7 +143,7 @@ Cross-link to [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs) and
 
 ### 9. Accessibility is a contract (cross-link to A11Y)
 
-Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-a11y--docs).
+Cross-link to [A11Y_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-a11y--docs).
 
 - Semantic `<table>` with `<thead>` / `<tbody>` / `<th scope="col">`.
 - Sortable columns expose `aria-sort` (`ascending` / `descending` / `none`).

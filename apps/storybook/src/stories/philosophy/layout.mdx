@@ -8,7 +8,7 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Layout & Responsiveness Philosophy
 
-A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-ux--docs),
+A focused sub-philosophy of [UX_PHILOSOPHY.md](?path=/docs/philosophy-foundations-ux--docs),
 expanding Principle #1 ("Adoption is friction subtraction"), #6
 ("Ease of use is performance"), #8 ("Open the side door"), and #11
 ("Build with the ecosystem"). Layout is the part of the UI that, when
@@ -49,7 +49,7 @@ Three tests, in order:
 3. **Does this preserve layout?** Decorative chrome must be
    `absolute`. Async content must reserve space. CLS attributable to
    layout choices stays at 0 — same contract as
-   [MOTION_PHILOSOPHY.md](?path=/docs/philosophy-motion--docs).
+   [MOTION_PHILOSOPHY.md](?path=/docs/philosophy-foundations-motion--docs).
 
 ---
 
@@ -165,7 +165,7 @@ domain. Layout-CLS comes from three sources, all preventable:
   `width` + `height`. Fumadocs `<ImageZoom>` already enforces this;
   inline `<img>` does not.
 - **Skeletons that don't match destination geometry.** Cross-link:
-  see [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-loading--docs) §"Dimensions
+  see [LOADING_PHILOSOPHY.md](?path=/docs/philosophy-interaction-states-loading--docs) §"Dimensions
   match the destination exactly." Layout owes the same contract.
 
 ### 7. Sections compose; pages don't

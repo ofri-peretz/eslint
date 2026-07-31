@@ -125,6 +125,19 @@ const CATEGORY_BY_SLUG: Record<string, Category> = Object.fromEntries(
 
 const DOCS_ORDER: string[] = ['index', ...CATEGORIES.flatMap((c) => c.slugs)];
 
+// Storybook nests stories by `/` in the title (see renderStorybookMdx's
+// nestedTitle), which Storybook's own slugifier turns into a page ID of
+// `philosophy-<category>-<slug>--docs` (lowercase, hyphen-separated
+// category label). Shared by rewriteCrossLinks and renderStorybookIndex
+// so both agree on the same ID for the same slug.
+function storybookPageId(slug: string): string {
+  const cat = CATEGORY_BY_SLUG[slug];
+  const catPart = cat
+    ? cat.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    : 'other';
+  return `philosophy-${catPart}-${slug}--docs`;
+}
+
 interface Philosophy {
   /** Absolute path to the source `.md`. */
   sourcePath: string;
@@ -188,10 +201,9 @@ function rewriteCrossLinks(markdown: string): string {
   // including optional `#anchor`.
   return markdown.replace(
     /\[([^\]]+)\]\(\.?\/?([A-Z][A-Z0-9_]*)_PHILOSOPHY\.md(#[^)]+)?\)/g,
-    (_match, label, name) => {
+    (_match, label, name, anchor = '') => {
       const targetSlug = slugFromFilename(`${name}_PHILOSOPHY.md`);
-      // Storybook MDX page IDs follow `philosophy-<slug>--docs`.
-      return `[${label}](?path=/docs/philosophy-${targetSlug}--docs)`;
+      return `[${label}](?path=/docs/${storybookPageId(targetSlug)}${anchor})`;
     },
   );
 }
@@ -267,11 +279,9 @@ function renderStorybookIndex(philosophies: Philosophy[]): string {
   const bySlug = new Map(philosophies.map((p) => [p.slug, p]));
   // Mirror the docs landing: one section per cluster, with hint + list.
   // Storybook URLs follow `philosophy-<category>-<slug>--docs` once a
-  // story's title is nested as Philosophy/Cat/Title; the slugifier is
-  // Storybook's own (lowercase, hyphen-separated).
-  const sbSlug = (cat: string, slug: string) =>
-    `philosophy-${cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${slug}--docs`;
-
+  // story's title is nested as Philosophy/Cat/Title — see
+  // `storybookPageId`, shared with `rewriteCrossLinks` so both agree on
+  // the same ID for the same slug.
   const seen = new Set<string>();
   const blocks: string[] = [];
   for (const cat of CATEGORIES) {
@@ -282,7 +292,7 @@ function renderStorybookIndex(philosophies: Philosophy[]): string {
     const list = members
       .map((p) => {
         seen.add(p.slug);
-        return `- **[${p.title}](?path=/docs/${sbSlug(cat.label, p.slug)})** — ${p.description}`;
+        return `- **[${p.title}](?path=/docs/${storybookPageId(p.slug)})** — ${p.description}`;
       })
       .join('\n');
     blocks.push(`## ${cat.label}\n\n${cat.hint}\n\n${list}`);

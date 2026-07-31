@@ -14,7 +14,7 @@ is governed by this document. CTAs are the smallest unit of conversion;
 they're also the most-copied component. **Inconsistent CTAs read as a broken
 product**, even when each one in isolation looks fine.
 
-This document is the sibling of [`UX_PHILOSOPHY.md`](?path=/docs/philosophy-ux--docs) and
+This document is the sibling of [`UX_PHILOSOPHY.md`](?path=/docs/philosophy-foundations-ux--docs) and
 inherits its tone: principles ordered by **leverage**, each backed by
 **Mechanics** (what to do) and **Measure** (how we know).
 
@@ -51,7 +51,7 @@ promise).
 
 The most-wanted action on a page is the primary CTA. *One.* A page with two
 primaries asks the reader to pick, and "pick" is friction
-([`UX_PHILOSOPHY.md` #1](?path=/docs/philosophy-ux--docs)).
+([`UX_PHILOSOPHY.md` #1](?path=/docs/philosophy-foundations-ux--docs#1-adoption-is-friction-subtraction)).
 A tie is a loss.
 
 **Mechanics**
@@ -232,7 +232,7 @@ without a meaning category.
 Animated CTAs (the `ShimmerButton` is the only one we ship today) are visual
 debt: they pull every eye on the page, which is exactly the point — *and
 exactly why they cannot be the default*. Every animated CTA spends from the
-motion budget defined in [`MOTION_PHILOSOPHY.md`](?path=/docs/philosophy-motion--docs).
+motion budget defined in [`MOTION_PHILOSOPHY.md`](?path=/docs/philosophy-foundations-motion--docs).
 
 **Mechanics**
 
@@ -265,7 +265,7 @@ is a regression. Cross-surface counts on the same page are allowed.
 The docs site, plugin READMEs, OG-card images, the eventual `@interlace/ui`
 consumer site, and the `claude.ai` integration cards all render CTAs through
 the same primitive. CTAs are how we *demonstrate* the package
-([`UX_PHILOSOPHY.md` #9](?path=/docs/philosophy-ux--docs));
+([`UX_PHILOSOPHY.md` #9](?path=/docs/philosophy-foundations-ux--docs#9-the-docs-site-is-the-showcase));
 if our own CTAs are inconsistent, we've shipped the counter-example.
 
 **Mechanics**
@@ -283,7 +283,7 @@ if our own CTAs are inconsistent, we've shipped the counter-example.
   weight/icon system — they're the offline equivalent of a CTA.
 - **OG cards render the primary CTA in the same dimensions** as the page's
   on-site CTA, so the link preview previews the click.
-- Builds on [`UX_PHILOSOPHY.md` #11 (Build with the ecosystem)](?path=/docs/philosophy-ux--docs):
+- Builds on [`UX_PHILOSOPHY.md` #11 (Build with the ecosystem)](?path=/docs/philosophy-foundations-ux--docs#11-build-with-the-ecosystem-not-against-it):
   Base UI's `useRender` is what makes this composition tractable.
 
 **Measure**: dependency graph — every component named `*-cta-*`, `Hero`,
@@ -306,7 +306,7 @@ button.
   ring color (`focus-visible:ring-ring/50`). Inherited from the cva base
   classes — don't strip them at call site.
 - **Hover** changes fill or border, never geometry. A CTA that grows on
-  hover causes layout shift ([`MOTION_PHILOSOPHY.md`](?path=/docs/philosophy-motion--docs)
+  hover causes layout shift ([`MOTION_PHILOSOPHY.md`](?path=/docs/philosophy-foundations-motion--docs)
   CLS=0).
 - **Active** (`:active`) shows a brief pressed treatment — handled by the
   primitive; don't customize per-call.
@@ -315,7 +315,7 @@ button.
   unavailable, it's disabled.
 - **Loading** replaces the trailing icon with a spinner and locks the label
   width — the button's bounding box does not move. (See
-  [`LOADING_PHILOSOPHY.md`](?path=/docs/philosophy-loading--docs) for the spinner pattern.)
+  [`LOADING_PHILOSOPHY.md`](?path=/docs/philosophy-interaction-states-loading--docs) for the spinner pattern.)
 - **`aria-busy="true"`** on loading; **`aria-disabled="true"`** when the
   click is rejected for a reason the reader should be told (with adjacent
   microcopy).
