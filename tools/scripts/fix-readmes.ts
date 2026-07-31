@@ -496,7 +496,9 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
     // Closing footer — Interlace mark only (no ESLint mark here; that pairing
     // lives in the header). Same light-pair asset as the header, smaller
-    // (~70px), linking back with the same UTM campaign as the package.
+    // (~70px). The link below is bare; `scripts/stamp-utm-links.ts` stamps
+    // the per-package UTM campaign onto it in a later pass (same as the
+    // header link above).
     output.push(`<p align="center">`);
     output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>`);
     output.push(`</p>`);

@@ -75,6 +75,15 @@ function checkPlugin(pkg: string): Violation | null {
   if (!hasDualLogo && !hasLegacyLockup) {
     reasons.push('missing Interlace + ESLint logos in prelude');
   }
+
+  // 2b. Closing footer: the dual-logo header format additionally requires a
+  // standalone Interlace mark (icon-light.svg, height=70) as the very last
+  // element (item 15 in readme-structure.md) — distinct from the header's
+  // icon-light.svg (height=90). Legacy-lockup READMEs predate this footer
+  // and are exempt, same as the header check above.
+  if (hasDualLogo && !content.includes('icon-light.svg" alt="Interlace" height="70"')) {
+    reasons.push('missing closing Interlace mark footer (item 15 in readme-structure.md)');
+  }
   if (
     !content.includes('img.shields.io/npm/v/') ||
     !content.includes('img.shields.io/badge/License-MIT')
