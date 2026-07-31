@@ -68,18 +68,28 @@ describe('Brand mark tokens — theme pairs', () => {
   });
 
   it('Interlace bar tokens carry the AA-safe theme-paired values (synced baseline)', () => {
+    // Scope to selector blocks so swapped/misplaced declarations fail: the
+    // deep pair must sit under `:root`, the bright pair under `.dark`.
+    // brand.css has several `.dark` blocks (fd overrides + bar tokens), so
+    // concatenate all matches per selector rather than taking the first.
+    const blocksFor = (selector: RegExp) =>
+      [...brandCss.matchAll(selector)].map((m) => m[1]).join('\n');
+    const rootBlocks = blocksFor(/:root\s*\{([\s\S]*?)\}/g);
+    const darkBlocks = blocksFor(/\.dark\s*\{([\s\S]*?)\}/g);
+
     // Light (deep pair) in :root…
-    expect(brandCss).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
-    expect(brandCss).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
+    expect(rootBlocks).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
+    expect(rootBlocks).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
     // …bright pair under .dark.
-    expect(brandCss).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
-    expect(brandCss).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
+    expect(darkBlocks).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
+    expect(darkBlocks).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
   });
 
   it('global.css imports the synced baseline so the fills resolve at runtime', () => {
     expect(css).toMatch(/@import\s+'\.\.\/\.\.\/\.interlace\/css\/brand\.css'/);
-    // The app-owned duplicate block is gone — baseline is the single source.
-    expect(css).not.toContain('--brand-mark-bar-o:');
+    // The app-owned duplicate block is gone — baseline is the single source
+    // for BOTH bar tokens.
+    expect(css).not.toMatch(/--brand-mark-bar-[og]\s*:/);
   });
 
   it('ESLint mark tokens carry the official untouched fills', () => {
