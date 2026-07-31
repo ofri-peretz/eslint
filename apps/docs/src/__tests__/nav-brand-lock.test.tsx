@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, it, expect, beforeAll } from 'vitest';
 
 /**
@@ -17,7 +17,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
  *    nav image (they remain in public/ solely because npm READMEs
  *    hot-link them).
  */
-const APP_ROOT = process.cwd();
+// Use __dirname so this works regardless of whether vitest is invoked from
+// the repo root (`npx vitest run apps/docs/…`) or from `apps/docs`
+// (`turbo run test`) — same trap documented in homepage-lock.test.tsx.
+const APP_ROOT = resolve(__dirname, '../..');
 
 describe('Top nav — Interlace mark + wordmark', () => {
   const navPath = join(APP_ROOT, 'src/lib/layout.shared.tsx');
