@@ -96,6 +96,39 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
         });
       `,
     },
+    // v5+: stopWhen with stepCountIs replaces maxSteps
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          tools: { weather: weatherTool },
+          stopWhen: stepCountIs(5),
+        });
+      `,
+    },
+    // v7 idiom (e.g. nuxt-ui chat template): stopWhen: isStepCount(5)
+    {
+      code: `
+        await streamText({
+          model: 'openai/gpt-5',
+          messages,
+          tools: { getWeather },
+          stopWhen: isStepCount(5),
+        });
+      `,
+    },
+    // v5+: stopWhen array of conditions
+    {
+      code: `
+        await streamText({
+          model: anthropic('claude-3'),
+          prompt: 'Hello',
+          tools: { search: searchTool },
+          stopWhen: [stepCountIs(10), hasToolCall('finalize')],
+        });
+      `,
+    },
   ],
 
   invalid: [
