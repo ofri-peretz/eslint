@@ -1,3 +1,9 @@
+## 1.3.9
+
+### Patch Changes
+
+- [#277](https://github.com/ofri-peretz/eslint/pull/277) [`d1ad332`](https://github.com/ofri-peretz/eslint/commit/d1ad332cc7366887482b288bcf65098d425501d0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Accept AI SDK v5+ idioms: `stopWhen` (e.g. `stopWhen: stepCountIs(5)`) now satisfies require-max-steps, and `maxOutputTokens` (v5 rename of `maxTokens`) satisfies require-max-tokens — fixing false positives on v5/v7 code.
+
 ## 1.3.8
 
 ### Patch Changes
