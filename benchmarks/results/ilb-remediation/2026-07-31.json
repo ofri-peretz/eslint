@@ -1,0 +1,277 @@
+{
+  "bench": "ILB-Remediation",
+  "benchVersion": "1.0",
+  "timestamp": "2026-07-31T20:22:18.024Z",
+  "methodologyCommit": "27353bbe01bd6c4d5a25b324d2c5e1d9de102a5b",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": null,
+    "typescript": null,
+    "tsCompiler": "tsc-classic",
+    "platform": "darwin-arm64"
+  },
+  "method": "source-level v1.0 — see suite README; runtime round-trip for Interlace fixers: scripts/ilb-autofix-bench.ts",
+  "results": [
+    {
+      "package": "eslint-plugin-secure-coding",
+      "version": "3.3.4",
+      "side": "interlace",
+      "rulesTotal": 28,
+      "fixableDeclared": 4,
+      "fixableImplemented": 4,
+      "suggestionsDeclared": 19,
+      "suggestionsImplemented": 14,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [
+        "no-directive-injection",
+        "no-electron-security-issues",
+        "no-improper-sanitization",
+        "no-unlimited-resource-allocation",
+        "no-weak-password-recovery"
+      ],
+      "undeclaredSuggestionImpls": [
+        "detect-non-literal-regexp",
+        "detect-object-injection"
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "version": "4.4.3",
+      "side": "interlace",
+      "rulesTotal": 35,
+      "fixableDeclared": 1,
+      "fixableImplemented": 1,
+      "suggestionsDeclared": 16,
+      "suggestionsImplemented": 15,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [
+        "no-buffer-overread"
+      ],
+      "undeclaredSuggestionImpls": [
+        "detect-child-process",
+        "detect-eval-with-expression",
+        "detect-non-literal-fs-filename"
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "version": "1.2.8",
+      "side": "interlace",
+      "rulesTotal": 45,
+      "fixableDeclared": 1,
+      "fixableImplemented": 1,
+      "suggestionsDeclared": 28,
+      "suggestionsImplemented": 27,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [
+        "no-clickjacking"
+      ],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "version": "1.3.4",
+      "side": "interlace",
+      "rulesTotal": 14,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 12,
+      "suggestionsImplemented": 12,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "version": "1.2.6",
+      "side": "interlace",
+      "rulesTotal": 6,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 5,
+      "suggestionsImplemented": 5,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "version": "1.2.8",
+      "side": "interlace",
+      "rulesTotal": 14,
+      "fixableDeclared": 1,
+      "fixableImplemented": 1,
+      "suggestionsDeclared": 12,
+      "suggestionsImplemented": 12,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "version": "8.2.7",
+      "side": "interlace",
+      "rulesTotal": 16,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 16,
+      "suggestionsImplemented": 1,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [
+        "no-bypass-middleware",
+        "no-debug-mode-production",
+        "no-hardcoded-connection-string",
+        "no-hardcoded-credentials",
+        "no-operator-injection",
+        "no-select-sensitive-fields",
+        "no-unbounded-find",
+        "no-unsafe-populate",
+        "no-unsafe-regex-query",
+        "no-unsafe-where",
+        "require-auth-mechanism",
+        "require-lean-queries",
+        "require-projection",
+        "require-schema-validation",
+        "require-tls-connection"
+      ],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-pg",
+      "version": "1.4.8",
+      "side": "interlace",
+      "rulesTotal": 13,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-jwt",
+      "version": "2.2.8",
+      "side": "interlace",
+      "rulesTotal": 13,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 1,
+      "suggestionsImplemented": 1,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "version": "1.3.8",
+      "side": "interlace",
+      "rulesTotal": 19,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-security",
+      "version": "4.0.1",
+      "side": "competitor",
+      "rulesTotal": 14,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-security-node",
+      "version": "1.1.4",
+      "side": "competitor",
+      "rulesTotal": 22,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "@microsoft/eslint-plugin-sdl",
+      "version": "1.1.0",
+      "side": "competitor",
+      "rulesTotal": 17,
+      "fixableDeclared": 17,
+      "fixableImplemented": 1,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [
+        "no-angular-bypass-sanitizer",
+        "no-angular-sanitization-trusted-urls",
+        "no-angularjs-bypass-sce",
+        "no-angularjs-enable-svg",
+        "no-angularjs-sanitization-whitelist",
+        "no-cookies",
+        "no-document-domain",
+        "no-document-write",
+        "no-electron-node-integration",
+        "no-html-method",
+        "no-inner-html",
+        "no-insecure-random",
+        "no-msapp-exec-unsafe",
+        "no-postmessage-star-origin",
+        "no-unsafe-alloc",
+        "no-winjs-html-unsafe"
+      ],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-no-unsanitized",
+      "version": "4.1.5",
+      "side": "competitor",
+      "rulesTotal": 2,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    },
+    {
+      "package": "eslint-plugin-xss",
+      "version": "0.1.12",
+      "side": "competitor",
+      "rulesTotal": 2,
+      "fixableDeclared": 0,
+      "fixableImplemented": 0,
+      "suggestionsDeclared": 0,
+      "suggestionsImplemented": 0,
+      "deadFixableDeclarations": [],
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
+    }
+  ],
+  "summary": {
+    "interlace": {
+      "packages": 10,
+      "rulesTotal": 203,
+      "fixableImplemented": 7,
+      "suggestionsImplemented": 87,
+      "deadDeclarations": 22
+    },
+    "competitors": {
+      "packages": 5,
+      "rulesTotal": 57,
+      "fixableImplemented": 1,
+      "suggestionsImplemented": 0,
+      "deadDeclarations": 16
+    }
+  }
+}

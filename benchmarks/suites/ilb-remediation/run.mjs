@@ -21,10 +21,8 @@
  *     pattern-scan its shipped rule sources for implementations.
  *   - Interlace plugins: pattern-scan `src/rules/` for meta declarations and
  *     implementations (identical patterns; TS sources declare meta literally).
- *   - Patterns: declared-fixable /fixable\s*:\s*['"](code|whitespace)['"]/,
- *     declared-suggestions /hasSuggestions\s*:\s*true/,
- *     implemented-fix /\bfix\s*:\s*/ or /\bfix\s*\(\s*fixer/,
- *     implemented-suggest /\bsuggest\s*:\s*/.
+ *   - Patterns: see the RE_* constants below (declared fixable/hasSuggestions
+ *     meta vs emitted fix/suggest in report calls).
  *   Limitations (documented, not hidden): source-level detection can't prove a
  *   fixer is *reachable*; runtime round-trip verification for Interlace fixers
  *   lives in scripts/ilb-autofix-bench.ts (Gap B) and is cross-referenced.
