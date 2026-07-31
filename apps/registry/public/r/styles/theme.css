@@ -31,7 +31,7 @@
  *   5. Lightweight CSS animations — fade-in-up / slide-in-left / scale-in.
  *      Reduced-motion contract is already wired in tokens.css.
  *
- * Brand colors (purple primary, AAA on white) are app-specific and stay in
+ * Brand colors (burnt-orange primary, AAA on white) are app-specific and stay in
  * the app's global.css. Don't move them here.
  */
 
@@ -80,14 +80,14 @@
   --color-destructive: hsl(0, 72%, 38%);
   --color-destructive-foreground: hsl(0, 0%, 100%);
 
-  /* shadcn chart palette — five distinct hues for series colors.
+  /* shadcn chart palette — five distinct hues, led by the brand orange and green.
      Light-mode values pass ≥4.5:1 contrast on `bg-card` (white).
      Used by @/components/ui/chart `<ChartContainer>` + ChartConfig. */
-  --chart-1: oklch(0.55 0.22 264);
-  --chart-2: oklch(0.55 0.16 162);
-  --chart-3: oklch(0.55 0.16 36);
-  --chart-4: oklch(0.55 0.2 320);
-  --chart-5: oklch(0.55 0.16 90);
+  --chart-1: oklch(0.55 0.16 41);
+  --chart-2: oklch(0.55 0.14 162);
+  --chart-3: oklch(0.55 0.18 264);
+  --chart-4: oklch(0.55 0.14 90);
+  --chart-5: oklch(0.55 0.13 200);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -98,11 +98,11 @@
 .dark {
   /* Dark-mode chart palette — lifted lightness so each series stays
      ≥4.5:1 on `bg-card` (near-black). */
-  --chart-1: oklch(0.78 0.16 264);
-  --chart-2: oklch(0.78 0.14 162);
-  --chart-3: oklch(0.78 0.14 36);
-  --chart-4: oklch(0.78 0.16 320);
-  --chart-5: oklch(0.78 0.14 90);
+  --chart-1: oklch(0.78 0.14 41);
+  --chart-2: oklch(0.78 0.12 162);
+  --chart-3: oklch(0.78 0.16 264);
+  --chart-4: oklch(0.78 0.12 90);
+  --chart-5: oklch(0.78 0.11 200);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -213,7 +213,7 @@
 }
 
 /* Hide gray rail segments and diagonal connectors — keep only the
-   purple sliding indicator. */
+   brand-tinted sliding indicator. */
 #nd-toc .bg-fd-foreground\/10 {
   display: none !important;
 }

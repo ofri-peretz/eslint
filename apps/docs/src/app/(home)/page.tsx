@@ -183,13 +183,13 @@ export default async function HomePage() {
             </pre>
           </div>
 
-          {/* Floating badge — AAA: white-on-violet-700 ≈ 5.4:1 (passes
+          {/* Floating badge — AAA: white-on-orange-800 ≈ 5.7:1 (passes
               AAA for large/bold text). aria-hidden + pointer-events-none
               per LAYOUT §9 (decorative chrome never displaces or steals
               focus). */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-4 -right-4 md:right-8 bg-linear-to-r from-purple-700 to-violet-800 text-white font-bold px-4 py-2 rounded-full text-sm shadow-lg"
+            className="pointer-events-none absolute -top-4 -right-4 md:right-8 bg-linear-to-r from-orange-800 to-orange-900 text-white font-bold px-4 py-2 rounded-full text-sm shadow-lg"
           >
             Flat Config ✓
           </div>
@@ -311,10 +311,10 @@ export default async function HomePage() {
 
           {/* Quality Pillar */}
           <Link href="/docs/quality" className="group">
-            <div className="relative overflow-hidden rounded-2xl border-2 border-fd-border bg-linear-to-br from-purple-500/10 via-blue-500/5 to-transparent p-8 h-full transition-all duration-300 hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1">
-              <div aria-hidden className="pointer-events-none absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-purple-500/20 to-transparent rounded-bl-full" />
+            <div className="relative overflow-hidden rounded-2xl border-2 border-fd-border bg-linear-to-br from-emerald-500/10 via-teal-500/5 to-transparent p-8 h-full transition-all duration-300 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1">
+              <div aria-hidden className="pointer-events-none absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-emerald-500/20 to-transparent rounded-bl-full" />
 
-              <Code2 className="size-14 text-purple-500 mb-6" aria-hidden />
+              <Code2 className="size-14 text-emerald-600 mb-6" aria-hidden />
               <h3 className="text-2xl font-bold mb-3">Quality & Architecture</h3>
               <p className="text-fd-muted-foreground mb-6">
                 <span className="text-fd-foreground font-semibold">{stats.qualityPlugins} plugins</span> enforcing conventions, modularity, reliability, and modern best practices.
@@ -324,14 +324,14 @@ export default async function HomePage() {
                 {['Conventions', 'Modularity', 'Reliability', 'Modernization'].map(tag => (
                   <span
                     key={tag}
-                    className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-900 dark:text-purple-100"
+                    className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-900 dark:text-emerald-100"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
 
-              <div className="flex items-center text-purple-500 font-medium">
+              <div className="flex items-center text-emerald-700 dark:text-emerald-400 font-medium">
                 Explore Quality <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
@@ -413,15 +413,15 @@ export default async function HomePage() {
 
       {/* FINAL CTA */}
       <Section spacing="spacious" container="wide">
-        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-purple-500/20 via-violet-500/15 to-purple-600/20 border border-purple-500/30 px-6 py-16 sm:px-10 lg:px-16 lg:py-24 text-center">
+        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-orange-500/20 via-amber-500/15 to-orange-600/20 border border-orange-500/30 px-6 py-16 sm:px-10 lg:px-16 lg:py-24 text-center">
           {/* Decorative chrome — absolute + aria-hidden + pointer-events-none (LAYOUT §9) */}
           <div
             aria-hidden
-            className="pointer-events-none absolute top-0 left-0 w-64 h-64 bg-linear-to-br from-purple-400/30 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute top-0 left-0 w-64 h-64 bg-linear-to-br from-orange-400/30 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute bottom-0 right-0 w-64 h-64 bg-linear-to-tl from-violet-500/30 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2"
+            className="pointer-events-none absolute bottom-0 right-0 w-64 h-64 bg-linear-to-tl from-emerald-500/30 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2"
           />
 
           {/* Inner column — flex-col gives a single source of truth for
@@ -453,7 +453,7 @@ export default async function HomePage() {
                 caption isn't pinned to the separator). Extra pt is required
                 because uppercase tracked text reads visually attached to a
                 line above it without generous gap. */}
-            <div className="w-full mt-10 md:mt-14 pt-14 md:pt-20 border-t border-purple-500/20">
+            <div className="w-full mt-10 md:mt-14 pt-14 md:pt-20 border-t border-orange-500/20">
               <p className="text-xs font-mono uppercase tracking-wider text-fd-muted-foreground mb-6">
                 Not ready yet? Explore
               </p>
@@ -499,7 +499,7 @@ function StepLabel({ n, label }: { n: number; label: string }) {
       <span className="inline-flex items-center gap-2">
         <span
           aria-hidden
-          className="size-5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 inline-flex items-center justify-center text-[10px] font-bold"
+          className="size-5 rounded-full bg-orange-500/15 text-orange-800 dark:text-orange-300 inline-flex items-center justify-center text-[10px] font-bold"
         >
           {n}
         </span>
@@ -513,9 +513,9 @@ function WhatsNextLink({ icon, label, href }: { icon: React.ReactNode; label: st
   return (
     <Link
       href={href}
-      className="group inline-flex items-center justify-center gap-2 rounded-lg border border-fd-border bg-fd-card/80 px-4 py-3 text-sm font-medium text-fd-foreground hover:border-purple-500/50 hover:text-purple-600 dark:hover:text-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-colors"
+      className="group inline-flex items-center justify-center gap-2 rounded-lg border border-fd-border bg-fd-card/80 px-4 py-3 text-sm font-medium text-fd-foreground hover:border-orange-500/50 hover:text-fd-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary transition-colors"
     >
-      <span className="text-fd-muted-foreground group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors" aria-hidden>
+      <span className="text-fd-muted-foreground group-hover:text-fd-primary transition-colors" aria-hidden>
         {icon}
       </span>
       {label}
@@ -541,7 +541,7 @@ function CatchCard({
     <Link
       href={href}
       aria-label={`${title} — ${cwe} — open rule ${ruleId}`}
-      className="group block rounded-xl border border-fd-border bg-fd-card p-6 hover:border-purple-500/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-all"
+      className="group block rounded-xl border border-fd-border bg-fd-card p-6 hover:border-orange-500/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary transition-all"
     >
       <div className="flex items-baseline gap-2 mb-3 flex-wrap min-w-0">
         <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-mono font-medium text-orange-900 dark:text-orange-100 whitespace-nowrap shrink-0">
@@ -550,11 +550,11 @@ function CatchCard({
         <span className="text-xs text-fd-muted-foreground whitespace-nowrap shrink-0">caught by</span>
         <code className="text-xs font-mono text-fd-foreground break-all">{ruleId}</code>
       </div>
-      <h3 className="text-lg font-semibold mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">{title}</h3>
+      <h3 className="text-lg font-semibold mb-3 group-hover:text-fd-primary transition-colors">{title}</h3>
       <pre className="bg-fd-background/80 rounded-md p-3 text-xs font-mono overflow-x-auto border border-fd-border/50">
         <code className="text-fd-foreground">{snippet}</code>
       </pre>
-      <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-fd-muted-foreground group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">
+      <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-fd-muted-foreground group-hover:text-fd-primary transition-colors">
         Read the rule
         <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </div>

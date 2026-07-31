@@ -19,7 +19,7 @@ const BREAKPOINTS = {
 
 test.describe('Visual Regression Tests', () => {
   test.describe('TOC Clerk Style', () => {
-    test('TOC should display with purple indicator on desktop', async ({ page }) => {
+    test('TOC should display with brand indicator on desktop', async ({ page }) => {
       await page.setViewportSize(BREAKPOINTS.largeDesktop);
       await page.goto('/docs');
       await page.waitForLoadState('networkidle');
@@ -35,12 +35,12 @@ test.describe('Visual Regression Tests', () => {
       });
     });
 
-    test('TOC active indicator should be purple', async ({ page }) => {
+    test('TOC active indicator should be brand-colored', async ({ page }) => {
       await page.setViewportSize(BREAKPOINTS.largeDesktop);
       await page.goto('/docs');
       await page.waitForLoadState('networkidle');
 
-      // Check for active links with purple color
+      // Check for active links with brand color
       const activeLink = page.locator('#nd-toc a[data-active="true"]').first();
       
       if (await activeLink.count() > 0) {
@@ -48,13 +48,16 @@ test.describe('Visual Regression Tests', () => {
           return window.getComputedStyle(el).color;
         });
         
-        // Verify it's a purple-ish color (not white/black/gray)
+        // Verify it's a saturated brand color (not white/black/gray)
         expect(color).toMatch(/rgb\(\d+, \d+, \d+\)/);
         const match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
         if (match) {
           const [_, r, g, b] = match.map(Number);
-          // Purple has higher R and B than G
-          expect(r > g || b > g).toBe(true);
+          // Brand orange: warm hue ordering R > G > B. (The old violet lock
+          // accepted any saturated hue via `r > g || b > g`; this would
+          // silently pass a regression back to violet, where B > G.)
+          expect(r).toBeGreaterThan(g);
+          expect(g).toBeGreaterThanOrEqual(b);
         }
       }
     });
@@ -150,7 +153,7 @@ test.describe('Visual Regression Tests', () => {
         throw new Error(lineInfo.error);
       }
 
-      // There should be only 1 unique x position (the purple indicator column)
+      // There should be only 1 unique x position (the brand indicator column)
       // Multiple x positions = staircase effect (regression!)
       expect(
         lineInfo.uniqueXPositions.length,
@@ -163,7 +166,7 @@ test.describe('Visual Regression Tests', () => {
       await page.goto('/docs');
       await page.waitForLoadState('networkidle');
 
-      // Find the purple indicator
+      // Find the brand indicator
       const indicator = page.locator('#nd-toc .bg-fd-primary').first();
       
       if (await indicator.count() > 0) {
@@ -265,7 +268,7 @@ test.describe('Visual Regression Tests', () => {
 
       expect(primaryColor).toBeTruthy();
       expect(primaryColor.length).toBeGreaterThan(0);
-      // Should contain hsl, rgb, or hex (our purple color)
+      // Should contain hsl, rgb, or hex (our brand color)
       expect(primaryColor).toMatch(/hsl|rgb|#/i);
     });
 

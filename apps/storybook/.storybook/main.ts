@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   },
   staticDirs: ['../public'],
   // Override Storybook's default pink Storybook S favicon with the
-  // Interlace brand mark (violet hexagon). `public/favicon.svg` is copied
+  // Interlace brand mark (orange/green pill bars). `public/favicon.svg` is copied
   // verbatim by `staticDirs`; this just rewrites the <link> tag in the
   // manager HTML so the browser tab + bookmark icon match the brand.
   managerHead: (head) =>

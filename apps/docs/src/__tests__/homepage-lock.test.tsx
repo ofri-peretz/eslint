@@ -264,7 +264,7 @@ describe('HeroSection: Structure Lock', () => {
       expect(heroSource).toContain('starDensity');
     });
 
-    it('has customized star color (purple)', () => {
+    it('has customized star color (brand orange)', () => {
       // Now lives as a default in HeroCosmic's `effects.shootingStarColor`.
       expect(heroSource).toMatch(
         /(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
@@ -329,9 +329,9 @@ describe('HeroSection: Structure Lock', () => {
       // surfaces. The migration to Tailwind v4 canonical `bg-linear-to-b`
       // happened at the same time, so accept both the legacy and canonical
       // forms (with or without the `dark:` prefix) — what matters is that
-      // the deep-purple gradient stays paired with the cosmic surface.
+      // the deep-orange gradient stays paired with the cosmic surface.
       expect(heroSource).toMatch(
-        /(?:bg-(?:gradient|linear)-to-b\s+from-purple-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-purple-950)/,
+        /(?:bg-(?:gradient|linear)-to-b\s+from-orange-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-orange-950)/,
       );
     });
 
@@ -604,8 +604,10 @@ describe('HeroSection: Meteors Lock', () => {
   // refactor can't silently re-introduce the drift.
   // ──────────────────────────────────────────────────────────────────
 
-  it('cosmic meteor color matches Nuxt blog-old (`#e9d5ff`)', () => {
-    expect(heroSource).toContain("meteorColor: '#e9d5ff'");
+  it('cosmic meteor color is the brand light-orange tint (`#fbb99a`)', () => {
+    // Rebranded 2026-07 from the Nuxt blog-old `#e9d5ff` violet tint; the
+    // timing/density parity asserts below still pin the blog-old cadence.
+    expect(heroSource).toContain("meteorColor: '#fbb99a'");
   });
 
   it('cosmic meteor count matches Nuxt blog-old (3, NOT the 22 from the registry primitive)', () => {
@@ -803,12 +805,14 @@ describe('Homepage: Visual Identity Lock', () => {
       expect(homepageSource).toContain('text-orange-500');
     });
 
-    it('uses purple accent for quality pillar', () => {
-      expect(homepageSource).toContain('text-purple-500');
+    it('uses emerald accent for quality pillar', () => {
+      // Icon (decorative, large-shape 3:1) + AA action text (4.5:1 normal size).
+      expect(homepageSource).toContain('text-emerald-600 mb-6');
+      expect(homepageSource).toContain('text-emerald-700 dark:text-emerald-400');
     });
 
     it('uses gradient CTA styling', () => {
-      expect(homepageSource).toContain('from-purple-500');
+      expect(homepageSource).toContain('from-orange-500');
     });
   });
 
