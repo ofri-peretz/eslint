@@ -42,10 +42,10 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-770',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} call without maxTokens limit can lead to excessive resource consumption',
+        description: '{{function}} call without a token limit can lead to excessive resource consumption',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add maxTokens option: {{function}}({ maxTokens: 4096, ... })',
+        fix: 'Add a token limit: {{function}}({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4)',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/generating-text',
       }),
     },
@@ -98,15 +98,15 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if maxTokens is present
+        // Check if a token limit is present: maxTokens (v4) or maxOutputTokens (v5+ rename)
         const hasMaxTokens = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' 
-            ? prop.key.name 
-            : prop.key.type === 'Literal' 
+          const keyName = prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'Literal'
               ? String(prop.key.value)
               : null;
-          return keyName === 'maxTokens' || keyName === 'max_tokens';
+          return keyName === 'maxTokens' || keyName === 'max_tokens' || keyName === 'maxOutputTokens';
         });
 
         if (!hasMaxTokens) {
