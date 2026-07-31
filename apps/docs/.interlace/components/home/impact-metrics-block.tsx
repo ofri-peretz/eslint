@@ -139,7 +139,7 @@ export function ImpactMetricsBlock({
         <h2 className="text-3xl font-semibold tracking-tight">
           The numbers behind the work
         </h2>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
+        <p className="mt-3 max-w-[42rem] text-muted-foreground">
           Live metrics across code, writing, and community engagement. Updates
           every 60s.
         </p>

@@ -27,6 +27,11 @@
 /* Scan @interlace/ui dist for class usage in primitives + decorative components */
 @source "../../../../packages/ui/dist";
 
+/* Scan the synced interlace baseline — Tailwind's default scanner skips
+   dot-directories, so classes that appear ONLY in .interlace/** are never
+   generated without this. */
+@source "../../.interlace";
+
 /* =========================================
    BRAND COLORS - ESLint Interlace
    Override fumadocs neutral theme with burnt-orange accent.

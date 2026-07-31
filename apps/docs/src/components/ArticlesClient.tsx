@@ -321,7 +321,7 @@ export function ArticlesClient({
           suppressHydrationWarning
         >
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="relative flex-1 min-w-[200px] max-w-[28rem]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fd-muted-foreground" aria-hidden />
               <input
                 type="text"
