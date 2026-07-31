@@ -1,5 +1,14 @@
 ## [1.1.4] - 2026-05-03
 
+## 1.2.4
+
+### Patch Changes
+
+- [#269](https://github.com/ofri-peretz/eslint/pull/269) [`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - docs: dual-logo README header (Interlace mark + ESLint mark side by side) and closing Interlace footer — refreshes the README rendered on npmjs.com. No runtime changes.
+
+- Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:
+  - @interlace/eslint-devkit@1.4.2
+
 ## 1.2.3
 
 ### Patch Changes
