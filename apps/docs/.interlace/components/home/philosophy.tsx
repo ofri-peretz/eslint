@@ -15,7 +15,7 @@ export function Philosophy() {
           <h2 className="text-2xl font-semibold tracking-tight">
             Open Source Philosophy
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-[32rem] text-muted-foreground">
             Open source is the ultimate learning accelerator. By building in
             public, I stay state-of-the-art, give back to the community, and
             build trust through transparent, well-documented code.

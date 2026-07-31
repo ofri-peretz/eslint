@@ -137,7 +137,7 @@ export function NorthStarHero({
       )}
 
       {description && (
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+        <p className="max-w-[36rem] text-sm leading-relaxed text-muted-foreground">
           {description}
         </p>
       )}

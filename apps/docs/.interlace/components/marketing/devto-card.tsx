@@ -31,7 +31,7 @@ import {
 } from '#interlace/lib/devto-loader';
 
 const DevToCardSkeleton = () => (
-  <div className="animate-pulse rounded-3xl border border-fd-border bg-fd-card p-6">
+  <div className="w-full max-w-[32rem] animate-pulse rounded-3xl border border-fd-border bg-fd-card p-6">
     <div className="mb-4 flex items-center gap-3">
       <div className="size-12 rounded-full bg-fd-muted" />
       <div className="space-y-2">
@@ -85,7 +85,7 @@ export const DevToArticleView = ({
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block h-full"
+      className="group block h-full w-full max-w-[32rem]"
     >
       <div
         className={cn(
