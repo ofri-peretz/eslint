@@ -53,21 +53,43 @@ describe('Top nav — Interlace mark + wordmark', () => {
   });
 });
 
-describe('Brand mark tokens — global.css theme pairs', () => {
+describe('Brand mark tokens — theme pairs', () => {
+  // The Interlace bar fills are ecosystem-shared and come from the synced
+  // baseline (`.interlace/css/brand.css`, authored in the agents repo);
+  // the ESLint hexagon fills stay app-owned in global.css.
   const cssPath = join(APP_ROOT, 'src/app/global.css');
+  const brandCssPath = join(APP_ROOT, '.interlace/css/brand.css');
   let css: string;
+  let brandCss: string;
 
   beforeAll(() => {
     css = readFileSync(cssPath, 'utf-8');
+    brandCss = readFileSync(brandCssPath, 'utf-8');
   });
 
-  it('Interlace bar tokens carry the AA-safe theme-paired values', () => {
+  it('Interlace bar tokens carry the AA-safe theme-paired values (synced baseline)', () => {
+    // Scope to selector blocks so swapped/misplaced declarations fail: the
+    // deep pair must sit under `:root`, the bright pair under `.dark`.
+    // brand.css has several `.dark` blocks (fd overrides + bar tokens), so
+    // concatenate all matches per selector rather than taking the first.
+    const blocksFor = (selector: RegExp) =>
+      [...brandCss.matchAll(selector)].map((m) => m[1]).join('\n');
+    const rootBlocks = blocksFor(/:root\s*\{([\s\S]*?)\}/g);
+    const darkBlocks = blocksFor(/\.dark\s*\{([\s\S]*?)\}/g);
+
     // Light (deep pair) in :root…
-    expect(css).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
-    expect(css).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
+    expect(rootBlocks).toMatch(/--brand-mark-bar-o:\s*#a84c17/);
+    expect(rootBlocks).toMatch(/--brand-mark-bar-g:\s*#0a6b47/);
     // …bright pair under .dark.
-    expect(css).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
-    expect(css).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
+    expect(darkBlocks).toMatch(/--brand-mark-bar-o:\s*#f4794a/);
+    expect(darkBlocks).toMatch(/--brand-mark-bar-g:\s*#0d9460/);
+  });
+
+  it('global.css imports the synced baseline so the fills resolve at runtime', () => {
+    expect(css).toMatch(/@import\s+'\.\.\/\.\.\/\.interlace\/css\/brand\.css'/);
+    // The app-owned duplicate block is gone — baseline is the single source
+    // for BOTH bar tokens.
+    expect(css).not.toMatch(/--brand-mark-bar-[og]\s*:/);
   });
 
   it('ESLint mark tokens carry the official untouched fills', () => {
