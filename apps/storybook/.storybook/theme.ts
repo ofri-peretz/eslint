@@ -11,10 +11,10 @@
  */
 import { create } from 'storybook/theming';
 
-// Brand violet — primary + hover. Light variant for selected sidebar items
+// Brand burnt orange — primary + hover. Light variant for selected sidebar items
 // against the dark chrome (matches `--interlace-primary` light/dark pair).
-const violetDark = '#a78bfa'; // violet-400
-const violetDarker = '#6d28d9'; // violet-700
+const brandDark = '#fbb99a'; // light burnt orange, 11.79:1 on near-black
+const brandDarker = '#8a3a10'; // burnt orange, 7.80:1 on white
 
 // Surface tokens — mirror `.dark { --interlace-* }` from interlace-theme.css.
 const bg = '#0a0a0f';
@@ -31,8 +31,8 @@ const theme = create({
   brandImage: './interlace-mark.svg',
   brandTarget: '_self',
 
-  colorPrimary: violetDark,
-  colorSecondary: violetDarker,
+  colorPrimary: brandDark,
+  colorSecondary: brandDarker,
 
   // App surfaces
   appBg: bg,
@@ -48,8 +48,8 @@ const theme = create({
 
   // Toolbar (top bar of the manager)
   barTextColor: mutedFg,
-  barSelectedColor: violetDark,
-  barHoverColor: violetDark,
+  barSelectedColor: brandDark,
+  barHoverColor: brandDark,
   barBg: contentBg,
 
   // Inputs (sidebar search, controls panel)

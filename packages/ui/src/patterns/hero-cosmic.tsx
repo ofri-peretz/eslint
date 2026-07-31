@@ -76,7 +76,7 @@ function renderCta(cta: HeroCosmicCTA | undefined) {
  * Atmospheric landing-hero preset for fumadocs sites — theme-aware twin
  * surfaces. Light theme: Rayleigh-scattered sky + photorealistic sun +
  * fluffy clouds (Nuxt `DaylightBackground.vue` port). Dark theme:
- * starfield + shooting stars + meteors over a deep purple-to-black
+ * starfield + shooting stars + meteors over a deep brand-orange-to-black
  * gradient (Nuxt `CosmicBackground.vue` port).
  *
  * Both surfaces wrap the same content slot, so headline / tagline / CTAs
@@ -111,10 +111,10 @@ export function HeroCosmic({
     shootingMaxSpeed: 30,
     shootingMinDelay: 1200,
     shootingMaxDelay: 4200,
-    shootingStarColor: '#c084fc',
+    shootingStarColor: '#f4794a',
     shootingTrailColor: '#2EB9DF',
     meteorCount: 3,
-    meteorColor: '#e9d5ff',
+    meteorColor: '#fbb99a',
     meteorMinDuration: 12,
     meteorMaxDuration: 30,
     ...effects,
@@ -132,7 +132,7 @@ export function HeroCosmic({
       className={cn('relative', className)}
       style={{ contain: 'paint', clipPath: 'inset(0)' }}
     >
-      <div className="relative flex min-h-screen items-center justify-center bg-linear-to-b from-sky-300 via-sky-100 to-amber-50 dark:bg-linear-to-b dark:from-purple-950 dark:via-slate-950 dark:to-black">
+      <div className="relative flex min-h-screen items-center justify-center bg-linear-to-b from-sky-300 via-sky-100 to-amber-50 dark:bg-linear-to-b dark:from-orange-950 dark:via-slate-950 dark:to-black">
         {/* Light-theme atmospheric surface — sky + sun + clouds. */}
         <div
           data-slot="hero-daylight-layer"
@@ -183,7 +183,7 @@ export function HeroCosmic({
           </h1>
 
           {tagline ? (
-            <p className="mx-auto mb-16 max-w-3xl text-lg leading-relaxed text-slate-700 drop-shadow dark:text-purple-100/90 md:text-xl">
+            <p className="mx-auto mb-16 max-w-3xl text-lg leading-relaxed text-slate-700 drop-shadow dark:text-orange-100/90 md:text-xl">
               {tagline}
             </p>
           ) : null}

@@ -54,7 +54,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
         <>
           <span className="text-white drop-shadow-lg">Secure your code,</span>
           <br />
-          <span className="bg-linear-to-r from-purple-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent">
             your style.
           </span>
         </>
@@ -84,7 +84,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
         // contrast) holds against the *locked* dark cosmic gradient — the
         // hero is intentionally theme-agnostic (no `dark:` prefix in
         // hero-cosmic.tsx), but the global `--color-fd-ring` resolves to a
-        // light-theme purple that fails contrast on this surface.
+        // light-theme value that fails contrast on this surface.
         render: (
           <Link
             href="/docs/getting-started"
@@ -111,7 +111,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
             //    against the cosmic dark surface AND remains visible on a
             //    light flash during hydration;
             //  - bg at 12% opacity lifts perceptually above the
-            //    purple-950→black gradient AND reads as a light translucent
+            //    orange-950→black gradient AND reads as a light translucent
             //    pill if it briefly sits on a light page background.
             className="text-white! border-white/50 hover:border-white/70 [&_svg]:text-white!"
           >

@@ -405,8 +405,8 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
       expect(componentSource).toContain('dark:from-neutral-950');
     });
 
-    it('has dark:via-purple-950/20 for cosmic purple mid-tone', () => {
-      expect(componentSource).toContain('dark:via-purple-950/20');
+    it('has dark:via-primary/8 for warm brand mid-tone', () => {
+      expect(componentSource).toContain('dark:via-primary/8');
     });
 
     it('has dark:to-neutral-900 for dark end', () => {
@@ -424,13 +424,13 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
     });
   });
 
-  describe('Beam Gradient - Light Mode', () => {
-    it('uses indigo-500 in gradient', () => {
-      expect(componentSource).toContain('from-indigo-500');
+  describe('Beam Gradient - Brand Tokens', () => {
+    it('uses primary in gradient', () => {
+      expect(componentSource).toContain('from-primary');
     });
 
-    it('uses purple-500 in gradient', () => {
-      expect(componentSource).toContain('via-purple-500');
+    it('uses chart-2 (brand green) in gradient', () => {
+      expect(componentSource).toContain('via-chart-2');
     });
 
     it('fades to transparent', () => {
@@ -438,37 +438,15 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
     });
   });
 
-  describe('Beam Gradient - Dark Mode', () => {
-    it('dark mode uses cyan-400', () => {
-      expect(componentSource).toContain('dark:from-cyan-400');
-    });
-
-    it('dark mode uses purple-400', () => {
-      expect(componentSource).toContain('dark:via-purple-400');
-    });
-
-    it('dark mode fades to transparent', () => {
-      expect(componentSource).toContain('dark:to-transparent');
+  describe('Explosion Glow - Brand Tokens', () => {
+    it('brand glow via-primary', () => {
+      expect(componentSource).toContain('via-primary');
     });
   });
 
-  describe('Explosion Glow - Theme Variants', () => {
-    it('light mode: indigo glow via-indigo-500', () => {
-      expect(componentSource).toContain('via-indigo-500');
-    });
-
-    it('dark mode: cyan glow dark:via-cyan-400', () => {
-      expect(componentSource).toContain('dark:via-cyan-400');
-    });
-  });
-
-  describe('Explosion Particles - Theme Variants', () => {
-    it('light mode particles: from-indigo-500 to-purple-500', () => {
-      expect(componentSource).toContain('from-indigo-500 to-purple-500');
-    });
-
-    it('dark mode particles: dark:from-cyan-400 dark:to-purple-400', () => {
-      expect(componentSource).toContain('dark:from-cyan-400 dark:to-purple-400');
+  describe('Explosion Particles - Brand Tokens', () => {
+    it('particles: from-primary to-chart-2', () => {
+      expect(componentSource).toContain('from-primary to-chart-2');
     });
   });
 });
@@ -940,8 +918,8 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
       expect(articlesSource).toContain('!to-neutral-100');
     });
 
-    it('dark mode: purple to slate to black cosmic gradient', () => {
-      expect(articlesSource).toContain('dark:!from-purple-950');
+    it('dark mode: orange to slate to black cosmic gradient', () => {
+      expect(articlesSource).toContain('dark:!from-orange-950');
       expect(articlesSource).toContain('dark:!via-slate-950');
       expect(articlesSource).toContain('dark:!to-black');
     });

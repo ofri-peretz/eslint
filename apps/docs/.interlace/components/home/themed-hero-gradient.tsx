@@ -21,7 +21,7 @@
  *
  * Peer deps required in the consuming app:
  *   - `next-themes` (already a transitive of `fumadocs-ui`)
- *   - `@base-ui/react` (not used here directly, listed for the wider baseline)
+ *   - `@base-ui-components/react` (not used here directly, listed for the wider baseline)
  */
 
 import { useTheme } from 'next-themes';
@@ -90,37 +90,37 @@ const DEFAULT_LIGHT_COLORS: HeroGradientColors = {
 };
 
 const DEFAULT_TEXT_STYLES: { dark: HeroTextStyleSet; light: HeroTextStyleSet } = {
-  // Dark gradient (purple-900 → indigo-950): white-family text passes 4.5:1.
+  // Dark gradient (orange-900 → stone-950): white-family text passes 4.5:1.
   dark: {
     headline: 'text-white',
     headlineGradient:
-      'bg-gradient-to-r from-purple-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent',
-    subheadline: 'text-purple-100',
+      'bg-gradient-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent',
+    subheadline: 'text-orange-100',
     subheadlineAccent: 'text-white font-semibold',
     badge: 'text-white',
     badgeContainer: 'border-white/30 bg-white/15 backdrop-blur-sm',
     ctaPrimary:
-      'bg-white text-purple-950 hover:bg-purple-50 shadow-lg hover:shadow-xl',
+      'bg-white text-orange-950 hover:bg-orange-50 shadow-lg hover:shadow-xl',
     ctaSecondary:
       'border border-white/40 bg-white/15 text-white backdrop-blur-sm hover:bg-white/25',
-    muted: 'text-purple-100/80',
+    muted: 'text-orange-100/80',
   },
-  // Light gradient (purple-100 → violet-200): MUST use deep purple-950/800
+  // Light gradient (orange-100 → amber-200): MUST use deep orange-950/800
   // family text — `text-white` here is invisible (4.5:1 fails by miles).
   light: {
-    headline: 'text-purple-950',
+    headline: 'text-orange-950',
     headlineGradient:
-      'bg-gradient-to-r from-purple-700 via-violet-700 to-fuchsia-700 bg-clip-text text-transparent',
-    subheadline: 'text-purple-900',
-    subheadlineAccent: 'text-purple-950 font-semibold',
-    badge: 'text-purple-950',
-    badgeContainer: 'border-purple-800/30 bg-white/60 backdrop-blur-sm',
-    // purple-700 + white text is ~4.0:1 (AA-fail). purple-900 hits ~7:1.
+      'bg-gradient-to-r from-orange-700 via-amber-700 to-orange-800 bg-clip-text text-transparent',
+    subheadline: 'text-orange-900',
+    subheadlineAccent: 'text-orange-950 font-semibold',
+    badge: 'text-orange-950',
+    badgeContainer: 'border-orange-800/30 bg-white/60 backdrop-blur-sm',
+    // orange-700 + white text is ~4.0:1 (AA-fail). orange-900 hits ~7:1.
     ctaPrimary:
-      'bg-purple-900 text-white hover:bg-purple-950 shadow-lg hover:shadow-xl',
+      'bg-orange-900 text-white hover:bg-orange-950 shadow-lg hover:shadow-xl',
     ctaSecondary:
-      'border border-purple-800/40 bg-white/70 text-purple-950 backdrop-blur-sm hover:bg-white/90',
-    muted: 'text-purple-900/80',
+      'border border-orange-800/40 bg-white/70 text-orange-950 backdrop-blur-sm hover:bg-white/90',
+    muted: 'text-orange-900/80',
   },
 };
 

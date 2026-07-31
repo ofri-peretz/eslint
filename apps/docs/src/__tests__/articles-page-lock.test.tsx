@@ -395,8 +395,8 @@ describe('ArticlesClient: Test IDs Lock', () => {
 // =========================================
 
 describe('ArticlesClient: Visual Identity Lock', () => {
-  it('uses purple accent colors', () => {
-    expect(articlesSource).toContain('purple');
+  it('uses orange accent colors', () => {
+    expect(articlesSource).toContain('orange');
   });
 
   it('uses fd-primary for brand consistency', () => {
