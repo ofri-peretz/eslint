@@ -31,8 +31,10 @@ export function Stat({ of, plugin }: { of?: string; plugin?: string }) {
     const entry = pluginStats.plugins.find(
       (p) => p.name === `eslint-plugin-${plugin}`,
     );
-    if (!entry) {
-      throw new Error(`<Stat plugin="${plugin}"> — unknown plugin`);
+    if (!entry || !entry.published) {
+      throw new Error(
+        `<Stat plugin="${plugin}"> — unknown or unpublished plugin`,
+      );
     }
     return <>{entry.rules}</>;
   }
