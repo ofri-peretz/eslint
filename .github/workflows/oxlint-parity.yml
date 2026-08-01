@@ -35,6 +35,8 @@ on:
       - 'scripts/audit-rule-portability.ts'
       - 'scripts/generate-oxlint-shims.ts'
       - 'scripts/verify-oxlint-shims.ts'
+      - 'scripts/__tests__/oxlint-export-lock.test.ts'
+      - 'scripts/__tests__/vitest.config.mts'
       - '.agent/oxlint-portability-baseline.json'
       - '.agent/oxlint-jsplugins-manifest.json'
       - 'benchmarks/suites/ilb-oxlint-parity/**'
@@ -127,6 +129,13 @@ jobs:
             --filter='./packages/eslint-plugin-*' \
             --filter='./packages/eslint-devkit' \
             --filter='./tools/oxlint-plugins'
+      - name: Published-surface lock — every plugin's ./oxlint sub-export
+        # Workspace-level vitest lock (scripts/__tests__/oxlint-export-lock.test.ts):
+        # for EVERY packages/eslint-plugin-* — package.json declares the
+        # ./oxlint subpath export, src/oxlint.ts loads, and it exports a
+        # non-empty ESLint-shaped rule mapping. This is the published-package
+        # counterpart of the built-shim smoke below.
+        run: npm run test:oxlint-exports
       - name: Runtime smoke — load every shim, compare rule names to manifest
         # All-plugins contract: confirms every plugin loads under oxlint's
         # JS-plugin host and exposes the rule-name set the manifest declares.
