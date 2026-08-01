@@ -56,7 +56,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags the use of the `delete` operator on objects. While property deletion is common, it is often a sign of insecure data handling when sensitive information (like passwords, keys, or PII) is involved.
+This rule flags `delete` on a **sensitive, statically known property** — `password`, `secret`, `apiKey`, `token`, `privateKey`, `sessionId`, `creditCard` and friends. `delete` unbinds a property; it does not scrub the value, and any other reference to it (a spread copy, a log line, an already-serialised response body) keeps the secret alive.
+
+Ordinary property deletion (`delete options.cacheable`, `delete acc[key]`) is **not** reported. Before v4.5.0 this rule fired on every `delete` expression, which produced 120 findings across a 1,470-file corpus with no security content in any of them — it was a `delete` detector, not a secret-cleanup detector.
 
 ```mermaid
 %%{init: {
@@ -89,7 +91,18 @@ flowchart TD
 
 ## Configuration
 
-This rule has no configuration options in the current version.
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `additionalSensitiveProperties` | `string[]` | `[]` | Extra property-name fragments (case-insensitive substrings) to treat as sensitive, on top of the built-in list. |
+
+```jsonc
+{
+  "node-security/require-secure-deletion": [
+    "warn",
+    { "additionalSensitiveProperties": ["pincode", "recoveryphrase"] }
+  ]
+}
+```
 
 ## Examples
 
@@ -99,6 +112,10 @@ This rule has no configuration options in the current version.
 // Simply deleting a sensitive property
 const user = { username: 'john', password: 'secret_password_123' };
 delete user.password; // ❌ Reference removed, but data remains in memory
+
+delete session.refreshToken;   // ❌
+delete payload['accessToken']; // ❌ computed access with a literal key
+delete user?.privateKey;       // ❌ optional chaining
 ```
 
 ### ✅ Correct
@@ -108,6 +125,11 @@ delete user.password; // ❌ Reference removed, but data remains in memory
 const sensitiveBuffer = Buffer.from('secret_key');
 // ... use buffer ...
 sensitiveBuffer.fill(0); // ✅ Clear memory explicitly
+
+// Non-sensitive property deletion is not this rule's business
+delete options.cacheable;  // ✅
+delete stats.children;     // ✅
+delete acc[dynamicKey];    // ✅ property name not statically known
 ```
 
 ## Known False Negatives

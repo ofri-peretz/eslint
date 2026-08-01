@@ -57,6 +57,28 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
+/**
+ * Timer functions that double as an implied-`eval` sink — but only when the
+ * first argument is a string. `setTimeout(fn, 0)` is a scheduler, not a
+ * deserializer.
+ */
+const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
+
+/**
+ * True when the expression can only evaluate to a string, i.e. the argument
+ * would actually be compiled by `setTimeout` / `setInterval`. A function
+ * reference, an arrow function, or anything else is never implied-eval.
+ */
+function isStringValued(arg: TSESTree.Node | undefined): boolean {
+  if (!arg) return false;
+  if (arg.type === 'Literal') return typeof arg.value === 'string';
+  if (arg.type === 'TemplateLiteral') return true;
+  if (arg.type === 'BinaryExpression' && arg.operator === '+') {
+    return isStringValued(arg.left) || isStringValued(arg.right);
+  }
+  return false;
+}
+
 export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-deserialization',
   meta: {
@@ -252,6 +274,18 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
       // Check for dangerous function calls
       if (callee.type === 'Identifier' && dangerousFunctions.includes(callee.name)) {
+        // `setTimeout` / `setInterval` are only a code-execution sink in their
+        // implied-eval form — when the FIRST argument is a *string* that the
+        // engine compiles. `setTimeout(callback, 1000)` is the ordinary timer
+        // form and is not deserialization of anything.
+        //
+        // Without this gate the rule reported
+        // `await new Promise(resolve => setTimeout(resolve, 1000))` at CVSS
+        // 9.8 CRITICAL, because `resolve` is an enclosing arrow-function
+        // parameter and every parameter is treated as untrusted input.
+        if (TIMER_FUNCTIONS.has(callee.name)) {
+          return isStringValued(node.arguments[0]);
+        }
         return true;
       }
 
@@ -259,6 +293,20 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       if (callee.type === 'MemberExpression') {
         const memberName = callee.property.type === 'Identifier' ? callee.property.name : '';
         const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
+
+        // `super.deserialize(context)` / `this.deserialize(context)` is a class
+        // *implementing* a (de)serialization protocol and chaining to its own
+        // base implementation — webpack's serialization layer does this in
+        // every Dependency subclass. The argument is the framework's own
+        // context object, not attacker-controlled data.
+        if (callee.object.type === 'Super' || callee.object.type === 'ThisExpression') {
+          return false;
+        }
+
+        // Same implied-eval reasoning as above for `window.setTimeout(...)`.
+        if (TIMER_FUNCTIONS.has(memberName)) {
+          return isStringValued(node.arguments[0]);
+        }
 
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
@@ -290,6 +338,17 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
      * Check if input comes from untrusted source
      */
     const isUntrustedInput = (inputNode: TSESTree.Node): boolean => {
+      // Concatenations and template literals carry their operands' trust:
+      // `setTimeout("alert(" + userCode + ")", 100)` is implied eval on
+      // untrusted input even though the argument node itself is a
+      // BinaryExpression rather than an Identifier.
+      if (inputNode.type === 'BinaryExpression' && inputNode.operator === '+') {
+        return isUntrustedInput(inputNode.left) || isUntrustedInput(inputNode.right);
+      }
+      if (inputNode.type === 'TemplateLiteral') {
+        return inputNode.expressions.some((e: TSESTree.Expression) => isUntrustedInput(e));
+      }
+
       // Check for MemberExpression patterns like req.body, req.query, etc.
       if (inputNode.type === 'MemberExpression') {
         if (inputNode.object.type === 'Identifier' && inputNode.object.name === 'req') {
@@ -375,6 +434,47 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
       return false;
     };
+    /**
+     * True when the call sits inside a function that is itself named
+     * `deserialize` / `unserialize` / `fromJSON` — i.e. the file is
+     * *implementing* a (de)serialization protocol and delegating to the next
+     * layer of it, which is what webpack's whole `lib/serialization` tree and
+     * every `static deserialize(context)` factory does:
+     *
+     *   static deserialize(context) {
+     *     const obj = new CssModule({ ... });
+     *     obj.deserialize(context);   // ← not attacker-controlled
+     *     return obj;
+     *   }
+     *
+     * A rule that cannot see the protocol cannot judge it, and 33 of 35 corpus
+     * findings were exactly this shape.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isInsideDeserializerImplementation = (node: TSESTree.Node): boolean => {
+      const DESERIALIZER_NAMES = new Set(['deserialize', 'unserialize', 'fromJSON', 'fromBuffer']);
+      let current: TSESTree.Node | undefined = node.parent as TSESTree.Node | undefined;
+      while (current) {
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          const fn = current as TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
+          if ('id' in fn && fn.id?.name && DESERIALIZER_NAMES.has(fn.id.name)) return true;
+          const owner = fn.parent as TSESTree.Node | undefined;
+          if (owner?.type === 'MethodDefinition' && owner.key.type === 'Identifier' &&
+              DESERIALIZER_NAMES.has(owner.key.name)) return true;
+          if (owner?.type === 'Property' && owner.key.type === 'Identifier' &&
+              DESERIALIZER_NAMES.has(owner.key.name)) return true;
+          if (owner?.type === 'VariableDeclarator' && owner.id.type === 'Identifier' &&
+              DESERIALIZER_NAMES.has(owner.id.name)) return true;
+        }
+        current = current.parent as TSESTree.Node | undefined;
+      }
+      return false;
+    };
+
     const checkCallExpression = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
       // 1. Check Function Constructor (NewExpression or CallExpression)
       if ((node.type === 'NewExpression' || node.type === 'CallExpression') &&
@@ -402,7 +502,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }
 
       // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
-      if (isDangerousDeserialization(node)) {
+      if (isDangerousDeserialization(node) && !isInsideDeserializerImplementation(node)) {
          const args: TSESTree.CallExpressionArgument[] = node.arguments;
          const hasUntrustedInput = args.some((arg): boolean => isUntrustedInput(arg));
 
