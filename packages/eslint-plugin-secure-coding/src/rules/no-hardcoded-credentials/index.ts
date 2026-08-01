@@ -102,6 +102,163 @@ const CREDENTIAL_VARIABLE_NAMES = new Set<string>([
 ]);
 
 /**
+ * ---------------------------------------------------------------------------
+ * VALUE-SHAPE HEURISTICS
+ * ---------------------------------------------------------------------------
+ * The rule decides on the *value*, never on the key name alone. A
+ * credential-shaped name (`password`, `apiKey`, `secret`) is treated as a
+ * necessary-but-not-sufficient signal: it can promote an ambiguous value, but
+ * it can never make a message constant into a finding.
+ *
+ * This exists because name-only matching produced a 50% false-positive rate on
+ * a 1,470-file corpus (webpack, lodash, eslint-plugin-import, two NestJS
+ * boilerplates): 5 of 10 findings were i18n error constants such as
+ * `errors: { password: 'incorrectPassword' }`, while the genuine 50-character
+ * committed API secret in the same corpus was found by *shape*, not name.
+ */
+
+/** Characters that join words inside an identifier-like string. */
+const WORD_SEPARATORS = new Set(['_', '-', '.', ' ']);
+
+/** Shannon entropy in bits per character. */
+function shannonEntropy(value: string): number {
+  const freq = new Map<string, number>();
+  for (const ch of value) freq.set(ch, (freq.get(ch) ?? 0) + 1);
+  let entropy = 0;
+  for (const count of freq.values()) {
+    const p = count / value.length;
+    entropy -= p * Math.log2(p);
+  }
+  return entropy;
+}
+
+interface CharClasses {
+  lower: boolean;
+  upper: boolean;
+  digit: boolean;
+  symbol: boolean;
+}
+
+/**
+ * Classify the characters present in a string. Word separators (`_ - . ` and
+ * space) are deliberately NOT counted as symbols — `snake_case_names` and
+ * `kebab-case-names` are identifiers, not passwords.
+ *
+ * Callers reject whitespace-bearing strings before reaching here, so no
+ * whitespace class is tracked.
+ */
+function charClasses(value: string): CharClasses {
+  const classes: CharClasses = { lower: false, upper: false, digit: false, symbol: false };
+  for (const ch of value) {
+    if (WORD_SEPARATORS.has(ch)) continue;
+    if (ch >= 'a' && ch <= 'z') classes.lower = true;
+    else if (ch >= 'A' && ch <= 'Z') classes.upper = true;
+    else if (ch >= '0' && ch <= '9') classes.digit = true;
+    else classes.symbol = true;
+  }
+  return classes;
+}
+
+function classCount(classes: CharClasses): number {
+  return Number(classes.lower) + Number(classes.upper) + Number(classes.digit) + Number(classes.symbol);
+}
+
+/** A token is "pronounceable" if it has a vowel and no long consonant run. */
+function isPronounceable(token: string): boolean {
+  const lower = token.toLowerCase();
+  if (!/[aeiouy]/.test(lower)) return false;
+  if (/[bcdfghjklmnpqrstvwxz]{4,}/.test(lower)) return false;
+  return true;
+}
+
+/**
+ * True when the string is made purely of dictionary-ish words joined by word
+ * separators or camelCase — i.e. an identifier, an i18n key, or an error
+ * message constant. No digits, no symbols, every ≥3-character token
+ * pronounceable.
+ *
+ * `incorrectPassword` → true   (the corpus false positive)
+ * `SessionCacheProvider` → true
+ * `experimental_onToolExecutionStart` → true
+ * `aaAA@123` → false  (symbols + digits)
+ * `qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP` → false (digits)
+ */
+export function isNaturalWordString(value: string): boolean {
+  if (!/^[A-Za-z][A-Za-z_\-. ]*$/.test(value)) return false;
+  const tokens = value
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z]+/)
+    .filter(Boolean);
+  const meaningful = tokens.filter(t => t.length >= 3);
+  if (meaningful.length === 0) return false;
+  return meaningful.every(isPronounceable);
+}
+
+/**
+ * True when the string contains a monotonically ascending run of `min`
+ * characters (`abcdef`, `012345`). Charset constants — the alphabets that
+ * random-string generators and hash encoders declare inline — have maximal
+ * entropy while being the opposite of a secret. webpack's
+ * `lib/util/hash/hash-digest.js` and ack-nestjs-boilerplate's
+ * `helper.service.ts` each declare several.
+ */
+function hasSequentialRun(value: string, min = 5): boolean {
+  let run = 1;
+  for (let i = 1; i < value.length; i++) {
+    run = value.charCodeAt(i) === value.charCodeAt(i - 1) + 1 ? run + 1 : 1;
+    if (run >= min) return true;
+  }
+  return false;
+}
+
+/**
+ * High-confidence random blob: a contiguous alphanumeric token, mixed case,
+ * containing digits, high per-character entropy, and not a charset constant.
+ * That is the shape of a real committed API secret.
+ *
+ * The charset is deliberately strict (`[A-Za-z0-9]` only). Every non-secret
+ * that reached this tier on the corpus failed exactly here: generated-code
+ * strings (`installedChunkData[1](error);`), comma-separated keyword lists,
+ * and Postgres constraint names (`PK_b36bcfe02fc8de3c57a8b2391c2`) all carry
+ * punctuation that no API key does. JWTs and dotted identifiers are excluded
+ * for the same reason and handled by their own, more specific tier.
+ */
+export function looksRandom(value: string): boolean {
+  if (value.length < 20) return false;
+  if (!/^[A-Za-z0-9]+$/.test(value)) return false;
+  const classes = charClasses(value);
+  if (!classes.lower || !classes.upper || !classes.digit) return false;
+  if (hasSequentialRun(value)) return false;
+  return shannonEntropy(value) >= 3.5;
+}
+
+/**
+ * Length at which a random-looking blob is reported with NO naming context.
+ * Below it the shape is still required, but so is a credential-named slot:
+ * `CreateUser1715028537217` (a TypeORM migration class name, 23 chars) passes
+ * every shape test there is, and only the absence of a credential-named slot
+ * separates it from a 25-character API key.
+ */
+const CONTEXT_FREE_RANDOM_LENGTH = 32;
+
+/**
+ * Shape gate for the "assigned to a credential-named binding" path. The name
+ * says *what the slot is for*; this says *whether the value is plausibly a
+ * secret rather than a message, label, or identifier*.
+ */
+export function isSecretShaped(value: string, minLength: number): boolean {
+  if (value.length < minLength) return false;
+  // Sentences and phrases are messages, never credentials.
+  if (/\s/.test(value)) return false;
+  // Pure word strings are identifiers / i18n keys / message constants.
+  if (isNaturalWordString(value)) return false;
+  // A credential mixes at least two character classes, or — for single-charset
+  // secrets like a 21-character lowercase blob — is long and high-entropy.
+  if (classCount(charClasses(value)) >= 2) return true;
+  return value.length >= 20 && shannonEntropy(value) >= 3.0;
+}
+
+/**
  * Result of credential pattern matching.
  * - `structural` matches (JWT, OAuth, AWS-key, DB connection string) are
  *   unambiguous — the string's shape only fits one purpose; report immediately.
@@ -164,11 +321,9 @@ function looksLikeCredential(
 
   // Secret keys (base64/hex 32+) — context-required. Long base64 / hex
   // strings appear in source maps, generated IDs, hash digests; without
-  // a credential-named context they're FPs.
-  if (value.length >= 32 && CREDENTIAL_PATTERNS.secretKey.test(value)) {
-    return { isCredential: true, type: 'Secret key', confidence: 'ambiguous' };
-  }
-
+  // a credential-named context they're FPs. Word-shaped strings are excluded
+  // outright: `experimental_onToolExecutionStart` is 33 chars of [A-Za-z_]
+  // and matches the charset, but it is an identifier, not a key.
   // Structural: AWS access key has a fixed prefix
   if (options.detectApiKeys && CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
     return { isCredential: true, type: 'AWS access key', confidence: 'structural' };
@@ -186,10 +341,28 @@ function looksLikeCredential(
     return { isCredential: true, type: 'API key', confidence: 'structural' };
   }
 
+  // Structural by SHAPE, not by name: a long, mixed-case, digit-bearing,
+  // high-entropy blob with no separators is a random secret whatever the
+  // slot it sits in. This is the tier that finds the genuine 50-character
+  // API secret committed in ack-nestjs-boilerplate's migration seed data —
+  // and it also finds the 25-character `key:` next to it, which the old
+  // name-driven logic missed because `key` was not on the allowlist.
+  if (options.detectApiKeys && looksRandom(value)) {
+    return {
+      isCredential: true,
+      type: 'Secret key',
+      confidence: value.length >= CONTEXT_FREE_RANDOM_LENGTH ? 'structural' : 'ambiguous',
+    };
+  }
+
+  if (value.length >= 32 && CREDENTIAL_PATTERNS.secretKey.test(value) && !isNaturalWordString(value)) {
+    return { isCredential: true, type: 'Secret key', confidence: 'ambiguous' };
+  }
+
   // Generic 32+-char alphanumeric — AMBIGUOUS. This is the FP source on
   // vercel/ai's TS union types and error class names. Caller must verify
-  // a credential-named context.
-  if (options.detectApiKeys && /^[A-Za-z0-9_-]{32,}$/.test(value)) {
+  // a credential-named context, and the value must not be word-shaped.
+  if (options.detectApiKeys && /^[A-Za-z0-9_-]{32,}$/.test(value) && !isNaturalWordString(value)) {
     return { isCredential: true, type: 'API key', confidence: 'ambiguous' };
   }
 
@@ -555,6 +728,17 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       const matches = (name: string): boolean => {
         const lower = name.toLowerCase();
+
+        // Bare `key` / `keys` is a WEAK credential name: it labels cache keys,
+        // map keys, i18n keys and object keys far more often than API keys
+        // (`const key = "memCache2"` in webpack's Compilation.js). It counts as
+        // credential context only when the value is already a random blob by
+        // shape — which is what makes `{ key: 'fyFGb7ywyM37TqDY8nuhAmGW5' }`
+        // (ack-nestjs-boilerplate's seeded API key) reportable.
+        if (lower === 'key' || lower === 'keys') {
+          return node.type === 'Literal' && typeof node.value === 'string' && looksRandom(node.value);
+        }
+
         // Try the literal name AND its singular form (drop trailing 's')
         // so collections like `tokens`, `apiKeys`, `secrets`, `passwords`
         // are recognised. Closes the audit FN where
@@ -669,11 +853,17 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         finalIsCredential = false;
       }
 
-      // Context-positive: any non-trivial string assigned to a
+      // Context-positive: a *secret-shaped* string assigned to a
       // credential-named variable/property is a credential, even when no
-      // regex pattern matches. Catches passwords like 'SuperSecret123!'
-      // that don't fit any structural pattern but are clearly secrets
-      // by virtue of where they're stored.
+      // structural pattern matches. Catches passwords like 'aaAA@123' that
+      // don't fit any known key format but are clearly secrets.
+      //
+      // `isSecretShaped` is the load-bearing half of this condition. Without
+      // it the rule fires on every string ≥ minLength that happens to sit in
+      // a credential-named slot — which is how `errors: { password:
+      // 'incorrectPassword' }` (an i18n error key, 5 of 10 corpus findings)
+      // got reported at CVSS 9.8. The name says what the slot is for; the
+      // shape says whether the value is a secret.
       //
       // The detection-disable options (detectApiKeys / detectPasswords /
       // detectTokens / detectDatabaseStrings) MUST gate this path too —
@@ -681,7 +871,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // `const password = "..."` because the var-name match alone
       // bypasses the option. Map the var name back to its category and
       // honour the option.
-      if (!finalIsCredential && value.length >= detectionOptions.minLength &&
+      if (!finalIsCredential &&
+          !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
+          isSecretShaped(value, detectionOptions.minLength) &&
           isCredentialContext(node, parent)) {
         // isCredentialContext(node, parent) just returned true, which
         // requires a truthy parent.
@@ -728,14 +920,14 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'useEnvironmentVariable',
-            data: { envVarName, credentialType: type },
+            data: { envVarName, credentialType: finalType },
             fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `process.env.${envVarName} || '${value}'`);
             },
           },
           {
             messageId: 'useSecretManager',
-            data: { credentialType: type },
+            data: { credentialType: finalType },
             fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `await getSecret('${envVarName.toLowerCase()}')`);
             },
