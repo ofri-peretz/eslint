@@ -58,6 +58,7 @@ const VALID_LUCIDE_ICONS = new Set([
   'Map',
   'Monitor',
   'Network',
+  'PackageX',
   'Puzzle',
   'RefreshCw',
   'Rocket',
