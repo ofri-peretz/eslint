@@ -68,8 +68,26 @@ class UsersController {
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Custom sensitive field patterns (merged with the defaults)
+  sensitivePatterns?: string[];
+
+  // Also check DTO classes (default: false)
+  includeDtos?: boolean;
 }
 ```
+
+## Scope: entities, not DTOs
+
+The rule tracks **persistence entities and domain models** — classes decorated
+with `@Entity`, `@Schema`, `@Table`, `@ObjectType`, `@InputType`, `@ArgsType` or
+`@Model`, or named `*Entity` / `*Schema` / `*Model` / `*Document` / `*Table`.
+
+DTOs are excluded by default. A `LoginResponseDto` *must* carry a token and an
+`AuthResetPasswordDto` *must* carry a password — those are declared contracts,
+whereas an entity that names a `password` column and never says `@Exclude()`
+leaks it the first time the object is returned from a controller. Set
+`includeDtos: true` to restore the older, noisier behaviour.
 
 ## Detected Sensitive Field Names
 

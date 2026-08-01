@@ -5,125 +5,28 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-throttler', requireThrottler, {
   valid: [
-    // ========== VALID: Controller with class-level @Throttle ==========
+    // ========== VALID: root module configures ThrottlerModule ==========
     {
       code: `
-        @Controller('users')
-        @Throttle({ default: { limit: 10, ttl: 60 }})
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
+        @Module({
+          imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
+          providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+        })
+        export class AppModule {}
       `,
     },
-    // ========== VALID: Controller with method-level @Throttle ==========
+    // ========== VALID: async throttler configuration ==========
     {
       code: `
-        @Controller('users')
-        class UsersController {
-          @Get()
-          @Throttle({ default: { limit: 10, ttl: 60 }})
-          findAll() {}
-        }
+        @Module({
+          imports: [ThrottlerModule.forRootAsync({ useFactory: () => ({}) })],
+        })
+        export class AppModule {}
       `,
     },
-    // ========== VALID: Controller with @SkipThrottle ==========
-    {
-      code: `
-        @Controller('health')
-        class HealthController {
-          @Get()
-          @SkipThrottle()
-          check() {}
-        }
-      `,
-    },
-    // ========== VALID: Controller with ThrottlerGuard ==========
-    {
-      code: `
-        @Controller('users')
-        @UseGuards(ThrottlerGuard)
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
-      `,
-    },
-    // ========== VALID: Non-controller class ==========
-    {
-      code: `
-        class UsersService {
-          findAll() {}
-        }
-      `,
-    },
-    // ========== VALID: Method without HTTP decorator ==========
-    {
-      code: `
-        @Controller('users')
-        class UsersController {
-          private helper() {}
-        }
-      `,
-    },
-    // ========== VALID: Test file ==========
-    {
-      code: `
-        @Controller('users')
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
-      `,
-      filename: 'users.controller.spec.ts',
-    },
-    // ========== VALID: assumeGlobalThrottler option ==========
-    {
-      code: `
-        @Controller('users')
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
-      `,
-      options: [{ assumeGlobalThrottler: true }],
-    },
-    // ========== VALID: @Throttle without parentheses (bare decorator) ==========
-    {
-      code: `
-        @Controller('users')
-        @Throttle
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
-      `,
-    },
-    // ========== VALID: Method-level ThrottlerGuard ==========
-    {
-      code: `
-        @Controller('auth')
-        class AuthController {
-          @Post('login')
-          @UseGuards(ThrottlerGuard)
-          login() {}
-        }
-      `,
-    },
-  ],
-  invalid: [
-    // ========== INVALID: Controller without throttling ==========
-    {
-      code: `
-        @Controller('users')
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
-      `,
-      errors: [{ messageId: 'missingThrottler' }],
-    },
-    // ========== INVALID: Multiple routes without throttling ==========
+    // ========== REGRESSION (ack + brocoders): route handlers are never
+    // reported. Rate limiting is adopted once in the root module, so 24 (and
+    // 93) per-route findings described a single one-line fix. ==========
     {
       code: `
         @Controller('auth')
@@ -134,18 +37,84 @@ ruleTester.run('require-throttler', requireThrottler, {
           register() {}
         }
       `,
-      errors: [{ messageId: 'missingThrottler' }, { messageId: 'missingThrottler' }],
     },
-    // ========== INVALID: Test file with allowInTests: false ==========
+    // ========== VALID: feature modules are not the root module ==========
     {
       code: `
-        @Controller('users')
-        class UsersController {
-          @Get()
-          findAll() {}
-        }
+        @Module({ controllers: [UsersController] })
+        export class UsersModule {}
       `,
-      filename: 'users.controller.spec.ts',
+    },
+    // ========== VALID: non-module class in app.module.ts ==========
+    {
+      code: `export class AppModuleHelper {}`,
+      filename: 'app.module.ts',
+    },
+    // ========== VALID: test file ==========
+    {
+      code: `
+        @Module({})
+        export class AppModule {}
+      `,
+      filename: 'app.module.spec.ts',
+    },
+    // ========== VALID: assumeGlobalThrottler option ==========
+    {
+      code: `
+        @Module({})
+        export class AppModule {}
+      `,
+      options: [{ assumeGlobalThrottler: true }],
+    },
+    // ========== VALID: custom root module name not matched ==========
+    {
+      code: `
+        @Module({})
+        export class AppModule {}
+      `,
+      options: [{ rootModuleNames: ['RootModule'], rootModuleFiles: [] }],
+    },
+  ],
+  invalid: [
+    // ========== INVALID: root module with no rate limiting ==========
+    {
+      code: `
+        @Module({
+          imports: [UsersModule],
+          controllers: [],
+          providers: [],
+        })
+        export class AppModule {}
+      `,
+      errors: [{ messageId: 'missingThrottler', data: { name: 'AppModule' } }],
+    },
+    // ========== INVALID: recognised by file name, not class name ==========
+    {
+      code: `
+        @Module({ imports: [UsersModule] })
+        export class ApplicationModule {}
+      `,
+      filename: 'src/app.module.ts',
+      errors: [
+        { messageId: 'missingThrottler', data: { name: 'ApplicationModule' } },
+      ],
+    },
+    // ========== INVALID: custom root module name ==========
+    {
+      code: `
+        @Module({ imports: [UsersModule] })
+        export class RootModule {}
+      `,
+      options: [{ rootModuleNames: ['RootModule'] }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'RootModule' } }],
+    },
+    // ========== INVALID: test file with allowInTests: false ==========
+    {
+      code: `
+        @Module({})
+        export class AppModule {}
+      `,
+      filename: 'app.module.spec.ts',
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'missingThrottler' }],
     },

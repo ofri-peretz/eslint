@@ -161,13 +161,15 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-        // DTO with exposed secret
+        // DTO with exposed secret — opt-in via includeDtos (a DTO field is a
+        // declared contract; see the regression block at the bottom of this file)
         {
           code: `
             class UserDto {
               secret: string;
             }
           `,
+          options: [{ includeDtos: true }],
           errors: [{ messageId: 'exposedField' }],
         },
         // Entity suffix class
@@ -292,6 +294,104 @@ describe('no-exposed-private-fields', () => {
             }
           `,
           errors: [{ messageId: 'exposedField' }],
+        },
+      ],
+    });
+  });
+
+  describe('DTOs (regression: 44 findings on ack, 22 on brocoders)', () => {
+    ruleTester.run('DTO fields are declared contracts', noExposedPrivateFields, {
+      valid: [
+        // brocoders: auth/dto/login-response.dto.ts — a login response MUST
+        // carry a token; flagging it is a contradiction.
+        {
+          code: `
+            class LoginResponseDto {
+              @ApiProperty()
+              token: string;
+
+              @ApiProperty()
+              refreshToken: string;
+            }
+          `,
+        },
+        // brocoders: auth/dto/auth-reset-password.dto.ts — a password reset
+        // request MUST carry a password.
+        {
+          code: `
+            class AuthResetPasswordDto {
+              @IsNotEmpty()
+              password: string;
+
+              @IsNotEmpty()
+              hash: string;
+            }
+          `,
+        },
+        // ack: app/dtos/app.env.dto.ts — environment validation DTO, never
+        // serialized to a client.
+        {
+          code: `
+            class AppEnvDto {
+              @IsString()
+              AUTH_JWT_ACCESS_TOKEN_SECRET_KEY: string;
+
+              @IsString()
+              DATABASE_PASSWORD: string;
+            }
+          `,
+        },
+        // ack: modules/user/dtos/user.dto.ts
+        {
+          code: `
+            class UserDto {
+              @Expose()
+              passwordExpired: Date;
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // TRUE POSITIVE (brocoders): TypeORM entity exposing the password hash
+        {
+          code: `
+            @Entity({ name: 'user' })
+            export class UserEntity extends EntityRelationalHelper {
+              @Column({ nullable: true })
+              password?: string;
+            }
+          `,
+          errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
+        },
+        // TRUE POSITIVE (brocoders): mongoose schema exposing the session hash
+        {
+          code: `
+            @Schema({ timestamps: true })
+            export class SessionSchemaClass extends EntityDocumentHelper {
+              @Prop()
+              hash: string;
+            }
+          `,
+          errors: [{ messageId: 'exposedField', data: { field: 'hash' } }],
+        },
+        // Entity suffix without a decorator is still tracked
+        {
+          code: `
+            export class TokenEntity {
+              refreshToken: string;
+            }
+          `,
+          errors: [{ messageId: 'exposedField', data: { field: 'refreshToken' } }],
+        },
+        // includeDtos: true restores the old, noisier behaviour
+        {
+          code: `
+            class LoginResponseDto {
+              token: string;
+            }
+          `,
+          options: [{ includeDtos: true }],
+          errors: [{ messageId: 'exposedField', data: { field: 'token' } }],
         },
       ],
     });

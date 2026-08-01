@@ -6,42 +6,55 @@
 
 /**
  * ESLint Rule: require-throttler
- * Requires @Throttle or ThrottlerGuard for rate limiting
+ * Requires an application-wide rate limiter (ThrottlerModule + ThrottlerGuard)
  * CWE-770: Allocation of Resources Without Limits or Throttling
+ *
+ * Rate limiting in NestJS is adopted **once**, in the root module:
+ *
+ * ```ts
+ * @Module({
+ *   imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
+ *   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+ * })
+ * export class AppModule {}
+ * ```
+ *
+ * Reporting the missing throttler on every route handler therefore produced
+ * dozens of findings for a single one-line fix (24 on one boilerplate, 93 on
+ * another). This rule reports once, on the root module — where the fix goes.
  *
  * @see https://cwe.mitre.org/data/definitions/770.html
  * @see https://docs.nestjs.com/security/rate-limiting
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { getBasename } from '@interlace/eslint-devkit';
+import { isModuleClass } from '../../utils/decorators';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'missingThrottler' | 'addThrottler';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Skip checking specific routes. Default: [] */
+  /** @deprecated No longer used — the rule no longer reports per route. */
   skipRoutes?: string[];
-  /** Skip rule if ThrottlerModule is configured globally in AppModule. Default: false */
+  /** Skip rule entirely, without scanning the project. Default: false */
   assumeGlobalThrottler?: boolean;
+  /** Class names treated as the application root module. Default: ['AppModule'] */
+  rootModuleNames?: string[];
+  /** File names treated as the application root module. Default: ['app.module.ts'] */
+  rootModuleFiles?: string[];
 }
 
 type RuleOptions = [Options?];
 
-// HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = new Set([
-  'Get',
-  'Post',
-  'Put',
-  'Patch',
-  'Delete',
-  'Options',
-  'Head',
-  'All',
-]);
+const DEFAULT_ROOT_MODULE_NAMES = ['AppModule'];
+const DEFAULT_ROOT_MODULE_FILES = ['app.module.ts'];
 
-// Throttle-related decorators
-const THROTTLE_DECORATORS = new Set(['Throttle', 'SkipThrottle']);
+/** Throttler configuration visible in the file being linted. */
+const THROTTLER_IN_FILE =
+  /ThrottlerModule\s*\.\s*forRoot(?:Async)?\s*\(|ThrottlerGuard|ThrottlerStorage/;
 
 export const requireThrottler = createRule<RuleOptions, MessageIds>({
   name: 'require-throttler',
@@ -49,7 +62,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-throttler.md',
-      description: 'Requires ThrottlerGuard or @Throttle decorator for rate limiting',
+      description: 'Requires an application-wide ThrottlerModule for rate limiting',
       cwe: 'CWE-770',
       cvss: 7.5,
     },
@@ -60,9 +73,10 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         issueName: 'Missing Rate Limiting',
         cwe: 'CWE-770',
         cvss: 7.5,
-        description: 'Controller {{name}} lacks rate limiting protection (Throttler)',
+        description:
+          'Application module {{name}} registers no rate limiting — every route, including authentication, is open to brute-force and DoS',
         severity: 'HIGH',
-        fix: 'Add @UseGuards(ThrottlerGuard) or configure global ThrottlerModule',
+        fix: 'Register ThrottlerModule.forRoot([...]) and { provide: APP_GUARD, useClass: ThrottlerGuard }',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
       }),
       addThrottler: formatLLMMessage({
@@ -70,7 +84,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         issueName: 'Add Rate Limiting',
         description: 'Configure ThrottlerModule to protect against DoS/brute-force attacks',
         severity: 'LOW',
-        fix: 'npm i @nestjs/throttler && ThrottlerModule.forRoot({ ttl: 60, limit: 10 })',
+        fix: 'npm i @nestjs/throttler && ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
       }),
     },
@@ -81,6 +95,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
           allowInTests: { type: 'boolean', default: true },
           skipRoutes: { type: 'array', items: { type: 'string' }, default: [] },
           assumeGlobalThrottler: { type: 'boolean', default: false },
+          rootModuleNames: { type: 'array', items: { type: 'string' } },
+          rootModuleFiles: { type: 'array', items: { type: 'string' } },
         },
         additionalProperties: false,
       },
@@ -88,7 +104,12 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: true, skipRoutes: [], assumeGlobalThrottler: false }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowInTests = true, assumeGlobalThrottler = false } = options as Options;
+    const {
+      allowInTests = true,
+      assumeGlobalThrottler = false,
+      rootModuleNames = DEFAULT_ROOT_MODULE_NAMES,
+      rootModuleFiles = DEFAULT_ROOT_MODULE_FILES,
+    } = options as Options;
 
     // Skip entirely if global ThrottlerModule is assumed (configured in AppModule)
     if (assumeGlobalThrottler) {
@@ -102,113 +123,31 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track class-level throttler and controller state
-    let isController = false;
-    let hasClassLevelThrottler = false;
-    let hasThrottlerGuard = false;
+    const rootNames = new Set(rootModuleNames);
+    const rootFiles = new Set(rootModuleFiles);
+    const isRootModuleFile = rootFiles.has(getBasename(filename));
 
-    /**
-     * Check if decorators include @UseGuards with ThrottlerGuard
-     */
-    function hasThrottlerGuardDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        if (dec.expression.type === AST_NODE_TYPES.CallExpression) {
-          const callee = dec.expression.callee;
-          if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'UseGuards') {
-            return dec.expression.arguments.some(
-              (arg: TSESTree.CallExpressionArgument) => arg.type === AST_NODE_TYPES.Identifier && arg.name === 'ThrottlerGuard'
-            );
-          }
-        }
-        return false;
-      });
-    }
-
-    /**
-     * Check if decorators include @Throttle or @SkipThrottle
-     */
-    function hasThrottleDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return THROTTLE_DECORATORS.has(name);
-      });
-    }
-
-    /**
-     * Check if class has @Controller decorator
-     */
-    function hasControllerDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return name === 'Controller';
-      });
-    }
-
-    /**
-     * Check if method has HTTP method decorator
-     */
-    function isRouteHandler(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return HTTP_METHOD_DECORATORS.has(name);
-      });
+    /** Only the root module is a sensible place to report a project-wide gap. */
+    function isRootModule(node: TSESTree.ClassDeclaration): boolean {
+      if (!isModuleClass(node.decorators)) return false;
+      if (isRootModuleFile) return true;
+      return node.id !== null && rootNames.has(node.id.name);
     }
 
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isController = hasControllerDecorator(node.decorators);
-        hasClassLevelThrottler = hasThrottleDecorator(node.decorators);
-        hasThrottlerGuard = hasThrottlerGuardDecorator(node.decorators);
-      },
+        if (!isRootModule(node)) return;
 
-      MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (!isController) return;
-        if (!isRouteHandler(node.decorators)) return;
+        // Configured right here (imports: [ThrottlerModule.forRoot(...)])
+        if (THROTTLER_IN_FILE.test(context.sourceCode.getText())) return;
 
-        // Skip if class or method has throttler
-        if (
-          hasClassLevelThrottler ||
-          hasThrottlerGuard ||
-          hasThrottleDecorator(node.decorators) ||
-          hasThrottlerGuardDecorator(node.decorators)
-        ) {
-          return;
-        }
-
-        // Skip constructor
-        if (node.key.type === AST_NODE_TYPES.Identifier && node.key.name === 'constructor') {
-          return;
-        }
-
-        const methodName =
-          node.key.type === AST_NODE_TYPES.Identifier ? node.key.name : '<anonymous>';
+        // …or anywhere else in the project (a dedicated throttler module)
+        if (getProjectContext(context).hasGlobalThrottler) return;
 
         context.report({
           node,
           messageId: 'missingThrottler',
-          data: { name: methodName },
+          data: { name: node.id === null ? '<anonymous>' : node.id.name },
           suggest: [{ messageId: 'addThrottler', fix: () => null }],
         });
       },

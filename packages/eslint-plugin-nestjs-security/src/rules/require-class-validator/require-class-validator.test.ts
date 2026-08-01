@@ -250,4 +250,212 @@ describe('require-class-validator', () => {
       ],
     });
   });
+
+  describe('Response DTOs (regression: 303 findings on ack, 20 on brocoders)', () => {
+    ruleTester.run('response DTOs are output, not input', requireClassValidator, {
+      valid: [
+        // ack-nestjs-boilerplate: modules/hello/dtos/response/hello.response.dto.ts
+        {
+          code: `
+            class HelloDateResponseDto {
+              @ApiProperty({ required: true })
+              date: Date;
+
+              @ApiProperty({ required: true })
+              iso: string;
+            }
+          `,
+        },
+        // ack: common/response/dtos/response.paging.dto.ts
+        {
+          code: `
+            class ResponsePagingDto {
+              @ApiProperty()
+              totalData: number;
+            }
+          `,
+        },
+        // ack: modules/user/dtos/user.dto.ts — @Expose marks a serialization
+        // model even though the class name says nothing about responses
+        {
+          code: `
+            class UserDto {
+              @ApiProperty({ required: false })
+              @Expose()
+              name?: string;
+
+              @ApiProperty({ required: true })
+              @Expose()
+              username: string;
+            }
+          `,
+        },
+        // ack: a DTO extending a shared response base class
+        {
+          code: `
+            class SessionDto extends DatabaseResponseDto {
+              @ApiProperty()
+              id: string;
+            }
+          `,
+        },
+        // brocoders: auth/dto/login-response.dto.ts
+        {
+          code: `
+            class LoginResponseDto {
+              @ApiProperty()
+              token: string;
+
+              @ApiProperty()
+              refreshToken: string;
+            }
+          `,
+        },
+        // Class-level @Exclude() marks the whole class as serialization output
+        {
+          code: `
+            @Exclude()
+            class UserProfileDto {
+              id: string;
+            }
+          `,
+        },
+        // brocoders: auth-apple/dto/auth-apple-login.dto.ts — @Allow() is an
+        // explicit class-validator whitelist decision
+        {
+          code: `
+            class AuthAppleLoginDto {
+              @ApiProperty({ example: 'abc' })
+              @IsNotEmpty()
+              idToken: string;
+
+              @Allow()
+              @ApiPropertyOptional()
+              firstName?: string;
+            }
+          `,
+        },
+        // ack: common/file/dtos/file.single.dto.ts — multipart upload slot
+        {
+          code: `
+            class FileUploadSingleRequestDto {
+              @ApiProperty({ type: 'string', format: 'binary', description: 'Single file' })
+              file: IFile;
+            }
+          `,
+        },
+        // ack: common/file/dtos/file.multiple.dto.ts — nested items schema
+        {
+          code: `
+            class FileUploadMultipleRequestDto {
+              @ApiProperty({
+                type: 'array',
+                items: { type: 'string', format: 'binary' },
+              })
+              files: IFile[];
+            }
+          `,
+        },
+        // Extended class-validator vocabulary must be recognised
+        {
+          code: `
+            class SettingsDto {
+              @IsIn(['a', 'b'])
+              mode: string;
+
+              @IsStrongPassword()
+              password: string;
+
+              @IsTimeZone()
+              tz: string;
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // TRUE POSITIVE (brocoders): request DTO fields with no validator at
+        // all — the rule must not go inert.
+        {
+          code: `
+            class CreateUserDto {
+              @ApiProperty()
+              @IsEmail()
+              email: string;
+
+              provider?: string;
+
+              socialId?: string | null;
+            }
+          `,
+          errors: [
+            { messageId: 'missingValidator', data: { property: 'provider' } },
+            { messageId: 'missingValidator', data: { property: 'socialId' } },
+          ],
+        },
+        // A response-shaped class is still checked when asked for explicitly
+        {
+          code: `
+            class LoginResponseDto {
+              @ApiProperty()
+              token: string;
+            }
+          `,
+          options: [{ checkResponseDtos: true }],
+          errors: [{ messageId: 'missingValidator', data: { property: 'token' } }],
+        },
+        // A custom responseDtoPattern narrows the exemption
+        {
+          code: `
+            class UserViewDto {
+              @ApiProperty()
+              id: string;
+            }
+          `,
+          options: [{ responseDtoPattern: 'Response' }],
+          errors: [{ messageId: 'missingValidator', data: { property: 'id' } }],
+        },
+        // @Transform / @Type alone do NOT mark a class as a response DTO —
+        // request DTOs legitimately use them for coercion.
+        {
+          code: `
+            class CreateUserDto {
+              @Transform(lowerCaseTransformer)
+              email: string;
+            }
+          `,
+          errors: [{ messageId: 'missingValidator', data: { property: 'email' } }],
+        },
+        // @ApiProperty without a `format: 'binary'` schema is still checked
+        {
+          code: `
+            class UploadDto {
+              @ApiProperty({ type: 'string', description: 'not a file' })
+              name: string;
+            }
+          `,
+          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
+        },
+        // Bare @ApiProperty (no argument object) is still checked
+        {
+          code: `
+            class UploadDto {
+              @ApiProperty
+              name: string;
+            }
+          `,
+          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
+        },
+        // A spread inside the schema object is not a `format` declaration
+        {
+          code: `
+            class UploadDto {
+              @ApiProperty({ ...baseSchema })
+              name: string;
+            }
+          `,
+          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
+        },
+      ],
+    });
+  });
 });
