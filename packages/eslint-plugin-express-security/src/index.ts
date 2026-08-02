@@ -49,6 +49,15 @@ import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
 // Structural redirect safety — structural-api, enforcement-grade
 import { noUserControlledRedirect } from './rules/no-user-controlled-redirect';
 
+// Corpus coverage-gap rules (A-lite, 2026-07) — CWE-640/209/598/073/548/178/843
+import { noHostHeaderInLinks } from './rules/no-host-header-in-links';
+import { noErrorDetailsInResponse } from './rules/no-error-details-in-response';
+import { noSensitiveDataInQuery } from './rules/no-sensitive-data-in-query';
+import { noUserControlledRenderLocals } from './rules/no-user-controlled-render-locals';
+import { noStaticRootExposure } from './rules/no-static-root-exposure';
+import { requireCaseInsensitivePathGuard } from './rules/require-case-insensitive-path-guard';
+import { requireQueryTypeGuard } from './rules/require-query-type-guard';
+
 /**
  * Collection of all Express security ESLint rules
  */
@@ -83,6 +92,15 @@ export const rules: Record<
 
   // Open redirect — structural-api (fires on res.redirect(req.query.*) AST shape)
   'no-user-controlled-redirect': noUserControlledRedirect,
+
+  // Corpus coverage-gap rules (A-lite, 2026-07)
+  'no-host-header-in-links': noHostHeaderInLinks,
+  'no-error-details-in-response': noErrorDetailsInResponse,
+  'no-sensitive-data-in-query': noSensitiveDataInQuery,
+  'no-user-controlled-render-locals': noUserControlledRenderLocals,
+  'no-static-root-exposure': noStaticRootExposure,
+  'require-case-insensitive-path-guard': requireCaseInsensitivePathGuard,
+  'require-query-type-guard': requireQueryTypeGuard,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -127,6 +145,16 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Open redirect — structural, CWE-601
   'express-security/no-user-controlled-redirect': 'error',
+
+  // Corpus coverage-gap rules (A-lite, 2026-07)
+  'express-security/no-host-header-in-links': 'error',
+  'express-security/no-error-details-in-response': 'error',
+  // Name-based detection (sensitive param names) — review-prompt severity per scope audit I3
+  'express-security/no-sensitive-data-in-query': 'warn',
+  'express-security/no-user-controlled-render-locals': 'error',
+  'express-security/no-static-root-exposure': 'error',
+  'express-security/require-case-insensitive-path-guard': 'warn',
+  'express-security/require-query-type-guard': 'warn',
 };
 
 /**
@@ -158,7 +186,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       Object.keys(rules).map((ruleName) => [
         `express-security/${ruleName}`,
         'error',
-      ])
+      ]),
     ),
   } satisfies TSESLint.FlatConfig.Config,
 

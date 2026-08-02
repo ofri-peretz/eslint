@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { getDecoratorNames, hasDecoratorNamed } from '../../utils/decorators';
 
 type MessageIds = 'exposedField' | 'useExcludeDecorator';
 
@@ -22,9 +23,45 @@ export interface Options {
   allowInTests?: boolean;
   /** Custom sensitive field patterns. Default: password, secret, token, etc. */
   sensitivePatterns?: string[];
+  /**
+   * Also check DTO classes. A DTO listing `token` or `password` is an explicit
+   * author decision (`LoginResponseDto` *must* carry a token; a
+   * `ResetPasswordDto` *must* carry a password), whereas a persistence entity
+   * exposing the same field leaks it through serialization by accident.
+   * Default: false
+   */
+  includeDtos?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+/** Class decorators that mark a persistence entity / serialized domain model. */
+const ENTITY_DECORATORS: ReadonlySet<string> = new Set([
+  'Entity',
+  'Schema',
+  'Table',
+  'ObjectType',
+  'Model',
+]);
+
+/**
+ * Class decorators that mark a GraphQL **input** object.
+ *
+ * `@InputType()` / `@ArgsType()` describe what a client *sends*, which is the
+ * GraphQL equivalent of a request DTO — a `LoginInput` must carry a `password`
+ * and a `ResetPasswordArgs` must carry a `token`. Tracking them by default
+ * contradicted the DTO exclusion (`Input$` is already in `DTO_NAME`), so they
+ * follow `includeDtos` like every other request contract. `@ObjectType()`
+ * stays in the entity set: that is the *response* side, where an accidental
+ * `password` field really does leak.
+ */
+const DTO_DECORATORS: ReadonlySet<string> = new Set(['InputType', 'ArgsType']);
+
+/** Class-name suffixes that mark a persistence entity / domain model. */
+const ENTITY_NAME = /Entity$|Schema$|Model$|Document$|Table$/;
+
+/** Class-name suffixes that mark a data-transfer object. */
+const DTO_NAME = /Dto$|Request$|Response$|Input$|Output$|Payload$/;
 
 // Default sensitive field patterns
 const DEFAULT_SENSITIVE_PATTERNS = [
@@ -92,14 +129,19 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         properties: {
           allowInTests: { type: 'boolean', default: true },
           sensitivePatterns: { type: 'array', items: { type: 'string' }, default: [] },
+          includeDtos: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true, sensitivePatterns: [] }],
+  defaultOptions: [{ allowInTests: true, sensitivePatterns: [], includeDtos: false }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowInTests = true, sensitivePatterns = [] } = options as Options;
+    const {
+      allowInTests = true,
+      sensitivePatterns = [],
+      includeDtos = false,
+    } = options as Options;
     const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -115,56 +157,33 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      * Check if decorators include @Exclude
      */
     function hasExcludeDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return name === 'Exclude';
-      });
+      return getDecoratorNames(decorators).includes('Exclude');
     }
 
     /**
-     * Check if class looks like an entity/DTO (contains decorators from TypeORM, class-validator, etc.)
+     * Is this a persistence entity / serialized domain model?
+     *
+     * Scoped deliberately: an entity that names a `password` column and never
+     * says `@Exclude()` leaks it the first time the object is returned from a
+     * controller. A DTO with the same field name is a declared contract.
      */
-    function isEntityOrDto(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      const entityDecorators = new Set([
-        'Entity',
-        'Schema',
-        'ObjectType',
-        'InputType',
-        'ArgsType',
-        'ApiProperty',
-      ]);
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return entityDecorators.has(name);
-      });
+    function isTrackedClass(node: TSESTree.ClassDeclaration): boolean {
+      if (hasDecoratorNamed(node.decorators, ENTITY_DECORATORS)) return true;
+      // A GraphQL input object is a request contract, not a persisted row —
+      // the decorator outranks the class name here.
+      if (hasDecoratorNamed(node.decorators, DTO_DECORATORS)) return includeDtos;
+      const name = node.id?.name;
+      if (name === undefined) return false;
+      if (ENTITY_NAME.test(name)) return true;
+      return includeDtos && DTO_NAME.test(name);
     }
 
-    // Track if we're in an entity/dto class
+    // Track if we're in an entity class
     let isInEntityOrDto = false;
 
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isInEntityOrDto = isEntityOrDto(node.decorators);
-        // Also check class name for DTO/Entity suffix
-        if (node.id?.name) {
-          isInEntityOrDto =
-            isInEntityOrDto ||
-            /Dto$|Entity$|Model$|Schema$/.test(node.id.name);
-        }
+        isInEntityOrDto = isTrackedClass(node);
       },
 
       PropertyDefinition(node: TSESTree.PropertyDefinition) {

@@ -171,12 +171,12 @@ export default async function HomePage() {
             {/* Code Content — WCAG accessible colors for light/dark themes */}
             <pre className="p-6 text-sm md:text-base overflow-x-auto">
               <code className="font-mono">
-                <span className="text-purple-600 dark:text-purple-400">import</span> <span className="text-amber-600 dark:text-yellow-400">browserSecurity</span> <span className="text-purple-600 dark:text-purple-400">from</span> <span className="text-green-600 dark:text-green-400">&apos;eslint-plugin-browser-security&apos;</span>;{'\n'}
-                <span className="text-purple-600 dark:text-purple-400">import</span> <span className="text-amber-600 dark:text-yellow-400">jwt</span> <span className="text-purple-600 dark:text-purple-400">from</span> <span className="text-green-600 dark:text-green-400">&apos;eslint-plugin-jwt&apos;</span>;{'\n'}
+                <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">browserSecurity</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-browser-security&apos;</span>;{'\n'}
+                <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">jwt</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-jwt&apos;</span>;{'\n'}
                 {'\n'}
-                <span className="text-purple-600 dark:text-purple-400">export default</span> [{'\n'}
-                {'  '}browserSecurity.configs.<span className="text-amber-600 dark:text-yellow-400">recommended</span>,{'\n'}
-                {'  '}jwt.configs.<span className="text-amber-600 dark:text-yellow-400">recommended</span>,{'\n'}
+                <span className="text-orange-800 dark:text-orange-300">export default</span> [{'\n'}
+                {'  '}browserSecurity.configs.<span className="text-amber-800 dark:text-yellow-400">recommended</span>,{'\n'}
+                {'  '}jwt.configs.<span className="text-amber-800 dark:text-yellow-400">recommended</span>,{'\n'}
                 {'  '}<span className="text-fd-muted-foreground">{'// Start protecting your code instantly'}</span>{'\n'}
                 ];
               </code>

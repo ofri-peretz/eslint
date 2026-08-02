@@ -1,0 +1,15 @@
+{
+  "cwe": "CWE-099",
+  "name": "Improper Control of Resource Identifiers (Environment Injection)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-node-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "env-key-from-user.js", "description": "process.env[req.body.key] = req.body.value" }
+    ],
+    "safe": [
+      { "file": "env-allowlisted-key.js", "description": "Assignment to a literal env key resolved from a closed allowlist" }
+    ]
+  }
+}

@@ -3,14 +3,21 @@
   "defaultOpen": false,
   "pages": [
     "no-cors-credentials-wildcard",
+    "no-error-details-in-response",
     "no-exposed-debug-endpoints",
     "no-express-unsafe-regex-route",
     "no-graphql-introspection-production",
+    "no-host-header-in-links",
     "no-insecure-cookie-options",
     "no-permissive-cors",
+    "no-sensitive-data-in-query",
+    "no-static-root-exposure",
+    "no-user-controlled-render-locals",
+    "require-case-insensitive-path-guard",
     "require-csrf-protection",
     "require-express-body-parser-limits",
     "require-helmet",
+    "require-query-type-guard",
     "require-rate-limiting"
   ]
 }
