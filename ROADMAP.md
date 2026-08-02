@@ -2,7 +2,7 @@
 
 This document tracks current focus areas and forward-looking plans for the Interlace ESLint ecosystem. Authoritative sources for measured claims live in [`CLAIMS.md`](./CLAIMS.md); this file is the narrative.
 
-Last refresh: 2026-05-13.
+Last refresh: 2026-08-02.
 
 ---
 

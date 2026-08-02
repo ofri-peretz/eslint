@@ -62,6 +62,24 @@ const PATTERNS = [
       '2.71s at 5K files (synthetic, no-cycle only) or 4.9s rule time (real codebase)',
   },
   {
+    id: 'import-next-sub-second-reversed',
+    // Value-first form: "0.4s for import-next linting". The forward pattern
+    // requires the context term to precede the duration, so this shape sat
+    // inside the documented scope while matching neither pattern — the same
+    // gap the `-reversed` twin of the 100x pattern exists to close.
+    //
+    // Deliberately a NARROWER keyword set than the forward arm: it drops the
+    // generic `lint time` / `linting`. Value-first phrasing is how other
+    // tools' legitimate figures are written ("Sub-second linting on large
+    // repos" describes oxlint in ecosystem.mdx), so keeping the generic terms
+    // here produced a false positive on a live marketing surface — which must
+    // never be silenced by an ALLOWLIST entry. Product-scoped terms only.
+    regex:
+      /(?<![\d.])(?:0?\.\d+\s*s(?:ec|econds)?\b|<\s*1\s*s\b|\bsub-second\b)[^\n]{0,80}?(?:eslint-plugin-import|import-next|no-cycle|cycle detection)/i,
+    replacement:
+      '2.71s at 5K files (synthetic, no-cycle only) or 4.9s rule time (real codebase)',
+  },
+  {
     id: 'unmeasured-sub-second-transition',
     // Context-free form of the same fabrication: any "Ns → 0.Xs" pairing.
     // Catches it in a diagram or table cell where the subject sits on a
@@ -168,7 +186,13 @@ function selftest() {
     '| `no-cycle` | 45s+ on large monorepos | <1s (100x faster) |',
     'eslint-plugin-import takes 45s to lint. Our replacement takes 0.4s.',
     'Docs surfaces carried a supporting table: 15.0s → 0.15s',
+    // Value-first: the duration leads, the subject follows.
+    '0.4s for import-next linting on a 10K-file repo',
+    'Down to 0.4s with no-cycle enabled',
   ];
+  // Value-first phrasing about a *different* tool is legitimate and must not
+  // be flagged — this exact line lives in ecosystem.mdx and describes oxlint.
+  const goodReversed = 'Sub-second linting on large repos. 790 stock rules';
   const good = [
     'Catching vulnerabilities during code review is 100x cheaper than fixing them',
     '| Native Rust ports in oxlint | ~50–100× faster |',
@@ -195,6 +219,11 @@ function selftest() {
 
   for (const s of bad) assert.equal(matches(s), true, `should flag: ${s}`);
   for (const s of good) assert.equal(matches(s), false, `should NOT flag: ${s}`);
+  assert.equal(
+    matches(goodReversed),
+    false,
+    'value-first phrasing about another tool must not be flagged'
+  );
 
   assert.equal(
     matches(badPair.join(' ')),

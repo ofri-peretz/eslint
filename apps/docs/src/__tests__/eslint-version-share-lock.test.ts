@@ -69,6 +69,36 @@ describe('ESLint version share: published surfaces match the tracked snapshot', 
     }
   });
 
+  /**
+   * Presence alone can't tell v9's share from v10's: swap two percentages
+   * between rows and the check above still passes, because both values are
+   * still *somewhere* in the file. So bind each share to its major within a
+   * single row or prose claim.
+   *
+   * Surfaces write the pair in three shapes, hence the alternatives:
+   *   `| **v9** | 109.1M | 51.13% |`   (README / compatibility.mdx table)
+   *   `| 9.x | Flat Config … | 51.13% |` (compatibility-matrix table)
+   *   `51.13% (v9)` / `v9: 51.13%`      (CLAIMS.md, ROADMAP prose)
+   */
+  it.each(SURFACES)('%s binds each share to its own major', (file) => {
+    const text = read(file);
+    for (const major of SUPPORTED) {
+      const share = pctOf(major).toFixed(2).replace('.', '\\.');
+      const v = `(?:\\*\\*)?v?${major}(?:\\.x)?(?:\\*\\*)?`;
+      const bound = new RegExp(
+        // major … share  (same table row or clause — no newline between)
+        `${v}[^\\n|]*(?:\\|[^\\n|]*)?\\|?[^\\n]{0,60}?${share}%` +
+          // …or share … major, e.g. "51.13% (v9)" / "51.13% (v9)"
+          `|${share}%[^\\n]{0,12}?${v}`
+      );
+      expect(
+        bound.test(text),
+        `${file} does not bind v${major} to its share ${pctOf(major).toFixed(2)}% ` +
+          'in a single row/claim — the values may be present but swapped between majors.'
+      ).toBe(true);
+    }
+  });
+
   it.each(SURFACES)('%s stamps the snapshot refresh date', (file) => {
     expect(
       read(file),
@@ -88,7 +118,9 @@ describe('ESLint version share: published surfaces match the tracked snapshot', 
     const stamps = [
       // "Last data refresh: **2026-08-02**" — window spans the newline used by
       // the MDX <Callout>, where title and date sit on separate lines.
-      ...text.matchAll(/Last data refresh[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/g),
+      // `Last (data )?refresh` because ROADMAP.md carries a document-level
+      // "Last refresh:" stamp as well, which went stale behind the data line.
+      ...text.matchAll(/Last (?:data )?refresh[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/g),
       // Table-header form: "Share (2026-08-02)"
       ...text.matchAll(/Share \((\d{4}-\d{2}-\d{2})\)/g),
     ];

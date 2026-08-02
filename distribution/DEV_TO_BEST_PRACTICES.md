@@ -150,7 +150,7 @@ description: '[Problem hook] + [Solution preview] + [Benefit]'
 # Examples:
 description: 'Even experienced developers make this SQL injection mistake. Learn the correct pattern and how ESLint catches it automatically.'
 
-description: 'eslint-plugin-import spends 148s finding circular deps in 5,000 files. Our drop-in replacement does it in 2.7s. Here is the benchmark.'
+description: 'The no-cycle rule alone costs eslint-plugin-import 148s on a synthetic 5,000-file corpus. Our drop-in replacement does it in 2.7s. Here is the benchmark.'
 ```
 
 ---
@@ -384,7 +384,7 @@ The same vulnerability appears in 80% of them."
 
 ```markdown
 - "This pattern appears in 80% of codebases I've audited"
-- "Cut no-cycle rule time 8x on a 5,736-file React codebase, at 100% detection parity"
+- "Cut no-cycle rule time 8x on a 5,736-file React codebase, at 100% parity for standard import/no-cycle detection"
 - "Trusted by teams at [Company A], [Company B]"
 ```
 
