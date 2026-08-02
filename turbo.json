@@ -72,42 +72,10 @@
       "inputs": [".markdownlint.json", "**/*.md", "!node_modules/**", "!**/dist/**"],
       "outputs": []
     },
-    "storybook": {
-      "cache": false,
-      "persistent": true
-    },
     "dev": {
       "cache": false,
       "persistent": true,
       "dependsOn": ["^build"]
-    },
-    "build-storybook": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        ".storybook/**",
-        "src/**",
-        "test-runner.ts",
-        "vite.config.ts",
-        "tsconfig.json",
-        "postcss.config.mjs",
-        "package.json"
-      ],
-      "outputs": ["storybook-static/**"]
-    },
-    "test-storybook": {
-      "dependsOn": ["build-storybook"],
-      "inputs": [".storybook/**", "src/**", "test-runner.ts", "package.json"],
-      "outputs": []
-    },
-    "registry#build": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "scripts/**",
-        "public/index.html",
-        "package.json",
-        "../../packages/ui/src/primitives/**/*.tsx"
-      ],
-      "outputs": ["public/r/**"]
     }
   }
 }
