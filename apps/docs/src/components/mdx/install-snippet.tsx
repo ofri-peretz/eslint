@@ -16,7 +16,7 @@ import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
  * `<DynamicCodeBlock>` (Shiki-driven, theme-aware) for the rendered shell.
  *
  * Usage:
- *   <InstallSnippet packages="eslint @interlace/eslint-plugin-jwt" />
+ *   <InstallSnippet packages="eslint eslint-plugin-jwt" />
  *   <InstallSnippet packages="@interlace/ui" dev />
  *   <InstallSnippet packages="lefthook" dev global />
  */

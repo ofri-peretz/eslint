@@ -72,6 +72,28 @@ describe('no-ssrf coverage gaps', () => {
       },
       // Zero-argument HTTP call — urlArg guard
       { code: 'fetch();' },
+
+      // --- carriesUntrustedUrl: shapes with no evidence of user flow ---
+      // Template literal interpolating a local with no user-input-sounding name
+      {
+        code: [
+          'function callApi(p) {',
+          '  return fetch(`https://x/${p}`);',
+          '}',
+        ].join('\n'),
+      },
+      // CallExpression argument whose own arguments are untainted
+      { code: 'fetch(buildUrl(id));' },
+      // Concatenation of two untainted operands
+      { code: 'fetch("https://x/" + id);' },
+      // Object spread — SpreadElement is not a Property
+      { code: 'got({ ...opts });' },
+      // Computed key that is neither Identifier nor Literal → not a URL key
+      { code: 'got({ ["ur" + "l"]: userUrl });' },
+      // Member chain whose root is a call, not a request identifier
+      { code: 'fetch(getReq().query.url);' },
+      // Member chain rooted at a non-request identifier
+      { code: 'fetch(config.query.url);' },
     ],
     invalid: [
       // Preceding member call whose method is not a validation method
@@ -131,13 +153,9 @@ describe('no-ssrf coverage gaps', () => {
         ].join('\n'),
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
-      // Template literal with expressions — dynamic but not an Identifier
+      // CallExpression argument that wraps a user-input-named identifier
       {
-        code: [
-          'function callApi(p) {',
-          '  return fetch(`https://x/${p}`);',
-          '}',
-        ].join('\n'),
+        code: 'fetch(String(userUrl));',
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
     ],
