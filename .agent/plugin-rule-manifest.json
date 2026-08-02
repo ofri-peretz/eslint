@@ -1105,6 +1105,11 @@
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
+    "no-unsafe-buffer-alloc": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
     "no-unsafe-dynamic-require": {
       "environment": "node",
       "detection": "structural-api",

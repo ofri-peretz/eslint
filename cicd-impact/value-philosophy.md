@@ -351,7 +351,7 @@ A philosophy that doesn't survive contact with a hostile reader is not load-bear
 
 ### Attack 7 — "You're recommending an ESLint monorepo while making the philosophical case for it. Conflict of interest."
 
-> *"This is just dressed-up marketing for `@interlace/eslint-plugin-*`."*
+> *"This is just dressed-up marketing for the Interlace eslint-plugins."*
 
 **Conceded transparently and addressed structurally.** The conflict is real: the philosophy is published by the same project it argues for. The structural mitigations: (a) the framework is org-agnostic and forkable — anyone can apply it to evaluate any analyzer, including competitors; (b) [`benchmarks/`](../benchmarks/) publishes precision/recall *including against competing analyzers*, with honest losses preserved in [`CLAIMS.md`](../CLAIMS.md); (c) the "What 'high-end' means" section in [`philosophy.md`](philosophy.md) gives the buyer specific quantitative thresholds the buyer can apply to *any* analyzer, not just ours. A reader skeptical of the conflict should run the framework against several analyzers — including ours — and let the numbers decide. That is the only honest answer.
 

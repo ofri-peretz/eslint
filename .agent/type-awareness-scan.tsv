@@ -410,6 +410,7 @@ conventions	no-json-schema-tags	unaware	backfilled docs 2026-05-10
 node-security	no-deprecated-buffer	unaware	backfilled docs 2026-05-10
 node-security	no-ssrf	unaware	backfilled docs 2026-05-10
 node-security	no-dynamic-command-string	unaware	
+node-security	no-unsafe-buffer-alloc	unaware	
 react-a11y	alt-text	unaware	backfilled docs 2026-05-10
 reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10

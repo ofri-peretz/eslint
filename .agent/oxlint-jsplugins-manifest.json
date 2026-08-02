@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-02",
   "totalPlugins": 19,
-  "totalRules": 423,
-  "oxlintCompatible": 423,
+  "totalRules": 424,
+  "oxlintCompatible": 424,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1395,7 +1395,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 36,
+      "ruleCount": 37,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1555,6 +1555,12 @@
         },
         {
           "name": "no-toctou-vulnerability",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-buffer-alloc",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

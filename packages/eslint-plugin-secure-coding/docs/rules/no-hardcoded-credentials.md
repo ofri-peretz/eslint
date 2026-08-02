@@ -189,6 +189,26 @@ export const SessionCacheProvider = 'SessionCacheProvider';        // ✅ DI tok
 const secret = 'experimental_onToolExecutionStart';                // ✅ identifier
 ```
 
+### ✅ Also correct — self-evident placeholders
+
+A value the developer is visibly expected to replace is not a leaked
+credential. Skipped by default; set `allowPlaceholders: false` to report them.
+
+```typescript
+const TEST_CREDENTIALS = {
+  apiKey: 'test-api-key',
+  token: 'xxxxxxxxxxxx',        // ✅ one character repeated
+  password: 'changeme',         // ✅ placeholder word
+  secret: '<your-secret-here>', // ✅ bracketed template slot
+};
+
+const key = '{{API_SECRET}}';   // ✅ also `${…}` and `[…]`
+```
+
+The allowlist applies only to non-structural findings. A JWT, an `sk_live_`
+key, or a `postgres://user:pass@host` string keeps its shape whatever words it
+contains, so those still report.
+
 ## Configuration
 
 ```javascript
@@ -201,7 +221,8 @@ const secret = 'experimental_onToolExecutionStart';                // ✅ identi
       detectApiKeys: true,                  // Detect API keys
       detectPasswords: true,                // Detect passwords
       detectTokens: true,                   // Detect tokens
-      detectDatabaseStrings: true          // Detect database strings
+      detectDatabaseStrings: true,         // Detect database strings
+      allowPlaceholders: true              // Skip <your-secret-here>, changeme, xxxxxxxx
     }]
   }
 }
@@ -218,6 +239,7 @@ const secret = 'experimental_onToolExecutionStart';                // ✅ identi
 | `detectPasswords`       | `boolean`  | `true`  | Detect common weak passwords                                      |
 | `detectTokens`          | `boolean`  | `true`  | Detect JWT and OAuth tokens                                       |
 | `detectDatabaseStrings` | `boolean`  | `true`  | Detect database connection strings with credentials               |
+| `allowPlaceholders`     | `boolean`  | `true`  | Skip self-evident placeholders (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
 
 ### Ignoring Test Credentials
 

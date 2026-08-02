@@ -27,6 +27,7 @@
     "no-static-iv",
     "no-timing-unsafe-compare",
     "no-toctou-vulnerability",
+    "no-unsafe-buffer-alloc",
     "no-unsafe-dynamic-require",
     "no-weak-cipher-algorithm",
     "no-weak-hash-algorithm",

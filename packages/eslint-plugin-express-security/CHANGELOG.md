@@ -1,5 +1,48 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.4.0
+
+### Minor Changes
+
+- [#292](https://github.com/ofri-peretz/eslint/pull/292) [`5664efd`](https://github.com/ofri-peretz/eslint/commit/5664efdc4df72a8621253b2d500c82b09944fd49) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - **`express-security/no-exposed-debug-endpoints` — only route registrations count.** The rule had a second listener that reported _any_ bare string literal equal to a debug path (`/admin`, `/health`, `/debug`, …) anywhere in a file. A redirect-URL constant tripped it while authoring benchmark corpus fixtures — `const ADMIN_PATH = '/admin'`, `res.redirect('/admin')` and `if (req.path === '/health')` were all CWE-489 "Exposed Debug Endpoint" findings, none of which registers an endpoint. That listener is gone: a literal is reported only as the path argument of an express route registration.
+
+  The registration check also now covers every express routing method (`put`, `patch`, `delete`, `head`, `options`, `all`) rather than just `get` / `post` / `use`, plus the chained route builder (`app.route('/admin').delete(handler)`), so `app.delete('/admin/users/:id', handler)` is caught where it previously was not. Conversely, `app.get(name)` with a single argument is an application-setting lookup rather than a route registration and is no longer reported.
+
+- [#293](https://github.com/ofri-peretz/eslint/pull/293) [`d6e2b3c`](https://github.com/ofri-peretz/eslint/commit/d6e2b3ccdcaed3797cffc49772c1b7fa56e78a82) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Seven new rules closing benchmark-corpus coverage gaps (A-lite research wave):
+
+  - `no-host-header-in-links` (CWE-640) — Host-header poisoning in password-reset/email link construction
+  - `no-error-details-in-response` (CWE-209) — stack traces / raw error objects sent to clients
+  - `no-sensitive-data-in-query` (CWE-598) — passwords/tokens read from GET query strings
+  - `no-user-controlled-render-locals` (CWE-73) — `res.render(view, req.body)` template object injection
+  - `no-static-root-exposure` (CWE-548) — `express.static(__dirname)` / `serve-index` directory exposure
+  - `require-case-insensitive-path-guard` (CWE-178) — case-sensitive path guards bypassed by `/ADMIN`
+  - `require-query-type-guard` (CWE-843) — string methods on `req.query` members without type guards
+
+  In the recommended preset four ship as `error` (`no-host-header-in-links`,
+  `no-error-details-in-response`, `no-user-controlled-render-locals`,
+  `no-static-root-exposure`) and three as `warn` — the two `require-*` guard
+  heuristics plus `no-sensitive-data-in-query`, which matches on parameter names
+  and so never gets enforcement severity.
+
+### Patch Changes
+
+- [#298](https://github.com/ofri-peretz/eslint/pull/298) [`a53887f`](https://github.com/ofri-peretz/eslint/commit/a53887fdcb4ba5fad0d9f06a19a295d125c7e144) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - **`express-security/no-missing-security-headers` — `.set()` on a non-response receiver is not a header call.** The rule matched `setHeader` / `header` / `set` on the method name alone, so `url.searchParams.set('page', '2')` and `app.set('view engine', 'ejs')` were reported as CVSS 7.5 missing-security-header findings — a false positive on two of the most common calls in an Express codebase. The receiver must now be an HTTP response (`res` / `resp` / `response` / `reply`, including `ctx.res.set(…)` and `this.response.header(…)`). The same predicate gates header _collection_, so a `Content-Security-Policy` string passed to an unrelated `.set()` no longer satisfies the requirement for a real response in the same scope.
+
+- [#294](https://github.com/ofri-peretz/eslint/pull/294) [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Rewrite `description` and `keywords` on every published package for npm search discovery. npm ranks on name, description, and keywords, and the registry only picks up these fields at publish — so this is metadata-only and takes effect for each package on its next release.
+
+  **Descriptions now lead with the search phrase.** Every one starts `ESLint plugin for <the thing you'd search>` instead of a brand-first or category-first framing, and names the concrete vulnerabilities the plugin actually detects. Three were corrected while doing so:
+
+  - `eslint-plugin-import-next` claimed "100x faster no-cycle detection". No 100x measurement exists: `CLAIMS.md` records **3.1x end-to-end** (8x in pure rule execution) on a 5,483-file React codebase, and the highest number in any benchmark result is 54.9x on the synthetic corpus. The description now states the real-codebase figure.
+  - `eslint-plugin-secure-coding` claimed SQL injection, XSS and CSRF coverage — none of which are its rules. It now names what it does detect: LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.
+  - `eslint-plugin-secure-coding` ("89 rules") and `eslint-plugin-react-a11y` ("37 rules") hard-coded rule counts that had drifted from reality. Counts are generated into `interlace-numbers.json`; hand-typed copies are removed rather than corrected.
+
+  **Keywords now match the vocabulary of the plugins that rank.** `eslint-plugin-security`, `eslint-plugin-jsx-a11y`, `eslint-plugin-n` and `eslint-plugin-import` all carry the `eslint` / `eslintplugin` / `eslint-plugin` trio — six of our packages were missing `eslintplugin`, and every one now carries all three plus `static-analysis`, `linting` and `code-quality`. Security plugins add `sast`, `appsec` and `vulnerability`; `node-security` and `secure-coding` also carry `nodesecurity`, the exact keyword `eslint-plugin-security` ranks on. Each plugin gained the CWE identifiers and attack names for what it detects (`cwe-78` command injection, `cwe-22` path traversal, `cwe-89` SQL injection, `cwe-79` XSS, `cwe-347` JWT algorithm confusion, `cwe-352` CSRF, `cwe-943` NoSQL injection), and `node-security` gained the crypto vocabulary it had been missing entirely despite absorbing the crypto rule set (`crypto`, `cryptography`, `weak-hash`, `md5`, `sha1`, `timing-attack`).
+
+  No rule behavior, exports, or configuration changes.
+
+- Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:
+  - @interlace/eslint-devkit@1.4.3
+
 ## 1.3.4
 
 ### Patch Changes
