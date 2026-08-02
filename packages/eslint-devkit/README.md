@@ -540,5 +540,9 @@ If the devkit saved you time, **[star the repo](https://github.com/ofri-peretz/e
 See [CHANGELOG.md](./CHANGELOG.md) for a list of changes and version history.
 
 <p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit"><img src="https://eslint.interlace.tools/images/og-devkit.png" alt="ESLint Interlace" width="100%" /></a>
+</p>
+
+<p align="center">
   <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>
