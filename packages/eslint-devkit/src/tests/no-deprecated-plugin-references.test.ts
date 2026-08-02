@@ -194,7 +194,10 @@ describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
         violations,
         violationMessage('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations),
       ).toEqual([]);
-    });
+      // Walks the whole repo tree. ~1.5s idle, but vitest runs test files in
+      // parallel workers, so a sibling doing heavy I/O can starve this past the
+      // 5s default and fail a commit that has nothing to do with it.
+    }, 60_000);
 
     it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
       const violations = findImportReferences(plugin.name).filter(
@@ -204,6 +207,6 @@ describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
         violations,
         violationMessage('import reference(s)', plugin.name, plugin.successor, violations),
       ).toEqual([]);
-    });
+    }, 60_000);
   }
 });
