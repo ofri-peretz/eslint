@@ -20,6 +20,7 @@
         "concepts/ecosystem",
         "---Migration---",
         "flat-config",
+        "migrate-from-security-node",
         "---Reference---",
         "concepts/compatibility",
         "concepts/compare",

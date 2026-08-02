@@ -2,7 +2,7 @@
 
 > **Purpose.** Single-read prelude for any agent working on the bench / leadership initiative. Replaces ~1,000 lines of scattered docs with one ~250-line digest. **Read this first**, then drill into the cited file/section only when you need detail.
 >
-> **Scope.** Everything an agent needs to know about: bench philosophy, vocabulary contract, the 12 benches, the 10 flagship rules, the severity policy, the 4-phase leadership roadmap, and where each operational answer lives.
+> **Scope.** Everything an agent needs to know about: bench philosophy, vocabulary contract, the 13 benches, the 10 flagship rules, the severity policy, the 4-phase leadership roadmap, and where each operational answer lives.
 >
 > **Last synced:** 2026-05-09. If a bench, principle, or roadmap item changed since, the master docs win — see "Source-of-truth links" at the bottom.
 
@@ -60,7 +60,7 @@ Required fields:
 
 **Matrix dimension (planned):** ILB-Perf and accuracy benches will run against `{tsc-classic@5.x, tsc-go@6.x}` × `{eslint@8, @9, @10}` once tsc-go reaches GA. Until then, runs default to whatever `typescript` resolves in `node_modules` and the field is recorded for traceability. See roadmap item 1.14.
 
-## 4. The 12 benches
+## 4. The 13 benches
 
 Each is single-dimension, versioned, with a frozen corpus.
 
@@ -78,6 +78,7 @@ Each is single-dimension, versioned, with a frozen corpus.
 | 9b | **ILB-LLM-Fix** | Can the LLM act on diagnostics? | informational | passRate ≥ 80% | round-trip per call |
 | 10 | **ILB-Formatter** | Whole-run formatter cost vs ESLint stylish + signal preservation | `interlace-compact` ≤ 0% vs stylish | structured formats = 4.0/4 | ≤ 50 ms (large), ≤ 250 ms (extreme) |
 | 11 | **ILB-Remediation** | Do remediation claims (fixable/suggestions) actually emit fixes — ours AND competitors'? | n/a | declared == implemented (0 dead declarations) | n/a |
+| 12 | **ILB-Landscape** | License-freedom + maintenance-velocity facts for the tool landscape (ours AND competitors', same queries) | $0, public APIs only | every judgment cell carries a verbatim citation | n/a |
 
 Cadence: per-PR (Arena, Juliet, Quality, Formatter) · nightly (Wild + Edge + Cov + Perf) · weekly (Coverage, LLM-Tokens, LLM-Fix) · quarterly (AI, CWE expansion review) · annually (re-baseline FP weights).
 
@@ -177,7 +178,7 @@ Full plan in [`benchmarks/LEADERSHIP_ROADMAP.md`](../../benchmarks/LEADERSHIP_RO
 
 ## Source-of-truth links
 
-- [`benchmarks/README.md`](../../benchmarks/README.md) — philosophy, 12 benches, severity policy, vocabulary contract, jq recipes
+- [`benchmarks/README.md`](../../benchmarks/README.md) — philosophy, 13 benches, severity policy, vocabulary contract, jq recipes
 - [`benchmarks/BASELINE_MATRIX.md`](../../benchmarks/BASELINE_MATRIX.md) — plugin → OSS-repo map, 45K+ policy
 - [`benchmarks/LEADERSHIP_ROADMAP.md`](../../benchmarks/LEADERSHIP_ROADMAP.md) — 4-phase plan, 25+ items
 - [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../benchmarks/FP_FN_REMEDIATION_TRACKER.md) — active FP/FN agenda
