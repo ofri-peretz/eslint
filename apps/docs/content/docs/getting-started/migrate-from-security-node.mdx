@@ -16,9 +16,9 @@ This page maps each of its 22 rules to the closest Interlace equivalent, or stat
 
 | Status | Count |
 | :--- | :--- |
-| Direct equivalent | 13 |
+| Direct equivalent | 12 |
 | Partial equivalent (see notes) | 3 |
-| No equivalent — gap | 6 |
+| No equivalent — gap | 7 |
 
 ## Rule-by-rule mapping
 
@@ -27,7 +27,7 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 | `security-node` rule | Status | Interlace equivalent | Notes |
 | :--- | :---: | :--- | :--- |
 | `detect-absence-of-name-option-in-exrpress-session` | ✗ gap | — | No `express-session` rules in `eslint-plugin-express-security`. |
-| `detect-buffer-unsafe-allocation` | ✓ | [`node-security/no-deprecated-buffer`](/docs/security/plugin-node-security/rules/no-deprecated-buffer) | Covers `Buffer.allocUnsafe()` and the deprecated `new Buffer()` constructor. |
+| `detect-buffer-unsafe-allocation` | ✗ gap | — | Upstream flags `Buffer.allocUnsafe()` only (CWE-908, uninitialized memory). No Interlace rule flags it. `node-security/no-deprecated-buffer` is the adjacent rule but targets the deprecated `Buffer()`/`new Buffer()` constructor — the two do not overlap. |
 | `detect-child-process` | ✓ | [`node-security/detect-child-process`](/docs/security/plugin-node-security/rules/detect-child-process) | Same rule name. Related: `node-security/no-shell-injection`. |
 | `detect-crlf` | ✗ gap | — | Log forging (CWE-117) via user input in log calls. `secure-coding/no-pii-in-logs` targets PII exposure, not CRLF forging — different concern. |
 | `detect-dangerous-redirects` | ✓ | `express-security/no-user-controlled-redirect` | Flags user-controlled `res.redirect()` arguments. Browser-side counterpart: `browser-security/no-insecure-redirects`. |
@@ -51,13 +51,13 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 
 ## Config migration
 
-The 16 mapped rules span four plugins. Install the ones your codebase needs:
+The 12 direct-mapping rules span five plugins. Install the ones your codebase needs:
 
 ```bash
-npm install --save-dev eslint-plugin-node-security eslint-plugin-secure-coding eslint-plugin-express-security eslint-plugin-mongodb-security
+npm install --save-dev eslint-plugin-node-security eslint-plugin-secure-coding eslint-plugin-express-security eslint-plugin-mongodb-security eslint-plugin-browser-security
 ```
 
-Add `eslint-plugin-pg`, `eslint-plugin-browser-security`, or `eslint-plugin-reliability` if the partial/related rows above apply to you.
+Add `eslint-plugin-pg` or `eslint-plugin-reliability` if the partial rows above apply to you.
 
 <Tabs items={['Before (security-node)', 'After (Interlace)']}>
 <Tab value="Before (security-node)">
@@ -74,12 +74,14 @@ import nodeSecurity from 'eslint-plugin-node-security';
 import secureCoding from 'eslint-plugin-secure-coding';
 import expressSecurity from 'eslint-plugin-express-security';
 import mongodbSecurity from 'eslint-plugin-mongodb-security';
+import browserSecurity from 'eslint-plugin-browser-security';
 
 export default [
   nodeSecurity.configs.recommended,
   secureCoding.configs.recommended,
   expressSecurity.configs.recommended,
   mongodbSecurity.configs.recommended,
+  browserSecurity.configs.recommended,
 ];
 ```
 </Tab>
@@ -87,9 +89,9 @@ export default [
 
 Still on `.eslintrc`? Do the [flat-config migration](/docs/getting-started/flat-config) first — all Interlace plugins support flat config natively (legacy configs are also exported).
 
-## If you depend on one of the 6 gaps
+## If you depend on one of the 7 gaps
 
 The gaps are listed above exactly as measured; nothing here substitutes for them today. Options:
 
-- Keep `eslint-plugin-security-node` installed **alongside** the Interlace plugins, enabling only its gap rules (`detect-crlf`, `detect-unhandled-event-errors`, `detect-runinthiscontext-method-in-nodes-vm`, `detect-option-multiplestatements-in-mysql`, `detect-option-unsafe-in-serialize-javascript-npm-package`, `detect-absence-of-name-option-in-exrpress-session`). ESLint runs both without conflict; note the upstream package targets ESLint 8-era APIs.
+- Keep `eslint-plugin-security-node` installed **alongside** the Interlace plugins, enabling only its gap rules (`detect-buffer-unsafe-allocation`, `detect-crlf`, `detect-unhandled-event-errors`, `detect-runinthiscontext-method-in-nodes-vm`, `detect-option-multiplestatements-in-mysql`, `detect-option-unsafe-in-serialize-javascript-npm-package`, `detect-absence-of-name-option-in-exrpress-session`). ESLint runs both without conflict; note the upstream package targets ESLint 8-era APIs.
 - [Open an issue](https://github.com/ofri-peretz/eslint/issues) if one of the gaps matters to your codebase — gap reports directly feed rule prioritization.
