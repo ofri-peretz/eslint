@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-02",
-  "totalPlugins": 19,
-  "totalRules": 424,
-  "oxlintCompatible": 424,
+  "totalPlugins": 20,
+  "totalRules": 425,
+  "oxlintCompatible": 425,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2600,6 +2600,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "sequelize-security",
+      "shim": "tools/oxlint-plugins/interlace-sequelize-security.cjs",
+      "subpath": "eslint-plugin-sequelize-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-vercel-ai-security",
       "short": "vercel-ai-security",
       "shim": "tools/oxlint-plugins/interlace-vercel-ai-security.cjs",
@@ -3253,6 +3268,9 @@
       "no-xxe-injection",
       "require-backend-authorization",
       "require-secure-defaults"
+    ],
+    "sequelize-security": [
+      "no-unsafe-query"
     ],
     "vercel-ai-security": [
       "no-dynamic-system-prompt",

@@ -60,6 +60,7 @@ const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
     'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
     'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    'eslint-plugin-sequelize-security': 'Security rules for the Sequelize ORM (SQL injection prevention in raw queries).',
     'eslint-plugin-browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
     'eslint-plugin-lambda-security': 'Security best practices for AWS Lambda functions (IAM, timeouts, environment).',
     'eslint-plugin-secure-coding': 'General secure coding practices and OWASP compliance for JavaScript/TypeScript.',

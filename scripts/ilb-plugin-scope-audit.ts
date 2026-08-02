@@ -13,6 +13,7 @@
  *   express      Express/Koa/Fastify router API (app.get, res.send, req.body)
  *   jwt          jsonwebtoken package API
  *   pg           pg (node-postgres) package API
+ *   sequelize    Sequelize ORM API (sequelize.query, Sequelize.literal)
  *   mongodb      mongodb/mongoose API
  *   nestjs       NestJS decorators (@Controller, @UseGuards)
  *   lambda       AWS Lambda handler shape (event, context, callback)
@@ -65,6 +66,7 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-express-security':  ['express'],
   'eslint-plugin-jwt':               ['jwt'],
   'eslint-plugin-pg':                ['pg'],
+  'eslint-plugin-sequelize-security': ['sequelize'],
   'eslint-plugin-mongodb-security':  ['mongodb'],
   'eslint-plugin-nestjs-security':   ['nestjs'],
   'eslint-plugin-lambda-security':   ['lambda'],

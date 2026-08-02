@@ -38,7 +38,7 @@ export interface PluginEntry {
 }
 
 /**
- * Canonical 19-plugin registry. Order doesn't matter for correctness; alphabetical
+ * Canonical 20-plugin registry. Order doesn't matter for correctness; alphabetical
  * within each pillar keeps the changelog tables and registries deterministic.
  */
 export const PLUGINS: PluginEntry[] = [
@@ -96,6 +96,12 @@ export const PLUGINS: PluginEntry[] = [
     package: 'eslint-plugin-secure-coding',
     pillar: 'security',
     description: 'Injection prevention',
+  },
+  {
+    slug: 'sequelize-security',
+    package: 'eslint-plugin-sequelize-security',
+    pillar: 'security',
+    description: 'Sequelize ORM security',
   },
   {
     slug: 'vercel-ai-security',

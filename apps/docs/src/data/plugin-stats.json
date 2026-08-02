@@ -57,6 +57,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-sequelize-security",
+      "rules": 1,
+      "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-express-security",
       "rules": 32,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
@@ -153,8 +161,8 @@
       "published": true
     }
   ],
-  "totalRules": 475,
-  "totalPlugins": 19,
-  "allPluginsCount": 19,
-  "generatedAt": "2026-08-02T22:05:30.787Z"
+  "totalRules": 476,
+  "totalPlugins": 20,
+  "allPluginsCount": 20,
+  "generatedAt": "2026-08-02T23:03:38.412Z"
 }
