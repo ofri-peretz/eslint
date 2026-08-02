@@ -21,18 +21,18 @@
 
 ## Per-plugin coverage
 
-| Plugin | Surface | Total APIs | Covered | Coverage % | Rule count | At/above floor? |
-| :--- | :--- | ---: | ---: | ---: | ---: | :---: |
-| `eslint-plugin-node-security` | Node.js core modules — fs, child_process, crypto, vm, dns, http(s) | 47 | 33 | 70% | 33 | ✅ |
-| `eslint-plugin-pg` | node-postgres — pg.Client / pg.Pool / pg.Query callable surface | 14 | 13 | 93% | 13 | ✅ |
-| `eslint-plugin-mongodb-security` | mongodb driver — Collection / Db / cursor query methods | 26 | 19 | 73% | 16 | ✅ |
-| `eslint-plugin-jwt` | jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues | 11 | 11 | 100% | 13 | ✅ |
-| `eslint-plugin-express-security` | Express — router methods, middleware patterns, common response sinks | 22 | 14 | 64% | 10 | ✅ |
-| `eslint-plugin-lambda-security` | AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse | 18 | 13 | 72% | 14 | ✅ |
-| `eslint-plugin-nestjs-security` | NestJS — Controllers, Providers, Guards, Decorators, Pipes | 16 | 10 | 63% | 6 | ✅ |
-| `eslint-plugin-vercel-ai-security` | Vercel AI SDK — generateText / streamText / generateObject / tools | 12 | 9 | 75% | 19 | ✅ |
-| `eslint-plugin-browser-security` | Browser web platform — DOM sinks, postMessage, storage, fetch, WebSocket, ServiceWorker, IndexedDB | 58 | 41 | 71% | 45 | ✅ |
-| `eslint-plugin-secure-coding` | Generic JS — eval / Function / regex / serialization / credentials | 19 | 18 | 95% | 27 | ✅ |
+| Plugin | Surface | Total APIs | Out of scope | In scope | Covered | Coverage % | Rule count | At/above floor? |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| `eslint-plugin-node-security` | Node.js core modules — fs, child_process, crypto, vm, dns, http(s) | 47 | 0 | 47 | 33 | 70% | 33 | ✅ |
+| `eslint-plugin-pg` | node-postgres — pg.Client / pg.Pool / pg.Query callable surface | 14 | 1 | 13 | 13 | 100% | 13 | ✅ |
+| `eslint-plugin-mongodb-security` | mongodb driver — Collection / Db / cursor query methods | 26 | 0 | 26 | 19 | 73% | 16 | ✅ |
+| `eslint-plugin-jwt` | jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues | 11 | 0 | 11 | 11 | 100% | 13 | ✅ |
+| `eslint-plugin-express-security` | Express — router methods, middleware patterns, common response sinks | 22 | 0 | 22 | 14 | 64% | 10 | ✅ |
+| `eslint-plugin-lambda-security` | AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse | 18 | 0 | 18 | 13 | 72% | 14 | ✅ |
+| `eslint-plugin-nestjs-security` | NestJS — Controllers, Providers, Guards, Decorators, Pipes | 16 | 0 | 16 | 10 | 63% | 6 | ✅ |
+| `eslint-plugin-vercel-ai-security` | Vercel AI SDK — generateText / streamText / generateObject / tools | 12 | 0 | 12 | 9 | 75% | 19 | ✅ |
+| `eslint-plugin-browser-security` | Browser web platform — DOM sinks, postMessage, storage, fetch, WebSocket, ServiceWorker, IndexedDB | 58 | 0 | 58 | 41 | 71% | 45 | ✅ |
+| `eslint-plugin-secure-coding` | Generic JS — eval / Function / regex / serialization / credentials | 19 | 0 | 19 | 18 | 95% | 27 | ✅ |
 
 ### Critical gaps (within 5 points of the floor)
 
@@ -52,12 +52,12 @@
   - node:http.Agent — TLS config patterns are covered, agent reuse less so
   - node:tls.createSecureContext — partially covered via require-secure-context
 
-### `eslint-plugin-pg` (93%)
+### `eslint-plugin-pg` (100%)
 
 - **Target surface:** node-postgres — pg.Client / pg.Pool / pg.Query callable surface (pg@8.x)
-- **Notes:** Near-complete coverage of the query-construction surface. The single uncovered API is type-parser registration, which is not a SQL-injection sink.
-- **Uncovered examples:**
-  - pg.types.setTypeParser — type-coercion sink, not a SQL injection surface; correctly out of scope
+- **Notes:** Complete coverage of the query-construction surface: all 13 in-scope APIs have at least one rule. The 14th public API, type-parser registration, is a result-coercion hook rather than a statement-construction sink and is excluded from the denominator with a written reason.
+- **Out of scope (excluded from the denominator):**
+  - `pg.types.setTypeParser` — Registers a result-value coercion function for a Postgres type OID. It runs on data coming back from the database and never participates in statement construction, so it cannot be a SQL-injection sink; parser correctness is a data-integrity concern outside this plugin's threat model.
 
 ### `eslint-plugin-mongodb-security` (73%)
 
@@ -136,7 +136,8 @@
 <details>
 <summary>How to read this</summary>
 
-- **API-surface coverage** (`distribution/EVALUATION_METRICS.md` §2) — the `Coverage %` column. Per-plugin floor 60%. Aggregate is informational.
+- **API-surface coverage** (`distribution/EVALUATION_METRICS.md` §2) — the `Coverage %` column, computed as `Covered / In scope`. Per-plugin floor 60%. Aggregate is informational.
+- **In scope** is `Total APIs` minus the `Out of scope` count: APIs that are not security sinks under this plugin's threat model. Each carries a written reason, and the audit rejects reasons that argue from rarity rather than threat model — so an unclosed gap can never be relabelled into a higher score.
 - **Critical gaps** are plugins within 5 points of the floor — fix surface coverage proactively before a new rule pushes them below.
 - **Status badge** is green when every plugin is at/above the floor; red on any miss.
 
