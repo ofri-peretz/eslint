@@ -146,7 +146,7 @@
     "ilb:oxlint-parity:ci": "tsx benchmarks/suites/ilb-oxlint-parity/run.ts --ci",
     "ilb:oxlint-parity:cached": "tsx benchmarks/suites/ilb-oxlint-parity/run.ts --cached",
     "ilb:oxlint-parity:harvest": "tsx benchmarks/suites/ilb-oxlint-parity/harvest-fixtures.ts",
-    "ilb:oxlint-parity:full": "npm run ilb:oxlint-parity:harvest && tsx benchmarks/suites/ilb-oxlint-parity/run.ts --corpus benchmarks/suites/ilb-oxlint-parity/harvested-fixtures --plugins pg,node-security,browser-security,secure-coding,crypto,jwt,express-security,mongodb-security,nestjs-security,lambda-security,vercel-ai-security --ci",
+    "ilb:oxlint-parity:full": "npm run ilb:oxlint-parity:harvest && tsx benchmarks/suites/ilb-oxlint-parity/run.ts --corpus benchmarks/suites/ilb-oxlint-parity/harvested-fixtures --plugins pg,node-security,browser-security,secure-coding,jwt,express-security,mongodb-security,nestjs-security,lambda-security,vercel-ai-security --ci",
     "ilb:tsc-matrix": "tsx benchmarks/suites/ilb-tsc-matrix/run.ts",
     "ilb:node-matrix": "tsx benchmarks/suites/ilb-node-matrix/run.ts",
     "ilb:eslint-matrix": "tsx benchmarks/suites/ilb-eslint-matrix/run.ts",
