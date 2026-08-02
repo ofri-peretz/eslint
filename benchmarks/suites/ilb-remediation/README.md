@@ -43,6 +43,22 @@ Output: `benchmarks/results/ilb-remediation/<date>.json` + a row appended to
 `benchmark-results/history.ndjson`. Envelope conforms to
 `benchmarks/lib/result-schema.json` (`bench: "ILB-Remediation"`).
 
+## Pre-registration receipt
+
+The envelope carries `methodologyHash` — sha256 over the concatenated bytes of
+every file in `methodologyPaths`, in listed order. For this suite that is
+`run.mjs` (the scanner is inline) plus its transitive repo-local imports
+(`lib/toolchain.ts`, `lib/preregister.ts`, `lib/methodology.ts`). Recompute from
+a clone:
+
+```bash
+cat $(jq -r '.methodologyPaths[]' benchmarks/results/ilb-remediation/<date>.json) | shasum -a 256
+```
+
+`methodologyCommit` is also recorded but is a **branch** SHA that this repo's
+squash-merge drops — it is a convenience pointer, not proof. See
+[benchmarks/README.md §10](../../README.md#verifying-a-published-methodology-hash).
+
 ## Fairness notes
 
 - Both sides are scanned with the same patterns; dead declarations are named

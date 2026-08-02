@@ -194,11 +194,14 @@ async function main() {
   }
 
   const date = new Date().toISOString().slice(0, 10);
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
   const envelope = {
     bench: 'ILB-Evade',
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
-    methodologyCommit: capturePreregistration({ allowDirty: true }).methodologyCommit,
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     cost: {},
     effectiveness: { ruleSurvivalRate },

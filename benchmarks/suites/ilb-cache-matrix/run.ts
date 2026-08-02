@@ -95,7 +95,7 @@ async function main() {
   console.log(`ILB-Cache-Matrix v0.1 · ${RUNS} runs/mode · corpus=${path.relative(REPO_ROOT, CORPUS)}`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true });
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
 
   // Cold: clear cache before each run
   console.log('── cold cache (cleared before each run) ──');
@@ -144,6 +144,8 @@ async function main() {
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     cost: {},
     effectiveness: {
