@@ -124,4 +124,87 @@ describe('no-ssrf', () => {
       ],
     });
   });
+
+  /**
+   * Confirmed FP, 2026-07-31 — benchmarks/corpus/CWE-444/safe/
+   * request-default-parser.js. A Node options object is not a URL, and its
+   * fields being plain locals is not evidence of user flow. The old gate only
+   * ran for Identifier arguments, so every other shape reported unconditionally.
+   */
+  describe('Benchmark FP — options object with no user-data flow', () => {
+    ruleTester.run('CWE-444 safe corpus fixture', noSsrf, {
+      valid: [
+        // Verbatim from benchmarks/corpus/CWE-444/safe/request-default-parser.js
+        {
+          code: `
+            const https = require('https');
+
+            function fetchProfile(host, path, cb) {
+              const req = https.request({ host, path, method: 'GET' }, (res) => {
+                let body = '';
+                res.on('data', (c) => (body += c));
+                res.on('end', () => cb(null, body));
+              });
+              req.on('error', cb);
+              req.end();
+            }
+
+            module.exports = { fetchProfile };
+          `,
+        },
+        // Same shape, no callback — the options object alone is not a URL
+        { code: "http.request({ hostname: host, port, path });" },
+        // Interpolated path built from locals — no user-input-named identifier
+        { code: 'function load(id) { return fetch(`https://api.internal/items/${id}`); }' },
+        // Object literal in a non-URL key holding a local
+        { code: 'axios.request({ method: "GET", headers: authHeaders });' },
+      ],
+      invalid: [
+        // Still caught: the options object carries a request-sourced URL
+        {
+          code: "https.request({ host: req.query.host, path: '/' });",
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: a url-naming key holding a user-input-named identifier
+        {
+          code: 'got({ url: targetUrl });',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: quoted url key
+        {
+          code: 'got({ "uri": userEndpoint });',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: URL read straight off the request
+        {
+          code: 'app.get("/p", (req, res) => fetch(req.query.url));',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: template literal interpolating a user-input-named id
+        {
+          code: 'fetch(`https://${userHost}/data`);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: concatenation onto a fixed base
+        {
+          code: 'fetch("https://proxy/" + userUrl);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: new URL(...) wrapping user input
+        {
+          code: 'axios.get(new URL(targetUrl, base));',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Still caught: ctx / event roots
+        {
+          code: 'fetch(ctx.request.body.feed);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        {
+          code: 'fetch(event.queryStringParameters.u);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+      ],
+    });
+  });
 });
