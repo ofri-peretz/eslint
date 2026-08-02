@@ -51,6 +51,17 @@ export function getPackageMetadata(packagePath: string) {
   };
 }
 
+/**
+ * First sentence of a package description.
+ *
+ * Splitting on a bare `.` truncated at any dot, so "Node.js" and "Express.js"
+ * cut the description to "…plugin for Node" / "…plugin for Express" on the docs
+ * site. A sentence boundary is a period followed by whitespace or end-of-string.
+ */
+export function firstSentence(description?: string) {
+  return description?.split(/\.(?=\s|$)/)[0] || '';
+}
+
 export function getCategory(packageName: string) {
   // Framework plugins - Express, NestJS, Lambda
   if (packageName.includes('express') || 
@@ -188,7 +199,7 @@ async function main() {
     stats.push({
       name: metadata.name,
       rules: ruleCount,
-      description: metadata.description?.split('.')[0] || '',
+      description: firstSentence(metadata.description),
       category,
       version: metadata.version,
       published,

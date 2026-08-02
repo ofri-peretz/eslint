@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { countRulesInPackage, getPackageMetadata, getCategory } from './sync-plugin-stats.ts';
+import { countRulesInPackage, getPackageMetadata, getCategory, firstSentence } from './sync-plugin-stats.ts';
 import fs from 'fs';
 import path from 'path';
 
@@ -17,6 +17,25 @@ vi.mock('path', async (importOriginal) => {
 
 describe('sync-plugin-stats', () => {
   
+  describe('firstSentence', () => {
+    it('keeps dotted terms intact', () => {
+      expect(
+        firstSentence(
+          'Security-focused ESLint plugin for Node.js built-in modules (fs, child_process). Detects command injection.',
+        ),
+      ).toBe('Security-focused ESLint plugin for Node.js built-in modules (fs, child_process)');
+      expect(
+        firstSentence('Security-focused ESLint plugin for Express.js applications. Detects insecure cookies.'),
+      ).toBe('Security-focused ESLint plugin for Express.js applications');
+    });
+
+    it('handles a single sentence, a trailing period, and no description', () => {
+      expect(firstSentence('ESLint rules for team conventions.')).toBe('ESLint rules for team conventions');
+      expect(firstSentence('No trailing period here')).toBe('No trailing period here');
+      expect(firstSentence(undefined)).toBe('');
+    });
+  });
+
   describe('getCategory', () => {
     it('should classify framework plugins', () => {
       expect(getCategory('eslint-plugin-express-security')).toBe('framework');
