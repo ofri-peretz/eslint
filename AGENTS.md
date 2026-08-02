@@ -250,13 +250,12 @@ What's *not* in T2 (cloud-only, intentional):
 
 - CodeQL — runs on GitHub's infrastructure with security-events upload.
 - Lighthouse — needs a clean Chrome instance.
-- Storybook a11y full crawl — needs Playwright on a clean box.
 - ILB cross-version matrix — multi-node-version, multi-eslint-version axes.
 
 ### T3 — CI on promote (workflow_dispatch + ready_for_review + label)
 
-The heavy workflows (CodeQL, Lighthouse, Storybook test-runner, Storybook
-a11y, benchmark, check-links, ILB matrix, oxlint-parity, `quality-full.yml`)
+The heavy workflows (CodeQL, Lighthouse, benchmark, check-links, ILB matrix,
+oxlint-parity, `quality-full.yml`)
 **do not run automatically on every WIP push.** They fire only when a PR is
 "promoted":
 

@@ -97,6 +97,26 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
         }
       `,
     },
+    // ========== REGRESSION (ack-nestjs-boilerplate): pipes bound at the
+    // parameter validate the value even without @UsePipes ==========
+    {
+      code: `
+        @Controller('users')
+        class UserAdminController {
+          @Get('/get/:user')
+          get(@Param('user', RequestRequiredPipe, RequestIsValidObjectIdPipe) user: UserDoc) {}
+        }
+      `,
+    },
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body(new ValidationPipe({ whitelist: true })) dto: CreateUserDto) {}
+        }
+      `,
+    },
   ],
   invalid: [
     // ========== INVALID: Missing ValidationPipe with DTO body ==========
@@ -132,6 +152,50 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
       `,
       filename: 'users.controller.spec.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'missingValidation' }],
+    },
+    // ========== INVALID: a non-pipe argument does not validate ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body('user') dto: CreateUserDto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingValidation' }],
+    },
+    // ========== INVALID: a non-pipe constructor argument does not validate ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body(new Transformer()) dto: CreateUserDto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingValidation' }],
+    },
+    // ========== INVALID: a namespaced pipe argument is not recognised ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body(new pipes.ValidationPipe()) dto: CreateUserDto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingValidation' }],
+    },
+    // ========== INVALID: a bare @Body decorator has no pipe arguments ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body dto: CreateUserDto) {}
+        }
+      `,
       errors: [{ messageId: 'missingValidation' }],
     },
   ],

@@ -77,8 +77,29 @@ class CreateUserDto {
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Also check response/serialization DTOs (default: false)
+  checkResponseDtos?: boolean;
+
+  // Class-name pattern identifying a response DTO
+  // (default: 'Response|Result|View|Payload|Output|Serializ')
+  responseDtoPattern?: string;
 }
 ```
+
+## What the rule deliberately does not report
+
+- **Response DTOs.** A class whose name (or superclass name) matches
+  `responseDtoPattern`, or that carries class-transformer `@Expose()` /
+  `@Exclude()`, describes server *output*. class-validator decorators are
+  meaningless there, and requiring them produced one finding per property of
+  every serialization model in the codebase. Re-enable with
+  `checkResponseDtos: true`.
+- **Multipart upload slots.** `@ApiProperty({ type: 'string', format: 'binary' })`
+  (including the nested `items: { format: 'binary' }` array form) is consumed by
+  Multer, never by class-validator.
+- **`@Allow()`-marked properties.** `@Allow()` is an explicit "accepted as-is"
+  decision under `forbidNonWhitelisted`, not a missing validator.
 
 ## Common Validators
 

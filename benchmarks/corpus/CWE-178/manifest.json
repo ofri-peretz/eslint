@@ -1,0 +1,24 @@
+{
+  "cwe": "CWE-178",
+  "name": "Improper Handling of Case Sensitivity (auth-guard path bypass)",
+  "owasp": "A01:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-express-security"
+  ],
+  "coverageGap": "No rule yet compares a case-sensitive path guard against a case-insensitive route matcher. Candidate: express-security/require-case-insensitive-path-guard. no-exposed-debug-endpoints fires on the /admin literal, but for an unrelated reason.",
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "case-sensitive-admin-guard.js",
+        "description": "Guard compares req.path with a case-sensitive prefix while the route matches case-insensitively"
+      }
+    ],
+    "safe": [
+      {
+        "file": "normalized-path-guard.js",
+        "description": "Guard lowercases the path before comparing, matching the routers case-insensitive semantics"
+      }
+    ]
+  }
+}
