@@ -67,6 +67,23 @@ describe('eslint-plugin-node-security plugin interface', () => {
       );
     });
 
+    // Regression lock. `secure-coding/no-insecure-comparison` was removed from
+    // every secure-coding preset in favour of this rule, but this rule was not
+    // in any `recommended` preset — so CWE-697 timing-unsafe comparison briefly
+    // had no preset coverage anywhere in the ecosystem while the migration note
+    // told users it lived here. If this rule leaves `recommended` again, the
+    // migration note in
+    // `packages/eslint-plugin-secure-coding/src/index.ts` becomes false.
+    it('keeps no-timing-unsafe-compare in recommended (CWE-697 preset coverage)', () => {
+      const recommendedRules = configs['recommended'].rules || {};
+      expect(
+        recommendedRules['node-security/no-timing-unsafe-compare'],
+        'no-timing-unsafe-compare must stay in recommended: it is the documented ' +
+          'replacement for secure-coding/no-insecure-comparison, which was removed ' +
+          'from every secure-coding preset.',
+      ).toBeDefined();
+    });
+
     it('should provide strict configuration', () => {
       expect(configs['strict']).toBeDefined();
       expect(configs['strict'].plugins?.['node-security']).toBeDefined();

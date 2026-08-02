@@ -167,7 +167,11 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // check wearing a security hat.
   //
   // The timing-attack half (a secret compared with `===`) is the part worth
-  // keeping, and `node-security/no-timing-unsafe-compare` is where it lives.
+  // keeping, and `node-security/no-timing-unsafe-compare` is where it lives —
+  // in that plugin's `recommended` preset since 2026-08-02, so consumers on
+  // presets keep CWE-697 coverage. It does mean the coverage now lives in a
+  // different package: a project that installs only `eslint-plugin-secure-coding`
+  // needs `eslint-plugin-node-security` as well to keep it.
   // The rule remains exported and available via `strict` / explicit opt-in.
 
   // Critical - Template injection
