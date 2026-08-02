@@ -151,7 +151,7 @@ describe('unsized images degrade instead of crashing the render', () => {
 
     const img = container.querySelector('img');
     expect(img?.getAttribute('height')).toBe('20');
-    expect(img?.getAttribute('width')).not.toBeNull();
+    expect(Number(img?.getAttribute('width'))).toBeGreaterThan(0);
     // The real intrinsic width takes over once the badge decodes.
     expect(img?.className).toContain('h-5');
     expect(img?.className).toContain('w-auto');
@@ -167,8 +167,24 @@ describe('unsized images degrade instead of crashing the render', () => {
     );
 
     const img = container.querySelector('img');
-    expect(img?.getAttribute('width')).not.toBeNull();
-    expect(img?.getAttribute('height')).not.toBeNull();
+    // Non-zero on BOTH axes or the browser has no aspect ratio to reserve —
+    // `width="0" height="0"` is the next/image idiom and reserves nothing on a
+    // plain image element. Caught in review on PR #308.
+    expect(Number(img?.getAttribute('width'))).toBeGreaterThan(0);
+    expect(Number(img?.getAttribute('height'))).toBeGreaterThan(0);
     expect(img?.className).toContain('h-auto');
+    // `sizes` only does something alongside `srcset`, which we never emit.
+    expect(img?.getAttribute('sizes')).toBeNull();
+  });
+
+  it('keeps the real dimensions when remark did supply them', () => {
+    const Component = Img();
+    const { container } = render(
+      <Component src="/logo.png" alt="logo" width={64} height={32} />
+    );
+
+    const img = container.querySelector('img');
+    expect(img?.getAttribute('width')).toBe('64');
+    expect(img?.getAttribute('height')).toBe('32');
   });
 });

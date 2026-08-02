@@ -108,14 +108,16 @@ function Img({ className, ...props }: ComponentProps<'img'>) {
         className={cn('inline-block h-5 w-auto', className)}
       />
     ) : (
-      // Next.js' documented idiom for an image of unknown intrinsic size.
+      // A nominal 16:9 box. The browser reserves `width / height` as the
+      // aspect ratio until the real bytes land, then `h-auto` hands layout
+      // back to the intrinsic size. The numbers only have to be non-zero and
+      // roughly content-shaped — zero would reserve nothing at all.
       // eslint-disable-next-line @next/next/no-img-element -- intrinsic size unknown
       <img
         {...props}
         alt={props.alt ?? ''}
-        width={0}
-        height={0}
-        sizes="100vw"
+        width={1200}
+        height={675}
         loading="lazy"
         decoding="async"
         className={cn('h-auto w-full rounded-lg', className)}
@@ -126,8 +128,11 @@ function Img({ className, ...props }: ComponentProps<'img'>) {
   return DefaultImg ? (
     (DefaultImg({ ...props, className }) as ReactElement)
   ) : (
+    // Only reachable for a *sized* image, so `props` always overrides the
+    // placeholder dimensions below — they exist to keep the tag self-evidently
+    // CLS-safe on inspection.
     // eslint-disable-next-line @next/next/no-img-element -- no default component available
-    <img width={0} height={0} {...props} alt={props.alt ?? ''} className={className} />
+    <img width={1200} height={675} {...props} alt={props.alt ?? ''} className={className} />
   );
 }
 
