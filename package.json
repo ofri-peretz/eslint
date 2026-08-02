@@ -82,6 +82,7 @@
     "oxlint:shims": "tsx scripts/generate-oxlint-shims.ts",
     "oxlint:shims:check": "tsx scripts/generate-oxlint-shims.ts --check",
     "oxlint:shims:verify": "tsx scripts/verify-oxlint-shims.ts",
+    "test:oxlint-exports": "vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/oxlint-export-lock.test.ts",
     "oxlint:verify-runtime": "tsx scripts/verify-oxlint-runtime.ts",
     "oxlint:verify-runtime:update": "tsx scripts/verify-oxlint-runtime.ts --update",
     "audit:meta": "tsx scripts/audit-rule-meta-completeness.ts",
