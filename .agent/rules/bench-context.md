@@ -77,6 +77,7 @@ Each is single-dimension, versioned, with a frozen corpus.
 | 9 | **ILB-LLM-Tokens** | Are per-finding messages cheap to feed to LLMs? | ≤ V1 (security/v2-compact) | n/a | n/a |
 | 9b | **ILB-LLM-Fix** | Can the LLM act on diagnostics? | informational | passRate ≥ 80% | round-trip per call |
 | 10 | **ILB-Formatter** | Whole-run formatter cost vs ESLint stylish + signal preservation | `interlace-compact` ≤ 0% vs stylish | structured formats = 4.0/4 | ≤ 50 ms (large), ≤ 250 ms (extreme) |
+| 11 | **ILB-Landscape** | License-freedom + maintenance-velocity facts for the tool landscape (ours AND competitors', same queries) | $0, public APIs only | every judgment cell carries a verbatim citation | n/a |
 
 Cadence: per-PR (Arena, Juliet, Quality, Formatter) · nightly (Wild + Edge + Cov + Perf) · weekly (Coverage, LLM-Tokens, LLM-Fix) · quarterly (AI, CWE expansion review) · annually (re-baseline FP weights).
 
