@@ -133,7 +133,7 @@ Every fixture under [`corpus/`](./corpus/) carries:
 
 ---
 
-## 2. The 10 benches at a glance
+## 2. The 13 benches at a glance
 
 Each bench is **single-dimension** (one bench, one number), **versioned** (corpus changes bump the version), and has **a frozen corpus** (pinned commits / fixed prompts / deterministic seeds). The Cost / Effectiveness / Latency columns are the triad — `n/a` means the aspect is genuinely not applicable to that bench, not that we forgot.
 
@@ -150,6 +150,8 @@ Each bench is **single-dimension** (one bench, one number), **versioned** (corpu
 | 9 | **ILB-LLM-Tokens** | Are per-finding rule messages cheap to feed to LLMs? | `meanTokensO200k` vs V1 · SLO: ≤ V1 (security/v2-compact) | n/a (cost-only bench) | n/a | `npm run ilb:llm:tokens` |
 | 9b | **ILB-LLM-Fix** | Can the LLM act on them? | reported (informational) | `passRate` · SLO: ≥ 80 % | API round-trip time per call | `npm run ilb:llm:fix` |
 | 10 | **ILB-Formatter** | Is the whole-run formatter cheaper than ESLint's `stylish` and does it preserve every TP/FP attribution signal? | `meanTokensO200k` vs `eslint-stylish` · SLO: `interlace-compact` ≤ 0 % | `signalScore` 0–4 · SLO: structured formats = 4.0/4 | `latencyMsP50` (median of 5) · SLO: ≤ 50 ms at `large`, ≤ 250 ms at `extreme` | `npm run ilb:formatter` |
+| 11 | **ILB-Remediation** | Of the rules that *claim* to fix or suggest, how many actually do — for us and for every free ESLint-native competitor? | n/a | implemented ÷ declared, plus dead declarations named on both sides · SLO: 0 dead declarations of our own | n/a (source-level scan) | `npm run ilb:remediation` |
+| 12 | **ILB-Landscape** | For every tool in the panel (ours included), what does its license actually permit, and how alive is it? | n/a | verbatim-cited license terms + releases/12mo + median issue first-response · SLO: every judgment cell carries a primary-source quote | n/a (public-API harvest) | `npm run ilb:landscape` |
 
 For live numbers see [`benchmark-results/scorecard.md`](../benchmark-results/scorecard.md). Don't paste numbers into this README — they go stale.
 
