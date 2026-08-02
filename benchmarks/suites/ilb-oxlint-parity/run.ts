@@ -45,8 +45,13 @@ const THRESHOLD = Number.parseFloat(ARG('--threshold', '0.95'));
 // Plugins enabled in oxlint must match what the ESLint config loads, otherwise
 // oxlint reports findings ESLint never sees and parity collapses to noise.
 // Default mirrors eslint.benchmark.config.mjs (security plugins).
+// NOTE: names here are filtered against the manifest (`allowedShorts`), so a
+// stale entry is silently dropped rather than erroring — keep it accurate.
+// `crypto` was removed 2026-08-02: eslint-plugin-crypto was consolidated into
+// node-security (PR #167) and its rules are covered under that plugin.
+// Locked by scripts/__tests__/oxlint-export-lock.test.ts.
 const PLUGINS_DEFAULT = [
-  'secure-coding', 'node-security', 'pg', 'crypto', 'express-security',
+  'secure-coding', 'node-security', 'pg', 'express-security',
   'browser-security', 'jwt', 'mongodb-security', 'nestjs-security',
   'lambda-security', 'vercel-ai-security',
 ];

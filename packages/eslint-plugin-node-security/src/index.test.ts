@@ -18,6 +18,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-unsafe-dynamic-require',
       'no-buffer-overread',
       'no-deprecated-buffer',
+      'no-unsafe-buffer-alloc',
       'no-toctou-vulnerability',
       'no-zip-slip',
       'no-arbitrary-file-access',

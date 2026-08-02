@@ -56,6 +56,11 @@ const ALLOWED_THIRD_PARTY = [
   // Subject of getting-started/migrate-from-security-node.mdx — the
   // migration guide maps its 22 rules (pinned at v1.1.4) to ours.
   'eslint-plugin-security-node',
+  // Cited in the landscape table of
+  // `security/plugin-node-security/rules/no-unsafe-buffer-alloc.mdx`.
+  // The real package is `@microsoft/eslint-plugin-sdl`; the scanner sees
+  // the unscoped tail.
+  'eslint-plugin-sdl',
 
   // === Documentation placeholders ===
   // `eslint-config-mycompany` is the "your shared config" example in
