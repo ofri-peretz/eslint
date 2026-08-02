@@ -278,7 +278,7 @@ A few cross-niche observations the table makes obvious:
 
 - **Cybersecurity, fintech, and healthtech are the three niches where the static-analysis budget should run highest** (2.5–5% of engineering payroll/year). This is *not* a developer-experience choice; it is a regulatory/disclosure-cost choice driven by Axis 3 (deliverability) being load-bearing for valuation.
 - **Consumer SaaS, marketplaces, and gaming should optimise for analyzer *latency* before *quality*** when forced to trade. High deploy cadence means the inner loop is the bottleneck; a fast 95%-precision analyzer beats a slow 99%-precision one.
-- **Developer-tools / infrastructure is the only niche where both quality *and* latency are table stakes** — quality because the analyzer's output is consumed by downstream developers (a regression is public), latency because per-PR continuous integration is the norm. This is also the niche where the static-analysis monorepo this calculator ships with (the `@interlace/eslint-plugin-*` family) is most directly applicable as a reference customer.
+- **Developer-tools / infrastructure is the only niche where both quality *and* latency are table stakes** — quality because the analyzer's output is consumed by downstream developers (a regression is public), latency because per-PR continuous integration is the norm. This is also the niche where the static-analysis monorepo this calculator ships with (the Interlace eslint-plugins family) is most directly applicable as a reference customer.
 
 ### How to enter your parameters — three worked examples
 

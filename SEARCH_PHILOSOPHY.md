@@ -113,7 +113,7 @@ What a result row looks like:
 +---------------------------------------------------------------+
 | 🛡  jwt/no-none-algorithm                              [CWE-327]|
 |    Reject JWT verification with the "none" algorithm.          |
-|    Plugin: @interlace/eslint-plugin-jwt   Severity: error      |
+|    Plugin: eslint-plugin-jwt              Severity: error      |
 +---------------------------------------------------------------+
 ```
 
