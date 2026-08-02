@@ -146,3 +146,66 @@ ruleTester.run('no-missing-security-headers (coverage wave)', noMissingSecurityH
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Regression lock: `.set()` / `.header()` on a non-response receiver is not a
+// header call. Matching on the method name alone flagged every url
+// .searchParams.set() and app.set('view engine', …) in the codebase.
+// ---------------------------------------------------------------------------
+ruleTester.run('no-missing-security-headers (callee must be a response)', noMissingSecurityHeaders, {
+  valid: [
+    // the reported false positives
+    { code: `url.searchParams.set('page', '2');` },
+    { code: `app.set('view engine', 'ejs');` },
+    { code: `app.set('trust proxy', 1);` },
+    // other everyday .set()/.header() receivers
+    { code: `cache.set('Content-Security-Policy', 'value');` },
+    { code: `headers.set('X-Frame-Options', 'DENY');` },
+    { code: `formData.set('X-Content-Type-Options', 'nosniff');` },
+    // computed member access is not tracked
+    { code: `res[method]('X-Frame-Options', 'DENY');` },
+    { code: `ctx['res'].set('X-Frame-Options', 'DENY');` },
+    // call-expression receiver is not tracked
+    { code: `getResponse().set('X-Frame-Options', 'DENY');` },
+    // a real response receiver with every required header still passes
+    {
+      code: `
+        function handler(req, res) {
+          ctx.res.set('Content-Security-Policy', "default-src 'self'");
+          ctx.res.set('X-Frame-Options', 'DENY');
+          ctx.res.set('X-Content-Type-Options', 'nosniff');
+        }
+      `,
+    },
+    // a non-header header name collected from a non-response receiver must not
+    // satisfy the requirement — no response call here at all, so no report
+    { code: `myMap.set('Content-Security-Policy', 'x');` },
+  ],
+  invalid: [
+    // response aliases are still checked
+    {
+      code: `reply.header('X-Frame-Options', 'DENY');`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    {
+      code: `response.set('X-Frame-Options', 'DENY');`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    {
+      code: `ctx.res.set('X-Frame-Options', 'DENY');`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+    // a non-response .set() cannot satisfy a required header for a real
+    // response call in the same scope
+    {
+      code: `
+        function handler(req, res) {
+          url.searchParams.set('Content-Security-Policy', "default-src 'self'");
+          res.set('X-Frame-Options', 'DENY');
+          res.set('X-Content-Type-Options', 'nosniff');
+        }
+      `,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
+  ],
+});
