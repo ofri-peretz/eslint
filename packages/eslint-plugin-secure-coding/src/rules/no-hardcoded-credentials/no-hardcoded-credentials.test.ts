@@ -1134,6 +1134,122 @@ describe('no-hardcoded-credentials', () => {
       ],
     });
   });
+
+  /**
+   * Confirmed FP, 2026-07-31 — benchmarks/corpus/CWE-798/safe/
+   * test-placeholder-values.js. `secret: '<your-secret-here>'` was reported at
+   * CVSS 9.8: the angle brackets are two character classes, which is all
+   * `isSecretShaped` asks for once the slot is credential-named. A value a
+   * developer is visibly expected to replace is not a leaked credential.
+   */
+  describe('placeholder values — benchmark FP regression', () => {
+    ruleTester.run('placeholders are not credentials', noHardcodedCredentials, {
+      valid: [
+        // Verbatim from benchmarks/corpus/CWE-798/safe/test-placeholder-values.js
+        {
+          code: `
+            const TEST_CREDENTIALS = {
+              apiKey: 'test-api-key',
+              token: 'xxxxxxxxxxxx',
+              password: 'changeme',
+              secret: '<your-secret-here>',
+            };
+
+            function buildTestClient(createClient) {
+              return createClient({
+                baseUrl: 'http://localhost:3000',
+                apiKey: TEST_CREDENTIALS.apiKey,
+              });
+            }
+          `,
+        },
+        // Bracketed template slots, each delimiter style
+        { code: `const secret = '{{API_SECRET}}';` },
+        { code: 'const apiKey = "${STRIPE_KEY}";' },
+        { code: `const token = '[bearer-token]';` },
+        // Placeholder word as a whole token
+        { code: `const password = 'REPLACE_ME_BEFORE_DEPLOY';` },
+        { code: `const apiKey = 'your-api-key-goes-here';` },
+        { code: `const secret = 'sample_value_1234';` },
+        // Repeated single character
+        { code: `const password = '********';` },
+        { code: `const apiKey = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';` },
+        // Empty string — not a placeholder, and not a credential either
+        { code: `const password = '';` },
+      ],
+      invalid: [
+        // Structural findings keep reporting even when they read like samples:
+        // the shape is unambiguous whatever words it contains.
+        {
+          code: `const dbUrl = 'postgres://admin:changeme@example.com:5432/app';`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              data: { credentialType: 'Database connection string', envVarName: 'DB_URL' },
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'DB_URL', credentialType: 'Database connection string' },
+                  output: `const dbUrl = process.env.DB_URL || 'postgres://admin:changeme@example.com:5432/app';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Database connection string' },
+                  output: `const dbUrl = await getSecret('db_url');`,
+                },
+              ],
+            },
+          ],
+        },
+        // A value that merely *contains* a placeholder word is not a
+        // placeholder — PLACEHOLDER_WORDS matches whole tokens only.
+        {
+          code: `const password = 'exampleton9!K';`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              data: { credentialType: 'Credential value', envVarName: 'PASSWORD' },
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  output: `const password = process.env.PASSWORD || 'exampleton9!K';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Credential value' },
+                  output: `const password = await getSecret('password');`,
+                },
+              ],
+            },
+          ],
+        },
+        // Opting out restores the old behaviour for the corpus fixture line.
+        {
+          code: `const secret = '<your-secret-here>';`,
+          options: [{ allowPlaceholders: false }],
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              data: { credentialType: 'Credential value', envVarName: 'SECRET' },
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'SECRET', credentialType: 'Credential value' },
+                  output: `const secret = process.env.SECRET || '<your-secret-here>';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Credential value' },
+                  output: `const secret = await getSecret('secret');`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
 
 /**
