@@ -74,6 +74,22 @@ module.exports = app;
         },
       ],
       invalid: [
+        // REGRESSION: manual `'...'` quoting emitted invalid JS when the
+        // rewritten literal itself contained a quote.
+        {
+          code: `if (req.path.startsWith("/Parent's/Admin")) deny();`,
+          errors: [
+            {
+              messageId: 'caseSensitivePathGuard',
+              suggestions: [
+                {
+                  messageId: 'addToLowerCase',
+                  output: `if (req.path.toLowerCase().startsWith("/parent's/admin")) deny();`,
+                },
+              ],
+            },
+          ],
+        },
         // Prefix guard — the classic bypass
         {
           code: `if (req.path.startsWith('/admin')) deny();`,

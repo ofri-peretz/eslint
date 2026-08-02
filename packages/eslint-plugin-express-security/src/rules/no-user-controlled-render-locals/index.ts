@@ -129,8 +129,33 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       const { allowSanitizers } = options as Options;
       const sanitizers = new Set(allowSanitizers ?? []);
 
-      /** file-local single-assignment tracking: identifier name → origin */
-      const trackedVars = new Map<string, TrackedSource>();
+      /**
+       * Single-assignment tracking keyed by the RESOLVED scope variable, not by
+       * name — two handlers in the same file can each declare `locals`, and a
+       * name-keyed map would leak the first one's origin into the second.
+       */
+      const trackedVars = new Map<TSESLint.Scope.Variable, TrackedSource>();
+
+      /** The scope variable an identifier resolves to, or null if unresolved. */
+      function resolveVariable(
+        node: TSESTree.Identifier,
+      ): TSESLint.Scope.Variable | null {
+        let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(
+          node,
+        );
+        while (scope) {
+          const found = scope.variables.find((v) => v.name === node.name);
+          if (found) return found;
+          scope = scope.upper;
+        }
+        return null;
+      }
+
+      /** Tracked origin for an identifier, resolved through scope. */
+      function getTracked(node: TSESTree.Identifier): TrackedSource | undefined {
+        const variable = resolveVariable(node);
+        return variable ? trackedVars.get(variable) : undefined;
+      }
 
       function isRequestName(name: string): boolean {
         return REQUEST_NAMES.has(name.toLowerCase());
@@ -176,7 +201,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         const direct = getWholeSource(node);
         if (direct) return direct;
         if (node.type === AST_NODE_TYPES.Identifier) {
-          const tracked = trackedVars.get(node.name);
+          const tracked = getTracked(node);
           if (tracked && tracked.whole) return tracked.source;
           return null;
         }
@@ -215,7 +240,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
           return getDerivedSource(node.right);
         }
         if (node.type === AST_NODE_TYPES.Identifier) {
-          const tracked = trackedVars.get(node.name);
+          const tracked = getTracked(node);
           if (tracked) return tracked.source;
           return null;
         }
@@ -285,35 +310,46 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         }
       }
 
+      /** Records the origin of a single-assignment declaration. */
+      function trackDeclarator(
+        declared: TSESLint.Scope.Variable,
+        init: TSESTree.Expression,
+      ): void {
+        const unsafe = getUnsafeLocalsSource(init);
+        if (unsafe) {
+          trackedVars.set(declared, { source: unsafe, whole: true });
+          return;
+        }
+        // const locals = { ...req.body } still carries the whole object
+        if (init.type === AST_NODE_TYPES.ObjectExpression) {
+          for (const prop of init.properties) {
+            if (prop.type !== AST_NODE_TYPES.SpreadElement) continue;
+            const spreadSource = getUnsafeLocalsSource(prop.argument);
+            if (spreadSource) {
+              trackedVars.set(declared, { source: spreadSource, whole: true });
+              return;
+            }
+          }
+          return;
+        }
+        const derived = getDerivedSource(init);
+        if (derived) {
+          trackedVars.set(declared, { source: derived, whole: false });
+        }
+      }
+
       return {
         VariableDeclarator(node: TSESTree.VariableDeclarator) {
           // Destructuring (const { title } = req.body) IS field-picking — safe.
           if (node.id.type !== AST_NODE_TYPES.Identifier) return;
-          if (!node.init) return;
           const init = node.init;
-          const unsafe = getUnsafeLocalsSource(init);
-          if (unsafe) {
-            trackedVars.set(node.id.name, { source: unsafe, whole: true });
-            return;
-          }
-          // const locals = { ...req.body } still carries the whole object
-          if (init.type === AST_NODE_TYPES.ObjectExpression) {
-            for (const prop of init.properties) {
-              if (prop.type !== AST_NODE_TYPES.SpreadElement) continue;
-              const spreadSource = getUnsafeLocalsSource(prop.argument);
-              if (spreadSource) {
-                trackedVars.set(node.id.name, {
-                  source: spreadSource,
-                  whole: true,
-                });
-                return;
-              }
-            }
-            return;
-          }
-          const derived = getDerivedSource(init);
-          if (derived) {
-            trackedVars.set(node.id.name, { source: derived, whole: false });
+          if (!init) return;
+          // Exactly one variable for an Identifier id — the loop keeps the
+          // lookup total, with no unreachable null-guard to cover.
+          for (const declared of context.sourceCode.getDeclaredVariables(
+            node,
+          )) {
+            trackDeclarator(declared, init);
           }
         },
 

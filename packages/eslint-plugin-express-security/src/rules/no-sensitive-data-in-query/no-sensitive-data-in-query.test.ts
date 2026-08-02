@@ -73,6 +73,12 @@ module.exports = app;
         code: `const v = req.query.page;`,
         options: [{ extraPatterns: ['^internal_'] }],
       },
+      // Names past MAX_PARAM_NAME_LENGTH skip extraPatterns entirely, so a
+      // backtracking pattern from an inherited config has nothing to chew on.
+      {
+        code: `const v = req.query.${'a'.repeat(200)};`,
+        options: [{ extraPatterns: ['^(a+)+$'] }],
+      },
       // Not a query object
       { code: `const x = foo.query.password;` },
       { code: `const y = req.search.password;` },

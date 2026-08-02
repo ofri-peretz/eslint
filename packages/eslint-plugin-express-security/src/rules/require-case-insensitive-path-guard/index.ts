@@ -81,6 +81,18 @@ const GUARD_METHODS = new Set([
 /** Equality operators used as path guards. */
 const EQUALITY_OPS = new Set(['===', '==', '!==', '!=']);
 
+/**
+ * Lower-cases a path literal and re-quotes it for source output. Prefers the
+ * repo-idiomatic single quotes, but falls back to `JSON.stringify`'s
+ * double-quoted, fully-escaped form when the value contains a quote or
+ * backslash — naive `'${value}'` interpolation emits a syntax error there.
+ */
+function quoteLiteral(value: string): string {
+  const json = JSON.stringify(value.toLowerCase());
+  const inner = json.slice(1, -1);
+  return /['\\]/.test(inner) ? json : `'${inner}'`;
+}
+
 const DEFAULT_PROTECTED_PATHS = [
   'admin',
   'api',
@@ -199,7 +211,7 @@ export const requireCaseInsensitivePathGuard = createRule<
               const fixes = [fixer.insertTextAfter(pathNode, '.toLowerCase()')];
               if (/[A-Z]/.test(value)) {
                 fixes.push(
-                  fixer.replaceText(literalNode, `'${value.toLowerCase()}'`),
+                  fixer.replaceText(literalNode, quoteLiteral(value)),
                 );
               }
               return fixes;

@@ -71,6 +71,13 @@ const DEFAULT_SENSITIVE = [
 ];
 
 /** Split a parameter name into lowercase word tokens (camelCase + snake_case). */
+/**
+ * Ceiling on the name length fed to config-supplied `extraPatterns`. Real query
+ * parameter names are far shorter; the cap denies a catastrophically
+ * backtracking pattern the long input it would need to amplify (CWE-1333).
+ */
+const MAX_PARAM_NAME_LENGTH = 128;
+
 function tokenize(name: string): string[] {
   return name
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -161,6 +168,10 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
     const terms = [...DEFAULT_SENSITIVE, ...(sensitiveParams ?? [])].map(
       (term) => tokenize(term),
     );
+    // Config-supplied patterns are compiled once and only ever matched against
+    // parameter names, which MAX_PARAM_NAME_LENGTH caps — a catastrophically
+    // backtracking pattern from an inherited config therefore has no input long
+    // enough to amplify against (CWE-1333).
     const patterns = (extraPatterns ?? []).map(
       (pattern) => new RegExp(pattern, 'i'),
     );
@@ -201,6 +212,7 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
           return true;
         }
       }
+      if (name.length > MAX_PARAM_NAME_LENGTH) return false;
       return patterns.some((pattern) => pattern.test(name));
     }
 

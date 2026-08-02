@@ -319,6 +319,20 @@ ruleTester.run(
   noUserControlledRenderLocals,
   {
     valid: [
+      // REGRESSION: a name-keyed tracking map leaked the first handler's origin
+      // into the second, flagging a `locals` that was never user-controlled.
+      {
+        code: `
+        app.post('/a', (req, res) => {
+          const locals = req.body;
+          res.render('a', { title: locals.title });
+        });
+        app.get('/b', (req, res) => {
+          const locals = { title: 'static' };
+          res.render('b', locals);
+        });
+      `,
+      },
       // isRenderCall negatives
       { code: `render('v', req.body);` }, // bare call — callee not a member expression
       { code: `res['render']('v', req.body);` }, // computed property
