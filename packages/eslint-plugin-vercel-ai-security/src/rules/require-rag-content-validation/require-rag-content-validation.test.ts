@@ -93,3 +93,21 @@ ruleTester.run('require-rag-content-validation', requireRagContentValidation, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SDK v7 renamed the system prompt to `instructions` (`system` is deprecated
+// in the SDK's own types). Regression lock: the rule used to match `system` only.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-rag-content-validation (instructions prop)', requireRagContentValidation, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        await streamText({
+          instructions: \`Context: \${await retrieve(query)}\`,
+        });
+      `,
+      errors: [{ messageId: 'unsanitizedRagContent' }],
+    },
+  ],
+});

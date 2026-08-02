@@ -11,6 +11,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp } from '../../utils/prompt-props';
 
 type MessageIds = 'unsanitizedRagContent';
 
@@ -181,7 +182,7 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
           if (prop.type !== 'Property') continue;
           
           const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          if (keyName !== 'prompt' && keyName !== 'system') continue;
+          if (keyName !== 'prompt' && !isSystemPromptProp(keyName)) continue;
 
           const ragSource = containsRagContent(prop.value);
           if (ragSource) {

@@ -133,3 +133,59 @@ ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt
   ],
   invalid: [],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SDK v7: `instructions` is the system prompt; `system` is deprecated.
+// Regression lock — before this was fixed the rule matched only `system`, so it
+// was inert on any code written against current AI SDK docs.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPrompt, {
+  valid: [
+    {
+      code: `
+        await streamText({
+          model,
+          instructions: 'You are a helpful assistant.',
+          prompt: userInput,
+        });
+      `,
+    },
+  ],
+  invalid: [
+    {
+      code: `
+        await streamText({
+          model,
+          instructions: \`You are a helpful assistant. \${userName}\`,
+          prompt: userInput,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+    // The shape actually found in nuxt-ui-templates/chat
+    // (server/api/chats/[id].post.ts) — a conditional interpolating the
+    // session username straight into the system prompt.
+    {
+      code: `
+        const result = streamText({
+          abortSignal: abortController.signal,
+          model,
+          instructions: \`You are a knowledgeable and helpful AI assistant. \${session.user?.username ? \`The user's name is \${session.user.username}.\` : ''} Your goal is to provide clear responses.\`,
+          messages,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+    // Both props present: each is reported on its own.
+    {
+      code: `
+        await generateText({
+          model,
+          instructions: \`\${a}\`,
+          system: \`\${b}\`,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }, { messageId: 'dynamicSystemPrompt' }],
+    },
+  ],
+});

@@ -11,6 +11,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp } from '../../utils/prompt-props';
 
 type MessageIds = 'dynamicSystemPrompt';
 
@@ -114,12 +115,12 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         const optionsArg = node.arguments[0];
         if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
 
-        // Find system property
+        // Find the system-prompt property (`instructions` in AI SDK v7+, `system` before it)
         for (const prop of optionsArg.properties) {
           if (prop.type !== 'Property') continue;
-          
+
           const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          if (keyName !== 'system') continue;
+          if (!isSystemPromptProp(keyName)) continue;
 
           // Check if system prompt is dynamic
           if (isDynamicContent(prop.value)) {

@@ -12,6 +12,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp } from '../../utils/prompt-props';
 
 type MessageIds = 'unsafePrompt' | 'unsafeSystemPrompt';
 
@@ -241,7 +242,7 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        if (keyName === 'system') {
+        if (isSystemPromptProp(keyName)) {
           const result = hasUnsafeUserInput(prop.value);
           if (result.unsafe) {
             context.report({

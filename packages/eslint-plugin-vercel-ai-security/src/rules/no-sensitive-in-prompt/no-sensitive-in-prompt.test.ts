@@ -232,3 +232,23 @@ ruleTester.run('no-sensitive-in-prompt (coverage gaps)', noSensitiveInPrompt, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SDK v7 renamed the system prompt to `instructions` (`system` is deprecated
+// in the SDK's own types). Regression lock: the props set used to carry `system`
+// only, so secrets interpolated into `instructions` went unreported.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-sensitive-in-prompt (instructions prop)', noSensitiveInPrompt, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          instructions: \`Use this key: \${apiKey}\`,
+        });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+  ],
+});

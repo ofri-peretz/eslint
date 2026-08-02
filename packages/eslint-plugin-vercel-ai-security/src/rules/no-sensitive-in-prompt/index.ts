@@ -11,6 +11,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { SYSTEM_PROMPT_PROPS } from '../../utils/prompt-props';
 
 type MessageIds = 'sensitiveInPrompt';
 
@@ -131,8 +132,8 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
         const optionsArg = node.arguments[0];
         if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
 
-        // Check prompt, system, and messages properties
-        const propsToCheck = new Set(['prompt', 'system', 'messages']);
+        // Check prompt, the system-prompt props, and messages
+        const propsToCheck = new Set(['prompt', 'messages', ...SYSTEM_PROMPT_PROPS]);
         
         for (const prop of optionsArg.properties) {
           if (prop.type !== 'Property') continue;
