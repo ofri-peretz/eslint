@@ -10,7 +10,7 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 36,
+      "rules": 37,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
       "version": "4.4.3",
@@ -58,7 +58,7 @@
     },
     {
       "name": "eslint-plugin-express-security",
-      "rules": 25,
+      "rules": 32,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
       "version": "1.3.4",
@@ -153,8 +153,8 @@
       "published": true
     }
   ],
-  "totalRules": 466,
+  "totalRules": 474,
   "totalPlugins": 19,
   "allPluginsCount": 19,
-  "generatedAt": "2026-08-02T07:07:23.616Z"
+  "generatedAt": "2026-08-02T15:01:52.492Z"
 }

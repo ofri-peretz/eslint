@@ -422,6 +422,48 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
+    },
+    "no-disabled-helmet-protections": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on helmet({ <protection>: false }) option shapes (CSP/frameguard/noSniff/referrerPolicy/hidePoweredBy, helmet 6 and 7 spellings)."
+    },
+    "require-strict-transport-security": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory \u2014 disabled, max-age below floor, includeSubDomains false."
+    },
+    "no-unsafe-csp-directives": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "CSP directive literals: 'unsafe-inline'/'unsafe-eval'/wildcard sources, frame-ancestors '*', missing frame-ancestors under useDefaults:false, upgradeInsecureRequests:null."
+    },
+    "no-permissive-trust-proxy": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') \u2014 req.ip becomes client-controlled (CWE-348)."
+    },
+    "require-route-authentication": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Route-path vocabulary decides what counts as a critical function, so it ships as warn per I3. Structural around it: registration shape, middleware chain, principal read in the handler."
+    },
+    "no-client-controlled-authorization": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Structural half is req.body/query/params/headers/cookies member reads in a decision position; the authorization-attribute vocabulary (role/permission/userId) is the name-based half, so it ships as warn per I3."
+    },
+    "no-idor-resource-access": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based \u2014 ships as warn per I3."
     }
   },
   "eslint-plugin-import-next": {
@@ -1224,6 +1266,12 @@
       "detection": "structural-api",
       "confidence": "enforcement",
       "notes": "crypto.createHash/Hmac/Cipher with dynamic first arg. Attacker controls algorithm = downgrade attack. Static literals are already checked by no-weak-hash-algorithm."
+    },
+    "no-dynamic-command-string": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Shell binary + -c/-Command argv position with an assembled string, or a non-escaping command-runner (execaCommand/$.raw). Distinct from no-shell-injection (CWE-78 exec concat)."
     }
   },
   "eslint-plugin-operability": {

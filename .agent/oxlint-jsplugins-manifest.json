@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-02",
   "totalPlugins": 19,
-  "totalRules": 415,
-  "oxlintCompatible": 415,
+  "totalRules": 423,
+  "oxlintCompatible": 423,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -390,10 +390,22 @@
       "short": "express-security",
       "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
       "subpath": "eslint-plugin-express-security/oxlint",
-      "ruleCount": 21,
+      "ruleCount": 28,
       "rules": [
         {
+          "name": "no-client-controlled-authorization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-cors-credentials-wildcard",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-disabled-helmet-protections",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -429,6 +441,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-idor-resource-access",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-insecure-cookie-options",
           "portability": "compatible",
           "blockers": [],
@@ -459,6 +477,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-permissive-trust-proxy",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-sensitive-data-in-query",
           "portability": "compatible",
           "blockers": [],
@@ -466,6 +490,12 @@
         },
         {
           "name": "no-static-root-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-csp-directives",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -514,6 +544,18 @@
         },
         {
           "name": "require-rate-limiting",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-route-authentication",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-strict-transport-security",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1353,7 +1395,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 36,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1429,6 +1471,12 @@
         },
         {
           "name": "no-dynamic-algorithm-selection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-command-string",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
