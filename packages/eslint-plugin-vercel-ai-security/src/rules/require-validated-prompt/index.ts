@@ -11,7 +11,8 @@
  * @see https://owasp.org/www-project-top-10-for-large-language-model-applications/
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 
 type MessageIds = 'unsafePrompt' | 'unsafeSystemPrompt';
 
@@ -219,13 +220,9 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
 
       // Check for unsafe prompt property
       for (const prop of optionsArg.properties) {
-        if (prop.type !== 'Property') continue;
+        if (prop.type !== AST_NODE_TYPES.Property) continue;
         
-        const keyName = prop.key.type === 'Identifier' 
-          ? prop.key.name 
-          : prop.key.type === 'Literal' 
-            ? String(prop.key.value)
-            : null;
+        const keyName = getStaticPropName(prop.key);
 
         if (keyName === 'prompt') {
           const result = hasUnsafeUserInput(prop.value);
@@ -241,7 +238,7 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        if (keyName === 'system') {
+        if (isSystemPromptProp(keyName)) {
           const result = hasUnsafeUserInput(prop.value);
           if (result.unsafe) {
             context.report({

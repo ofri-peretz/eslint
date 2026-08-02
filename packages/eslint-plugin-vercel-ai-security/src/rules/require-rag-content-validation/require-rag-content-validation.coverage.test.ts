@@ -49,8 +49,20 @@ ruleTester.run('require-rag-content-validation (branch coverage)', requireRagCon
         }
       `,
     },
-    // String-literal 'prompt' key — keyName resolves to null, prop skipped
-    // (documented FN: only Identifier keys are matched).
+    // Computed key — the name genuinely isn't statically known.
+    {
+      code: `
+        async function f() {
+          const docs = await vectorStore.search(q);
+          generateText({ [k]: docs });
+        }
+      `,
+    },
+  ],
+  invalid: [
+    // Was a "documented FN: only Identifier keys are matched" entry in `valid`.
+    // Quoting a key doesn't change what the property means, so recording the
+    // miss as expected behaviour just made the gap permanent.
     {
       code: `
         async function f() {
@@ -58,9 +70,8 @@ ruleTester.run('require-rag-content-validation (branch coverage)', requireRagCon
           generateText({ 'prompt': docs });
         }
       `,
+      errors: [{ messageId: 'unsanitizedRagContent' }],
     },
-  ],
-  invalid: [
     // RAG content reaching the system property (not just prompt).
     {
       code: `
