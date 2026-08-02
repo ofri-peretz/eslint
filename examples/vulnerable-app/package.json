@@ -9,15 +9,15 @@
     "audit:sarif": "eslint --format=@interlace/eslint-formatter-sarif src > findings.sarif"
   },
   "devDependencies": {
-    "@interlace/eslint-plugin-browser-security": "*",
-    "@interlace/eslint-plugin-import-next": "*",
-    "@interlace/eslint-plugin-jwt": "*",
-    "@interlace/eslint-plugin-mongodb-security": "*",
-    "@interlace/eslint-plugin-pg": "*",
-    "@interlace/eslint-plugin-react-a11y": "*",
-    "@interlace/eslint-plugin-react-features": "*",
-    "@interlace/eslint-plugin-secure-coding": "*",
-    "@interlace/eslint-plugin-vercel-ai-security": "*",
+    "eslint-plugin-browser-security": "*",
+    "eslint-plugin-import-next": "*",
+    "eslint-plugin-jwt": "*",
+    "eslint-plugin-mongodb-security": "*",
+    "eslint-plugin-pg": "*",
+    "eslint-plugin-react-a11y": "*",
+    "eslint-plugin-react-features": "*",
+    "eslint-plugin-secure-coding": "*",
+    "eslint-plugin-vercel-ai-security": "*",
     "eslint": "^9.0.0"
   }
 }
