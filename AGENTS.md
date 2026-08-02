@@ -163,6 +163,13 @@ The public-facing surface for this whole system is
 
 ## Plugin Scope Rules
 
+**Naming: every security plugin is `eslint-plugin-<ecosystem>-security`.** The suffix is
+what tells a consumer the package is protective rather than stylistic, and it keeps the
+family scannable on npm. No exceptions for new packages. `eslint-plugin-pg`,
+`eslint-plugin-jwt` and `eslint-plugin-secure-coding` predate the convention and are
+grandfathered — renaming a published package is a separate decision with its own cost
+(npm deprecate + republish, every config example, the live awesome-list entries).
+
 When creating or reviewing rules, ensure they're in the correct plugin:
 
 | If the rule...                                                  | It belongs in...                   |
