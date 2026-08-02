@@ -52,7 +52,8 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { getToolchain } from "../../lib/toolchain.ts";
+import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -274,28 +275,19 @@ async function harvestTool(tool, repoCache) {
     await sleep(SLEEP_MS);
     const fr = firstResponse(slug);
     repoCache.set(slug, { ...facts, ...releases, firstResponse: fr });
-  } else if (tool.releasesRepo) {
-    // cache key is the issues repo; releasesRepo variant only used by codeql (uncached path above)
   }
+  // No cached-path branch for tool.releasesRepo: the cache key is the issues repo,
+  // and the only tool with a distinct releasesRepo (codeql) always takes the
+  // uncached path above, so there is nothing left to do on a cache hit.
   row.github = repoCache.get(slug);
   return row;
 }
 
-function toolchain() {
-  let eslintVersion = null;
-  try {
-    eslintVersion = JSON.parse(readFileSync(join(REPO_ROOT, "node_modules/eslint/package.json"), "utf8")).version;
-  } catch {
-    /* not installed in this checkout — null is schema-valid */
-  }
-  return {
-    node: process.version.replace(/^v/, ""),
-    eslint: eslintVersion,
-    typescript: null,
-    tsCompiler: "unknown",
-    platform: `${process.platform}-${process.arch}`,
-  };
-}
+// Toolchain detection is deliberately NOT reimplemented here. The first
+// version of this file rolled its own and emitted `eslint: null,
+// typescript: null, tsCompiler: "unknown"`, which validateToolchain() counts
+// as three fatal issues — the run has to happen in a checkout with deps
+// installed. Use the one shared implementation (roadmap item 1.14).
 
 async function main() {
   const force = process.argv.includes("--force");
@@ -318,7 +310,8 @@ async function main() {
     bench: "ILB-Landscape",
     benchVersion: "1.0",
     timestamp: NOW.toISOString(),
-    toolchain: toolchain(),
+    methodologyCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim(),
+    toolchain: getToolchain(),
     landscape: {
       registry: "eslint-security-leadership/conditions/competitors.json@1.0.0 (retrieved 2026-07-31)",
       windows: {

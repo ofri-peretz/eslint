@@ -1,12 +1,14 @@
 {
   "bench": "ILB-Landscape",
   "benchVersion": "1.0",
-  "timestamp": "2026-07-31T23:15:32.146Z",
+  "timestamp": "2026-08-02T05:46:34.540Z",
+  "methodologyCommit": "7aa5202812a0fa9bfadd42bdb157cfbdbc0c3b22",
   "toolchain": {
     "node": "24.12.0",
-    "eslint": null,
-    "typescript": null,
-    "tsCompiler": "unknown",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.54.0",
     "platform": "darwin-arm64"
   },
   "landscape": {
@@ -14,11 +16,11 @@
     "windows": {
       "releases": {
         "months": 12,
-        "cutoff": "2025-07-31T23:15:32.146Z"
+        "cutoff": "2025-08-02T05:46:34.540Z"
       },
       "firstResponse": {
         "months": 24,
-        "cutoff": "2024-07-31T23:15:32.146Z",
+        "cutoff": "2024-08-02T05:46:34.540Z",
         "issueCap": 1000
       }
     },
@@ -235,9 +237,9 @@
         "github": {
           "repo": "SonarSource/SonarJS",
           "stars": 1257,
-          "pushedAt": "2026-07-31T17:09:15Z",
+          "pushedAt": "2026-08-01T19:26:31Z",
           "createdAt": "2012-05-15T12:35:38Z",
-          "openIssuesCount": 29,
+          "openIssuesCount": 30,
           "archived": false,
           "licenseSpdx": "NOASSERTION",
           "githubReleasesLast12mo": 21,
@@ -263,7 +265,7 @@
         "npmPackage": null,
         "github": {
           "repo": "semgrep/semgrep",
-          "stars": 16071,
+          "stars": 16081,
           "pushedAt": "2026-07-31T00:23:11Z",
           "createdAt": "2019-12-13T09:29:54Z",
           "openIssuesCount": 898,
@@ -277,9 +279,9 @@
           "firstResponse": {
             "medianFirstResponseHours": 74.5,
             "p90FirstResponseHours": 464.4,
-            "n": 353,
+            "n": 352,
             "responded": 161,
-            "responseRate": 0.456,
+            "responseRate": 0.457,
             "truncatedAtCap": false
           }
         }
@@ -292,10 +294,10 @@
         "npmPackage": null,
         "github": {
           "repo": "github/codeql",
-          "stars": 9895,
+          "stars": 9896,
           "pushedAt": "2026-07-31T14:10:18Z",
           "createdAt": "2018-07-31T16:35:51Z",
-          "openIssuesCount": 1435,
+          "openIssuesCount": 1437,
           "archived": false,
           "licenseSpdx": "MIT",
           "githubReleasesLast12mo": 25,
@@ -305,11 +307,11 @@
           },
           "releasesRepo": "github/codeql-cli-binaries",
           "firstResponse": {
-            "medianFirstResponseHours": 10.2,
+            "medianFirstResponseHours": 10.6,
             "p90FirstResponseHours": 106.8,
-            "n": 690,
-            "responded": 93,
-            "responseRate": 0.135,
+            "n": 689,
+            "responded": 92,
+            "responseRate": 0.134,
             "truncatedAtCap": false
           }
         }
@@ -383,7 +385,7 @@
         "npmTotalVersions": 2040,
         "github": {
           "repo": "snyk/cli",
-          "stars": 5627,
+          "stars": 5626,
           "pushedAt": "2026-07-31T17:11:42Z",
           "createdAt": "2015-10-30T11:36:00Z",
           "openIssuesCount": 129,
@@ -412,7 +414,7 @@
         "npmPackage": null,
         "github": {
           "repo": "Bearer/bearer",
-          "stars": 2709,
+          "stars": 2710,
           "pushedAt": "2026-07-31T15:33:29Z",
           "createdAt": "2022-09-27T17:02:45Z",
           "openIssuesCount": 16,
@@ -470,12 +472,12 @@
           "stars": 1000,
           "pushedAt": "2026-07-31T18:15:20Z",
           "createdAt": "2016-08-03T15:30:25Z",
-          "openIssuesCount": 73,
+          "openIssuesCount": 74,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 5,
+          "githubReleasesLast12mo": 4,
           "githubReleaseWindow": {
-            "oldest": "2025-08-01T16:50:43Z",
+            "oldest": "2025-09-11T21:44:43Z",
             "newest": "2026-07-17T18:58:08Z"
           },
           "firstResponse": {
@@ -535,15 +537,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -588,15 +590,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -636,15 +638,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -689,15 +691,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -742,15 +744,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -789,15 +791,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -837,15 +839,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -864,9 +866,9 @@
         "repoLevel": true,
         "npmPackage": "eslint-plugin-vercel-ai-security",
         "npmLicense": "MIT",
-        "npmLatestVersion": "1.3.8",
-        "npmLastPublish": "2026-07-31T06:17:58.883Z",
-        "npmReleasesLast12mo": 20,
+        "npmLatestVersion": "1.3.9",
+        "npmLastPublish": "2026-08-01T00:02:27.549Z",
+        "npmReleasesLast12mo": 21,
         "npmReleaseDatesLast12mo": [
           "1.0.0@2025-12-13",
           "1.0.1@2025-12-14",
@@ -887,21 +889,22 @@
           "1.3.5@2026-02-09",
           "1.3.6@2026-06-21",
           "1.3.7@2026-07-19",
-          "1.3.8@2026-07-31"
+          "1.3.8@2026-07-31",
+          "1.3.9@2026-08-01"
         ],
-        "npmTotalVersions": 20,
+        "npmTotalVersions": 21,
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -946,15 +949,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -1002,15 +1005,15 @@
         "github": {
           "repo": "ofri-peretz/eslint",
           "stars": 12,
-          "pushedAt": "2026-07-31T23:15:27Z",
+          "pushedAt": "2026-08-02T05:46:07Z",
           "createdAt": "2025-10-27T03:55:42Z",
-          "openIssuesCount": 10,
+          "openIssuesCount": 15,
           "archived": false,
           "licenseSpdx": "MIT",
-          "githubReleasesLast12mo": 208,
+          "githubReleasesLast12mo": 209,
           "githubReleaseWindow": {
             "oldest": "2026-01-05T06:51:22Z",
-            "newest": "2026-07-31T06:18:03Z"
+            "newest": "2026-08-01T00:02:31Z"
           },
           "firstResponse": {
             "medianFirstResponseHours": null,
@@ -1025,7 +1028,7 @@
     ]
   },
   "rateLimit": {
-    "coreRemainingBefore": 4989,
-    "graphqlRemainingBefore": 4876
+    "coreRemainingBefore": 4846,
+    "graphqlRemainingBefore": 4805
   }
 }
