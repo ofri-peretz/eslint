@@ -159,7 +159,7 @@ This is not a one-time budget; it's a recurring annuity per the [§4 Trap 3 esca
 
 The investment should target three concrete moves:
 
-1. **Adopt the security-focused rule families** (per niche preset): `secure-coding`, `crypto`, `jwt`, `node-security`, `express-security`, `pg`. Run [`analyzer-evaluation-framework.md`](analyzer-evaluation-framework.md) against candidates (`@interlace/eslint-plugin-*`, SonarQube, Semgrep, CodeQL) — pick by precision-on-CWE-corpus + latency.
+1. **Adopt the security-focused rule families** (per niche preset): `secure-coding`, `crypto`, `jwt`, `node-security`, `express-security`, `pg`. Run [`analyzer-evaluation-framework.md`](analyzer-evaluation-framework.md) against candidates (Interlace eslint-plugins, SonarQube, Semgrep, CodeQL) — pick by precision-on-CWE-corpus + latency.
 2. **Reduce `T_pipeline` from 14 min toward < 8 min** (the `long_threshold`). At 8 min, the cognitive-tax multiplier collapses from ×2.47 to ×1.0; that single change drops annual cost by ~$73K. Concrete techniques: parallelise lint + types (currently sequential), shard tests, use Turborepo or Nx remote caching, swap any > 5s-per-file linter for a < 1s-per-file equivalent.
 3. **Cut `F` from 22% toward 10%** via better lint coverage and pre-commit hooks. At F = 10%, the failure-rework multiplier drops from ×1.53 to ×1.24; annual cost drops another ~$25K. Achievable via the rule-family adoption in step 1.
 

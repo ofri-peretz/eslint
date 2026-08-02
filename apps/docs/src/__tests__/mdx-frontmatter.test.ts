@@ -58,6 +58,7 @@ const VALID_LUCIDE_ICONS = new Set([
   'Map',
   'Monitor',
   'Network',
+  'PackageX',
   'Puzzle',
   'RefreshCw',
   'Rocket',
@@ -113,9 +114,9 @@ const VALID_LUCIDE_ICONS = new Set([
   // These design-philosophy pages (apps/docs/content/docs/design/**)
   // were removed — see docs/remove-design-system-section — because
   // they leaked Interlace design-system content into this plugin-
-  // product docs site. Canonical home is now Storybook only
-  // (`scripts/sync-philosophies.ts` → apps/storybook). Kept here in
-  // case any legacy content still declares these icons.
+  // product docs site. The canonical home is now the design system's
+  // own repo (ofri-peretz/interlace). Kept here in case any legacy
+  // content still declares these icons.
   'Palette',
   'MousePointerClick',
   'Table',

@@ -149,3 +149,5 @@
 {"date":"2026-05-17","bench":"ILB-AI","score":"68% detection","asOf":"2026-02-09"}
 {"date":"2026-05-17","bench":"ILB-LLM-Tokens","score":"sec/compact -8.7% vs V1","asOf":"2026-05-03"}
 {"date":"2026-05-17","bench":"ILB-LLM-Fix","score":"97.22% macro pass","asOf":"2026-05-03"}
+{"bench":"ILB-Remediation","benchVersion":"1.0","timestamp":"2026-07-31T20:22:18.024Z","methodologyCommit":"27353bbe01bd6c4d5a25b324d2c5e1d9de102a5b","summary":{"interlace":{"packages":10,"rulesTotal":203,"fixableImplemented":7,"suggestionsImplemented":87,"deadDeclarations":22},"competitors":{"packages":5,"rulesTotal":57,"fixableImplemented":1,"suggestionsImplemented":0,"deadDeclarations":16}}}
+{"bench":"ILB-Remediation","benchVersion":"1.0","timestamp":"2026-08-02T06:15:28.985Z","methodologyCommit":"78e332a9ff52f4352278234295055c8c6a717d00","summary":{"interlace":{"packages":10,"rulesTotal":203,"fixableImplemented":7,"suggestionsImplemented":87,"deadDeclarations":22},"competitors":{"packages":5,"rulesTotal":57,"fixableImplemented":1,"suggestionsImplemented":0,"deadDeclarations":16}},"resultPath":"benchmarks/results/ilb-remediation/2026-08-02.json"}

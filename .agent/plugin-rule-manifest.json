@@ -307,52 +307,39 @@
     }
   },
   "eslint-plugin-express-security": {
-    "require-helmet": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-permissive-cors": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-csrf-protection": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "no-insecure-cookie-options": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-rate-limiting": {
-      "environment": "express",
-      "detection": "naming-heuristic",
-      "confidence": "review-prompt"
-    },
-    "no-graphql-introspection-production": {
-      "environment": "express",
-      "detection": "structural-api",
-      "confidence": "review-prompt"
-    },
     "no-cors-credentials-wildcard": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "require-express-body-parser-limits": {
+    "no-error-details-in-response": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks catch-clause params and error-first callback params into res.send/json sinks via a scope frame stack."
+    },
+    "no-exposed-debug-endpoints": {
       "environment": "express",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-express-unsafe-regex-route": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "no-exposed-debug-endpoints": {
+    "no-graphql-introspection-production": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-host-header-in-links": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks req.headers.host / req.get('host') assignments into URL construction and mail sinks within a function \u2014 conservative same-scope flow, not a name match."
+    },
+    "no-insecure-cookie-options": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
@@ -375,11 +362,66 @@
       "confidence": "review-prompt",
       "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
     },
+    "no-permissive-cors": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-data-in-query": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Token-based matching of sensitive parameter names on req.query reads \u2014 names are the signal, so ships as warn per I3."
+    },
+    "no-static-root-exposure": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on express.static/serveIndex argument shapes (__dirname, '.', process.cwd(), traversal segments, non-literal joins)."
+    },
     "no-user-controlled-redirect": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
       "notes": "Fires on res.redirect(req.query.*) AST shape \u2014 structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+    },
+    "no-user-controlled-render-locals": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the res.render(view, req.body|query|params) AST shape incl. spreads. The shape carries the signal, but the request/response roots are matched against fixed name sets (req/request/ctx, res/response/reply), so an unconventional alias is not tracked."
+    },
+    "require-case-insensitive-path-guard": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Protected-path detection keys off configurable path literals (admin/api/dashboard/...), so it ships as warn."
+    },
+    "require-csrf-protection": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-express-body-parser-limits": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-helmet": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-query-type-guard": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt",
+      "notes": "String-method call on a req.query member with no typeof/Array.isArray/String() guard in scope; ships as warn while cross-function flow is untracked."
+    },
+    "require-rate-limiting": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
     }
   },
   "eslint-plugin-import-next": {
@@ -1020,6 +1062,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-unsafe-buffer-alloc": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
     },
     "no-unsafe-dynamic-require": {
       "environment": "node",

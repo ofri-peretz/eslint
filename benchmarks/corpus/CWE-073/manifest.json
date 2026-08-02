@@ -1,0 +1,28 @@
+{
+  "cwe": "CWE-073",
+  "name": "External Control of File Name or Path (template object injection via res.render)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-express-security"
+  ],
+  "coverageGap": "No rule yet detects req.body / req.query flowing into the res.render locals object. Candidate: express-security/no-user-controlled-render-locals. Today only generic hardening rules fire on these fixtures.",
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "render-body-spread.js",
+        "description": "res.render(view, req.body) — the whole request body becomes the template locals object"
+      },
+      {
+        "file": "render-query-spread.js",
+        "description": "Query string spread into the locals, overriding engine-reserved keys"
+      }
+    ],
+    "safe": [
+      {
+        "file": "render-explicit-locals.js",
+        "description": "Locals built by explicitly picking known fields"
+      }
+    ]
+  }
+}

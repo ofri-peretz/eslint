@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-lambda-security",
-  "version": "1.2.8",
-  "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications. Detects insecure API Gateway responses, missing security headers, CORS misconfigurations, input validation issues, and more.",
+  "version": "1.2.9",
+  "description": "ESLint plugin for AWS Lambda security — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -43,32 +43,43 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
     "interlace-security",
     "aws",
     "lambda",
     "aws-lambda",
+    "aws-security",
     "middy",
     "api-gateway",
     "serverless",
-    "security",
+    "serverless-security",
+    "iam",
     "cors",
-    "headers",
+    "security-headers",
     "validation",
-    "owasp",
-    "cwe",
+    "secrets",
+    "node",
+    "nodejs",
     "llm-optimized",
     "ai-assistant",
-    "typescript",
-    "static-analysis"
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.2"
+    "@interlace/eslint-devkit": "^1.4.3"
   },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"

@@ -310,7 +310,7 @@ to help prioritize fixes:
 **Key Content**:
 
 - Rule count comparison (vs eslint-plugin-security, sonarjs, etc.)
-- Performance improvements (100x faster cycle detection)
+- Performance improvements (8x faster cycle detection)
 - Feature matrix comparison
 - "Killer Features" spotlight
 

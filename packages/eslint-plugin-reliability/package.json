@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-reliability",
-  "version": "3.1.6",
-  "description": "ESLint rules for runtime stability, fault tolerance, and type safety.",
+  "version": "3.1.7",
+  "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -29,12 +29,24 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "reliability",
     "error-handling",
+    "exception-handling",
+    "fault-tolerance",
+    "resilience",
     "type-safety",
-    "llm-optimized"
+    "null-safety",
+    "timeout",
+    "async",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"

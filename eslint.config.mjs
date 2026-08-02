@@ -147,11 +147,10 @@ export default [
     },
   },
 
-  // ── react-a11y + react-features — UI / Storybook / docs surfaces ────────
+  // ── react-a11y + react-features — UI / docs surfaces ────────────────────
   {
     files: [
       'packages/ui/src/**/*.{ts,tsx}',
-      'apps/storybook/src/**/*.{ts,tsx}',
       'apps/docs/src/**/*.{ts,tsx}',
     ],
     plugins: {

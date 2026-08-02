@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-maintainability",
-  "version": "3.0.8",
-  "description": "ESLint rules for reducing cognitive load and ensuring code readability.",
+  "version": "3.0.9",
+  "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -33,12 +33,24 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
-    "interlace-quality",
+    "static-analysis",
+    "linting",
     "code-quality",
-    "clean-code",
+    "interlace-quality",
     "maintainability",
-    "llm-optimized"
+    "cognitive-complexity",
+    "complexity",
+    "readability",
+    "clean-code",
+    "refactoring",
+    "error-handling",
+    "nested-ternary",
+    "duplicate-code",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"

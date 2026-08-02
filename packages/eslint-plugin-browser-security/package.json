@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-browser-security",
-  "version": "1.2.8",
-  "description": "Security-focused ESLint plugin for browser applications. Detects XSS vulnerabilities, postMessage abuse, localStorage/sessionStorage/IndexedDB token exposure, cookie security issues, WebSocket security, Blob URL leaks, Service Worker risks, and CSP misconfigurations.",
+  "version": "1.2.9",
+  "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -43,42 +43,45 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
     "interlace-security",
     "browser",
     "browser-security",
+    "frontend-security",
     "web-security",
-    "security",
     "xss",
     "dom-xss",
+    "cwe-79",
+    "clickjacking",
+    "mixed-content",
     "postmessage",
     "localstorage",
-    "sessionstorage",
     "indexeddb",
     "cookies",
     "websocket",
     "service-worker",
-    "web-worker",
-    "file-api",
-    "blob-url",
     "csp",
     "content-security-policy",
-    "innerhtml",
-    "eval",
-    "owasp",
-    "cwe",
     "llm-optimized",
     "ai-assistant",
-    "typescript",
-    "static-analysis"
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.2"
+    "@interlace/eslint-devkit": "^1.4.3"
   },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"

@@ -5,11 +5,15 @@
  */
 
 /**
- * @interlace/eslint-config
+ * @interlace/eslint-config — REPO-INTERNAL, NOT PUBLISHED
  *
- * One-extends meta-config for the Interlace ESLint ecosystem. Replaces the
- * manual 11-plugin compose documented in `.agent/flagship-rules.md` § "Using
- * the flagship preset".
+ * `private: true`. This is not a consumer-facing meta-config and must not be
+ * recommended or published: ESLint config is composed per repository from the
+ * individual `eslint-plugin-*` packages, so each repo takes only what it needs.
+ *
+ * It exists so this monorepo can lint its own component API (`componentApi`,
+ * consumed by the root `eslint.config.mjs`) and so `src/index.test.ts` can pin
+ * the flagship array against `.agent/flagship-rules.md`.
  *
  * Presets (all are flat-config arrays — drop them into ESLint 9/10 with
  * spread, e.g. `export default [...flagship, ...myOverrides]`):
@@ -100,14 +104,7 @@ export const quality: readonly FlatConfig[] = [
 /**
  * Recommended preset for the React plugins. 2 plugins.
  *
- * Apply only to JSX/TSX files in consumer configs:
- *
- * ```js
- * import { react } from '@interlace/eslint-config';
- * export default [
- *   ...react.map(c => ({ ...c, files: ['**\/*.{jsx,tsx}'] })),
- * ];
- * ```
+ * Apply only to JSX/TSX files.
  */
 export const react: readonly FlatConfig[] = [
   (reactFeaturesConfigs as ConfigMap)['recommended']!,
@@ -121,29 +118,21 @@ export const react: readonly FlatConfig[] = [
  * Not included in `recommended` because the rules are too strict for
  * application code that hasn't been migrated yet.
  *
- * ```js
- * import { componentApi } from '@interlace/eslint-config';
- * export default [
- *   ...componentApi.map(c => ({ ...c, files: ['**\/*.{jsx,tsx}'] })),
- * ];
- * ```
+ *
+ * This is the one preset with a live internal consumer: the root
+ * `eslint.config.mjs` imports it, and `.github/workflows/component-api-lint.yml`
+ * builds this package to run it.
  */
 export const componentApi: readonly FlatConfig[] = [
   (reactFeaturesConfigs as ConfigMap)['componentApi']!,
 ];
 
 /**
- * Full recommended preset — security + quality + react. 19 plugins.
+ * Full preset — security + quality + react. 19 plugins.
  *
- * For most projects this is the right starting point:
- *
- * ```js
- * import interlace from '@interlace/eslint-config';
- * export default [
- *   ...interlace.recommended,
- *   { files: ['**\/*.test.ts'], rules: { 'secure-coding/no-hardcoded-credentials': 'off' } },
- * ];
- * ```
+ * Internal aggregate only; it is not offered to consumers as a one-import
+ * install. It backs the structural lock that fails closed when a plugin drops
+ * its `recommended` export.
  */
 export const recommended: readonly FlatConfig[] = [
   ...security,
@@ -152,8 +141,8 @@ export const recommended: readonly FlatConfig[] = [
 ];
 
 /**
- * Default export aggregates every named preset under one namespace so
- * consumers can `import interlace from '@interlace/eslint-config'`.
+ * Default export aggregates every named preset under one namespace for the
+ * repo-internal callers and the lock test.
  */
 const presets = {
   flagship,
