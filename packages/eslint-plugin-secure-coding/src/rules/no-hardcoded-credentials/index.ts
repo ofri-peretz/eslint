@@ -49,6 +49,9 @@ export interface Options {
 
   /** Strategy for fixing hardcoded credentials: 'env', 'config', 'vault', 'auto' */
   strategy?: 'env' | 'config' | 'vault' | 'auto';
+
+  /** Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`). Default: true */
+  allowPlaceholders?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -256,6 +259,52 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   // secrets like a 21-character lowercase blob — is long and high-entropy.
   if (classCount(charClasses(value)) >= 2) return true;
   return value.length >= 20 && shannonEntropy(value) >= 3.0;
+}
+
+/**
+ * Words that only ever appear in a value a developer expects to replace.
+ * Matched as whole words inside the string, so `changeme`, `change-me`,
+ * `YOUR_API_KEY`, and `<your-secret-here>` are all covered.
+ */
+const PLACEHOLDER_WORDS = new Set([
+  'changeme', 'change', 'replaceme', 'replace', 'yours', 'your',
+  'placeholder', 'example', 'sample', 'dummy', 'todo', 'tbd',
+  'redacted', 'notreal', 'xxx',
+]);
+
+/**
+ * True when the value is a self-evident stand-in rather than a secret.
+ *
+ * Three shapes, each unambiguous on its own:
+ *   1. Bracketed template slots — `<your-secret-here>`, `{{API_KEY}}`,
+ *      `${SECRET}`, `[token]`. No real credential is delimited this way, and
+ *      the brackets are what push the string past `isSecretShaped`'s
+ *      two-character-class gate in the first place.
+ *   2. A placeholder word standing as its own token — `changeme`,
+ *      `YOUR_API_KEY`, `example.com`. Substring matching is deliberately
+ *      avoided: a real key may contain `bar` by chance.
+ *   3. One character repeated — `xxxxxxxxxxxx`, `********`, `00000000`.
+ *
+ * Verified against benchmarks/corpus/CWE-798/safe/test-placeholder-values.js,
+ * where `secret: '<your-secret-here>'` was reported at CVSS 9.8.
+ */
+export function isPlaceholderValue(value: string): boolean {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return false;
+
+  // 1. Bracketed template slots.
+  if (/^(?:<.*>|\{\{.*\}\}|\$\{.*\}|\[.*\])$/.test(trimmed)) return true;
+
+  // 3. One character repeated (4+).
+  if (trimmed.length >= 4 && new Set(trimmed).size === 1) return true;
+
+  // 2. Placeholder word as a whole token.
+  const tokens = trimmed
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  return tokens.some(token => PLACEHOLDER_WORDS.has(token));
 }
 
 /**
@@ -505,6 +554,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             default: 'auto',
             description: 'Strategy for fixing hardcoded credentials (auto = smart detection)'
           },
+          allowPlaceholders: {
+            type: 'boolean',
+            default: true,
+            description: 'Skip self-evident placeholder values (<your-secret-here>, changeme, xxxxxxxx)',
+          },
         },
         additionalProperties: false,
       },
@@ -521,6 +575,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings: true,
       customPatterns: [],
       strategy: 'auto',
+      allowPlaceholders: true,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -534,6 +589,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectTokens = true,
       detectDatabaseStrings = true,
       customPatterns = [],
+      allowPlaceholders = true,
     }: Options = options;
 
     const filename = context.filename;
@@ -853,6 +909,14 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         finalIsCredential = false;
       }
 
+      // Self-evident placeholders are not secrets. Gated to non-structural
+      // findings only: a JWT, an `sk_live_` key, or a DB connection string
+      // keeps its shape whatever words it contains, so those still report.
+      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value);
+      if (isPlaceholder && confidence !== 'structural') {
+        finalIsCredential = false;
+      }
+
       // Context-positive: a *secret-shaped* string assigned to a
       // credential-named variable/property is a credential, even when no
       // structural pattern matches. Catches passwords like 'aaAA@123' that
@@ -872,6 +936,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // bypasses the option. Map the var name back to its category and
       // honour the option.
       if (!finalIsCredential &&
+          !isPlaceholder &&
           !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
           isSecretShaped(value, detectionOptions.minLength) &&
           isCredentialContext(node, parent)) {

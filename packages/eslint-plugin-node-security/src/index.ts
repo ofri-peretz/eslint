@@ -96,7 +96,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.4.3',
+    version: '4.5.0',
   },
   rules,
 };
@@ -130,6 +130,15 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-ssrf': 'warn',
   'node-security/no-shell-injection': 'error',
   'node-security/no-dynamic-algorithm-selection': 'error',
+  // Added to `recommended` 2026-08-02. `secure-coding/no-insecure-comparison`
+  // was removed from every `secure-coding` preset in favour of this rule, but
+  // this rule was not in any `recommended` preset — so CWE-697 timing-unsafe
+  // comparison had no preset coverage anywhere in the ecosystem, and the
+  // migration note pointed at a rule users would have had to enable by hand.
+  // Enters at 'warn' rather than 'error' for the same reason as
+  // `no-deprecated-buffer` above: adopters already on this preset shouldn't
+  // have CI turn red on a version bump. Promote on the next major.
+  'node-security/no-timing-unsafe-compare': 'warn',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',
