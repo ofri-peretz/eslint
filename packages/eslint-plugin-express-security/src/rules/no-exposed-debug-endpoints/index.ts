@@ -22,6 +22,19 @@ type RuleOptions = [Options?];
 
 const DEFAULT_DEBUG_PATHS = ['/debug', '/__debug__', '/admin', '/_admin', '/test', '/health'];
 
+// Express route-registration methods, incl. `use` for mounted sub-routers.
+const HTTP_METHODS = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+  'all',
+  'use',
+]);
+
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
   meta: {
@@ -74,10 +87,6 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    function report(node: TSESTree.Node) {
-      context.report({ node, messageId: 'violationDetected' });
-    }
-
     // oxlint-disable-next-line consistent-function-scoping
     const isExpressRouteCall = (node: TSESTree.CallExpression) => {
       return (
@@ -85,32 +94,24 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         node.callee.object.type === 'Identifier' &&
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
         node.callee.property.type === 'Identifier' &&
-        ['get', 'post', 'use'].includes(node.callee.property.name)
+        HTTP_METHODS.has(node.callee.property.name)
       );
     };
 
     return {
+      // Only route *registrations* are flagged. A bare string literal that
+      // happens to equal a debug path (a redirect target, a constant, a
+      // comparison) is not an exposed endpoint — flagging it was a false
+      // positive.
       CallExpression(node: TSESTree.CallExpression) {
-        if (isExpressRouteCall(node)) {
-          const pathArg = node.arguments[0];
-          if (pathArg && pathArg.type === 'Literal' && typeof pathArg.value === 'string') {
-            const path = pathArg.value.toLowerCase();
-            if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
-              report(pathArg);
-            }
-          }
+        if (!isExpressRouteCall(node)) {
+          return;
         }
-      },
-      
-      Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string') {
-          const path = node.value.toLowerCase();
-          if (debugPaths.some(dp => path === dp.toLowerCase())) {
-            const parent = node.parent;
-            if (parent && parent.type === 'CallExpression' && isExpressRouteCall(parent) && parent.arguments[0] === node) {
-              return;
-            }
-            report(node);
+        const pathArg = node.arguments[0];
+        if (pathArg && pathArg.type === 'Literal' && typeof pathArg.value === 'string') {
+          const path = pathArg.value.toLowerCase();
+          if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
+            context.report({ node: pathArg, messageId: 'violationDetected' });
           }
         }
       },

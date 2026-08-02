@@ -46,7 +46,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 
 ## Rule Details
 
-This rule scans for route definitions in Express-like frameworks and literal string constants that match known sensitive paths.
+This rule scans for route *registrations* in Express-like frameworks (`app.get`, `router.use`, …) whose path argument is a string literal matching a known sensitive path. A string literal that merely equals a debug path in some other position — a constant, a redirect target, a comparison — is **not** reported: it is not an exposed endpoint.
 
 ```mermaid
 %%{init: {
@@ -63,7 +63,7 @@ This rule scans for route definitions in Express-like frameworks and literal str
   }
 }}%%
 flowchart TD
-    A["📝 Detect Route or String"] --> B{Matches Debug Pattern?}
+    A["📝 Detect Route Registration"] --> B{Path Literal Matches Debug Pattern?}
     B -->|Yes| C[🔍 Analyze Context]
     B -->|No| D[✅ Safe - Skip]
 
@@ -125,8 +125,8 @@ express.post('/test/reset-state', (req, res) => {
   db.clearAll();
 });
 
-// ❌ Literal string matching a forbidden path
-const myPath = '/__debug__';
+// ❌ Any route-registration method, not just get/post/use
+app.delete('/admin/users/:id', handler);
 ```
 
 ### ✅ Correct
@@ -148,6 +148,12 @@ router.post('/login', authHandler);
 // ✅ Passing path via variable (Not detected by static analysis)
 const PATH = '/api/v1/health';
 app.get(PATH, handler);
+
+// ✅ Bare string literals are not endpoints — constants, redirect targets
+//    and comparisons are never reported
+const ADMIN_PATH = '/admin';
+res.redirect('/admin');
+if (req.path === '/health') return next();
 ```
 
 ## Security Impact
