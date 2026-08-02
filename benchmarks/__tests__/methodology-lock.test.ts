@@ -41,8 +41,11 @@ function findEmittingSources(): string[] {
     }
   };
   walk(path.join(BENCHMARKS, 'suites'));
+  // score.ts emits a receipt but lives outside suites/. Added unconditionally and
+  // deliberately NOT re-filtered: if it ever stops emitting, the assertions below
+  // must fail loudly rather than let it drop silently out of the locked set.
   out.push(path.join(BENCHMARKS, 'score.ts'));
-  return out.filter((p) => fs.readFileSync(p, 'utf8').includes('methodologyCommit:'));
+  return out;
 }
 
 describe('methodology receipt — emission lock', () => {

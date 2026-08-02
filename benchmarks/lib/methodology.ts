@@ -89,7 +89,10 @@ export function collectMethodologyFiles(entrypoint, extraPaths = []) {
     try {
       source = fs.readFileSync(file, 'utf8');
     } catch {
-      continue; // a root that doesn't exist is caught by captureMethodology
+      // Skips scanning this file's imports. The path itself still ends up in
+      // rootRels, so captureMethodology's readFileSync throws on it — an
+      // unreadable methodology file must fail loudly, not hash to nothing.
+      continue;
     }
     for (const match of source.matchAll(SPEC_RE)) {
       const spec = match[1] ?? match[2];
