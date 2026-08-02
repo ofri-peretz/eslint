@@ -210,6 +210,43 @@ describe('computeSCCsFromFile edge cases', () => {
     // Every discovered file is indexed even under truncation
     expect(cache.sccIndex.has(a)).toBe(true);
   });
+
+  it('visits nothing when maxDepth is negative', () => {
+    // The schema puts no `minimum` on maxDepth, so a negative value is valid
+    // input. It rejects even the root before any node is indexed.
+    const a = createTempFile('src/a.ts', 'export const a = 1;');
+
+    const sccs = computeSCCsFromFile(a, { maxDepth: -1, ...baseOptions() });
+
+    expect(sccs).toEqual([]);
+    expect(cache.sccIndex.has(a)).toBe(false);
+  });
+
+  it('traverses an import chain far deeper than the JS call stack', () => {
+    // Regression: Tarjan used to recurse once per node and threw
+    // `RangeError: Maximum call stack size exceeded` at roughly 5,000 nodes.
+    // no-cycle defaults to an unlimited maxDepth, so nothing capped it and the
+    // whole lint run died. 10,000 is comfortably past the old ceiling.
+    const DEPTH = 10_000;
+
+    createTempFile(`src/f0.ts`, 'export const f0 = 1;');
+    for (let i = 1; i < DEPTH; i++) {
+      createTempFile(
+        `src/f${i}.ts`,
+        `import { f${i - 1} } from './f${i - 1}';\nexport const f${i} = 1;\n`,
+      );
+    }
+    const head = path.join(testDir, `src/f${DEPTH - 1}.ts`);
+
+    const sccs = computeSCCsFromFile(head, {
+      maxDepth: Infinity,
+      ...baseOptions(),
+    });
+
+    // A strictly descending chain is acyclic: one singleton SCC per file.
+    expect(sccs).toHaveLength(DEPTH);
+    expect(sccs.every((s) => !s.hasCycle)).toBe(true);
+  });
 });
 
 describe('isFileInCycle', () => {
