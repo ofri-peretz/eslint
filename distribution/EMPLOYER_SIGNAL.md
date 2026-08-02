@@ -63,7 +63,7 @@ This is a **Staff-level product engineering story**, not a "I made some npm pack
 ```
 Phase 1: eslint-plugin-import-next (The Trojan Horse)
 ├── Target: Frustrated eslint-plugin-import users
-├── Tactic: "45s → 0.4s" benchmark viral content
+├── Tactic: "148s → 2.7s" no-cycle benchmark content (synthetic, 5K files)
 ├── Goal: 50K weekly downloads
 └── Timeline: 6-12 months
 
@@ -90,7 +90,7 @@ Phase 4: Viral Breakout
 
 | Lever                      | How To Pull It                                      |
 | -------------------------- | --------------------------------------------------- |
-| **Performance benchmarks** | "10K files: import took 45s, import-next took 0.4s" |
+| **Performance benchmarks** | "5,736-file React codebase: 8x faster rule time, 3.1x end-to-end, 100% detection parity" ([latest.json](../benchmarks/results/ilb-perf-import-no-cycle/latest.json)) |
 | **Drop-in migration**      | Zero friction replacement guides                    |
 | **The Badge**              | Social proof viral loop in READMEs                  |
 | **AGENTS.md standard**     | Novel contribution to AI tooling ecosystem          |
@@ -154,7 +154,7 @@ You're not an AI researcher. You're a **builder who can take ambiguous problems 
 
 ### Short-term (0-3 months)
 
-- [ ] Publish "45s → 0.4s" benchmark blog post
+- [x] Publish the no-cycle benchmark blog post — shipped as ["eslint-plugin-import Spends 148s Finding Circular Deps in 5,000 Files. import-next Does It in 2.7s."](https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa) (slug is legacy; title is correct)
 - [ ] Submit template PRs to Vercel/Next.js starters with eslint-plugin-vercel-ai-security
 - [ ] Launch "Security Badge" campaign for README viral loop
 - [ ] Create interactive StackBlitz demos with "Auto-Fix" button

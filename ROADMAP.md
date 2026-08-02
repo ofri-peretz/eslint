@@ -99,7 +99,7 @@ We support **ESLint v8, v9, and v10** (v10 included per our forward-looking [sup
 - **v11 → support window opens** as soon as v11.0.0 ships (forward-looking rule), without waiting for share data
 - **EOL milestones** — track upstream ESLint EOL announcements; align removals with the next major release
 
-Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
+Last data refresh: 2026-08-02 (v9: 51.13%, v8: 28.29%, v10: 11.08%). v8 is **up** 4pp since the 2026-05-09 refresh and sits well clear of the 20% gate, so the v8-deprecation trigger has not moved closer; v10 gained ~1.8pp and is still below it.
 
 ---
 

@@ -33,11 +33,11 @@ All plugins use ES2020 features and require Node.js 18+ for:
 
 ### ESLint Versions
 
-| Version | Config Format                    | Share (2026-05-09) | Status                          |
+| Version | Config Format                    | Share (2026-08-02) | Status                          |
 | :------ | :------------------------------- | :----------------- | :------------------------------ |
-| 8.x     | Legacy (`.eslintrc.*`)           | 24.3%              | ✅ Supported (≥20% gate)        |
-| 9.x     | Flat Config (`eslint.config.js`) | 60.4%              | ✅ Supported (≥20% gate)        |
-| 10.x    | Flat Config (`eslint.config.js`) | 9.2%               | ✅ Supported (forward-looking)  |
+| 8.x     | Legacy (`.eslintrc.*`)           | 28.29%             | ✅ Supported (≥20% gate)        |
+| 9.x     | Flat Config (`eslint.config.js`) | 51.13%             | ✅ Supported (≥20% gate)        |
+| 10.x    | Flat Config (`eslint.config.js`) | 11.08%             | ✅ Supported (forward-looking)  |
 
 **Important**: ESLint 9.x and 10.x use flat config by default. All plugins export both legacy and flat config presets so the same plugin code works across v8, v9, and v10.
 

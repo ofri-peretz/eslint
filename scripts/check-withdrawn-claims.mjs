@@ -37,6 +37,31 @@ const PATTERNS = [
       /(?:no-cycle|cycle detection|circular dep\w*|import-next)[^.\n]{0,40}?100\s*[x×]\s*faster/i,
     replacement: '3.1x faster end-to-end / 8x faster in pure rule time',
   },
+  {
+    id: 'import-next-sub-second',
+    // The 100x sweep missed a second fabrication that travelled with it:
+    // "45s → 0.4s", "<1s (100x faster)". No run in benchmarks/results/ is
+    // sub-second — the floor is 1.05s (synthetic, 1K files) and the real
+    // codebase is 4.9s rule time / 16.7s end-to-end. A sub-second lint
+    // figure in this repo is unmeasured by construction.
+    // The lookbehind is load-bearing: without it, the `.59s` inside a measured
+    // `148.59s` reads as a sub-second figure and the guard flags its own
+    // evidence. Window spans sentences (`[^\n]`) because the fabrication was
+    // written as two: "…takes 45s to lint. Our replacement takes 0.4s."
+    regex:
+      /(?:eslint-plugin-import|import-next|no-cycle|cycle detection|lint time|linting)[^\n]{0,80}?(?:(?<![\d.])0?\.\d+\s*s(?:ec|econds)?\b|<\s*1\s*s\b|\bsub-second\b)/i,
+    replacement:
+      '2.71s at 5K files (synthetic, no-cycle only) or 4.9s rule time (real codebase)',
+  },
+  {
+    id: 'unmeasured-sub-second-transition',
+    // Context-free form of the same fabrication: any "Ns → 0.Xs" pairing.
+    // Catches it in a diagram or table cell where the subject sits on a
+    // different line than the number, out of reach of the pair window.
+    regex: /\b\d+(?:\.\d+)?\s*s\b\s*(?:→|->|to)\s*(?<![\d.])0?\.\d+\s*s\b/i,
+    replacement:
+      '148.6s → 2.71s at 5K files (synthetic, no-cycle only), citing the result JSON',
+  },
 ];
 
 /**
@@ -128,6 +153,13 @@ function selftest() {
     // "faster" and the subject, which a naive \s+ would refuse to cross.
     '**100x faster** cycle detection in `import-next`',
     '_100x faster_ circular dependency analysis',
+    // The sub-second fabrication that rode along with the 100x claim.
+    '├── Tactic: "45s → 0.4s" benchmark viral content',
+    '| **Performance benchmarks** | "10K files: import took 45s, import-next took 0.4s" |',
+    '- "Reduced lint time from 45s to 0.4s in production"',
+    '| `no-cycle` | 45s+ on large monorepos | <1s (100x faster) |',
+    'eslint-plugin-import takes 45s to lint. Our replacement takes 0.4s.',
+    'Docs surfaces carried a supporting table: 15.0s → 0.15s',
   ];
   const good = [
     'Catching vulnerabilities during code review is 100x cheaper than fixing them',
@@ -137,6 +169,12 @@ function selftest() {
     'Vite and esbuild offer 10-100x faster builds.',
     '8x faster cycle detection',
     'Scaled APIs 100x',
+    // Measured figures must survive — the floor is 1.05s, never sub-second.
+    'no-cycle rule time: 148.59s vs 2.71s at 5,000 files (synthetic)',
+    'import-next finishes the 1K-file corpus in 1.05s',
+    '| `docs.yml` | ~45s | docs structure validation |',
+    'Cut no-cycle rule time 8x on a 5,736-file React codebase',
+    'p95 budget per rule is 0.4s',
   ];
   // Claim split across two Markdown lines — caught via the pair window.
   const badPair = ['Cycle detection is now', '100x faster than the official plugin'];
