@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      // This package has no src/, so the root task's inputs would hash nothing
+      // that matters and the lock would cache-hit forever. The methodology
+      // receipt lock reads suite sources directly — they are inputs.
+      "inputs": [
+        "__tests__/**",
+        "lib/**",
+        "suites/**/*.ts",
+        "suites/**/*.mjs",
+        "score.ts",
+        "vitest.config.mts",
+        "package.json"
+      ],
+      "outputs": []
+    }
+  }
+}
