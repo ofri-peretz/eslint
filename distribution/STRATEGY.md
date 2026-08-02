@@ -18,8 +18,8 @@ Stop competing on "detection" (e.g., `eslint-plugin-import`). Differentiate on *
 
 #### A. `eslint-plugin-import-next` (The Trojan Horse)
 - **Target:** Mass adoption via performance.
-- **Pain Point:** `import/no-cycle` is slow (45s+).
-- **Solution:** 100x faster implementation (0.4s).
+- **Pain Point:** `import/no-cycle` is slow (39s of rule time on a 455K-LoC codebase).
+- **Solution:** 3.1x faster end-to-end / 8x faster rule time (51.7s → 16.7s full lint; 39.2s → 4.9s rule time).
 - **Tactic:** Viral benchmarks. "Drop-in replacement".
 
 #### B. `eslint-plugin-vercel-ai-security` (The Vertical Specialist)
@@ -49,7 +49,7 @@ Stop competing on "detection" (e.g., `eslint-plugin-import`). Differentiate on *
 > **Goal:** Position Ofri Peretz as a Staff-level Product Engineer for Lead/Staff roles at Meta, Google, Vercel, Stripe, or Scale AI.
 
 ### The Narrative
-_"I identified the ESLint ecosystem was stuck in 2020. I rebuilt the static analysis layer for the Agentic Era: 100x faster, AI-native messaging, and OWASP-mapped security."_
+_"I identified the ESLint ecosystem was stuck in 2020. I rebuilt the static analysis layer for the Agentic Era: 3.1x faster end-to-end cycle detection, AI-native messaging, and OWASP-mapped security."_
 
 ### Evidence of Competence
 | Competency | Signals |
@@ -69,12 +69,12 @@ _"I identified the ESLint ecosystem was stuck in 2020. I rebuilt the static anal
 ## 3. 🔍 Competitor Landscape
 
 ### The "Speed" Cluster (Rust-based)
-- **Biome / Oxlint**: Competing on raw speed (100x faster).
+- **Biome / Oxlint**: Competing on raw speed (Rust-native; we have not benchmarked their headline multiples ourselves).
 - *Our Counter:* **Depth & Agility**. They can't check `pg` specifics or `vercel-ai` nuances yet. We offer **domain expertise** and **AI-native remediation** which they lack.
 
 ### The "Legacy" Cluster
 - **eslint-plugin-import**: The zombie giant. Slow, unmaintained.
-- *Our Counter:* `import-next`. 100x faster, drop-in replacement.
+- *Our Counter:* `import-next`. 3.1x faster end-to-end, drop-in replacement.
 - **eslint-plugin-security**: Abandoned/shallow.
 - *Our Counter:* `secure-coding`. 89 rules vs their 13. Deep OWASP mapping.
 
