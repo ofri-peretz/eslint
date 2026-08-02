@@ -7,21 +7,55 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Run ESLint once and return `{ seconds, ok, reason }`.
+ *
+ * `ok` matters as much as the timing. This used to swallow every failure with
+ * "ESLint returns non-zero on lint errors, which is expected" — true for exit
+ * code 1, but it also swallowed exit code 2, which is how ESLint reports a rule
+ * that threw. A plugin that crashes partway through the corpus exits *early*,
+ * so the crash was recorded as a fast run. The bias only ever ran one way:
+ * toward flattering whichever plugin failed sooner.
+ *
+ * Exit codes: 0 = clean, 1 = lint errors found (expected), 2 = fatal.
+ */
 export function runEslint(configPath, fixtureDir, rootDir) {
   const start = process.hrtime.bigint();
-  
+
+  let ok = true;
+  let reason = null;
+
   try {
-    execSync(`npx eslint "${fixtureDir}" --config "${configPath}" --no-error-on-unmatched-pattern 2>/dev/null`, {
-      cwd: rootDir,
-      stdio: 'pipe',
-      timeout: 300000, // 5 min timeout
-    });
+    execSync(
+      `npx eslint "${fixtureDir}" --config "${configPath}" --no-error-on-unmatched-pattern`,
+      {
+        cwd: rootDir,
+        // Discard stdout: a fixture with many violations emits tens of
+        // thousands of report lines, and buffering them overruns execSync's
+        // 1 MB maxBuffer, which kills the child with SIGTERM. That looks
+        // exactly like a timeout. dense-5000 (20,000 reports) tripped this for
+        // both plugins and read as ">300s" when both actually finish in ~5s.
+        // Only the exit status and stderr matter here.
+        stdio: ['ignore', 'ignore', 'pipe'],
+        maxBuffer: 32 * 1024 * 1024,
+        timeout: 300000, // 5 min timeout
+      }
+    );
   } catch (e) {
-    // ESLint returns non-zero on lint errors, which is expected
+    if (e.killed || e.signal) {
+      ok = false;
+      reason = `killed (${e.signal || 'timeout'})`;
+    } else if (e.status === 1) {
+      // Lint errors found — the expected outcome on fixtures containing cycles.
+    } else {
+      ok = false;
+      const stderr = (e.stderr?.toString() || '').trim().split('\n').slice(-3).join(' | ');
+      reason = `exit ${e.status}${stderr ? `: ${stderr}` : ''}`;
+    }
   }
-  
+
   const end = process.hrtime.bigint();
-  return Number(end - start) / 1e9; // Convert to seconds
+  return { seconds: Number(end - start) / 1e9, ok, reason };
 }
 
 export function runBenchmark(options) {
@@ -69,29 +103,54 @@ export function runBenchmark(options) {
       
       const times = [];
       const configPath = path.join(configsDir, plugin.config);
-      
+      let failure = null;
+
       for (let i = 0; i < iterations; i++) {
         process.stdout.write(`      Run ${i + 1}/${iterations}\r`);
-        const time = runEslint(configPath, fixtureDir, path.dirname(fixturesDir));
-        times.push(time);
+        const run = runEslint(configPath, fixtureDir, path.dirname(fixturesDir));
+        if (!run.ok) {
+          failure = run.reason;
+          break;
+        }
+        times.push(run.seconds);
       }
-      
+
+      if (failure) {
+        // Record the failure instead of a duration. A crashed run exits early,
+        // so timing it would score the crash as a win.
+        sizeResult.plugins[plugin.name] = { failed: true, reason: failure };
+        console.log(`   ❌ ${plugin.name}: FAILED — ${failure}`);
+        continue;
+      }
+
       const stats = calculateStats(times);
       sizeResult.plugins[plugin.name] = { times, stats };
-      
+
       console.log(`   ✅ ${plugin.name}: ${stats.mean.toFixed(2)}s (±${stats.stdDev.toFixed(2)}s)`);
     }
 
     // Calculate speedup between first two plugins
     const pluginNames = Object.keys(sizeResult.plugins);
     if (pluginNames.length >= 2) {
-      const baseTime = sizeResult.plugins[pluginNames[0]]?.stats.mean;
-      const fastTime = sizeResult.plugins[pluginNames[1]]?.stats.mean;
-      
-      if (baseTime && fastTime) {
-        const speedup = (baseTime / fastTime).toFixed(1);
-        console.log(`\n   ⚡ Speedup: ${speedup}x faster`);
-        sizeResult.speedup = parseFloat(speedup);
+      const base = sizeResult.plugins[pluginNames[0]];
+      const fast = sizeResult.plugins[pluginNames[1]];
+
+      if (base?.failed || fast?.failed) {
+        // No ratio is meaningful when one side never completed.
+        sizeResult.speedup = null;
+        sizeResult.speedupNote = `not comparable — ${
+          base?.failed ? pluginNames[0] : pluginNames[1]
+        } failed`;
+        console.log(`\n   ⚠️  Speedup: n/a (${sizeResult.speedupNote})`);
+      } else {
+        const baseTime = base?.stats.mean;
+        const fastTime = fast?.stats.mean;
+
+        if (baseTime && fastTime) {
+          const speedup = (baseTime / fastTime).toFixed(1);
+          console.log(`\n   ⚡ Speedup: ${speedup}x faster`);
+          sizeResult.speedup = parseFloat(speedup);
+        }
       }
     }
 

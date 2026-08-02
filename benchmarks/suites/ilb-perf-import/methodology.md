@@ -80,3 +80,57 @@ This suite preserves measured losses, including:
 - **vs naive DFS** — Phase 6 still 3.6x slower than the inline custom rule. KPI not met. Carried forward as a Phase 7+ goal rather than buried.
 
 If a future "fix" silently drops a dimension where we lose, that's a benchmark regression — the framework forbids it.
+
+## Graph-shape matrix (`ilb-perf-import-shapes`)
+
+The synthetic corpus above is a single graph shape — a deep linear chain — which
+is the best case for a plugin that amortizes traversal across files. A win there
+says nothing about shapes with nothing to amortize. This matrix holds file count
+at 5,000 and varies only the shape, so "faster than the official plugin" can be
+claimed over a range instead of over one favourable graph.
+
+| Shape | Structure | What it stresses |
+|-------|-----------|------------------|
+| `chain-5000` | `file[i] → file[i-1]`, `file[i-5]`; depth ≈ 5,000 | Deep traversal. Heavily amortizable — our best case. |
+| `wide-5000` | 5,000 leaves over a 20-module core; depth 2 | Nothing to amortize; per-file setup cost is the whole story. |
+| `flat-5000` | No local imports | Fixed per-file overhead, isolated from traversal cost. |
+| `dense-5000` | 1,000 mutually-importing clusters of 5 | Maximum distinct SCCs; the cycle-reporting path dominates. |
+| `single` | One file importing one other | Cold editor-on-save; a shared cache has one file to amortize over. |
+
+Generate with `node scripts/generate-fixtures.js shapes`, run with
+`node scripts/run-benchmark.js ilb-perf-import-shapes --iterations=3`.
+
+### Gates
+
+Detection parity is checked per shape before any timing is trusted. A speed
+number from a run that reported different cycles than the official plugin is
+meaningless. Recorded parity: `flat` 0/0, `wide` 0/0, `dense` 20,000/20,000,
+`single` 0/0. `chain` cannot be compared — the official plugin crashes on it.
+
+A run that fails is recorded as `failed` with a reason, never as a duration, and
+any speedup involving it is `null`. This matters more than it sounds: a plugin
+that crashes partway through exits *early*, so timing a crash scores it as fast.
+The bias only ever runs one way — toward flattering whichever plugin fails
+sooner.
+
+### Two traps this suite has already hit
+
+**Fixture paths.** `generate-fixtures.js` wrote to `benchmarks/<name>/fixtures`
+while `run-benchmark.js` read `suites/<suite>/fixtures`, and the generator keyed
+directories by generator name (`import`) rather than suite name
+(`ilb-perf-import`). Both are fixed. Before the fix the synthetic suite could not
+be regenerated from committed source at all.
+
+**stdout buffering reads as a timeout.** `execSync` buffers stdout with a 1 MB
+default `maxBuffer`. `dense-5000` emits 20,000 report lines, overruns it, and
+Node kills the child with SIGTERM — indistinguishable from the 300s timeout.
+Both plugins were recorded as ">300s" when both actually finish in under 4s.
+stdout is now discarded; only exit status and stderr are captured.
+
+### Reporting statistics
+
+Report **medians**, not means, and state `n`. On `wide-5000` the official plugin
+produced a 6.05s outlier against a 2.81s median, which dragged its mean to 3.70s
+and inverted the verdict — one run read as "we are 0.9× slower" purely from that
+outlier. Interleave the two plugins within each round so monotonic drift (thermal
+throttling, background load) cancels rather than accruing to whichever ran second.
