@@ -38,6 +38,14 @@ const PACKAGES_DIR = path.resolve(__dirname, '..', '..', 'packages');
 const RE_DECL_SUGGEST = /hasSuggestions\s*:\s*true/;
 const RE_IMPL_SUGGEST = /\bsuggest\s*:/;
 
+/**
+ * Drop whole-line comments before pattern matching, so prose like
+ * `// suggest: see docs` can't read as an implementation. Only full-line
+ * comments are stripped — a trailing `//` would eat the `https://` in a
+ * `docs.url` on the same line.
+ */
+const stripLineComments = (content: string) => content.replaceAll(/^[ \t]*\/\/.*$/gm, '');
+
 interface RuleSource {
   plugin: string;
   rule: string;
@@ -62,6 +70,9 @@ function collectRuleSources(): RuleSource[] {
       }
       if (!entry.name.endsWith('.ts')) continue;
       if (/\.(test|spec|d)\.ts$/.test(entry.name)) continue;
+      // Rule modules only. A shared helper parked under src/rules/ has no
+      // `meta:` block, and reporting it as a drifting "rule" would be noise.
+      if (!/\bmeta\s*:\s*\{/.test(fs.readFileSync(full, 'utf8'))) continue;
       const rule =
         entry.name === 'index.ts' ? path.basename(dir) : entry.name.replace(/\.ts$/, '');
       out.push({ plugin, rule, file: full });
@@ -89,7 +100,7 @@ it('finds the rule sources to lock (sanity floor)', () => {
 describe('meta.hasSuggestions matches suggest: usage', () => {
   const drift = ruleSources
     .map((src) => {
-      const content = fs.readFileSync(src.file, 'utf8');
+      const content = stripLineComments(fs.readFileSync(src.file, 'utf8'));
       return {
         ...src,
         declared: RE_DECL_SUGGEST.test(content),
