@@ -1,0 +1,15 @@
+{
+  "cwe": "CWE-409",
+  "name": "Improper Handling of Highly Compressed Data (Decompression Bomb)",
+  "owasp": "A05:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-node-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "gunzip-no-limit.js", "description": "zlib.gunzip(reqBody, cb) with no maxOutputLength" }
+    ],
+    "safe": [
+      { "file": "gunzip-limited.js", "description": "zlib.gunzip with { maxOutputLength } ceiling" }
+    ]
+  }
+}
