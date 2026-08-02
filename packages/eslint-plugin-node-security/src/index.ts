@@ -10,12 +10,14 @@ import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filena
 import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
 import { noBufferOverread } from './rules/no-buffer-overread';
 import { noDeprecatedBuffer } from './rules/no-deprecated-buffer';
+import { noUnsafeBufferAlloc } from './rules/no-unsafe-buffer-alloc';
 import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
 import { noShellInjection } from './rules/no-shell-injection';
+import { noDynamicCommandString } from './rules/no-dynamic-command-string';
 import { noDynamicAlgorithmSelection } from './rules/no-dynamic-algorithm-selection';
 
 // Migrated rules from secure-coding
@@ -56,12 +58,14 @@ export const rules: Record<
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'no-buffer-overread': noBufferOverread,
   'no-deprecated-buffer': noDeprecatedBuffer,
+  'no-unsafe-buffer-alloc': noUnsafeBufferAlloc,
   'no-toctou-vulnerability': noToctouVulnerability,
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
   'no-ssrf': noSsrf,
   'no-shell-injection': noShellInjection,
+  'no-dynamic-command-string': noDynamicCommandString,
   'no-dynamic-algorithm-selection': noDynamicAlgorithmSelection,
 
   // Migrated rules
@@ -94,7 +98,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.4.3',
+    version: '4.6.0',
   },
   rules,
 };
@@ -115,13 +119,29 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // adopters who already use the preset and have legacy `Buffer()` calls.
   // Promote to 'error' on the next major bump.
   'node-security/no-deprecated-buffer': 'error',
+  // Added in 4.5.0. Unconditional flag on `Buffer.allocUnsafe()` — a real but
+  // legitimate performance API — so it ships as 'warn', not 'error'. The rule
+  // does no dataflow, so a correctly-overwritten buffer still reports.
+  // Upstream `security-node/detect-buffer-unsafe-allocation` ships this off by
+  // default; 'warn' is the middle ground.
+  'node-security/no-unsafe-buffer-alloc': 'warn',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
   'node-security/no-data-in-temp-storage': 'error',
   'node-security/no-ssrf': 'warn',
   'node-security/no-shell-injection': 'error',
+  'node-security/no-dynamic-command-string': 'error',
   'node-security/no-dynamic-algorithm-selection': 'error',
+  // Added to `recommended` 2026-08-02. `secure-coding/no-insecure-comparison`
+  // was removed from every `secure-coding` preset in favour of this rule, but
+  // this rule was not in any `recommended` preset — so CWE-697 timing-unsafe
+  // comparison had no preset coverage anywhere in the ecosystem, and the
+  // migration note pointed at a rule users would have had to enable by hand.
+  // Enters at 'warn' rather than 'error' for the same reason as
+  // `no-deprecated-buffer` above: adopters already on this preset shouldn't
+  // have CI turn red on a version bump. Promote on the next major.
+  'node-security/no-timing-unsafe-compare': 'warn',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',

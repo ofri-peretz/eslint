@@ -35,10 +35,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { getToolchain } from '../../lib/toolchain.ts';
+import { capturePreregistration } from '../../lib/preregister.ts';
 
 const SUITE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SUITE_DIR, '../../..');
@@ -201,11 +201,18 @@ const results = [
 
 const sum = (side, k) => results.filter((r) => r.side === side).reduce((a, r) => a + r[k], 0);
 
+// `methodologyCommit` alone is a branch SHA that squash-merge drops; the
+// `methodologyHash` pair is the receipt a reader can actually resolve from a
+// clone. Both come from the one shared helper — never re-derived per suite.
+const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+
 const envelope = {
   bench: 'ILB-Remediation',
   benchVersion: '1.0',
   timestamp: new Date().toISOString(),
-  methodologyCommit: execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(),
+  methodologyCommit: prereg.methodologyCommit,
+  methodologyHash: prereg.methodologyHash,
+  methodologyPaths: prereg.methodologyPaths,
   // Detected, never hand-written. The first version of this block hardcoded
   // `tsCompiler: 'tsc-classic'` with null eslint/typescript — three fatal
   // validateToolchain() issues, and the hardcoded value was simply false:
@@ -251,6 +258,7 @@ fs.appendFileSync(
     benchVersion: envelope.benchVersion,
     timestamp: envelope.timestamp,
     methodologyCommit: envelope.methodologyCommit,
+    methodologyHash: envelope.methodologyHash,
     summary: envelope.summary,
     // Receipt: without this a history row cannot be traced back to the result
     // JSON that produced its summary.

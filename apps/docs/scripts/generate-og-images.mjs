@@ -30,6 +30,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PLUGINS } from '../src/lib/plugins.ts';
 
+/**
+ * Published packages that carry the same README banner but are NOT plugins, so
+ * they don't (and shouldn't) appear in the PLUGINS registry that drives the docs
+ * sidebar. Same card shape — `pillar` is the footer tag and picks the accent.
+ * Only add entries here for packages that are actually published to npm.
+ */
+const EXTRAS = [
+  {
+    slug: 'devkit',
+    package: '@interlace/eslint-devkit',
+    pillar: 'tooling',
+    description: 'AST helpers & rule testing',
+  },
+];
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = path.resolve(__dirname, '..');
 const PUBLIC_DIR = path.join(DOCS_ROOT, 'public');
@@ -224,7 +239,7 @@ function main() {
     }
 
     if (doPlugins) {
-      for (const plugin of PLUGINS) {
+      for (const plugin of [...PLUGINS, ...EXTRAS]) {
         const outPath = path.join(IMAGES_DIR, `og-${plugin.slug}.png`);
         const isNew = !existsSync(outPath);
         const svg = pluginCardSVG(plugin);

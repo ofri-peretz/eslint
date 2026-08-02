@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-02",
   "totalPlugins": 19,
-  "totalRules": 415,
-  "oxlintCompatible": 415,
+  "totalRules": 424,
+  "oxlintCompatible": 424,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -390,10 +390,22 @@
       "short": "express-security",
       "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
       "subpath": "eslint-plugin-express-security/oxlint",
-      "ruleCount": 21,
+      "ruleCount": 28,
       "rules": [
         {
+          "name": "no-client-controlled-authorization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-cors-credentials-wildcard",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-disabled-helmet-protections",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -429,6 +441,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-idor-resource-access",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-insecure-cookie-options",
           "portability": "compatible",
           "blockers": [],
@@ -459,6 +477,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-permissive-trust-proxy",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-sensitive-data-in-query",
           "portability": "compatible",
           "blockers": [],
@@ -466,6 +490,12 @@
         },
         {
           "name": "no-static-root-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-csp-directives",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -514,6 +544,18 @@
         },
         {
           "name": "require-rate-limiting",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-route-authentication",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-strict-transport-security",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1353,7 +1395,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 37,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1434,6 +1476,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-dynamic-command-string",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-dynamic-dependency-loading",
           "portability": "compatible",
           "blockers": [],
@@ -1507,6 +1555,12 @@
         },
         {
           "name": "no-toctou-vulnerability",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-buffer-alloc",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2735,19 +2789,24 @@
       "utm-taxonomy"
     ],
     "express-security": [
+      "no-client-controlled-authorization",
       "no-cors-credentials-wildcard",
+      "no-disabled-helmet-protections",
       "no-error-details-in-response",
       "no-exposed-debug-endpoints",
       "no-express-unsafe-regex-route",
       "no-graphql-introspection-production",
       "no-host-header-in-links",
+      "no-idor-resource-access",
       "no-insecure-cookie-options",
       "no-missing-cors-check",
       "no-missing-csrf-protection",
       "no-missing-security-headers",
       "no-permissive-cors",
+      "no-permissive-trust-proxy",
       "no-sensitive-data-in-query",
       "no-static-root-exposure",
+      "no-unsafe-csp-directives",
       "no-user-controlled-redirect",
       "no-user-controlled-render-locals",
       "require-case-insensitive-path-guard",
@@ -2755,7 +2814,9 @@
       "require-express-body-parser-limits",
       "require-helmet",
       "require-query-type-guard",
-      "require-rate-limiting"
+      "require-rate-limiting",
+      "require-route-authentication",
+      "require-strict-transport-security"
     ],
     "import-next": [
       "consistent-type-specifier-style",
@@ -2926,6 +2987,7 @@
       "no-deprecated-buffer",
       "no-deprecated-cipher-method",
       "no-dynamic-algorithm-selection",
+      "no-dynamic-command-string",
       "no-dynamic-dependency-loading",
       "no-dynamic-require",
       "no-ecb-mode",
@@ -2939,6 +3001,7 @@
       "no-static-iv",
       "no-timing-unsafe-compare",
       "no-toctou-vulnerability",
+      "no-unsafe-buffer-alloc",
       "no-unsafe-dynamic-require",
       "no-weak-cipher-algorithm",
       "no-weak-hash-algorithm",

@@ -144,7 +144,7 @@ async function main() {
   console.log(`ILB-TSC-Matrix v0.1 · ${RUNS} runs/compiler · corpus=${path.relative(REPO_ROOT, CORPUS)}`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true });
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
   const compilers = detectAvailableCompilers();
 
   if (compilers.length === 0) {
@@ -204,6 +204,8 @@ async function main() {
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     preregistration: prereg,
     cost: {},

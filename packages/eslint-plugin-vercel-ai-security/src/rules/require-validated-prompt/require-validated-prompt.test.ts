@@ -255,3 +255,22 @@ describe('require-validated-prompt — synthetic AST', () => {
     expect(report.data?.input).toBe('user input');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SDK v7 renamed the system prompt to `instructions` (`system` is deprecated
+// in the SDK's own types). Regression lock: the rule used to match `system` only.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-validated-prompt (instructions prop)', requireValidatedPrompt, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          instructions: \`You are an assistant. \${userInput}\`,
+        });
+      `,
+      errors: [{ messageId: 'unsafeSystemPrompt' }],
+    },
+  ],
+});
