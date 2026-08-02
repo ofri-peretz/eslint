@@ -22,20 +22,34 @@ import {
 import {
   getHttpMethodDecorator,
   getRoutePath,
+  getUseGuardsGuardNames,
   hasDecoratorNamed,
   hasUnresolvedDecorator,
-  hasUseGuards,
   isControllerClass,
   PUBLIC_DECORATORS,
 } from '../../utils/decorators';
 import { getProjectContext } from '../../utils/project-context';
 
-type MessageIds = 'missingGuards' | 'addGuards';
+type MessageIds =
+  | 'missingGuards'
+  | 'missingRequiredGuards'
+  | 'addGuards';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Guards to check for. Default: any guard */
+  /**
+   * Specific guard classes that satisfy the rule. Empty (the default) accepts
+   * any `@UseGuards(...)`. When set, a route must name one of these guards —
+   * `@UseGuards(RolesGuard)` no longer satisfies `requiredGuards:
+   * ['JwtAuthGuard']`.
+   *
+   * The exemptions stay conservative: a `@UseGuards` whose arguments cannot be
+   * named statically, an unresolved composite decorator
+   * (`allowCustomDecorators`) and a global `APP_GUARD` (`detectGlobalGuards`)
+   * all still suppress the report, because none of them can be *proven* not to
+   * apply the required guard.
+   */
   requiredGuards?: string[];
   /** Allow public endpoints (with @Public decorator). Default: true */
   allowPublicDecorator?: boolean;
@@ -127,6 +141,17 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         fix: 'Add @UseGuards(AuthGuard): @UseGuards(AuthGuard) before the handler',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
+      missingRequiredGuards: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Missing Required Authorization Guard',
+        cwe: 'CWE-284',
+        cvss: 9.8,
+        description:
+          'Controller/route handler {{name}} is not protected by any of the required guards ({{guards}})',
+        severity: 'CRITICAL',
+        fix: 'Add one of the required guards: @UseGuards({{guards}}) before the handler',
+        documentationLink: 'https://docs.nestjs.com/guards',
+      }),
       addGuards: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Add Authentication Guard',
@@ -165,6 +190,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
       allowInTests = true,
+      requiredGuards = [],
       allowPublicDecorator = true,
       assumeGlobalGuards = false,
       allowCustomDecorators = true,
@@ -184,6 +210,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     }
 
     const publicTokens = new Set(publicRoutePatterns.map(normalizeRouteToken));
+    const requiredGuardNames = new Set(requiredGuards);
 
     // Class-level state
     let isController = false;
@@ -195,6 +222,24 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     ): boolean {
       if (!allowPublicDecorator) return false;
       return hasDecoratorNamed(decorators, PUBLIC_DECORATORS);
+    }
+
+    /**
+     * Does this decorator list carry a guard that satisfies the requirement?
+     *
+     * Without `requiredGuards`, any `@UseGuards` counts. With it, the guard
+     * must be named — except when it cannot be named statically, which is not
+     * evidence of absence.
+     */
+    function satisfiesGuardRequirement(
+      decorators: TSESTree.Decorator[] | undefined,
+    ): boolean {
+      const guardNames = getUseGuardsGuardNames(decorators);
+      if (guardNames.length === 0) return false;
+      if (requiredGuardNames.size === 0) return true;
+      return guardNames.some(
+        (name) => name === '' || requiredGuardNames.has(name),
+      );
     }
 
     /** A decorator we cannot resolve may be a composite that applies guards. */
@@ -226,7 +271,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         isController = isControllerClass(node.decorators);
         classIsExempt =
-          hasUseGuards(node.decorators) ||
+          satisfiesGuardRequirement(node.decorators) ||
           hasPublicDecorator(node.decorators) ||
           hasPossibleGuardDecorator(node.decorators);
       },
@@ -248,7 +293,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
 
         if (
           hasPublicDecorator(node.decorators) ||
-          hasUseGuards(node.decorators) ||
+          satisfiesGuardRequirement(node.decorators) ||
           hasPossibleGuardDecorator(node.decorators)
         ) {
           return;
@@ -262,8 +307,11 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
 
         context.report({
           node,
-          messageId: 'missingGuards',
-          data: { name: methodName },
+          messageId:
+            requiredGuardNames.size === 0
+              ? 'missingGuards'
+              : 'missingRequiredGuards',
+          data: { name: methodName, guards: requiredGuards.join(', ') },
           suggest: [{ messageId: 'addGuards', fix: () => null }],
         });
       },

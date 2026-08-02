@@ -41,10 +41,21 @@ const ENTITY_DECORATORS: ReadonlySet<string> = new Set([
   'Schema',
   'Table',
   'ObjectType',
-  'InputType',
-  'ArgsType',
   'Model',
 ]);
+
+/**
+ * Class decorators that mark a GraphQL **input** object.
+ *
+ * `@InputType()` / `@ArgsType()` describe what a client *sends*, which is the
+ * GraphQL equivalent of a request DTO — a `LoginInput` must carry a `password`
+ * and a `ResetPasswordArgs` must carry a `token`. Tracking them by default
+ * contradicted the DTO exclusion (`Input$` is already in `DTO_NAME`), so they
+ * follow `includeDtos` like every other request contract. `@ObjectType()`
+ * stays in the entity set: that is the *response* side, where an accidental
+ * `password` field really does leak.
+ */
+const DTO_DECORATORS: ReadonlySet<string> = new Set(['InputType', 'ArgsType']);
 
 /** Class-name suffixes that mark a persistence entity / domain model. */
 const ENTITY_NAME = /Entity$|Schema$|Model$|Document$|Table$/;
@@ -158,6 +169,9 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      */
     function isTrackedClass(node: TSESTree.ClassDeclaration): boolean {
       if (hasDecoratorNamed(node.decorators, ENTITY_DECORATORS)) return true;
+      // A GraphQL input object is a request contract, not a persisted row —
+      // the decorator outranks the class name here.
+      if (hasDecoratorNamed(node.decorators, DTO_DECORATORS)) return includeDtos;
       const name = node.id?.name;
       if (name === undefined) return false;
       if (ENTITY_NAME.test(name)) return true;

@@ -12,6 +12,7 @@ import {
   getDecoratorNames,
   getHttpMethodDecorator,
   getRoutePath,
+  getUseGuardsGuardNames,
   hasDecoratorNamed,
   hasUnresolvedDecorator,
   hasUseGuards,
@@ -177,6 +178,77 @@ describe('class/route predicates', () => {
 
   it('returns null when decorators are undefined', () => {
     expect(getHttpMethodDecorator(undefined)).toBeNull();
+  });
+});
+
+describe('getUseGuardsGuardNames', () => {
+  const identifier = (name: string) => ({ type: 'Identifier', name });
+
+  it('returns an empty list when there is no @UseGuards', () => {
+    expect(getUseGuardsGuardNames([call('Get')])).toEqual([]);
+    expect(getUseGuardsGuardNames(undefined)).toEqual([]);
+  });
+
+  it('names every guard argument', () => {
+    expect(
+      getUseGuardsGuardNames([
+        call('UseGuards', [identifier('JwtAuthGuard'), identifier('RolesGuard')]),
+      ]),
+    ).toEqual(['JwtAuthGuard', 'RolesGuard']);
+  });
+
+  it('unwraps the passport factory form AuthGuard("jwt")', () => {
+    expect(
+      getUseGuardsGuardNames([
+        call('UseGuards', [
+          {
+            type: 'CallExpression',
+            callee: identifier('AuthGuard'),
+            arguments: [stringArg('jwt')],
+          },
+        ]),
+      ]),
+    ).toEqual(['AuthGuard']);
+  });
+
+  it('unwraps a namespaced guard reference', () => {
+    expect(
+      getUseGuardsGuardNames([
+        call('UseGuards', [
+          {
+            type: 'MemberExpression',
+            object: identifier('guards'),
+            property: identifier('JwtAuthGuard'),
+          },
+        ]),
+      ]),
+    ).toEqual(['JwtAuthGuard']);
+  });
+
+  it('yields "" for a guard list with no static name', () => {
+    expect(
+      getUseGuardsGuardNames([
+        call('UseGuards', [{ type: 'SpreadElement', argument: identifier('all') }]),
+      ]),
+    ).toEqual(['']);
+  });
+
+  it('yields "" for @UseGuards() with no arguments', () => {
+    expect(getUseGuardsGuardNames([call('UseGuards')])).toEqual(['']);
+  });
+
+  it('yields "" for a bare @UseGuards', () => {
+    expect(getUseGuardsGuardNames([bare('UseGuards')])).toEqual(['']);
+  });
+
+  it('collects across several @UseGuards decorators', () => {
+    expect(
+      getUseGuardsGuardNames([
+        call('UseGuards', [identifier('JwtAuthGuard')]),
+        call('Get'),
+        call('UseGuards', [identifier('RolesGuard')]),
+      ]),
+    ).toEqual(['JwtAuthGuard', 'RolesGuard']);
   });
 });
 

@@ -80,14 +80,20 @@ class UsersController {
 ## Scope: entities, not DTOs
 
 The rule tracks **persistence entities and domain models** — classes decorated
-with `@Entity`, `@Schema`, `@Table`, `@ObjectType`, `@InputType`, `@ArgsType` or
-`@Model`, or named `*Entity` / `*Schema` / `*Model` / `*Document` / `*Table`.
+with `@Entity`, `@Schema`, `@Table`, `@ObjectType` or `@Model`, or named
+`*Entity` / `*Schema` / `*Model` / `*Document` / `*Table`.
 
 DTOs are excluded by default. A `LoginResponseDto` *must* carry a token and an
 `AuthResetPasswordDto` *must* carry a password — those are declared contracts,
 whereas an entity that names a `password` column and never says `@Exclude()`
 leaks it the first time the object is returned from a controller. Set
 `includeDtos: true` to restore the older, noisier behaviour.
+
+`@InputType()` and `@ArgsType()` follow `includeDtos`, not the entity set:
+GraphQL input objects describe what a client *sends*, so they are request
+contracts (`LoginInput`, `ResetPasswordArgs`) exactly like a `*Dto` class.
+`@ObjectType()` stays an entity — that is the response side, where an
+accidental `password` field really does leak.
 
 ## Detected Sensitive Field Names
 

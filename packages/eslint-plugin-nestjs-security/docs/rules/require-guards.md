@@ -87,7 +87,7 @@ class UsersController {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Specific guards to require (default: any guard)
+  // Specific guard classes that satisfy the rule (default: [] — any guard)
   requiredGuards?: string[];
 
   // Allow @Public decorator to bypass (default: true)
@@ -106,6 +106,42 @@ class UsersController {
   publicRoutePatterns?: string[];
 }
 ```
+
+### `requiredGuards` — demand a *specific* guard
+
+By default any `@UseGuards(...)` satisfies the rule. `requiredGuards` narrows
+that to a named set: the guard argument must be one of them.
+
+```jsonc
+{ "requiredGuards": ["JwtAuthGuard"] }
+```
+
+```typescript
+@Controller('users')
+class UsersController {
+  @UseGuards(JwtAuthGuard) // ✅ the required guard
+  @Get('me')
+  me() {}
+
+  @UseGuards(RolesGuard) // ❌ guarded, but not by JwtAuthGuard
+  @Get()
+  findAll() {}
+}
+```
+
+Guard arguments are read syntactically, so `@UseGuards(AuthGuard('jwt'))` and
+`@UseGuards(guards.JwtAuthGuard)` both resolve to `AuthGuard` / `JwtAuthGuard`.
+
+**The option is deliberately conservative — it can only add findings where the
+guard is visible.** Three cases still suppress the report, because none of them
+can be *proven* not to apply the required guard:
+
+- a `@UseGuards` whose arguments have no static name (`@UseGuards(...guards)`,
+  `@UseGuards()`, a bare `@UseGuards`),
+- an unresolved composite decorator such as `@AuthJwtAccessProtected()` — the
+  `allowCustomDecorators` exemption; set it to `false` to close this hole,
+- a global `APP_GUARD` / `app.useGlobalGuards()` registration — the
+  `detectGlobalGuards` exemption; set it to `false` to close this one.
 
 ## Recognized Skip Decorators
 

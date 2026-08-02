@@ -52,9 +52,28 @@ type RuleOptions = [Options?];
 const DEFAULT_ROOT_MODULE_NAMES = ['AppModule'];
 const DEFAULT_ROOT_MODULE_FILES = ['app.module.ts'];
 
-/** Throttler configuration visible in the file being linted. */
-const THROTTLER_IN_FILE =
-  /ThrottlerModule\s*\.\s*forRoot(?:Async)?\s*\(|ThrottlerGuard|ThrottlerStorage/;
+/**
+ * Rate limiting actually **registered** in the file being linted.
+ *
+ * Matching the bare identifiers `ThrottlerGuard` / `ThrottlerStorage` anywhere
+ * in the file text was wrong: a lone
+ * `import { ThrottlerGuard } from '@nestjs/throttler'` silenced the rule on a
+ * module that never put the guard in `providers`. Only a module import or a
+ * provider entry counts as a registration.
+ */
+const THROTTLER_REGISTRATIONS: readonly RegExp[] = [
+  // imports: [ThrottlerModule.forRoot(...)] / .forRootAsync(...)
+  /ThrottlerModule\s*\.\s*forRoot(?:Async)?\s*\(/,
+  // imports: [ThrottlerModule] — configured by a dedicated module
+  /imports\s*:\s*\[[^\]]*\bThrottlerModule\b/,
+  // providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
+  /provide\s*:\s*APP_GUARD[\s\S]{0,240}?use(?:Class|Existing)\s*:\s*Throttler[\w$]*/,
+];
+
+/** True when the linted source registers rate limiting itself. */
+function registersThrottler(source: string): boolean {
+  return THROTTLER_REGISTRATIONS.some((pattern) => pattern.test(source));
+}
 
 export const requireThrottler = createRule<RuleOptions, MessageIds>({
   name: 'require-throttler',
@@ -138,8 +157,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (!isRootModule(node)) return;
 
-        // Configured right here (imports: [ThrottlerModule.forRoot(...)])
-        if (THROTTLER_IN_FILE.test(context.sourceCode.getText())) return;
+        // Registered right here (imports: [ThrottlerModule.forRoot(...)])
+        if (registersThrottler(context.sourceCode.getText())) return;
 
         // …or anywhere else in the project (a dedicated throttler module)
         if (getProjectContext(context).hasGlobalThrottler) return;

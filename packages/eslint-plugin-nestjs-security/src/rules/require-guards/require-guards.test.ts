@@ -218,6 +218,114 @@ ruleTester.run('require-guards', requireGuards, {
       `,
       options: [{ publicRoutePatterns: ['stripeHook'] }],
     },
+    // ========== VALID: requiredGuards satisfied at method level ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(JwtAuthGuard)
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: requiredGuards satisfied at class level ==========
+    {
+      code: `
+        @Controller('users')
+        @UseGuards(JwtAuthGuard)
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: requiredGuards satisfied by one of several guards ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(RolesGuard, JwtAuthGuard)
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: the passport factory form `AuthGuard('jwt')` ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(AuthGuard('jwt'))
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['AuthGuard'] }],
+    },
+    // ========== VALID: namespaced guard reference ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(guards.JwtAuthGuard)
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: a guard list we cannot name is not evidence of absence ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(...projectGuards)
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: `@UseGuards()` with no arguments, ditto ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards()
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: bare `@UseGuards` (no call), ditto ==========
+    {
+      code: `
+        @Controller('users')
+        @UseGuards
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
+    // ========== VALID: an unresolved composite may apply the required guard ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @AuthJwtAccessProtected()
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+    },
   ],
   invalid: [
     // ========== INVALID: Controller without guards ==========
@@ -300,6 +408,55 @@ ruleTester.run('require-guards', requireGuards, {
       `,
       options: [{ allowCustomDecorators: false }],
       errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
+    },
+    // ========== INVALID: guarded, but not by a required guard ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @UseGuards(RolesGuard)
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+      errors: [
+        {
+          messageId: 'missingRequiredGuards',
+          data: { name: 'findAll', guards: 'JwtAuthGuard' },
+        },
+      ],
+    },
+    // ========== INVALID: a class-level guard that is not the required one
+    // does not exempt the routes below it ==========
+    {
+      code: `
+        @Controller('users')
+        @UseGuards(RolesGuard)
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard', 'ApiKeyGuard'] }],
+      errors: [
+        {
+          messageId: 'missingRequiredGuards',
+          data: { name: 'findAll', guards: 'JwtAuthGuard, ApiKeyGuard' },
+        },
+      ],
+    },
+    // ========== INVALID: no guard at all, with requiredGuards set ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ requiredGuards: ['JwtAuthGuard'] }],
+      errors: [{ messageId: 'missingRequiredGuards' }],
     },
   ],
 });

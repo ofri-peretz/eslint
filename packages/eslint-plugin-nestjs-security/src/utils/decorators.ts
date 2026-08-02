@@ -218,6 +218,52 @@ export function hasUseGuards(
   return getDecoratorNames(decorators).includes('UseGuards');
 }
 
+/**
+ * Class name behind a `@UseGuards(...)` argument.
+ *
+ * `JwtAuthGuard` → `JwtAuthGuard`, `AuthGuard('jwt')` → `AuthGuard`,
+ * `guards.JwtAuthGuard` → `JwtAuthGuard`. Anything else (a spread, a
+ * conditional, an array built elsewhere) has no static name and yields `''`.
+ */
+function getGuardArgumentName(node: TSESTree.Node): string {
+  if (node.type === AST_NODE_TYPES.CallExpression) {
+    return getGuardArgumentName(node.callee);
+  }
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    return getGuardArgumentName(node.property);
+  }
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    return node.name;
+  }
+  return '';
+}
+
+/**
+ * Guard class names referenced by every `@UseGuards(...)` in the list.
+ *
+ * An empty array means the list carries no `@UseGuards` at all. An `''` entry
+ * means a `@UseGuards` whose guards cannot be named statically (`@UseGuards`
+ * without a call, `@UseGuards()`, `@UseGuards(...guards)`) — callers must treat
+ * it as "cannot prove which guard", never as "no guard".
+ */
+export function getUseGuardsGuardNames(
+  decorators: TSESTree.Decorator[] | undefined,
+): string[] {
+  const names: string[] = [];
+  for (const decorator of decorators ?? []) {
+    if (getDecoratorName(decorator) !== 'UseGuards') continue;
+    const call = getDecoratorCall(decorator);
+    if (call === null || call.arguments.length === 0) {
+      names.push('');
+      continue;
+    }
+    for (const argument of call.arguments) {
+      names.push(getGuardArgumentName(argument));
+    }
+  }
+  return names;
+}
+
 /** True when the list contains `@Controller`. */
 export function isControllerClass(
   decorators: TSESTree.Decorator[] | undefined,

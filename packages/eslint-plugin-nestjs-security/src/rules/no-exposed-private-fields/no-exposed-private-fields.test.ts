@@ -220,7 +220,38 @@ describe('no-exposed-private-fields', () => {
 
   describe('Invalid Code - Decorated Classes', () => {
     ruleTester.run('invalid - decorated classes', noExposedPrivateFields, {
-      valid: [],
+      valid: [
+        // @InputType (GraphQL) is a *request* contract — the GraphQL
+        // equivalent of a DTO — so it follows `includeDtos`, which is off
+        // by default. A LoginInput must carry a password.
+        {
+          code: `
+            @InputType()
+            class LoginInput {
+              password: string;
+            }
+          `,
+        },
+        // @ArgsType (GraphQL), same reasoning
+        {
+          code: `
+            @ArgsType()
+            class ResetPasswordArgs {
+              token: string;
+            }
+          `,
+        },
+        // The decorator outranks the class name: an @InputType is an input
+        // even when it is named like an entity.
+        {
+          code: `
+            @InputType()
+            class UserEntity {
+              password: string;
+            }
+          `,
+        },
+      ],
       invalid: [
         // @Schema (Mongoose)
         {
@@ -242,7 +273,8 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-        // @InputType (GraphQL)
+        // @InputType (GraphQL) with includeDtos: true — the opt-in restores
+        // the older, noisier behaviour for request contracts.
         {
           code: `
             @InputType()
@@ -250,6 +282,18 @@ describe('no-exposed-private-fields', () => {
               secretToken: string;
             }
           `,
+          options: [{ includeDtos: true }],
+          errors: [{ messageId: 'exposedField' }],
+        },
+        // @ArgsType (GraphQL) with includeDtos: true
+        {
+          code: `
+            @ArgsType()
+            class ResetPasswordArgs {
+              token: string;
+            }
+          `,
+          options: [{ includeDtos: true }],
           errors: [{ messageId: 'exposedField' }],
         },
       ],

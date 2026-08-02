@@ -24,6 +24,25 @@ ruleTester.run('require-throttler', requireThrottler, {
         export class AppModule {}
       `,
     },
+    // ========== VALID: ThrottlerModule imported bare, configured elsewhere ==========
+    {
+      code: `
+        @Module({
+          imports: [ConfigModule, ThrottlerModule],
+        })
+        export class AppModule {}
+      `,
+    },
+    // ========== VALID: guard registered as APP_GUARD, module configured
+    // in a dedicated throttler module ==========
+    {
+      code: `
+        @Module({
+          providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+        })
+        export class AppModule {}
+      `,
+    },
     // ========== REGRESSION (ack + brocoders): route handlers are never
     // reported. Rate limiting is adopted once in the root module, so 24 (and
     // 93) per-route findings described a single one-line fix. ==========
@@ -83,6 +102,32 @@ ruleTester.run('require-throttler', requireThrottler, {
           imports: [UsersModule],
           controllers: [],
           providers: [],
+        })
+        export class AppModule {}
+      `,
+      errors: [{ messageId: 'missingThrottler', data: { name: 'AppModule' } }],
+    },
+    // ========== REGRESSION: an *unused* `ThrottlerGuard` import is not a
+    // registration. Matching the bare identifier anywhere in the file text
+    // silenced the rule on a module that never puts the guard in providers. ==========
+    {
+      code: `
+        import { ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
+
+        @Module({
+          imports: [UsersModule],
+          providers: [UsersService],
+        })
+        export class AppModule {}
+      `,
+      errors: [{ messageId: 'missingThrottler', data: { name: 'AppModule' } }],
+    },
+    // ========== INVALID: a global APP_GUARD that is not a throttler does not
+    // count as rate limiting ==========
+    {
+      code: `
+        @Module({
+          providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
         })
         export class AppModule {}
       `,

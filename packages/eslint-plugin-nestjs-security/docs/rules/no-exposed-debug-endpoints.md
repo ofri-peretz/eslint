@@ -56,15 +56,19 @@ finding.
 ## ❌ Incorrect
 
 ```typescript
+// ❌ Debug path on the route handler
 @Controller('utils')
 export class UtilsController {
-  // ❌ NestJS Get decorator using a debug path
   @Get('debug')
   getDebugInfo() {
     return process.memoryUsage();
   }
+}
 
-  // ❌ Debug base path on the controller
+// ❌ Debug base path on the controller — every route under it is a debug route,
+//    including ones whose own path says nothing about debugging
+@Controller({ version: '1', path: '/__debug__' })
+export class DebugController {
   @Get('state')
   state() {
     return this.debugService.dump();

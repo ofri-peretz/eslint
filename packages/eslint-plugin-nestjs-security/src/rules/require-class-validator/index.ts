@@ -154,7 +154,6 @@ const VALIDATOR_DECORATORS = new Set([
   'IsSurrogatePair',
   'IsVariableWidth',
   'IsOctal',
-  'IsUppercase',
   // Custom
   'Validate',
   'ValidateBy',
