@@ -91,6 +91,7 @@ Phase 4: Viral Breakout
 | Lever                      | How To Pull It                                      |
 | -------------------------- | --------------------------------------------------- |
 | **Performance benchmarks** | "5,736-file React codebase: 8x faster rule time, 3.1x end-to-end, 100% parity for standard `import/no-cycle` detection" ([latest.json](../benchmarks/results/ilb-perf-import-no-cycle/latest.json) — `kpiStatus.detectionParity`, which also records 3 extra barrel-export-specific cycles) |
+| **Deep-graph capability** | "6,000-module chain: `import/no-cycle` crashes, `import-next/no-cycle` finishes in 18s" ([repro](../benchmarks/scripts/repro-deep-chain.mjs) — categorical, needs no benchmark) |
 | **Drop-in migration**      | Zero friction replacement guides                    |
 | **The Badge**              | Social proof viral loop in READMEs                  |
 | **AGENTS.md standard**     | Novel contribution to AI tooling ecosystem          |
@@ -107,7 +108,8 @@ Phase 4: Viral Breakout
 | ----------- | ----------------------- | ------------------------------- |
 | Performance | 51.7s on a 455K-LoC repo | 16.7s (3.1x faster e2e, 8x rule time) |
 | Incremental | No                      | Yes (shared caching)            |
-| Memory      | OOM on large repos      | Bounded                         |
+| Memory      | 4,035 MB peak RSS       | 4,064 MB — parity, not a win    |
+| Deep graphs | Crashes (stack overflow in its SCC pass) | Completes (iterative SCC) |
 | AI-Native   | No                      | Structured remediation messages |
 
 ### vs. eslint-plugin-unicorn

@@ -48,6 +48,28 @@ A 2026-05-13 audit (see plan file `please-review-our-repository-parsed-catmull.m
 >
 > **⚠️ The `ilb-perf-import-no-cycle` suite has no runnable harness in this repo.** `benchmarks/results/ilb-perf-import-no-cycle/` holds result JSONs, but there is no matching `benchmarks/suites/ilb-perf-import-no-cycle/` and no npm script that regenerates them — the two dated files were produced out-of-tree. The real-codebase run **identifies** its runner (`scripts/benchmark-circular-deps.mjs` in the private `snappy-client-dashboard` repo), but a named runner in a private repo is *not* independently reproducible: no reader of this repository, and no maintainer without access to that private codebase, can re-run it. The synthetic run names no runner at all. Consequences: (1) the synthetic row is frozen at its 2026-01-02 values and cannot be refreshed by "re-running the suite" — re-verifying it means **writing a new harness plus a synthetic cyclic-corpus generator first**; (2) prefer the real-codebase rows for public copy — not because they are reproducible, but because they are measured on a real codebase rather than a generated one, and their provenance is at least named. Building an in-repo, publicly reproducible harness is tracked under "Pending claims" below and is the only thing that clears both warnings.
 
+### Performance — graph-shape matrix (ilb-perf-import-shapes suite)
+
+Reproducible from committed source, unlike the suite above:
+`node benchmarks/scripts/generate-fixtures.js shapes` then
+`node benchmarks/scripts/run-benchmark.js ilb-perf-import-shapes --iterations=3`.
+Detection parity is checked per shape **before** any timing is trusted, and a run
+that fails is recorded as a failure rather than a duration — a crashed run exits
+early, so timing it would score the crash as a win.
+
+| Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
+| --- | --- | --- | --- |
+| "`eslint-plugin-import` crashes on deep import chains; `import-next` completes them" | ilb-perf-import-shapes (`chain-5000`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — official `failed: exit 2` (`RangeError` in its own `lib/scc.js`), ours 11.34s. Standalone repro: [`benchmarks/scripts/repro-deep-chain.mjs`](benchmarks/scripts/repro-deep-chain.mjs) | 2026-08-02 |
+| "Never slower than `eslint-plugin-import` on any graph shape tested" | ilb-perf-import-shapes (5 shapes @ 5,000 files) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — chain: official crashes · wide 2.81s vs 2.80s · flat 2.28s vs 2.23s · dense 3.96s vs 3.64s · single 0.39s vs 0.36s | 2026-08-02 |
+| "~1.1x faster on dense cyclic graphs and cold single-file runs" | ilb-perf-import-shapes (`dense-5000`, `single`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) | 2026-08-02 |
+| "Run-to-run variance ~12x tighter" | ilb-perf-import-shapes (`wide-5000`, n=7 interleaved) | stdev 0.11 ours vs 1.37 official; official threw a 6.05s outlier against a 2.81s median | 2026-08-02 |
+
+> **Scope limit.** Five synthetic shapes plus one real codebase. "Never slower on
+> any graph shape tested" is exactly as strong as that corpus and no stronger —
+> two of the five shapes are ties, not wins. Do not paraphrase it as "always
+> faster". Medians, not means: on `wide-5000` a single outlier moved the mean
+> enough to invert the verdict.
+
 ### CI/CD impact framework — value, philosophy, methodology
 
 These are framework-level claims, not measurement claims. The "evidence" is the published artifact; the "last verified" date is the last time the artifact was reviewed for org-agnosticism (no internal data leaked) and citation freshness.
@@ -157,7 +179,7 @@ The `†`-marked rows in [`distribution/PUBLISHING_QUEUE.md`](distribution/PUBLI
 | "First-fix accuracy improvement from V2 formatter" (Phase 7 of report) | New: `ilb-formatter-eval` (LLM eval harness) | Not started — see [no-cycle-performance-roadmap.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/no-cycle-performance-roadmap.md) |
 | "Compact-mode tokens are 6% cheaper than V1" | Token-counter test | Verified statically (tiktoken o200k) — see Phase 7 of [2026-05-03-snappy-dashboard.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/2026-05-03-snappy-dashboard.md) — needs JSON capture |
 | "Native ESLint 9 concurrency speedup" | Future ilb-perf-eslint9 suite | Not started; depends on ESLint 9 migration |
-| "Synthetic-corpus speedup at ≥10K files" (the number the withdrawn 100x claim was extrapolating toward) | In-repo `ilb-perf-import-no-cycle` harness — **does not exist yet**; needs a runner + synthetic cyclic-corpus generator, then a 10K-file run | Not started. Until it exists, no synthetic figure above 54.9x may be marketed, and the 2026-01-02 synthetic numbers cannot be refreshed. Budget note: the 2026-01-02 file records that `eslint-plugin-import` needs 10+ min per 10K-file iteration, so a 3-iteration baseline is ~30 min of wall clock. |
+| "Synthetic-corpus speedup at ≥10K files" (the number the withdrawn 100x claim was extrapolating toward) | In-repo `ilb-perf-import-shapes` harness — **now exists** (2026-08-02): generator + runner + methodology, reproducible from committed source. A ≥10K-file run is still outstanding | Harness done, 10K run not started. Until that run exists, no synthetic figure above 54.9x may be marketed, and the 2026-01-02 synthetic numbers cannot be refreshed. Budget note: the 2026-01-02 file records that `eslint-plugin-import` needs 10+ min per 10K-file iteration, so a 3-iteration baseline is ~30 min of wall clock — and on a deep-chain shape it will not finish at all, it crashes. |
 
 ## How to add a new claim
 
