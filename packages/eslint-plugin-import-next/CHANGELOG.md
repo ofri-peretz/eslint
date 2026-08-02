@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Architecture Overhaul**: Complete rewrite for performance and maintainability.
 - **Rule Parity**: Achieved 100% feature parity with `eslint-plugin-import` (46 rules).
-- **Performance**: `no-cycle` rule is now up to 100x faster using incremental graph analysis.
+- **Performance**: `no-cycle` rule is now significantly faster using incremental graph analysis. _(Corrected 2026-08-02: this entry originally read "up to 100x faster". That number was never measured and has been withdrawn — see [CLAIMS.md](https://github.com/ofri-peretz/eslint/blob/main/CLAIMS.md). The verified figures are 3.1x faster end-to-end and 8x faster in pure rule time on a 5,483-file React codebase.)_
 - **TypeScript Support**: First-class support for TypeScript (parsers and resolvers) out of the box.
 
 ### Added

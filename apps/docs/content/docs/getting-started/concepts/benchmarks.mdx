@@ -50,10 +50,20 @@ Interlace is optimized for speed, even with comprehensive security checks:
 
 ### Cycle Detection (import-next)
 
-| Tool                          | Time  | Comparison      |
-| ----------------------------- | ----- | --------------- |
-| `eslint-plugin-import`        | 15.0s | Baseline        |
-| **eslint-plugin-import-next** | 0.15s | **100x faster** |
+Measured on a real 5,483-file React 19 + Vite + TypeScript codebase (455K LoC), `import/no-cycle` enabled on both sides:
+
+| Tool                          | End-to-end lint | Rule time only | Comparison      |
+| ----------------------------- | --------------- | -------------- | --------------- |
+| `eslint-plugin-import` 2.32.0 | 51.7s           | 39.2s          | Baseline        |
+| **eslint-plugin-import-next** | **16.7s**       | **4.9s**       | **3.1x / 8x faster** |
+
+<Callout type="info">
+  Source: [`ilb-perf-import-no-cycle`
+  2026-05-03](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json).
+  Detection parity with the official plugin is 100%; peak memory overhead is
+  ~0 MB. Every figure on this page is registered in
+  [CLAIMS.md](https://github.com/ofri-peretz/eslint/blob/main/CLAIMS.md).
+</Callout>
 
 ### Rule Processing
 
@@ -96,8 +106,9 @@ Features you won't find anywhere else:
     Detects file read vulnerabilities via COPY FROM—first ESLint rule of its
     kind.
   </Card>
-  <Card title="⚡ 100x Faster no-cycle" icon={<Zap />}>
-    Optimized cycle detection that runs in milliseconds, not minutes.
+  <Card title="⚡ 8x Faster no-cycle" icon={<Zap />}>
+    Cycle detection rule time cut from 39.2s to 4.9s on a 455K-LoC codebase,
+    with 100% detection parity.
   </Card>
   <Card title="🛡️ JWT Algorithm Confusion" icon={<Shield />}>
     Catches CVE-2015-2951 algorithm confusion attacks in your JWT
@@ -147,7 +158,7 @@ Every rule outputs structured metadata that AI assistants can parse and act on.
 
 ### Performance Optimized
 
-Algorithms designed for speed—100x faster cycle detection, parallel rule execution.
+Algorithms designed for speed—8x faster cycle detection, parallel rule execution.
 
 ### Production Tested
 

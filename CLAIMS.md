@@ -37,7 +37,9 @@ A 2026-05-13 audit (see plan file `please-review-our-repository-parsed-catmull.m
 | "Cycle detection completes in ~4.9s on 455K LoC" | ilb-perf-import-no-cycle (Phase 6 ruleTimeMs) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
 | "Negligible memory overhead (<50 MB)" | ilb-perf-import-no-cycle (peakRssMb) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
 | "100% detection parity with official plugin" | ilb-perf-import-no-cycle (detection accuracy) | [2026-05-03-snappy-dashboard.json](benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json) | 2026-05-03 |
-| "Synthetic-corpus 25.7x speedup at 1K files" | ilb-perf-import-no-cycle (synthetic) | [2026-01-02.json](benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json) | 2026-01-02 (re-verify recommended — > 90 days) |
+| "Synthetic-corpus 25.7x speedup at 1K files" (54.9x at 5K files) | ilb-perf-import-no-cycle (synthetic) | [2026-01-02.json](benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json) | 2026-01-02 — **cannot currently be re-verified**, see note below |
+
+> **⚠️ The `ilb-perf-import-no-cycle` suite has no runnable harness in this repo.** `benchmarks/results/ilb-perf-import-no-cycle/` holds result JSONs, but there is no matching `benchmarks/suites/ilb-perf-import-no-cycle/` and no npm script that regenerates them — the two dated files were produced out-of-tree (the real-codebase run cites a runner in the private `snappy-client-dashboard` repo; the synthetic run cites no runner at all). Consequences: (1) the synthetic row above is frozen at its 2026-01-02 values and cannot be refreshed by "re-running the suite" — re-verifying it means **writing a new harness plus a synthetic cyclic-corpus generator first**; (2) prefer the real-codebase rows for any public copy, since those at least name a reproducible runner. Building the in-repo harness is tracked under "Pending claims" below.
 
 ### CI/CD impact framework — value, philosophy, methodology
 
@@ -99,6 +101,19 @@ These rows used to live under "Verified claims" but were removed during an audit
 | Withdrawn claim (do not use in marketing) | Cited evidence | Why withdrawn | Withdrawn on |
 | --- | --- | --- | --- |
 | "97.6% precision, 100% recall, 98.8% F1 on 40-vuln corpus" | [`benchmarks/results/ilb-arena/2026-05-03.json`](benchmarks/results/ilb-arena/2026-05-03.json) | The cited file's `summary.leaderboard[0]` reports Interlace at **100% precision / 100% recall / 100% F1** (40 TP / 0 FP / 0 FN). The 97.6 / 100 / 98.8 figures appear nowhere in the cited JSON, so the registry was asserting numbers neither it nor the evidence supports. The audit chose to withdraw rather than substitute 100% / 100% / 100% — a perfect score on a 40-fixture self-authored corpus is the textbook "regression test, not benchmark" failure mode and would not survive an adversarial reading. **The ordinal claim ("1st of 18 plugins tested, 17 security-relevant") is preserved above** — *relative* ranking on the same fixtures still informs a buyer even when absolute scores don't. | 2026-05-13 |
+| "`import-next` is 100x faster than `eslint-plugin-import`" (also "up to 100x", "100x faster no-cycle", "100x faster cycle detection") | None — no result file in `benchmarks/results/` contains a 100x measurement | **The number was never measured.** The largest figure anywhere in the corpus is the synthetic **54.9x at 5,000 files** ([2026-01-02.json](benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json)); the real-codebase run tops out at **3.1x end-to-end / 8x rule-time**. 100x appears to be an extrapolation of the synthetic curve toward the 10K-file point that the same file records as **never run** (`note: "10K benchmark terminated - eslint-plugin-import would take 10+ minutes"`). An extrapolation is not a measurement. Docs surfaces also carried a fabricated supporting table (`15.0s → 0.15s`) whose two timings appear in no result file at all. **Replacement copy: "3.1x faster end-to-end and 8x faster in pure rule execution"**, the real-codebase figures already verified above. | 2026-08-02 |
+
+### Open remediation — the 100x claim on Dev.to (2026-08-02)
+
+In-repo surfaces are corrected and guarded by `npm run audit:claims` ([`scripts/check-withdrawn-claims.mjs`](scripts/check-withdrawn-claims.mjs), wired into `npm run quality`). Three surfaces are **outside this repo** and still carry the number:
+
+| Live article | Carries | Fix |
+| --- | --- | --- |
+| [`...import-next-up-to-100x-faster-1afa`](https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa) | Title *and* URL slug | Title/description are editable on Dev.to; **the slug is frozen** and will keep reading `100x-faster`. Retitle + add a correction note in the body. |
+| [`getting-started-with-eslint-plugin-import-next-51e6`](https://dev.to/ofri-peretz/getting-started-with-eslint-plugin-import-next-51e6) | Title + description ("reduce CI/CD times by up to 100x") | Retitle and rewrite description. Slug is clean. |
+| [`why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh`](https://dev.to/ofri-peretz/why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh) | Title ("the 100x Fix"); description claims "45s to 0.4s" | Retitle; the 0.4s figure is also unmeasured (real: 16.7s e2e / 4.9s rule time). Slug is clean. |
+
+`apps/docs/src/data/articles.json` is a **generated mirror** of `dev.to/api/articles/me/all` (written by `apps/docs/scripts/update-articles.ts`). Editing it by hand is wrong twice over: the next sync reverts it, and until then the site advertises a title that differs from the live article. **Fix upstream on Dev.to, then re-run the sync.** The same applies to the two `†`-marked rows in [`distribution/PUBLISHING_QUEUE.md`](distribution/PUBLISHING_QUEUE.md), which are a log of what was published, not a marketing surface.
 
 ## Pending claims (require new suites)
 
@@ -108,6 +123,7 @@ These rows used to live under "Verified claims" but were removed during an audit
 | "First-fix accuracy improvement from V2 formatter" (Phase 7 of report) | New: `ilb-formatter-eval` (LLM eval harness) | Not started — see [no-cycle-performance-roadmap.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/no-cycle-performance-roadmap.md) |
 | "Compact-mode tokens are 6% cheaper than V1" | Token-counter test | Verified statically (tiktoken o200k) — see Phase 7 of [2026-05-03-snappy-dashboard.md](https://github.com/ofri-peretz/agents/blob/main/interlace/eslint/benchmarks/2026-05-03-snappy-dashboard.md) — needs JSON capture |
 | "Native ESLint 9 concurrency speedup" | Future ilb-perf-eslint9 suite | Not started; depends on ESLint 9 migration |
+| "Synthetic-corpus speedup at ≥10K files" (the number the withdrawn 100x claim was extrapolating toward) | In-repo `ilb-perf-import-no-cycle` harness — **does not exist yet**; needs a runner + synthetic cyclic-corpus generator, then a 10K-file run | Not started. Until it exists, no synthetic figure above 54.9x may be marketed, and the 2026-01-02 synthetic numbers cannot be refreshed. Budget note: the 2026-01-02 file records that `eslint-plugin-import` needs 10+ min per 10K-file iteration, so a 3-iteration baseline is ~30 min of wall clock. |
 
 ## How to add a new claim
 
