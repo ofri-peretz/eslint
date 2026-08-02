@@ -133,7 +133,8 @@ describe('Package Metadata', () => {
  * Options our rules check:
  * - model: LanguageModel
  * - messages: CoreMessage[]
- * - system: string (system prompt)
+ * - instructions: string (system prompt; the canonical name since AI SDK v7)
+ * - system: string (same thing, marked @deprecated in the SDK's own types)
  * - tools: Record<string, Tool>
  * - maxTokens: number
  * - temperature: number
