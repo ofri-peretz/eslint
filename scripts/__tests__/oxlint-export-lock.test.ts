@@ -80,7 +80,10 @@ describe.each(pluginDirs)('%s ./oxlint sub-export', (pkgName) => {
       };
     };
     const plugin = mod.default;
-    expect(plugin, `${pkgName}/oxlint did not export a plugin object`).toBeDefined();
+    expect(
+      plugin,
+      `${pkgName}/oxlint did not export a plugin object`,
+    ).toBeDefined();
     expect(plugin?.meta?.name).toBe(pkgName);
 
     const rules = plugin?.rules ?? {};
@@ -96,5 +99,98 @@ describe.each(pluginDirs)('%s ./oxlint sub-export', (pkgName) => {
         `${pkgName}/oxlint rule "${ruleName}" has no create() function`,
       ).toBe('function');
     }
+  });
+});
+
+/**
+ * Parity-bench plugin lists must name only live plugins.
+ *
+ * The ILB-oxlint-parity runner filters its `--plugins` shorts against the
+ * generated manifest (`allowedShorts`), so a stale name is *silently dropped* —
+ * no error, no warning. A deleted plugin can therefore sit in these lists
+ * indefinitely while reading, to humans and agents, as "still covered".
+ *
+ * That exact failure shipped: `crypto` survived in both lists after
+ * eslint-plugin-crypto was consolidated into node-security and deleted
+ * (PR #167), which later produced a false "eslint-plugin-crypto has no
+ * ./oxlint export — 10/11 security plugins covered" gap in the oxlint adoption
+ * research, and a proposal to resurrect and republish a deliberately
+ * deprecated package.
+ *
+ * Reverting either cleanup must turn CI red (CLAUDE.md regression contract).
+ * The sibling guard for *documentation* mentions and *imports* of dead plugins
+ * is packages/eslint-devkit/src/tests/no-deprecated-plugin-references.test.ts;
+ * neither of its layers can see a bare short name in a string list.
+ */
+describe('ILB-oxlint-parity plugin lists name only live plugins', () => {
+  const REPO_ROOT = path.resolve(__dirname, '..', '..');
+
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, '.agent', 'oxlint-jsplugins-manifest.json'),
+      'utf8',
+    ),
+  ) as { plugins: Array<{ short: string; ruleCount: number }> };
+
+  const liveShorts = new Set(
+    manifest.plugins.filter((p) => p.ruleCount > 0).map((p) => p.short),
+  );
+
+  /** Shorts in run.ts's PLUGINS_DEFAULT array literal. */
+  function readRunnerDefaults(): string[] {
+    const src = fs.readFileSync(
+      path.join(
+        REPO_ROOT,
+        'benchmarks',
+        'suites',
+        'ilb-oxlint-parity',
+        'run.ts',
+      ),
+      'utf8',
+    );
+    const match = /const PLUGINS_DEFAULT = \[([^\]]*)\]/.exec(src);
+    if (!match) throw new Error('PLUGINS_DEFAULT not found in run.ts');
+    return [...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  }
+
+  /** Shorts in every `--plugins a,b,c` occurrence across root package.json scripts. */
+  function readScriptPluginLists(): string[] {
+    const scripts = JSON.parse(
+      fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
+    ).scripts as Record<string, string>;
+    return Object.values(scripts).flatMap((cmd) =>
+      [...cmd.matchAll(/--plugins\s+([\w,-]+)/g)].flatMap((m) =>
+        m[1].split(',').filter(Boolean),
+      ),
+    );
+  }
+
+  it('manifest exposes the live plugin set (sanity floor)', () => {
+    expect(liveShorts.size).toBeGreaterThanOrEqual(19);
+    // The consolidated-away plugin must never reappear as a manifest entry.
+    expect(liveShorts.has('crypto')).toBe(false);
+  });
+
+  it('run.ts PLUGINS_DEFAULT contains no dead plugin shorts', () => {
+    const defaults = readRunnerDefaults();
+    expect(defaults.length).toBeGreaterThan(0);
+    const dead = defaults.filter((s) => !liveShorts.has(s));
+    expect(
+      dead,
+      `run.ts PLUGINS_DEFAULT names plugin(s) absent from the oxlint manifest: ` +
+        `${dead.join(', ')}. These are silently dropped by allowedShorts — ` +
+        `remove them, or run \`npm run oxlint:shims\` if a real plugin is missing.`,
+    ).toEqual([]);
+  });
+
+  it('package.json --plugins lists contain no dead plugin shorts', () => {
+    const listed = readScriptPluginLists();
+    expect(listed.length).toBeGreaterThan(0);
+    const dead = [...new Set(listed.filter((s) => !liveShorts.has(s)))];
+    expect(
+      dead,
+      `package.json script(s) pass --plugins with name(s) absent from the ` +
+        `oxlint manifest: ${dead.join(', ')}. Silently dropped at runtime.`,
+    ).toEqual([]);
   });
 });
