@@ -1,13 +1,14 @@
 {
   "bench": "ILB-Remediation",
   "benchVersion": "1.0",
-  "timestamp": "2026-07-31T20:22:18.024Z",
-  "methodologyCommit": "27353bbe01bd6c4d5a25b324d2c5e1d9de102a5b",
+  "timestamp": "2026-08-02T06:15:28.985Z",
+  "methodologyCommit": "78e332a9ff52f4352278234295055c8c6a717d00",
   "toolchain": {
     "node": "24.12.0",
-    "eslint": null,
-    "typescript": null,
-    "tsCompiler": "tsc-classic",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.54.0",
     "platform": "darwin-arm64"
   },
   "method": "source-level v1.0 — see suite README; runtime round-trip for Interlace fixers: scripts/ilb-autofix-bench.ts",
@@ -164,7 +165,7 @@
     },
     {
       "package": "eslint-plugin-vercel-ai-security",
-      "version": "1.3.8",
+      "version": "1.3.9",
       "side": "interlace",
       "rulesTotal": 19,
       "fixableDeclared": 0,
