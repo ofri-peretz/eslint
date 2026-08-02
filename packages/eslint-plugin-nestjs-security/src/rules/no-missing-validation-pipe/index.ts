@@ -14,14 +14,26 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  getDecoratorCall,
+  getDecoratorName,
+  getHttpMethodDecorator,
+  isControllerClass,
+} from '../../utils/decorators';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'missingValidation' | 'addValidationPipe';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Skip rule if global ValidationPipe is configured in main.ts. Default: false */
+  /** Skip rule entirely, without scanning the project. Default: false */
   assumeGlobalPipes?: boolean;
+  /**
+   * Suppress findings when the project registers a pipe globally via
+   * `APP_PIPE` or `app.useGlobalPipes()`. Default: true
+   */
+  detectGlobalPipes?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -29,17 +41,8 @@ type RuleOptions = [Options?];
 // Decorators that receive user input
 const INPUT_DECORATORS = new Set(['Body', 'Query', 'Param']);
 
-// HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = new Set([
-  'Get',
-  'Post',
-  'Put',
-  'Patch',
-  'Delete',
-  'Options',
-  'Head',
-  'All',
-]);
+/** `@Body(new ValidationPipe())` / `@Param('id', ParseIntPipe)` are validated. */
+const PIPE_NAME = /Pipe$/;
 
 export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-validation-pipe',
@@ -78,14 +81,21 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         properties: {
           allowInTests: { type: 'boolean', default: true },
           assumeGlobalPipes: { type: 'boolean', default: false },
+          detectGlobalPipes: { type: 'boolean', default: true },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true, assumeGlobalPipes: false }],
+  defaultOptions: [
+    { allowInTests: true, assumeGlobalPipes: false, detectGlobalPipes: true },
+  ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowInTests = true, assumeGlobalPipes = false } = options as Options;
+    const {
+      allowInTests = true,
+      assumeGlobalPipes = false,
+      detectGlobalPipes = true,
+    } = options as Options;
 
     // Skip entirely if global ValidationPipe is assumed (configured in main.ts)
     if (assumeGlobalPipes) {
@@ -133,59 +143,48 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if class has @Controller decorator
-     */
-    function hasControllerDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return name === 'Controller';
-      });
-    }
-
-    /**
-     * Check if method is a route handler
-     */
-    function isRouteHandler(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return HTTP_METHOD_DECORATORS.has(name);
-      });
-    }
-
-    /**
-     * Get input decorator name from parameter decorators
+     * The `@Body()` / `@Query()` / `@Param()` decorator of a parameter, or
+     * `null` when the parameter does not receive user input.
      */
     function getInputDecorator(
       decorators: TSESTree.Decorator[] | undefined
-    ): string | null {
+    ): TSESTree.Decorator | null {
       if (!decorators) return null;
       for (const dec of decorators) {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        if (INPUT_DECORATORS.has(name)) {
-          return name;
+        if (INPUT_DECORATORS.has(getDecoratorName(dec))) {
+          return dec;
         }
       }
       return null;
+    }
+
+    /**
+     * Parameter-level pipes validate the value at the binding site:
+     * `@Body(new ValidationPipe())`, `@Param('id', ParseIntPipe)`,
+     * `@Query('page', PaginationPipe)`.
+     */
+    function hasParameterPipe(decorator: TSESTree.Decorator): boolean {
+      const call = getDecoratorCall(decorator);
+      if (call === null) return false;
+      return call.arguments.some((arg: TSESTree.CallExpressionArgument) => {
+        if (arg.type === AST_NODE_TYPES.Identifier) {
+          return PIPE_NAME.test(arg.name);
+        }
+        if (
+          arg.type === AST_NODE_TYPES.NewExpression &&
+          arg.callee.type === AST_NODE_TYPES.Identifier
+        ) {
+          return PIPE_NAME.test(arg.callee.name);
+        }
+        return false;
+      });
+    }
+
+    /** A global `APP_PIPE` / `useGlobalPipes()` validates every route. */
+    function hasProjectGlobalPipe(): boolean {
+      return (
+        detectGlobalPipes && getProjectContext(context).hasGlobalValidationPipe
+      );
     }
 
     /**
@@ -204,13 +203,13 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isController = hasControllerDecorator(node.decorators);
+        isController = isControllerClass(node.decorators);
         hasClassLevelPipe = hasValidationPipe(node.decorators);
       },
 
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (!isController) return;
-        if (!isRouteHandler(node.decorators)) return;
+        if (getHttpMethodDecorator(node.decorators) === null) return;
 
         // Skip if class or method has ValidationPipe
         if (hasClassLevelPipe || hasValidationPipe(node.decorators)) return;
@@ -221,18 +220,23 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
             if (param.type !== AST_NODE_TYPES.Identifier) continue;
 
             const inputDecorator = getInputDecorator(param.decorators);
-            if (!inputDecorator) continue;
+            if (inputDecorator === null) continue;
 
             // Only flag if parameter has a complex type annotation (DTO)
-            if (hasTypeAnnotation(param)) {
-              const paramName = param.name;
-              context.report({
-                node: param,
-                messageId: 'missingValidation',
-                data: { param: `@${inputDecorator}() ${paramName}` },
-                suggest: [{ messageId: 'addValidationPipe', fix: () => null }],
-              });
-            }
+            if (!hasTypeAnnotation(param)) continue;
+            // A pipe bound to the parameter already validates it
+            if (hasParameterPipe(inputDecorator)) continue;
+            // A globally registered pipe validates every route in the project
+            if (hasProjectGlobalPipe()) return;
+
+            context.report({
+              node: param,
+              messageId: 'missingValidation',
+              data: {
+                param: `@${getDecoratorName(inputDecorator)}() ${param.name}`,
+              },
+              suggest: [{ messageId: 'addValidationPipe', fix: () => null }],
+            });
           }
         }
       },

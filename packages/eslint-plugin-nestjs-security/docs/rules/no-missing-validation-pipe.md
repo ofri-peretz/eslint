@@ -87,10 +87,22 @@ app.useGlobalPipes(
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Skip if global pipes configured in main.ts (default: false)
+  // Skip the rule entirely, without scanning the project (default: false)
   assumeGlobalPipes?: boolean;
+
+  // Suppress findings when APP_PIPE / useGlobalPipes is registered (default: true)
+  detectGlobalPipes?: boolean;
 }
 ```
+
+## What the rule deliberately does not report
+
+- **Globally registered pipes.** `{ provide: APP_PIPE, useClass: ValidationPipe }`
+  in any module, or `app.useGlobalPipes(...)` in the bootstrap file, validates
+  every route in the project. Disable with `detectGlobalPipes: false`.
+- **Parameter-bound pipes.** `@Body(new ValidationPipe())`,
+  `@Param('id', ParseIntPipe)` and `@Param('user', RequestRequiredPipe)` validate
+  at the binding site; any argument whose name ends in `Pipe` counts.
 
 ## Recommended ValidationPipe Options
 

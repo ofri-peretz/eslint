@@ -5,8 +5,12 @@ name: Deploy app to Vercel
 # Manual deploy trigger — pick one app from .github/vercel-apps.json and a
 # target (preview or production). Invoked via `gh workflow run`:
 #
-#   gh -R ofri-peretz/eslint workflow run deploy.yml -f app=storybook -f target=production
-#   gh -R ofri-peretz/eslint workflow run deploy.yml -f app=registry -f target=preview
+#   gh -R ofri-peretz/eslint workflow run deploy.yml -f app=docs -f target=preview
+#
+# `docs` is the only app this repo deploys. storybook.interlace.tools and
+# ds.interlace.tools deploy from ofri-peretz/interlace via Vercel git
+# integration — see interlace/docs/adr/0001-consolidate-duplicated-design-
+# system.md (D2/D4). Do not add them back as choices here.
 #
 # Setup (one-time):
 #   1. Create a Vercel access token at https://vercel.com/account/tokens
@@ -25,8 +29,6 @@ on:
         required: true
         options:
           - docs
-          - storybook
-          - registry
       target:
         description: Deploy target
         type: choice
@@ -57,15 +59,14 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       # Composite setup: node from .nvmrc + cached node_modules + cached
-      # Turbo + cached Next.js / Storybook build artifacts. Skips `npm ci`
-      # on a node_modules cache hit (workspace lockfile didn't change).
+      # Turbo + cached Next.js build artifacts. Skips `npm ci` on a
+      # node_modules cache hit (workspace lockfile didn't change).
       # Without this the workflow was doing a cold `npm ci` for 2400+
       # packages on every deploy (~6 minutes); with it, cache-hit runs
       # restore in seconds and the deploy lands well under 5 min total.
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
-          storybook-cache: "true"
 
       - name: Resolve Vercel project for "${{ inputs.app }}"
         id: project
@@ -94,12 +95,11 @@ jobs:
       # out the Build/Output/Install Command overrides so the app's local
       # `vercel.json` is the single source of truth for build settings.
       #
-      # Why this exists: the registry project drifted to rootDirectory=`.`
-      # + buildCommand=`cd ../.. && npx turbo run build --filter=docs`,
-      # which made every prebuilt deploy ship docs content to the registry
-      # domain (404s on /r/*.json). Codifying the heal step here means a
-      # future drift can't break a deploy silently — the next run snaps it
-      # back to what this repo says it should be.
+      # Why this exists: a Vercel project's rootDirectory / build command
+      # can drift on the dashboard and make every prebuilt deploy ship the
+      # wrong output. Codifying the heal step here means a future drift
+      # can't break a deploy silently — the next run snaps it back to what
+      # this repo says it should be.
       - name: Self-heal Vercel project config (rootDirectory + build cmds)
         run: |
           set -euo pipefail
@@ -133,7 +133,7 @@ jobs:
         id: deploy
         # --archive=tgz packs the build output into a single tarball before
         # upload; without it Vercel rejects any deployment >15000 files
-        # (registry's prebuild + node_modules tree easily clears that). See
+        # (a prebuilt Next.js + node_modules tree easily clears that). See
         # commit 6216fc91 which applied the same flag to deploy-docs.yml.
         run: |
           set -euo pipefail

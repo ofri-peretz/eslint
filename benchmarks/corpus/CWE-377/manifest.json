@@ -1,0 +1,16 @@
+{
+  "cwe": "CWE-377",
+  "name": "Insecure Temporary File",
+  "owasp": "A04:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-node-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "static-tmp-write.js", "description": "fs.writeFileSync to a hard-coded /tmp/app-export.json path" },
+      { "file": "tmpdir-static-name.js", "description": "os.tmpdir() joined with a constant filename" }
+    ],
+    "safe": [
+      { "file": "mkdtemp-write.js", "description": "fs.mkdtempSync(path.join(os.tmpdir(), prefix)) creates a unique dir" }
+    ]
+  }
+}
