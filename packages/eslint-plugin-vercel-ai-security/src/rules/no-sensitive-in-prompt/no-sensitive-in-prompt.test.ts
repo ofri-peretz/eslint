@@ -215,8 +215,8 @@ ruleTester.run('no-sensitive-in-prompt (coverage gaps)', noSensitiveInPrompt, {
   valid: [
     // spread-only options object
     { code: `generateText({ ...opts });` },
-    // string-literal key is skipped (keyName resolves to null)
-    { code: `generateText({ 'prompt': password });` },
+    // computed key — the name genuinely isn't statically known
+    { code: `generateText({ [k]: password });` },
     // computed member access — property is not an Identifier
     { code: `generateText({ prompt: user['password'] });` },
     // member access to a non-sensitive property
@@ -246,6 +246,23 @@ ruleTester.run('no-sensitive-in-prompt (instructions prop)', noSensitiveInPrompt
         await generateText({
           model: openai('gpt-4'),
           instructions: \`Use this key: \${apiKey}\`,
+        });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+  ],
+});
+
+// Quoted keys are the same property as bare ones — `{ "instructions": x }` must
+// be read like `{ instructions: x }`, or a secret slips through on formatting alone.
+ruleTester.run('no-sensitive-in-prompt (quoted key)', noSensitiveInPrompt, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          "instructions": \`Use this key: \${apiKey}\`,
         });
       `,
       errors: [{ messageId: 'sensitiveInPrompt' }],

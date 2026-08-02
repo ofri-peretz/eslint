@@ -111,3 +111,18 @@ ruleTester.run('require-rag-content-validation (instructions prop)', requireRagC
     },
   ],
 });
+
+// Quoted keys are the same property as bare ones.
+ruleTester.run('require-rag-content-validation (quoted key)', requireRagContentValidation, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        await streamText({
+          "instructions": \`Context: \${await retrieve(query)}\`,
+        });
+      `,
+      errors: [{ messageId: 'unsanitizedRagContent' }],
+    },
+  ],
+});

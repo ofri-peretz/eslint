@@ -10,8 +10,8 @@
  * @see OWASP ASI07: Poisoned RAG Pipeline
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isSystemPromptProp } from '../../utils/prompt-props';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 
 type MessageIds = 'unsanitizedRagContent';
 
@@ -179,9 +179,9 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
 
         // Check prompt property
         for (const prop of optionsArg.properties) {
-          if (prop.type !== 'Property') continue;
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
           
-          const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
+          const keyName = getStaticPropName(prop.key);
           if (keyName !== 'prompt' && !isSystemPromptProp(keyName)) continue;
 
           const ragSource = containsRagContent(prop.value);

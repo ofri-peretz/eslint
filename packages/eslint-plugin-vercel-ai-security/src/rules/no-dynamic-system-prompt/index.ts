@@ -10,8 +10,8 @@
  * @see OWASP ASI01: Agent Confusion
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isSystemPromptProp } from '../../utils/prompt-props';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 
 type MessageIds = 'dynamicSystemPrompt';
 
@@ -117,9 +117,9 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
 
         // Find the system-prompt property (`instructions` in AI SDK v7+, `system` before it)
         for (const prop of optionsArg.properties) {
-          if (prop.type !== 'Property') continue;
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
 
-          const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
+          const keyName = getStaticPropName(prop.key);
           if (!isSystemPromptProp(keyName)) continue;
 
           // Check if system prompt is dynamic

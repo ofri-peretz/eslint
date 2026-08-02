@@ -128,10 +128,17 @@ ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt
     { code: `generateText(cfg);` },
     // spread-only options object
     { code: `generateText({ ...cfg });` },
-    // string-literal 'system' key is skipped (keyName resolves to null)
-    { code: `generateText({ 'system': buildPrompt() });` },
+    // computed key — the name genuinely isn't statically known
+    { code: `generateText({ [k]: buildPrompt() });` },
   ],
-  invalid: [],
+  invalid: [
+    // Quoted keys are the same property as bare ones. This used to sit in
+    // `valid` with the note "keyName resolves to null", which recorded the gap
+    // as if it were intended: a rule that stops firing because someone put
+    // quotes round the key is a silent miss, not a design decision.
+    { code: `generateText({ 'system': buildPrompt() });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
+    { code: `streamText({ "instructions": \`\${userInput}\` });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
+  ],
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
