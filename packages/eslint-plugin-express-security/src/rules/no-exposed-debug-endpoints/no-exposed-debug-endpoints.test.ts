@@ -39,6 +39,15 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
       code: "router.all('/health', handler)",
       errors: [{ messageId: 'violationDetected' }],
     },
+    // Chained route builder — app.route(path).verb(handler)
+    {
+      code: "app.route('/admin').delete(handler)",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "router.route('/test').get(handler)",
+      errors: [{ messageId: 'violationDetected' }],
+    },
   ],
 });
 
@@ -93,6 +102,9 @@ ruleTester.run('no-exposed-debug-endpoints (coverage wave)', noExposedDebugEndpo
     { code: `app.use();` },
     // express object, but not a route-registration method
     { code: `app.listen(3000);` },
+    // `app.get(name)` with a single argument reads an application setting,
+    // it does not register a route
+    { code: `const v = app.get('/debug');` },
     // computed member call on an express object
     { code: `app[method]('/admin', handler);` },
     // plain (non-member) call

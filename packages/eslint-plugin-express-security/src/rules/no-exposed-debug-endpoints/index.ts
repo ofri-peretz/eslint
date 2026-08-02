@@ -22,7 +22,8 @@ type RuleOptions = [Options?];
 
 const DEFAULT_DEBUG_PATHS = ['/debug', '/__debug__', '/admin', '/_admin', '/test', '/health'];
 
-// Express route-registration methods, incl. `use` for mounted sub-routers.
+// Express route-registration methods, incl. `use` for mounted sub-routers and
+// `route` for the chained builder (`app.route('/admin').delete(handler)`).
 const HTTP_METHODS = new Set([
   'get',
   'post',
@@ -33,6 +34,7 @@ const HTTP_METHODS = new Set([
   'options',
   'all',
   'use',
+  'route',
 ]);
 
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
@@ -105,6 +107,17 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
       // positive.
       CallExpression(node: TSESTree.CallExpression) {
         if (!isExpressRouteCall(node)) {
+          return;
+        }
+        // `app.get(name)` with a single argument is an application-setting
+        // lookup, not a route registration. Registering a route always passes
+        // at least one handler.
+        const isSettingLookup =
+          node.callee.type === 'MemberExpression' &&
+          node.callee.property.type === 'Identifier' &&
+          node.callee.property.name === 'get' &&
+          node.arguments.length === 1;
+        if (isSettingLookup) {
           return;
         }
         const pathArg = node.arguments[0];

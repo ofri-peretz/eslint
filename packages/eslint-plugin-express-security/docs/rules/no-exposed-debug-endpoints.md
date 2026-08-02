@@ -127,6 +127,9 @@ express.post('/test/reset-state', (req, res) => {
 
 // ❌ Any route-registration method, not just get/post/use
 app.delete('/admin/users/:id', handler);
+
+// ❌ Chained route builder
+app.route('/admin').get(listUsers).delete(removeUser);
 ```
 
 ### ✅ Correct
@@ -154,6 +157,10 @@ app.get(PATH, handler);
 const ADMIN_PATH = '/admin';
 res.redirect('/admin');
 if (req.path === '/health') return next();
+
+// ✅ `app.get(name)` with a single argument reads an application setting,
+//    it does not register a route
+const configured = app.get('/debug');
 ```
 
 ## Security Impact
