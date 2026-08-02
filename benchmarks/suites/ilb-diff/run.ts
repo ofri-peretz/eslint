@@ -214,7 +214,7 @@ async function main() {
   console.log(`ILB-Diff v0.1 · corpus=${path.relative(REPO_ROOT, CORPUS)} · tools=${TOOLS.join(',')}`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true });
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
   const toolchain = getToolchain();
 
   const adapterResults = [];
@@ -244,6 +244,8 @@ async function main() {
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain,
     preregistration: prereg,
     cost: {},

@@ -53,6 +53,7 @@
 
 import { execFileSync } from "node:child_process";
 import { getToolchain } from "../../lib/toolchain.ts";
+import { capturePreregistration } from "../../lib/preregister.ts";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -306,11 +307,18 @@ async function main() {
     await sleep(SLEEP_MS);
   }
 
+  // `methodologyCommit` alone is a branch SHA that squash-merge drops; the
+  // `methodologyHash` pair is the receipt a reader can actually resolve from a
+  // clone. Both come from the one shared helper — never re-derived per suite.
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+
   const envelope = {
     bench: "ILB-Landscape",
     benchVersion: "1.0",
     timestamp: NOW.toISOString(),
-    methodologyCommit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     landscape: {
       registry: "eslint-security-leadership/conditions/competitors.json@1.0.0 (retrieved 2026-07-31)",
