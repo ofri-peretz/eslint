@@ -29,7 +29,7 @@
       "rules": 23,
       "description": "Security-focused ESLint plugin for Vercel AI SDK",
       "category": "security",
-      "version": "1.3.8",
+      "version": "1.3.9",
       "published": true
     },
     {
@@ -156,5 +156,5 @@
   "totalRules": 459,
   "totalPlugins": 19,
   "allPluginsCount": 19,
-  "generatedAt": "2026-07-31T18:28:49.309Z"
+  "generatedAt": "2026-08-02T06:15:46.210Z"
 }
