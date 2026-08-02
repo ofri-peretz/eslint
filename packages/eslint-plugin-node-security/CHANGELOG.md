@@ -1,5 +1,3 @@
-## [4.1.0] - 2026-05-03
-
 ## 4.5.0
 
 ### Minor Changes
@@ -248,6 +246,8 @@
 
 - Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
   - @interlace/eslint-devkit@1.4.1
+
+## [4.1.0] - 2026-05-03
 
 ### Added
 

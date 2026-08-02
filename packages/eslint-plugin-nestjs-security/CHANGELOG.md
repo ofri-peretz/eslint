@@ -1,5 +1,3 @@
-## [1.2.3] - 2026-02-08
-
 ## 1.3.0
 
 ### Minor Changes
@@ -107,6 +105,8 @@ APP_INTERCEPTOR, ... }`), through `app.useGlobalPipes()` /
 
 - Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
   - @interlace/eslint-devkit@1.4.1
+
+## [1.2.3] - 2026-02-08
 
 ### Bug Fixes
 
