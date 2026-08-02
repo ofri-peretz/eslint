@@ -18,7 +18,7 @@
 
 ### The Interview Story
 
-> _"I identified that the ESLint ecosystem was stuck in 2020—built for humans, not agents. I rebuilt the static analysis layer from the ground up with AI-native messaging, 3.1x faster dependency analysis, and OWASP-mapped security rules. The plugins now have X weekly downloads, proving the market needed this."_
+> _"I identified that the ESLint ecosystem was stuck in 2020—built for humans, not agents. I rebuilt the static analysis layer from the ground up with AI-native messaging, an `import-next` plugin that lints a 455K-LoC codebase 3.1x faster end-to-end with circular-dependency detection on, and OWASP-mapped security rules. The plugins now have X weekly downloads, proving the market needed this."_
 
 This is a **Staff-level product engineering story**, not a "I made some npm packages" story.
 

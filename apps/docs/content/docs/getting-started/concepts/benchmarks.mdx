@@ -50,7 +50,7 @@ Interlace is optimized for speed, even with comprehensive security checks:
 
 ### Cycle Detection (import-next)
 
-Measured on a real 5,483-file React 19 + Vite + TypeScript codebase (455K LoC), `import/no-cycle` enabled on both sides:
+Measured on a real React 19 + Vite + TypeScript codebase — 5,736 files (4,682 excluding tests and stories), 455K LoC — with `import/no-cycle` enabled on both sides:
 
 | Tool                          | End-to-end lint | Rule time only | Comparison      |
 | ----------------------------- | --------------- | -------------- | --------------- |
@@ -60,8 +60,8 @@ Measured on a real 5,483-file React 19 + Vite + TypeScript codebase (455K LoC), 
 <Callout type="info">
   Source: [`ilb-perf-import-no-cycle`
   2026-05-03](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-perf-import-no-cycle/2026-05-03-snappy-dashboard.json).
-  Detection parity with the official plugin is 100%; peak memory overhead is
-  ~0 MB. Every figure on this page is registered in
+  Detection parity with the official plugin is 100%; peak RSS is 4,064 MB vs
+  4,035 MB for the official plugin (+29 MB). Every figure on this page is registered in
   [CLAIMS.md](https://github.com/ofri-peretz/eslint/blob/main/CLAIMS.md).
 </Callout>
 

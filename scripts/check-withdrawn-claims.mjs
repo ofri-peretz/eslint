@@ -42,21 +42,42 @@ const PATTERNS = [
 /**
  * Files allowed to contain the withdrawn phrasing, each for a stated reason.
  * Adding a path here is a deliberate act — say why.
+ *
+ * Whole-file exemptions are only for records that are *about* the withdrawal or
+ * are generated elsewhere. A living marketing surface never belongs here — it
+ * would let a fresh uncorrected claim in under cover of an old one.
  */
 const ALLOWLIST = new Map([
-  ['CLAIMS.md', 'documents the withdrawal itself'],
+  ['CLAIMS.md', 'the registry documenting the withdrawal itself'],
   ['distribution/PUBLISHING_QUEUE.md', 'log of already-published article titles (marked †)'],
-  [
-    'packages/eslint-plugin-import-next/CHANGELOG.md',
-    'historical entry carrying an inline correction note',
-  ],
   [
     'apps/docs/src/data/articles.json',
     'generated mirror of the Dev.to API — fix upstream on Dev.to, not here',
   ],
+  ['scripts/check-withdrawn-claims.mjs', 'this file — the patterns and their test fixtures'],
 ]);
 
+/**
+ * Per-line escape hatch, for files that must keep a historical claim verbatim
+ * *next to* its correction (changelog entries). Narrower than an ALLOWLIST
+ * entry: a new uncorrected claim elsewhere in the same file still fails.
+ */
+const CORRECTION_MARKER =
+  /\(Corrected \d{4}-\d{2}-\d{2}:|originally (?:read|claimed)|\bclaimed ["'“]/i;
+
 const TEXT_FILE = /\.(md|mdx|json|ts|tsx|js|jsx|mjs|cjs|yml|yaml|html)$/i;
+
+/**
+ * Strip Markdown emphasis and collapse whitespace so `**100x faster** cycle`
+ * and `100x faster cycle` normalize to the same text. Without this the scanner
+ * only catches unformatted prose — which is not how docs are written.
+ */
+function normalize(line) {
+  return line
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function trackedFiles() {
   return execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
@@ -74,12 +95,24 @@ function scan(files) {
       continue; // deleted-but-tracked, or binary mislabelled by extension
     }
     const lines = text.split('\n');
+    const norm = lines.map(normalize);
+
     for (const { id, regex, replacement } of PATTERNS) {
-      lines.forEach((line, i) => {
-        if (regex.test(line)) {
-          hits.push({ file, line: i + 1, id, replacement, text: line.trim() });
-        }
-      });
+      for (let i = 0; i < lines.length; i++) {
+        const next = i + 1 < norm.length ? norm[i + 1] : '';
+        const onThisLine = regex.test(norm[i]);
+        // A claim wrapped across two Markdown lines matches only when joined.
+        // Guard on !onThisLine && !onNextLine so a self-contained claim on the
+        // next line is reported once, at its own index, not twice.
+        const wrapped =
+          !onThisLine && next !== '' && !regex.test(next) && regex.test(`${norm[i]} ${next}`);
+        if (!onThisLine && !wrapped) continue;
+
+        // A historical claim sitting next to its own correction is fine.
+        if (CORRECTION_MARKER.test(lines[i])) continue;
+
+        hits.push({ file, line: i + 1, id, replacement, text: lines[i].trim() });
+      }
     }
   }
   return hits;
@@ -91,6 +124,10 @@ function selftest() {
     '| `no-cycle` | **100x faster** circular deps |',
     'Optimized: 100× faster dependency analysis',
     '<Card title="⚡ 100x Faster no-cycle">',
+    // Emphasis must not hide the claim — `**100x faster**` puts `**` between
+    // "faster" and the subject, which a naive \s+ would refuse to cross.
+    '**100x faster** cycle detection in `import-next`',
+    '_100x faster_ circular dependency analysis',
   ];
   const good = [
     'Catching vulnerabilities during code review is 100x cheaper than fixing them',
@@ -101,11 +138,34 @@ function selftest() {
     '8x faster cycle detection',
     'Scaled APIs 100x',
   ];
-  const matches = (s) => PATTERNS.some((p) => p.regex.test(s));
+  // Claim split across two Markdown lines — caught via the pair window.
+  const badPair = ['Cycle detection is now', '100x faster than the official plugin'];
+
+  const matches = (s) => PATTERNS.some((p) => p.regex.test(normalize(s)));
 
   for (const s of bad) assert.equal(matches(s), true, `should flag: ${s}`);
   for (const s of good) assert.equal(matches(s), false, `should NOT flag: ${s}`);
-  console.log(`✅ selftest passed (${bad.length} flagged, ${good.length} ignored)`);
+
+  assert.equal(
+    matches(badPair.join(' ')),
+    true,
+    'should flag a claim wrapped across two lines'
+  );
+  assert.equal(
+    CORRECTION_MARKER.test('- **Performance**: faster. _(Corrected 2026-08-02: originally read "up to 100x faster")_'),
+    true,
+    'correction marker should exempt a documented historical claim'
+  );
+  assert.equal(
+    CORRECTION_MARKER.test('- **Performance**: now 100x faster.'),
+    false,
+    'correction marker must not exempt an ordinary claim'
+  );
+
+  console.log(
+    `✅ selftest passed (${bad.length} flagged, ${good.length} ignored, ` +
+      '1 wrapped-line, 2 correction-marker)'
+  );
 }
 
 if (process.argv.includes('--selftest')) {

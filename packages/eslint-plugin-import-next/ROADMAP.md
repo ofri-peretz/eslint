@@ -12,7 +12,7 @@ This roadmap transforms `eslint-plugin-import-next` from a high-performance comp
 graph LR
     subgraph Phase 0 ["Phase 0: Current (✅ Done)"]
         A[100% Rule Parity]
-        B[8x Faster no-cycle]
+        B[no-cycle: 8x Faster Rule Time]
         C[3 Exclusive Rules]
     end
 
@@ -455,7 +455,7 @@ packages/
 | Feature                | eslint-plugin-import | eslint-plugin-import-x | **import-next** |
 | ---------------------- | :------------------: | :--------------------: | :-------------: |
 | ESLint 9 flat config   |      ⚠️ Partial      |           ✅           |       ✅        |
-| `no-cycle` performance |       ❌ Slow        |       ⚠️ Better        |  ✅ 8x faster   |
+| `no-cycle` performance |       ❌ Slow        |       ⚠️ Better        | ✅ 8x faster in pure rule execution time |
 | package.json `exports` |          ❌          |     ⚠️ v5 planned      |   ✅ Phase 1    |
 | Subpath `imports`      |          ❌          |     ⚠️ v5 planned      |   ✅ Phase 1    |
 | Barrel file detection  |          ❌          |           ❌           |   ✅ Phase 2    |
