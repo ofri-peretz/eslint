@@ -113,7 +113,7 @@ async function main() {
   console.log(`ILB-ESLint-Matrix v0.1 · ${RUNS} runs/major · majors=${majors.join(',')} · corpus=${path.relative(REPO_ROOT, CORPUS)}`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true });
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
 
   const perMajor = {};
   let baselineFindings = null;
@@ -167,6 +167,8 @@ async function main() {
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     cost: {},
     effectiveness: {
