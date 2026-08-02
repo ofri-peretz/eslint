@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-07-17",
+  "generatedAt": "2026-08-02",
   "totalPlugins": 19,
-  "totalRules": 408,
-  "oxlintCompatible": 408,
+  "totalRules": 415,
+  "oxlintCompatible": 415,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -390,10 +390,16 @@
       "short": "express-security",
       "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
       "subpath": "eslint-plugin-express-security/oxlint",
-      "ruleCount": 14,
+      "ruleCount": 21,
       "rules": [
         {
           "name": "no-cors-credentials-wildcard",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-error-details-in-response",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -412,6 +418,12 @@
         },
         {
           "name": "no-graphql-introspection-production",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-host-header-in-links",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -447,7 +459,31 @@
           "isTypeAware": false
         },
         {
+          "name": "no-sensitive-data-in-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-static-root-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-user-controlled-redirect",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-user-controlled-render-locals",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-case-insensitive-path-guard",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -466,6 +502,12 @@
         },
         {
           "name": "require-helmet",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-query-type-guard",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2694,18 +2736,25 @@
     ],
     "express-security": [
       "no-cors-credentials-wildcard",
+      "no-error-details-in-response",
       "no-exposed-debug-endpoints",
       "no-express-unsafe-regex-route",
       "no-graphql-introspection-production",
+      "no-host-header-in-links",
       "no-insecure-cookie-options",
       "no-missing-cors-check",
       "no-missing-csrf-protection",
       "no-missing-security-headers",
       "no-permissive-cors",
+      "no-sensitive-data-in-query",
+      "no-static-root-exposure",
       "no-user-controlled-redirect",
+      "no-user-controlled-render-locals",
+      "require-case-insensitive-path-guard",
       "require-csrf-protection",
       "require-express-body-parser-limits",
       "require-helmet",
+      "require-query-type-guard",
       "require-rate-limiting"
     ],
     "import-next": [

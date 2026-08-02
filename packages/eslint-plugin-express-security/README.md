@@ -40,6 +40,7 @@ npm install eslint-plugin-express-security --save-dev
 ```
 
 ## ⚙️ Configuration Presets
+
 | Preset        | Description                                                             |
 | :------------ | :---------------------------------------------------------------------- |
 | `recommended` | Balanced security for Express projects (critical as error, others warn) |
@@ -48,6 +49,7 @@ npm install eslint-plugin-express-security --save-dev
 | `graphql`     | GraphQL-specific security rules only                                    |
 
 ## 📚 Supported Libraries
+
 | Library   | npm                                                                                                         | Downloads                                                                                                          | Detection                |
 | :-------- | :---------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- | :----------------------- |
 | `express` | [![npm](https://img.shields.io/npm/v/express.svg?style=flat-square)](https://www.npmjs.com/package/express) | [![downloads](https://img.shields.io/npm/dt/express.svg?style=flat-square)](https://www.npmjs.com/package/express) | Misconfig, DoS           |
@@ -58,10 +60,11 @@ npm install eslint-plugin-express-security --save-dev
 ---
 
 ## 📦 Compatibility
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
+
+| Package | Version                           |
+| :------ | :-------------------------------- |
+| ESLint  | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0`                        |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
@@ -69,50 +72,59 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 
 **Legend**
 
-| Icon | Description |
-| :---: | :--- |
-| 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set to warn in recommended preset. |
-| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-| 💡 | **Suggestions**: Providing code suggestions in IDE. |
-| 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-error-details-in-response](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-error-details-in-response?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-209 | A04:2021 |  | Disallow sending caught error objects, stack traces, or spreads of them in HTTP responses. | 🟢 |  |  |  |  |  |
 | [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
 | [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 |  |  |  |  |  |
 | [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  |  |  |  |  |
+| [no-host-header-in-links](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-host-header-in-links?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-640 | A07:2021 |  | Disallow building absolute URLs (password-reset and verification links) from the Host or X-Forwarded-Host r… | 🟢 |  |  |  |  |  |
 | [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-614 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
 | [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | Detects overly permissive CORS configurations in Express.js applications | 🟢 | 💼 |  |  |  |  |
+| [no-sensitive-data-in-query](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-sensitive-data-in-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-598 | A04:2021 |  | Disallow reading sensitive-named parameters (password, token, secret, apiKey, ...) from req.query. | 🟢 |  |  |  |  |  |
+| [no-static-root-exposure](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-static-root-exposure?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-548 | A05:2021 |  | Disallow express.static() roots that expose the application directory and any serve-index usage | 🟢 |  |  |  |  |  |
+| [no-user-controlled-render-locals](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-user-controlled-render-locals?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-73 | A03:2021 |  | Disallow res.render() with locals or view names sourced wholesale from req.body / req.query / req.params | 🟢 |  |  |  |  |  |
+| [require-case-insensitive-path-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-case-insensitive-path-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-178 | A01:2021 |  | This rule detects path-based authorization guards that compare req.path case-sensitively, which case-insens… | 🟢 |  |  |  |  |  |
 | [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
 | [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
 | [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
+| [require-query-type-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-query-type-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-843 | A03:2021 |  | This rule detects string methods called on req.query values without a type guard — Express query values can… | 🟢 |  |  |  |  |  |
 | [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
-| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                                           |
+| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.                            |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.                                 |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security)      | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.                                        |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention.                           |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.                                  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.                                   |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.                                     |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)   | MongoDB security best practices.                                      |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening.                                     |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.                               |
 
 <!-- INTERLACE:STAR_CTA:START -->
+
 ## ⭐ Support & follow
 
 If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.

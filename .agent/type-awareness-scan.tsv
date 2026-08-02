@@ -75,6 +75,13 @@ express-security	no-permissive-cors	unaware
 express-security	no-express-unsafe-regex-route	unaware	
 express-security	no-exposed-debug-endpoints	unaware	
 express-security	require-helmet	unaware	
+express-security	no-host-header-in-links	unaware	
+express-security	no-error-details-in-response	unaware	
+express-security	no-sensitive-data-in-query	unaware	
+express-security	no-user-controlled-render-locals	unaware	
+express-security	no-static-root-exposure	unaware	
+express-security	require-case-insensitive-path-guard	unaware	
+express-security	require-query-type-guard	unaware	
 import-next	no-commonjs	unaware	
 import-next	enforce-team-boundaries	unaware	
 import-next	no-namespace	unaware	
