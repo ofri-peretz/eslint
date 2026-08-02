@@ -2,7 +2,7 @@
 
 > **Read [`value-philosophy.md`](value-philosophy.md) and [`philosophy.md`](philosophy.md) first.** This document is the operationalisation of the "What 'high-end' means" subsection in `philosophy.md` — a reusable scorecard a buyer applies to **any** static analyzer (SonarQube, Snyk, CodeQL, Semgrep, ESLint, the plugin monorepo this folder ships with, internal tooling, anything) to decide whether it meets the high-end bar and how it ranks against alternatives.
 >
-> **Why this exists separately.** A philosophy authored by a vendor is structurally conflicted (Attack 7 in [`value-philosophy.md`](value-philosophy.md) §6.5). The conflict is mitigated only if the framework the vendor uses to argue for itself is the same framework the buyer can use to evaluate the vendor *against the alternatives*. This document is that framework, vendor-neutral, with the explicit invitation to score `@interlace/eslint-plugin-*` (the monorepo this folder lives in) using it. If our scores don't beat the alternatives on the dimensions the buyer cares about, the buyer should pick the alternative — that is the discipline this document enforces on us.
+> **Why this exists separately.** A philosophy authored by a vendor is structurally conflicted (Attack 7 in [`value-philosophy.md`](value-philosophy.md) §6.5). The conflict is mitigated only if the framework the vendor uses to argue for itself is the same framework the buyer can use to evaluate the vendor *against the alternatives*. This document is that framework, vendor-neutral, with the explicit invitation to score the Interlace eslint-plugins (the monorepo this folder lives in) using it. If our scores don't beat the alternatives on the dimensions the buyer cares about, the buyer should pick the alternative — that is the discipline this document enforces on us.
 
 ## The scorecard at a glance
 
@@ -125,15 +125,15 @@ Use this scorecard against the analyzers commonly shortlisted for JavaScript / T
 | [Snyk Code](https://snyk.io/product/snyk-code/) | DeepCode-derived AI-assisted SAST | Multi-language; cloud-first |
 | [GitHub CodeQL](https://codeql.github.com/) | Query-based semantic analysis | Multi-language; integrated with GitHub Actions |
 | [ESLint core](https://eslint.org/) + popular plugins | Rule-based JS/TS linting | JavaScript / TypeScript ecosystem |
-| `@interlace/eslint-plugin-*` (this monorepo) | Specialised security + quality rule packs | JavaScript / TypeScript ecosystem; this folder's reference customer |
+| Interlace eslint-plugins (this monorepo) | Specialised security + quality rule packs | JavaScript / TypeScript ecosystem; this folder's reference customer |
 | [eslint-plugin-security](https://github.com/eslint-community/eslint-plugin-security) | Generic security rules | JavaScript |
 | [Biome](https://biomejs.dev/) | Rust-based ESLint alternative | JavaScript / TypeScript |
 
-The discipline: score them all, on the same corpus, with the same protocol. The buyer's decision should fall out of the scores. If `@interlace/eslint-plugin-*` doesn't beat the alternatives on the dimensions the buyer cares about, the buyer should pick the alternative — and we should fix our weakness.
+The discipline: score them all, on the same corpus, with the same protocol. The buyer's decision should fall out of the scores. If the Interlace eslint-plugins don't beat the alternatives on the dimensions the buyer cares about, the buyer should pick the alternative — and we should fix our weakness.
 
 ## Honest disclosure
 
-This document is published in the same monorepo as `@interlace/eslint-plugin-*`. We make our case for the monorepo's quality not by claiming the framework was authored neutrally, but by:
+This document is published in the same monorepo as the Interlace eslint-plugins. We make our case for the monorepo's quality not by claiming the framework was authored neutrally, but by:
 
 1. Making the framework reusable for evaluating the alternatives (this document)
 2. Publishing our own scores against this framework in [`benchmarks/`](../benchmarks/) and [`CLAIMS.md`](../CLAIMS.md)

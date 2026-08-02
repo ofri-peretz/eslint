@@ -2,15 +2,15 @@
 // Loads every flagship-rule's plugin in `recommended` mode so the demo
 // fixtures fire the expected violations.
 
-import secureCoding from '@interlace/eslint-plugin-secure-coding';
-import browserSecurity from '@interlace/eslint-plugin-browser-security';
-import pgPlugin from '@interlace/eslint-plugin-pg';
-import mongoPlugin from '@interlace/eslint-plugin-mongodb-security';
-import jwtPlugin from '@interlace/eslint-plugin-jwt';
-import vercelAi from '@interlace/eslint-plugin-vercel-ai-security';
-import importNext from '@interlace/eslint-plugin-import-next';
-import reactA11y from '@interlace/eslint-plugin-react-a11y';
-import reactFeatures from '@interlace/eslint-plugin-react-features';
+import secureCoding from 'eslint-plugin-secure-coding';
+import browserSecurity from 'eslint-plugin-browser-security';
+import pgPlugin from 'eslint-plugin-pg';
+import mongoPlugin from 'eslint-plugin-mongodb-security';
+import jwtPlugin from 'eslint-plugin-jwt';
+import vercelAi from 'eslint-plugin-vercel-ai-security';
+import importNext from 'eslint-plugin-import-next';
+import reactA11y from 'eslint-plugin-react-a11y';
+import reactFeatures from 'eslint-plugin-react-features';
 
 const plugins = {
   'secure-coding':       secureCoding,

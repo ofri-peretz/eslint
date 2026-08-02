@@ -104,7 +104,7 @@ The contract:
 - **Workspace flags translate.**
   - `npm install -w` ↔ `pnpm add --filter` ↔ `yarn workspace ... add` ↔ `bun add --filter`
 - **Multi-package installs go on one line**, comma-free. `npm install
-  eslint @interlace/eslint-plugin-jwt` not piecemeal.
+  eslint eslint-plugin-jwt` not piecemeal.
 
 The PM switcher is **forbidden** outside install snippets. A "run the
 tests" command is `npm test` — not switched, because that's not what
