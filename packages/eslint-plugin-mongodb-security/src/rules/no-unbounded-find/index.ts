@@ -12,7 +12,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unboundedFind';
+type MessageIds = 'unboundedFind' | 'suggestionAddLimit';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
@@ -43,6 +43,7 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
         fix: 'Add .limit(100) or appropriate limit to the query',
         documentationLink: 'https://www.mongodb.com/docs/manual/reference/method/cursor.limit/',
       }),
+      suggestionAddLimit: 'Append .limit(100) to the query',
     },
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
@@ -115,6 +116,14 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'unboundedFind',
+          suggest: [
+            {
+              messageId: 'suggestionAddLimit',
+              // ponytail: 100 mirrors the message's documented default; make it
+              // an option only if users ask for a different ceiling.
+              fix: (fixer: TSESLint.RuleFixer) => fixer.insertTextAfter(node, '.limit(100)'),
+            },
+          ],
         });
       },
     };

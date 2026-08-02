@@ -66,7 +66,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       description: 'Detects Electron security vulnerabilities and insecure configurations',
       cwe: 'CWE-16',
     },
-    hasSuggestions: true,
     messages: {
       electronSecurityIssue: formatLLMMessage({
         icon: MessageIcons.SECURITY,

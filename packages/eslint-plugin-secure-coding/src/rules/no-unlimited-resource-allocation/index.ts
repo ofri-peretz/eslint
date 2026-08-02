@@ -70,7 +70,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       description: 'Detects unlimited resource allocation that could cause DoS',
       cwe: 'CWE-770',
     },
-    hasSuggestions: true,
     messages: {
       unlimitedResourceAllocation: formatLLMMessage({
         icon: MessageIcons.SECURITY,

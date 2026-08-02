@@ -165,7 +165,10 @@ ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
     // Native-driver options object present but without a `limit` property.
     {
       code: `db.users.find({}, { skip: 5 });`,
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `db.users.find({}, { skip: 5 }).limit(100);` }],
+      }],
     },
   ],
 });
@@ -455,12 +458,16 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
-      errors: [{ messageId: 'requireTls' }],
+      errors: [{
+        messageId: 'requireTls',
+        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { ...opts, tls: true });` }],
+      }],
     },
     // String-literal 'tls' key is not recognized (Identifier keys only).
     {
       code: `mongoose.connect(uri, { 'tls': true });`,
-      errors: [{ messageId: 'requireTls' }],
+      // Nothing to rewrite — the key is already tls: true, just quoted.
+      errors: [{ messageId: 'requireTls', suggestions: [] }],
     },
   ],
 });

@@ -53,7 +53,6 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-200',
       cvss: 3.7,
     },
-    hasSuggestions: true,
     messages: {
       requireProjection: formatLLMMessage({
         icon: MessageIcons.INFO,

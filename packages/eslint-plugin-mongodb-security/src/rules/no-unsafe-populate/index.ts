@@ -51,7 +51,6 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-943',
       cvss: 6.5,
     },
-    hasSuggestions: true,
     messages: {
       unsafePopulate: formatLLMMessage({
         icon: MessageIcons.SECURITY,

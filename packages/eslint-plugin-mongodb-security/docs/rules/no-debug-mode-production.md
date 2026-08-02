@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-489
 owasp: "A05:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** CWE-489, debug, Mongoose, logging, production, security

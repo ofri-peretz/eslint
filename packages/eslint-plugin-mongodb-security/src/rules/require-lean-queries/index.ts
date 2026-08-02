@@ -12,7 +12,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'useLean';
+type MessageIds = 'useLean' | 'suggestionAddLean';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
@@ -66,6 +66,7 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
         fix: 'Add .lean() for read-only queries to improve performance',
         documentationLink: 'https://mongoosejs.com/docs/tutorials/lean.html',
       }),
+      suggestionAddLean: 'Append .lean() to the query',
     },
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
@@ -99,6 +100,12 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'useLean',
+            suggest: [
+              {
+                messageId: 'suggestionAddLean',
+                fix: (fixer: TSESLint.RuleFixer) => fixer.insertTextAfter(node, '.lean()'),
+              },
+            ],
           });
         }
       },

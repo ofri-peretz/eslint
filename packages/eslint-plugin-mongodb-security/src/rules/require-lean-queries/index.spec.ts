@@ -28,29 +28,44 @@ ruleTester.run('require-lean-queries', requireLeanQueries, {
     // find without .lean()
     {
       code: `User.find({});`,
-      errors: [{ messageId: 'useLean' }],
+      errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `User.find({}).lean();` }],
+      }],
     },
     // findOne without .lean()
     {
       code: `User.findOne({ email: "test@test.com" });`,
-      errors: [{ messageId: 'useLean' }],
+      errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `User.findOne({ email: "test@test.com" }).lean();` }],
+      }],
     },
     // findById without .lean()
     {
       code: `User.findById(id);`,
-      errors: [{ messageId: 'useLean' }],
+      errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `User.findById(id).lean();` }],
+      }],
     },
     // Chained with sort but no .lean()
     {
       code: `User.find({}).sort({ name: 1 });`,
-      errors: [{ messageId: 'useLean' }],
+      errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `User.find({}).lean().sort({ name: 1 });` }],
+      }],
     },
     // allowInTests: false
     {
       code: `User.find({});`,
       filename: 'user.test.ts',
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'useLean' }],
+      errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `User.find({}).lean();` }],
+      }],
     },
   ],
 });

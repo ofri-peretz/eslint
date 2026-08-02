@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-295
 owasp: "A02:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security

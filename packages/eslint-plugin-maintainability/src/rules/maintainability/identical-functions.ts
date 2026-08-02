@@ -76,6 +76,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
       description:
         'Detects duplicate function implementations with DRY refactoring suggestions',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 43% reduction (56→32 tokens) - DRY principle violation detected
       identicalFunctions: formatLLMMessage({

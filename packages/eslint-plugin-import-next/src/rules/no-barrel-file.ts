@@ -147,7 +147,6 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow barrel files that harm build performance and tree-shaking efficiency',
     },
-    hasSuggestions: true,
     messages: {
       barrelFileDetected: formatLLMMessage({
         icon: MessageIcons.SECURITY,

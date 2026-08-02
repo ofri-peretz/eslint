@@ -30,7 +30,6 @@ export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-943',
       cvss: 9.1,
     },
-    hasSuggestions: true,
     messages: {
       operatorInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,

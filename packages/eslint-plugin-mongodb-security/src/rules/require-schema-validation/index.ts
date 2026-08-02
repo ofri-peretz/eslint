@@ -30,7 +30,6 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-20',
       cvss: 6.1,
     },
-    hasSuggestions: true,
     messages: {
       requireSchemaValidation: formatLLMMessage({
         icon: MessageIcons.INFO,

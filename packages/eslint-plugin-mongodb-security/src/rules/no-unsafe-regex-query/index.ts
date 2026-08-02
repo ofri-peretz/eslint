@@ -57,7 +57,6 @@ export const noUnsafeRegexQuery = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-400',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       unsafeRegex: formatLLMMessage({
         icon: MessageIcons.SECURITY,

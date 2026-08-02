@@ -70,7 +70,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       description: 'Detects weak password recovery mechanisms',
       cwe: 'CWE-640',
     },
-    hasSuggestions: true,
     messages: {
       weakPasswordRecovery: formatLLMMessage({
         icon: MessageIcons.SECURITY,

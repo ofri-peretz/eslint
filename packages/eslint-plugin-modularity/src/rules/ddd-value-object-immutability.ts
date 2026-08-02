@@ -96,6 +96,7 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/ddd-value-object-immutability.md',
       description: 'Validates value objects are properly immutable',
     },
+    hasSuggestions: true,
     messages: {
       mutableValueObject: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

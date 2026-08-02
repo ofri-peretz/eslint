@@ -28,7 +28,6 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-943',
       cvss: 9,
     },
-    hasSuggestions: true,
     messages: {
       unsafeWhere: formatLLMMessage({
         icon: MessageIcons.SECURITY,
