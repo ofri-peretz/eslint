@@ -10,6 +10,7 @@ import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filena
 import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
 import { noBufferOverread } from './rules/no-buffer-overread';
 import { noDeprecatedBuffer } from './rules/no-deprecated-buffer';
+import { noUnsafeBufferAlloc } from './rules/no-unsafe-buffer-alloc';
 import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
@@ -56,6 +57,7 @@ export const rules: Record<
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'no-buffer-overread': noBufferOverread,
   'no-deprecated-buffer': noDeprecatedBuffer,
+  'no-unsafe-buffer-alloc': noUnsafeBufferAlloc,
   'no-toctou-vulnerability': noToctouVulnerability,
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
@@ -115,6 +117,12 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // adopters who already use the preset and have legacy `Buffer()` calls.
   // Promote to 'error' on the next major bump.
   'node-security/no-deprecated-buffer': 'error',
+  // Added in 4.5.0. Unconditional flag on `Buffer.allocUnsafe()` — a real but
+  // legitimate performance API — so it ships as 'warn', not 'error'. The rule
+  // does no dataflow, so a correctly-overwritten buffer still reports.
+  // Upstream `security-node/detect-buffer-unsafe-allocation` ships this off by
+  // default; 'warn' is the middle ground.
+  'node-security/no-unsafe-buffer-alloc': 'warn',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
