@@ -1,0 +1,159 @@
+---
+title: no-client-controlled-authorization
+description: This rule detects access decisions taken on request-supplied role, permission or identity values — the check runs, and passes for anyone who sets the field
+tags: ['security', 'express']
+category: security
+severity: high
+cwe: CWE-863
+autofix: false
+---
+
+> Disallow authorization decisions taken on request-supplied role, permission or identity values
+
+<!-- @rule-summary -->
+
+This rule detects access decisions taken on request-supplied role, permission or identity values — the check runs, and passes for anyone who sets the field
+<!-- @/rule-summary -->
+
+**Severity:** 🔴 High (ships as `warn` — see below)
+**CWE:** [CWE-863](https://cwe.mitre.org/data/definitions/863.html)
+
+## Rule Details
+
+```js
+if (req.body.role === 'admin') {
+  return deleteEverything();
+}
+```
+
+There *is* an authorization check here. It reads the caller's claim about who they are and believes it. That is the difference between CWE-862 (missing authorization — no check) and **CWE-863 (incorrect authorization — the check is wrong)**, and it is why this pattern survives review: a reviewer scanning for "is there a role check?" finds one.
+
+The rule reports when an authorization attribute is read off a client-controlled container — `req.body`, `req.query`, `req.params`, `req.headers`, `req.cookies` — and the value lands in a decision position:
+
+- an equality comparison (`===`, `==`, `!==`, `!=`)
+- an `if` / ternary test, a `switch` discriminant, a `!` negation, or a `&&` / `||` combination
+- the receiver or the argument of `.includes()` / `.some()`
+
+`??` is deliberately **not** a decision position: `req.body.role ?? 'viewer'`
+supplies a default, it does not gate anything.
+
+Attribute vocabulary: `role`, `roles`, `isAdmin`, `permissions`, `scope`, `privileges`, `userType`, `accessLevel`, `acl`, `claims`, `userId`, `ownerId`, `accountId`, `tenantId`, `orgId` (case-insensitive, snake_case included), plus `x-*` headers naming a role, user, tenant, account or permission.
+
+Because that vocabulary is a **naming heuristic**, the rule ships as `warn` and never at enforcement severity (plugin scope-audit invariant I3).
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Role straight off the request body
+if (req.body.role === 'admin') { deleteEverything(); }
+
+// Truthiness of a client-set flag
+if (req.query.isAdmin) { grant(); }
+
+// Negated guard clause — same trust, inverted
+if (!req.body.isAdmin) { return res.sendStatus(403); }
+
+// Permission list supplied by the caller
+const ok = req.body.permissions.includes('billing:write');
+
+// The request value as the needle
+const ok = ADMIN_ROLES.includes(req.body.role);
+
+// An identity header the client can set as easily as the proxy
+if (req.headers['x-user-role'] === 'owner') { grant(); }
+
+// Ownership decided on a client-supplied id
+if (req.params.userId === record.ownerId) { allow(); }
+
+// Same decision, switch syntax
+switch (req.body.role) {
+  case 'admin': adminAccess(); break;
+}
+```
+
+### ✅ Correct
+
+```javascript
+// The attribute comes from the verified session or token
+if (req.user.role === 'admin') { grant(); }
+if (req.auth.permissions.includes('billing:write')) { grant(); }
+if (req.session.isAdmin) { grant(); }
+
+// Request input used for something other than an access decision
+const role = req.body.role;
+logger.info(req.body.role);
+res.json({ role: req.body.role });
+
+// `??` supplies a default, it does not gate anything
+const requestedRole = req.body.role ?? 'viewer';
+
+// Ordinary request properties in a decision are not authorization
+if (req.query.page === '1') { first(); }
+if (req.headers['content-type'] === 'application/json') { parse(); }
+```
+
+If a proxy really is the only writer of an identity header, terminate it: strip the header at the edge, verify a signature on it, and read the verified value — not the raw header — in the app.
+
+## Options
+
+| Option            | Type       | Default | Description                                               |
+| ----------------- | ---------- | ------- | --------------------------------------------------------- |
+| `extraProperties` | `string[]` | `[]`    | Extra property names treated as authorization attributes   |
+
+```json
+{
+  "rules": {
+    "express-security/no-client-controlled-authorization": [
+      "warn",
+      { "extraProperties": ["plan", "featureFlags"] }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+An app whose only "authorization" is a per-request tenant id supplied by a trusted internal caller (service-to-service, mTLS-terminated) will see findings that are accepted risk. Prefer an inline disable with a comment naming the trust boundary over turning the rule off.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Value Copied To A Variable First
+
+**Why**: No data-flow analysis — the request read and the decision must be in the same expression.
+
+```typescript
+// ❌ NOT DETECTED
+const role = req.body.role;
+if (role === 'admin') { grant(); }
+```
+
+**Mitigation**: This is the most common shape in real code; treat the rule as a floor, not a proof.
+
+### Dynamic Property Names
+
+**Why**: The property must be statically known.
+
+```typescript
+// ❌ NOT DETECTED
+if (req.body[field] === 'admin') { grant(); }
+```
+
+### Attributes Outside The Vocabulary
+
+**Why**: `role`-shaped names are the signal.
+
+```typescript
+// ❌ NOT DETECTED — until `tier` is added to extraProperties
+if (req.body.tier === 'internal') { grant(); }
+```
+
+## Further Reading
+
+- [CWE-863: Incorrect Authorization](https://cwe.mitre.org/data/definitions/863.html)
+- [OWASP A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [`require-route-authentication`](./require-route-authentication.md) — no check at all (CWE-306)
+- [`no-idor-resource-access`](./no-idor-resource-access.md) — authenticated, but not scoped to the caller (CWE-639)
