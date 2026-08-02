@@ -26,7 +26,7 @@
       "ILB-Formatter",
       "ILB-Remediation"
     ],
-    "doc": "benchmarks/README.md#2-the-10-benches-at-a-glance"
+    "doc": "benchmarks/README.md#2-the-12-benches-at-a-glance"
   },
   "vocabularyContract": {
     "aspects": [
@@ -101,7 +101,7 @@
   },
   "roadmap": {
     "doc": "benchmarks/LEADERSHIP_ROADMAP.md",
-    "totalItems": 42,
+    "totalItems": 56,
     "phases": {
       "1": {
         "name": "Foundation",
@@ -530,7 +530,7 @@
   },
   "queries": {
     "_comment": "Common queries for agents \u2014 examples to adapt with jq.",
-    "shippedItems": "jq '[.roadmap.phases[] | .items[] | select(.status == \"Shipped\")]' benchmarks/state.json",
+    "shippedItems": "jq '[.roadmap.phases[] | .items[] | select(.status | startswith(\"Shipped\"))]' benchmarks/state.json",
     "phase1Status": "jq '.roadmap.phases[\"1\"]' benchmarks/state.json",
     "nextActionable": "jq '[.roadmap.phases[] | .items[] | select(.status == \"Not started\")] | .[0:5]' benchmarks/state.json",
     "vocabularyFields": "jq '.vocabularyContract.fields' benchmarks/state.json"
@@ -539,6 +539,6 @@
     "whenItemShips": "Update phases[].items[].status to 'Shipped', set shipped date, add evidence pointer. Also update LEADERSHIP_ROADMAP.md \u00a73 tracker.",
     "whenItemStarts": "Update status to 'In progress', set started date.",
     "whenAddingItem": "Append to phases[].items[]; also amend LEADERSHIP_ROADMAP.md \u00a72 in the same PR.",
-    "whenChangingToolchain": "Bump the relevant bench versions; record the toolchain change in benchmark-results/history.ndjson (once item 1.12 ships)."
+    "whenChangingToolchain": "Bump the relevant bench versions; record the toolchain change in benchmark-results/history.ndjson."
   }
 }

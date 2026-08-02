@@ -35,10 +35,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { getToolchain } from '../../lib/toolchain.ts';
 
 const SUITE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SUITE_DIR, '../../..');
@@ -79,13 +79,43 @@ function walk(dir, visit) {
   }
 }
 
+/**
+ * Concatenated argument text of every `…report(…)` call in a source file,
+ * via a balanced-paren scan.
+ *
+ * Implementation signals are searched HERE rather than in the whole file:
+ * `fix:` and `suggest:` are ordinary identifiers that also appear in prose.
+ * Our own devkit metadata is the motivating case — several rules carry a
+ * documentation string literally spelled `fix: 'Use Buffer.alloc(size)…'`,
+ * which a file-wide scan reads as a working autofixer.
+ */
+function reportDescriptors(src) {
+  const out = [];
+  const re = /\breport\s*\(/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const start = m.index + m[0].length;
+    let depth = 1;
+    let i = start;
+    while (i < src.length && depth > 0) {
+      const c = src[i];
+      if (c === '(') depth += 1;
+      else if (c === ')') depth -= 1;
+      i += 1;
+    }
+    out.push(src.slice(start, i - 1));
+  }
+  return out.join('\n');
+}
+
 /** Scan one rule source file for declaration + implementation signals. */
 function scanSource(src) {
+  const reports = reportDescriptors(src);
   return {
     declFixable: RE_DECL_FIXABLE.test(src),
     declSuggest: RE_DECL_SUGGEST.test(src),
-    implFix: RE_IMPL_FIX.test(src),
-    implSuggest: RE_IMPL_SUGGEST.test(src),
+    implFix: RE_IMPL_FIX.test(reports),
+    implSuggest: RE_IMPL_SUGGEST.test(reports),
   };
 }
 
@@ -124,7 +154,18 @@ function measureCompetitor(pkgName) {
       const p = path.join(pkgRoot, cand, `${ruleName}.js`);
       if (fs.existsSync(p)) { src = fs.readFileSync(p, 'utf8'); break; }
     }
-    const scanned = src ? scanSource(src) : { implFix: null, implSuggest: null };
+    // Never fall back to null. A null implFix/implSuggest is excluded by BOTH
+    // the implemented-count filter and the dead-declaration filter, so an
+    // unresolvable rule would quietly vanish from the competitor's numbers and
+    // make their result look complete. Fail loudly and add the layout instead.
+    if (!src) {
+      throw new Error(
+        `${pkgName}: could not locate rule source for "${ruleName}" in any known layout ` +
+          `(lib/rules, rules, dist/rules, lib, dist under ${pkgRoot}). ` +
+          `Add the layout to the candidate list — do not let the rule be silently skipped.`,
+      );
+    }
+    const scanned = scanSource(src);
     rules.push({
       rule: ruleName,
       declFixable: meta.fixable === 'code' || meta.fixable === 'whitespace',
@@ -165,13 +206,12 @@ const envelope = {
   benchVersion: '1.0',
   timestamp: new Date().toISOString(),
   methodologyCommit: execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(),
-  toolchain: {
-    node: process.version.replace(/^v/, ''),
-    eslint: null,
-    typescript: null,
-    tsCompiler: 'tsc-classic',
-    platform: `${os.platform()}-${os.arch()}`,
-  },
+  // Detected, never hand-written. The first version of this block hardcoded
+  // `tsCompiler: 'tsc-classic'` with null eslint/typescript — three fatal
+  // validateToolchain() issues, and the hardcoded value was simply false:
+  // this repo is on TypeScript 6, which is tsc-go. Roadmap item 1.14 exists
+  // to make exactly that transition visible in the data.
+  toolchain: getToolchain(),
   method: 'source-level v1.0 — see suite README; runtime round-trip for Interlace fixers: scripts/ilb-autofix-bench.ts',
   results,
   summary: {
@@ -212,6 +252,9 @@ fs.appendFileSync(
     timestamp: envelope.timestamp,
     methodologyCommit: envelope.methodologyCommit,
     summary: envelope.summary,
+    // Receipt: without this a history row cannot be traced back to the result
+    // JSON that produced its summary.
+    resultPath: path.relative(ROOT, outPath),
   }) + '\n',
 );
 
