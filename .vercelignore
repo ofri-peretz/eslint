@@ -49,7 +49,3 @@ __tests__
 graph.json
 *.md
 !README.md
-
-# Storybook
-.storybook
-storybook-static
