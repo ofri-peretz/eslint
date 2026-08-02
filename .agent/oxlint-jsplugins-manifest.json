@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-02",
   "totalPlugins": 19,
-  "totalRules": 424,
-  "oxlintCompatible": 424,
+  "totalRules": 426,
+  "oxlintCompatible": 426,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1350,7 +1350,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 6,
+      "ruleCount": 8,
       "rules": [
         {
           "name": "no-exposed-debug-endpoints",
@@ -1371,6 +1371,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-permissive-cors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "require-class-validator",
           "portability": "compatible",
           "blockers": [],
@@ -1384,6 +1390,12 @@
         },
         {
           "name": "require-throttler",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-validation-pipe-whitelist",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

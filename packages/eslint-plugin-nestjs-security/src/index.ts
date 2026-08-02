@@ -25,6 +25,8 @@ import { TSESLint } from '@interlace/eslint-devkit';
 import { requireGuards } from './rules/require-guards';
 import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
 import { requireThrottler } from './rules/require-throttler';
+import { requireValidationPipeWhitelist } from './rules/require-validation-pipe-whitelist';
+import { noPermissiveCors } from './rules/no-permissive-cors';
 
 // P1 Rules
 import { requireClassValidator } from './rules/require-class-validator';
@@ -42,6 +44,8 @@ export const rules: Record<
   'require-guards': requireGuards,
   'no-missing-validation-pipe': noMissingValidationPipe,
   'require-throttler': requireThrottler,
+  'require-validation-pipe-whitelist': requireValidationPipeWhitelist,
+  'no-permissive-cors': noPermissiveCors,
 
   // P1 - Data Validation & Exposure
   'require-class-validator': requireClassValidator,
@@ -68,6 +72,10 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/require-guards': 'error',
   'nestjs-security/no-missing-validation-pipe': 'warn',
   'nestjs-security/require-throttler': 'warn',
+  // Both enter at 'error': each is a narrow, statically-decidable misconfiguration
+  // with no legitimate use, and each was wrong in real apps we measured.
+  'nestjs-security/require-validation-pipe-whitelist': 'error',
+  'nestjs-security/no-permissive-cors': 'error',
 
   // P1 - Data Validation
   'nestjs-security/require-class-validator': 'warn',
