@@ -2,7 +2,7 @@
 
 This document defines the supported versions of key dependencies and runtime environments for all Interlace ESLint plugins.
 
-> **ESLint version policy:** see [`docs/ESLINT_VERSION_SUPPORT.md`](../docs/ESLINT_VERSION_SUPPORT.md) for the authoritative support matrix, the 20% gate, the forward-looking exception (covers v10 today), and the refresh script (`npm run stats:eslint-versions`). Last data refresh: **2026-05-09**.
+> **ESLint version policy:** see [`docs/ESLINT_VERSION_SUPPORT.md`](../docs/ESLINT_VERSION_SUPPORT.md) for the authoritative support matrix, the 20% gate, the forward-looking exception (covers v10 today), and the refresh script (`npm run stats:eslint-versions`). Last data refresh: **2026-08-02**.
 
 ## Quick Reference
 

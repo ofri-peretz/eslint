@@ -76,6 +76,31 @@ describe('ESLint version share: published surfaces match the tracked snapshot', 
     ).toContain(refreshDate);
   });
 
+  /**
+   * "Contains the current date" is satisfiable by *any* occurrence, so a file
+   * can pass while a second, stale refresh stamp sits elsewhere in it — which
+   * is exactly what happened: compatibility-matrix.md carried a fresh
+   * `Share (2026-08-02)` table header above an intro still reading
+   * "Last data refresh: 2026-05-09". So assert every declared refresh stamp.
+   */
+  it.each(SURFACES)('%s: every declared refresh stamp is the current one', (file) => {
+    const text = read(file);
+    const stamps = [
+      // "Last data refresh: **2026-08-02**" — window spans the newline used by
+      // the MDX <Callout>, where title and date sit on separate lines.
+      ...[...text.matchAll(/Last data refresh[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/g)],
+      // Table-header form: "Share (2026-08-02)"
+      ...[...text.matchAll(/Share \((\d{4}-\d{2}-\d{2})\)/g)],
+    ];
+    for (const [full, date] of stamps) {
+      expect(
+        date,
+        `${file} declares a refresh stamp of ${date} but the snapshot is ${refreshDate}: ` +
+          `"${full.replace(/\s+/g, ' ').slice(0, 80)}"`
+      ).toBe(refreshDate);
+    }
+  });
+
   it('the "supported majors cover X%" claim matches the summed share', () => {
     // Two public surfaces state the aggregate; both must land on the real sum.
     for (const file of ['CLAIMS.md', 'apps/docs/content/docs/getting-started/concepts/compatibility.mdx']) {

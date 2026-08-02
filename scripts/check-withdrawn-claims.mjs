@@ -44,6 +44,14 @@ const PATTERNS = [
     // sub-second — the floor is 1.05s (synthetic, 1K files) and the real
     // codebase is 4.9s rule time / 16.7s end-to-end. A sub-second lint
     // figure in this repo is unmeasured by construction.
+    //
+    // Known over-reach: `linting` / `lint time` are broader than the other
+    // keywords, which are tightly scoped to this product claim. A legitimate
+    // sub-second figure for a *different* tool ("CI linting finished in
+    // 0.4s" for oxlint) would be flagged. That is the deliberate trade — a
+    // sub-second lint number in this repo should have to justify itself —
+    // and ALLOWLIST is the escape hatch. Expect this arm to be the most
+    // likely source of future friction.
     // The lookbehind is load-bearing: without it, the `.59s` inside a measured
     // `148.59s` reads as a sub-second figure and the guard flags its own
     // evidence. Window spans sentences (`[^\n]`) because the fabrication was
@@ -178,6 +186,10 @@ function selftest() {
   ];
   // Claim split across two Markdown lines — caught via the pair window.
   const badPair = ['Cycle detection is now', '100x faster than the official plugin'];
+  // Same, for the sub-second arms. The pair window is generic, but without
+  // these the wrapped-line path is only ever exercised for the 100x pattern.
+  const badPairSubSecond = ['eslint-plugin-import lint run completes in', '0.4s'];
+  const badPairTransition = ['Cut the suite from 45s', 'to 0.4s in production'];
 
   const matches = (s) => PATTERNS.some((p) => p.regex.test(normalize(s)));
 
@@ -188,6 +200,16 @@ function selftest() {
     matches(badPair.join(' ')),
     true,
     'should flag a claim wrapped across two lines'
+  );
+  assert.equal(
+    matches(badPairSubSecond.join(' ')),
+    true,
+    'should flag a sub-second claim wrapped across two lines'
+  );
+  assert.equal(
+    matches(badPairTransition.join(' ')),
+    true,
+    'should flag an Ns -> 0.Xs transition wrapped across two lines'
   );
   assert.equal(
     CORRECTION_MARKER.test('- **Performance**: faster. _(Corrected 2026-08-02: originally read "up to 100x faster")_'),
@@ -202,7 +224,7 @@ function selftest() {
 
   console.log(
     `✅ selftest passed (${bad.length} flagged, ${good.length} ignored, ` +
-      '1 wrapped-line, 2 correction-marker)'
+      '3 wrapped-line, 2 correction-marker)'
   );
 }
 
