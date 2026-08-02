@@ -3,6 +3,8 @@
 > **Goal**: Publish **100 articles** across the Interlace ESLint ecosystem.
 > **Started**: December 31, 2025
 > **Current Count**: 27 / 100
+>
+> **† Withdrawn-claim marker.** Rows tagged **†** record an article whose *published* title carries the **"100x faster"** claim for `eslint-plugin-import-next`. That number was never measured and was withdrawn on 2026-08-02 — see [`CLAIMS.md` § Withdrawn claims](../CLAIMS.md). The titles are left verbatim here because this file is a log of what was actually published; the article titles themselves must be corrected **on Dev.to**, which is the source of truth (the published URL slug is frozen and cannot change). Substantiated figures: **3.1x faster end-to-end, 8x faster in pure rule time**. Do not reuse the 100x phrasing in any new article.
 
 ---
 
@@ -48,7 +50,7 @@ Articles are organized into **3 phases** for maximum impact:
 | 16  | Dec 31, 2025 | Transaction Race Conditions                                 | pg            |
 | 17  | Dec 31, 2025 | Getting Started with eslint-plugin-vercel-ai-security       | vercel-ai     |
 | 18  | Jan 2, 2026  | Getting Started with eslint-plugin-import-next              | import-next   |
-| 19  | Jan 2, 2026  | eslint-plugin-import vs import-next: Up to 100x Faster      | benchmarks    |
+| 19† | Jan 2, 2026  | eslint-plugin-import vs import-next: Up to 100x Faster      | benchmarks    |
 | 21  | Jan 2, 2026  | Getting Started with eslint-plugin-jwt                      | jwt           |
 | 22  | Jan 2, 2026  | Getting Started with eslint-plugin-browser-security         | browser       |
 | 23  | Jan 2, 2026  | Getting Started with eslint-plugin-express-security         | express       |
@@ -66,7 +68,7 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 | 2       | `secure-coding/00-getting-started.md`      | Getting Started with eslint-plugin-secure-coding       | secure-coding     | ✅     |
 | 3       | `vercel-ai-security/00-getting-started.md` | Getting Started with eslint-plugin-vercel-ai-security  | vercel-ai         | ✅     |
 | 4       | `import-next/00-getting-started.md`        | Getting Started with eslint-plugin-import-next         | import-next       | ✅     |
-| 5       | `import-next/02-benchmark-showdown.md`     | eslint-plugin-import vs import-next: Up to 100x Faster | ESLint Benchmarks | ✅     |
+| 5†      | `import-next/02-benchmark-showdown.md`     | eslint-plugin-import vs import-next: Up to 100x Faster | ESLint Benchmarks | ✅     |
 | 7       | `jwt/00-getting-started.md`                | Getting Started with eslint-plugin-jwt                 | jwt               | ✅     |
 | 8       | `browser-security/00-getting-started.md`   | Getting Started with eslint-plugin-browser-security    | browser           | ✅     |
 | 9       | `express-security/00-getting-started.md`   | Getting Started with eslint-plugin-express-security    | express           | ✅     |
