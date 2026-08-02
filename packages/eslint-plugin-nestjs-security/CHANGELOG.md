@@ -1,3 +1,80 @@
+## 1.3.0
+
+### Minor Changes
+
+- [#287](https://github.com/ofri-peretz/eslint/pull/287) [`5184a12`](https://github.com/ofri-peretz/eslint/commit/5184a1299e2d69f7c9ecbb721a92a543f30af2ce) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Eliminate the false-positive storm on real NestJS codebases. Scanning two
+  popular boilerplates with `recommended` produced 582 findings on
+  ack-nestjs-boilerplate and 109 on brocoders/nestjs-boilerplate; after this
+  change they produce 0 and 11, and every remaining finding is a genuine gap
+  (an unauthenticated file-download route, entities exposing `password`/`hash`,
+  unvalidated request-DTO properties, and one missing `ThrottlerModule`).
+
+  - **Cross-file global registration is now detected.** Guards, pipes and rate
+    limiting registered through DI (`{ provide: APP_GUARD | APP_PIPE |
+APP_INTERCEPTOR, ... }`), through `app.useGlobalPipes()` /
+    `app.useGlobalGuards()`, or through `ThrottlerModule.forRoot(Async)` suppress
+    the corresponding per-controller findings. The project root is resolved from
+    the linted file and its module files are scanned once and cached. A
+    `ThrottlerGuard` registered as `APP_GUARD` counts as rate limiting, not
+    authentication. Opt out per rule with `detectGlobalGuards` /
+    `detectGlobalPipes: false`.
+  - **`require-guards`** no longer asserts "unguarded" on a route carrying a
+    decorator it cannot resolve — projects wrap `@UseGuards` in composites such as
+    `@AuthJwtAccessProtected()` via `applyDecorators()`. It also stops reporting
+    credential-issuing routes (`login`, `register`, `forgotPassword`,
+    `resetPassword`, `confirmEmail`, `refresh`, health checks, webhooks), which
+    cannot require the credential they hand out. New options:
+    `allowCustomDecorators`, `detectGlobalGuards`, `publicRoutePatterns`.
+    `requiredGuards` — documented since 1.0 but never read — is now actually
+    enforced: with it set, `@UseGuards(RolesGuard)` no longer satisfies
+    `requiredGuards: ['JwtAuthGuard']`, and the new `missingRequiredGuards`
+    message names the guards that would. Guard arguments are read syntactically
+    (`AuthGuard('jwt')`, `guards.JwtAuthGuard`); anything with no static name,
+    an unresolved composite decorator, or a global `APP_GUARD` still suppresses
+    the report, since none of them can be proven _not_ to apply the guard.
+  - **`require-throttler` now reports once per project, on the root module**,
+    instead of once per route handler. Rate limiting is adopted with a single
+    `ThrottlerModule` registration, so 24 (and 93) per-route errors described a
+    one-line fix. New options: `rootModuleNames`, `rootModuleFiles`; `skipRoutes`
+    is deprecated and ignored. In-file detection requires an actual registration
+    (`ThrottlerModule` in `imports`, or a `ThrottlerGuard` behind `APP_GUARD`) —
+    a bare `import { ThrottlerGuard }` no longer silences the rule.
+  - **`no-missing-validation-pipe`** honours parameter-bound pipes
+    (`@Body(new ValidationPipe())`, `@Param('id', ParseIntPipe)`) and globally
+    registered pipes.
+  - **`require-class-validator`** no longer fires on response/serialization DTOs
+    (name pattern, superclass name, or class-transformer `@Expose`/`@Exclude`),
+    on `format: 'binary'` multipart upload slots, or on `@Allow()`-marked
+    properties, and recognises ~40 more class-validator decorators. New options:
+    `checkResponseDtos`, `responseDtoPattern`.
+  - **`no-exposed-private-fields`** is scoped to persistence entities and domain
+    models. A `LoginResponseDto` carrying a token is a declared contract; an
+    `@Entity()` exposing `password` without `@Exclude()` is an accident. New
+    option: `includeDtos` restores the previous behaviour. GraphQL `@InputType()`
+    / `@ArgsType()` classes follow `includeDtos` too — they are request contracts
+    (`LoginInput` must carry a password); `@ObjectType()` stays an entity.
+  - **`no-exposed-debug-endpoints`** inspects route paths only, instead of every
+    string literal in the file (it was flagging enum members, seed data and config
+    values). `admin`, `test` and `health` are no longer default debug paths, and a
+    guarded debug route is no longer reported. New option: `detectGlobalGuards`.
+
+### Patch Changes
+
+- [#294](https://github.com/ofri-peretz/eslint/pull/294) [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Rewrite `description` and `keywords` on every published package for npm search discovery. npm ranks on name, description, and keywords, and the registry only picks up these fields at publish — so this is metadata-only and takes effect for each package on its next release.
+
+  **Descriptions now lead with the search phrase.** Every one starts `ESLint plugin for <the thing you'd search>` instead of a brand-first or category-first framing, and names the concrete vulnerabilities the plugin actually detects. Three were corrected while doing so:
+
+  - `eslint-plugin-import-next` claimed "100x faster no-cycle detection". No 100x measurement exists: `CLAIMS.md` records **3.1x end-to-end** (8x in pure rule execution) on a 5,483-file React codebase, and the highest number in any benchmark result is 54.9x on the synthetic corpus. The description now states the real-codebase figure.
+  - `eslint-plugin-secure-coding` claimed SQL injection, XSS and CSRF coverage — none of which are its rules. It now names what it does detect: LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.
+  - `eslint-plugin-secure-coding` ("89 rules") and `eslint-plugin-react-a11y` ("37 rules") hard-coded rule counts that had drifted from reality. Counts are generated into `interlace-numbers.json`; hand-typed copies are removed rather than corrected.
+
+  **Keywords now match the vocabulary of the plugins that rank.** `eslint-plugin-security`, `eslint-plugin-jsx-a11y`, `eslint-plugin-n` and `eslint-plugin-import` all carry the `eslint` / `eslintplugin` / `eslint-plugin` trio — six of our packages were missing `eslintplugin`, and every one now carries all three plus `static-analysis`, `linting` and `code-quality`. Security plugins add `sast`, `appsec` and `vulnerability`; `node-security` and `secure-coding` also carry `nodesecurity`, the exact keyword `eslint-plugin-security` ranks on. Each plugin gained the CWE identifiers and attack names for what it detects (`cwe-78` command injection, `cwe-22` path traversal, `cwe-89` SQL injection, `cwe-79` XSS, `cwe-347` JWT algorithm confusion, `cwe-352` CSRF, `cwe-943` NoSQL injection), and `node-security` gained the crypto vocabulary it had been missing entirely despite absorbing the crypto rule set (`crypto`, `cryptography`, `weak-hash`, `md5`, `sha1`, `timing-attack`).
+
+  No rule behavior, exports, or configuration changes.
+
+- Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:
+  - @interlace/eslint-devkit@1.4.3
+
 ## 1.2.6
 
 ### Patch Changes

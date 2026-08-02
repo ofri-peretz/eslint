@@ -1,3 +1,92 @@
+## 4.5.0
+
+### Minor Changes
+
+- [#310](https://github.com/ofri-peretz/eslint/pull/310) [`28d7898`](https://github.com/ofri-peretz/eslint/commit/28d789896b06dd13ac7c50bcb4aaa36fa5e4be29) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-timing-unsafe-compare` to the `recommended` preset, restoring CWE-697
+  coverage.
+
+  `secure-coding/no-insecure-comparison` was removed from every `secure-coding`
+  preset, with `node-security/no-timing-unsafe-compare` named as the replacement.
+  But that rule was not in any `recommended` preset, so the practical result was
+  that **no `recommended` preset anywhere covered CWE-697 timing-unsafe
+  comparison**, and the migration note pointed users at a rule they would have had
+  to enable by hand — which the note did not say.
+
+  It enters at `'warn'` rather than `'error'`, matching the precedent already set
+  by `no-deprecated-buffer` in this preset: adopters shouldn't have CI turn red on
+  a version bump. Promote to `'error'` on the next major.
+
+  Note the coverage now lives in a different package than before. A project that
+  installs only `eslint-plugin-secure-coding` and relied on its presets for this
+  check needs `eslint-plugin-node-security` as well.
+
+  A lock test in `src/index.test.ts` fails if the rule leaves `recommended` again,
+  since that would silently make the migration note false.
+
+- [#288](https://github.com/ofri-peretz/eslint/pull/288) [`89bea05`](https://github.com/ofri-peretz/eslint/commit/89bea05c6c48f5f1bdbcc3c87b301d967d962051) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Cut false positives in five security rules, measured against a 1,470-file corpus (webpack `lib/`, lodash, eslint-plugin-import `src/`, and two NestJS boilerplates).
+
+  **`secure-coding/no-hardcoded-credentials` — decide on the value, not the key name.** The rule reported any string in a credential-named slot, so `errors: { password: 'incorrectPassword' }` (an i18n error key) was a CVSS 9.8 finding — 5 of its 10 corpus hits. Detection is now driven by the value's shape: entropy, character-class mix, charset, and a "natural word string" test that rejects identifier- and message-shaped values. A credential-shaped name is still consulted, but only to promote an already-secret-shaped value. Corpus: **10 → 7 findings, and all 7 are true positives** — including two the old logic missed, because a 25-character random `key:` is now found by shape rather than by being on a name allowlist.
+
+  **`secure-coding/no-unsafe-deserialization` — `setTimeout` is not a deserializer.** `await new Promise(resolve => setTimeout(resolve, 1000))` was rated CVSS 9.8 CRITICAL. `setTimeout` / `setInterval` now only report in their implied-`eval` form (string first argument), and calls inside a function named `deserialize` / `unserialize` / `fromJSON` / `fromBuffer` — a class implementing a serialization protocol — are exempt. Corpus: **35 → 4**.
+
+  **`secure-coding/no-graphql-injection` — require real GraphQL syntax.** Any template literal containing a nested brace or the word `type` was a CVSS 9.8 GraphQL injection. Operation and schema keywords must now start a line, schema keywords require a body, and a bare selection set must be the entire string. Concatenations are matched on their reassembled static value rather than on their source text. Corpus: **41 → 0**.
+
+  **`node-security/require-secure-deletion` — only sensitive properties.** The rule fired on every `delete obj.prop`. It now reports only a statically known, sensitive property name (`password`, `token`, `apiKey`, `privateKey`, `sessionId`, …), configurable via the new `additionalSensitiveProperties` option, and understands computed access and optional chaining. Corpus: **25 → 1** (a genuine `delete userDto.oldPassword`).
+
+  **`secure-coding/no-insecure-comparison` — removed from `recommended`, `recommended-strict` and `owasp-top-10`.** It is deprecated in favour of `node-security/no-timing-unsafe-compare`, and its loose-equality half re-reports core `eqeqeq` under a CWE-697 banner — 433 corpus findings, all duplicates. No narrowing fixes that, so the honest change is to stop switching it on for people; it remains exported and available via `strict` or explicit opt-in. Its timing-attack half was also narrowed to match secret keywords on identifier **word segments** instead of substrings of the whole expression text, which stops `if (key === "__non_webpack_require__")` (and `monkey`, `keyword`, `machine`, `author`) from being reported: **443 → 221**.
+
+### Patch Changes
+
+- [#294](https://github.com/ofri-peretz/eslint/pull/294) [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Rewrite `description` and `keywords` on every published package for npm search discovery. npm ranks on name, description, and keywords, and the registry only picks up these fields at publish — so this is metadata-only and takes effect for each package on its next release.
+
+  **Descriptions now lead with the search phrase.** Every one starts `ESLint plugin for <the thing you'd search>` instead of a brand-first or category-first framing, and names the concrete vulnerabilities the plugin actually detects. Three were corrected while doing so:
+
+  - `eslint-plugin-import-next` claimed "100x faster no-cycle detection". No 100x measurement exists: `CLAIMS.md` records **3.1x end-to-end** (8x in pure rule execution) on a 5,483-file React codebase, and the highest number in any benchmark result is 54.9x on the synthetic corpus. The description now states the real-codebase figure.
+  - `eslint-plugin-secure-coding` claimed SQL injection, XSS and CSRF coverage — none of which are its rules. It now names what it does detect: LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.
+  - `eslint-plugin-secure-coding` ("89 rules") and `eslint-plugin-react-a11y` ("37 rules") hard-coded rule counts that had drifted from reality. Counts are generated into `interlace-numbers.json`; hand-typed copies are removed rather than corrected.
+
+  **Keywords now match the vocabulary of the plugins that rank.** `eslint-plugin-security`, `eslint-plugin-jsx-a11y`, `eslint-plugin-n` and `eslint-plugin-import` all carry the `eslint` / `eslintplugin` / `eslint-plugin` trio — six of our packages were missing `eslintplugin`, and every one now carries all three plus `static-analysis`, `linting` and `code-quality`. Security plugins add `sast`, `appsec` and `vulnerability`; `node-security` and `secure-coding` also carry `nodesecurity`, the exact keyword `eslint-plugin-security` ranks on. Each plugin gained the CWE identifiers and attack names for what it detects (`cwe-78` command injection, `cwe-22` path traversal, `cwe-89` SQL injection, `cwe-79` XSS, `cwe-347` JWT algorithm confusion, `cwe-352` CSRF, `cwe-943` NoSQL injection), and `node-security` gained the crypto vocabulary it had been missing entirely despite absorbing the crypto rule set (`crypto`, `cryptography`, `weak-hash`, `md5`, `sha1`, `timing-attack`).
+
+  No rule behavior, exports, or configuration changes.
+
+- [#296](https://github.com/ofri-peretz/eslint/pull/296) [`0c7a208`](https://github.com/ofri-peretz/eslint/commit/0c7a208f568436cc55ac6732641df46e8f44af1f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Cut two false positives confirmed against the benchmark corpus SAFE fixtures.
+
+  **`node-security/no-ssrf`** — the user-input gate only ran when the URL argument
+  was a bare identifier, so every other shape reported unconditionally. A Node
+  options object built from a helper's own parameters —
+  `https.request({ host, path, method: 'GET' })`, from
+  `benchmarks/corpus/CWE-444/safe/request-default-parser.js` — was flagged with no
+  user data anywhere in the flow.
+
+  The gate now applies to every argument shape and requires evidence: a
+  user-input-named identifier standing as the URL, a read off a request object
+  (`req` / `request` / `ctx` / `event`), or a template literal or concatenation
+  interpolating either. Options-object fields count when they are request-sourced,
+  or when a `url` / `href` / `uri` key holds a user-input-named identifier.
+
+  Newly ignored: options objects and interpolations built purely from locals.
+  Still reported: `fetch(userUrl)`, `fetch(req.query.url)`,
+  `https.request({ host: req.query.host })`, ``fetch(`https://${userHost}/x`)``.
+
+  **`secure-coding/no-hardcoded-credentials`** — `secret: '<your-secret-here>'`
+  from `benchmarks/corpus/CWE-798/safe/test-placeholder-values.js` was reported at
+  CVSS 9.8. The angle brackets are two character classes, which is all the shape
+  gate asks for once the slot is credential-named.
+
+  Self-evident placeholders are now skipped: bracketed template slots (`<…>`,
+  `{{…}}`, `${…}`, `[…]`), placeholder words standing as their own token
+  (`changeme`, `YOUR_API_KEY`, `example`), and one character repeated
+  (`xxxxxxxxxxxx`). Whole-token matching only, so a real secret that merely
+  contains such a substring is unaffected.
+
+  The allowlist applies to non-structural findings only — a JWT, an `sk_live_`
+  key, or a `postgres://user:pass@host` string still reports whatever words it
+  contains. Set the new `allowPlaceholders: false` option to restore the previous
+  behaviour.
+
+- Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:
+  - @interlace/eslint-devkit@1.4.3
+
 ## 4.4.3
 
 ### Patch Changes
