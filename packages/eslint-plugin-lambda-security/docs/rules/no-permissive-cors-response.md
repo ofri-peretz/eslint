@@ -50,9 +50,9 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
   }
 }}%%
 flowchart TD
-    A[🔍 Return Statement Found] --> B{Returns object?}
+    A[🔍 ReturnStatement / arrow implicit-return / response variable] --> B{Object literal?}
     B -->|No| C[✅ Skip]
-    B -->|Yes| D{Has statusCode property?}
+    B -->|Yes| D{Has statusCode or body property?}
     D -->|No| C
     D -->|Yes| E{Has headers property?}
     E -->|No| C

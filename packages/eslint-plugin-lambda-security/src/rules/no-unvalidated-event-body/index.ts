@@ -196,6 +196,9 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
      * '{}'))` is a validated parse chain, but `event.body`'s direct parent is
      * the `??` LogicalExpression, which used to defeat every check and produce
      * a false positive. Same for `event.body!` and `event.body as string`.
+     * Also walks past `&&` and `||` (all share `LogicalExpression`), which
+     * lets `if (event.httpMethod === 'POST' && event.body)` resolve to the
+     * enclosing `IfStatement` safe-guard rather than the `&&` itself.
      */
     function semanticParent(node: TSESTree.Node): TSESTree.Node | undefined {
       let current = node;
