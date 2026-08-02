@@ -6,21 +6,51 @@
 
 /**
  * @fileoverview Detect debug endpoints without auth in NestJS applications
+ *
+ * Only *routes* are inspected: the path argument of `@Controller(...)` and of
+ * the HTTP-method decorators. The previous implementation matched every string
+ * literal in the file, which flagged enum members (`EnumLoggerLevel.debug`),
+ * seed data and config values — 24 findings across two boilerplates, none of
+ * them an endpoint.
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import {
+  getHttpMethodDecorator,
+  getRoutePath,
+  hasUnresolvedDecorator,
+  hasUseGuards,
+  isControllerClass,
+} from '../../utils/decorators';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'violationDetected';
 
 export interface Options {
   endpoints?: string[];
   ignoreFiles?: string[];
+  /** Suppress findings when the project registers a global guard. Default: true */
+  detectGlobalGuards?: boolean;
 }
 
 type RuleOptions = [Options?];
 
-const DEFAULT_DEBUG_PATHS = ['debug', '__debug__', 'admin', '_admin', 'test', 'health'];
+/**
+ * Only genuinely diagnostic route names. `admin`, `test` and `health` used to
+ * be in this list; they are ordinary route names in every NestJS application
+ * (`/admin/users`, `/health`) and produced pure noise. Re-add them through the
+ * `endpoints` option if your project treats them as internal.
+ */
+const DEFAULT_DEBUG_PATHS = [
+  'debug',
+  '_debug',
+  '__debug__',
+  'debugger',
+  'dev-tools',
+  'devtools',
+  'phpinfo',
+];
 
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
@@ -56,7 +86,8 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             description: 'List of files or patterns to ignore'
-          }
+          },
+          detectGlobalGuards: { type: 'boolean', default: true },
         },
         additionalProperties: false
       }
@@ -65,57 +96,60 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context) {
     const options = context.options[0] || {};
-    const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
+    const debugPaths = new Set(
+      (options.endpoints ?? DEFAULT_DEBUG_PATHS).map((path) =>
+        path.replace(/^\/+/, '').toLowerCase(),
+      ),
+    );
     const ignoreFiles = options.ignoreFiles || [];
+    const detectGlobalGuards = options.detectGlobalGuards ?? true;
     const filename = context.filename;
 
     if (ignoreFiles.some(pattern => filename.includes(pattern))) {
       return {};
     }
 
-    function report(node: TSESTree.Node) {
-      context.report({ node, messageId: 'violationDetected' });
+    let isController = false;
+    let classIsProtected = false;
+    let classPathIsDebug = false;
+
+    /** Any `/`-separated segment of the path is a configured debug name. */
+    function isDebugPath(path: string | null): boolean {
+      if (path === null) return false;
+      return path
+        .split('/')
+        .some((segment) => debugPaths.has(segment.toLowerCase()));
     }
 
-    const HTTP_METHODS = new Set(['Get', 'Post', 'Put', 'Delete', 'Patch', 'All', 'Options', 'Head']);
+    /** Guarded explicitly, by a project-owned composite, or app-wide. */
+    function isProtected(decorators: TSESTree.Decorator[] | undefined): boolean {
+      return hasUseGuards(decorators) || hasUnresolvedDecorator(decorators);
+    }
+
+    function hasProjectGlobalGuard(): boolean {
+      return detectGlobalGuards && getProjectContext(context).hasGlobalAuthGuard;
+    }
 
     return {
-      Decorator(node: TSESTree.Decorator) {
-        if (node.expression.type === 'CallExpression' &&
-            node.expression.callee.type === 'Identifier' &&
-            HTTP_METHODS.has(node.expression.callee.name)) {
-          
-          const pathArg = node.expression.arguments[0];
-          if (pathArg && pathArg.type === 'Literal' && typeof pathArg.value === 'string') {
-            const path = pathArg.value.toLowerCase();
-            if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
-              report(pathArg);
-            }
-          }
-        }
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        isController = isControllerClass(node.decorators);
+        classIsProtected = isProtected(node.decorators);
+        classPathIsDebug = (node.decorators ?? []).some(
+          (decorator) => isDebugPath(getRoutePath(decorator)),
+        );
       },
-      
-      Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string') {
-          const path = node.value.toLowerCase();
-          // Normalize NestJS paths which might not have leading slash
-          const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
-          
-          if (debugPaths.some(dp => {
-            const normalizedDP = dp.startsWith('/') ? dp.slice(1) : dp;
-            return normalizedPath === normalizedDP.toLowerCase();
-          })) {
-            // Avoid double reporting if it's already in an HTTP decorator
-            const parent = node.parent;
-            if (parent && parent.type === 'CallExpression' && 
-                parent.callee.type === 'Identifier' && 
-                HTTP_METHODS.has(parent.callee.name) &&
-                parent.parent.type === 'Decorator') {
-              return;
-            }
-            report(node);
-          }
-        }
+
+      MethodDefinition(node: TSESTree.MethodDefinition) {
+        if (!isController || classIsProtected) return;
+
+        const httpDecorator = getHttpMethodDecorator(node.decorators);
+        if (httpDecorator === null) return;
+        if (isProtected(node.decorators)) return;
+
+        if (!classPathIsDebug && !isDebugPath(getRoutePath(httpDecorator))) return;
+        if (hasProjectGlobalGuard()) return;
+
+        context.report({ node: httpDecorator, messageId: 'violationDetected' });
       },
     };
   },

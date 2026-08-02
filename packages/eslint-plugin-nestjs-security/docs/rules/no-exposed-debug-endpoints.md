@@ -35,28 +35,45 @@ Identifies potential debug, administration, or testing endpoints that are often 
 
 ## Rule Details
 
-This rule scans for NestJS HTTP decorators (`@Get`, `@Post`, etc.) and literal string constants that match known sensitive paths.
+This rule inspects **route paths only**: the path argument of `@Controller(...)`
+(string or `{ path: '...' }` object form) and of the HTTP-method decorators. It
+reports a debug route that is not protected by a guard.
+
+Earlier versions matched every string literal in the file, which flagged enum
+members (`EnumLoggerLevel.debug`), seed data and config values — 24 findings
+across two NestJS boilerplates, none of them an endpoint.
+
+`admin`, `test` and `health` were removed from the default path list: they are
+ordinary route names in every NestJS application. Add them back through the
+`endpoints` option if your project treats them as internal.
+
+A route is considered protected when the handler or its controller carries
+`@UseGuards`, carries a decorator the plugin cannot resolve (a guard composite
+such as `@AuthJwtAccessProtected()`), or the project registers a global
+`APP_GUARD`. `@Public()` does **not** protect a debug route — that is the whole
+finding.
 
 ## ❌ Incorrect
 
 ```typescript
+// ❌ Debug path on the route handler
 @Controller('utils')
 export class UtilsController {
-  // ❌ NestJS Get decorator using a debug path
   @Get('debug')
   getDebugInfo() {
     return process.memoryUsage();
   }
-
-  // ❌ Admin path exposed
-  @Post('/admin/reset')
-  resetSystem() {
-    // ...
-  }
 }
 
-// ❌ Literal string matching a forbidden path
-const myPath = 'test-endpoint';
+// ❌ Debug base path on the controller — every route under it is a debug route,
+//    including ones whose own path says nothing about debugging
+@Controller({ version: '1', path: '/__debug__' })
+export class DebugController {
+  @Get('state')
+  state() {
+    return this.debugService.dump();
+  }
+}
 ```
 
 ## ✅ Correct
@@ -70,12 +87,17 @@ export class ProfileController {
     return { name: 'User' };
   }
 
-  // ✅ Debug endpoint protected by a Guard (Rule still flags path, but this is the goal)
+  // ✅ Debug endpoint behind a guard
   @UseGuards(AdminGuard)
-  @Get('internal-status')
+  @Get('debug')
   getStatus() {
     return { status: 'OK' };
   }
+}
+
+// ✅ Not a route — plain strings and enum members are never inspected
+export enum EnumLoggerLevel {
+  debug = 'debug',
 }
 ```
 
@@ -85,6 +107,7 @@ export class ProfileController {
 | :------------ | :--------- | :--------------- | :------------------------------------------- |
 | `endpoints`   | `string[]` | `['debug', ...]` | Custom list of debug/admin endpoints to flag |
 | `ignoreFiles` | `string[]` | `[]`             | List of files or patterns to ignore          |
+| `detectGlobalGuards` | `boolean` | `true` | Suppress findings when `APP_GUARD` is registered |
 
 ### Example Configuration
 
@@ -104,8 +127,12 @@ export class ProfileController {
 
 ## Known False Negatives
 
-- Values stored in variables/constants used in decorators.
-- Dynamic path generation using template literals if not easily resolvable.
+- Values stored in variables/constants used in decorators (`@Get(DEBUG_PATH)`).
+- Dynamic path generation using template literals.
+- Debug routes on a controller that carries any decorator the plugin cannot
+  resolve — it is assumed to be a guard composite.
+- Any debug route in a project that registers a global `APP_GUARD`
+  (`detectGlobalGuards: false` restores the check).
 
 ## References
 
