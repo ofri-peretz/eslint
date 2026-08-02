@@ -9,7 +9,7 @@ This directory contains Cursor IDE commands that inject checklists into prompts 
 **Purpose:** Include the ESLint Rule Addition Checklist
 
 **When to use:**
-- Adding a new ESLint rule to any `@interlace/eslint-plugin-*` package
+- Adding a new ESLint rule to any `eslint-plugin-*` package
 - Creating rule documentation
 - Updating rule exports
 
