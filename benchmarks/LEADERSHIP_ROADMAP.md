@@ -80,6 +80,16 @@ Each phase is ~3 months. Effort = engineering-weeks (1 person, focused). Depende
 
 ## 3. Live tracker
 
+> **⚠️ Correction (2026-08-02) — items 2.5 and 3.4 were marked Shipped in error.**
+> The 12 MCP packages were real, but they exist **only** at commit `b2638dc6`
+> (2026-05-09) and were deleted afterwards. Verified on 2026-08-02:
+> `git ls-tree -r --name-only origin/main | grep -ci mcp` returns **0**, and the npm
+> registry returns **404** for every one of them. Item 2.5's own definition of done
+> reads "`secure-coding-mcp` **published**" — so it never met its acceptance
+> criterion, and MCP is not a differentiator for us today: Semgrep (free CLI), Snyk
+> (`snyk mcp --experimental`), ESLint core (`@eslint/mcp`) and SonarQube all ship one.
+> Full verification: `eslint-security-leadership/research/e22-mcp-verification.md`.
+
 | # | Item | Phase | Status | Owner | Started | Shipped |
 |---|---|---|---|---|---|---|
 | 1.1 | Dual-audience philosophy doc | 1 | **Shipped** | maintainer | 2026-05-09 | 2026-05-09 |
@@ -107,12 +117,12 @@ Each phase is ~3 months. Effort = engineering-weeks (1 person, focused). Depende
 | 2.2 | ILB-Confidence | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 2.3 | ILB-Discover | 2 | **Shipped** (BM25 baseline; embedding upgrade noted) | agent | 2026-05-09 | 2026-05-09 |
 | 2.4 | ILB-Evade | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
-| 2.5 | MCP server proof-of-concept | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
+| 2.5 | MCP server proof-of-concept | 2 | **Reverted** — built 2026-05-09, deleted since; never published (see §2.5 note) | agent | 2026-05-09 | — |
 | 2.6 | ILB-Provenance (CVE links) | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 3.1 | Public ILB leaderboard | 3 | **Shipped** (protocol + publisher + storage live; hosted UI deployment external) | agent | 2026-05-09 | 2026-05-09 |
 | 3.2 | Differential bench publication | 3 | **Shipped** (publisher live; full run pending external tool install) | agent | 2026-05-09 | 2026-05-09 |
 | 3.3 | OWASP Benchmark engagement | 3 | **Shipped** (pitch packet ready; outreach external) | agent | 2026-05-09 | 2026-05-09 |
-| 3.4 | MCP servers across all security plugins | 3 | **Shipped** (1 base + 11 plugin adapters) | agent | 2026-05-09 | 2026-05-09 |
+| 3.4 | MCP servers across all security plugins | 3 | **Reverted** — 1 base + 11 adapters built 2026-05-09, deleted since; never published (see §2.5 note) | agent | 2026-05-09 | — |
 | 4.1 | Mutation testing for fixtures (ILB-Mutate) | 4 | **Shipped** (smoke ✅ 100% survival) | agent | 2026-05-09 | 2026-05-09 |
 | 4.2 | ISO/IEC 25010 mapping for quality plugins | 4 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 4.3 | External replication (kit ready) | 4 | **Shipped** (engagement external) | agent | 2026-05-09 | 2026-05-09 |
