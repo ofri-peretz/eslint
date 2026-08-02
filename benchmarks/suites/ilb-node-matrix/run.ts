@@ -213,7 +213,7 @@ async function main() {
   for (const v of matrix) console.log(`  node@${v.version}  (${v.supportTier})`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true });
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
 
   const perVersion = {};
   let baselineFindings = null;
@@ -265,6 +265,8 @@ async function main() {
     benchVersion: '0.1',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     preregistration: prereg,
     cost: {},

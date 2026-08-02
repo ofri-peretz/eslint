@@ -109,7 +109,7 @@ async function main() {
   console.log(`ILB-Determinism v1.0 · ${RUNS} runs · corpus=${path.relative(REPO_ROOT, CORPUS)}`);
   console.log('');
 
-  const prereg = capturePreregistration({ allowDirty: true }); // local runs may be dirty; CI sets allowDirty:false elsewhere
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url }); // local runs may be dirty; CI sets allowDirty:false elsewhere
   const toolchain = getToolchain();
 
   const runs = [];
@@ -143,6 +143,8 @@ async function main() {
     benchVersion: '1.0',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain,
     preregistration: prereg,
     cost: {},
