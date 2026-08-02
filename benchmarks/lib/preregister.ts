@@ -5,13 +5,19 @@
  * tweaked until the numbers look good.
  *
  * Every ILB result MUST carry `methodologyCommit` (a 40-char SHA) on the
- * envelope. This module exposes:
+ * envelope. That SHA is a *branch* commit, and this repo merges with squash —
+ * so it is never reachable from a fresh clone of `main`. It stays as useful
+ * provenance while the PR ref lives, but the squash-proof receipt is
+ * `methodologyHash`; see ./methodology.ts for the full argument.
  *
- *   capturePreregistration({ paths, allowDirty })
+ * This module exposes:
+ *
+ *   capturePreregistration({ paths, allowDirty, entrypoint, methodologyPaths })
  *     Reads the current HEAD SHA + status of methodology-relevant paths
  *     (corpus, suite runners, scoring fns) and returns a block to embed
  *     in the result. Throws if those paths have uncommitted changes,
- *     unless `allowDirty` is set.
+ *     unless `allowDirty` is set. Pass `entrypoint: import.meta.url` to also
+ *     get the squash-proof `methodologyHash` / `methodologyPaths` pair.
  *
  *   verifyPreregistration(result)
  *     Validates that a result file's `methodologyCommit` exists in the
@@ -26,6 +32,8 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { captureMethodology } from './methodology.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');
@@ -58,15 +66,25 @@ function isInRepo() {
  * @param {object} [opts]
  * @param {string[]} [opts.paths]       methodology paths (default: corpus/suites/lib/etc)
  * @param {boolean}  [opts.allowDirty]  allow uncommitted changes to methodology paths (CI: never; local: opt-in)
- * @returns {{ methodologyCommit: string|null, dirtyPaths: string[], capturedAt: string }}
+ * @param {string}   [opts.entrypoint]  the caller's own file (`import.meta.url`) — enables `methodologyHash`
+ * @param {string[]} [opts.methodologyPaths] extra method files not reachable by a static import
+ * @returns {{ methodologyCommit: string|null, methodologyHash: string|null, methodologyPaths: string[], dirtyPaths: string[], capturedAt: string }}
  */
 export function capturePreregistration(opts: any = {}) {
   const paths = opts.paths ?? DEFAULT_METHODOLOGY_PATHS;
   const allowDirty = opts.allowDirty ?? false;
 
+  // Squash-proof half of the receipt. Independent of git, so it is captured
+  // even outside a repo — that is precisely the case `methodologyCommit` can't
+  // serve. Suites that don't pass an entrypoint stay on the old shape.
+  const methodology = opts.entrypoint
+    ? captureMethodology(opts.entrypoint, opts.methodologyPaths ?? [])
+    : { methodologyHash: null, methodologyPaths: [] };
+
   if (!isInRepo()) {
     return {
       methodologyCommit: null,
+      ...methodology,
       dirtyPaths: [],
       capturedAt: new Date().toISOString(),
       note: 'not running inside a git repo — methodology not pre-registered',
@@ -97,6 +115,7 @@ export function capturePreregistration(opts: any = {}) {
 
   return {
     methodologyCommit,
+    ...methodology,
     dirtyPaths,
     capturedAt: new Date().toISOString(),
     paths,
@@ -131,7 +150,8 @@ export function verifyPreregistration(result) {
  * Helper to embed a pre-registration block into a result envelope at
  * the conventional shape:
  *
- *   { ..., methodologyCommit: "<sha>", preregistration: { capturedAt, dirtyPaths, paths } }
+ *   { ..., methodologyCommit: "<sha>", methodologyHash: "sha256:<hex>",
+ *     methodologyPaths: [...], preregistration: { capturedAt, dirtyPaths, paths } }
  *
  * @param {object} result   the envelope being built
  * @param {object} [opts]
@@ -140,6 +160,8 @@ export function verifyPreregistration(result) {
 export function attachPreregistration(result, opts) {
   const block = capturePreregistration(opts);
   result.methodologyCommit = block.methodologyCommit;
+  result.methodologyHash = block.methodologyHash;
+  result.methodologyPaths = block.methodologyPaths;
   result.preregistration = block;
   return result;
 }

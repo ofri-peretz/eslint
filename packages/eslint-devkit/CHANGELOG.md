@@ -1,5 +1,15 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.4.4
+
+### Patch Changes
+
+- [#302](https://github.com/ofri-peretz/eslint/pull/302) [`09d2951`](https://github.com/ofri-peretz/eslint/commit/09d2951b3ac74efc9ba49b64e9089d66800b16cc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the Interlace OG banner to the README, so the npm page matches every
+  published plugin in the ecosystem. devkit was the only published package
+  carrying the closing Interlace mark but no banner. README-only change — no
+  runtime, API, or type surface is affected; the release exists to get the
+  updated README onto npm, where it is baked in at publish time.
+
 ## 1.4.3
 
 ### Patch Changes
