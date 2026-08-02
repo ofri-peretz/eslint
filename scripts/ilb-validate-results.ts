@@ -113,6 +113,8 @@ function validateResultFile(filePath) {
     for (const t of toolchainIssues) issues.push(`${rel}: ${t}`);
   }
 
+  checkMethodologyReceipt(parsed, issues, rel);
+
   checkBlockedSynonyms(parsed, issues, rel);
   checkSubsetKeys(parsed.cost, ALLOWED_COST_KEYS, issues, `${rel}.cost`);
   checkSubsetKeys(parsed.effectiveness, ALLOWED_EFFECTIVENESS_KEYS, issues, `${rel}.effectiveness`);
@@ -120,6 +122,44 @@ function validateResultFile(filePath) {
   checkProvenance(parsed.provenance, issues, rel);
 
   return issues;
+}
+
+/**
+ * Methodology receipt — see benchmarks/lib/methodology.ts.
+ *
+ * `methodologyCommit` is a branch SHA and this repo squash-merges, so it never
+ * enters `main`'s history: it cannot be resolved from a fresh clone. The
+ * durable receipt is `methodologyHash` + the `methodologyPaths` it covers.
+ *
+ * Warn on old, strict on new. The 80-file historical corpus predates the field
+ * and is never regenerated, so failing (or even warning by default) on it would
+ * be a permanent wall of noise that trains everyone to ignore this gate — the
+ * envelope's own `timestamp` is the honest discriminator. Presence is always
+ * checked strictly: a malformed receipt is worse than none, because it looks
+ * verifiable.
+ */
+const METHODOLOGY_HASH_SINCE = '2026-08-03'; // the field landed 2026-08-02; same-day results predate it
+
+function checkMethodologyReceipt(parsed, issues, locationLabel) {
+  const { methodologyHash: hash, methodologyPaths: paths } = parsed;
+
+  if (hash === undefined && paths === undefined) {
+    const msg = `${locationLabel}: missing "methodologyHash" — methodologyCommit alone does not survive squash-merge, see benchmarks/lib/methodology.ts`;
+    const predatesField =
+      typeof parsed.timestamp !== 'string' || parsed.timestamp.slice(0, 10) < METHODOLOGY_HASH_SINCE;
+    if (!predatesField) issues.push(msg);
+    else if (STRICT) issues.push(`${msg} (warning — pre-${METHODOLOGY_HASH_SINCE} file)`);
+    return;
+  }
+
+  if (typeof hash !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(hash)) {
+    issues.push(`${locationLabel}: methodologyHash must match /^sha256:[a-f0-9]{64}$/ (got ${JSON.stringify(hash)})`);
+  }
+  if (!Array.isArray(paths) || paths.length === 0) {
+    issues.push(`${locationLabel}: methodologyPaths must be a non-empty array — without it the hash is not self-describing and cannot be recomputed`);
+  } else if (paths.some((p) => typeof p !== 'string' || p.length === 0)) {
+    issues.push(`${locationLabel}: methodologyPaths entries must be non-empty repo-relative path strings`);
+  }
 }
 
 /**
