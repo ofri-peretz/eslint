@@ -51,6 +51,20 @@ export function getPackageMetadata(packagePath: string) {
   };
 }
 
+/**
+ * First sentence of a package description, for the docs plugin cards.
+ *
+ * Splits on a sentence boundary — a period followed by whitespace or the end
+ * of the string — not on any period. Descriptions legitimately contain dotted
+ * terms ("Node.js", "Array.at", "process.exit", "3.1x"), and a bare
+ * `split('.')[0]` truncated those mid-word: "ESLint plugin for Node".
+ */
+export function firstSentence(description?: string): string {
+  if (!description) return '';
+  const end = description.search(/\.(?:\s|$)/);
+  return end === -1 ? description : description.slice(0, end);
+}
+
 export function getCategory(packageName: string) {
   // Framework plugins - Express, NestJS, Lambda
   if (packageName.includes('express') || 
@@ -188,7 +202,7 @@ async function main() {
     stats.push({
       name: metadata.name,
       rules: ruleCount,
-      description: metadata.description?.split('.')[0] || '',
+      description: firstSentence(metadata.description),
       category,
       version: metadata.version,
       published,

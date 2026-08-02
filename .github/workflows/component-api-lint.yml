@@ -165,17 +165,7 @@ jobs:
         # behavior where the workflow promoted every rule to error.
         run: npx eslint --max-warnings 0 packages/ui/src/primitives/dialog.tsx
 
-  registry-drift:
-    name: registry drift check
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
-      - uses: ./.github/actions/setup
-
-      - name: Verify shadcn registry is in sync with packages/ui/src/primitives/
-        run: npm run build:check --workspace=registry
-        # Fails if any `apps/registry/public/r/<name>.json` is out of sync with
-        # the corresponding primitive source. Keeps `ds.interlace.tools` from
-        # serving stale JSON when a contributor adds a primitive but forgets to
-        # rebuild the registry.
+      # The shadcn registry drift check used to live here. The registry app
+      # moved to ofri-peretz/interlace, which runs the equivalent gate in its
+      # own CI — see interlace/docs/adr/0001-consolidate-duplicated-design-
+      # system.md (D2).

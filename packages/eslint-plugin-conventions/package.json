@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-conventions",
   "version": "4.2.2",
-  "description": "ESLint rules for team-specific disciplinary patterns and code conventions.",
+  "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -29,12 +29,24 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "conventions",
+    "code-style",
+    "naming-conventions",
+    "filename-case",
+    "magic-numbers",
+    "todo-comments",
+    "deprecation",
     "clean-code",
     "consistency",
-    "llm-optimized"
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
