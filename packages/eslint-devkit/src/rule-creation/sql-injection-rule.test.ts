@@ -31,20 +31,36 @@ const ruleTester = new RuleTester({
 
 /** Ungated single-sink instance — the pg shape. */
 const ungated = createSqlInjectionRule({
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'test rule (ungated)',
+      url: 'https://example.test/ungated',
+      cwe: 'CWE-89',
+      cvss: 9.8,
+      confidence: 'high',
+    },
+  },
   methods: ['query'],
   requireSqlKeywords: false,
-  description: 'test rule (ungated)',
-  url: 'https://example.test/ungated',
   fix: 'Use parameterized queries ($1, $2).',
   documentationLink: 'https://example.test/docs',
 });
 
 /** Keyword-gated multi-sink instance — the ORM / multi-driver shape. */
 const gated = createSqlInjectionRule({
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'test rule (gated)',
+      url: 'https://example.test/gated',
+      cwe: 'CWE-89',
+      cvss: 9.8,
+      confidence: 'high',
+    },
+  },
   methods: ['query', 'raw', 'execute'],
   requireSqlKeywords: true,
-  description: 'test rule (gated)',
-  url: 'https://example.test/gated',
   fix: 'Use placeholders and pass values separately.',
   documentationLink: 'https://example.test/docs',
 });

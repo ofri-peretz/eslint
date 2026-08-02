@@ -132,7 +132,10 @@ function listRuleDefinitions(pluginDir: string): RuleDefinition[] {
   const out: RuleDefinition[] = [];
   for (const path of candidates) {
     const source = readFileSync(path, 'utf8');
-    if (!/\bmeta\s*:\s*\{/.test(source)) continue;
+    // A file whose only `meta: {` is the plugin descriptor (src/index.ts)
+    // defines no rules. Without this the fallback below still invented one,
+    // named after the directory, scoring 0 on every field.
+    if (!hasRuleMetaBlock(source)) continue;
 
     const ruleNames = extractRuleNamesAroundMeta(source);
     if (ruleNames.length === 0) {
@@ -150,6 +153,27 @@ function listRuleDefinitions(pluginDir: string): RuleDefinition[] {
 }
 
 /**
+ * True when a `meta: {` block is an ESLint *plugin* descriptor
+ * (`{ name, version }`) rather than a rule's metadata. Rule meta never
+ * carries `version`, and plugin meta never carries `docs`/`messages`.
+ */
+/** True when a file contains at least one `meta: {` that belongs to a rule. */
+function hasRuleMetaBlock(source: string): boolean {
+  const re = /\bmeta\s*:\s*\{/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    if (!isPluginMetaBlock(source, m.index + m[0].length - 1)) return true;
+  }
+  return false;
+}
+
+function isPluginMetaBlock(source: string, braceIdx: number): boolean {
+  const block = extractBalancedBlock(source, braceIdx);
+  if (!block) return false;
+  return /\bversion\s*:/.test(block) && !/\b(docs|messages|schema|type)\s*:/.test(block);
+}
+
+/**
  * Heuristic: for each `meta: {` block, walk back ~400 chars and look
  * for the nearest identifier that names a rule export.
  */
@@ -158,6 +182,11 @@ function extractRuleNamesAroundMeta(source: string): string[] {
   const re = /\bmeta\s*:\s*\{/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
+    // A plugin object also carries `meta: { name, version }`. It is not a
+    // rule, and counting it added one phantom zero-score "rule" to every
+    // plugin — invisible in a 60-rule plugin, but half the score of a
+    // single-rule one, which is how it surfaced.
+    if (isPluginMetaBlock(source, m.index + m[0].length - 1)) continue;
     const lookbehind = source.slice(Math.max(0, m.index - 400), m.index);
     let name: string | null = null;
     const stringRule = lookbehind.match(/['"]([a-z][a-z0-9-]+)['"]\s*:\s*\{[^}]*$/);

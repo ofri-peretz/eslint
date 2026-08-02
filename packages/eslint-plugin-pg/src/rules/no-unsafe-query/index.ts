@@ -17,14 +17,22 @@
 import { createSqlInjectionRule } from '@interlace/eslint-devkit';
 
 export const noUnsafeQuery = createSqlInjectionRule({
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries.',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-query.md',
+      cwe: 'CWE-89',
+      cvss: 9.8,
+      confidence: 'high',
+    },
+  },
   methods: ['query'],
   // Historical behaviour: any interpolation into `.query()` is a finding,
   // whether or not the static text looks like SQL. The sink is unambiguous
   // in a pg codebase, so the keyword gate would only add false negatives.
   requireSqlKeywords: false,
-  description:
-    'Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries.',
-  url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-query.md',
   fix: 'Use parameterized queries ($1, $2) instead of string concatenation.',
   documentationLink: 'https://node-postgres.com/features/queries#parameterized-queries',
 });

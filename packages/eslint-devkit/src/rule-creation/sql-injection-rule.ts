@@ -30,6 +30,25 @@ import { formatLLMMessage, MessageIcons } from '../messaging';
 export type SqlInjectionMessageIds = 'noUnsafeQuery' | 'unsafeTemplateLiteral';
 
 export interface SqlInjectionRuleConfig {
+  /**
+   * The rule's own `meta.type` + `meta.docs`, spelled out by the caller.
+   *
+   * Deliberately NOT derived inside this factory: `scripts/audit-rule-meta-completeness.ts`
+   * reads rule metadata by *statically parsing the rule's source file*, so
+   * metadata hidden in here is invisible to it — a factory-built rule scores
+   * 0% and fails the strict gate. Keeping it at the call site also puts each
+   * driver's CWE/CVSS where a reader expects to find it.
+   */
+  readonly meta: {
+    readonly type: 'problem';
+    readonly docs: {
+      readonly description: string;
+      readonly url: string;
+      readonly cwe: string;
+      readonly cvss: number;
+      readonly confidence: 'high' | 'medium' | 'low';
+    };
+  };
   /** Method names treated as raw-SQL sinks, e.g. `['query']` or `['query', 'raw', 'execute']`. */
   readonly methods: readonly string[];
   /**
@@ -39,10 +58,6 @@ export interface SqlInjectionRuleConfig {
    * interpolation into a sink is a finding.
    */
   readonly requireSqlKeywords: boolean;
-  /** `meta.docs.description`. */
-  readonly description: string;
-  /** `meta.docs.url`. */
-  readonly url: string;
   /** Remediation line in the emitted message. */
   readonly fix: string;
   /** Reference link in the emitted message. */
@@ -98,24 +113,20 @@ export function createSqlInjectionRule(
 
   return {
     meta: {
-      type: 'problem',
-      docs: {
-        description: config.description,
-        url: config.url,
-        // CWE / CVSS surface in @interlace/eslint-formatter (devkit augments
-        // RuleMetaDataDocs) and are locked against the emitted message by
-        // security-cvss-docs-consistency.lock.test.ts.
-        cwe: 'CWE-89',
-        cvss: 9.8,
-        confidence: 'high',
-      },
+      type: config.meta.type,
+      // CWE / CVSS surface in @interlace/eslint-formatter (devkit augments
+      // RuleMetaDataDocs) and are locked against the emitted message by
+      // security-cvss-docs-consistency.lock.test.ts.
+      docs: { ...config.meta.docs },
       messages: {
         noUnsafeQuery: formatLLMMessage({
           icon: MessageIcons.SECURITY,
           issueName: 'SQL Injection Risk',
           description: 'Unsafe SQL query detected. Variable interpolation found.',
           severity: 'CRITICAL',
-          cwe: 'CWE-89',
+          // Same source as meta.docs.cwe, so the emitted CVSS can never drift
+          // from the documented one (security-cvss-docs-consistency.lock).
+          cwe: config.meta.docs.cwe,
           owasp: 'A03:2021',
           compliance: ['SOC2', 'PCI-DSS', 'NIST-CSF'],
           effort: 'high',

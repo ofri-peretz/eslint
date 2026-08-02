@@ -19,6 +19,17 @@
 import { createSqlInjectionRule } from '@interlace/eslint-devkit';
 
 export const noUnsafeQuery = createSqlInjectionRule({
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Prevent SQL injection by disallowing string concatenation or interpolated template literals in raw Sequelize queries.',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-sequelize-security/docs/rules/no-unsafe-query.md',
+      cwe: 'CWE-89',
+      cvss: 9.8,
+      confidence: 'high',
+    },
+  },
   // `sequelize.query()` runs raw SQL; `Sequelize.literal()` splices raw SQL
   // into a builder query (the usual ORDER BY / column-name injection).
   methods: ['query', 'literal'],
@@ -26,9 +37,6 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // is only installed by Sequelize users — so no keyword gate, which would
   // otherwise miss `literal(`${sortColumn}`)` (no SQL keyword of its own).
   requireSqlKeywords: false,
-  description:
-    'Prevent SQL injection by disallowing string concatenation or interpolated template literals in raw Sequelize queries.',
-  url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-sequelize-security/docs/rules/no-unsafe-query.md',
   fix: 'Pass values via `replacements` or `bind` instead of interpolating them into the SQL string.',
   documentationLink: 'https://sequelize.org/docs/v6/core-concepts/raw-queries/#replacements',
 });
