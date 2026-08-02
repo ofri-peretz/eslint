@@ -147,6 +147,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'CSP Wildcard Source (CWE-79)',
         cwe: 'CWE-79',
+        cvss: 6.5,
         description:
           '{{directive}} includes the wildcard source {{source}}, so script can be loaded from any host — the directive stops constraining anything.',
         severity: 'HIGH',
@@ -157,6 +158,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'CSP Permits Framing By Any Origin (CWE-1021)',
         cwe: 'CWE-1021',
+        cvss: 5.4,
         description:
           "frame-ancestors is set to {{source}}, so any site can embed this app in an iframe and drive clicks through it (clickjacking).",
         severity: 'MEDIUM',
@@ -167,6 +169,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'CSP Without frame-ancestors (CWE-1021)',
         cwe: 'CWE-1021',
+        cvss: 5.4,
         description:
           'useDefaults is false and no frame-ancestors directive is set. frame-ancestors does NOT fall back to default-src, so this policy places no limit on who may frame the app.',
         severity: 'MEDIUM',
@@ -177,6 +180,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'CSP Mixed-Content Upgrade Removed (CWE-311)',
         cwe: 'CWE-311',
+        cvss: 5.9,
         description:
           'upgradeInsecureRequests is set to null, which removes the directive from the policy. Sub-resources referenced over http:// are then fetched in cleartext from an https:// page.',
         severity: 'MEDIUM',

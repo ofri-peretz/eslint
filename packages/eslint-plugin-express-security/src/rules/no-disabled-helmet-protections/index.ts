@@ -100,7 +100,7 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-disabled-helmet-protections.md',
       description:
-        'Disallow disabling helmet security-header defaults (contentSecurityPolicy, frameguard, noSniff, referrerPolicy, hidePoweredBy)',
+        'Disallow disabling helmet security-header defaults: contentSecurityPolicy, frameguard/xFrameOptions, noSniff/xContentTypeOptions, referrerPolicy, hidePoweredBy/xPoweredBy, crossOriginResourcePolicy, crossOriginOpenerPolicy',
       cwe: 'CWE-693',
       cvss: 6.5,
       confidence: 'high',
@@ -110,6 +110,7 @@ export const noDisabledHelmetProtections = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Helmet Protection Disabled (CWE-693)',
         cwe: 'CWE-693',
+        cvss: 6.5,
         description:
           'helmet({ {{option}}: false }) stops the {{header}} header from being sent. The middleware is mounted but this protection is off, so the app ships the same exposure as an app with no helmet at all.',
         severity: 'HIGH',

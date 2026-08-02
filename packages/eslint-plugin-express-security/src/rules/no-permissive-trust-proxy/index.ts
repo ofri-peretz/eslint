@@ -92,6 +92,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unconditional Proxy Trust (CWE-348)',
         cwe: 'CWE-348',
+        cvss: 5.3,
         description:
           "'trust proxy' is enabled unconditionally, so Express takes the left-most X-Forwarded-For entry as req.ip. A client can send any address it likes — rate-limit buckets, IP allowlists and audit logs all follow the forged value.",
         severity: 'MEDIUM',

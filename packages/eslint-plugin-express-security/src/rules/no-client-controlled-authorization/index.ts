@@ -215,6 +215,7 @@ export const noClientControlledAuthorization = createRule<
         icon: MessageIcons.SECURITY,
         issueName: 'Authorization Decided On Client Input (CWE-863)',
         cwe: 'CWE-863',
+        cvss: 8.1,
         description:
           'The access decision reads {{expression}} — a value the caller sends. The check runs, and passes for anyone who sets the field.',
         severity: 'HIGH',

@@ -8,7 +8,7 @@ cwe: CWE-693
 autofix: false
 ---
 
-> Disallow disabling helmet security-header defaults (contentSecurityPolicy, frameguard, noSniff, referrerPolicy, hidePoweredBy)
+> Disallow disabling helmet security-header defaults: contentSecurityPolicy, frameguard/xFrameOptions, noSniff/xContentTypeOptions, referrerPolicy, hidePoweredBy/xPoweredBy, crossOriginResourcePolicy, crossOriginOpenerPolicy
 
 <!-- @rule-summary -->
 

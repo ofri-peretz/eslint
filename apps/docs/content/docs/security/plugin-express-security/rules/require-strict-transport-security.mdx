@@ -30,7 +30,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 The rule fires on the `hsts` / `strictTransportSecurity` option of `helmet()` and on the `helmet.hsts()` / `helmet.strictTransportSecurity()` middleware factories. **An omitted option is never reported**: helmet's default is already 365 days with `includeSubDomains`. Only an explicit weakening is a finding.
 
-The default floor is 15,552,000 seconds (180 days) — the minimum [hstspreload.org](https://hstspreload.org/) accepts.
+The default floor is 15,552,000 seconds (six months) — below that an HSTS policy stops being meaningful. It is **not** the preload bar: [hstspreload.org](https://hstspreload.org/) submission requires `max-age` of at least 31,536,000 (one year) together with `includeSubDomains` and `preload`. Set `minMaxAge: 31536000` if you intend to submit.
 
 ## Examples
 
@@ -74,7 +74,7 @@ The `max-age` finding offers one editor suggestion (no auto-fix): **raise `maxAg
 
 | Option              | Type      | Default    | Description                                       |
 | ------------------- | --------- | ---------- | ------------------------------------------------- |
-| `minMaxAge`         | `number`  | `15552000` | Minimum accepted `max-age`, in seconds            |
+| `minMaxAge`         | `number`  | `15552000` | Minimum accepted `max-age`, in seconds (six months; use `31536000` for preload eligibility) |
 | `requireSubDomains` | `boolean` | `true`     | Report `includeSubDomains: false`                 |
 
 ```json

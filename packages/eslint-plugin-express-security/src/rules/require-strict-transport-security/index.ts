@@ -49,8 +49,9 @@ type MessageIds =
 
 export interface Options {
   /**
-   * Minimum accepted `max-age`, in seconds. Default: 15552000 (180 days) —
-   * the floor required for hstspreload.org submission.
+   * Minimum accepted `max-age`, in seconds. Default: 15552000 (six months) —
+   * the commonly cited effective floor. Note that hstspreload.org submission
+   * requires a full year (31536000) plus includeSubDomains and preload.
    */
   minMaxAge?: number;
 
@@ -60,7 +61,12 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/** 180 days — the hstspreload.org minimum. */
+/**
+ * Six months. The default floor below which an HSTS policy stops being
+ * meaningful. It is NOT the preload bar: hstspreload.org requires
+ * max-age ≥ 31536000 (one year) with includeSubDomains and preload — raise
+ * `minMaxAge` to 31536000 if you intend to submit.
+ */
 const DEFAULT_MIN_MAX_AGE = 15552000;
 
 /** Both helmet spellings of the HSTS option / middleware. */
@@ -117,6 +123,7 @@ export const requireStrictTransportSecurity = createRule<
         icon: MessageIcons.SECURITY,
         issueName: 'HSTS Disabled (CWE-319)',
         cwe: 'CWE-319',
+        cvss: 7.4,
         description:
           'helmet({ {{option}}: false }) removes the Strict-Transport-Security header. Every first request of a session can then be downgraded to plaintext HTTP and stripped in transit.',
         severity: 'HIGH',
@@ -127,16 +134,18 @@ export const requireStrictTransportSecurity = createRule<
         icon: MessageIcons.SECURITY,
         issueName: 'HSTS max-age Too Short (CWE-319)',
         cwe: 'CWE-319',
+        cvss: 5.9,
         description:
           'Strict-Transport-Security max-age is {{maxAge}}s, below the {{minimum}}s floor. Once it lapses, the next visit is downgradeable again.',
         severity: 'MEDIUM',
-        fix: 'Set maxAge to at least {{minimum}} seconds (31536000 = one year is the common choice).',
+        fix: 'Set maxAge to at least {{minimum}} seconds. Preload submission (hstspreload.org) requires 31536000 — one year — plus includeSubDomains and preload.',
         documentationLink: 'https://hstspreload.org/',
       }),
       subdomainsExcluded: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'HSTS Excludes Subdomains (CWE-319)',
         cwe: 'CWE-319',
+        cvss: 5.9,
         description:
           'includeSubDomains is off, so any subdomain still answers over plaintext HTTP — enough to plant a cookie the parent domain trusts.',
         severity: 'MEDIUM',

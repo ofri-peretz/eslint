@@ -109,7 +109,21 @@ function basename(command: string): string {
   return segments[segments.length - 1];
 }
 
-/** A string assembled at runtime rather than written out in full. */
+/**
+ * A string assembled at runtime rather than written out in full.
+ *
+ * Deliberately stricter than `no-shell-injection`'s `isStringConcatOrTemplate`,
+ * and NOT shared with it. That rule fires on `exec()` — where the whole first
+ * argument IS the command line, so a bare identifier tells you nothing about
+ * whether a shell metacharacter can appear, and it stays silent (`exec(cmd)` is
+ * its documented coverage gap). Here the argv position is already known to be a
+ * command string handed to an interpreter, so a bare identifier is exactly as
+ * unverifiable as an interpolation and is reported. Consolidating the two would
+ * either loosen this rule or make `no-shell-injection` fire on `exec(variable)`,
+ * which is the false positive it was written to avoid. Pinned by the
+ * `spawn('zsh', ['-c', userCommand])` (reported) and `exec(userCommand)`
+ * (not reported by either rule) test pair.
+ */
 function isAssembledString(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.length > 0;
@@ -156,6 +170,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Command Injection Through Shell Flag (CWE-77)',
         cwe: 'CWE-77',
+        cvss: 9.8,
         description:
           '{{fn}}("{{shell}}", ["{{flag}}", …]) hands a dynamically built string to {{shell}}, which parses it as a command line. The argument array looks parameterized but everything after {{flag}} is re-parsed — `;`, `&&`, backticks and `$()` all execute.',
         severity: 'CRITICAL',
@@ -167,6 +182,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Interpolated Command Line (CWE-77)',
         cwe: 'CWE-77',
+        cvss: 9.8,
         description:
           '{{fn}}() takes a whole command line and does NOT escape interpolated values (unlike the execa/zx tagged-template forms). Any special character in the interpolated value changes which command runs.',
         severity: 'CRITICAL',

@@ -15,7 +15,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-> Disallow disabling helmet security-header defaults (contentSecurityPolicy, frameguard, noSniff, referrerPolicy, hidePoweredBy)
+> Disallow disabling helmet security-header defaults: contentSecurityPolicy, frameguard/xFrameOptions, noSniff/xContentTypeOptions, referrerPolicy, hidePoweredBy/xPoweredBy, crossOriginResourcePolicy, crossOriginOpenerPolicy
 
 **Severity:** 🔴 High
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)

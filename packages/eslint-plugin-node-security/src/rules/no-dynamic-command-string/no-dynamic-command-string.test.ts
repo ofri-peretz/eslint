@@ -58,6 +58,12 @@ describe('no-dynamic-command-string', () => {
       { code: 'tag`git clone ${url}`;' },
       { code: 'obj[fn]`git clone ${url}`;' },
       { code: 'getTag()`git clone ${url}`;' },
+      // Coverage-gap pin: a bare identifier as the WHOLE command line is
+      // no-shell-injection's documented gap, and not this rule's shape either
+      // (exec is not an argv-taking function). The mirror-image invalid case —
+      // the same identifier in a -c argv slot — is asserted below.
+      { code: `exec(userCommand);` },
+      { code: `execSync(userCommand);` },
     ],
     invalid: [
       // bash -c with an interpolated command line
