@@ -229,12 +229,14 @@ if (results.length > 0) {
   const timestamp = new Date().toISOString().split('T')[0];
   const outputPath = path.join(RESULTS_DIR, `${timestamp}.json`);
   let prereg = null;
-  try { prereg = capturePreregistration({ allowDirty: true }); } catch { /* local dirty allowed */ }
+  try { prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url }); } catch { /* local dirty allowed */ }
   const envelope = {
     bench: 'ILB-Juliet',
     benchVersion: '1.0',
     timestamp: new Date().toISOString(),
     methodologyCommit: prereg?.methodologyCommit ?? null,
+    methodologyHash: prereg?.methodologyHash ?? null,
+    methodologyPaths: prereg?.methodologyPaths ?? [],
     toolchain: getToolchain(),
     preregistration: prereg ?? null,
     cost: {},

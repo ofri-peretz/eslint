@@ -9,6 +9,7 @@
     "./lib/median": "./lib/median.ts"
   },
   "scripts": {
+    "test": "vitest run",
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
     "ilb:perf-import-nestjs": "tsx suites/ilb-perf-import-nestjs/run.ts",
     "ilb:cwe-corpus": "tsx suites/ilb-cwe-corpus/run.ts",

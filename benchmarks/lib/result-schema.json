@@ -50,7 +50,18 @@
     "methodologyCommit": {
       "type": "string",
       "pattern": "^[a-f0-9]{7,40}$",
-      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. CI requires this once 1.5 lands."
+      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. NOT squash-proof — this repo squash-merges, so a branch SHA never enters main's history and is unreachable from a fresh clone. Useful provenance while the PR ref lives; `methodologyHash` is the durable receipt."
+    },
+    "methodologyHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Squash-proof pre-registration receipt (item 1.5): sha256 of the concatenated bytes of every file in `methodologyPaths`, in listed order. Survives squash/rebase/force-push and is recomputable from a fresh clone: `cat $(jq -r '.methodologyPaths[]' <result.json>) | shasum -a 256`. Required on results from 2026-08-03 onward; the older corpus predates it."
+    },
+    "methodologyPaths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Repo-relative files covered by `methodologyHash`, in hash order: the suite entrypoint first, then its transitive repo-local imports (sorted). Recorded so the hash is self-describing — an unversioned 'hash of some files' is no better than a dead SHA."
     },
     "toolchain": {
       "type": "object",
