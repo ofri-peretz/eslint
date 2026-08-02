@@ -74,6 +74,28 @@ function safeFetch(rawUrl) {
 }
 ```
 
+### ✅ Also correct — no evidence of user flow
+
+The rule reports on evidence, not on the mere presence of a dynamic argument.
+A Node options object whose fields are plain locals is internal plumbing, not
+a user-controlled URL:
+
+```js
+function fetchProfile(host, path, cb) {
+  // host/path are this helper's own parameters — not flagged
+  return https.request({ host, path, method: 'GET' }, cb);
+}
+
+const r = await fetch(`https://api.internal/items/${id}`);   // id is a local
+```
+
+Three shapes count as evidence:
+
+1. The whole argument is a user-input-named identifier — `fetch(userUrl)`.
+2. Any part of the expression reads off a request object (`req`, `request`,
+   `ctx`, `event`) — `https.request({ host: req.query.host })`.
+3. A template literal or concatenation interpolating either of the above.
+
 ## Error Message Format
 
 ```text
