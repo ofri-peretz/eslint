@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-operability",
   "version": "3.0.10",
-  "description": "ESLint rules for production behavior, resource hygiene, and log quality.",
+  "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -29,12 +29,23 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "operability",
     "observability",
     "production-ready",
-    "llm-optimized"
+    "logging",
+    "log-quality",
+    "debug-code",
+    "sre",
+    "data-minimization",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
