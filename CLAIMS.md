@@ -1,4 +1,4 @@
-# Claims Registry — `@interlace/eslint-plugin-*`
+# Claims Registry — Interlace eslint-plugins
 
 > Every marketing claim in this repo's docs and home page is mapped here to its evidence file. Format mandated by the [Interlace Evidence Framework](https://github.com/ofri-peretz/agents/blob/main/interlace/evidence-framework.md).
 >
