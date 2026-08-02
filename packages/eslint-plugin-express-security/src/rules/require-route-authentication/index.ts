@@ -224,6 +224,17 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     let hasGlobalAuth = false;
 
     function isAuthMiddlewareArg(arg: TSESTree.Node): boolean {
+      // `require` is in AUTH_MIDDLEWARE for names like `requireRole`, but this
+      // matches PRINTED SOURCE TEXT — so in CommonJS `app.use(require('body-parser'))`
+      // would read as a global auth guard and switch the rule off file-wide.
+      // Rule out the import call itself before the name match.
+      if (
+        arg.type === AST_NODE_TYPES.CallExpression &&
+        arg.callee.type === AST_NODE_TYPES.Identifier &&
+        arg.callee.name === 'require'
+      ) {
+        return false;
+      }
       const text = context.sourceCode.getText(arg);
       if (AUTH_MIDDLEWARE.test(text)) return true;
       for (const name of extraAuth) {
@@ -247,14 +258,23 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
         const method = routeMethodOf(node);
         if (!method) return;
 
-        // app.use(requireAuth) — a router-wide guard suppresses every route
+        // app.use(requireAuth) — a router-wide guard suppresses every route.
+        // A PATH-SCOPED mount does not: `app.use('/public', requireAuth)` guards
+        // /public only, and treating it as global would silently switch this rule
+        // off for every critical route in the file.
         if (method === 'use') {
-          for (const arg of node.arguments) {
-            if (
-              arg.type !== AST_NODE_TYPES.Literal &&
-              isAuthMiddlewareArg(arg)
-            ) {
-              hasGlobalAuth = true;
+          const [first] = node.arguments;
+          const pathScoped =
+            first?.type === AST_NODE_TYPES.Literal &&
+            typeof first.value === 'string';
+          if (!pathScoped) {
+            for (const arg of node.arguments) {
+              if (
+                arg.type !== AST_NODE_TYPES.Literal &&
+                isAuthMiddlewareArg(arg)
+              ) {
+                hasGlobalAuth = true;
+              }
             }
           }
           return;

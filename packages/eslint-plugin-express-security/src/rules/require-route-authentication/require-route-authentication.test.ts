@@ -84,6 +84,25 @@ describe('require-route-authentication', () => {
       },
     ],
     invalid: [
+      // REGRESSION: a path-scoped mount is not global auth. `app.use('/public', ...)`
+      // guards /public only — before this lock it switched the rule off file-wide.
+      {
+        code: `
+          app.use('/public', requireAuth);
+          app.post('/users', createUser);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // REGRESSION: AUTH_MIDDLEWARE matches printed source text and contains
+      // `require`, so in CommonJS an ordinary import read as a global auth guard
+      // and suppressed every route in the file.
+      {
+        code: `
+          app.use(require('body-parser'));
+          app.post('/users', createUser);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
       // Account management wide open
       {
         code: `app.post('/users', createUser);`,
