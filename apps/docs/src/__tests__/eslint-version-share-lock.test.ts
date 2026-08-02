@@ -88,9 +88,9 @@ describe('ESLint version share: published surfaces match the tracked snapshot', 
     const stamps = [
       // "Last data refresh: **2026-08-02**" — window spans the newline used by
       // the MDX <Callout>, where title and date sit on separate lines.
-      ...[...text.matchAll(/Last data refresh[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/g)],
+      ...text.matchAll(/Last data refresh[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/g),
       // Table-header form: "Share (2026-08-02)"
-      ...[...text.matchAll(/Share \((\d{4}-\d{2}-\d{2})\)/g)],
+      ...text.matchAll(/Share \((\d{4}-\d{2}-\d{2})\)/g),
     ];
     for (const [full, date] of stamps) {
       expect(
