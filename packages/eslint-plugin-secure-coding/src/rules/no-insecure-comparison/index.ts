@@ -165,8 +165,51 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const secretKeywords = ['secret', 'token', 'password', 'apikey', 'api_key', 'signature', 'auth', 'key', 'hash', 'digest', 'mac'];
-      
+      // Word-level, not substring-level. The bare keywords `key`, `auth` and
+      // `mac` used to be matched as substrings of the whole expression's source
+      // text, which made `if (key === "__non_webpack_require__")` a "timing
+      // attack" and swept in `monkey`, `keyword`, `machine`, `author`. A secret
+      // is named by a *word*, so match words.
+      const secretKeywords = new Set([
+        'secret', 'secrets', 'token', 'tokens', 'password', 'passwd', 'pwd',
+        'apikey', 'api_key', 'secretkey', 'secret_key', 'privatekey', 'private_key',
+        'signature', 'hmac', 'digest', 'checksum', 'nonce', 'otp',
+        'passwordhash', 'password_hash', 'hashedpassword', 'hashed_password',
+      ]);
+
+      /**
+       * Split an identifier-ish name into lowercase word segments:
+       * `expectedPassword` → ['expected', 'password'], `api_key` → ['api','key'].
+       * The joined form is kept too so `apiKey` also matches the `apikey` entry.
+       */
+      // oxlint-disable-next-line consistent-function-scoping
+      const nameSegments = (name: string): string[] => {
+        const parts = name
+          .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+          .split(/[^A-Za-z0-9]+/)
+          .filter(Boolean)
+          .map((p) => p.toLowerCase());
+        return [...parts, parts.join(''), parts.join('_'), name.toLowerCase()];
+      };
+
+      /** Every identifier / property name appearing inside an expression. */
+      // oxlint-disable-next-line consistent-function-scoping
+      const namesIn = (expr: TSESTree.Node): string[] => {
+        const out: string[] = [];
+        const walk = (n: TSESTree.Node): void => {
+          if (n.type === 'Identifier') out.push(n.name);
+          else if (n.type === 'MemberExpression') {
+            walk(n.object);
+            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
+            else walk(n.property);
+          } else if (n.type === 'CallExpression') {
+            walk(n.callee);
+          }
+        };
+        walk(expr);
+        return out;
+      };
+
       const isSecurityContext = ((): boolean => {
          let current: TSESTree.Node | undefined = node;
          while (current) {
@@ -189,13 +232,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       })();
 
       const isPotentialSecret = (expr: TSESTree.Expression): boolean => {
-        const text = sourceCode.getText(expr).toLowerCase();
-        if (secretKeywords.some(keyword => text.includes(keyword))) return true;
-        
+        const segments = namesIn(expr).flatMap(nameSegments);
+        if (segments.some(segment => secretKeywords.has(segment))) return true;
+
         // In security contexts, treat generic terms as potential secrets
         if (isSecurityContext) {
-            const contextKeywords = ['provided', 'expected', 'actual', 'input', 'value', 'data'];
-            return contextKeywords.some(keyword => text.includes(keyword));
+            const contextKeywords = new Set(['provided', 'expected', 'actual', 'input', 'value', 'data']);
+            return segments.some(segment => contextKeywords.has(segment));
         }
         return false;
       };

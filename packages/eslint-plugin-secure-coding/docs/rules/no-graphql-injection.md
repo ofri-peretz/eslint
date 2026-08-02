@@ -58,6 +58,30 @@ GraphQL injection occurs when user input is improperly inserted into GraphQL que
 - Perform DoS attacks with complex/nested queries
 - Extract schema information via introspection
 
+### What counts as a GraphQL document
+
+A template literal is not a GraphQL query just because it has braces in it. Two
+requirements were tightened in 2026-07 after a 1,470-file corpus run (webpack,
+lodash, eslint-plugin-import, two NestJS boilerplates) produced 41 findings at
+CVSS 9.8, every one of them an ordinary message or code-generation string:
+
+1. **Operation and schema keywords must start a line.** GraphQL declares
+   `query`, `mutation`, `subscription`, `fragment`, `type`, `interface`, `enum`,
+   `scalar` and `input` at the start of a line; English mentions them mid-clause.
+   Matching them anywhere in the text turned
+   `` `Please specify --type ${a} or ${b}` `` and `` `Invalid type ${t}` `` into
+   GraphQL-injection findings. A schema keyword additionally requires the text
+   to contain a `{` — a type definition has a body.
+2. **A bare selection set must BE the whole string.** Nested braces inside a
+   larger message are not a selection set. Requiring the trimmed text to start
+   with `{` and end with `}` is what stops webpack's
+   `` `resolve.fallback: { "${request}": require.resolve("${alias}") }` `` from
+   matching.
+
+String concatenations are evaluated on their reassembled **static string
+value**, not on `sourceCode.getText()` — otherwise the JS quoting (`"query {…`)
+sits in front of the query and defeats the start-of-line test.
+
 ### Why This Matters
 
 | Issue            | Impact                   | Solution                            |

@@ -43,7 +43,10 @@ nx lint eslint-plugin-nestjs-security
 ```
 src/
 ├── index.ts          # Plugin entry, exports rules and 2 configs
-└── rules/            # 5 rule directories
+├── utils/            # Shared helpers
+│   ├── decorators.ts      # Decorator naming + known/unresolved classification
+│   └── project-context.ts # Cross-file global registration discovery (cached)
+└── rules/            # 6 rule directories
     └── [rule-name]/
         ├── index.ts       # Rule implementation
         └── index.spec.ts  # Rule tests
@@ -52,7 +55,7 @@ docs/                 # Documentation
 
 ## Plugin Purpose
 
-Security-focused ESLint plugin with **5 rules** for NestJS applications. Covers authorization guards, validation pipes, throttling/rate limiting, class-validator decorators, and sensitive field exposure.
+Security-focused ESLint plugin with **6 rules** for NestJS applications. Covers authorization guards, validation pipes, throttling/rate limiting, class-validator decorators, and sensitive field exposure.
 
 ## Rule Categories
 
@@ -88,25 +91,37 @@ Security-focused ESLint plugin with **5 rules** for NestJS applications. Covers 
 
 ## Global Configuration Handling
 
-NestJS supports global config that ESLint cannot detect cross-file. Rules support `assumeGlobal*` options:
+NestJS applies guards, pipes and throttling app-wide through DI, in a file the
+controller never imports. `src/utils/project-context.ts` discovers those
+registrations: it resolves the project root (nearest `package.json`), scans
+`main.ts` / `*.module.ts` once, and caches the result per root.
 
-```javascript
-// eslint.config.js - for teams using global config in main.ts
-{
-  rules: {
-    'nestjs-security/require-guards': ['warn', { assumeGlobalGuards: true }],
-    'nestjs-security/no-missing-validation-pipe': ['warn', { assumeGlobalPipes: true }],
-    'nestjs-security/require-throttler': ['warn', { assumeGlobalThrottler: true }]
-  }
-}
-```
+Detected: `{ provide: APP_GUARD|APP_PIPE|APP_INTERCEPTOR|APP_FILTER }`,
+`app.useGlobalPipes()`, `app.useGlobalGuards()`, `ThrottlerModule.forRoot(Async)`.
+A `ThrottlerGuard` registered as `APP_GUARD` counts as throttling, not auth.
+
+The `assumeGlobal*` options still force-skip a rule without scanning; the new
+`detectGlobal*: false` options disable the scan and restore strict per-file
+checking.
+
+## False-positive doctrine
+
+`src/utils/decorators.ts` holds `KNOWN_DECORATORS` — every decorator shipped by
+NestJS, Swagger, class-validator and class-transformer. **Anything not in that
+set is treated as project-owned and possibly a guard composite**
+(`applyDecorators(UseGuards(...))`), so `require-guards` and
+`no-exposed-debug-endpoints` stay silent on it. A false negative is far cheaper
+than a false positive on somebody else's codebase.
+
+Never add a wildcard to that set. An `Api*` prefix heuristic would swallow ack's
+`@ApiKeyProtected()`, which is a guard, not Swagger documentation.
 
 ## Recognized Decorators
 
-| Rule                | Skip Decorators                              |
-| ------------------- | -------------------------------------------- |
-| `require-guards`    | @Public, @SkipAuth, @AllowAnonymous, @NoAuth |
-| `require-throttler` | @SkipThrottle                                |
+| Rule                | Skip Decorators                                              |
+| ------------------- | ------------------------------------------------------------ |
+| `require-guards`    | @Public, @IsPublic, @SkipAuth, @AllowAnonymous, @Anonymous, @NoAuth, any unresolved decorator |
+| `require-throttler` | reports only on the root module; no per-route decorators      |
 
 ## Security Considerations
 

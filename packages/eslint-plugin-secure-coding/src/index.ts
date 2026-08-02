@@ -155,7 +155,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Critical - Credentials
   'secure-coding/no-hardcoded-credentials': 'error',
-  'secure-coding/no-insecure-comparison': 'warn',
+
+  // NOTE: `no-insecure-comparison` is intentionally NOT in `recommended`
+  // (removed 2026-07-31). It is `deprecated` in favour of
+  // `node-security/no-timing-unsafe-compare`, and what it actually reports on
+  // ordinary code is every `==` / `!=` — 876 findings on a 1,470-file corpus
+  // (webpack, lodash, eslint-plugin-import, two NestJS boilerplates), 100% of
+  // them already covered by core `eqeqeq`. Re-reporting another rule's
+  // findings under a CWE-697 security banner is noise, not signal, and no
+  // narrowing fixes that: the loose-equality half of this rule is a style
+  // check wearing a security hat.
+  //
+  // The timing-attack half (a secret compared with `===`) is the part worth
+  // keeping, and `node-security/no-timing-unsafe-compare` is where it lives.
+  // The rule remains exported and available via `strict` / explicit opt-in.
 
   // Critical - Template injection
   'secure-coding/no-template-injection': 'error',
@@ -275,8 +288,10 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/no-improper-type-validation': 'error',
       
       // A07:2021 – Identification and Authentication Failures
-      'secure-coding/no-insecure-comparison': 'error',
-      
+      // no-insecure-comparison removed for the same reason as in
+      // `recommended`: it re-reports `eqeqeq` under a security banner. Use
+      // `node-security/no-timing-unsafe-compare` for the timing-attack half.
+
       // A08:2021 – Software and Data Integrity Failures
       'secure-coding/no-unsafe-deserialization': 'error',
     },

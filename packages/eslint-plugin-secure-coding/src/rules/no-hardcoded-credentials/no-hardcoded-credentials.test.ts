@@ -741,12 +741,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: '' },
+                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
                   output: 'const config = { password: process.env.PASSWORD || \'SuperSecretPhrase!!\' };',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'const config = { password: await getSecret(\'password\') };',
                 },
               ],
@@ -765,12 +765,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
                   output: 'const config = { "password": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'const config = { "password": await getSecret(\'api_key\') };',
                 },
               ],
@@ -788,12 +788,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
                   output: 'this.password = process.env.API_KEY || \'SuperSecretPhrase!!\';',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'this.password = await getSecret(\'api_key\');',
                 },
               ],
@@ -813,12 +813,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'CREDENTIALS', credentialType: '' },
+                  data: { envVarName: 'CREDENTIALS', credentialType: 'Credential value' },
                   output: 'const credentials = process.env.CREDENTIALS || \'SuperSecretPhrase!!\';',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'const credentials = await getSecret(\'credentials\');',
                 },
               ],
@@ -837,12 +837,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
                   output: 'const secrets = [process.env.API_KEY || \'SuperSecretPhrase!!\'];',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'const secrets = [await getSecret(\'api_key\')];',
                 },
               ],
@@ -863,12 +863,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
                   output: 'let mySecret; mySecret = process.env.API_KEY || \'SuperSecretPhrase!!\';',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'let mySecret; mySecret = await getSecret(\'api_key\');',
                 },
               ],
@@ -885,12 +885,12 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: '' },
+                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
                   output: 'const config = { "secretKey": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
                 },
                 {
                   messageId: 'useSecretManager',
-                  data: { credentialType: '' },
+                  data: { credentialType: 'Credential value' },
                   output: 'const config = { "secretKey": await getSecret(\'api_key\') };',
                 },
               ],
@@ -980,6 +980,152 @@ describe('no-hardcoded-credentials', () => {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'AWS access key' },
                   output: 'const apiKey = someOtherFallback || await getSecret(\'api_key\');',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  /**
+   * Regression lock — value shape, not key name.
+   *
+   * Corpus evidence (1,470 files: webpack, lodash, eslint-plugin-import, two
+   * NestJS boilerplates): the rule produced 10 findings, 5 of which were the
+   * i18n error constant `errors: { password: 'incorrectPassword' }` in
+   * brocoders-nestjs-boilerplate/src/auth/auth.service.ts, reported at CVSS
+   * 9.8 purely because the *property key* was named `password`.
+   *
+   * The true positives in the same corpus — a 50-character random API secret
+   * and the seed password `aaAA@123` in ack-nestjs-boilerplate's migration
+   * data — are all distinguishable by the VALUE's shape. Every case below is
+   * verbatim from that corpus.
+   */
+  describe('corpus regression — decide on the value, not the key name', () => {
+    ruleTester.run('no-hardcoded-credentials', noHardcodedCredentials, {
+      valid: [
+        // FALSE POSITIVE (killed): i18n error keys. Pure word strings in a
+        // credential-named slot are message constants, not secrets.
+        { code: `throw new Error({ errors: { password: 'incorrectPassword' } });` },
+        { code: `const errors = { password: 'incorrectPassword' };` },
+        { code: `const e = { token: 'notFoundToken' };` },
+        { code: `const e = { secret: 'missingSecret' };` },
+        // Identifier-shaped constants (the vercel/ai FP class), now excluded
+        // by shape even inside a credential-named slot.
+        { code: `const secret = 'experimental_onToolExecutionStart';` },
+        { code: `export const SessionCacheProvider = 'SessionCacheProvider';` },
+        // Sentences are never credentials.
+        { code: `const password = 'Please enter your password';` },
+        // Single character class, below the long-blob length — the
+        // `isSecretShaped` entropy fallback rejects it.
+        { code: `const password = 'bcdfghjklmnp';` },
+        // Word separators only, every token shorter than 3 characters — no
+        // meaningful token to judge, so not a "natural word string", but the
+        // single character class and short length still rule it out.
+        { code: `const password = 'ab-cd-ef';` },
+        // `looksRandom` rejections, on a non-credential binding so nothing
+        // else can pick them up:
+        //   - contains an ascending run (charset-constant shape)
+        { code: `const someValue = 'aB3xyabcdefQ7mK1pL5vN8wR2tS6';` },
+        //   - long and mixed-class but low entropy (repeating pattern)
+        { code: `const someValue = 'aB1aB1aB1aB1aB1aB1aB1a';` },
+        // Secret-shaped values in NON-credential slots stay silent — the shape
+        // is necessary but the name still has to agree.
+        { code: `obj.randomThing = 'aaAA@123';` },
+        { code: `let randomVar; randomVar = 'aaAA@123';` },
+        { code: `const c = { randomField: 'aaAA@123' };` },
+        { code: `const c = { "randomField": 'aaAA@123' };` },
+      ],
+      invalid: [
+        // TRUE POSITIVE (kept): the genuine 50-character API secret committed
+        // in ack-nestjs-boilerplate/src/migration/data/migration.api-key.data.ts.
+        {
+          code: `const seed = { secret: 'qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP' };`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'SECRET', credentialType: 'Secret key' },
+                  output: `const seed = { secret: process.env.SECRET || 'qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP' };`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Secret key' },
+                  output: `const seed = { secret: await getSecret('secret') };`,
+                },
+              ],
+            },
+          ],
+        },
+        // TRUE POSITIVE (newly found): the 25-character random key on the line
+        // above it. The old name-driven logic missed this because `key` is not
+        // on the credential-name allowlist — shape catches it regardless.
+        {
+          code: `const seed = { key: 'fyFGb7ywyM37TqDY8nuhAmGW5' };`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'KEY', credentialType: 'Secret key' },
+                  output: `const seed = { key: process.env.KEY || 'fyFGb7ywyM37TqDY8nuhAmGW5' };`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Secret key' },
+                  output: `const seed = { key: await getSecret('key') };`,
+                },
+              ],
+            },
+          ],
+        },
+        // TRUE POSITIVE: a single-charset secret — 21 lowercase characters
+        // with no pronounceable token. Exercises the entropy fallback in
+        // `isSecretShaped` that the 12-character case above rejects.
+        {
+          code: `const password = 'bcdfghjklmnpqrstvwxyz';`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  output: `const password = process.env.PASSWORD || 'bcdfghjklmnpqrstvwxyz';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Credential value' },
+                  output: `const password = await getSecret('password');`,
+                },
+              ],
+            },
+          ],
+        },
+        // TRUE POSITIVE (kept): the seeded admin password from
+        // ack-nestjs-boilerplate/src/migration/data/migration.user.data.ts.
+        // Too short and too structured for any key format, but four character
+        // classes in a `password` slot is a credential.
+        {
+          code: `const seed = { password: 'aaAA@123' };`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  output: `const seed = { password: process.env.PASSWORD || 'aaAA@123' };`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  data: { credentialType: 'Credential value' },
+                  output: `const seed = { password: await getSecret('password') };`,
                 },
               ],
             },
@@ -1138,10 +1284,29 @@ describe('Layer 2 - mock context', () => {
     const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
     const literal = listeners.Literal as (node: unknown) => void;
 
+    // Lowercase hex: matches the base64/hex `secretKey` charset (ambiguous
+    // tier) but NOT `looksRandom`, which requires mixed case + digits. A
+    // mixed-case blob like `aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC` is structural
+    // by shape and reports without any naming context.
     literal({
       type: 'Literal',
-      value: 'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC',
+      value: 'abcdef1234567890abcdef1234567890',
       parent: undefined,
+    });
+
+    expect(reports).toHaveLength(0);
+  });
+
+  it('isCredentialContext returns false for an ArrayExpression parent with no parent of its own (detached node)', () => {
+    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const literal = listeners.Literal as (node: unknown) => void;
+
+    // Secret-shaped value, so the context-positive path is reached, but the
+    // ArrayExpression is detached and cannot be walked up to a named binding.
+    literal({
+      type: 'Literal',
+      value: 'aaAA@123',
+      parent: { type: 'ArrayExpression', parent: undefined },
     });
 
     expect(reports).toHaveLength(0);
