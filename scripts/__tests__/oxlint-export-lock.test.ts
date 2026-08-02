@@ -166,7 +166,14 @@ describe('ILB-oxlint-parity plugin lists name only live plugins', () => {
   }
 
   it('manifest exposes the live plugin set (sanity floor)', () => {
-    expect(liveShorts.size).toBeGreaterThanOrEqual(19);
+    // Deliberately well below the current count (19). This guards only against
+    // a truncated/empty manifest making the two checks below vacuously pass —
+    // it is NOT a plugin-count pin. `liveShorts` filters on `ruleCount > 0`, so
+    // pinning it to the exact total would fail for the wrong reason the first
+    // time a plugin is scaffolded with no rules yet. The real plugin-count
+    // ratchet is the `pluginDirs.length` floor at the top of this file, which
+    // counts directories and so isn't subject to that.
+    expect(liveShorts.size).toBeGreaterThanOrEqual(10);
     // The consolidated-away plugin must never reappear as a manifest entry.
     expect(liveShorts.has('crypto')).toBe(false);
   });
