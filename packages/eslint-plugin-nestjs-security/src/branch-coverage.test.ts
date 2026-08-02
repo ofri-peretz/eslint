@@ -48,6 +48,13 @@ const getDec = {
     arguments: [],
   },
 };
+const moduleDec = {
+  expression: {
+    type: 'CallExpression',
+    callee: { type: 'Identifier', name: 'Module' },
+    arguments: [],
+  },
+};
 
 type Listener = (node: unknown) => void;
 const listener = (listeners: Record<string, unknown>, name: string): Listener =>
@@ -102,10 +109,8 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
         }
       `,
     },
-  ],
-  invalid: [
-    // Member-expression decorator on the class: hits the '' fallback in
-    // hasControllerDecorator / return-false tail of hasUseGuardsDecorator
+    // Member-expression decorator on the class: unnameable, so it may be a
+    // guard composite → the whole controller is exempt
     {
       code: `
         @Controller('u')
@@ -115,11 +120,8 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
           findAll() {}
         }
       `,
-      errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
-    // Member-expression *call* decorator alongside @Get: '' fallback in
-    // hasHttpMethodDecorator + hasPublicDecorator, callee-not-Identifier in
-    // hasUseGuardsDecorator
+    // Member-expression *call* decorator on the handler: same reasoning
     {
       code: `
         @Controller('u')
@@ -129,8 +131,9 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
           findAll() {}
         }
       `,
-      errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
+  ],
+  invalid: [
     // Bare @Get identifier decorator (Identifier arm of hasHttpMethodDecorator)
     {
       code: `
@@ -395,98 +398,55 @@ describe('no-missing-validation-pipe — Layer 2 synthetic AST', () => {
 // ===========================================================================
 ruleTester.run('require-throttler (branch edges)', requireThrottler, {
   valid: [
-    // Bare @SkipThrottle identifier decorator (Identifier arm of hasThrottleDecorator)
-    {
-      code: `
-        @Controller('u')
-        class BareSkip {
-          @Get()
-          @SkipThrottle
-          findAll() {}
-        }
-      `,
-    },
-    // Member-expression class decorator: '' fallback → not a controller
+    // Member-expression class decorator: '' fallback → not a @Module
     {
       code: `
         @ns.module()
-        class NotAController {
-          @Get()
-          findAll() {}
-        }
+        class NotAModule {}
       `,
+    },
+    // Bare @Module identifier decorator on a non-root module
+    {
+      code: `
+        @Module
+        class UsersModule {}
+      `,
+    },
+    // Root module file, but the class is not decorated with @Module
+    {
+      code: `export class AppModule {}`,
+      filename: 'src/app.module.ts',
     },
   ],
   invalid: [
-    // Bare @Controller identifier decorator (Identifier arm)
+    // Bare @Module identifier decorator (Identifier arm of isModuleClass)
     {
       code: `
-        @Controller
-        class BareController {
-          @Get()
-          findAll() {}
-        }
+        @Module
+        class AppModule {}
       `,
-      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
-    },
-    // Bare @Get identifier decorator (Identifier arm of isRouteHandler)
-    {
-      code: `
-        @Controller('u')
-        class BareGet {
-          @Get
-          findAll() {}
-        }
-      `,
-      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
-    },
-    // Member-expression method decorator: '' fallback in isRouteHandler +
-    // hasThrottleDecorator, callee-not-Identifier in hasThrottlerGuardDecorator
-    {
-      code: `
-        @Controller('u')
-        class MemberMethodDecorator {
-          @ns.log()
-          @Get()
-          findAll() {}
-        }
-      `,
-      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
-    },
-    // Computed method key reports as <anonymous>
-    {
-      code: `
-        @Controller('u')
-        class ComputedKey {
-          @Get()
-          ['dynamic']() {}
-        }
-      `,
-      errors: [{ messageId: 'missingThrottler', data: { name: '<anonymous>' } }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'AppModule' } }],
     },
   ],
 });
 
 describe('require-throttler — Layer 2 synthetic AST', () => {
-  it('treats undefined decorators as absent on class and method (no report)', () => {
+  it('ignores a class with undefined decorators', () => {
     const { listeners, reports } = createWithMockContext(requireThrottler);
     listener(listeners, 'ClassDeclaration')({ decorators: undefined, id: null });
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'findAll' },
-      decorators: undefined,
-    });
     expect(reports).toEqual([]);
   });
 
-  it('skips a constructor that carries an HTTP decorator (parser-impossible AST)', () => {
-    const { listeners, reports } = createWithMockContext(requireThrottler);
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'constructor' },
-      decorators: [getDec],
+  it('reports an anonymous root module as <anonymous>', () => {
+    const { listeners, reports } = createWithMockContext(requireThrottler, {
+      filename: 'app.module.ts',
     });
-    expect(reports).toEqual([]);
+    listener(listeners, 'ClassDeclaration')({ decorators: [moduleDec], id: null });
+    expect(reports).toHaveLength(1);
+    expect(reports[0]).toMatchObject({
+      messageId: 'missingThrottler',
+      data: { name: '<anonymous>' },
+    });
   });
 });
 
@@ -567,6 +527,8 @@ describe('require-class-validator — Layer 2 synthetic AST', () => {
     listener(listeners, 'ClassDeclaration')({
       id: { type: 'Identifier', name: 'SyntheticDto' },
       decorators: [],
+      superClass: null,
+      body: { body: [] },
     });
     listener(listeners, 'PropertyDefinition')({
       key: { type: 'Identifier', name: 'field' },
@@ -719,22 +681,48 @@ ruleTester.run('no-exposed-debug-endpoints (branch edges)', noExposedDebugEndpoi
         class CustomDecorated {}
       `,
     },
-  ],
-  invalid: [
-    // Member-expression callee decorator: Decorator handler skips it, but the
-    // Literal handler still flags the exact debug path
+    // Member-expression class decorator: unnameable → assumed to guard
     {
       code: `
+        @Controller('app')
         @foo.bar('debug')
-        class MemberCallee {}
+        class MemberCallee {
+          @Get('debug')
+          debug() {}
+        }
+      `,
+    },
+    // Bare @Controller identifier decorator with no route path
+    {
+      code: `
+        @Controller
+        class BareController {
+          @Get('safe')
+          safe() {}
+        }
+      `,
+    },
+  ],
+  invalid: [
+    // Bare @Get identifier decorator on a debug-pathed controller
+    {
+      code: `
+        @Controller('debug')
+        class DebugController {
+          @Get
+          state() {}
+        }
       `,
       errors: [{ messageId: 'violationDetected' }],
     },
-    // Custom endpoint configured with a leading slash (dp.startsWith('/') arm)
-    {
-      code: `const p = 'custom-debug';`,
-      options: [{ endpoints: ['/custom-debug'] }],
-      errors: [{ messageId: 'violationDetected' }],
-    },
   ],
+});
+
+describe('no-exposed-debug-endpoints — Layer 2 synthetic AST', () => {
+  it('treats a class with undefined decorators as a non-controller', () => {
+    const { listeners, reports } = createWithMockContext(noExposedDebugEndpoints);
+    listener(listeners, 'ClassDeclaration')({ decorators: undefined });
+    listener(listeners, 'MethodDefinition')({ decorators: [getDec] });
+    expect(reports).toEqual([]);
+  });
 });
