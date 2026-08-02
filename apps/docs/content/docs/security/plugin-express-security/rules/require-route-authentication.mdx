@@ -27,7 +27,7 @@ CWE-306 is the case where the check was never written, not the case where it is 
 The rule reports a route when **all** of the following hold:
 
 1. It is a route registration on an Express app/router (`app.post`, `router.delete`, …) with a string-literal path.
-2. The path matches the critical-function vocabulary (`password`, `credential`, `account`, `payment`, `billing`, `config`, `role`, `user`, …) and does **not** match the public-by-design vocabulary (`login`, `signup`, `reset`, `webhook`, `health`, `oauth`, `callback`, …).
+2. The path matches the critical-function vocabulary (`password`, `credential`, `account`, `payment`, `billing`, `config`, `role`, `user`, …) and does **not** match the public-by-design vocabulary (`login`, `signup`, `reset`, `webhook`, `health`, `oauth`, `callback`, …). Fragments match on **word boundaries with an optional plural `s`**, not as raw substrings: `/users` and `/orders/:id` match, `/reorder-items` and `/border-crossing` do not.
 3. No argument before the final handler reads as authentication middleware (`requireAuth`, `authenticate`, `passport.authenticate('jwt')`, `verifyToken`, `ensureLoggedIn`, …).
 4. The handler body never reads an authenticated principal — `req.user`, `req.auth`, `req.session`, `res.locals.user`, …
 5. The file has no router-wide guard (`app.use(requireAuth)`), wherever it appears — the check is deferred to the end of the file so a guard mounted after the routes still counts.
@@ -66,6 +66,10 @@ router.use(requireAuth);
 
 // The handler resolves the principal itself
 app.get('/account/profile', (req, res) => res.json(req.user));
+
+// Word-boundary matching — "order"/"user" do not collide on English
+app.post('/reorder-items', reorder);
+app.post('/border-crossing', cross);
 
 // Public by design — never reported
 app.post('/login', doLogin);

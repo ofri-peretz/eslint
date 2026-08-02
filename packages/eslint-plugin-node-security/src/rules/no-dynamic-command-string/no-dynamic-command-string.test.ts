@@ -27,6 +27,10 @@ describe('no-dynamic-command-string', () => {
       { code: `spawn('bash', ['-c', 'ls -la']);` },
       { code: `spawn('bash', ['-lc']);` },
       { code: `spawn('bash', ['--login']);` },
+      // -e is errexit to a POSIX shell, not a command flag
+      { code: `spawn('bash', ['-e', deployScript]);` },
+      // /k is a cmd flag, not a POSIX one
+      { code: `spawn('sh', ['/k', userCommand]);` },
       { code: `spawn('bash', [flagVar, cmd]);` },
       { code: `spawn('bash', [1, cmd]);` },
       { code: `spawn('bash', [, cmd]);` },
@@ -86,6 +90,11 @@ describe('no-dynamic-command-string', () => {
       },
       {
         code: 'spawn(\'powershell\', [\'-Command\', `Remove-Item ${file}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // PowerShell really does take -e (-EncodedCommand)
+      {
+        code: 'spawn(\'pwsh\', [\'-e\', `Remove-Item ${file}`]);',
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },
       // Flag not in the first position

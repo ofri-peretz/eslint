@@ -28,6 +28,10 @@ describe('no-client-controlled-authorization', () => {
         { code: `res.json({ role: req.body.role });` },
         { code: `if (flag) { log(req.body.role); }` },
         { code: `if (ready) req.body.role;` },
+        // `??` supplies a default — not an access decision
+        { code: `const role = req.body.role ?? 'viewer';` },
+        // A switch on something other than the discriminant
+        { code: `switch (mode) { case req.body.role: run(); break; }` },
         { code: `const label = req.body.role + '!';` },
         { code: `const kind = typeof req.body.role;` },
         { code: `save({ role: req.body.role, id: req.params.id });` },
@@ -96,6 +100,11 @@ describe('no-client-controlled-authorization', () => {
         },
         {
           code: `const allowed = req.body.isAdmin || isOwner(record);`,
+          errors: [{ messageId: 'clientControlledAuthorization' as const }],
+        },
+        // switch on a client-supplied role is the same decision, other syntax
+        {
+          code: `switch (req.body.role) { case 'admin': adminAccess(); break; }`,
           errors: [{ messageId: 'clientControlledAuthorization' as const }],
         },
         // Koa-style nesting still reaches the request

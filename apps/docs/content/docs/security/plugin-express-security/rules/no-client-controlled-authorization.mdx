@@ -33,8 +33,11 @@ There *is* an authorization check here. It reads the caller's claim about who th
 The rule reports when an authorization attribute is read off a client-controlled container — `req.body`, `req.query`, `req.params`, `req.headers`, `req.cookies` — and the value lands in a decision position:
 
 - an equality comparison (`===`, `==`, `!==`, `!=`)
-- an `if` / ternary test, a `!` negation, or a `&&` / `||` combination
+- an `if` / ternary test, a `switch` discriminant, a `!` negation, or a `&&` / `||` combination
 - the receiver or the argument of `.includes()` / `.some()`
+
+`??` is deliberately **not** a decision position: `req.body.role ?? 'viewer'`
+supplies a default, it does not gate anything.
 
 Attribute vocabulary: `role`, `roles`, `isAdmin`, `permissions`, `scope`, `privileges`, `userType`, `accessLevel`, `acl`, `claims`, `userId`, `ownerId`, `accountId`, `tenantId`, `orgId` (case-insensitive, snake_case included), plus `x-*` headers naming a role, user, tenant, account or permission.
 
@@ -65,6 +68,11 @@ if (req.headers['x-user-role'] === 'owner') { grant(); }
 
 // Ownership decided on a client-supplied id
 if (req.params.userId === record.ownerId) { allow(); }
+
+// Same decision, switch syntax
+switch (req.body.role) {
+  case 'admin': adminAccess(); break;
+}
 ```
 
 ### ✅ Correct
@@ -79,6 +87,9 @@ if (req.session.isAdmin) { grant(); }
 const role = req.body.role;
 logger.info(req.body.role);
 res.json({ role: req.body.role });
+
+// `??` supplies a default, it does not gate anything
+const requestedRole = req.body.role ?? 'viewer';
 
 // Ordinary request properties in a decision are not authorization
 if (req.query.page === '1') { first(); }

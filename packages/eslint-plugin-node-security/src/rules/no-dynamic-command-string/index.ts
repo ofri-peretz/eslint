@@ -61,23 +61,40 @@ const ARGV_FUNCTIONS = new Set([
   'fork',
 ]);
 
-/** Interpreters that re-parse whatever follows their command flag. */
-const SHELL_BINARIES = new Set([
-  'sh',
-  'bash',
-  'zsh',
-  'dash',
-  'ksh',
-  'busybox',
-  'cmd',
-  'cmd.exe',
-  'powershell',
-  'powershell.exe',
-  'pwsh',
+/**
+ * Interpreters that re-parse whatever follows a command flag → the flags that
+ * actually do the re-parsing, per interpreter.
+ *
+ * The sets are deliberately not shared: `-e` means `set -e` (errexit) to a
+ * POSIX shell and would make the next element a *script path*, not a command
+ * string, whereas to PowerShell `-e` is `-EncodedCommand`. Treating them alike
+ * produced a report whose message was wrong for bash.
+ */
+const POSIX_COMMAND_FLAGS = new Set(['-c']);
+const CMD_COMMAND_FLAGS = new Set(['/c', '/C', '/k', '/K']);
+const POWERSHELL_COMMAND_FLAGS = new Set([
+  '-Command',
+  '-command',
+  '-c',
+  '-EncodedCommand',
+  '-encodedcommand',
+  '-e',
+  '-ec',
 ]);
 
-/** Flags after which the next argv element is a command string. */
-const COMMAND_FLAGS = new Set(['-c', '-e', '/c', '/C', '/k', '/K', '-Command', '-command']);
+const SHELL_COMMAND_FLAGS: Record<string, Set<string>> = {
+  sh: POSIX_COMMAND_FLAGS,
+  bash: POSIX_COMMAND_FLAGS,
+  zsh: POSIX_COMMAND_FLAGS,
+  dash: POSIX_COMMAND_FLAGS,
+  ksh: POSIX_COMMAND_FLAGS,
+  busybox: POSIX_COMMAND_FLAGS,
+  cmd: CMD_COMMAND_FLAGS,
+  'cmd.exe': CMD_COMMAND_FLAGS,
+  powershell: POWERSHELL_COMMAND_FLAGS,
+  'powershell.exe': POWERSHELL_COMMAND_FLAGS,
+  pwsh: POWERSHELL_COMMAND_FLAGS,
+};
 
 /** Library entry points that accept a full command line without escaping. */
 const COMMAND_RUNNERS = new Set([
@@ -192,7 +209,8 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
         return;
       }
       const shell = basename(command.value);
-      if (!SHELL_BINARIES.has(shell.toLowerCase())) return;
+      const commandFlags = SHELL_COMMAND_FLAGS[shell.toLowerCase()];
+      if (!commandFlags) return;
 
       const argv = node.arguments[1];
       if (!argv || argv.type !== AST_NODE_TYPES.ArrayExpression) return;
@@ -201,7 +219,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
         const flag = argv.elements[i];
         if (!flag || flag.type !== AST_NODE_TYPES.Literal) continue;
         if (typeof flag.value !== 'string') continue;
-        if (!COMMAND_FLAGS.has(flag.value)) continue;
+        if (!commandFlags.has(flag.value)) continue;
 
         const commandString = argv.elements[i + 1];
         if (!commandString) continue;

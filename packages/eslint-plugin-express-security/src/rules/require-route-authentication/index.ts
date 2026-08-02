@@ -109,6 +109,9 @@ const DEFAULT_PUBLIC_PATHS = [
   'webhook',
   'hook',
   'health',
+  'healthz',
+  'readyz',
+  'livez',
   'ping',
   'status',
   'public',
@@ -136,6 +139,20 @@ const ROUTE_METHODS = new Set([
 
 /** Receivers that are an Express application/router in practice. */
 const APP_RECEIVER = /^(app|router|express|api)$/i;
+
+/**
+ * Does a path fragment occur as a whole word in the route path?
+ *
+ * A raw `path.includes(fragment)` collides on ordinary English: `/reorder-items`
+ * and `/border-crossing` both contain "order". Matching is therefore anchored to
+ * non-alphanumeric boundaries, with an optional plural `s` so the singular
+ * vocabulary ("order", "user") still matches the plural routes people write
+ * ("/orders/:id", "/users").
+ */
+function matchesFragment(path: string, fragment: string): boolean {
+  const escaped = fragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^a-z0-9])${escaped}s?([^a-z0-9]|$)`).test(path);
+}
 
 /** Middleware whose name says "this request is authenticated". */
 const AUTH_MIDDLEWARE =
@@ -257,8 +274,8 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
         if (rest.length === 0) return;
 
         const path = pathArg.value.toLowerCase();
-        if (publics.some((fragment) => path.includes(fragment))) return;
-        if (!critical.some((fragment) => path.includes(fragment))) return;
+        if (publics.some((fragment) => matchesFragment(path, fragment))) return;
+        if (!critical.some((fragment) => matchesFragment(path, fragment))) return;
 
         // Any middleware before the final handler that reads as auth
         const chain = rest.slice(0, -1);

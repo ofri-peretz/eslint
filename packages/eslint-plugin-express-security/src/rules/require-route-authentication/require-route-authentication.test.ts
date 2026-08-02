@@ -46,6 +46,10 @@ describe('require-route-authentication', () => {
       // Nothing critical about the path
       { code: `app.get('/articles', listArticles);` },
       { code: `app.post('/search', runSearch);` },
+      // Word-boundary matching — "order"/"user" must not collide on English
+      { code: `app.post('/reorder-items', reorder);` },
+      { code: `app.post('/border-crossing', cross);` },
+      { code: `app.get('/healthz', healthCheck);` },
       // Not a route registration
       { code: `app.get('view engine');` },
       { code: `app.listen(3000, onListen);` },
@@ -111,6 +115,11 @@ describe('require-route-authentication', () => {
           app.use('/api', apiRouter);
           app.patch('/billing/plan', bodyParser.json(), updatePlan);
         `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // Plural routes still match the singular vocabulary
+      {
+        code: `app.get('/invoices/:id', showInvoice);`,
         errors: [{ messageId: 'missingAuthentication' as const }],
       },
       // Custom critical vocabulary

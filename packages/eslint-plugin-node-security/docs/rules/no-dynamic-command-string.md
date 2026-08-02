@@ -39,6 +39,16 @@ spawn('bash', ['-c', `kill -9 ${pid}`]);
 
 The array is real, but its second element is handed to `bash`, which parses it as a command line all over again. `;`, `&&`, backticks and `$()` in `pid` all execute. The parameterization is decorative.
 
+The command flags are tracked **per interpreter**, because they do not mean the same thing everywhere:
+
+| Interpreter                          | Flags that make the next argv element a command string |
+| ------------------------------------ | ------------------------------------------------------ |
+| `sh`, `bash`, `zsh`, `dash`, `ksh`, `busybox` | `-c`                                          |
+| `cmd`, `cmd.exe`                     | `/c`, `/C`, `/k`, `/K`                                 |
+| `powershell`, `pwsh`                 | `-Command`, `-c`, `-EncodedCommand`, `-e`, `-ec`       |
+
+`spawn('bash', ['-e', script])` is therefore **not** a finding: to a POSIX shell `-e` is `set -e`, and the next element is a script path, not a command string.
+
 ### 2. Command-runner libraries that take a whole command line
 
 ```js
@@ -88,6 +98,9 @@ execFile('git', ['clone', repoUrl]);
 
 // A shell with a fully static command line is not a finding
 spawn('bash', ['-c', 'ls -la']);
+
+// -e is errexit to a POSIX shell, not a command flag
+spawn('bash', ['-e', deployScript]);
 
 // The escaping forms of the same libraries
 await $`git clone ${url}`;

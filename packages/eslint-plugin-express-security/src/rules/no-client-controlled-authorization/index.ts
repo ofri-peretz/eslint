@@ -165,7 +165,13 @@ function isAuthorizationDecision(node: TSESTree.Node): boolean {
       case AST_NODE_TYPES.ConditionalExpression:
         if (parent.test === current) return true;
         break;
+      case AST_NODE_TYPES.SwitchStatement:
+        if (parent.discriminant === current) return true;
+        break;
       case AST_NODE_TYPES.LogicalExpression:
+        // `??` supplies a default, it does not decide access:
+        // `const role = req.body.role ?? 'viewer'` is not a guard.
+        if (parent.operator === '??') break;
         return true;
       case AST_NODE_TYPES.UnaryExpression:
         if (parent.operator === '!') return true;
