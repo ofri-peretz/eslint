@@ -171,6 +171,8 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         const { object, property } = node;
         if (object.type !== AST_NODE_TYPES.Identifier) return null;
         if (property.type !== AST_NODE_TYPES.Identifier) return null;
+        // req[body] reads whatever `body` holds — not the request body.
+        if (node.computed) return null;
         if (!USER_SOURCE_PROPS.has(property.name)) return null;
         if (!isRequestName(object.name)) return null;
         return `req.${property.name}`;

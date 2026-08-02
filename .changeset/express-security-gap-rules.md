@@ -12,4 +12,8 @@ Seven new rules closing benchmark-corpus coverage gaps (A-lite research wave):
 - `require-case-insensitive-path-guard` (CWE-178) — case-sensitive path guards bypassed by `/ADMIN`
 - `require-query-type-guard` (CWE-843) — string methods on `req.query` members without type guards
 
-The first five ship as `error` in the recommended preset; the two guard heuristics ship as `warn`.
+In the recommended preset four ship as `error` (`no-host-header-in-links`,
+`no-error-details-in-response`, `no-user-controlled-render-locals`,
+`no-static-root-exposure`) and three as `warn` — the two `require-*` guard
+heuristics plus `no-sensitive-data-in-query`, which matches on parameter names
+and so never gets enforcement severity.

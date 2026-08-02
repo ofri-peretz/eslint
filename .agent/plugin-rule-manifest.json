@@ -389,7 +389,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on the res.render(view, req.body|query|params) AST shape incl. spreads \u2014 rename req/res and it still fires."
+      "notes": "Fires on the res.render(view, req.body|query|params) AST shape incl. spreads. The shape carries the signal, but the request/response roots are matched against fixed name sets (req/request/ctx, res/response/reply), so an unconventional alias is not tracked."
     },
     "require-case-insensitive-path-guard": {
       "environment": "express",

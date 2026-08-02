@@ -172,9 +172,17 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
     // parameter names, which MAX_PARAM_NAME_LENGTH caps — a catastrophically
     // backtracking pattern from an inherited config therefore has no input long
     // enough to amplify against (CWE-1333).
-    const patterns = (extraPatterns ?? []).map(
-      (pattern) => new RegExp(pattern, 'i'),
-    );
+    // An invalid pattern would throw out of create() and abort the whole lint
+    // run for the file with an opaque error; a bad config entry is skipped
+    // instead, leaving the rest of the rule working.
+    const patterns: RegExp[] = [];
+    for (const pattern of extraPatterns ?? []) {
+      try {
+        patterns.push(new RegExp(pattern, 'i'));
+      } catch {
+        // not a valid regular expression — ignore this entry
+      }
+    }
     const allowedSet = new Set(
       (allowedParams ?? []).map((name) => name.toLowerCase()),
     );

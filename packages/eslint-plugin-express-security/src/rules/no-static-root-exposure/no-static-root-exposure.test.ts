@@ -234,6 +234,22 @@ describe('no-static-root-exposure', () => {
         options: [{ allowedRoots: ['www'] }],
         errors: [{ messageId: 'unknownRoot', data: { root: 'public' } }],
       },
+      // A configured root containing a quote must not break the emitted source
+      {
+        code: `express.static(__dirname);`,
+        options: [{ allowedRoots: ["pete's-files"] }],
+        errors: [
+          {
+            messageId: 'staticRoot',
+            suggestions: [
+              {
+                messageId: 'scopeToSubdir',
+                output: `express.static(path.join(__dirname, "pete's-files"));`,
+              },
+            ],
+          },
+        ],
+      },
       // Suggestion uses the first configured root
       {
         code: `express.static(__dirname);`,

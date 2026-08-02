@@ -62,6 +62,17 @@ const DEFAULT_ALLOWED_ROOTS = ['public', 'static', 'dist', 'build', 'assets'];
 /** path methods that assemble a root directory from segments. */
 const JOIN_METHODS = new Set(['join', 'resolve']);
 
+/**
+ * Quotes a config-supplied string for source output. Prefers single quotes,
+ * falling back to `JSON.stringify`'s escaped form when the value contains a
+ * quote or backslash — naive interpolation would emit invalid JavaScript.
+ */
+function quoteLiteral(value: string): string {
+  const json = JSON.stringify(value);
+  const inner = json.slice(1, -1);
+  return /['\\]/.test(inner) ? json : `'${inner}'`;
+}
+
 export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-static-root-exposure',
   meta: {
@@ -206,7 +217,7 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
             fix: (fixer: TSESLint.RuleFixer) =>
               fixer.replaceText(
                 node,
-                `path.join(__dirname, '${suggestionRoot}')`,
+                `path.join(__dirname, ${quoteLiteral(suggestionRoot)})`,
               ),
           },
         ],

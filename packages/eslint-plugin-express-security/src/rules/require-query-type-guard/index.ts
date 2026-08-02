@@ -160,6 +160,7 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
     function isReqQuery(node: TSESTree.Node): boolean {
       return (
         node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isRequestIdent(node.object.name) &&
         node.property.type === AST_NODE_TYPES.Identifier &&

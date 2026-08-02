@@ -47,7 +47,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'errorDetailsExposed' | 'sendSanitizedError';
+type MessageIds = 'errorDetailsExposed';
 
 export interface Options {
   /**
@@ -79,7 +79,7 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
   name: 'no-error-details-in-response',
   meta: {
     type: 'problem',
-    hasSuggestions: true,
+    hasSuggestions: false,
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-error-details-in-response.md',
       description:
@@ -98,15 +98,6 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
         fix: "Log the error server-side and respond with a generic body: logger.error(err); res.status(500).json({ error: 'Internal Server Error' })",
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html',
-      }),
-      sendSanitizedError: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Send a sanitized error response',
-        description:
-          'Replace the error details with a generic message and an incident id',
-        severity: 'LOW',
-        fix: "res.status(500).json({ error: 'Internal Server Error', incidentId })",
-        documentationLink: 'https://cwe.mitre.org/data/definitions/209.html',
       }),
     },
     schema: [
@@ -200,6 +191,7 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
       }
       if (
         node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isErrorName(node.object.name) &&
         node.property.type === AST_NODE_TYPES.Identifier
@@ -291,7 +283,11 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
             node: finding.node,
             messageId: 'errorDetailsExposed',
             data: { detail: finding.detail },
-            suggest: [{ messageId: 'sendSanitizedError', fix: () => null }],
+            // No suggestion: the safe replacement depends on the app's error
+            // contract (incident ids, logger, status shape), so there is
+            // nothing mechanical to offer. The remedy is in the message's
+            // `fix:` line. A `fix: () => null` suggestion would be stripped
+            // from the output by ESLint and render as nothing at all.
           });
         }
       },

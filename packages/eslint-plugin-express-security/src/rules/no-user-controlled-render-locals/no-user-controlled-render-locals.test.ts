@@ -333,6 +333,8 @@ ruleTester.run(
         });
       `,
       },
+      // Computed access reads a variable named by `body`, not the body object
+      { code: `res.render('v', req[body]);` },
       // isRenderCall negatives
       { code: `render('v', req.body);` }, // bare call — callee not a member expression
       { code: `res['render']('v', req.body);` }, // computed property

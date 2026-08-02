@@ -129,8 +129,13 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
     const mailCallees = new Set(checkMailCallees ?? ['sendMail', 'send']);
     const sourceCode = context.sourceCode;
 
-    /** Variables assigned from a host-header read → source description. */
-    const hostVars = new Map<string, string>();
+    /**
+     * Variables assigned from a host-header read → source description. Keyed by
+     * the RESOLVED scope variable, not by name: two handlers in the same file
+     * can each declare `host`, and a name-keyed map would report the second
+     * one as request-derived when it never was.
+     */
+    const hostVars = new Map<TSESLint.Scope.Variable, string>();
 
     function isRequestIdent(name: string): boolean {
       const lower = name.toLowerCase();
@@ -209,7 +214,13 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
     /** Direct host read, or an identifier tracked from one. */
     function resolveHostSource(node: TSESTree.Node): string | null {
       if (node.type === AST_NODE_TYPES.Identifier) {
-        return hostVars.get(node.name) ?? null;
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+        while (scope) {
+          const variable = scope.variables.find((v) => v.name === node.name);
+          if (variable) return hostVars.get(variable) ?? null;
+          scope = scope.upper;
+        }
+        return null;
       }
       return getHostHeaderSource(node);
     }
@@ -277,7 +288,11 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
           return;
         }
         const source = getHostHeaderSource(node.init);
-        if (source !== null) hostVars.set(node.id.name, source);
+        if (source === null) return;
+        // Exactly one variable for an Identifier id.
+        for (const variable of sourceCode.getDeclaredVariables(node)) {
+          hostVars.set(variable, source);
+        }
       },
 
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
