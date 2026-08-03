@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Remote-image offline lock
  *
