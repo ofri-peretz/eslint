@@ -40,6 +40,18 @@ import {
 } from '@interlace/eslint-devkit';
 import { expressionName, objectProperties } from '../../utils/nest-ast';
 
+/**
+ * Identifiers and members that mean "which environment are we in".
+ *
+ * Narrower than "any condition" on purpose. A permissive origin fenced behind
+ * a development check cannot reach production, and reporting it at the same
+ * CVSS 8.1 as an unconditional one is what makes a security rule read as
+ * noise. But a condition that is *not* about the environment proves nothing —
+ * `if (req.path.startsWith('/public'))` still ships to real users.
+ */
+const ENV_HINT =
+  /\b(NODE_ENV|APP_ENV|ENVIRONMENT|isDev|isDevelopment|isLocal|isTest|isProd|isProduction|devMode|development|production)\b/;
+
 type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
 
 export interface Options {
@@ -170,6 +182,28 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     const { allowInTests = true } = options;
     if (allowInTests && TEST_FILE.test(context.filename)) return {};
 
+    /**
+     * Whether the call sits inside a branch that tests the environment.
+     *
+     * Only the *condition* text is inspected, and only for an environment
+     * marker — the rule does not try to evaluate which way the branch goes.
+     */
+    function insideEnvironmentBranch(node: TSESTree.Node): boolean {
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        let test: TSESTree.Node | null = null;
+        if (current.type === AST_NODE_TYPES.IfStatement) test = current.test;
+        else if (current.type === AST_NODE_TYPES.ConditionalExpression)
+          test = current.test;
+        else if (current.type === AST_NODE_TYPES.LogicalExpression)
+          test = current.left;
+        if (test && ENV_HINT.test(context.sourceCode.getText(test)))
+          return true;
+        current = current.parent;
+      }
+      return false;
+    }
+
     /** Report on the `origin` value when it accepts everything. */
     function checkOptionsObject(
       optionsNode: TSESTree.ObjectExpression,
@@ -245,6 +279,9 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        // A permissive origin fenced behind a development check cannot reach
+        // production. Applies to both entry points below.
+        if (insideEnvironmentBranch(node)) return;
         checkNestFactoryOptions(node);
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
         const property = node.callee.property;

@@ -5,6 +5,32 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-guards', requireGuards, {
   valid: [
+    // nest-hackathon-starter: a liveness probe on the root controller. There is
+    // no path segment to match and the handler is `healthCheck`, so exact-name
+    // matching missed it and a void-returning probe was reported at CRITICAL.
+    `
+      @Controller('')
+      class AppController {
+        @Get()
+        healthCheck(): void {}
+      }
+    `,
+    // The same probe under every spelling teams actually use.
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        getHealth() {}
+      }
+    `,
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        livenessProbe() {}
+      }
+    `,
+
     // ========== VALID: Controller with class-level guards ==========
     {
       code: `
@@ -264,6 +290,31 @@ ruleTester.run('require-guards', requireGuards, {
     },
   ],
   invalid: [
+    // A health *token* inside a longer name is not a probe. `deleteHealthRecord`
+    // is a destructive route that happens to mention health, and tokenising
+    // must not exempt it.
+    {
+      code: `
+        @Controller('records')
+        class RecordsController {
+          @Delete(':id')
+          deleteHealthRecord(@Param('id') id: string) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A write is never a probe, whatever it is called.
+    {
+      code: `
+        @Controller()
+        class AppController {
+          @Post()
+          healthCheck(@Body() dto: PayloadDto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+
     // ========== INVALID: Controller without guards ==========
     {
       code: `

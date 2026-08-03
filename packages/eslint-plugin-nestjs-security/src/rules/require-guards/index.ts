@@ -35,7 +35,9 @@ import {
   memberName,
   superClassName,
   type ClassNode,
+  routeMethodName,
 } from '../../utils/nest-ast';
+import { tokenize } from '../../utils/sensitive-names';
 import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds =
@@ -99,6 +101,24 @@ const PUBLIC_DECORATORS = new Set([
  * and throttling divide the work: this rule protects private routes, that rule
  * protects public ones.
  */
+/**
+ * Name tokens that denote an infrastructure probe.
+ *
+ * Kept separate from DEFAULT_PUBLIC_ROUTES because these are matched against
+ * the *handler name* rather than a path segment, and only at a name boundary.
+ */
+const PROBE_TERMS: ReadonlySet<string> = new Set([
+  'health',
+  'healthz',
+  'healthcheck',
+  'liveness',
+  'readiness',
+  'live',
+  'ready',
+  'ping',
+  'status',
+]);
+
 const DEFAULT_PUBLIC_ROUTES = [
   'login',
   'signin',
@@ -372,8 +392,26 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       node: TSESTree.MethodDefinition,
       cls: ClassNode,
     ): boolean {
-      const handler = (memberName(node) ?? '').toLowerCase();
+      const rawHandler = memberName(node) ?? '';
+      const handler = rawHandler.toLowerCase();
       if (publicSet.has(handler)) return true;
+
+      // A liveness/readiness probe is often only identifiable by its handler
+      // name: `@Controller('')` + `@Get()` + `healthCheck()` has no path
+      // segment to match, and exact-name matching reported a void-returning
+      // probe at CRITICAL. Tokenise the name and accept a probe term at either
+      // end — `healthCheck`, `getHealth`, `livenessProbe` all qualify.
+      //
+      // Bounded deliberately: only the first or last token counts, so
+      // `deleteHealthRecord` stays in scope, and only on a read, because a
+      // write is never a probe whatever it is called.
+      if (routeMethodName(node) === 'Get') {
+        // Tokenise the ORIGINAL name: `handler` is already lower-cased, which
+        // destroys the camelCase boundaries tokenize() splits on.
+        const parts = tokenize(rawHandler);
+        const ends = [parts[0], parts[parts.length - 1]].filter(Boolean);
+        if (ends.some((t) => PROBE_TERMS.has(t))) return true;
+      }
 
       // Both decorators are guaranteed present: the caller already established
       // this is a route handler on a @Controller class.

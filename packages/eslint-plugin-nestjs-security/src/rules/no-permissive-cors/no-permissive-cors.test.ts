@@ -11,6 +11,34 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+    // truthy/src/main.ts: a permissive origin fenced behind a development
+    // check cannot reach production. Reporting it at the same CVSS 8.1 as an
+    // unconditional one is what makes a security rule read as noise.
+    `
+      if (process.env.NODE_ENV === 'development') {
+        app.enableCors({ origin: true, credentials: true });
+      }
+    `,
+    `
+      if (isDevelopment) {
+        app.enableCors({ origin: '*' });
+      }
+    `,
+    `
+      if (config.get('NODE_ENV') !== 'production') {
+        app.enableCors();
+      }
+    `,
+    // The ternary and short-circuit spellings of the same fence.
+    `isDevelopment ? app.enableCors({ origin: '*' }) : undefined;`,
+    `isDev && app.enableCors({ origin: true, credentials: true });`,
+    // And the NestFactory entry point behind the same fence.
+    `
+      if (process.env.NODE_ENV !== 'production') {
+        const app = await NestFactory.create(AppModule, { cors: true });
+      }
+    `,
+
     // No `cors` key at all — CORS is off, which is the secure default.
     `const app = await NestFactory.create(AppModule);`,
     `const app = await NestFactory.create(AppModule, { bufferLogs: true });`,
@@ -79,6 +107,17 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ],
   invalid: [
+    // A condition that is not about the environment proves nothing about
+    // production — this still reaches real users.
+    {
+      code: `
+        if (req.path.startsWith('/public')) {
+          app.enableCors({ origin: '*' });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+
     // NestFactory.create's `cors` option routes into the very same code path:
     // nest-application.ts turns a non-object `cors` into a bare enableCors(),
     // so `{ cors: true }` IS `Access-Control-Allow-Origin: *`.
