@@ -38,6 +38,27 @@ describe('detect-object-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe object access', detectObjectInjection, {
       valid: [
+        // ── Provably-numeric keys ────────────────────────────────────────
+        // A number can never be the string '__proto__' / 'prototype' /
+        // 'constructor', so these cannot pollute a prototype whatever the
+        // identifiers hold. Locks the ILB-Edge classes that name-based
+        // detection missed (`offset`, `lastIndex`, `stride`, `i++`).
+        { code: 'result[dstOffset++] = 1;' },
+        { code: 'arr[i--] = 1;' },
+        { code: 'const v = buffer[n - 1];' },
+        { code: 'const v = arr[a * b];' },
+        { code: 'const v = arr[idx % len];' },
+        { code: 'const v = arr[hi >> 1];' },
+        { code: 'const v = arr[-offset];' },
+        { code: 'this.buffer[this._addIndex * this.valueSize - 1] = 1;' },
+        { code: 'const v = arr[flag ? 0 : 1];' },
+        { code: 'const v = arr[~mask];' },
+        { code: 'const v = arr[base ** exp];' },
+        { code: 'const v = arr[1 + 2];' },
+        // ── Literal prefix rules out every dangerous name ────────────────
+        // `'node' + i` always starts with "node", so it can never be
+        // '__proto__' / 'prototype' / 'constructor'.
+        { code: "nodeProperties['node' + index++] = childNode;" },
         // Literal property access
         {
           code: 'obj.name = value;',
@@ -152,6 +173,41 @@ describe('detect-object-injection', () => {
     ruleTester.run('invalid - dynamic property access', detectObjectInjection, {
       valid: [],
       invalid: [
+        // ── The numeric/affix guards must not become an escape hatch ─────
+        // `+` between two identifiers proves nothing — either side could be a
+        // string, so the result could still be '__proto__'.
+        {
+          code: 'obj[prefix + userInput] = value;',
+          errors: 1,
+        },
+        // A literal prefix a dangerous name could still start with
+        // disqualifies nothing: '__proto__'.startsWith('__pro') is true.
+        {
+          code: "obj['__pro' + rest] = value;",
+          errors: 1,
+        },
+        // Non-arithmetic operators prove nothing about the key's type:
+        // `typeof`/`!` yield strings/booleans, `===` yields a boolean.
+        {
+          code: 'obj[typeof userInput] = value;',
+          errors: 1,
+        },
+        {
+          code: 'obj[a === b] = value;',
+          errors: 1,
+        },
+        // An empty prefix constrains nothing — `'' + x` is just String(x).
+        {
+          code: "obj['' + userInput] = value;",
+          errors: 1,
+        },
+        // A *numeric* left operand is not a string prefix: `1 + x` can be
+        // "1__proto__"-ish only in theory, but more importantly it proves
+        // nothing about the tail, so the access stays reported.
+        {
+          code: 'obj[1 + userInput] = value;',
+          errors: 1,
+        },
         // Note: Rule may not detect all dynamic property access patterns
         // Rule checks for dangerous patterns but may miss some cases
         // These represent expected behavior - rule may need enhancement

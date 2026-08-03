@@ -439,9 +439,42 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
     /**
+     * True when a literal prefix rules out every dangerous name. `obj['node' +
+     * i]` always *begins* with `node`, so it can never equal `__proto__`,
+     * `prototype` or `constructor` whatever `i` holds — building keys by
+     * concatenating onto a fixed prefix is how real code namespaces them.
+     *
+     * Only a *prefix* counts. A trailing literal (`arr[a + 1]`) is deliberately
+     * not treated as safe: `+` between a value and a number still runs through
+     * string concatenation, and the rule's threat model covers unintended-key
+     * writes beyond the three prototype names.
+     */
+    const hasSafeLiteralPrefix = (node: TSESTree.Node): boolean => {
+      if (
+        node.type !== AST_NODE_TYPES.BinaryExpression ||
+        (node as TSESTree.BinaryExpression).operator !== '+'
+      ) {
+        return false;
+      }
+      const left = (node as TSESTree.BinaryExpression).left as TSESTree.Node;
+      if (left.type !== AST_NODE_TYPES.Literal) return false;
+      const v = (left as TSESTree.Literal).value;
+      if (typeof v !== 'string' || v.length === 0) return false;
+      // Safe unless a dangerous name could still start with this prefix.
+      return !dangerousProperties.some((d) => d.startsWith(v));
+    };
+
+    /**
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+      // SAFE: the key is provably numeric, or is namespaced behind a literal
+      // prefix. Both are facts about the expression's shape, not its naming —
+      // rename every identifier and the answer is unchanged.
+      if (isNumericKey(propertyNode) || hasSafeLiteralPrefix(propertyNode)) {
+        return false;
+      }
+
       // SAFE: Common numeric index variable names (i, j, k, index, idx, n)
       // These are typically loop counters for array access
       if (propertyNode.type === AST_NODE_TYPES.Identifier) {
@@ -734,14 +767,33 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (node.type === AST_NODE_TYPES.Literal && typeof (node as TSESTree.Literal).value === 'number') {
         return true;
       }
-      if (node.type === AST_NODE_TYPES.UnaryExpression && (node as TSESTree.UnaryExpression).operator === '+') {
+      if (node.type === AST_NODE_TYPES.UnaryExpression) {
+        const op = (node as TSESTree.UnaryExpression).operator;
+        // `+x`, `-x` and `~x` all apply ToNumber to their operand.
+        if (op === '+' || op === '-' || op === '~') return true;
+      }
+      // `i++` / `--i` evaluate to a number by ToNumeric, whatever `i` held.
+      // This is the dominant real-world index form (`result[dstOffset++]`) and
+      // was previously only caught when the variable happened to be named `i`.
+      if (node.type === AST_NODE_TYPES.UpdateExpression) {
         return true;
       }
       if (node.type === AST_NODE_TYPES.BinaryExpression) {
         const op = (node as TSESTree.BinaryExpression).operator;
-        if (op === '|' || op === '&' || op === '^' || op === '<<' || op === '>>' || op === '>>>' || op === '*' || op === '/' || op === '%' || op === '-') {
+        if (op === '|' || op === '&' || op === '^' || op === '<<' || op === '>>' || op === '>>>' || op === '*' || op === '/' || op === '%' || op === '-' || op === '**') {
           return true;
         }
+        // `+` only when *both* sides are themselves provably numeric —
+        // otherwise it is string concatenation.
+        if (op === '+') {
+          const bin = node as TSESTree.BinaryExpression;
+          return isNumericKey(bin.left as TSESTree.Node) && isNumericKey(bin.right as TSESTree.Node);
+        }
+      }
+      // `cond ? 0 : 1` is numeric when both arms are.
+      if (node.type === AST_NODE_TYPES.ConditionalExpression) {
+        const cond = node as TSESTree.ConditionalExpression;
+        return isNumericKey(cond.consequent) && isNumericKey(cond.alternate);
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = (node as TSESTree.CallExpression).callee;
