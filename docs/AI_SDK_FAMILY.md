@@ -67,6 +67,20 @@ Discovery cost of not owning `mcp-security` is handled with `keywords` (`mcp`,
 `model context protocol`, `mcp security`, `mcp server`) and the awesome-list submissions,
 not by contorting the package name.
 
+### Initial version: 0.1.0 (Ofri, 2026-08-02)
+
+Every new plugin in this family debuts at **`0.1.0`**, not `1.0.0`. Pre-1.0 is the honest
+signal for a rule set whose false-positive profile hasn't met real codebases yet, and it
+buys room to move rules between plugins (see the open question below) without a major bump
+on every correction.
+
+**Mechanism:** set `"version": "0.0.0"` in the new `package.json` and ship a **minor**
+changeset. The release PR then publishes exactly `0.1.0`. Setting `0.1.0` in package.json
+directly does *not* work — the first changeset would bump it past the intended debut.
+
+`check-versions` (the `lockfile` pre-push gate) compares package.json against the published
+npm version, so it stays quiet for a package that has never been published.
+
 > **Naming note:** "Codex" is OpenAI's coding agent, not an SDK. Its npm surface is
 > `openai` + `@openai/agents`, so it folds into the OpenAI plugin — no `eslint-plugin-codex-*`.
 

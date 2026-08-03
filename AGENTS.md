@@ -163,6 +163,29 @@ The public-facing surface for this whole system is
 
 ## Plugin Scope Rules
 
+**README logo row: Interlace + ESLint + oxlint + the SDK/protocol the plugin targets.**
+Every plugin that lints a specific platform, protocol or SDK opens its README with the same
+centred row, all marks at `height="90"`, `&nbsp;&nbsp;` between them. The SDK mark links to
+that SDK's npm page — it is what tells a reader (and a search engine) which package this
+plugin is for. Plugins with no external target (`secure-coding`, `maintainability`, …) keep
+the two-mark row.
+
+Marks are **self-hosted** in `apps/docs/public/` and referenced as
+`https://eslint.interlace.tools/<name>-logo.svg`. Never hotlink a third-party CDN: npm
+proxies README images through GitHub camo with long-lived caching, so an external URL that
+moves leaves a broken image that is painful to flush.
+
+> ⚠️ **Deploy the docs site before publishing a package whose README references a new mark.**
+> camo caches aggressively; if it fetches a 404 first, the broken image sticks around long
+> after the asset lands. Order: merge → docs deploy → verify the SVG is 2xx → release.
+
+Source marks from [simple-icons](https://simpleicons.org) (CC0) where available, recoloured
+`#8b949e` so they read on light and dark GitHub themes. If simple-icons does not carry a
+brand, treat that as a signal the mark is restricted rather than something to work around —
+**OpenAI is the live example: simple-icons 404s on it.** Ship the row without that mark
+rather than sourcing the logo elsewhere, unless the brand's guidelines have been read and
+clearly permit it.
+
 **Naming: every security plugin is `eslint-plugin-<ecosystem>-security`.** The suffix is
 what tells a consumer the package is protective rather than stylistic, and it keeps the
 family scannable on npm. No exceptions for new packages. `eslint-plugin-pg`,
