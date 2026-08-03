@@ -11,6 +11,13 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+    // `['*']` is not a wildcard. cors compares each array element with
+    // `origin === allowedOrigin`, and no browser sends `Origin: *`, so this
+    // list matches nothing — it denies every cross-origin request rather than
+    // allowing them. Locked as valid because reporting it was a real false
+    // positive in an error-level rule.
+    `app.enableCors({ origin: ['*'] });`,
+    `app.enableCors({ origin: ['*', 'https://trusted.com'] });`,
     // A genuine allowlist stays quiet.
     `app.enableCors({ origin: ['https://app.example.com', 'https://admin.example.com'] });`,
     // An empty list denies everything — restrictive, not permissive.
@@ -48,17 +55,6 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ],
   invalid: [
-    // An allowlist containing '*' is not an allowlist — the wildcard accepts
-    // every origin and the sibling entries restrict nothing.
-    {
-      code: `app.enableCors({ origin: ['*'] });`,
-      errors: [{ messageId: 'wildcardOrigin' }],
-    },
-    {
-      code: `app.enableCors({ origin: ['*', 'https://trusted.com'] });`,
-      errors: [{ messageId: 'wildcardOrigin' }],
-    },
-
     // Bare call — defaults to '*'.
     {
       code: `app.enableCors();`,

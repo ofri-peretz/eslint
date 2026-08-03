@@ -37,6 +37,7 @@ import {
   isTestFile,
   type ClassNode,
 } from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'violationDetected';
 
@@ -49,6 +50,16 @@ export interface Options {
   allowInTests?: boolean;
   /** Extra decorator names that count as access control. */
   authDecorators?: string[];
+  /**
+   * Scan the project for a guard registered app-wide via `APP_GUARD` or `app.useGlobalGuards()`,
+   * and stay quiet when one is found. Default: true.
+   *
+   * The registration lives in a different file from the route, so a
+   * single-file rule cannot see it — this is the cross-file scan that
+   * makes the difference between silence and reporting a correctly
+   * configured application.
+   */
+  detectGlobalGuards?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -142,6 +153,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
             description: 'List of file path substrings to ignore',
           },
           allowInTests: { type: 'boolean', default: true },
+          detectGlobalGuards: { type: 'boolean', default: true },
           authDecorators: {
             type: 'array',
             items: { type: 'string' },
@@ -158,6 +170,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
       endpoints,
       ignoreFiles = [],
       allowInTests = true,
+      detectGlobalGuards = true,
       authDecorators = [],
     } = options;
     const origins = collectImportOrigins(context.sourceCode.ast);
@@ -171,6 +184,13 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
       return {};
     }
     if (allowInTests && isTestFile(filename)) {
+      return {};
+    }
+
+    // The registration lives in another file, so this is the only way a
+    // single-file rule can know it exists. Without it the rule reports every
+    // admin route of a correctly-configured application.
+    if (detectGlobalGuards && getProjectContext(context).hasGlobalAuthGuard) {
       return {};
     }
 

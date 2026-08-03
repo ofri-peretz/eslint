@@ -33,6 +33,7 @@ import {
   memberName,
   type ClassNode,
 } from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'missingThrottler' | 'addThrottler';
 
@@ -53,6 +54,16 @@ export interface Options {
    * rather than per route.
    */
   onlySensitiveRoutes?: boolean;
+  /**
+   * Scan the project for rate limiting registered app-wide via `ThrottlerModule` plus a guard,
+   * and stay quiet when one is found. Default: true.
+   *
+   * The registration lives in a different file from the route, so a
+   * single-file rule cannot see it — this is the cross-file scan that
+   * makes the difference between silence and reporting a correctly
+   * configured application.
+   */
+  detectGlobalThrottler?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -151,6 +162,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          detectGlobalThrottler: { type: 'boolean', default: true },
           skipRoutes: { type: 'array', items: { type: 'string' }, default: [] },
           assumeGlobalThrottler: { type: 'boolean', default: false },
           onlySensitiveRoutes: { type: 'boolean', default: true },
@@ -169,6 +181,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     const {
       allowInTests = true,
       assumeGlobalThrottler = false,
+      detectGlobalThrottler = true,
       skipRoutes = [],
       onlySensitiveRoutes = true,
     } = options as Options;
@@ -179,6 +192,16 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     }
 
     if (allowInTests && isTestFile(context.filename)) {
+      return {};
+    }
+
+    // The registration lives in another file, so this is the only way a
+    // single-file rule can know it exists. Without it the rule reports every
+    // route of a correctly-configured application.
+    if (
+      detectGlobalThrottler &&
+      getProjectContext(context).hasGlobalThrottler
+    ) {
       return {};
     }
 

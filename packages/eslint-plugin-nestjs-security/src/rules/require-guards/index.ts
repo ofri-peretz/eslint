@@ -36,6 +36,7 @@ import {
   superClassName,
   type ClassNode,
 } from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds =
   'missingGuards' | 'emptyGuards' | 'missingRequiredGuard' | 'addGuards';
@@ -59,6 +60,16 @@ export interface Options {
    * require a guard. Replaces the default list when provided.
    */
   publicRoutes?: string[];
+  /**
+   * Scan the project for a guard registered app-wide via `APP_GUARD` or `app.useGlobalGuards()`,
+   * and stay quiet when one is found. Default: true.
+   *
+   * The registration lives in a different file from the route, so a
+   * single-file rule cannot see it — this is the cross-file scan that
+   * makes the difference between silence and reporting a correctly
+   * configured application.
+   */
+  detectGlobalGuards?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -184,6 +195,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          detectGlobalGuards: { type: 'boolean', default: true },
           requiredGuards: {
             type: 'array',
             items: { type: 'string' },
@@ -222,6 +234,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       allowInTests = true,
       allowPublicDecorator = true,
       assumeGlobalGuards = false,
+      detectGlobalGuards = true,
       requiredGuards = [],
       authDecorators = [],
       publicRoutes,
@@ -245,6 +258,13 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     }
 
     if (allowInTests && isTestFile(context.filename)) {
+      return {};
+    }
+
+    // The registration lives in another file, so this is the only way a
+    // single-file rule can know it exists. Without it the rule reports every
+    // route of a correctly-configured application.
+    if (detectGlobalGuards && getProjectContext(context).hasGlobalAuthGuard) {
       return {};
     }
 

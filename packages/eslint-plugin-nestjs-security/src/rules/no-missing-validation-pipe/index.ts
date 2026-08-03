@@ -30,6 +30,7 @@ import {
   isRouteHandler,
   isTestFile,
 } from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'missingValidation' | 'addValidationPipe';
 
@@ -50,6 +51,16 @@ export interface Options {
    * Enable this only if your project deliberately avoids global pipes.
    */
   requireExplicitPipe?: boolean;
+  /**
+   * Scan the project for a pipe registered app-wide via `APP_PIPE` or `app.useGlobalPipes()`,
+   * and stay quiet when one is found. Default: true.
+   *
+   * The registration lives in a different file from the route, so a
+   * single-file rule cannot see it — this is the cross-file scan that
+   * makes the difference between silence and reporting a correctly
+   * configured application.
+   */
+  detectGlobalPipes?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -91,6 +102,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          detectGlobalPipes: { type: 'boolean', default: true },
           assumeGlobalPipes: { type: 'boolean', default: false },
           requireExplicitPipe: { type: 'boolean', default: false },
         },
@@ -106,6 +118,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     const {
       allowInTests = true,
       assumeGlobalPipes = false,
+      detectGlobalPipes = true,
       requireExplicitPipe = false,
     } = options as Options;
 
@@ -115,6 +128,16 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     }
 
     if (allowInTests && isTestFile(context.filename)) {
+      return {};
+    }
+
+    // The registration lives in another file, so this is the only way a
+    // single-file rule can know it exists. Without it the rule reports every
+    // route of a correctly-configured application.
+    if (
+      detectGlobalPipes &&
+      getProjectContext(context).hasGlobalValidationPipe
+    ) {
       return {};
     }
 
