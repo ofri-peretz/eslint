@@ -21,6 +21,17 @@ import * as path from 'node:path';
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../..');
 const PACKAGES_DIR = path.join(WORKSPACE_ROOT, 'packages');
 
+// Fail loudly if the `../` count ever drifts again. The original bug was silent:
+// a wrong root meant every scan hit an empty directory and every existsSync
+// returned false, so the per-plugin describe generated zero tests and the suite
+// reported green. A throw at module scope turns that into a collection error.
+if (!fs.existsSync(PACKAGES_DIR)) {
+  throw new Error(
+    `PACKAGES_DIR does not exist (${PACKAGES_DIR}). WORKSPACE_ROOT resolution in ` +
+      'this file is wrong — check the `../` count against the file location.',
+  );
+}
+
 // List of valid plugin names in the Interlace ecosystem.
 // Deprecated / removed plugins are intentionally excluded — their docs hygiene is enforced
 // separately and they are not recommended in cross-plugin docs.
@@ -142,8 +153,10 @@ describe('Documentation Standards', { timeout: 30_000 }, () => {
           // maintainability / modernization / node-security docs while their
           // tests reported green.
           const pluginPrefix = plugin.replace('eslint-plugin-', '');
+          // `0-9` matters: node-security ships `no-sha1-hash`, so a digit-free
+          // character class silently exempts real rules from this check.
           const configMatches = content.match(
-            /'([a-z-]+)\/[a-z-]+':\s*(?:\[\s*)?['"](?:error|warn|off)['"]/g,
+            /'([a-z0-9-]+)\/[a-z0-9-]+':\s*(?:\[\s*)?['"](?:error|warn|off)['"]/g,
           );
 
           if (configMatches) {
