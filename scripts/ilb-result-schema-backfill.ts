@@ -23,6 +23,7 @@
  */
 
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,16 +36,24 @@ const APPLY = process.argv.includes('--apply');
 // Map result directory names to the canonical bench enum value defined
 // in benchmarks/lib/result-schema.json. New entries here must match the
 // schema's `bench.enum` list — anything else fails strict validation.
+const SCHEMA_BENCH_ENUM: Set<string> = new Set(
+  JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'benchmarks/lib/result-schema.json'), 'utf8'),
+  ).properties.bench.enum as string[],
+);
+
 const BENCH_DIR_TO_NAME: Record<string, string> = {
   'ilb-arena': 'ILB-Arena',
   'ilb-arena-quality': 'ILB-Arena-Quality',
-  'ilb-cwe-corpus': 'ILB-CWE-Corpus',
+  // The schema enum carries the original name; the directory was renamed but
+  // the contract value was not. Map to the enum value, never the dir name.
+  'ilb-cwe-corpus': 'ILB-Juliet',
   // Legacy aliases — kept so backfill can still recognize pre-2026-05-13 result
   // dirs. The `ilb-juliet-cwe/` directory is an orphan from an earlier schema
   // pass; leave it labeled with the legacy bench name until it's pruned
   // (tracked as Tier 0.8 follow-up in the plan file).
-  'ilb-juliet': 'ILB-CWE-Corpus',
-  'ilb-juliet-cwe': 'ILB-CWE-Corpus',
+  'ilb-juliet': 'ILB-Juliet',
+  'ilb-juliet-cwe': 'ILB-Juliet',
   'ilb-wild': 'ILB-Wild',
   'ilb-edge': 'ILB-Edge',
   'ilb-cov': 'ILB-Cov',
@@ -76,6 +85,14 @@ const BENCH_DIR_TO_NAME: Record<string, string> = {
   // `ilb-oxlint-parity` is a comparative parity report against Wild.
   'ilb-flagship': 'ILB-Wild',
   'ilb-oxlint-parity': 'ILB-Wild',
+  // The NestJS import-perf variant belongs with the other `ilb-perf-import-*`
+  // dirs above; `ilb-remediation` and `landscape-data` have had dedicated enum
+  // values in result-schema.json since they were added. Without these three
+  // entries the walker logged "unknown bench dir" and skipped their files, so
+  // they stayed non-conforming no matter how often the backfill was run.
+  'ilb-perf-import-nestjs': 'ILB-Perf',
+  'ilb-remediation': 'ILB-Remediation',
+  'landscape-data': 'ILB-Landscape',
 };
 
 function deriveBenchName(dirName: string): string | null {
@@ -127,7 +144,11 @@ for (const benchDir of fs.readdirSync(RESULTS_DIR)) {
       continue;
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) continue;
-    const ALLOWED_BENCH_NAMES = new Set(Object.values(BENCH_DIR_TO_NAME));
+    // Read the allow-list from the schema, not from this file's own map. Using
+    // the map's values meant any label that is valid per the contract but not
+    // produced by the map — `ILB-Juliet`, for one — counted as "missing" and
+    // got silently rewritten, relabelling historical results.
+    const ALLOWED_BENCH_NAMES = SCHEMA_BENCH_ENUM;
     const needsBench = parsed.bench === undefined || !ALLOWED_BENCH_NAMES.has(parsed.bench as string);
     const needsVersion =
       parsed.benchVersion === undefined ||
@@ -155,18 +176,35 @@ for (const benchDir of fs.readdirSync(RESULTS_DIR)) {
     // explicit zero-major-version makes "this is unversioned legacy
     // data" unambiguous to anyone querying for trend lines.
     if (needsVersion) updatedDoc.benchVersion = 'v0.0';
-    // Timestamp must be ISO-8601 date-time. For legacy files we infer
-    // from the filename (`YYYY-MM-DD.json`) or fall back to file mtime.
+    // Timestamp must be ISO-8601 date-time. For legacy files, infer from the
+    // filename (`YYYY-MM-DD.json`), else from the commit that first added the
+    // file.
+    //
+    // mtime is NOT a usable signal here: in a fresh clone or git worktree every
+    // file carries the checkout time, so it stamps historical results with
+    // today's date. That is false provenance in a record whose whole purpose is
+    // provenance — and it also pushes the file past METHODOLOGY_HASH_SINCE in
+    // ilb-validate-results, turning a grandfathered warning into a fatal error
+    // for a run that genuinely predates the field.
     if (needsTimestamp) {
       const dateInName = file.match(/(\d{4}-\d{2}-\d{2})/);
-      const isoDate = dateInName ? `${dateInName[1]}T00:00:00.000Z` : null;
-      if (isoDate) {
-        updatedDoc.timestamp = isoDate;
+      if (dateInName) {
+        updatedDoc.timestamp = `${dateInName[1]}T00:00:00.000Z`;
       } else {
-        try {
-          updatedDoc.timestamp = fs.statSync(fp).mtime.toISOString();
-        } catch {
-          updatedDoc.timestamp = new Date().toISOString();
+        // Pin cwd: run from outside the repo root, git exits non-zero and the
+        // date silently degrades to "unknown".
+        const added = spawnSync('git', ['log', '--diff-filter=A', '--format=%aI', '-1', '--', fp], {
+          cwd: ROOT,
+          encoding: 'utf8',
+        });
+        const gitDate = added.status === 0 ? added.stdout.trim().split('\n')[0] : '';
+        if (gitDate) {
+          updatedDoc.timestamp = new Date(gitDate).toISOString();
+        } else {
+          // Untracked and undated — the only remaining honest statement is
+          // that we do not know when this ran. Leave `timestamp` absent
+          // rather than invent one; the validator grandfathers it.
+          console.log(`  ⚠️  no date in filename and not tracked by git, leaving timestamp unset: ${file}`);
         }
       }
     }

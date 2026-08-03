@@ -157,3 +157,6 @@ packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
 .review-screens/
 .build-nocomments
+
+# scratch dir from benchmarks/scripts/repro-deep-chain.mjs (self-cleans, but not if interrupted)
+.deep-chain-repro/
