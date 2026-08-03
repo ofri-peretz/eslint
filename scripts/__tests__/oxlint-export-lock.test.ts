@@ -59,8 +59,8 @@ describe.each(pluginDirs)('%s ./oxlint sub-export', (pkgName) => {
       files?: string[];
     };
     expect(pkgJson.exports?.['./oxlint']).toEqual({
-      types: './src/oxlint.d.ts',
-      default: './src/oxlint.js',
+      types: './dist/src/oxlint.d.ts',
+      default: './dist/src/oxlint.js',
     });
     // The export points into src/ — src/ must ship in the tarball.
     expect(pkgJson.files).toContain('src/');
