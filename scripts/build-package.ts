@@ -131,12 +131,22 @@ if (stripResult.status === 0) {
   };
   overlayJs(noCommentsDir, join(distDir, 'src'));
   if (copied === 0) {
+    // tsc reported success yet produced no .js to copy back. That is a broken
+    // build pipeline, not a degraded optimisation — failing here is the only
+    // thing that surfaces it, since the gate that would catch commented output
+    // runs in `npm run quality` and the release workflow, not on every build.
     console.error(
-      `build-package(${pkg.name}): comment-strip pass emitted nothing — dist keeps commented JS.`,
+      `build-package(${pkg.name}): comment-strip pass reported success but emitted no .js.\n` +
+        `  Expected files under ${noCommentsDir}/src matching dist/src.\n` +
+        `  This is a build-pipeline bug — dist would ship commented JS silently.`,
     );
+    process.exit(1);
   }
 } else {
-  // Never fail the build over an optimisation; ship the commented JS instead.
+  // The strip pass itself failed (bad tsconfig, tsc crash). That IS just a
+  // degraded optimisation — warn and ship commented JS rather than blocking
+  // every local build. Contrast the `copied === 0` branch above, where tsc
+  // claimed success and produced nothing, which is a real defect.
   console.error(
     `build-package(${pkg.name}): comment-strip pass failed (status ${stripResult.status}); shipping commented JS.`,
   );

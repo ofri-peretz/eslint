@@ -51,6 +51,12 @@ const oxcResolverCache = new Map<
 // imports. As a hard dependency it was downloaded by all 21 consumers. It is
 // now an OPTIONAL peer, loaded on first use rather than at module load, so
 // importing this devkit no longer requires the binary to be present.
+// NOTE: `clearResolverCache()` deliberately does NOT reset this. In production
+// there is no reason to unload the factory. In tests it matters: patching
+// `Module._load` to simulate a missing peer AFTER something already resolved
+// will not raise MissingResolverPeerError, because `factoryRef` is still set
+// and `require('oxc-resolver')` never re-executes. Use `vi.resetModules()`
+// (see resolver-optional-peer.test.ts), not `clearResolverCache()`.
 let factoryRef: typeof OxcResolverFactory | undefined;
 
 /**

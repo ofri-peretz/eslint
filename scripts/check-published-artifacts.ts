@@ -293,12 +293,19 @@ if (metadataGaps.length > 0) {
   console.error('');
 }
 
-if (
-  violations.length === 0 &&
-  commentRegressions.length === 0 &&
-  metadataGaps.length === 0 &&
-  exportGaps.length === 0
-) {
+// One list, one exit decision. Adding a fifth category means adding it here and
+// nowhere else — the previous shape spread the decision across a compound
+// success condition AND a separate early-exit, so a new category could satisfy
+// one and be forgotten by the other.
+const FAILURES = [
+  violations.length,
+  commentRegressions.length,
+  metadataGaps.length,
+  exportGaps.length,
+];
+const failed = FAILURES.reduce((a, b) => a + b, 0) > 0;
+
+if (!failed) {
   console.log(
     '  ✅ No source maps, no AGENTS.md, no commented JS;' +
       ' every declared export resolves; metadata complete.\n',
@@ -306,6 +313,8 @@ if (
   process.exit(0);
 }
 
+// Every category above has already printed its own detail block; only
+// `violations` still needs rendering before we exit non-zero.
 if (violations.length === 0) process.exit(1);
 
 const wasted = violations.reduce((a, v) => a + v.kb, 0);
