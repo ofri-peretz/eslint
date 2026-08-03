@@ -1073,6 +1073,16 @@
       "detection": "structural-api",
       "confidence": "review-prompt"
     },
+    "require-validation-pipe-whitelist": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
     "require-class-validator": {
       "environment": "nestjs",
       "detection": "structural-pattern",
