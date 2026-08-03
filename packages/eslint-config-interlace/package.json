@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.6.1",
+    "@interlace/eslint-devkit": "^1.6.2",
     "eslint-plugin-browser-security": "^1.2.10",
     "eslint-plugin-conventions": "^4.2.4",
     "eslint-plugin-express-security": "^1.5.1",
