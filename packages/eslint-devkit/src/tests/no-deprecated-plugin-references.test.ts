@@ -179,7 +179,12 @@ function violationMessage(
   );
 }
 
-describe('No Deprecated Plugin References', () => {
+// Both layers shell out to `grep` over the whole workspace. The grep itself is
+// sub-second (measured 0.65–0.74s from repo root); what blows the default 5s
+// budget is process spawn + I/O contention when `turbo run test` runs 20+ test
+// processes in parallel. 30s is slack for load, not for the scan — do not "fix"
+// this by widening SHARED_EXCLUDES.
+describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
   for (const plugin of DEPRECATED_PLUGINS) {
     it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {
       const violations = findMarkdownReferences(plugin.name).filter(
