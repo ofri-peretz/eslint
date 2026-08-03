@@ -246,6 +246,20 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
   }
 }
 
+// One list, one exit decision — used by BOTH the --json branch and the human
+// output below. Adding a sixth category means adding it here and nowhere else.
+// Declared before either consumer: an earlier version referenced it only from
+// the --json branch while declaring it further down, so `--json` crashed on a
+// temporal dead zone. CodeQL caught that; the lock is that both readers now
+// sit below this line.
+const FAILURES = [
+  violations.length,
+  commentRegressions.length,
+  metadataGaps.length,
+  exportGaps.length,
+  manifestLeaks.length,
+];
+
 if (sizes.length === 0) {
   console.error(
     'check-published-artifacts: no built packages found — run `npx turbo build --filter="./packages/*"` first.',
@@ -324,18 +338,7 @@ if (metadataGaps.length > 0) {
   console.error('');
 }
 
-// One list, one exit decision. Adding a fifth category means adding it here and
-// nowhere else — the previous shape spread the decision across a compound
-// success condition AND a separate early-exit, so a new category could satisfy
-// one and be forgotten by the other.
-const FAILURES = [
-  violations.length,
-  commentRegressions.length,
-  metadataGaps.length,
-  exportGaps.length,
-  manifestLeaks.length,
-];
-const failed = FAILURES.reduce((a, b) => a + b, 0) > 0;
+const failed = FAILURES.some((n) => n > 0);
 
 if (!failed) {
   console.log(
