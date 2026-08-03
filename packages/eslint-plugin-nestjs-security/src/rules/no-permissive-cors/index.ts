@@ -38,6 +38,7 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { expressionName, objectProperties } from '../../utils/nest-ast';
 
 type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
 
@@ -200,8 +201,51 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       // shortcut in configureOrigin fires only for the top-level *string* '*'.
     }
 
+    /**
+     * `NestFactory.create(App, { cors })` — the same setting, elsewhere.
+     *
+     * Nest routes the constructor option straight into the method this rule
+     * already watches:
+     *
+     *   const passCustomOptions = isObject(cors) || isFunction(cors);
+     *   if (!passCustomOptions) return this.enableCors();
+     *   return this.enableCors(this.appOptions.cors);
+     *
+     * So `{ cors: true }` *is* a bare `enableCors()`, and reporting one while
+     * ignoring the other was an accident of which callee the visitor matched,
+     * not a decision about risk.
+     */
+    function checkNestFactoryOptions(node: TSESTree.CallExpression): void {
+      const callee = node.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+      if (expressionName(callee.object) !== 'NestFactory') return;
+      const method = expressionName(callee);
+      // createMicroservice has no HTTP surface and no cors option.
+      if (method !== 'create' && method !== 'createApplicationContext') return;
+
+      const options = node.arguments[1];
+      if (options?.type !== AST_NODE_TYPES.ObjectExpression) return;
+      const props = objectProperties(options);
+      // A spread could supply `cors`; cannot prove its absence or its shape.
+      if (!props) return;
+
+      const cors = props.get('cors');
+      // No `cors` key at all means CORS is off — the secure default.
+      if (!cors) return;
+
+      if (cors.type === AST_NODE_TYPES.ObjectExpression) {
+        checkOptionsObject(cors, cors);
+        return;
+      }
+      // A non-object truthy value takes the bare-enableCors() path.
+      if (cors.type === AST_NODE_TYPES.Literal && cors.value === true) {
+        context.report({ node: cors, messageId: 'defaultOrigin' });
+      }
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        checkNestFactoryOptions(node);
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
         const property = node.callee.property;
         if (

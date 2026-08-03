@@ -169,7 +169,15 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
             const literalBody =
               !arg ||
               arg.type === AST_NODE_TYPES.Literal ||
-              arg.type === AST_NODE_TYPES.TemplateLiteral;
+              arg.type === AST_NODE_TYPES.TemplateLiteral ||
+              // `res.status(204).json({})` carries nothing. An empty object
+              // literal has no property that any @Exclude() could have
+              // stripped, so the serialization bypass cannot leak through it —
+              // the same reasoning as the string-literal case above. This was
+              // 3 of 3 findings on a second corpus, i.e. the rule's entire
+              // precision on repos it had not been tuned against.
+              (arg.type === AST_NODE_TYPES.ObjectExpression &&
+                arg.properties.length === 0);
             if (receiver?.name === binding && !literalBody) {
               found = writer;
               return;

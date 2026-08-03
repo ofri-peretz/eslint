@@ -362,6 +362,12 @@ const FIXTURES: Fixture[] = [
     what: 'ValidationPipe built from options declared in another module',
     // `new ValidationPipe(validationOptions)` — this file cannot prove whitelist
     // is missing, so the rule must not guess.
+    //
+    // The `{ cors: true }` in the same bootstrap IS reported: Nest turns a
+    // non-object `cors` into a bare `enableCors()`, i.e.
+    // Access-Control-Allow-Origin: *. This number changed deliberately when
+    // no-permissive-cors was extended from the `enableCors` call site to the
+    // NestFactory.create option, which is the same setting written elsewhere.
     code: `
       import { ValidationPipe } from '@nestjs/common';
       import validationOptions from './utils/validation-options';
@@ -371,7 +377,7 @@ const FIXTURES: Fixture[] = [
         app.useGlobalPipes(new ValidationPipe(validationOptions));
       }
     `,
-    expected: {},
+    expected: { 'no-permissive-cors': 1 },
   },
   {
     from: 'novu',

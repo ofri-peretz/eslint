@@ -20,10 +20,13 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
+  decoratorCall,
   enclosingClass,
   hasDecorator,
   isTestFile,
+  isTrueLiteral,
   memberName,
+  objectProperties,
   type ClassNode,
 } from '../../utils/nest-ast';
 import {
@@ -143,12 +146,19 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
     ]);
 
     /** Decorators that mark a class as something serialized back to clients. */
+    /**
+     * Class decorators marking something that is serialized *outward*.
+     *
+     * `@InputType()` and `@ArgsType()` are deliberately absent: they are
+     * GraphQL *inputs*, submitted by the client and never returned, so a
+     * credential-named field on one cannot be exposed. They were in this set,
+     * which made every `@InputType()` a reporting surface for a rule about
+     * data leaving. `@ObjectType()` stays — that one is returned.
+     */
     const ENTITY_DECORATORS = new Set([
       'Entity',
       'Schema',
       'ObjectType',
-      'InputType',
-      'ArgsType',
       'ApiProperty',
     ]);
 
@@ -160,7 +170,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      * rule exists for is a credential riding along on an *unrelated* payload.
      */
     const CREDENTIAL_DELIVERY =
-      /(Login|Auth|Refresh|Token|Session|Credential)\w*(Response|ResponseDto|Payload|Result)$/;
+      /(Login|SignIn|SignUp|Register|Auth|Refresh|Token|Session|Credential|Verify|Otp|Mfa|TwoFactor)\w*(Response|ResponseDto|Payload|Result)$/;
 
     /**
      * Whether the class is a *response* shape.
@@ -171,10 +181,25 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      * Only entities, persisted models and explicitly response-named classes
      * are serialized back to clients.
      */
+    /**
+     * Class names that describe a *request* body.
+     *
+     * `RegisterPayload` matches the `Payload$` response convention while being
+     * bound with `@Body()` and never returned. `@Exclude()` on it is a no-op at
+     * best, and under `excludeExtraneousValues` it strips the field the request
+     * depends on — so the rule's own advice would break the endpoint.
+     */
+    const INBOUND_NAME =
+      /^(Create|Update|Patch|Upsert|Register|SignUp|SignIn|Login|Reset|Change|Verify|Send|Request)[A-Z]/;
+
     function isEntityOrDto(cls: ClassNode): boolean {
       const name = cls.id?.name;
-      if (name && CREDENTIAL_DELIVERY.test(name)) return false;
+      // Checked first: a persisted class is serialized outward whatever it is
+      // called, so `@Entity() class CreateAuditEntry` must stay in scope even
+      // though its name opens with an inbound verb.
       if (hasDecorator(cls.decorators, ENTITY_DECORATORS)) return true;
+      if (name && CREDENTIAL_DELIVERY.test(name)) return false;
+      if (name && INBOUND_NAME.test(name)) return false;
       return name
         ? /(Entity|Model|Schema|Response|ResponseDto|Payload|View)$/.test(name)
         : false;
@@ -204,6 +229,22 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
       return annotation === AST_NODE_TYPES.TSBooleanKeyword;
     }
 
+    /** Whether a persistence decorator keeps this column out of results. */
+    function isProjectionExcluded(node: TSESTree.PropertyDefinition): boolean {
+      for (const decorator of node.decorators) {
+        const arg = decoratorCall(decorator)?.arguments[0];
+        if (arg?.type !== AST_NODE_TYPES.ObjectExpression) continue;
+        const props = objectProperties(arg);
+        if (!props) continue;
+        const select = props.get('select');
+        if (select?.type === AST_NODE_TYPES.Literal && select.value === false) {
+          return true;
+        }
+        if (isTrueLiteral(props.get('hidden'))) return true;
+      }
+      return false;
+    }
+
     return {
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
         const cls = enclosingClass(node);
@@ -221,6 +262,12 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         // Already excluded, on the field or class-wide (excludeAll strategy).
         if (hasDecorator(node.decorators, 'Exclude')) return;
         if (hasDecorator(cls.decorators, 'Exclude')) return;
+
+        // Or excluded by the ORM's own projection, which is the idiomatic
+        // mechanism in each stack and a stronger guarantee than @Exclude():
+        // the column never leaves the database. TypeORM and Typegoose spell it
+        // `select: false`, MikroORM spells it `hidden: true`.
+        if (isProjectionExcluded(node)) return;
 
         context.report({
           node,

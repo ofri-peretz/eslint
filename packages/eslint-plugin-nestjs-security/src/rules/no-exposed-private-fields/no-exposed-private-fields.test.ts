@@ -33,6 +33,58 @@ describe('no-exposed-private-fields', () => {
   describe('Valid Code - Properly Excluded Fields', () => {
     ruleTester.run('valid - excluded fields', noExposedPrivateFields, {
       valid: [
+        // A GraphQL @InputType is submitted by the client and never returned, so a
+        // credential-named field on it cannot be *exposed* — this rule is CWE-200,
+        // data leaving. Previously asserted as a finding; that expectation was
+        // wrong. Validating such a field is require-class-validator's job.
+        `
+      @InputType()
+      class CreateUser {
+        secretToken: string;
+      }
+    `,
+
+        // FP-D1 — the ORM already excludes it from every query result. Each stack
+        // spells the same guarantee differently, and @Exclude() is not the only
+        // proof of safety.
+        `
+      class UserModel {
+        @prop({ required: true, select: false })
+        password: string;
+      }
+    `,
+        `
+      class UserEntity {
+        @Property({ hidden: true })
+        password: string;
+      }
+    `,
+        `
+      @Entity()
+      class UserEntity {
+        @Column({ select: false })
+        password: string;
+      }
+    `,
+        // FP-D2 — an inbound payload. @Exclude() here is a no-op at best and
+        // breaks the request under excludeExtraneousValues.
+        `
+      class RegisterPayload {
+        @IsString()
+        password: string;
+      }
+    `,
+        // FP-D3 — the token IS the payload. Following the rule's advice here
+        // would break sign-in.
+        `
+      class SignInResponseDto {
+        @ApiProperty()
+        access_token: string;
+        @ApiProperty()
+        refresh_token: string;
+      }
+    `,
+
         // @Exclude on password
         {
           code: `
@@ -88,7 +140,42 @@ describe('no-exposed-private-fields', () => {
           `,
         },
       ],
-      invalid: [],
+      invalid: [
+        // "Cannot prove excluded" is not "proved excluded". A non-literal
+        // projection value and a spread both leave the question open, so the rule
+        // proceeds and reports rather than assuming safety.
+        {
+          code: `
+        class TokenEntity {
+          @Column({ select: shouldSelect })
+          secret: string;
+        }
+      `,
+          errors: [{ messageId: 'exposedField' }],
+        },
+        {
+          code: `
+        class SessionEntity {
+          @Column({ ...columnOpts })
+          secret: string;
+        }
+      `,
+          errors: [{ messageId: 'exposedField' }],
+        },
+
+        // A persisted class stays in scope whatever it is named — the inbound-verb
+        // exclusion must not override the @Entity fact.
+        {
+          code: `
+        @Entity()
+        class CreateAuditEntryEntity {
+          @Column()
+          password: string;
+        }
+      `,
+          errors: [{ messageId: 'exposedField' }],
+        },
+      ],
     });
   });
 
@@ -236,16 +323,6 @@ describe('no-exposed-private-fields', () => {
             @ObjectType()
             class User {
               password: string;
-            }
-          `,
-          errors: [{ messageId: 'exposedField' }],
-        },
-        // @InputType (GraphQL)
-        {
-          code: `
-            @InputType()
-            class CreateUser {
-              secretToken: string;
             }
           `,
           errors: [{ messageId: 'exposedField' }],

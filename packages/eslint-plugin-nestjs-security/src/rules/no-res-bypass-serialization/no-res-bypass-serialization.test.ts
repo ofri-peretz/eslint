@@ -44,6 +44,18 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
         }
       }
     `,
+    // truthy: a 204 with an empty body. Nothing to serialise, so nothing the
+    // interceptor bypass could have leaked.
+    `
+      @Controller('auth')
+      class AuthController {
+        @Post('login')
+        async login(@Res() response: Response) {
+          response.setHeader('Set-Cookie', cookiePayload);
+          return response.status(204).json({});
+        }
+      }
+    `,
     // amplication health checks: sends a string literal.
     `
       @Controller('health')
@@ -261,6 +273,17 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
           findAll(@Res() res: Response) {
             this.service.load().then((data) => res.json(data));
           }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A non-empty object literal still carries fields that @Exclude() governs.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) { res.json({ user: this.user }); }
         }
       `,
       errors: [{ messageId: 'bypassesSerialization' }],

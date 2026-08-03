@@ -11,6 +11,30 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+    // No `cors` key at all — CORS is off, which is the secure default.
+    `const app = await NestFactory.create(AppModule);`,
+    `const app = await NestFactory.create(AppModule, { bufferLogs: true });`,
+    `const app = await NestFactory.create(AppModule, { cors: false });`,
+    // awesome-nest-bp: a real allow-list built from config.
+    `
+      const app = await NestFactory.create(AppModule, {
+        cors: { origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'] },
+      });
+    `,
+    // A spread could supply `origin`; cannot prove.
+    `const app = await NestFactory.create(AppModule, { cors: { ...corsOpts } });`,
+    // A spread at the top level could supply `cors` itself.
+    `const app = await NestFactory.create(AppModule, { ...bootstrapOptions });`,
+    // A non-literal cors value is unknowable.
+    `const app = await NestFactory.create(AppModule, { cors: corsEnabled });`,
+    // Options passed as an identifier — nothing to enumerate.
+    `const app = await NestFactory.create(AppModule, bootstrapOptions);`,
+    // A microservice has no HTTP surface and no cors option.
+    `const app = await NestFactory.createMicroservice(AppModule, { transport: Transport.TCP });`,
+    // A bare call, and a non-NestFactory receiver.
+    `const app = await NestFactory.create(AppModule, {});`,
+    `const x = await Other.create(AppModule, { cors: true });`,
+
     // `['*']` is not a wildcard. cors compares each array element with
     // `origin === allowedOrigin`, and no browser sends `Origin: *`, so this
     // list matches nothing — it denies every cross-origin request rather than
@@ -55,6 +79,31 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ],
   invalid: [
+    // NestFactory.create's `cors` option routes into the very same code path:
+    // nest-application.ts turns a non-object `cors` into a bare enableCors(),
+    // so `{ cors: true }` IS `Access-Control-Allow-Origin: *`.
+    {
+      code: `const app = await NestFactory.create(AppModule, { cors: true });`,
+      errors: [{ messageId: 'defaultOrigin' }],
+    },
+    // A cors options object with no `origin` — the cors package defaults to '*'.
+    {
+      code: `
+        const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+          cors: { exposedHeaders: ['WWW-Authenticate'] },
+        });
+      `,
+      errors: [{ messageId: 'defaultOrigin' }],
+    },
+    {
+      code: `const app = await NestFactory.create(AppModule, { cors: { origin: '*' } });`,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      code: `const app = await NestFactory.create(AppModule, { cors: { origin: true } });`,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+
     // Bare call — defaults to '*'.
     {
       code: `app.enableCors();`,
