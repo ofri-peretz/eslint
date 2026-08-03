@@ -3095,9 +3095,11 @@
       "no-exposed-debug-endpoints",
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
+      "no-permissive-cors",
       "require-class-validator",
       "require-guards",
-      "require-throttler"
+      "require-throttler",
+      "require-validation-pipe-whitelist"
     ],
     "node-security": [
       "detect-child-process",
