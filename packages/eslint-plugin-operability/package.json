@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-operability",
   "version": "3.0.11",
-  "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls.",
+  "description": "ESLint plugin for production operability \u2014 bans debug code and console logging in production, verbose error messages, and process.exit calls.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -11,8 +11,8 @@
       "default": "./dist/src/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -60,7 +60,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-operability"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-operability",

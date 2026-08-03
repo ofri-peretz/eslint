@@ -1,7 +1,7 @@
 {
   "name": "@interlace/eslint-devkit",
   "version": "1.4.4",
-  "description": "Toolkit for building ESLint plugins in TypeScript — AST helpers, type utilities, rule-creation scaffolding, security benchmarks, and SARIF output.",
+  "description": "Toolkit for building ESLint plugins in TypeScript \u2014 AST helpers, type utilities, rule-creation scaffolding, security benchmarks, and SARIF output.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -23,7 +23,7 @@
   "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-devkit#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-devkit"
   },
   "bugs": {

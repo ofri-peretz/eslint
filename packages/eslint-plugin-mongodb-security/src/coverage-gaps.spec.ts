@@ -625,8 +625,8 @@ describe('eslint-plugin-mongodb-security/oxlint sub-export', () => {
       fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'),
     );
     expect(pkgJson.exports['./oxlint']).toEqual({
-      types: './src/oxlint.d.ts',
-      default: './src/oxlint.js',
+      types: './dist/src/oxlint.d.ts',
+      default: './dist/src/oxlint.js',
     });
   });
 

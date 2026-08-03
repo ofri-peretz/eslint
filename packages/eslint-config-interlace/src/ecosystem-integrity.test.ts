@@ -44,6 +44,15 @@ const PLUGIN_NAMES = [
   'eslint-plugin-nestjs-security',
   'eslint-plugin-lambda-security',
   'eslint-plugin-vercel-ai-security',
+  // AI SDK family (4) — each gated on its own SDK
+  'eslint-plugin-mcp-sdk-security',
+  'eslint-plugin-openai-security',
+  'eslint-plugin-anthropic-security',
+  'eslint-plugin-gemini-security',
+  // renamed from eslint-plugin-pg / eslint-plugin-jwt; the originals stay
+  // listed until their deprecations age out
+  'eslint-plugin-postgresql-security',
+  'eslint-plugin-jwt-security',
   // quality (7)
   'eslint-plugin-conventions',
   'eslint-plugin-import-next',

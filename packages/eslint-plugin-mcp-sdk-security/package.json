@@ -1,0 +1,95 @@
+{
+  "name": "eslint-plugin-mcp-sdk-security",
+  "version": "0.1.0",
+  "description": "ESLint plugin for Model Context Protocol (MCP) SDK security \u2014 catches tools registered without an input schema, so handlers never run on unvalidated client-supplied arguments.",
+  "type": "commonjs",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./oxlint": {
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-mcp-sdk-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "mcp",
+    "mcp-security",
+    "mcp-server",
+    "model-context-protocol",
+    "modelcontextprotocol",
+    "tool-calling",
+    "tool-poisoning",
+    "ai-security",
+    "llm",
+    "llm-security",
+    "agentic",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "^1.4.4"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  }
+}

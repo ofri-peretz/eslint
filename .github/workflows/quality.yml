@@ -86,6 +86,17 @@ jobs:
           turbo-cache: "false"
       - run: npm run lint:workflows
 
+  publish-metadata:
+    name: Publish Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run lint:publish
+
   lockfile:
     name: Lockfile Sync
     runs-on: ubuntu-latest
@@ -120,7 +131,7 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, lockfile]
+    needs: [oxlint, markdown, changelog, workflows, publish-metadata, lockfile]
     if: always()
     steps:
       - name: Render gate report
@@ -129,6 +140,7 @@ jobs:
           R_MARKDOWN: ${{ needs.markdown.result }}
           R_CHANGELOG: ${{ needs.changelog.result }}
           R_WORKFLOWS: ${{ needs.workflows.result }}
+          R_PUBLISH: ${{ needs.publish-metadata.result }}
           R_LOCKFILE: ${{ needs.lockfile.result }}
         run: |
           set -euo pipefail
@@ -143,7 +155,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_LOCKFILE"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_PUBLISH" "$R_LOCKFILE"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -161,6 +173,7 @@ jobs:
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
             echo "| Workflow conventions | $(icon "$R_WORKFLOWS") $R_WORKFLOWS    | \`scripts/lint-workflows.ts\` |"
+            echo "| Publish metadata    | $(icon "$R_PUBLISH") $R_PUBLISH         | no package publishes with an npm warning |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"

@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-pg",
   "version": "1.4.9",
-  "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL.",
+  "description": "ESLint plugin for the pg PostgreSQL driver \u2014 detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -11,8 +11,8 @@
       "default": "./dist/src/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-pg",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-pg"
   },
   "bugs": {

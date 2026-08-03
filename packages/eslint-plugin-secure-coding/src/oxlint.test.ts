@@ -33,8 +33,8 @@ describe('eslint-plugin-secure-coding/oxlint sub-export', () => {
     // `dist/` only via tsc output. See sibling browser-security/package.json
     // for the canonical shape.
     expect(pkgJson.exports['./oxlint']).toEqual({
-      types: './src/oxlint.d.ts',
-      default: './src/oxlint.js',
+      types: './dist/src/oxlint.d.ts',
+      default: './dist/src/oxlint.js',
     });
   });
 

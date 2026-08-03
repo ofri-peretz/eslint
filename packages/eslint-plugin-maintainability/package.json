@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-maintainability",
   "version": "3.0.9",
-  "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
+  "description": "ESLint plugin for maintainable code \u2014 limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -15,8 +15,8 @@
       "default": "./src/types/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -73,7 +73,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-maintainability"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-maintainability",

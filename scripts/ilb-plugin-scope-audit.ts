@@ -58,6 +58,21 @@ const PRINT = process.argv.includes('--print');
 
 // ── Plugin environment contracts ────────────────────────────────────────────
 
+/**
+ * Rule namespace, where it differs from the package directory name.
+ *
+ * The renamed packages deliberately kept their original short namespace so a
+ * migration is a one-line package.json change — every `pg/no-unsafe-query`
+ * reference and eslint-disable comment keeps working. Without this map the
+ * audit derives the namespace from the directory, then (a) reads the
+ * `'pg': plugin` config line as a rule named `pg` and (b) resolves every
+ * severity to 'off' because it looks for a prefix the configs never use.
+ */
+const PLUGIN_NAMESPACE: Record<string, string> = {
+  'eslint-plugin-postgresql-security': 'pg',
+  'eslint-plugin-jwt-security': 'jwt',
+};
+
 const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-secure-coding':     ['universal'],
   'eslint-plugin-node-security':     ['universal', 'node'],
@@ -65,6 +80,11 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-express-security':  ['express'],
   'eslint-plugin-jwt':               ['jwt'],
   'eslint-plugin-pg':                ['pg'],
+  // Renamed packages keep their original rule set, namespace and therefore
+  // their environment tags — see AGENTS.md 'every security plugin is
+  // eslint-plugin-*-security'. The old names stay until the deprecations age out.
+  'eslint-plugin-jwt-security':        ['jwt'],
+  'eslint-plugin-postgresql-security': ['pg'],
   'eslint-plugin-mongodb-security':  ['mongodb'],
   'eslint-plugin-nestjs-security':   ['nestjs'],
   'eslint-plugin-lambda-security':   ['lambda'],
@@ -252,7 +272,7 @@ function getRulesFromIndex(pluginDir: string): string[] {
   const indexPath = path.join(PACKAGES_DIR, pluginDir, 'src', 'index.ts');
   if (!fs.existsSync(indexPath)) return [];
   const src = fs.readFileSync(indexPath, 'utf-8');
-  const pluginShortName = pluginDir.replace('eslint-plugin-', '');
+  const pluginShortName = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
 
   // Strategy: scan lines that look like `'rule-name': <non-string>` (rule registration)
   // Exclude lines that assign string literals — those are flagship config ('rule': 'error').
@@ -300,7 +320,7 @@ function getFlagshipSeverity(pluginDir: string, ruleName: string): 'error' | 'wa
   if (!fs.existsSync(indexPath)) return 'off';
   const src = fs.readFileSync(indexPath, 'utf-8');
   // Look for 'plugin-name/rule-name': 'error'|'warn'
-  const prefix = pluginDir.replace('eslint-plugin-', '');
+  const prefix = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
   const re = new RegExp(`['"]${prefix}/${ruleName}['"]\\s*:\\s*['"]([^'"]+)['"]`);
   const m = src.match(re);
   if (!m) return 'off';
