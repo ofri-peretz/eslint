@@ -189,9 +189,20 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         } else if (value.value === true) {
           context.report({ node: originProp, messageId: 'reflectedOrigin' });
         }
+      } else if (value.type === AST_NODE_TYPES.ArrayExpression) {
+        // An allowlist containing '*' is not an allowlist: the cors middleware
+        // accepts an origin matching *any* element, so the wildcard makes every
+        // sibling entry decorative. `['*', 'https://app.example.com']` is
+        // exactly as permissive as `'*'`.
+        const wildcard = value.elements.find(
+          (el) => el?.type === AST_NODE_TYPES.Literal && el.value === '*',
+        );
+        if (wildcard) {
+          context.report({ node: wildcard, messageId: 'wildcardOrigin' });
+        }
       }
-      // Anything else (identifier, member expression, array, function, template)
-      // is either a real allowlist or not statically knowable — stay quiet.
+      // Anything else (identifier, member expression, function, template) is
+      // either a real allowlist or not statically knowable — stay quiet.
     }
 
     return {
