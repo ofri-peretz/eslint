@@ -8,9 +8,9 @@
  * ESLint Rule: no-unsafe-regex-construction
  * Detects unsafe regex construction patterns (user input without escaping, dynamic flags)
  * CWE-400: Uncontrolled Resource Consumption
- * 
+ *
  * Extends detect-non-literal-regexp with pattern analysis
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/400.html
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
@@ -28,15 +28,18 @@ type MessageIds =
 // Inline regex-metacharacter escape, appended to the flagged expression by the
 // `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
 // code, so the fix must be self-contained rather than calling one.
+// `${}` here are regex metacharacters inside a character class, not a template
+// placeholder — the string is a literal `.replace(...)` snippet inserted by the fixer.
+// eslint-disable-next-line no-template-curly-in-string
 const INLINE_ESCAPE_SUFFIX = '.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")';
 
 export interface Options {
   /** Allow literal string patterns. Default: false */
   allowLiterals?: boolean;
-  
+
   /** Trusted functions that escape input. Default: ['escapeRegex', 'escape', 'sanitize'] */
   trustedEscapingFunctions?: string[];
-  
+
   /** Maximum pattern length for dynamic regex. Default: 100 */
   maxPatternLength?: number;
 }
@@ -51,12 +54,12 @@ function isUserInput(node: TSESTree.Node): boolean {
   if (node.type === 'CallExpression') {
     return true;
   }
-  
+
   // Template literals with expressions are dynamic
   if (node.type === 'TemplateLiteral') {
     return node.expressions.length > 0;
   }
-  
+
   // Member expressions accessing user properties
   if (node.type === 'MemberExpression') {
     return true;
@@ -73,7 +76,7 @@ function isUserInput(node: TSESTree.Node): boolean {
     }
     return true;
   }
-  
+
   return false;
 }
 
@@ -83,7 +86,7 @@ function isUserInput(node: TSESTree.Node): boolean {
 function isEscaped(
   node: TSESTree.Node,
   trustedFunctions: string[],
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   // Check if the node itself is a call to a trusted escaping function
   if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
@@ -102,35 +105,41 @@ function isEscaped(
   const maxDepth = 5; // Prevent infinite loops
 
   while (depth < maxDepth) {
-    const parent = sourceCode.getNodeByRangeIndex?.(current.range[0] - 1) || 
-                   (current as TSESTree.Node).parent;
-    
+    const parent =
+      sourceCode.getNodeByRangeIndex?.(current.range[0] - 1) ||
+      (current as TSESTree.Node).parent;
+
     if (!parent) break;
-    
-    if (parent.type === 'CallExpression' && parent.callee.type === 'Identifier') {
+
+    if (
+      parent.type === 'CallExpression' &&
+      parent.callee.type === 'Identifier'
+    ) {
       const functionName = parent.callee.name;
       if (trustedFunctions.includes(functionName)) {
         return true;
       }
     }
-    
+
     current = parent as TSESTree.Node;
     depth++;
   }
-  
+
   return false;
 }
 
 /**
  * Check if regex flags are dynamic
  */
-function hasDynamicFlags(node: TSESTree.CallExpression | TSESTree.NewExpression): boolean {
+function hasDynamicFlags(
+  node: TSESTree.CallExpression | TSESTree.NewExpression,
+): boolean {
   // Check second argument (flags)
   if (node.arguments.length > 1) {
     const flagsNode = node.arguments[1];
     return isUserInput(flagsNode);
   }
-  
+
   return false;
 }
 
@@ -140,27 +149,36 @@ function hasDynamicFlags(node: TSESTree.CallExpression | TSESTree.NewExpression)
 function extractPattern(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
   sourceCode: TSESLint.SourceCode,
-  trustedFunctions: string[]
-): { patternNode: TSESTree.Node | null; isUserInput: boolean; isEscaped: boolean } {
+  trustedFunctions: string[],
+): {
+  patternNode: TSESTree.Node | null;
+  isUserInput: boolean;
+  isEscaped: boolean;
+} {
   const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
-  
+
   if (!patternNode) {
     return { patternNode: null, isUserInput: false, isEscaped: false };
   }
-  
+
   const isUserInputValue = isUserInput(patternNode);
   // Default trusted functions + user configured ones
-  const allTrustedFunctions = [...new Set([
-    'escapeRegex', 'escape', 'sanitize', 'RegExp.escape',
-    ...trustedFunctions
-  ])];
+  const allTrustedFunctions = [
+    ...new Set([
+      'escapeRegex',
+      'escape',
+      'sanitize',
+      'RegExp.escape',
+      ...trustedFunctions,
+    ]),
+  ];
 
   const isEscapedValue = isEscaped(
     patternNode,
     allTrustedFunctions,
-    sourceCode
+    sourceCode,
   );
-  
+
   return {
     patternNode,
     isUserInput: isUserInputValue,
@@ -174,7 +192,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-regex-construction.md',
-      description: 'Detects unsafe regex construction patterns (user input without escaping, dynamic flags)',
+      description:
+        'Detects unsafe regex construction patterns (user input without escaping, dynamic flags)',
       cwe: 'CWE-400',
       cvss: 7.5,
     },
@@ -187,7 +206,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         description: '{{issue}}: {{details}}',
         severity: 'HIGH',
         fix: '{{fix}}',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
       escapeUserInput: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -196,7 +216,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         // oxlint-disable-next-line no-template-curly-in-string
         fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),
       validatePattern: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -204,7 +225,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         description: 'Validate pattern against whitelist',
         severity: 'LOW',
         fix: 'Validate pattern before creating RegExp',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
       useSafeLibrary: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -220,7 +242,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         description: 'Use static flags instead of dynamic',
         severity: 'LOW',
         fix: 'new RegExp(pattern, "gi") with static flags',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
       }),
     },
     schema: [
@@ -256,7 +279,10 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       maxPatternLength: 100,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     // `options` is always an object here (defaulted by the destructuring
     // parameter above), so a second `|| {}` fallback could never fire —
     // removed as dead code.
@@ -271,28 +297,37 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     /**
      * Check RegExp constructor calls
      */
-    function checkRegExpCall(node: TSESTree.CallExpression | TSESTree.NewExpression) {
+    function checkRegExpCall(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ) {
       // Check for RegExp constructor
       const isRegExpCall =
-        (node.type === 'CallExpression' && node.callee.type === 'Identifier' && node.callee.name === 'RegExp') ||
-        (node.type === 'NewExpression' && node.callee.type === 'Identifier' && node.callee.name === 'RegExp');
+        (node.type === 'CallExpression' &&
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'RegExp') ||
+        (node.type === 'NewExpression' &&
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'RegExp');
 
       if (!isRegExpCall) {
         return;
       }
 
-      const { patternNode, isUserInput: isUserInputValue, isEscaped: isEscapedValue } = extractPattern(
-        node,
-        sourceCode,
-        trustedEscapingFunctions
-      );
+      const {
+        patternNode,
+        isUserInput: isUserInputValue,
+        isEscaped: isEscapedValue,
+      } = extractPattern(node, sourceCode, trustedEscapingFunctions);
 
       if (!patternNode) {
         return;
       }
 
       // Check for literal strings
-      if (patternNode.type === 'Literal' && typeof patternNode.value === 'string') {
+      if (
+        patternNode.type === 'Literal' &&
+        typeof patternNode.value === 'string'
+      ) {
         // Even literals can be unsafe if they're very long - check this regardless of allowLiterals
         const patternLength = patternNode.value.length;
         if (patternLength > maxPatternLength) {
@@ -321,7 +356,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
             messageId: 'unsafeRegexConstruction',
             data: {
               issue: 'Literal regex pattern',
-              details: 'Literal regex patterns should be avoided for security. Use variables instead.',
+              details:
+                'Literal regex patterns should be avoided for security. Use variables instead.',
               fix: 'Use a variable or RegExp constructor with a string variable',
             },
             suggest: [
@@ -343,7 +379,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           messageId: 'unsafeRegexConstruction',
           data: {
             issue: 'User input in regex without escaping',
-            details: 'User input in regex pattern can lead to ReDoS or injection attacks',
+            details:
+              'User input in regex pattern can lead to ReDoS or injection attacks',
             fix: 'Escape special characters before using in regex',
           },
           suggest: [
@@ -378,7 +415,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           messageId: 'unsafeRegexConstruction',
           data: {
             issue: 'Dynamic regex flags',
-            details: 'Dynamic flags can lead to unexpected behavior or security issues',
+            details:
+              'Dynamic flags can lead to unexpected behavior or security issues',
             fix: 'Use static flags instead of dynamic flags',
           },
           suggest: [
@@ -397,4 +435,3 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-
