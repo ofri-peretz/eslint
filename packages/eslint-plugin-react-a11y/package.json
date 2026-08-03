@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-react-a11y"
   },
   "bugs": {
@@ -81,7 +81,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.4.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -98,6 +98,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

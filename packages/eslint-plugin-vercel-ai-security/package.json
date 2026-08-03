@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-vercel-ai-security"
   },
   "bugs": {
@@ -102,6 +102,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

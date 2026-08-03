@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: sequelize",
+    "icon": "Database",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

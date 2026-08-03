@@ -27,6 +27,11 @@ export interface MockContextOptions {
   filename?: string;
   /** Text returned by the `sourceCode.getText()` stub. */
   sourceText?: string;
+  /**
+   * Program node exposed as `sourceCode.ast`. Defaults to an empty program —
+   * rules that pre-scan the file at `create()` time need this to exist.
+   */
+  ast?: unknown;
 }
 
 export interface MockContextResult {
@@ -50,6 +55,7 @@ export function createWithMockContext(
   const filename = opts.filename ?? 'mock.ts';
   const emptyScope = { variables: [], references: [], childScopes: [] };
   const sourceCode = {
+    ast: opts.ast ?? { type: 'Program', body: [], tokens: [], comments: [] },
     text: opts.sourceText ?? '',
     getText: () => opts.sourceText ?? '',
     getScope: () => emptyScope,

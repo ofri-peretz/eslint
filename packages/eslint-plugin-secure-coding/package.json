@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-secure-coding",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-secure-coding"
   },
   "bugs": {
@@ -87,7 +87,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.3",
+    "@interlace/eslint-devkit": "^1.4.4",
     "scslre": "^0.3.0",
     "@eslint-community/regexpp": "^4.10.0"
   },
@@ -100,6 +100,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

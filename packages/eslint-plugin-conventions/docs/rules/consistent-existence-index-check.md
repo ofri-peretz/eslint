@@ -65,7 +65,7 @@ if (index !== -1) {
 ```javascript
 {
   rules: {
-    'architecture/consistent-existence-index-check': 'warn'
+    'conventions/consistent-existence-index-check': 'warn'
   }
 }
 ```

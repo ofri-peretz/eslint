@@ -119,14 +119,14 @@ ESLint is the backbone for keeping large codebases healthy. These packages targe
 
 ## 🛟 ESLint Support Matrix
 
-> **Last data refresh:** 2026-05-09 (window: 2026-05-02 → 2026-05-09, source: npm registry)
+> **Last data refresh:** 2026-08-02 — shares computed from `api.npmjs.org/versions/eslint/last-week`, which sums to 213.3M across exact versions. npm's package-level endpoint reports ~154M for the same window; the two endpoints count differently, so read the **share** column as the claim, not the absolute totals.
 
-| ESLint Major | Weekly Downloads | Share | Status                           |
-| :----------- | :--------------- | :---- | :------------------------------- |
-| **v10**      | 11.8M            | 9.24% | ✅ Supported (forward-looking)   |
-| **v9**       | 76.9M            | 60.4% | ✅ Supported (current default)   |
-| **v8**       | 30.9M            | 24.3% | ✅ Supported (legacy active)     |
-| v7 and older | 7.7M             | 6.1%  | ❌ Unsupported (EOL)             |
+| ESLint Major | Weekly Downloads | Share  | Status                           |
+| :----------- | :--------------- | :----- | :------------------------------- |
+| **v10**      | 23.6M            | 11.08% | ✅ Supported (forward-looking)   |
+| **v9**       | 109.1M           | 51.13% | ✅ Supported (current default)   |
+| **v8**       | 60.3M            | 28.29% | ✅ Supported (legacy active)     |
+| v7 and older | 20.3M            | 9.51%  | ❌ Unsupported (EOL)             |
 
 All published packages declare `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency.
 

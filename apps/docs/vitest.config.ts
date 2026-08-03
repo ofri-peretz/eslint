@@ -43,6 +43,13 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
+    // Most of this suite is structural lock tests that glob + read the whole
+    // monorepo (mermaid-syntax alone reads ~940 markdown files). That is ~0.3s
+    // warm but ~6s cold, so vitest's 5s default turned a cold page cache into a
+    // "failure" — reliably, under the 44-task `turbo run test` fan-out that the
+    // lefthook pre-push `tests` hook runs, which starves every task for I/O.
+    // These tests are I/O-bound, not compute-bound; give them room.
+    testTimeout: 30_000,
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',

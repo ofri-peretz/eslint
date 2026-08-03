@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-nestjs-security"
   },
   "bugs": {
@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.4.4"
   },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
@@ -103,6 +103,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

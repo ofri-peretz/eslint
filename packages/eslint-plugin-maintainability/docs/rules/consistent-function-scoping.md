@@ -79,7 +79,7 @@ function createMultiplier(factor: number) {
 ```javascript
 {
   rules: {
-    'architecture/consistent-function-scoping': 'warn'
+    'maintainability/consistent-function-scoping': 'warn'
   }
 }
 ```
