@@ -433,7 +433,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory \u2014 disabled, max-age below floor, includeSubDomains false."
+      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory — disabled, max-age below floor, includeSubDomains false."
     },
     "no-unsafe-csp-directives": {
       "environment": "express",
@@ -445,7 +445,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') \u2014 req.ip becomes client-controlled (CWE-348)."
+      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') — req.ip becomes client-controlled (CWE-348)."
     },
     "require-route-authentication": {
       "environment": "express",
@@ -463,7 +463,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based \u2014 ships as warn per I3."
+      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based — ships as warn per I3."
     }
   },
   "eslint-plugin-import-next": {
@@ -2186,6 +2186,54 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Sequelize's raw-SQL sinks: sequelize.query() and Sequelize.literal()."
+    }
+  },
+  "eslint-plugin-mysql-security": {
+    "no-unsafe-query": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with MySQL's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-prisma-security": {
+    "no-unsafe-query": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Prisma's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-drizzle-security": {
+    "no-unsafe-query": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Drizzle's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-knex-security": {
+    "no-unsafe-query": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Knex's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-sqlite-security": {
+    "no-unsafe-query": {
+      "environment": "sqlite",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with SQLite's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-typeorm-security": {
+    "no-unsafe-query": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with TypeORM's raw-SQL sinks."
     }
   }
 }

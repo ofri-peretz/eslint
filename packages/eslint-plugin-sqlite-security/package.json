@@ -1,0 +1,102 @@
+{
+  "name": "eslint-plugin-sqlite-security",
+  "version": "0.0.0",
+  "description": "ESLint plugin for better-sqlite3 / sqlite3 \u2014 detects SQL injection in raw queries built with string concatenation or template literals.",
+  "type": "commonjs",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./oxlint": {
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-sqlite-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-sqlite-security",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ofri-peretz/eslint",
+    "directory": "packages/eslint-plugin-sqlite-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "sqlite",
+    "better-sqlite3",
+    "sql",
+    "sql-injection",
+    "cwe-89",
+    "raw-query",
+    "database",
+    "database-security",
+    "mysql",
+    "sqlite",
+    "postgres",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "better-sqlite3": "^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
+    "sqlite3": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "sqlite3": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "^1.4.3"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  }
+}

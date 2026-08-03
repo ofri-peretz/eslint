@@ -1,6 +1,8 @@
----
-'eslint-plugin-sequelize-security': minor
----
+# eslint-plugin-sequelize-security
+
+## 0.1.0
+
+### Minor Changes
 
 Initial release: `eslint-plugin-sequelize-security` — SQL injection detection for the
 Sequelize ORM.

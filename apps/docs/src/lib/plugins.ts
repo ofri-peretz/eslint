@@ -98,6 +98,42 @@ export const PLUGINS: PluginEntry[] = [
     description: 'Injection prevention',
   },
   {
+    slug: 'mysql-security',
+    package: 'eslint-plugin-mysql-security',
+    pillar: 'security',
+    description: 'MySQL security',
+  },
+  {
+    slug: 'prisma-security',
+    package: 'eslint-plugin-prisma-security',
+    pillar: 'security',
+    description: 'Prisma security',
+  },
+  {
+    slug: 'drizzle-security',
+    package: 'eslint-plugin-drizzle-security',
+    pillar: 'security',
+    description: 'Drizzle security',
+  },
+  {
+    slug: 'knex-security',
+    package: 'eslint-plugin-knex-security',
+    pillar: 'security',
+    description: 'Knex security',
+  },
+  {
+    slug: 'sqlite-security',
+    package: 'eslint-plugin-sqlite-security',
+    pillar: 'security',
+    description: 'SQLite security',
+  },
+  {
+    slug: 'typeorm-security',
+    package: 'eslint-plugin-typeorm-security',
+    pillar: 'security',
+    description: 'TypeORM security',
+  },
+  {
     slug: 'sequelize-security',
     package: 'eslint-plugin-sequelize-security',
     pillar: 'security',

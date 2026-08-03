@@ -57,9 +57,57 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-drizzle-security",
+      "rules": 1,
+      "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-knex-security",
+      "rules": 1,
+      "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-mysql-security",
+      "rules": 1,
+      "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-prisma-security",
+      "rules": 1,
+      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-sequelize-security",
       "rules": 1,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.1.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-sqlite-security",
+      "rules": 1,
+      "description": "ESLint plugin for better-sqlite3 / sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-typeorm-security",
+      "rules": 1,
+      "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.0.0",
       "published": true
@@ -161,8 +209,8 @@
       "published": true
     }
   ],
-  "totalRules": 476,
-  "totalPlugins": 20,
-  "allPluginsCount": 20,
-  "generatedAt": "2026-08-02T23:03:38.412Z"
+  "totalRules": 482,
+  "totalPlugins": 26,
+  "allPluginsCount": 26,
+  "generatedAt": "2026-08-03T01:01:17.045Z"
 }
