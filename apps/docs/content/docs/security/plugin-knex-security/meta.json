@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: knex-security",
+    "icon": "Database",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

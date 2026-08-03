@@ -60,7 +60,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-operability"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-operability",
@@ -78,6 +78,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }
