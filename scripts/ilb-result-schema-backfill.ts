@@ -191,7 +191,10 @@ for (const benchDir of fs.readdirSync(RESULTS_DIR)) {
       if (dateInName) {
         updatedDoc.timestamp = `${dateInName[1]}T00:00:00.000Z`;
       } else {
+        // Pin cwd: run from outside the repo root, git exits non-zero and the
+        // date silently degrades to "unknown".
         const added = spawnSync('git', ['log', '--diff-filter=A', '--format=%aI', '-1', '--', fp], {
+          cwd: ROOT,
           encoding: 'utf8',
         });
         const gitDate = added.status === 0 ? added.stdout.trim().split('\n')[0] : '';

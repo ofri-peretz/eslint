@@ -351,7 +351,11 @@ function main() {
   const total = d.shared + d.eslintOnly.length + d.oxlintOnly.length;
   const parityRate = total === 0 ? 1.0 : d.shared / total;
 
-  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+  // `allowDirty` is documented "NOT for CI" (benchmarks/lib/preregister.ts:112):
+  // a hash computed over uncommitted method files looks verifiable but is not,
+  // which is the precise failure this receipt exists to prevent. Locally it
+  // stays permissive so a work-in-progress run still completes.
+  const prereg = capturePreregistration({ allowDirty: !CI, entrypoint: import.meta.url });
 
   const envelope = {
     suite: 'ilb-oxlint-parity',

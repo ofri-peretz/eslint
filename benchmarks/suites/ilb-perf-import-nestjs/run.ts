@@ -535,7 +535,10 @@ function writeJson(corpus: CorpusSpec, fileCount: number, loc: number, results: 
     comparison[host] = { baseline: baseline.id, vs };
   }
 
-  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+  // See the note in ilb-oxlint-parity/run.ts — never allow a dirty tree to
+  // produce a receipt in CI.
+  const CI = process.argv.includes('--ci') || Boolean(process.env.CI);
+  const prereg = capturePreregistration({ allowDirty: !CI, entrypoint: import.meta.url });
 
   const payload = {
     suite: 'ilb-perf-import-nestjs',
