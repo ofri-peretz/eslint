@@ -1,11 +1,8 @@
----
-'eslint-plugin-mysql-security': minor
-'eslint-plugin-prisma-security': minor
-'eslint-plugin-drizzle-security': minor
-'eslint-plugin-knex-security': minor
-'eslint-plugin-sqlite-security': minor
-'eslint-plugin-typeorm-security': minor
----
+# eslint-plugin-drizzle-security
+
+## 0.1.0
+
+### Minor Changes
 
 Six new driver-scoped SQL-injection plugins (CWE-89), each shipping one rule —
 `no-unsafe-query` at `error` in `recommended`:
