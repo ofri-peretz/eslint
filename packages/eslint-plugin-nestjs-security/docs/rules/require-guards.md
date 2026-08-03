@@ -87,14 +87,33 @@ class UsersController {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Specific guards to require (default: any guard)
+  // Require these specific guards by name, not merely *a* guard (default: any)
   requiredGuards?: string[];
 
-  // Allow @Public decorator to bypass (default: true)
+  // Let @Public/@IsPublic/@SkipAuth/@AllowAnonymous/@Anonymous/@NoAuth and
+  // @HealthCheck mark a route as intentionally open (default: true)
   allowPublicDecorator?: boolean;
 
-  // Skip if global guards configured in main.ts (default: false)
+  // Scan the project's module and bootstrap files for an app-wide guard
+  // (APP_GUARD / app.useGlobalGuards) and stay silent when one exists
+  // (default: true)
+  detectGlobalGuards?: boolean;
+
+  // Assume a global guard without scanning, for registrations the scan cannot
+  // resolve — built at runtime, or supplied by a library (default: false)
   assumeGlobalGuards?: boolean;
+
+  // Extra decorator names that count as access control. Rarely needed: a
+  // decorator imported from a module whose path mentions auth/guard/policy is
+  // recognised automatically (default: [])
+  authDecorators?: string[];
+
+  // Route path segments that cannot require authentication, because they are
+  // how a caller obtains it. Matched per segment, so /admin/login-attempts is
+  // still private. Omit the key to keep the built-in list; pass [] to require
+  // a guard on every route (default: login, signin, register, refresh,
+  // callback, webhook, health, …)
+  publicRoutes?: string[];
 }
 ```
 
@@ -155,15 +174,18 @@ class UsersController extends BaseController {
 
 **Mitigation**: Apply guards explicitly on each controller.
 
-### Module-Level Guard Providers
+### Registered app-wide — **detected**
 
-**Why**: Guards registered as APP_GUARD providers are not detected.
+The rule scans the project's module and bootstrap files and stays silent when it
+finds an app-wide registration, so this is _not_ a false positive:
 
 ```typescript
-// ❌ NOT DETECTED - APP_GUARD provider
 @Module({
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }]
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
+export class AppModule {}
 ```
 
-**Mitigation**: Set assumeGlobalGuards for modules with APP_GUARD.
+Turn the scan off with `detectGlobalGuards: false` if you want the routes reported anyway.
+What the scan still cannot resolve is a registration built at runtime or
+supplied by a library — `assumeGlobalGuards: true` covers those.

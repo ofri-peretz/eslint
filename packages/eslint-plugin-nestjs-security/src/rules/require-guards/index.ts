@@ -77,8 +77,10 @@ type RuleOptions = [Options?];
 // Decorators that bypass guard requirements
 const PUBLIC_DECORATORS = new Set([
   'Public',
+  'IsPublic',
   'SkipAuth',
   'AllowAnonymous',
+  'Anonymous',
   'NoAuth',
   // @nestjs/terminus marks a liveness/readiness probe, which is public by design.
   'HealthCheck',
@@ -211,7 +213,13 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
           publicRoutes: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            // No `default` on purpose. ESLint validates options with Ajv in
+            // useDefaults mode, so a default here is written into the options
+            // object whenever a config supplies one at all — `['error', {}]`
+            // would arrive as `publicRoutes: []`, defeating the `??` below and
+            // wiping out every built-in public route. Leaving it undefined is
+            // what lets an omitted key mean "use the defaults" while an
+            // explicit `[]` still means "no public routes".
           },
         },
         additionalProperties: false,

@@ -111,12 +111,14 @@ three apps that don't whitelist fully reported.
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Also check response/serialization DTOs (default: false)
-  checkResponseDtos?: boolean;
+  // Extra decorator names that count as validation, for projects that compose
+  // class-validator into their own decorators — @StringField(), @NumberFieldOptional()
+  validatorDecorators?: string[];
 
-  // Class-name pattern identifying a response DTO
-  // (default: 'Response|Result|View|Payload|Output|Serializ')
-  responseDtoPattern?: string;
+  // Also report GraphQL @InputType() / @ArgsType() classes (default: false).
+  // The GraphQL schema already enforces scalar types and nullability, so this
+  // is opt-in: see the "GraphQL input types" section above.
+  checkGraphqlInputs?: boolean;
 
   // Stay quiet when the project registers a ValidationPipe with
   // `whitelist: true`, which strips undecorated properties (default: true)

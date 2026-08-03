@@ -65,8 +65,21 @@ export class AppModule {}
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Skip if global throttler configured in app.module (default: false)
+  // Scan the project's module and bootstrap files for app-wide rate limiting
+  // (ThrottlerModule plus a guard) and stay silent when it exists
+  // (default: true)
+  detectGlobalThrottler?: boolean;
+
+  // Assume global rate limiting without scanning (default: false)
   assumeGlobalThrottler?: boolean;
+
+  // Report only unauthenticated credential-adjacent routes — login, signup,
+  // reset, otp, mfa, token. Turning this off reports every unthrottled route,
+  // which is a capacity concern rather than a security one (default: true)
+  onlySensitiveRoutes?: boolean;
+
+  // Route path segments to leave alone (default: [])
+  skipRoutes?: string[];
 }
 ```
 
@@ -83,15 +96,22 @@ export class AppModule {}
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Global Throttler Module
+### Registered app-wide — **detected**
 
-**Why**: ThrottlerModule.forRoot in app.module is not linked to controllers.
+The rule scans the project's module and bootstrap files and stays silent when it
+finds an app-wide registration, so this is _not_ a false positive:
 
 ```typescript
-// ❌ NOT DETECTED - Global throttler exists
-// app.module.ts: imports: [ThrottlerModule.forRoot(...)]
-// controller.ts: Already throttled globally, but flagged
+@Module({
+  imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+})
+export class AppModule {}
 ```
+
+Turn the scan off with `detectGlobalThrottler: false` if you want the routes reported anyway.
+What the scan still cannot resolve is a registration built at runtime or
+supplied by a library — `assumeGlobalThrottler: true` covers those.
 
 **Mitigation**: Set `assumeGlobalThrottler: true` in rule options.
 
