@@ -104,7 +104,14 @@ Generate with `node scripts/generate-fixtures.js shapes`, run with
 
 Detection parity is checked per shape before any timing is trusted. A speed
 number from a run that reported different cycles than the official plugin is
-meaningless. Recorded parity: `flat` 0/0, `wide` 0/0, `dense` 20,000/20,000,
+meaningless.
+
+**The gate is manual, not enforced by the runner.** `runner.js` records only
+`times`, `stats`, `failed` and `reason` — it does not capture violation counts,
+so nothing in the result JSON proves parity held for a given run. The counts
+below were verified by hand on 2026-08-02 with `eslint -f json` per shape. Until
+the runner records them, treat parity as an operator responsibility and re-check
+it whenever fixtures are regenerated. Verified counts: `flat` 0/0, `wide` 0/0, `dense` 20,000/20,000,
 `single` 0/0. `chain` cannot be compared — the official plugin crashes on it.
 
 A run that fails is recorded as `failed` with a reason, never as a duration, and

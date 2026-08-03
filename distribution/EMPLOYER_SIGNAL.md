@@ -64,6 +64,7 @@ This is a **Staff-level product engineering story**, not a "I made some npm pack
 Phase 1: eslint-plugin-import-next (The Trojan Horse)
 ├── Target: Frustrated eslint-plugin-import users
 ├── Tactic: "148s → 2.7s" no-cycle benchmark content (synthetic, 5K files)
+├── Tactic: "crashes on deep chains, we complete them" (categorical, no benchmark needed)
 ├── Goal: 50K weekly downloads
 └── Timeline: 6-12 months
 
@@ -109,7 +110,7 @@ Phase 4: Viral Breakout
 | Performance | 51.7s on a 455K-LoC repo | 16.7s (3.1x faster e2e, 8x rule time) |
 | Incremental | No                      | Yes (shared caching)            |
 | Memory      | 4,035 MB peak RSS       | 4,064 MB — parity, not a win    |
-| Deep graphs | Crashes (stack overflow in its SCC pass) | Completes (iterative SCC) |
+| Deep graphs (`no-cycle` only) | Crashes — stack overflow in its SCC pass | Completes — iterative SCC |
 | AI-Native   | No                      | Structured remediation messages |
 
 ### vs. eslint-plugin-unicorn

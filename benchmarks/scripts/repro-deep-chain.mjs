@@ -27,6 +27,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const DEPTH = Number(process.argv[2] ?? 6000);
+if (!Number.isInteger(DEPTH) || DEPTH < 2) {
+  // Without this, `node repro-deep-chain.mjs abc` writes one file, both plugins
+  // "complete", and the script reports a pass for an input it never tested.
+  console.error(`Invalid depth: ${process.argv[2]}. Pass an integer >= 2.`);
+  process.exit(2);
+}
 
 // Built under the current directory, not the OS temp dir: an ESLint flat config
 // resolves `eslint-plugin-*` relative to its own location, so a config in /tmp

@@ -1,4 +1,12 @@
 {
+  "schemaVersion": 1,
+  "toolchain": {
+    "node": "v18.16.1",
+    "eslint": "10.7.0",
+    "os": "darwin-arm64",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-import-next": "2.3.9"
+  },
   "benchmark": "ILB-Perf \u2014 no-cycle across graph shapes",
   "timestamp": "2026-08-02T14:28:42.333Z",
   "iterations": 3,
@@ -13,7 +21,7 @@
       "plugins": {
         "eslint-plugin-import": {
           "failed": true,
-          "reason": "exit 2:     at Map.forEach (<anonymous>) |     at visitNode (/Users/ofri/repos/ofriperetz.dev/eslint/.claude/worktrees/perf-no-cycle/node_modules/eslint-plugin-import/lib/scc.js:51:29) |     at /Users/ofri/repos/ofriperetz.dev/eslint/.claude/worktrees/perf-no-cycle/node_modules/eslint-plugin-import/lib/scc.js:67:13"
+          "reason": "exit 2:     at Map.forEach (<anonymous>) |     at visitNode (node_modules/eslint-plugin-import/lib/scc.js:51:29) |     at node_modules/eslint-plugin-import/lib/scc.js:67:13"
         },
         "eslint-plugin-import-next": {
           "times": [

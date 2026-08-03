@@ -203,11 +203,14 @@ export function printSummaryTable(results) {
   
   for (const result of results.results) {
     const pluginNames = Object.keys(result.plugins);
-    const stats1 = result.plugins[pluginNames[0]]?.stats;
-    const stats2 = result.plugins[pluginNames[1]]?.stats;
-    
-    if (stats1 && stats2) {
-      console.log(`| ${result.size.toLocaleString().padEnd(5)} | ${stats1.mean.toFixed(2)}s | ${stats2.mean.toFixed(2)}s | ${result.speedup}x |`);
-    }
+    const p1 = result.plugins[pluginNames[0]];
+    const p2 = result.plugins[pluginNames[1]];
+    // A failed plugin has no `stats`. Skipping those rows hid the headline
+    // result of this suite — the shape where the baseline crashes outright.
+    const cell = (p) => (p?.failed ? 'FAILED' : p?.stats ? `${p.stats.median.toFixed(2)}s` : '—');
+    const ratio = result.speedup != null ? `${result.speedup}x` : 'n/a';
+    console.log(
+      `| ${String(result.size).padEnd(5)} | ${cell(p1)} | ${cell(p2)} | ${ratio} |`
+    );
   }
 }
