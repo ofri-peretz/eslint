@@ -741,7 +741,12 @@ describe('integration: real ESLint -f handshake', () => {
     // semi (warning) regardless of count.
     expect(grouped[0]!.severity).toBe('error');
     expect(grouped[0]!.ruleId).toBe('no-var');
-  });
+    // This test's cost is dominated by the cold `await import('eslint')` above,
+    // not by anything it asserts: ~1.3s warm, 10.3s on a cold module cache —
+    // past vitest's 5000ms default, which failed this file inside the lefthook
+    // `tests-affected` pre-commit hook on commits that touched nothing here.
+    // Sized off the cold number, per scripts/__tests__/precommit-gate-locks.test.ts.
+  }, 60_000);
 });
 
 describe('renderNDJSON', () => {

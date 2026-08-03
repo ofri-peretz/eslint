@@ -190,11 +190,29 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$PLUGIN_PATH/.compatibility-results"
+          # Two things are load-bearing here:
+          #
+          #   --config  The compat suites are excluded from every package's
+          #             vitest.config.mts (they'd otherwise gate the lefthook
+          #             pre-commit hook on a 200s+ cold SDK load). A CLI
+          #             positional only *filters* the config's include — it
+          #             can't add files back — so without this flag the run
+          #             matches zero files.
+          #
+          #   the filter shape  Vitest 4 treats positionals as plain substring
+          #             filters, not globs. The old
+          #             `.../__compatibility__/**/*.spec.ts` argument matched
+          #             nothing and this step passed while testing zero SDKs.
+          #             Keep it a literal path prefix.
+          #
+          # vitest.compat.config.mts sets passWithNoTests: false so either
+          # mistake fails loudly instead of going green.
           npx vitest run \
+            --config vitest.compat.config.mts \
             --reporter=verbose \
             --reporter=json \
             --outputFile="$PLUGIN_PATH/.compatibility-results/test-results.json" \
-            "$PLUGIN_PATH/src/__compatibility__/**/*.spec.ts" \
+            "$PLUGIN_PATH/src/__compatibility__" \
             2>&1 | tee "$PLUGIN_PATH/.compatibility-results/test-output.txt"
 
       - name: Generate breaking-change report

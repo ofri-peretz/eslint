@@ -81,6 +81,11 @@ function isAllowed(relPath: string, allowlist: Array<string | RegExp>): boolean 
 }
 
 const SHARED_EXCLUDES = [
+  // `.git` holds no source, but grep still walks and stats every loose object
+  // and packfile before the --include filter rejects them. In a normal clone
+  // (where .git is a directory rather than a worktree's gitfile) that tripled
+  // the cold scan: 2658ms → 886ms once excluded.
+  '--exclude-dir=.git',
   '--exclude-dir=node_modules',
   '--exclude-dir=dist',
   '--exclude-dir=build',
@@ -179,26 +184,49 @@ function violationMessage(
   );
 }
 
+/**
+ * Both tests below shell out to a full-repo grep, so their cost is dominated by
+ * filesystem I/O, not by anything vitest can predict. Warm they run in ~1–3s;
+ * on a cold page cache (fresh worktree, right after `npm ci`) the import scan
+ * was measured at 7.4s — past vitest's 5000ms default, which failed this file
+ * and blocked the lefthook `tests-affected` pre-commit hook on commits that had
+ * nothing to do with it.
+ *
+ * SCAN_TIMEOUT_MS is sized off that cold number with headroom for a loaded
+ * machine (lefthook runs its hooks with `parallel: true`), not off the warm
+ * case. Same discipline as vitest.compat.config.mts — size ceilings off cold
+ * observation, and locked by scripts/__tests__/precommit-gate-locks.test.ts.
+ */
+const SCAN_TIMEOUT_MS = 60_000;
+
 describe('No Deprecated Plugin References', () => {
   for (const plugin of DEPRECATED_PLUGINS) {
-    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {
-      const violations = findMarkdownReferences(plugin.name).filter(
-        (hit) => !isAllowed(hit.file, plugin.allowlist),
-      );
-      expect(
-        violations,
-        violationMessage('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations),
-      ).toEqual([]);
-    });
+    it(
+      `should not recommend ${plugin.name} in markdown (use ${plugin.successor})`,
+      () => {
+        const violations = findMarkdownReferences(plugin.name).filter(
+          (hit) => !isAllowed(hit.file, plugin.allowlist),
+        );
+        expect(
+          violations,
+          violationMessage('non-allowlisted markdown reference(s)', plugin.name, plugin.successor, violations),
+        ).toEqual([]);
+      },
+      SCAN_TIMEOUT_MS,
+    );
 
-    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
-      const violations = findImportReferences(plugin.name).filter(
-        (hit) => !isAllowed(hit.file, plugin.importAllowlist),
-      );
-      expect(
-        violations,
-        violationMessage('import reference(s)', plugin.name, plugin.successor, violations),
-      ).toEqual([]);
-    });
+    it(
+      `should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`,
+      () => {
+        const violations = findImportReferences(plugin.name).filter(
+          (hit) => !isAllowed(hit.file, plugin.importAllowlist),
+        );
+        expect(
+          violations,
+          violationMessage('import reference(s)', plugin.name, plugin.successor, violations),
+        ).toEqual([]);
+      },
+      SCAN_TIMEOUT_MS,
+    );
   }
 });

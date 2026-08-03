@@ -95,6 +95,13 @@ jobs:
       - name: Run tests via Turbo
         run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
 
+      # Workspace-level locks: keep slow, unbounded work out of the lefthook
+      # pre-commit path — SDK compat suites excluded from the default run (and
+      # still wired into sdk-compatibility.yml), whole-repo scans carrying a
+      # cold-sized timeout.
+      - name: Pre-commit gate locks
+        run: npm run --silent test:precommit-locks
+
   build:
     name: Build (Turbo)
     needs: gate
