@@ -3102,6 +3102,7 @@
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
       "no-permissive-cors",
+      "no-res-bypass-serialization",
       "require-class-validator",
       "require-guards",
       "require-throttler",
