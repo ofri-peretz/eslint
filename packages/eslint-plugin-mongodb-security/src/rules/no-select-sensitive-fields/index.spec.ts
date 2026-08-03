@@ -25,19 +25,19 @@ ruleTester.run('no-select-sensitive-fields', noSelectSensitiveFields, {
   ],
 
   invalid: [
-    // find without .select()
+    // find without .select(), schema in view
     {
-      code: `User.find({});`,
+      code: `const userSchema = new Schema({ email: String, password: String });\nUser.find({});`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // findOne without .select()
     {
-      code: `User.findOne({ email: req.body.email });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\nUser.findOne({ email: req.body.email });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // findById without .select()
     {
-      code: `User.findById(req.params.id);`,
+      code: `const userSchema = new Schema({ email: String, password: String });\nUser.findById(req.params.id);`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // select that includes sensitive field
@@ -47,7 +47,7 @@ ruleTester.run('no-select-sensitive-fields', noSelectSensitiveFields, {
     },
     // allowInTests: false
     {
-      code: `User.find({});`,
+      code: `const userSchema = new Schema({ email: String, password: String });\nUser.find({});`,
       filename: 'user.test.ts',
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'selectSensitiveFields' }],
