@@ -21,6 +21,8 @@ import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { getToolchain } from '../../lib/toolchain.ts';
+import { capturePreregistration } from '../../lib/preregister.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -349,9 +351,22 @@ function main() {
   const total = d.shared + d.eslintOnly.length + d.oxlintOnly.length;
   const parityRate = total === 0 ? 1.0 : d.shared / total;
 
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+
   const envelope = {
     suite: 'ilb-oxlint-parity',
     version: '1.0',
+    // Vocabulary-contract fields (benchmarks/lib/result-schema.json) plus the
+    // squash-proof receipt. Without these every run wrote a file that
+    // ilb-validate-results could only grandfather as a warning — the debt grew
+    // by one file per run and never shrank.
+    bench: 'ILB-Wild',
+    benchVersion: '0.1',
+    timestamp: new Date().toISOString(),
+    toolchain: getToolchain(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     runAt: new Date().toISOString(),
     corpus: path.relative(REPO_ROOT, CORPUS),
     eslintFindings: eslintFindings.length,

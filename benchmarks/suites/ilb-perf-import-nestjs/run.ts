@@ -114,6 +114,8 @@ function buildWorkerScript(configPath: string, files: string[], ruleId: string, 
   return `
 import { ESLint } from 'eslint';
 import { pathToFileURL } from 'url';
+import { getToolchain } from '../../lib/toolchain.ts';
+import { capturePreregistration } from '../../lib/preregister.ts';
 
 async function run() {
   const configMod = await import(pathToFileURL(${JSON.stringify(configPath)}).href);
@@ -533,9 +535,19 @@ function writeJson(corpus: CorpusSpec, fileCount: number, loc: number, results: 
     comparison[host] = { baseline: baseline.id, vs };
   }
 
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+
   const payload = {
     suite: 'ilb-perf-import-nestjs',
+    // Vocabulary-contract fields + squash-proof receipt — see the note in
+    // ilb-oxlint-parity/run.ts. `timestamp` alone was not enough.
+    bench: 'ILB-Perf',
+    benchVersion: '0.1',
     timestamp: new Date().toISOString(),
+    toolchain: getToolchain(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     environment: {
       node: process.version,
       platform: process.platform,
