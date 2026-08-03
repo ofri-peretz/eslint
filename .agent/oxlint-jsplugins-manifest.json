@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-02",
-  "totalPlugins": 19,
-  "totalRules": 426,
-  "oxlintCompatible": 426,
+  "generatedAt": "2026-08-03",
+  "totalPlugins": 26,
+  "totalRules": 433,
+  "oxlintCompatible": 433,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -379,6 +379,21 @@
         },
         {
           "name": "deprecation/no-deprecated-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "drizzle-security",
+      "shim": "tools/oxlint-plugins/interlace-drizzle-security.cjs",
+      "subpath": "eslint-plugin-drizzle-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -989,6 +1004,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-knex-security",
+      "short": "knex-security",
+      "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
+      "subpath": "eslint-plugin-knex-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-lambda-security",
       "short": "lambda-security",
       "shim": "tools/oxlint-plugins/interlace-lambda-security.cjs",
@@ -1339,6 +1369,21 @@
         },
         {
           "name": "require-tls-connection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "mysql-security",
+      "shim": "tools/oxlint-plugins/interlace-mysql-security.cjs",
+      "subpath": "eslint-plugin-mysql-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1759,6 +1804,21 @@
         },
         {
           "name": "prevent-double-release",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "prisma-security",
+      "shim": "tools/oxlint-plugins/interlace-prisma-security.cjs",
+      "subpath": "eslint-plugin-prisma-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2612,6 +2672,51 @@
       ]
     },
     {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "sequelize-security",
+      "shim": "tools/oxlint-plugins/interlace-sequelize-security.cjs",
+      "subpath": "eslint-plugin-sequelize-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "sqlite-security",
+      "shim": "tools/oxlint-plugins/interlace-sqlite-security.cjs",
+      "subpath": "eslint-plugin-sqlite-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "typeorm-security",
+      "shim": "tools/oxlint-plugins/interlace-typeorm-security.cjs",
+      "subpath": "eslint-plugin-typeorm-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-vercel-ai-security",
       "short": "vercel-ai-security",
       "shim": "tools/oxlint-plugins/interlace-vercel-ai-security.cjs",
@@ -2800,6 +2905,9 @@
       "require-data-testid",
       "utm-taxonomy"
     ],
+    "drizzle-security": [
+      "no-unsafe-query"
+    ],
     "express-security": [
       "no-client-controlled-authorization",
       "no-cors-credentials-wildcard",
@@ -2903,6 +3011,9 @@
       "require-issuer-validation",
       "require-max-age"
     ],
+    "knex-security": [
+      "no-unsafe-query"
+    ],
     "lambda-security": [
       "no-env-logging",
       "no-error-swallowing",
@@ -2977,15 +3088,16 @@
       "require-schema-validation",
       "require-tls-connection"
     ],
+    "mysql-security": [
+      "no-unsafe-query"
+    ],
     "nestjs-security": [
       "no-exposed-debug-endpoints",
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
-      "no-permissive-cors",
       "require-class-validator",
       "require-guards",
-      "require-throttler",
-      "require-validation-pipe-whitelist"
+      "require-throttler"
     ],
     "node-security": [
       "detect-child-process",
@@ -3054,6 +3166,9 @@
       "no-unsafe-search-path",
       "prefer-pool-query",
       "prevent-double-release"
+    ],
+    "prisma-security": [
+      "no-unsafe-query"
     ],
     "react-a11y": [
       "alt-text",
@@ -3267,6 +3382,15 @@
       "no-xxe-injection",
       "require-backend-authorization",
       "require-secure-defaults"
+    ],
+    "sequelize-security": [
+      "no-unsafe-query"
+    ],
+    "sqlite-security": [
+      "no-unsafe-query"
+    ],
+    "typeorm-security": [
+      "no-unsafe-query"
     ],
     "vercel-ai-security": [
       "no-dynamic-system-prompt",

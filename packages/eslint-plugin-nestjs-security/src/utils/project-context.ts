@@ -226,6 +226,7 @@ interface MutableContext {
   globalProviders: Set<string>;
   hasGlobalAuthGuard: boolean;
   hasGlobalValidationPipe: boolean;
+  hasWhitelistingValidationPipe: boolean;
   hasGlobalThrottler: boolean;
 }
 
