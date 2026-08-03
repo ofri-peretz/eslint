@@ -21,6 +21,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { globSync } from 'glob';
 import { cloneRepo, resolveBenchDir } from '../../lib/clone-repo';
+import { getToolchain } from '../../lib/toolchain';
+import { capturePreregistration } from '../../lib/preregister';
 
 const SUITE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const BENCHMARKS_ROOT = path.resolve(SUITE_DIR, '..', '..');
@@ -114,8 +116,6 @@ function buildWorkerScript(configPath: string, files: string[], ruleId: string, 
   return `
 import { ESLint } from 'eslint';
 import { pathToFileURL } from 'url';
-import { getToolchain } from '../../lib/toolchain.ts';
-import { capturePreregistration } from '../../lib/preregister.ts';
 
 async function run() {
   const configMod = await import(pathToFileURL(${JSON.stringify(configPath)}).href);
