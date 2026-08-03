@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-08-03T02:33:16.405Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "suite": "ilb-perf-import-nestjs",
   "timestamp": "2026-05-14T04:37:01.326Z",
   "environment": {
