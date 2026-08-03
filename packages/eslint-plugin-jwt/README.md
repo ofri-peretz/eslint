@@ -2,6 +2,10 @@
   <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
   <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/oxlint-logo.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://www.npmjs.com/package/jsonwebtoken" target="_blank"><img src="https://eslint.interlace.tools/jwt-logo.svg" alt="JSON Web Tokens" height="90" /></a>
 </p>
 
 <p align="center">
