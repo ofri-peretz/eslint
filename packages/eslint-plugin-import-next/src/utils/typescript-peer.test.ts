@@ -8,7 +8,9 @@
  * linting plain JavaScript. These tests pin the lazy, failure-tolerant access.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import fs from 'node:fs';
 import Module from 'node:module';
+import path from 'node:path';
 import { aliasSymbolFlag, loadTypeScript, resetTypeScriptPeerCache } from './typescript-peer';
 
 describe('typescript peer loading', () => {
@@ -44,5 +46,38 @@ describe('typescript peer loading', () => {
     expect(loadTypeScript()).toBeNull();
     // Callers treat undefined as "no alias" — `flags & 0` is always falsy.
     expect(aliasSymbolFlag()).toBe(0);
+  });
+});
+
+/**
+ * Rule-level lock.
+ *
+ * The tests above pin the utility, but nothing would fail if a rule reverted to
+ * `import ts from 'typescript'` at module scope: the workspace has TypeScript
+ * installed, so every rule test would still pass and only a *consumer* without
+ * it would break. This asserts the adoption, not just the helper.
+ */
+describe('rules do not import typescript at module scope', () => {
+  const RULES_DIR = path.resolve(__dirname, '..', 'rules');
+
+  it('every rule source imports typescript only as a type, if at all', () => {
+    const offenders: string[] = [];
+    for (const entry of fs.readdirSync(RULES_DIR)) {
+      if (!entry.endsWith('.ts') || entry.endsWith('.test.ts')) continue;
+      const source = fs.readFileSync(path.join(RULES_DIR, entry), 'utf-8');
+      for (const line of source.split('\n')) {
+        // `import type ts from 'typescript'` is erased at compile time and safe.
+        // Any other import of it emits a require and breaks a clean install.
+        if (/^\s*import\s+(?!type\b)[^;]*\bfrom\s+['"]typescript['"]/.test(line)) {
+          offenders.push(`${entry}: ${line.trim()}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      'These rules import `typescript` as a value, which emits require("typescript") ' +
+        'and throws for consumers who lint plain JavaScript. Use `loadTypeScript()` ' +
+        `from utils/typescript-peer instead:\n  ${offenders.join('\n  ')}`,
+    ).toEqual([]);
   });
 });
