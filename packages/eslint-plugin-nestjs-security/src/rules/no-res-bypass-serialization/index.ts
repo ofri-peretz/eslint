@@ -137,8 +137,30 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
     ): string | null {
       let found: string | null = null;
 
+      /**
+       * Whether a function node rebinds `binding` in its own parameters.
+       *
+       * `const transform = (res: Inner) => res.json(x)` inside a handler that
+       * injected `@Res() res` is a *different* res, and writing to it says
+       * nothing about the injected response. A closure that does not rebind the
+       * name still refers to the outer one, so only shadowing stops the walk.
+       */
+      const shadowsBinding = (node: TSESTree.Node): boolean => {
+        if (
+          node.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+          node.type !== AST_NODE_TYPES.FunctionExpression &&
+          node.type !== AST_NODE_TYPES.FunctionDeclaration
+        ) {
+          return false;
+        }
+        return node.params.some(
+          (p) => p.type === AST_NODE_TYPES.Identifier && p.name === binding,
+        );
+      };
+
       const visit = (node: TSESTree.Node): void => {
         if (found) return;
+        if (shadowsBinding(node)) return;
         if (node.type === AST_NODE_TYPES.CallExpression) {
           const writer = expressionName(node.callee);
           if (BODY_WRITERS.has(writer)) {

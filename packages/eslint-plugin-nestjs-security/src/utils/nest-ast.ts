@@ -84,8 +84,17 @@ export const DEFAULT_AUTH_DECORATORS: ReadonlySet<string> = new Set([
  * guards, roles, permissions, policies, abilities or scopes is access control.
  * Names outside that vocabulary (immich's `@MaintenanceRoute()`) still need the
  * per-rule `authDecorators` option.
+ *
+ * One exclusion: a name that opens with a retrieval verb is reading a value,
+ * not enforcing anything. `@GetAuthUser()`, `@ExtractAuthToken()` and
+ * `@CurrentAuthProfile()` all mention `Auth` as an infix modifier while
+ * enforcing nothing, and treating them as access control would make
+ * `require-guards` silent on a route that carries only one of them.
  */
+const ACCESSOR_PREFIX = /^(Get|Extract|Fetch|Read|Find|Current|Resolve)[A-Z]/;
+
 export function isAuthDecoratorName(name: string): boolean {
+  if (ACCESSOR_PREFIX.test(name)) return false;
   return /(^|[a-z])(Auth|Authenticated|Authentication|Authorize|Authorized|Authorization|Guard|Guards|Role|Roles|Permission|Permissions|Policy|Policies|Abilit(y|ies)|Scope|Scopes|Secured|Protected)([A-Z]|$)/.test(
     name,
   );

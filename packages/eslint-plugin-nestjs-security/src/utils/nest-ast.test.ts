@@ -595,3 +595,27 @@ describe('callReceiver', () => {
     expect(callReceiver(calleeAt('(await get()).json(x)'))).toBeNull();
   });
 });
+
+/**
+ * The vocabulary fallback fires only where import origin cannot settle the
+ * question, so its precision still matters: a decorator that merely *mentions*
+ * auth while retrieving a value must not read as enforcement.
+ */
+describe('isAuthDecoratorName — retrieval verbs are not enforcement', () => {
+  it('rejects accessor decorators that mention auth as an infix', () => {
+    expect(isAuthDecoratorName('GetAuthUser')).toBe(false);
+    expect(isAuthDecoratorName('ExtractAuthToken')).toBe(false);
+    expect(isAuthDecoratorName('CurrentAuthProfile')).toBe(false);
+    expect(isAuthDecoratorName('FindRoleById')).toBe(false);
+    expect(isAuthDecoratorName('ResolveScopeList')).toBe(false);
+  });
+
+  it('still accepts the enforcement vocabulary', () => {
+    expect(isAuthDecoratorName('Auth')).toBe(true);
+    expect(isAuthDecoratorName('Authenticated')).toBe(true);
+    expect(isAuthDecoratorName('RequireAuthentication')).toBe(true);
+    expect(isAuthDecoratorName('Roles')).toBe(true);
+    expect(isAuthDecoratorName('CheckPolicies')).toBe(true);
+    expect(isAuthDecoratorName('AdminGuard')).toBe(true);
+  });
+});

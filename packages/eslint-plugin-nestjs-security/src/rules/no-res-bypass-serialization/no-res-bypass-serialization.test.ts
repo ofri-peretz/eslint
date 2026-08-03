@@ -120,6 +120,42 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
         findAll(@Res() { json }: Response) { json(this.users); }
       }
     `,
+    // A nested function that rebinds the name is a different `res`. Reported by
+    // an earlier version, which walked into every function body regardless of
+    // scope.
+    `
+      @Controller('users')
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) {
+          const transform = (res: InnerType) => {
+            res.json(someData);
+          };
+          res.status(200).send('ok');
+        }
+      }
+    `,
+    // Same for a function expression and a declaration.
+    `
+      @Controller('users')
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) {
+          this.stream.on('data', function (res) { res.send(chunk); });
+          res.sendFile(this.path);
+        }
+      }
+    `,
+    `
+      @Controller('users')
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) {
+          function render(res) { res.json(model); }
+          res.redirect(this.url);
+        }
+      }
+    `,
     // Test files are exempt by default.
     {
       code: `
@@ -210,6 +246,20 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
             if (this.failed) return res.redirect(this.url);
             res.setHeader('Content-Type', 'application/json');
             res.send(credentials);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A nested function that does NOT rebind the name still writes to the
+    // injected response — the closure is the same binding.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) {
+            this.service.load().then((data) => res.json(data));
           }
         }
       `,
