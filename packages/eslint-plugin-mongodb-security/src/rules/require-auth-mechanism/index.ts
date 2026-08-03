@@ -11,6 +11,8 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isTestFile } from '../../utils/paths';
+import { analyzeMongoScope } from '../../utils/receiver';
 
 type MessageIds = 'requireAuthMechanism';
 export interface Options { allowInTests?: boolean; }
@@ -48,11 +50,13 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const inTestFile = isTestFile(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && inTestFile) {
       return {};
     }
+
+    const mongo = analyzeMongoScope(context.sourceCode.ast);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -65,6 +69,13 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
           : null;
 
         if (!methodName || !CONNECTION_METHODS.has(methodName)) {
+          return;
+        }
+
+        // Redis clients, TypeORM query runners and pino transports all have a
+        // `.connect()`. Calling one of those "a MongoDB connection" is the
+        // most damaging thing this rule can do, so require proof.
+        if (!mongo.isConnectionReceiver(node)) {
           return;
         }
 

@@ -117,17 +117,17 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
   invalid: [
     // Second argument is not an object — projection cannot be proven safe.
     {
-      code: `db.users.find({}, "name");`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Options object without a projection property.
     {
-      code: `db.users.find({}, { sort: { a: 1 } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { sort: { a: 1 } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // projection value is not an object literal.
     {
-      code: `db.users.find({}, { projection: req.query.p });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: req.query.p });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Sensitive field explicitly included.
@@ -142,12 +142,12 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
     },
     // Exclusion-only projection (no inclusion) is not treated as safe.
     {
-      code: `db.users.find({}, { projection: { name: 0 } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 0 } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Non-boolean/non-numeric projection value never sets hasInclusion.
     {
-      code: `db.users.find({}, { projection: { name: 'x' } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 'x' } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
   ],

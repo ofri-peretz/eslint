@@ -91,6 +91,20 @@ userSchema.pre('findOneAndUpdate', function () {
 });
 ```
 
+## Receiver Requirement
+
+`updateOne()`, `findOneAndUpdate()`, `deleteMany()` and friends are are not MongoDB-exclusive. This rule only fires when the receiver is
+plausibly a Mongo model, collection or database handle — a PascalCase model
+identifier (`User.find(...)`), a name like `model`/`collection`/`db`, a
+`db.collection('users')` chain, or a value bound to a `mongodb`/`mongoose`
+import.
+
+It stays silent on:
+
+- Generic repository wrappers (`this.birdRepository.updateOne(...)`) — only a
+  Mongoose model has pre/post middleware to bypass in the first place.
+- Other ORMs that share the method vocabulary.
+
 ## Known False Negatives
 
 ### Dynamic Method Calls
