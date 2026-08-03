@@ -32,17 +32,13 @@
  *      matches zero files — green, and testing nothing.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * BUG 2 — no-deprecated-plugin-references.test.ts (2026-08-02)
- * Two whole-repo `grep -r` scans running under vitest's 5000ms default. Warm
- * they take ~1–3s; cold the import scan was measured at 7.4s, so the file
- * failed on a cold cache and blocked unrelated commits. Fixed by declaring an
- * explicit timeout sized off the cold number, and by excluding `.git` from the
- * scan (2658ms → 886ms cold in a normal clone).
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * BUG 3 — eslint-formatter's real-ESLint handshake test (2026-08-02)
- * `await import('eslint')` inside the test: ~1.3s warm, 10.3s cold, again past
- * the 5000ms default. Same fix — an explicit timeout on the `it(...)`.
+ * BUG 2 — environment-bound suites on vitest's 5000ms default (2026-08-02)
+ * The devkit repo-scan suites (two whole-repo greps; 7.4s measured cold) and
+ * eslint-formatter's real-ESLint handshake (`await import('eslint')`: 1.3s warm,
+ * 10.3s cold). #324 fixed the two devkit files with a suite-level
+ * `{ timeout: 30_000 }`; the formatter needed the same and is fixed here. The
+ * second block below locks all three to that idiom, so the next suite that
+ * shells out or cold-imports doesn't have to rediscover this.
  *
  * Revert any part and this test goes red.
  */
@@ -123,50 +119,51 @@ describe('SDK compatibility suites are isolated from the default test run', () =
   });
 });
 
-describe('whole-repo scan tests declare a cold-sized timeout', () => {
-  const SCAN_TEST =
-    'packages/eslint-devkit/src/tests/no-deprecated-plugin-references.test.ts';
+/**
+ * Suites whose cost is environment, not assertions — a whole-repo `grep`, a cold
+ * `import('eslint')`. Each must carry a suite-level `{ timeout }` of at least
+ * 30s. The idiom is the one #324 established:
+ *
+ *   describe('name', { timeout: 30_000 }, () => { ... })
+ *
+ * One declaration covers every test in the file, so adding a test can't
+ * silently reintroduce the 5s default the way a per-`it(...)` argument can.
+ */
+describe('environment-bound suites declare a suite-level timeout', () => {
+  const SUITES: Array<{ file: string; suite: string; why: string }> = [
+    {
+      file: 'packages/eslint-devkit/src/tests/no-deprecated-plugin-references.test.ts',
+      suite: 'No Deprecated Plugin References',
+      why: 'two whole-repo greps; 7.4s measured cold, worse under parallel load',
+    },
+    {
+      file: 'packages/eslint-devkit/src/tests/documentation-standards.test.ts',
+      suite: 'Documentation Standards',
+      why: 'every test shells out to a whole-repo grep',
+    },
+    {
+      file: 'packages/eslint-formatter/src/index.test.ts',
+      suite: 'integration: real ESLint -f handshake',
+      why: "await import('eslint'); 1.3s warm, 10.3s cold",
+    },
+  ];
 
-  it('no-deprecated-plugin-references sets an explicit scan timeout', () => {
-    const source = read(SCAN_TEST);
-    expect(
-      source,
-      "This file shells out to two whole-repo greps. On vitest's 5000ms " +
-        'default it failed on a cold page cache (7.4s measured) and blocked ' +
-        'the pre-commit hook for unrelated commits. Keep an explicit timeout ' +
-        'sized off the cold number.',
-    ).toMatch(/const SCAN_TIMEOUT_MS = \d[\d_]*;/);
+  it.each(SUITES)('$suite', ({ file, suite, why }) => {
+    const source = read(file);
+    const declaration = new RegExp(
+      `describe\\(\\s*'${suite.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}',\\s*\\{[^}]*timeout:\\s*([\\d_]+)`,
+    ).exec(source);
 
-    const declared = Number(
-      /const SCAN_TIMEOUT_MS = ([\d_]+);/.exec(source)?.[1].replace(/_/g, ''),
-    );
     expect(
-      declared,
-      'A ceiling at or below 10s is the warm-case sizing that caused the bug.',
+      declaration,
+      `${file} → describe('${suite}', { timeout: N }, ...) is missing. This ` +
+        `suite is I/O-bound (${why}), so vitest's 5000ms default fails it on a ` +
+        'cold or loaded machine and blocks commits that touched nothing here.',
+    ).not.toBeNull();
+
+    expect(
+      Number(declaration![1].replace(/_/g, '')),
+      'Below 30s is warm-case sizing — the mistake that caused the bug.',
     ).toBeGreaterThanOrEqual(30_000);
-
-    // Both `it(...)` calls must actually pass it — declaring the constant and
-    // forgetting to use it would leave the 5000ms default in place.
-    expect(source.match(/^\s*SCAN_TIMEOUT_MS,$/gm) ?? []).toHaveLength(2);
-  });
-
-  it('the real-ESLint handshake test budgets for a cold eslint import', () => {
-    const source = read('packages/eslint-formatter/src/index.test.ts');
-    const block = source.slice(
-      source.indexOf("describe('integration: real ESLint -f handshake'"),
-    );
-    expect(
-      block,
-      "This test does `await import('eslint')` — ~1.3s warm, 10.3s cold, past " +
-        "vitest's 5000ms default. Keep an explicit timeout on the `it(...)`.",
-    ).toMatch(/\}, \d{2}_?\d{3}\);/);
-  });
-
-  it('the repo scan skips .git', () => {
-    expect(
-      read(SCAN_TEST),
-      'grep -r walks every loose object and packfile in .git before the ' +
-        '--include filter rejects them: 2658ms → 886ms cold once excluded.',
-    ).toContain("'--exclude-dir=.git'");
   });
 });

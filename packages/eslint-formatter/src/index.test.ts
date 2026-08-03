@@ -681,7 +681,13 @@ describe('peerDep compatibility: ESLint v8 / v9 / v10 LintMessage shapes', () =>
   });
 });
 
-describe('integration: real ESLint -f handshake', () => {
+// This suite's cost is the `await import('eslint')` below, not what it asserts:
+// ~1.3s warm, 10.3s on a cold module cache, plus process/I-O contention when
+// `turbo run test` runs 20+ test processes in parallel — all past vitest's
+// default 5s budget, which failed this file in the lefthook hooks on commits
+// that touched nothing here. 30s is slack for a cold, loaded machine; it
+// matches the same call made for the devkit repo-scan suites in #324.
+describe('integration: real ESLint -f handshake', { timeout: 30_000 }, () => {
   it('formatter accepts real ESLint LintMessage shape and renders all four modes', async () => {
     // We use Linter (not ESLint) here on purpose: it takes a config object
     // directly with no loader, avoiding flat-vs-legacy detection in the
@@ -741,12 +747,7 @@ describe('integration: real ESLint -f handshake', () => {
     // semi (warning) regardless of count.
     expect(grouped[0]!.severity).toBe('error');
     expect(grouped[0]!.ruleId).toBe('no-var');
-    // This test's cost is dominated by the cold `await import('eslint')` above,
-    // not by anything it asserts: ~1.3s warm, 10.3s on a cold module cache —
-    // past vitest's 5000ms default, which failed this file inside the lefthook
-    // `tests-affected` pre-commit hook on commits that touched nothing here.
-    // Sized off the cold number, per scripts/__tests__/precommit-gate-locks.test.ts.
-  }, 60_000);
+  });
 });
 
 describe('renderNDJSON', () => {
