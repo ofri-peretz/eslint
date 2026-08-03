@@ -80,7 +80,7 @@ early, so timing it would score the crash as a win.
 > cold-single-file, ties on flat, and is unmeasured on wide.** Do **not** write
 > "never slower on any graph shape tested" — the only committed number for wide
 > contradicts it.
-
+>
 > **Scope limit.** Four usable synthetic shapes plus one real codebase. Medians,
 > not means: on `wide-5000` a single outlier moved the mean enough to invert the
 > verdict in one run.
