@@ -10,7 +10,7 @@
       "published_at": "2026-08-01T09:00:32.914Z",
       "readable_publish_date": "",
       "reading_time_minutes": 4,
-      "page_views_count": 10,
+      "page_views_count": 11,
       "public_reactions_count": 0,
       "positive_reactions_count": 0,
       "comments_count": 0,
@@ -551,7 +551,7 @@
       "published_at": "2026-07-18T23:34:28.047Z",
       "readable_publish_date": "",
       "reading_time_minutes": 8,
-      "page_views_count": 10,
+      "page_views_count": 12,
       "public_reactions_count": 1,
       "positive_reactions_count": 1,
       "comments_count": 0,
@@ -572,7 +572,7 @@
       "published_at": "2026-07-18T23:34:23.463Z",
       "readable_publish_date": "",
       "reading_time_minutes": 7,
-      "page_views_count": 30,
+      "page_views_count": 32,
       "public_reactions_count": 0,
       "positive_reactions_count": 0,
       "comments_count": 0,
@@ -1458,7 +1458,7 @@
     },
     {
       "id": 3137481,
-      "title": "'3 Lines of Vercel AI SDK Code Are a Prompt-Injection Hole — and \"Just Sanitize It\" Won''t Close It'",
+      "title": "3 Lines of Vercel AI SDK Code Are a Prompt-Injection Hole — and \"Just Sanitize It\" Won't Close It",
       "description": "I scanned 356 files across 10 public Vercel AI SDK apps for one prompt-injection bug and found it in an official Vercel template. The exploit, why string sanitization is a trap, and the CWE-74 ESLint rule that enforces a real validation boundary at write-time.",
       "url": "https://dev.to/ofri-peretz/3-lines-of-code-to-hack-your-vercel-ai-app-and-1-line-to-fix-it-jo",
       "canonical_url": "https://ofriperetz.dev/articles/3-lines-of-code-to-hack-your-vercel-ai-app-and-1-line-to-fix-it-jo",
@@ -1624,6 +1624,6 @@
     }
   ],
   "total": 79,
-  "lastUpdated": "2026-08-02T14:31:20.756Z",
+  "lastUpdated": "2026-08-03T00:05:00.049Z",
   "source": "authenticated"
 }
