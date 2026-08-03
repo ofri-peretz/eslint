@@ -33,6 +33,7 @@ import { requireClassValidator } from './rules/require-class-validator';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
 import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
+import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -53,6 +54,7 @@ export const rules: Record<
   'no-exposed-private-fields': noExposedPrivateFields,
   'no-exposed-debug-endpoints': noExposedDebugEndpoints,
   'no-res-bypass-serialization': noResBypassSerialization,
+  'no-unguarded-swagger': noUnguardedSwagger,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -84,6 +86,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/no-exposed-private-fields': 'warn',
   'nestjs-security/no-exposed-debug-endpoints': 'error',
   'nestjs-security/no-res-bypass-serialization': 'warn',
+  'nestjs-security/no-unguarded-swagger': 'warn',
 };
 
 /**
@@ -166,6 +169,7 @@ export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-c
 export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
 export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
+export type { Options as NoUnguardedSwaggerOptions } from './rules/no-unguarded-swagger';
 
 /**
  * Combined options type for all rules
@@ -179,4 +183,5 @@ export interface AllNestjsSecurityRulesOptions {
   'require-class-validator'?: import('./rules/require-class-validator').Options;
   'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
   'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
+  'no-unguarded-swagger'?: import('./rules/no-unguarded-swagger').Options;
 }

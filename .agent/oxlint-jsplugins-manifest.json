@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-03",
   "totalPlugins": 26,
-  "totalRules": 434,
-  "oxlintCompatible": 434,
+  "totalRules": 435,
+  "oxlintCompatible": 435,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1395,7 +1395,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 9,
+      "ruleCount": 10,
       "rules": [
         {
           "name": "no-exposed-debug-endpoints",
@@ -1423,6 +1423,12 @@
         },
         {
           "name": "no-res-bypass-serialization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-swagger",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

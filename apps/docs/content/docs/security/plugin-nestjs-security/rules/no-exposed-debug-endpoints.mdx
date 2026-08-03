@@ -84,10 +84,13 @@ export class ProfileController {
 
 ## ⚙️ Configuration
 
-| Option        | Type       | Default          | Description                                  |
-| :------------ | :--------- | :--------------- | :------------------------------------------- |
-| `endpoints`   | `string[]` | `['debug', ...]` | Custom list of debug/admin endpoints to flag |
-| `ignoreFiles` | `string[]` | `[]`             | List of files or patterns to ignore          |
+| Option               | Type       | Default          | Description                                                                                                     |
+| :------------------- | :--------- | :--------------- | :-------------------------------------------------------------------------------------------------------------- |
+| `endpoints`          | `string[]` | `['debug', ...]` | Path segments treated as a debug/admin surface. Omit to keep the built-in list; `health` is deliberately absent |
+| `ignoreFiles`        | `string[]` | `[]`             | File path substrings to skip entirely                                                                           |
+| `allowInTests`       | `boolean`  | `true`           | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts`                                                                |
+| `detectGlobalGuards` | `boolean`  | `true`           | Scan module and bootstrap files for an app-wide guard and stay silent when one exists                           |
+| `authDecorators`     | `string[]` | `[]`             | Extra decorator names that count as access control. Rarely needed — import origin resolves most of them         |
 
 ### Example Configuration
 

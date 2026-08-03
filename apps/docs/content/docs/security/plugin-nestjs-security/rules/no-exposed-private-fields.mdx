@@ -71,6 +71,11 @@ class UsersController {
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Field-name terms treated as sensitive. Matched on token boundaries, so
+  // `hashedPassword` matches while `passwordChangedAt` and `shippingAddress`
+  // do not (default: password, secret, token, apiKey, privateKey, …)
+  sensitivePatterns?: string[];
 }
 ```
 

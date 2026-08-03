@@ -109,6 +109,12 @@ const FIXTURES: Record<string, string> = {
   `,
   'require-validation-pipe-whitelist': `app.useGlobalPipes(new ValidationPipe());`,
   'no-permissive-cors': `app.enableCors({ origin: '*' });`,
+  'no-unguarded-swagger': `
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      SwaggerModule.setup('docs', app, document);
+    }
+  `,
   'no-res-bypass-serialization': `
     @Controller('users')
     class UsersController {

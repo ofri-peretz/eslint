@@ -7,6 +7,7 @@
     "no-missing-validation-pipe",
     "no-permissive-cors",
     "no-res-bypass-serialization",
+    "no-unguarded-swagger",
     "require-class-validator",
     "require-guards",
     "require-throttler",

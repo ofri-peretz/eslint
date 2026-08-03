@@ -216,7 +216,8 @@ nestjs-security	no-permissive-cors	unaware
 nestjs-security	no-missing-validation-pipe	unaware	
 nestjs-security	no-exposed-debug-endpoints	unaware	
 nestjs-security	no-exposed-private-fields	unaware
-nestjs-security	no-res-bypass-serialization	unaware		
+nestjs-security	no-res-bypass-serialization	unaware
+nestjs-security	no-unguarded-swagger	unaware			
 node-security	require-secure-credential-storage	unaware	
 node-security	detect-eval-with-expression	unaware	
 node-security	no-zip-slip	unaware	
