@@ -47,6 +47,29 @@ const SUPPORTED = [10, 9, 8] as const;
 const supportedTotal = SUPPORTED.reduce((sum, m) => sum + pctOf(m), 0);
 const refreshDate = stats.fetchedAt.slice(0, 10);
 
+/**
+ * Does `text` tie ESLint major `major` to `share` inside a single row or clause?
+ *
+ * The version token must be a *labelled* version — literal `v9` or `9.x` — and
+ * must not be preceded or followed by a digit or dot. Without those boundaries
+ * an optional-`v` pattern matches the bare "9" inside the `109.1M` downloads
+ * cell of the very row it is checking, so a row whose label was wrong or
+ * missing still satisfied the lock. See the regression fixtures below.
+ */
+function bindsMajorToShare(text: string, major: number, pct: number): boolean {
+  const share = pct.toFixed(2).replace('.', '\\.');
+  // `**v9**` / `v9` / `9.x`, never a digit run inside a larger number.
+  const v =
+    `(?:(?<![\\d.])(?:\\*\\*)?v${major}(?:\\*\\*)?(?![\\d.])` +
+    `|(?<![\\d.])${major}\\.x(?![\\d]))`;
+  return new RegExp(
+    // major … share, same line (table row, or "v9: 51.13%")
+    `${v}[^\\n]{0,80}?${share}%` +
+      // …or share … major, e.g. "51.13% (v9)"
+      `|${share}%[^\\n]{0,15}?${v}`
+  ).test(text);
+}
+
 /** Every surface that publishes the per-major share. */
 const SURFACES = [
   'README.md',
@@ -80,19 +103,48 @@ describe('ESLint version share: published surfaces match the tracked snapshot', 
    *   `| 9.x | Flat Config … | 51.13% |` (compatibility-matrix table)
    *   `51.13% (v9)` / `v9: 51.13%`      (CLAIMS.md, ROADMAP prose)
    */
+  /**
+   * Regression fixtures for `bindsMajorToShare`. The first case is the bug:
+   * a row labelled **v10** carrying v9's download and share figures used to
+   * satisfy the major-9 matcher, because the bare "9" inside `109.1M` stood
+   * in for the version label.
+   */
+  describe('bindsMajorToShare: the version token is a label, not any digit', () => {
+    const V9_SHARE = 51.13;
+
+    it('rejects v9 when only a v10 row carries 109.1M and 51.13%', () => {
+      const mislabelled = '| **v10**      | 109.1M           | 51.13% | ✅ Supported |';
+      expect(bindsMajorToShare(mislabelled, 9, V9_SHARE)).toBe(false);
+    });
+
+    it('accepts the same row once it is labelled v9', () => {
+      const correct = '| **v9**       | 109.1M           | 51.13% | ✅ Supported |';
+      expect(bindsMajorToShare(correct, 9, V9_SHARE)).toBe(true);
+    });
+
+    it('does not let v10 stand in for v1, or v1 for v10', () => {
+      const row = '| **v10** | 23.6M | 11.08% |';
+      expect(bindsMajorToShare(row, 1, 11.08)).toBe(false);
+      expect(bindsMajorToShare(row, 10, 11.08)).toBe(true);
+    });
+
+    it('supports the `9.x` table form and the `(v9)` prose form', () => {
+      expect(bindsMajorToShare('| 9.x | Flat Config | 51.13% |', 9, V9_SHARE)).toBe(true);
+      expect(bindsMajorToShare('51.13% (v9) + 28.29% (v8)', 9, V9_SHARE)).toBe(true);
+    });
+
+    it('does not bind across a line break', () => {
+      expect(bindsMajorToShare('| **v9** | 109.1M |\n| **v8** | 51.13% |', 9, V9_SHARE)).toBe(
+        false
+      );
+    });
+  });
+
   it.each(SURFACES)('%s binds each share to its own major', (file) => {
     const text = read(file);
     for (const major of SUPPORTED) {
-      const share = pctOf(major).toFixed(2).replace('.', '\\.');
-      const v = `(?:\\*\\*)?v?${major}(?:\\.x)?(?:\\*\\*)?`;
-      const bound = new RegExp(
-        // major … share  (same table row or clause — no newline between)
-        `${v}[^\\n|]*(?:\\|[^\\n|]*)?\\|?[^\\n]{0,60}?${share}%` +
-          // …or share … major, e.g. "51.13% (v9)" / "51.13% (v9)"
-          `|${share}%[^\\n]{0,12}?${v}`
-      );
       expect(
-        bound.test(text),
+        bindsMajorToShare(text, major, pctOf(major)),
         `${file} does not bind v${major} to its share ${pctOf(major).toFixed(2)}% ` +
           'in a single row/claim — the values may be present but swapped between majors.'
       ).toBe(true);
