@@ -44,6 +44,15 @@ export interface NestProjectContext {
   hasGlobalAuthGuard: boolean;
   /** A pipe (`APP_PIPE` / `useGlobalPipes`) is registered app-wide. */
   hasGlobalValidationPipe: boolean;
+  /**
+   * A global ValidationPipe is configured with `whitelist: true`.
+   *
+   * This matters because whitelisting *strips* every property a DTO does not
+   * declare with a class-validator decorator. An undecorated property is
+   * therefore not attacker-controllable — it never arrives — so reporting it as
+   * unvalidated input is a false positive.
+   */
+  hasWhitelistingValidationPipe: boolean;
   /** Rate limiting is configured app-wide (ThrottlerModule + guard). */
   hasGlobalThrottler: boolean;
 }
@@ -153,9 +162,32 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
 }
 
 /** Fold one file's source into the accumulating project context. */
-function analyzeSource(source: string, into: MutableContext): void {
+/**
+ * `whitelist: true` reachable from a file that registers a global pipe.
+ *
+ * Checked inline first, then in that file's own relative imports — one hop, no
+ * recursion. The common real shape is a `ValidationPipeOptions` const in its own
+ * module (`new ValidationPipe(validationOptions)`), which an inline-only check
+ * misses. Scoping to the registering file's imports keeps a sibling app in a
+ * monorepo from silencing this one.
+ */
+function whitelistReachable(source: string, file: string): boolean {
+  if (/\bwhitelist\s*:\s*true\b/.test(source)) return true;
+  const dir = getDirname(file);
+  const specifiers = source.matchAll(/from\s+['"](\.[^'"]+)['"]/g);
+  for (const [, spec] of specifiers) {
+    for (const candidate of [`${spec}.ts`, joinPath(spec, 'index.ts')]) {
+      const imported = readFileSync(resolvePath(dir, candidate));
+      if (imported !== null && /\bwhitelist\s*:\s*true\b/.test(imported)) return true;
+    }
+  }
+  return false;
+}
+
+function analyzeSource(source: string, into: MutableContext, file: string): void {
   PROVIDE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
+  let registersPipeViaToken = false;
   while ((match = PROVIDE_RE.exec(source)) !== null) {
     const [, token, tail] = match;
     into.globalProviders.add(token);
@@ -172,10 +204,20 @@ function analyzeSource(source: string, into: MutableContext): void {
       }
     } else if (token === 'APP_PIPE') {
       into.hasGlobalValidationPipe = true;
+      registersPipeViaToken = true;
     }
   }
 
-  if (USE_GLOBAL_PIPES_RE.test(source)) into.hasGlobalValidationPipe = true;
+  const fileRegistersPipe = USE_GLOBAL_PIPES_RE.test(source) || registersPipeViaToken;
+  if (fileRegistersPipe) into.hasGlobalValidationPipe = true;
+  // `whitelist: true` must appear in the SAME file that registers the pipe.
+  // Testing the accumulated `hasGlobalValidationPipe` instead was a real bug: in
+  // a monorepo, one app's whitelisting pipe silenced every other app's DTO
+  // findings, because the flag carries across files. Measured on a 5-app corpus
+  // where only one app whitelists — it zeroed all four others.
+  if (fileRegistersPipe && whitelistReachable(source, file)) {
+    into.hasWhitelistingValidationPipe = true;
+  }
   if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
   if (THROTTLER_MODULE_RE.test(source)) into.hasGlobalThrottler = true;
 }
@@ -196,13 +238,14 @@ export function scanProject(
     globalProviders: new Set<string>(),
     hasGlobalAuthGuard: false,
     hasGlobalValidationPipe: false,
+    hasWhitelistingValidationPipe: false,
     hasGlobalThrottler: false,
   };
 
   for (const file of collectConfigFiles(root, limits)) {
     const source = readFileSync(file);
     if (source !== null) {
-      analyzeSource(source, accumulator);
+      analyzeSource(source, accumulator, file);
     }
   }
 
@@ -233,6 +276,7 @@ export function getProjectContext(
       globalProviders: new Set<string>(),
       hasGlobalAuthGuard: false,
       hasGlobalValidationPipe: false,
+    hasWhitelistingValidationPipe: false,
       hasGlobalThrottler: false,
     };
   }
