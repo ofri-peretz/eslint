@@ -89,7 +89,7 @@ const csp = "default-src 'self'"; // No frame protection!
 ```javascript
 {
   rules: {
-    'secure-coding/no-clickjacking': ['error', {
+    'browser-security/no-clickjacking': ['error', {
       trustedSources: ['self', 'https://trusted.com'],
       requireFrameBusting: true,
       detectTransparentOverlays: true

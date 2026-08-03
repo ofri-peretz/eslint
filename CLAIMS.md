@@ -26,7 +26,7 @@ A 2026-05-13 audit (see plan file `please-review-our-repository-parsed-catmull.m
 | Claim (as it appears in docs/marketing) | Evidence | Last verified |
 | --- | --- | --- |
 | "Supports ESLint 8, 9, and 10" | All 37 packages declare `peerDependencies.eslint: ^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0`; benchmark fixtures for each major in [`benchmarks/suites/ilb-arena/eslint{8,9,10}-compat/`](benchmarks/suites/ilb-arena/). **Closed 2026-05-13 (Open Item #6):** removed-in-v10 context APIs (`context.getFilename()` / `getSourceCode()` / `getCwd()`) — 140-file scope at the 2026-05-10 audit — now report **zero matches in `packages/eslint-plugin-*/src/rules`** (one harmless reference remains as a code-comment in a test file). `cicd-impact/scripts/eslint10-compat-test.mjs` runs the full lodash 1,046-file corpus cleanly on ESLint 10.3.0: **0 parse errors, 875 issues, 0.76 ms/file, ~800 ms median over 3 runs**. The 875-vs-pre-migration-1,351 finding-count delta is attributable to the script's pre-existing `secure-coding/detect-object-injection: 'off'` scoping (~95% FP rate on `obj[var]` per `competitor_study_2026-05-09.md`), not an ESLint-10 regression. CI guard alive: [`.github/workflows/eslint-version-matrix.yml`](.github/workflows/eslint-version-matrix.yml) runs the cross-version matrix on every PR touching `packages/eslint-plugin-*/**` plus a weekly Sunday cron. Runbook archived at [`cicd-impact/eslint10-migration-runbook.md`](cicd-impact/eslint10-migration-runbook.md). | 2026-05-13 |
-| "Supported majors cover ~94% of weekly ESLint downloads" | 60.4% (v9) + 24.3% (v8) + 9.2% (v10) per npm registry; refresh via `npm run stats:eslint-versions` | 2026-05-09 |
+| "Supported majors cover ~90% of weekly ESLint downloads" | 51.13% (v9) + 28.29% (v8) + 11.08% (v10) = **90.49%**. Shares derive from `api.npmjs.org/versions/eslint/last-week` (213.3M summed across exact versions); npm's package-level endpoint reports ~154M for the same window, so the **ratio** is the claim, not the absolute total. Snapshot in [`benchmark-results/eslint-version-stats.json`](benchmark-results/eslint-version-stats.json); refresh via `npm run stats:eslint-versions` | 2026-08-02 (live pull) |
 
 ### Performance — circular dependency detection (ilb-perf-import-no-cycle suite)
 
@@ -110,17 +110,44 @@ These rows used to live under "Verified claims" but were removed during an audit
 | "97.6% precision, 100% recall, 98.8% F1 on 40-vuln corpus" | [`benchmarks/results/ilb-arena/2026-05-03.json`](benchmarks/results/ilb-arena/2026-05-03.json) | The cited file's `summary.leaderboard[0]` reports Interlace at **100% precision / 100% recall / 100% F1** (40 TP / 0 FP / 0 FN). The 97.6 / 100 / 98.8 figures appear nowhere in the cited JSON, so the registry was asserting numbers neither it nor the evidence supports. The audit chose to withdraw rather than substitute 100% / 100% / 100% — a perfect score on a 40-fixture self-authored corpus is the textbook "regression test, not benchmark" failure mode and would not survive an adversarial reading. **The ordinal claim ("1st of 18 plugins tested, 17 security-relevant") is preserved above** — *relative* ranking on the same fixtures still informs a buyer even when absolute scores don't. | 2026-05-13 |
 | "`import-next` is 100x faster than `eslint-plugin-import`" (also "up to 100x", "100x faster no-cycle", "100x faster cycle detection") | None — no result file in `benchmarks/results/` contains a 100x measurement | **The number was never measured.** The largest figure anywhere in the corpus is the synthetic **54.9x at 5,000 files** ([2026-01-02.json](benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json)); the real-codebase run tops out at **3.1x end-to-end / 8x rule-time**. 100x appears to be an extrapolation of the synthetic curve toward the 10K-file point that the same file records as **never run** (`note: "10K benchmark terminated - eslint-plugin-import would take 10+ minutes"`). An extrapolation is not a measurement. Docs surfaces also carried a fabricated supporting table (`15.0s → 0.15s`) whose two timings appear in no result file at all. **Replacement copy: "3.1x faster end-to-end and 8x faster in pure rule execution"**, the real-codebase figures already verified above. | 2026-08-02 |
 
-### Open remediation — the 100x claim on Dev.to (2026-08-02)
+### Remediation — the 100x claim on Dev.to (opened 2026-08-02, closed 2026-08-02)
 
-In-repo surfaces are corrected and guarded by `npm run audit:claims` ([`scripts/check-withdrawn-claims.mjs`](scripts/check-withdrawn-claims.mjs), wired into `npm run quality`). Three surfaces are **outside this repo** and still carry the number:
+In-repo surfaces are corrected and guarded by `npm run audit:claims` ([`scripts/check-withdrawn-claims.mjs`](scripts/check-withdrawn-claims.mjs), wired into `npm run quality`). Three surfaces were **outside this repo**. All three have been retitled upstream and carry an in-body correction note — titles re-verified live on 2026-08-02:
 
-| Live article | Carries | Fix |
+| Live article | Carried | Status |
 | --- | --- | --- |
-| [`...import-next-up-to-100x-faster-1afa`](https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa) | Title *and* URL slug | Title/description are editable on Dev.to; **the slug is frozen** and will keep reading `100x-faster`. Retitle + add a correction note in the body. |
-| [`getting-started-with-eslint-plugin-import-next-51e6`](https://dev.to/ofri-peretz/getting-started-with-eslint-plugin-import-next-51e6) | Title + description ("reduce CI/CD times by up to 100x") | Retitle and rewrite description. Slug is clean. |
-| [`why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh`](https://dev.to/ofri-peretz/why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh) | Title ("the 100x Fix"); description claims "45s to 0.4s" | Retitle; the 0.4s figure is also unmeasured (real: 16.7s e2e / 4.9s rule time). Slug is clean. |
+| [`...import-next-up-to-100x-faster-1afa`](https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa) | Title *and* URL slug | ✅ Retitled → *"eslint-plugin-import Spends 148s Finding Circular Deps in 5,000 Files. import-next Does It in 2.7s."* Body notes the 100x figure was a 10K-file projection, not a reading. **The slug is frozen** and still reads `100x-faster` — do not change it; the published link would break. |
+| [`getting-started-with-eslint-plugin-import-next-51e6`](https://dev.to/ofri-peretz/getting-started-with-eslint-plugin-import-next-51e6) | Title + description ("reduce CI/CD times by up to 100x") | ✅ Retitled → *"no-cycle Is Commented Out in Your ESLint Config. Here Is the Two-Minute Swap That Turns It Back On."* Body cites the measured 54.8x at 5K files. |
+| [`why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh`](https://dev.to/ofri-peretz/why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh) | Title ("the 100x Fix"); description claimed "45s to 0.4s" | ✅ Retitled → *"Why eslint-plugin-import Takes 58 Seconds on 10,000 Files — And Where the Time Actually Goes."* The `0.4s` figure was unmeasured too (real: 16.7s e2e / 4.9s rule time) and is now banned repo-wide by the `import-next-sub-second` pattern in the audit script. |
 
-`apps/docs/src/data/articles.json` is a **generated mirror** of `dev.to/api/articles/me/all` (written by `apps/docs/scripts/update-articles.ts`). Editing it by hand is wrong twice over: the next sync reverts it, and until then the site advertises a title that differs from the live article. **Fix upstream on Dev.to, then re-run the sync.** The same applies to the two `†`-marked rows in [`distribution/PUBLISHING_QUEUE.md`](distribution/PUBLISHING_QUEUE.md), which are a log of what was published, not a marketing surface.
+**Cross-link prose — corrected 2026-08-02.** Retitling the three articles above left the claim alive in a fourth place: *other* articles linking to them described the target as "up to 100x faster on large repos" in body prose. Three published articles carried it and were patched in place via the Dev.to API — link *targets* untouched, since the `/go/…-up-to-100x-faster` redirect slugs are frozen:
+
+| Article | Was | Now |
+| --- | --- | --- |
+| [`…0-cycles-on-nextjs…-ln2`](https://dev.to/ofri-peretz/import-nextno-cycle-reported-0-cycles-on-nextjs-we-found-why-and-fixed-it-ln2) | "up to 100x faster on large repos" | 54.8x on `no-cycle` at 5K synthetic files; 8x rule time on a real 5,736-file codebase |
+| [`…and-other-lies-caches-tell-you-3ld8`](https://dev.to/ofri-peretz/no-cycle-finds-0-cycles-in-nextjs-and-other-lies-caches-tell-you-3ld8) | "(up to 100x faster on large repos)" | same measured pair |
+| [`…what-it-still-gets-wrong-c94`](https://dev.to/ofri-peretz/eslint-plugin-import-has-38m-weekly-downloads-heres-what-it-still-gets-wrong-c94) | link text "Up to 100x Faster →" | the target's real shipped title |
+
+A fourth hit, [`…takes-58-seconds…-2nmh`](https://dev.to/ofri-peretz/why-eslint-plugin-import-takes-45-seconds-and-how-we-fixed-it-2nmh), was **left alone deliberately**: every `100x` / `0.4s` / `45s` string in it sits inside its own correction note, which exists to name those numbers as unmeasured. Its "58 seconds on 10,000 files" headline is measured — 58.67s, whole recommended config, [`ilb-perf-import/2026-01-02.json`](benchmarks/results/ilb-perf-import/2026-01-02.json). That is a *different* suite from the no-cycle-only one whose 10K point was never run; don't conflate them when auditing.
+
+Swept 2026-08-02: **0 withdrawn claims in prose across all 84 articles returned by `articles/me/all`** — that endpoint includes drafts, which is why it exceeds the **79 published** articles mirrored into `articles.json`.
+
+> **On 54.8x vs 54.9x.** The synthetic result file stores `"speedup": 54.9`, but its own measurements — 148.59s vs 2.71s — divide to **54.83x**. Public copy uses **54.8x** (the arithmetic); the stored 54.9 is a rounding artifact of the harness. Don't "correct" one to the other without reading this note.
+
+**Article cache — resynced 2026-08-02.** `apps/docs/src/data/articles.json` is a **generated mirror** of `dev.to/api/articles/me/all`; never hand-edit it, because the next sync reverts the edit. It had drifted badly (38 cached vs 79 live, 35 stale titles) and was still advertising the three withdrawn headlines. Re-run against the authenticated endpoint, it now carries the corrected titles. The only surviving `100x` strings are the article's frozen `url`, `canonical_url`, and `cover_image` filename — **these must not be changed; the published link would break.**
+
+Run the sync the way CI does — [`docs-data.yml`](.github/workflows/docs-data.yml) and `npm run devto:sync-articles` both use [`update-articles-data.ts`](apps/docs/scripts/update-articles-data.ts) with **`DEV_TO_API_KEY`**:
+
+```bash
+DEV_TO_API_KEY=... npx tsx apps/docs/scripts/update-articles-data.ts
+```
+
+Two traps, both live:
+
+- **Always run it authenticated.** The unauthenticated endpoint omits `page_views_count` and the script coerces it to `0` — an anonymous run silently zeroes every view count in the mirror. Confirm `🔑 Source: authenticated API` in the output.
+- **`apps/docs/scripts/update-articles.ts` is a dead second writer** of the same file, keyed off a *differently spelled* `DEVTO_API_KEY`. It is referenced by no workflow and no npm script. Don't run it; it is a deletion candidate.
+
+The `†`-marked rows in [`distribution/PUBLISHING_QUEUE.md`](distribution/PUBLISHING_QUEUE.md) have been updated to the retitled headlines: that file logs what is published, and what is published is now the corrected title.
 
 ## Pending claims (require new suites)
 

@@ -87,6 +87,37 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
         };
       `,
     },
+    // Validated parse chain behind a nullish-coalescing default
+    {
+      code: `
+        import { z } from 'zod';
+        const schema = z.object({ name: z.string() });
+        export const handler = async (event) => {
+          const result = schema.safeParse(JSON.parse(event.body ?? '{}'));
+          return { statusCode: 200 };
+        };
+      `,
+    },
+    // Same, with the older || default and a non-null assertion
+    {
+      code: `
+        export const handler = async (event) => {
+          const data = schema.parse(JSON.parse(event.body || '{}'));
+          const more = schema.parse(event.body!);
+          return { statusCode: 200 };
+        };
+      `,
+    },
+    // Null check inside a compound condition
+    {
+      code: `
+        export const handler = async (event) => {
+          if (event.httpMethod === 'POST' && event.body) {
+            console.log('has body');
+          }
+        };
+      `,
+    },
     // Test file (allowed by default)
     {
       code: `

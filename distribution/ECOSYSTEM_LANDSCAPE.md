@@ -76,12 +76,12 @@ verticals (database, runtime, framework, SDK).
 JavaScript/TypeScript (no eval, no hardcoded credentials, ReDoS detection,
 PII handling, etc.).
 
-**Neighbors in this space:**
-- `eslint-plugin-security` (~1.6M weekly) — the long-standing generic
+**Neighbors in this space** (npm last-week, pulled 2026-08-02):
+- `eslint-plugin-security` (~3.1M weekly) — the long-standing generic
   security plugin. ~13 rules, broad surface.
-- `eslint-plugin-no-secrets` (~250k weekly) — focused on credential leaks.
+- `eslint-plugin-no-secrets` (~286k weekly) — focused on credential leaks.
 - `eslint-plugin-xss` (abandoned).
-- `eslint-plugin-sonarjs` (~1.9M) — overlaps in a small security subset.
+- `eslint-plugin-sonarjs` (~3.3M weekly) — overlaps in a small security subset.
 - Oxlint stock has a small `security/` namespace.
 
 **Where we add depth:** per-rule CWE/CVSS metadata, MCP integration for
