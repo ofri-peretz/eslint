@@ -72,6 +72,10 @@ function resolveLocalObject(
 function findOriginProperty(options: TSESTree.ObjectExpression): TSESTree.Property | undefined {
   for (const prop of options.properties) {
     if (prop.type !== AST_NODE_TYPES.Property) continue;
+    // A computed key is a variable reference, not a name: in `{ [origin]: '*' }`
+    // the key node is an Identifier called `origin` but says nothing about which
+    // property is being set.
+    if (prop.computed) continue;
     const key =
       prop.key.type === AST_NODE_TYPES.Identifier
         ? prop.key.name

@@ -140,3 +140,41 @@ ruleTester.run('require-validation-pipe-whitelist (coverage gaps)', requireValid
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Computed keys whose variable happens to share the property's name.
+// `{ [whitelist]: true }` reads as an Identifier called `whitelist`, but it is a
+// variable reference — the property being set is unknown. Treating it as the
+// literal key made the rule pass silently: a false negative, not noise.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-validation-pipe-whitelist (computed key collision)', requireValidationPipeWhitelist, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        const whitelist = 'transform';
+        new ValidationPipe({ [whitelist]: true });
+      `,
+      errors: [{ messageId: 'missingWhitelist' }],
+    },
+    {
+      code: `
+        const forbidNonWhitelisted = 'x';
+        new ValidationPipe({ whitelist: true, [forbidNonWhitelisted]: true });
+      `,
+      options: [{ requireForbidNonWhitelisted: true }],
+      errors: [{ messageId: 'missingWhitelist' }],
+    },
+  ],
+});
+
+// Both flags genuinely set — the strict option is satisfied.
+ruleTester.run('require-validation-pipe-whitelist (strict satisfied)', requireValidationPipeWhitelist, {
+  valid: [
+    {
+      code: `new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true });`,
+      options: [{ requireForbidNonWhitelisted: true }],
+    },
+  ],
+  invalid: [],
+});

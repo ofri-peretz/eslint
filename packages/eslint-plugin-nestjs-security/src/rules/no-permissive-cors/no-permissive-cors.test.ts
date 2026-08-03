@@ -168,3 +168,19 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
     },
   ],
 });
+
+// A computed key named `origin` is a variable reference, not the property.
+// Reading it as the literal key would let `{ [origin]: 'https://ok' }` masquerade
+// as a configured allowlist and silence the default-'*' report.
+ruleTester.run('no-permissive-cors (computed key collision)', noPermissiveCors, {
+  valid: [],
+  invalid: [
+    {
+      code: `
+        const origin = 'credentials';
+        app.enableCors({ [origin]: true });
+      `,
+      errors: [{ messageId: 'defaultOrigin' }],
+    },
+  ],
+});

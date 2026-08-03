@@ -53,10 +53,20 @@ type RuleOptions = [Options?];
 
 const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
 
-/** Static name of a property key, or null when it isn't statically known. */
-function propName(key: TSESTree.Node): string | null {
-  if (key.type === AST_NODE_TYPES.Identifier) return key.name;
-  if (key.type === AST_NODE_TYPES.Literal && typeof key.value === 'string') return key.value;
+/**
+ * Static name of a property, or null when it isn't statically known.
+ *
+ * `computed` must be checked: in `{ [whitelist]: true }` the key node is an
+ * Identifier named `whitelist`, but it is a *variable reference*, not the
+ * property name. Reading `.name` there made the rule believe whitelist was set
+ * and pass silently — a false negative.
+ */
+function propName(prop: TSESTree.Property): string | null {
+  if (prop.computed) return null;
+  if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
+  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
+    return prop.key.value;
+  }
   return null;
 }
 
@@ -65,7 +75,7 @@ function setsTrue(object: TSESTree.ObjectExpression, name: string): boolean {
   return object.properties.some(
     (prop) =>
       prop.type === AST_NODE_TYPES.Property &&
-      propName(prop.key) === name &&
+      propName(prop) === name &&
       prop.value.type === AST_NODE_TYPES.Literal &&
       prop.value.value === true,
   );

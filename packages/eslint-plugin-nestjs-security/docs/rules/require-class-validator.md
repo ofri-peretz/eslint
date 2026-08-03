@@ -100,6 +100,14 @@ three apps that don't whitelist fully reported.
   // Class-name pattern identifying a response DTO
   // (default: 'Response|Result|View|Payload|Output|Serializ')
   responseDtoPattern?: string;
+
+  // Stay quiet when the project registers a ValidationPipe with
+  // `whitelist: true`, which strips undecorated properties (default: true)
+  detectWhitelistingPipe?: boolean;
+
+  // Treat the project as whitelisting without scanning for it, for setups the
+  // static scan can't see (default: false)
+  assumeWhitelistingPipe?: boolean;
 }
 ```
 
