@@ -851,7 +851,30 @@ export function computeSCCsFromFile(
 }
 
 /**
- * Tarjan's strong connect function (recursive part)
+ * One suspended `tarjanStrongConnect` invocation.
+ *
+ * `successors` is the pre-filtered edge list and `next` is the cursor into it,
+ * so resuming a frame picks up exactly where the recursive version would have
+ * returned to.
+ */
+interface TarjanFrame {
+  file: string;
+  depth: number;
+  successors: string[];
+  next: number;
+}
+
+/**
+ * Tarjan's strong connect, iterative.
+ *
+ * This was a direct recursion, which costs one JS stack frame per graph node
+ * and threw `RangeError: Maximum call stack size exceeded` on deep import
+ * chains — around 5,000 nodes on Node 24, and `no-cycle` defaults to
+ * `maxDepth: Infinity`, so nothing capped it. An explicit stack removes the
+ * ceiling; depth is now bounded by heap, not by the call stack.
+ *
+ * Traversal order and every write to `state` are unchanged, so the SCCs
+ * produced are identical to the recursive version.
  */
 function tarjanStrongConnect(
   file: string,
@@ -867,71 +890,99 @@ function tarjanStrongConnect(
     return;
   }
 
-  // Set the depth index for this node
-  state.indices.set(file, state.index);
-  state.lowlinks.set(file, state.index);
-  state.index++;
-  state.stack.push(file);
-  state.onStack.add(file);
+  /** Entry work: index the node, push it, and read its outgoing edges. */
+  const enter = (node: string, nodeDepth: number): TarjanFrame => {
+    state.indices.set(node, state.index);
+    state.lowlinks.set(node, state.index);
+    state.index++;
+    state.stack.push(node);
+    state.onStack.add(node);
 
-  // Get successors (imported files)
-  const imports = getFileImports(file, {
-    workspaceRoot,
-    barrelExports,
-    cache,
-    resolverSettings,
-  });
+    const imports = getFileImports(node, {
+      workspaceRoot,
+      barrelExports,
+      cache,
+      resolverSettings,
+    });
 
-  for (const imp of imports) {
-    // Skip dynamic and type-only imports — type edges are erased at compile
-    // time and must not participate in SCC graph edges.
-    if (imp.dynamic || imp.typeOnly) continue;
-
-    const successor = imp.path;
-
-    if (!state.indices.has(successor)) {
-      // Successor has not yet been visited; recurse on it
-      tarjanStrongConnect(successor, state, options, depth + 1);
-      state.lowlinks.set(
-        file,
-        Math.min(
-          // `file`'s lowlink is always set at function entry above.
-          state.lowlinks.get(file) as number,
-          // The successor's lowlink can be missing when the recursive call
-          // returned early on the depth limit before initializing it.
-          state.lowlinks.get(successor) ?? 0,
-        ),
-      );
-    } else if (state.onStack.has(successor)) {
-      // Successor is in stack and hence in the current SCC.
-      // Both values are guaranteed: `file` got a lowlink at function entry,
-      // and an on-stack successor always received an index before pushing.
-      state.lowlinks.set(
-        file,
-        Math.min(
-          state.lowlinks.get(file) as number,
-          state.indices.get(successor) as number,
-        ),
-      );
+    const successors: string[] = [];
+    for (const imp of imports) {
+      // Skip dynamic and type-only imports — type edges are erased at compile
+      // time and must not participate in SCC graph edges.
+      if (imp.dynamic || imp.typeOnly) continue;
+      successors.push(imp.path);
     }
-  }
-  const lowlink = state.lowlinks.get(file);
-  const index = state.indices.get(file);
-  // If file is a root node, pop the stack and generate an SCC
-  if (lowlink === index) {
-    const scc: string[] = [];
-    let w: string;
-    do {
-      // The stack always contains `file` at this point (it was pushed at
-      // function entry), so pop() cannot return undefined before the loop
-      // terminates at `w === file`.
-      w = state.stack.pop() as string;
-      state.onStack.delete(w);
-      scc.push(w);
-    } while (w !== file);
 
-    // Only store SCCs (single nodes aren't cycles, but we track them for completeness)
-    state.sccs.push(scc);
+    return { file: node, depth: nodeDepth, successors, next: 0 };
+  };
+
+  const relax = (node: string, candidate: number): void => {
+    // `node`'s lowlink is always set by enter() before it can be relaxed.
+    state.lowlinks.set(
+      node,
+      Math.min(state.lowlinks.get(node) as number, candidate),
+    );
+  };
+
+  const frames: TarjanFrame[] = [enter(file, depth)];
+
+  while (frames.length > 0) {
+    const frame = frames[frames.length - 1];
+
+    if (frame.next < frame.successors.length) {
+      const successor = frame.successors[frame.next++];
+
+      if (!state.indices.has(successor)) {
+        if (frame.depth + 1 > maxDepth) {
+          // The recursive call would have returned before assigning the
+          // successor a lowlink, and the caller then folded in `?? 0`.
+          // Preserved verbatim — lowlinks are non-negative, so this pins the
+          // parent's lowlink to 0.
+          relax(frame.file, 0);
+          continue;
+        }
+        // Descend. The post-return relax happens when this child frame pops.
+        frames.push(enter(successor, frame.depth + 1));
+      } else if (state.onStack.has(successor)) {
+        // Successor is in stack and hence in the current SCC. An on-stack
+        // successor always received an index before being pushed.
+        relax(frame.file, state.indices.get(successor) as number);
+      }
+      continue;
+    }
+
+    // Edges exhausted — this is where the recursive call returned.
+    frames.pop();
+
+    const lowlink = state.lowlinks.get(frame.file);
+    const index = state.indices.get(frame.file);
+    // If file is a root node, pop the stack and generate an SCC
+    if (lowlink === index) {
+      const scc: string[] = [];
+      let w: string;
+      do {
+        // The stack always contains `frame.file` at this point (enter() pushed
+        // it), so pop() cannot return undefined before the loop terminates at
+        // `w === frame.file`.
+        w = state.stack.pop() as string;
+        state.onStack.delete(w);
+        scc.push(w);
+      } while (w !== frame.file);
+
+      // Only store SCCs (single nodes aren't cycles, but we track them for completeness)
+      state.sccs.push(scc);
+    }
+
+    // Fold the finished child's lowlink into its parent — the relax the
+    // recursive version applied on return. Its `?? 0` fallback covered a
+    // child that bailed on the depth limit before being assigned a lowlink;
+    // that case never reaches here, because the depth check now happens
+    // before the frame is pushed. A frame that exists was assigned a lowlink
+    // by enter().
+    const parent = frames[frames.length - 1];
+    if (parent) {
+      relax(parent.file, state.lowlinks.get(frame.file) as number);
+    }
   }
 }
 
