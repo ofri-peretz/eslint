@@ -80,18 +80,11 @@ function isAllowed(relPath: string, allowlist: Array<string | RegExp>): boolean 
   return false;
 }
 
-const SHARED_EXCLUDES = [
-  '--exclude-dir=node_modules',
-  '--exclude-dir=dist',
-  '--exclude-dir=build',
-  '--exclude-dir=.turbo',
-  '--exclude-dir=.next',
-  '--exclude-dir=coverage',
-  '--exclude-dir=benchmark-results',
-  '--exclude-dir=results',
-  '--exclude-dir=.claude',
-  '--exclude-dir=.agent',
-];
+// `git grep` only walks *tracked* files, so node_modules/dist/build/.turbo/.next/
+// coverage/benchmark-results/results and every other gitignored artifact are
+// already out of scope — no --exclude-dir list needed. These two are tracked,
+// so they still need explicit exclusion.
+const SHARED_EXCLUDES = [`':(exclude).claude/'`, `':(exclude).agent/'`];
 
 interface Hit {
   file: string;
@@ -99,9 +92,17 @@ interface Hit {
   snippet: string;
 }
 
-/** Run `grep -rn[E]` with the given args and parse `path:line:content` rows into hits. */
+/**
+ * Run `git grep -n[E]` and parse `path:line:content` rows into hits.
+ *
+ * `git grep` over tracked files rather than `grep -r` over the working tree:
+ * ~0.25s vs 3s warm / 15s cold, because it never walks node_modules or the
+ * other ignored trees. The old walk exceeded vitest's 5s default testTimeout
+ * under the 44-task `turbo run test` fan-out (the lefthook pre-push `tests`
+ * hook), flaking pushes with a timeout that read as a violation.
+ */
 function grepRepo(grepArgs: string[]): Hit[] {
-  const cmd = ['grep', ...grepArgs, '.', '2>/dev/null || true'].join(' ');
+  const cmd = ['git', 'grep', ...grepArgs, '2>/dev/null || true'].join(' ');
   const raw = execSync(cmd, {
     cwd: WORKSPACE_ROOT,
     encoding: 'utf-8',
@@ -128,13 +129,7 @@ function grepRepo(grepArgs: string[]): Hit[] {
 
 /** Mentions of `term` in markdown/MDX. */
 function findMarkdownReferences(term: string): Hit[] {
-  return grepRepo([
-    '-rn',
-    `"${term}"`,
-    '--include="*.md"',
-    '--include="*.mdx"',
-    ...SHARED_EXCLUDES,
-  ]);
+  return grepRepo(['-n', `"${term}"`, '--', `'*.md'`, `'*.mdx'`, ...SHARED_EXCLUDES]);
 }
 
 /**
@@ -147,16 +142,17 @@ function findImportReferences(term: string): Hit[] {
   // (from|import|require) ...quote... <anything>eslint-plugin-crypto
   const pattern = `(from|import|require)[[:space:]]*\\(?[[:space:]]*['\\"][^'\\"]*${term}`;
   return grepRepo([
-    '-rnE',
+    '-nE',
     `"${pattern}"`,
-    '--include="*.mjs"',
-    '--include="*.mts"',
-    '--include="*.cts"',
-    '--include="*.ts"',
-    '--include="*.tsx"',
-    '--include="*.js"',
-    '--include="*.cjs"',
-    '--include="*.jsx"',
+    '--',
+    `'*.mjs'`,
+    `'*.mts'`,
+    `'*.cts'`,
+    `'*.ts'`,
+    `'*.tsx'`,
+    `'*.js'`,
+    `'*.cjs'`,
+    `'*.jsx'`,
     ...SHARED_EXCLUDES,
   ]);
 }
@@ -186,7 +182,11 @@ function violationMessage(
 // this by widening SHARED_EXCLUDES.
 describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
   for (const plugin of DEPRECATED_PLUGINS) {
-    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {
+    // Explicit timeout: a repo-wide scan is fast (~0.25s) but shells out, so it
+    // is at the mercy of I/O contention under the full `turbo run test` fan-out.
+    // The default 5s left too little headroom and turned contention into a
+    // "violation".
+    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, { timeout: 60_000 }, () => {
       const violations = findMarkdownReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.allowlist),
       );
@@ -196,7 +196,7 @@ describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
       ).toEqual([]);
     });
 
-    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
+    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, { timeout: 60_000 }, () => {
       const violations = findImportReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.importAllowlist),
       );
