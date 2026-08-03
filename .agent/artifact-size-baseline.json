@@ -11,7 +11,7 @@
     "eslint-plugin-maintainability": 126,
     "eslint-plugin-modernization": 38,
     "eslint-plugin-modularity": 58,
-    "eslint-plugin-mongodb-security": 101,
+    "eslint-plugin-mongodb-security": 111,
     "eslint-plugin-nestjs-security": 84,
     "eslint-plugin-node-security": 327,
     "eslint-plugin-operability": 54,
