@@ -16,35 +16,38 @@ describe('eslint-plugin-nestjs-security plugin interface', () => {
       'require-guards',
       'no-missing-validation-pipe',
       'require-throttler',
+      'require-validation-pipe-whitelist',
+      'no-permissive-cors',
       'require-class-validator',
       'no-exposed-private-fields',
       'no-exposed-debug-endpoints',
+      'no-res-bypass-serialization',
     ]);
-    expect(ruleKeys.length).toBe(6);
+    expect(ruleKeys.length).toBe(9);
   });
 
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs.recommended).toBeDefined();
       expect(configs.recommended.plugins?.['nestjs-security']).toBeDefined();
-      
+
       const recommendedRules = configs.recommended.rules || {};
-      Object.keys(recommendedRules).forEach(ruleName => {
+      Object.keys(recommendedRules).forEach((ruleName) => {
         expect(ruleName).toMatch(/^nestjs-security\//);
       });
-      
+
       expect(recommendedRules['nestjs-security/require-guards']).toBe('error');
     });
 
     it('should provide strict configuration', () => {
       expect(configs.strict).toBeDefined();
       expect(configs.strict.plugins?.['nestjs-security']).toBeDefined();
-      
+
       const strictRules = configs.strict.rules || {};
-      Object.keys(strictRules).forEach(ruleName => {
+      Object.keys(strictRules).forEach((ruleName) => {
         expect(ruleName).toMatch(/^nestjs-security\//);
       });
-      
+
       expect(strictRules['nestjs-security/require-guards']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });

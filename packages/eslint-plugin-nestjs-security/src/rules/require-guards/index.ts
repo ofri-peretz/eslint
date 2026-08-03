@@ -20,103 +20,108 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
-  getHttpMethodDecorator,
-  getRoutePath,
-  getUseGuardsGuardNames,
-  hasDecoratorNamed,
-  hasUnresolvedDecorator,
+  decoratorCall,
+  HTTP_METHOD_DECORATORS,
+  enclosingClass,
+  expressionName,
+  findDecorator,
+  hasDecorator,
+  DEFAULT_AUTH_DECORATORS,
+  collectImportOrigins,
+  isAccessControlDecorator,
   isControllerClass,
-  PUBLIC_DECORATORS,
-} from '../../utils/decorators';
-import { getProjectContext } from '../../utils/project-context';
+  isRouteHandler,
+  isTestFile,
+  memberName,
+  superClassName,
+  type ClassNode,
+} from '../../utils/nest-ast';
 
 type MessageIds =
-  | 'missingGuards'
-  | 'missingRequiredGuards'
-  | 'addGuards';
+  'missingGuards' | 'emptyGuards' | 'missingRequiredGuard' | 'addGuards';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /**
-   * Specific guard classes that satisfy the rule. Empty (the default) accepts
-   * any `@UseGuards(...)`. When set, a route must name one of these guards —
-   * `@UseGuards(RolesGuard)` no longer satisfies `requiredGuards:
-   * ['JwtAuthGuard']`.
-   *
-   * The exemptions stay conservative: a `@UseGuards` whose arguments cannot be
-   * named statically, an unresolved composite decorator
-   * (`allowCustomDecorators`) and a global `APP_GUARD` (`detectGlobalGuards`)
-   * all still suppress the report, because none of them can be *proven* not to
-   * apply the required guard.
-   */
+  /** Guards that satisfy the rule. Empty means any guard. Default: [] */
   requiredGuards?: string[];
   /** Allow public endpoints (with @Public decorator). Default: true */
   allowPublicDecorator?: boolean;
-  /** Skip rule entirely, without scanning the project. Default: false */
+  /** Skip rule if global guards are configured in main.ts. Default: false */
   assumeGlobalGuards?: boolean;
   /**
-   * Treat a route/controller carrying a decorator this plugin cannot resolve
-   * (a project-owned composite such as `@AuthJwtAccessProtected()`) as
-   * possibly guarded. Default: true
+   * Extra decorator names that count as access control, on top of
+   * @UseGuards and the well-known wrappers (@Auth, @Authenticated, @Roles...).
    */
-  allowCustomDecorators?: boolean;
+  authDecorators?: string[];
   /**
-   * Suppress findings when the project registers a global guard via
-   * `APP_GUARD` or `app.useGlobalGuards()`. Default: true
+   * Route path segments / handler names that are public by design and must not
+   * require a guard. Replaces the default list when provided.
    */
-  detectGlobalGuards?: boolean;
-  /**
-   * Handler names / route paths that are unauthenticated by design. Matched
-   * case-insensitively against the method name and the route path with
-   * separators removed.
-   */
-  publicRoutePatterns?: string[];
+  publicRoutes?: string[];
 }
 
 type RuleOptions = [Options?];
 
+// Decorators that bypass guard requirements
+const PUBLIC_DECORATORS = new Set([
+  'Public',
+  'SkipAuth',
+  'AllowAnonymous',
+  'NoAuth',
+  // @nestjs/terminus marks a liveness/readiness probe, which is public by design.
+  'HealthCheck',
+]);
+
 /**
- * Route names that cannot have an auth guard by definition — the endpoints a
- * caller uses *to obtain* credentials, plus the standard unauthenticated
- * infrastructure routes. Requiring `@UseGuards` on `POST /auth/login` is not a
- * finding, it is a contradiction.
+ * Routes that cannot require authentication, because they are how a caller
+ * *obtains* it — or how infrastructure probes the service.
+ *
+ * Demanding a guard on `POST /auth/login` is incoherent: nobody can log in if
+ * logging in requires being logged in. Measured on the corpus, these accounted
+ * for a large share of `require-guards` reports on correct code.
+ *
+ * The brute-force exposure these endpoints genuinely carry is covered by
+ * `require-throttler`, which targets exactly this same set by default. Guards
+ * and throttling divide the work: this rule protects private routes, that rule
+ * protects public ones.
  */
-const DEFAULT_PUBLIC_ROUTE_PATTERNS = [
+const DEFAULT_PUBLIC_ROUTES = [
   'login',
   'signin',
+  'sign-in',
   'logout',
   'signout',
-  'register',
+  'sign-out',
   'signup',
+  'sign-up',
+  'register',
+  'registration',
   'refresh',
-  'refreshtoken',
-  'forgotpassword',
-  'passwordforgot',
-  'resetpassword',
-  'passwordreset',
-  'confirmemail',
-  'emailconfirm',
-  'confirmnewemail',
-  'verifyemail',
-  'emailverify',
-  'health',
-  'healthcheck',
-  'liveness',
-  'readiness',
-  'ping',
-  'metrics',
-  'version',
-  'appinfo',
+  'forgot-password',
+  'reset-password',
+  'forgot',
+  'verify',
+  'verify-email',
+  'confirm',
+  'callback',
   'webhook',
   'webhooks',
-  'callback',
-  'oauthcallback',
+  'health',
+  'healthz',
+  'readiness',
+  'liveness',
+  'ping',
+  'public',
+  'oauth',
+  'sso',
 ];
 
-/** `confirm-new/email` and `confirmNewEmail` must compare equal. */
-function normalizeRouteToken(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+/** A route handler awaiting resolution once every class in the file is known. */
+interface Pending {
+  node: TSESTree.MethodDefinition;
+  cls: ClassNode;
+  name: string;
 }
 
 export const requireGuards = createRule<RuleOptions, MessageIds>({
@@ -125,7 +130,8 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-guards.md',
-      description: 'Requires @UseGuards decorator on controllers or route handlers',
+      description:
+        'Requires @UseGuards decorator on controllers or route handlers',
       cwe: 'CWE-284',
       cvss: 9.8,
     },
@@ -136,20 +142,32 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         issueName: 'Missing Authorization Guards',
         cwe: 'CWE-284',
         cvss: 9.8,
-        description: 'Controller/route handler {{name}} lacks @UseGuards for access control',
+        description:
+          'Controller/route handler {{name}} lacks @UseGuards for access control',
         severity: 'CRITICAL',
         fix: 'Add @UseGuards(AuthGuard): @UseGuards(AuthGuard) before the handler',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
-      missingRequiredGuards: formatLLMMessage({
+      emptyGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Missing Required Authorization Guard',
+        issueName: 'Empty Guard List',
         cwe: 'CWE-284',
         cvss: 9.8,
         description:
-          'Controller/route handler {{name}} is not protected by any of the required guards ({{guards}})',
+          '@UseGuards() on {{name}} declares no guard, so it enforces nothing',
         severity: 'CRITICAL',
-        fix: 'Add one of the required guards: @UseGuards({{guards}}) before the handler',
+        fix: 'Pass a guard class: @UseGuards(AuthGuard)',
+        documentationLink: 'https://docs.nestjs.com/guards',
+      }),
+      missingRequiredGuard: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Missing Required Guard',
+        cwe: 'CWE-284',
+        cvss: 9.8,
+        description:
+          'Route handler {{name}} is guarded, but none of the required guards ({{required}}) is applied',
+        severity: 'CRITICAL',
+        fix: 'Add one of the required guards: @UseGuards({{firstRequired}})',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
       addGuards: formatLLMMessage({
@@ -166,12 +184,23 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          requiredGuards: { type: 'array', items: { type: 'string' }, default: [] },
+          requiredGuards: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
           allowPublicDecorator: { type: 'boolean', default: true },
           assumeGlobalGuards: { type: 'boolean', default: false },
-          allowCustomDecorators: { type: 'boolean', default: true },
-          detectGlobalGuards: { type: 'boolean', default: true },
-          publicRoutePatterns: { type: 'array', items: { type: 'string' } },
+          authDecorators: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
+          publicRoutes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
         },
         additionalProperties: false,
       },
@@ -183,137 +212,245 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       requiredGuards: [],
       allowPublicDecorator: true,
       assumeGlobalGuards: false,
-      allowCustomDecorators: true,
-      detectGlobalGuards: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     const {
       allowInTests = true,
-      requiredGuards = [],
       allowPublicDecorator = true,
       assumeGlobalGuards = false,
-      allowCustomDecorators = true,
-      detectGlobalGuards = true,
-      publicRoutePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
+      requiredGuards = [],
+      authDecorators = [],
+      publicRoutes,
     } = options as Options;
+
+    const publicSet = new Set(
+      (publicRoutes ?? DEFAULT_PUBLIC_ROUTES).map((r) =>
+        r.toLowerCase().replace(/^\/+|\/+$/g, ''),
+      ),
+    );
+
+    const origins = collectImportOrigins(context.sourceCode.ast);
+    const authNames = new Set([...DEFAULT_AUTH_DECORATORS, ...authDecorators]);
+    // @UseGuards is handled separately: it is the only one whose *arguments*
+    // we can inspect, so an empty argument list is a finding rather than proof.
+    authNames.delete('UseGuards');
 
     // Skip entirely if global guards are assumed (configured in main.ts)
     if (assumeGlobalGuards) {
       return {};
     }
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && isTestFile(context.filename)) {
       return {};
     }
 
-    const publicTokens = new Set(publicRoutePatterns.map(normalizeRouteToken));
-    const requiredGuardNames = new Set(requiredGuards);
+    /** Class name -> declaration, so `extends` can be followed within the file. */
+    const classesByName = new Map<string, ClassNode>();
+    const pending: Pending[] = [];
 
-    // Class-level state
-    let isController = false;
-    let classIsExempt = false;
+    /**
+     * Guard class names applied by the @UseGuards decorators on a node.
+     * Returns null when there is no @UseGuards at all, so callers can tell
+     * "unguarded" apart from "@UseGuards() with an empty list".
+     */
+    function guardNames(
+      decorators: TSESTree.Decorator[] | undefined,
+    ): string[] | null {
+      const dec = findDecorator(decorators, 'UseGuards');
+      if (!dec) return null;
+      const call = decoratorCall(dec);
+      // A bare `@UseGuards` reference names no guard.
+      if (!call) return [];
+      // `AuthGuard`, `new RolesGuard()`, `AuthGuard('jwt')` and `passport.AuthGuard`
+      // all resolve to the guard's own name.
+      return call.arguments.map(expressionName);
+    }
 
-    /** `@Public()`-style opt-out. */
+    /**
+     * Guards applied to a class, following `extends` within this file so a
+     * controller inheriting `@UseGuards` from a base class is not reported.
+     */
+    function inheritedGuardNames(cls: ClassNode): string[] | null {
+      const seen = new Set<ClassNode>();
+      let current: ClassNode | null = cls;
+      const collected: string[] = [];
+      let found = false;
+
+      while (current && !seen.has(current)) {
+        seen.add(current);
+        const own = guardNames(current.decorators);
+        if (own !== null) {
+          found = true;
+          collected.push(...own);
+        }
+        const superName: string | null = superClassName(current);
+        current = superName ? (classesByName.get(superName) ?? null) : null;
+      }
+
+      return found ? collected : null;
+    }
+
     function hasPublicDecorator(
       decorators: TSESTree.Decorator[] | undefined,
     ): boolean {
       if (!allowPublicDecorator) return false;
-      return hasDecoratorNamed(decorators, PUBLIC_DECORATORS);
+      return hasDecorator(decorators, PUBLIC_DECORATORS);
     }
 
     /**
-     * Does this decorator list carry a guard that satisfies the requirement?
+     * Route path segments declared by a decorator.
      *
-     * Without `requiredGuards`, any `@UseGuards` counts. With it, the guard
-     * must be named — except when it cannot be named statically, which is not
-     * evidence of absence.
+     * Handles both NestJS forms: `@Controller('auth')` and the options object
+     * `@Controller({ path: 'auth', version: '1' })`, which real codebases use
+     * whenever they version an API.
      */
-    function satisfiesGuardRequirement(
-      decorators: TSESTree.Decorator[] | undefined,
-    ): boolean {
-      const guardNames = getUseGuardsGuardNames(decorators);
-      if (guardNames.length === 0) return false;
-      if (requiredGuardNames.size === 0) return true;
-      return guardNames.some(
-        (name) => name === '' || requiredGuardNames.has(name),
-      );
+    function pathSegments(decorator: TSESTree.Decorator): string[] {
+      const call = decoratorCall(decorator);
+      if (!call) return [];
+      const out: string[] = [];
+      const push = (v: unknown) => {
+        if (typeof v === 'string')
+          out.push(...v.toLowerCase().split('/').filter(Boolean));
+      };
+      for (const arg of call.arguments) {
+        if (arg.type === AST_NODE_TYPES.Literal) {
+          push(arg.value);
+        } else if (arg.type === AST_NODE_TYPES.ObjectExpression) {
+          for (const prop of arg.properties) {
+            if (
+              prop.type === AST_NODE_TYPES.Property &&
+              !prop.computed &&
+              prop.key.type === AST_NODE_TYPES.Identifier &&
+              prop.key.name === 'path' &&
+              prop.value.type === AST_NODE_TYPES.Literal
+            ) {
+              push(prop.value.value);
+            }
+          }
+        }
+      }
+      return out;
     }
 
-    /** A decorator we cannot resolve may be a composite that applies guards. */
-    function hasPossibleGuardDecorator(
-      decorators: TSESTree.Decorator[] | undefined,
-    ): boolean {
-      return allowCustomDecorators && hasUnresolvedDecorator(decorators);
-    }
-
-    /** Endpoints that exist to hand out credentials cannot require them. */
+    /**
+     * Whether this route is public by design — the controller prefix, the route
+     * path or the handler name names an authentication entry point or a probe.
+     */
     function isPublicByDesign(
-      methodName: string,
-      httpDecorator: TSESTree.Decorator,
+      node: TSESTree.MethodDefinition,
+      cls: ClassNode,
     ): boolean {
-      if (publicTokens.has(normalizeRouteToken(methodName))) return true;
-      const path = getRoutePath(httpDecorator);
-      if (path === null) return false;
-      return path
-        .split('/')
-        .some((segment) => segment !== '' && publicTokens.has(normalizeRouteToken(segment)));
+      const handler = (memberName(node) ?? '').toLowerCase();
+      if (publicSet.has(handler)) return true;
+
+      // Both decorators are guaranteed present: the caller already established
+      // this is a route handler on a @Controller class.
+      const segments = [
+        ...pathSegments(
+          findDecorator(cls.decorators, 'Controller') as TSESTree.Decorator,
+        ),
+        ...pathSegments(
+          findDecorator(
+            node.decorators,
+            HTTP_METHOD_DECORATORS,
+          ) as TSESTree.Decorator,
+        ),
+      ];
+      return segments.some((seg) => publicSet.has(seg));
     }
 
-    /** A global `APP_GUARD` protects every route in the project. */
-    function hasProjectGlobalGuard(): boolean {
-      return detectGlobalGuards && getProjectContext(context).hasGlobalAuthGuard;
+    function registerClass(node: ClassNode): void {
+      if (node.id?.name) {
+        classesByName.set(node.id.name, node);
+      }
     }
 
     return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isController = isControllerClass(node.decorators);
-        classIsExempt =
-          satisfiesGuardRequirement(node.decorators) ||
-          hasPublicDecorator(node.decorators) ||
-          hasPossibleGuardDecorator(node.decorators);
-      },
+      ClassDeclaration: registerClass,
+      ClassExpression: registerClass,
 
       MethodDefinition(node: TSESTree.MethodDefinition) {
-        // Only check if we're in a controller and method is a route handler
-        if (!isController || classIsExempt) return;
+        const cls = enclosingClass(node);
+        if (!cls || !isControllerClass(cls)) return;
+        if (!isRouteHandler(node)) return;
+        if (hasPublicDecorator(node.decorators)) return;
+        if (hasPublicDecorator(cls.decorators)) return;
 
-        // Skip constructor and non-public methods
-        if (
-          node.key.type === AST_NODE_TYPES.Identifier &&
-          (node.key.name === 'constructor' || node.key.name.startsWith('_'))
-        ) {
-          return;
+        pending.push({ node, cls, name: memberName(node) ?? '<anonymous>' });
+      },
+
+      'Program:exit'() {
+        for (const { node, cls, name } of pending) {
+          // A project-specific auth decorator (@Auth, @Authenticated, ...) is
+          // access control even though it never mentions @UseGuards.
+          // `UseGuards` is deliberately excluded here: it is the one decorator
+          // whose *arguments* we inspect, so its presence is a question (which
+          // guards? any at all?), not an answer.
+          const isAuth = (d: TSESTree.Decorator) =>
+            isAccessControlDecorator(d, origins, authNames, true);
+          // Both are arrays: a pending entry is only created for a route
+          // handler on a @Controller class.
+          if (
+            (node.decorators as TSESTree.Decorator[]).some(isAuth) ||
+            (cls.decorators as TSESTree.Decorator[]).some(isAuth)
+          ) {
+            continue;
+          }
+
+          // Authentication entry points and health probes cannot require auth.
+          if (isPublicByDesign(node, cls)) continue;
+
+          const classGuards = inheritedGuardNames(cls);
+          const methodGuards = guardNames(node.decorators);
+
+          // No @UseGuards anywhere on the class chain or the method.
+          if (classGuards === null && methodGuards === null) {
+            context.report({
+              node,
+              messageId: 'missingGuards',
+              data: { name },
+              suggest: [{ messageId: 'addGuards', fix: () => null }],
+            });
+            continue;
+          }
+
+          const applied = [
+            ...(classGuards ?? []),
+            ...(methodGuards ?? []),
+          ].filter(Boolean);
+
+          // @UseGuards() present but naming nothing — enforces nothing.
+          if (applied.length === 0) {
+            context.report({
+              node,
+              messageId: 'emptyGuards',
+              data: { name },
+              suggest: [{ messageId: 'addGuards', fix: () => null }],
+            });
+            continue;
+          }
+
+          // When specific guards are required, a different guard does not count.
+          if (
+            requiredGuards.length > 0 &&
+            !applied.some((g) => requiredGuards.includes(g))
+          ) {
+            context.report({
+              node,
+              messageId: 'missingRequiredGuard',
+              data: {
+                name,
+                required: requiredGuards.join(', '),
+                firstRequired: requiredGuards[0],
+              },
+              suggest: [{ messageId: 'addGuards', fix: () => null }],
+            });
+          }
         }
-
-        const httpDecorator = getHttpMethodDecorator(node.decorators);
-        if (httpDecorator === null) return;
-
-        if (
-          hasPublicDecorator(node.decorators) ||
-          satisfiesGuardRequirement(node.decorators) ||
-          hasPossibleGuardDecorator(node.decorators)
-        ) {
-          return;
-        }
-
-        const methodName =
-          node.key.type === AST_NODE_TYPES.Identifier ? node.key.name : '<anonymous>';
-
-        if (isPublicByDesign(methodName, httpDecorator)) return;
-        if (hasProjectGlobalGuard()) return;
-
-        context.report({
-          node,
-          messageId:
-            requiredGuardNames.size === 0
-              ? 'missingGuards'
-              : 'missingRequiredGuards',
-          data: { name: methodName, guards: requiredGuards.join(', ') },
-          suggest: [{ messageId: 'addGuards', fix: () => null }],
-        });
       },
     };
   },

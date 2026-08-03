@@ -1,7 +1,7 @@
 /**
  * Tests for require-class-validator rule
  * Security: CWE-20 (Improper Input Validation)
- * 
+ *
  * Edge cases to reveal false positives/negatives:
  * - DTO classes (Dto/Request/Input suffix)
  * - Classes with @ApiProperty decorator
@@ -31,6 +31,145 @@ describe('require-class-validator', () => {
   describe('Valid Code - Properties with Validators', () => {
     ruleTester.run('valid - validated properties', requireClassValidator, {
       valid: [
+        // novu: an @Injectable() service whose name ends in "Request". A provider
+        // is never a request payload, whatever it is called.
+        `
+      @Injectable()
+      export class PasswordResetRequest {
+        private MAX_ATTEMPTS_IN_A_MINUTE = 5;
+        private RATE_LIMIT_IN_SECONDS = 60;
+      }
+    `,
+        // Accessibility is the point: private/protected members are not part of
+        // the payload a ValidationPipe ever populates.
+        `
+      export class CreateUserDto {
+        @IsEmail()
+        email: string;
+        private attempts = 0;
+        protected trace: string;
+      }
+    `,
+        // twenty: environment configuration validated once at boot. It uses
+        // class-validator, but the undecorated members are defaults, not fields a
+        // request can set — and nothing else marks the class as inbound.
+        `
+      export class ConfigVariables {
+        @IsString()
+        @IsOptional()
+        PASSWORD_RESET_TOKEN_EXPIRES_IN = '5m';
+
+        CALENDAR_PROVIDER_GOOGLE_ENABLED = false;
+
+        LOG_LEVELS = ['error'];
+      }
+    `,
+
+        // A composed project decorator counts as validation (awesome-nest-boilerplate
+        // ships @StringField/@NumberFieldOptional/@ClassFieldOptional wrapping class-validator).
+        `
+      class CreateUserDto {
+        @NumberFieldOptional({ minimum: 1, maximum: 50 })
+        readonly take: number = 10;
+      }
+    `,
+        // A custom validator name supplied via options.
+        {
+          code: `
+        class CreateUserDto {
+          @MyCustomCheck()
+          name: string;
+        }
+      `,
+          options: [{ validatorDecorators: ['MyCustomCheck'] }],
+        },
+        // @nestjs/graphql's bare @Field() is a schema decorator, not validation.
+        // Treating it as one made every TypeORM entity look like a validated DTO.
+        `
+      @Entity()
+      class ApplicationEntity {
+        @Field()
+        @Column({ nullable: false, type: 'text' })
+        name: string;
+        @Column({ nullable: true, type: 'uuid' })
+        ownerId: string;
+      }
+    `,
+        // The @Schema()/@ViewEntity() decorator forms are excluded too.
+        `
+      @Schema()
+      class UserDoc {
+        @Prop()
+        email: string;
+        legacyField: string;
+      }
+    `,
+        // Persistence classes are the database shape, not a request payload.
+        `
+      class BillingPriceEntity {
+        @Column()
+        amount: number;
+        currency: string;
+      }
+    `,
+        // A verb prefix alone is not a DTO: this is a Svelte view-model from
+        // immich's frontend, matched by an earlier `^Edit[A-Z]` heuristic.
+        `
+      class EditManager {
+        isShowingConfirmDialog = false;
+        currentAsset = null;
+      }
+    `,
+        // Verb-prefixed *responses* are still responses.
+        `
+      class SetAgentMcpServersFailureDto {
+        @ApiProperty()
+        mcpId: string;
+      }
+    `,
+        `
+      class DeleteTopicSubscriptionsResponseDto {
+        @ApiProperty()
+        subscriberId: string;
+      }
+    `,
+        // An entity mapper carries decorators for serialisation, not validation.
+        `
+      class AbstractDto {
+        @DateField()
+        createdAt: Date;
+        translations?: AbstractTranslationDto[];
+        constructor(entity: AbstractEntity) {}
+      }
+    `,
+        // Outbound classes whose names no suffix blocklist would catch.
+        `
+      class TestDomainRouteAgentResultDto {
+        @ApiProperty()
+        agentId: string;
+      }
+    `,
+        `
+      class SubscriptionErrorDto {
+        @ApiProperty()
+        subscriberId: string;
+      }
+    `,
+        // Response-shaped classes are outbound: @ApiProperty for Swagger, no validators.
+        `
+      class AgentIntegrationResponseDto {
+        identifier: string;
+      }
+    `,
+        `
+      class WorkflowRunsPayload {
+        cursor: string;
+      }
+    `,
+        // A class with no name (anonymous expression) is not a DTO.
+        `const C = class { name: string; };`,
+        // A name with no DTO-ish suffix is not a DTO.
+        `class Helper { name: string; }`,
         // @IsString and @IsNotEmpty
         {
           code: `
@@ -108,7 +247,20 @@ describe('require-class-validator', () => {
           `,
         },
       ],
-      invalid: [],
+      invalid: [
+        // A default does not make a named DTO's field safe — a request still sets
+        // it. Only the inferred-by-sibling path treats initialisers as defaults.
+        {
+          code: `
+        export class CreateUserDto {
+          @IsEmail()
+          email: string;
+          role: string = 'user';
+        }
+      `,
+          errors: [{ messageId: 'missingValidator' }],
+        },
+      ],
     });
   });
 
@@ -230,7 +382,7 @@ describe('require-class-validator', () => {
         // Nested validation
         {
           code: `
-            class ComplexDto {
+            class CreateComplexDto {
               @ValidateNested()
               nested: NestedDto;
             }
@@ -241,7 +393,7 @@ describe('require-class-validator', () => {
         // Nested object without ValidateNested
         {
           code: `
-            class ComplexDto {
+            class CreateComplexDto {
               nested: NestedDto;
             }
           `,
@@ -250,212 +402,48 @@ describe('require-class-validator', () => {
       ],
     });
   });
-
-  describe('Response DTOs (regression: 303 findings on ack, 20 on brocoders)', () => {
-    ruleTester.run('response DTOs are output, not input', requireClassValidator, {
-      valid: [
-        // ack-nestjs-boilerplate: modules/hello/dtos/response/hello.response.dto.ts
-        {
-          code: `
-            class HelloDateResponseDto {
-              @ApiProperty({ required: true })
-              date: Date;
-
-              @ApiProperty({ required: true })
-              iso: string;
-            }
-          `,
-        },
-        // ack: common/response/dtos/response.paging.dto.ts
-        {
-          code: `
-            class ResponsePagingDto {
-              @ApiProperty()
-              totalData: number;
-            }
-          `,
-        },
-        // ack: modules/user/dtos/user.dto.ts — @Expose marks a serialization
-        // model even though the class name says nothing about responses
-        {
-          code: `
-            class UserDto {
-              @ApiProperty({ required: false })
-              @Expose()
-              name?: string;
-
-              @ApiProperty({ required: true })
-              @Expose()
-              username: string;
-            }
-          `,
-        },
-        // ack: a DTO extending a shared response base class
-        {
-          code: `
-            class SessionDto extends DatabaseResponseDto {
-              @ApiProperty()
-              id: string;
-            }
-          `,
-        },
-        // brocoders: auth/dto/login-response.dto.ts
-        {
-          code: `
-            class LoginResponseDto {
-              @ApiProperty()
-              token: string;
-
-              @ApiProperty()
-              refreshToken: string;
-            }
-          `,
-        },
-        // Class-level @Exclude() marks the whole class as serialization output
-        {
-          code: `
-            @Exclude()
-            class UserProfileDto {
-              id: string;
-            }
-          `,
-        },
-        // brocoders: auth-apple/dto/auth-apple-login.dto.ts — @Allow() is an
-        // explicit class-validator whitelist decision
-        {
-          code: `
-            class AuthAppleLoginDto {
-              @ApiProperty({ example: 'abc' })
-              @IsNotEmpty()
-              idToken: string;
-
-              @Allow()
-              @ApiPropertyOptional()
-              firstName?: string;
-            }
-          `,
-        },
-        // ack: common/file/dtos/file.single.dto.ts — multipart upload slot
-        {
-          code: `
-            class FileUploadSingleRequestDto {
-              @ApiProperty({ type: 'string', format: 'binary', description: 'Single file' })
-              file: IFile;
-            }
-          `,
-        },
-        // ack: common/file/dtos/file.multiple.dto.ts — nested items schema
-        {
-          code: `
-            class FileUploadMultipleRequestDto {
-              @ApiProperty({
-                type: 'array',
-                items: { type: 'string', format: 'binary' },
-              })
-              files: IFile[];
-            }
-          `,
-        },
-        // Extended class-validator vocabulary must be recognised
-        {
-          code: `
-            class SettingsDto {
-              @IsIn(['a', 'b'])
-              mode: string;
-
-              @IsStrongPassword()
-              password: string;
-
-              @IsTimeZone()
-              tz: string;
-            }
-          `,
-        },
-      ],
-      invalid: [
-        // TRUE POSITIVE (brocoders): request DTO fields with no validator at
-        // all — the rule must not go inert.
-        {
-          code: `
-            class CreateUserDto {
-              @ApiProperty()
-              @IsEmail()
-              email: string;
-
-              provider?: string;
-
-              socialId?: string | null;
-            }
-          `,
-          errors: [
-            { messageId: 'missingValidator', data: { property: 'provider' } },
-            { messageId: 'missingValidator', data: { property: 'socialId' } },
-          ],
-        },
-        // A response-shaped class is still checked when asked for explicitly
-        {
-          code: `
-            class LoginResponseDto {
-              @ApiProperty()
-              token: string;
-            }
-          `,
-          options: [{ checkResponseDtos: true }],
-          errors: [{ messageId: 'missingValidator', data: { property: 'token' } }],
-        },
-        // A custom responseDtoPattern narrows the exemption
-        {
-          code: `
-            class UserViewDto {
-              @ApiProperty()
-              id: string;
-            }
-          `,
-          options: [{ responseDtoPattern: 'Response' }],
-          errors: [{ messageId: 'missingValidator', data: { property: 'id' } }],
-        },
-        // @Transform / @Type alone do NOT mark a class as a response DTO —
-        // request DTOs legitimately use them for coercion.
-        {
-          code: `
-            class CreateUserDto {
-              @Transform(lowerCaseTransformer)
-              email: string;
-            }
-          `,
-          errors: [{ messageId: 'missingValidator', data: { property: 'email' } }],
-        },
-        // @ApiProperty without a `format: 'binary'` schema is still checked
-        {
-          code: `
-            class UploadDto {
-              @ApiProperty({ type: 'string', description: 'not a file' })
-              name: string;
-            }
-          `,
-          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
-        },
-        // Bare @ApiProperty (no argument object) is still checked
-        {
-          code: `
-            class UploadDto {
-              @ApiProperty
-              name: string;
-            }
-          `,
-          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
-        },
-        // A spread inside the schema object is not a `format` declaration
-        {
-          code: `
-            class UploadDto {
-              @ApiProperty({ ...baseSchema })
-              name: string;
-            }
-          `,
-          errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
-        },
-      ],
-    });
-  });
 });
+
+// Locks for the members the rule must not treat as inbound payload.
+ruleTester.run(
+  'require-class-validator (member skips)',
+  requireClassValidator,
+  {
+    valid: [
+      // FP-4: statics are class constants.
+      `
+      class CreateUserDto {
+        static readonly TABLE = 'users';
+        static defaults = {};
+      }
+    `,
+      // A field stripped from the payload needs no validator.
+      `
+      class CreateUserDto {
+        @Exclude()
+        internalId: string;
+      }
+    `,
+      // Computed keys have no static name.
+      `
+      class CreateUserDto {
+        [dynamicKey]: string;
+      }
+    `,
+    ],
+    invalid: [
+      // A class that already validates *something* is inbound: the bare members
+      // beside the validated one are real gaps.
+      {
+        code: `
+        class SignupPayload {
+          @IsString()
+          email: string;
+          socialId: string;
+        }
+      `,
+        errors: [{ messageId: 'missingValidator' }],
+      },
+    ],
+  },
+);

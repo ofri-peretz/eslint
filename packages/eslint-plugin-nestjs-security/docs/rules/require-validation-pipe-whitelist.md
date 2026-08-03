@@ -1,0 +1,115 @@
+---
+title: require-validation-pipe-whitelist
+description: This rule detects ValidationPipe instances that do not set whitelist, which lets a request set DTO properties that ...
+tags: ['security', 'nestjs']
+category: security
+severity: high
+cwe: CWE-915
+owasp: 'A03:2021'
+autofix: false
+---
+
+> Require `whitelist: true` on ValidationPipe to prevent mass assignment
+
+<!-- @rule-summary -->
+
+This rule detects ValidationPipe instances that do not set whitelist, which lets a request set DTO properties that ...
+<!-- @/rule-summary -->
+
+## Rule Details
+
+A `ValidationPipe` validates the properties a DTO declares — and forwards every
+property it does not. The handler receives them, the service receives them, and
+`repository.save(dto)` writes them. So a DTO that never mentions `isAdmin` will
+still carry `isAdmin: true` into the database if the request sent it.
+
+`whitelist: true` strips every property without a validation decorator, which is
+what makes the DTO an allow-list rather than a suggestion.
+
+Measured across ten high-star NestJS codebases: **29 ValidationPipe
+constructions do not set it**, in 6 of 9 real repositories.
+
+## OWASP Mapping
+
+- **OWASP Top 10 2021**: A03:2021 - Injection
+- **CWE**: CWE-915 - Improperly Controlled Modification of Dynamically-Determined Object Attributes
+- **CVSS**: 7.5 (High)
+
+## ❌ Incorrect
+
+```typescript
+// Nothing is stripped — `isAdmin` reaches the handler.
+app.useGlobalPipes(new ValidationPipe());
+
+app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+@Query(new ValidationPipe({ transform: true }))
+pageOptions: PageOptionsDto;
+
+// forbidNonWhitelisted only rejects extra properties *while whitelist is on*.
+// On its own it does nothing at all.
+new ValidationPipe({ forbidNonWhitelisted: true });
+```
+
+## ✅ Correct
+
+```typescript
+app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+// Reject the request instead of silently stripping.
+app.useGlobalPipes(
+  new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+);
+```
+
+## Options
+
+```typescript
+{
+  // Skip rule in test files (default: true)
+  allowInTests?: boolean;
+}
+```
+
+## When Not To Use It
+
+- If a pipe deliberately accepts arbitrary properties — a passthrough proxy
+  endpoint, for instance — disable the rule on that line rather than globally.
+
+## Known False Negatives
+
+The rule reports only what this file proves. It abstains in three cases, by
+design: a wrong accusation about a pipe that _is_ configured correctly costs
+more than a missed one.
+
+### Options declared elsewhere
+
+**Why**: `new ValidationPipe(validationOptions)` may well set `whitelist` — the
+object lives in another module. brocoders-boilerplate does exactly this.
+
+```typescript
+// ❌ NOT DETECTED - options are opaque here
+import validationOptions from './utils/validation-options';
+app.useGlobalPipes(new ValidationPipe(validationOptions));
+```
+
+**Mitigation**: Inline the option, or check the shared options object by hand.
+
+### Spread options
+
+**Why**: `{ ...options }` can define `whitelist`, so its absence is unproven.
+
+```typescript
+// ❌ NOT DETECTED
+new ValidationPipe({ transform: true, ...options });
+```
+
+### Config-driven values
+
+**Why**: `whitelist: isProduction` is a deliberate decision, not an omission.
+Only an absent key or a non-`true` literal is reported.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - a decision we cannot evaluate
+new ValidationPipe({ whitelist: config.strictValidation });
+```

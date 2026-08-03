@@ -1,38 +1,24 @@
 ---
 title: require-throttler
-description: Reports once, on the root module, when the application configures no rate limiter (ThrottlerModule + Throttler...
+description: This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-770
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 ---
 
-> Requires an application-wide ThrottlerModule for rate limiting
-
+> Require ThrottlerGuard or @Throttle decorator for rate limiting
 
 <!-- @rule-summary -->
-Reports once, on the root module, when the application configures no rate limiter (ThrottlerModule + ThrottlerGuard).
+
+This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
 <!-- @/rule-summary -->
 
 ## Rule Details
 
-This rule reports **once per project**, on the root module, when the application
-configures no rate limiter. Rate limiting in NestJS is adopted with a single
-`ThrottlerModule.forRoot()` registration plus a global `ThrottlerGuard`, so
-flagging every route handler turned a one-line fix into dozens of errors (24 on
-one boilerplate, 93 on another). Nothing is reported on controllers.
-
-The root module is a `@Module`-decorated class named `AppModule`, or any
-`@Module` class in a file named `app.module.ts`. Both are configurable.
-
-Rate limiting is considered configured when any of the following appears in the
-file being linted or in any `*.module.ts` / `main.ts` under the project root:
-
-- `ThrottlerModule.forRoot(...)` or `ThrottlerModule.forRootAsync(...)`
-- `{ provide: APP_GUARD, useClass: ThrottlerGuard }`
-- any reference to `ThrottlerGuard` / `ThrottlerStorage`
+This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulnerable to brute-force and denial-of-service attacks.
 
 ## OWASP Mapping
 
@@ -43,35 +29,33 @@ file being linted or in any `*.module.ts` / `main.ts` under the project root:
 ## ❌ Incorrect
 
 ```typescript
-// app.module.ts — nothing throttles login, register or password reset
-@Module({
-  imports: [AuthModule, UsersModule],
-  controllers: [],
-  providers: [],
-})
-export class AppModule {}
+@Controller('auth')
+class AuthController {
+  @Post('login')
+  login() {
+    // No rate limiting - vulnerable to brute force!
+  }
+}
 ```
 
 ## ✅ Correct
 
 ```typescript
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
+@Controller('auth')
+@UseGuards(ThrottlerGuard)
+class AuthController {
+  @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
+  login() {}
+}
+
+// Or in app.module.ts (global)
 @Module({
   imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
-```
-
-Per-route tuning still works as usual, and is no longer required to silence the
-rule:
-
-```typescript
-@Post('login')
-@Throttle({ default: { limit: 5, ttl: 60000 } })
-login() {}
 ```
 
 ## Options
@@ -81,37 +65,35 @@ login() {}
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Skip the rule entirely, without scanning the project (default: false)
+  // Skip if global throttler configured in app.module (default: false)
   assumeGlobalThrottler?: boolean;
-
-  // Class names treated as the root module (default: ['AppModule'])
-  rootModuleNames?: string[];
-
-  // File names treated as the root module (default: ['app.module.ts'])
-  rootModuleFiles?: string[];
-
-  // Deprecated, no longer used — the rule never reports per route
-  skipRoutes?: string[];
 }
 ```
 
+## Recognized Skip Decorators
+
+- `@SkipThrottle()` - Built-in decorator from @nestjs/throttler
+
 ## When Not To Use It
 
-- If rate limiting is handled by infrastructure (Kong, Nginx, an API gateway),
-  set `assumeGlobalThrottler: true`.
-- If your project has no root module (a library, or a Nest microservice built
-  from several entry points), the rule has nothing to report.
+- If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
+- For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Root Module Outside the Lint Scope
+### Global Throttler Module
 
-**Why**: The finding is attached to the root module. If `app.module.ts` is not
-linted, nothing is reported even when the project has no rate limiting.
+**Why**: ThrottlerModule.forRoot in app.module is not linked to controllers.
 
-**Mitigation**: Include module files in your lint glob.
+```typescript
+// ❌ NOT DETECTED - Global throttler exists
+// app.module.ts: imports: [ThrottlerModule.forRoot(...)]
+// controller.ts: Already throttled globally, but flagged
+```
+
+**Mitigation**: Set `assumeGlobalThrottler: true` in rule options.
 
 ### Custom Rate Limiting
 
@@ -123,12 +105,29 @@ linted, nothing is reported even when the project has no rate limiting.
 class AuthController {}
 ```
 
-**Mitigation**: Set `assumeGlobalThrottler: true`, or reference `ThrottlerGuard`
-where your limiter is registered.
+**Mitigation**: Configure rule to recognize custom rate limiting decorators.
 
-### Per-Route Gaps Under a Global Throttler
+### Infrastructure Rate Limiting
 
-**Why**: Once `ThrottlerModule` is configured, the rule is silent. It cannot tell
-whether a specific route's limit is appropriate for a brute-forceable endpoint.
+**Why**: Reverse proxy or API gateway limits are not visible.
 
-**Mitigation**: Review `@Throttle()` limits on authentication routes by hand.
+```typescript
+// ❌ NOT DETECTED (correctly) - Kong/Nginx handles limits
+@Controller('auth')
+class AuthController {}
+```
+
+**Mitigation**: Document infrastructure rate limits. Add inline comment.
+
+### Dynamic Throttle Configuration
+
+**Why**: Throttle options from variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic throttle config
+const throttleConfig = getThrottleConfig();
+@Throttle(throttleConfig) // May be undefined
+class Controller {}
+```
+
+**Mitigation**: Use inline throttle configuration.

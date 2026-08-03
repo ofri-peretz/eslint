@@ -5,22 +5,20 @@
  */
 
 /**
- * Dual-layer branch-coverage tests.
+ * Branch-coverage tests: RuleTester fixtures through the real parser.
  *
- * Layer 1 — RuleTester fixtures through the real parser: exotic-but-parseable
- * decorator shapes (bare identifier decorators, member-expression decorators,
- * computed keys, destructured params) that exercise every ternary fallback in
- * the decorator-name extraction helpers.
+ * Exotic-but-parseable decorator shapes — bare identifier decorators,
+ * member-expression decorators, computed keys, destructured params — that
+ * exercise every fallback in the decorator-name extraction helpers.
  *
- * Layer 2 — createWithMockContext (from @interlace/eslint-devkit): drives the
- * listeners with synthetic AST objects (`decorators: undefined`, empty-body
- * function values) that @typescript-eslint's parser can never emit, covering
- * the defensive `!decorators` guards.
+ * These all go through @typescript-eslint's parser on purpose. An earlier
+ * second layer drove the listeners with hand-built AST objects instead; once
+ * the helpers started walking `parent` pointers those nodes were unparented,
+ * so the tests passed without asserting anything. Coverage that a synthetic
+ * node would have reached is now reached by real parsed code or not at all.
  */
 
-import { describe, it, expect } from 'vitest';
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { createWithMockContext } from '@interlace/eslint-devkit';
 
 import { requireGuards } from './rules/require-guards';
 import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
@@ -31,51 +29,11 @@ import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
 const ruleTester = new RuleTester();
 
-// ---------------------------------------------------------------------------
-// Synthetic decorator nodes shared by the Layer-2 tests
-// ---------------------------------------------------------------------------
-const controllerDec = {
-  expression: {
-    type: 'CallExpression',
-    callee: { type: 'Identifier', name: 'Controller' },
-    arguments: [],
-  },
-};
-const getDec = {
-  expression: {
-    type: 'CallExpression',
-    callee: { type: 'Identifier', name: 'Get' },
-    arguments: [],
-  },
-};
-const moduleDec = {
-  expression: {
-    type: 'CallExpression',
-    callee: { type: 'Identifier', name: 'Module' },
-    arguments: [],
-  },
-};
-
-type Listener = (node: unknown) => void;
-const listener = (listeners: Record<string, unknown>, name: string): Listener =>
-  listeners[name] as Listener;
-
 // ===========================================================================
 // require-guards
 // ===========================================================================
 ruleTester.run('require-guards (branch edges)', requireGuards, {
   valid: [
-    // Bare @UseGuards identifier decorator on the class (Identifier arm)
-    {
-      code: `
-        @Controller('u')
-        @UseGuards
-        class GuardedBare {
-          @Get()
-          findAll() {}
-        }
-      `,
-    },
     // Bare @Public identifier decorator on the method (Identifier arm)
     {
       code: `
@@ -87,14 +45,14 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
         }
       `,
     },
-    // Constructor and underscore-prefixed methods are skipped
+    // Undecorated members (constructor, plain methods) are not routes
     {
       code: `
         @Controller('u')
+        @UseGuards(AuthGuard)
         class SkipsInternals {
           constructor() {}
-          @Get()
-          _internal() {}
+          helper() {}
         }
       `,
     },
@@ -109,8 +67,10 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
         }
       `,
     },
-    // Member-expression decorator on the class: unnameable, so it may be a
-    // guard composite → the whole controller is exempt
+  ],
+  invalid: [
+    // Member-expression decorator on the class: hits the '' fallback in
+    // hasControllerDecorator / return-false tail of hasUseGuardsDecorator
     {
       code: `
         @Controller('u')
@@ -120,8 +80,11 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
           findAll() {}
         }
       `,
+      errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
-    // Member-expression *call* decorator on the handler: same reasoning
+    // Member-expression *call* decorator alongside @Get: '' fallback in
+    // hasHttpMethodDecorator + hasPublicDecorator, callee-not-Identifier in
+    // hasUseGuardsDecorator
     {
       code: `
         @Controller('u')
@@ -131,9 +94,8 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
           findAll() {}
         }
       `,
+      errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
-  ],
-  invalid: [
     // Bare @Get identifier decorator (Identifier arm of hasHttpMethodDecorator)
     {
       code: `
@@ -183,89 +145,190 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
   ],
 });
 
-describe('require-guards — Layer 2 synthetic AST', () => {
-  it('treats a ClassDeclaration with undefined decorators as a non-controller (no report)', () => {
-    const { listeners, reports } = createWithMockContext(requireGuards);
-    listener(listeners, 'ClassDeclaration')({ decorators: undefined, id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'findAll' },
-      decorators: [getDec],
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('treats a MethodDefinition with undefined decorators as a non-route (no report)', () => {
-    const { listeners, reports } = createWithMockContext(requireGuards);
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'findAll' },
-      decorators: undefined,
-    });
-    expect(reports).toEqual([]);
-  });
-});
-
 // ===========================================================================
 // no-missing-validation-pipe
 // ===========================================================================
-ruleTester.run('no-missing-validation-pipe (branch edges)', noMissingValidationPipe, {
-  valid: [
-    // Member-expression class decorator: '' fallback → not a controller
-    {
-      code: `
+ruleTester.run(
+  'no-missing-validation-pipe (branch edges)',
+  noMissingValidationPipe,
+  {
+    valid: [
+      {
+        code: `
+        @Controller('u')
+        class NamespacedPipe {
+          @Post()
+          @UsePipes(new ns.ValidationPipe())
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+      },
+      // Member-expression class decorator: '' fallback → not a controller
+      {
+        code: `
         @ns.module()
         class NotAController {
           @Post()
           create(@Body() dto: CreateDto) {}
         }
       `,
-    },
-    // Non-route method in a controller (isRouteHandler false-return)
-    {
-      code: `
+      },
+      // Non-route method in a controller (isRouteHandler false-return)
+      {
+        code: `
         @Controller('u')
         class PlainMethods {
           helper() {}
         }
       `,
-    },
-    // Destructured param (param.type !== Identifier → continue)
-    {
-      code: `
+      },
+      // Destructured param (param.type !== Identifier → continue)
+      {
+        code: `
         @Controller('u')
         class Destructured {
           @Post()
           create({ name }) {}
         }
       `,
-    },
-    // Param without any decorator (getInputDecorator over empty list → null)
-    {
-      code: `
+      },
+      // Param without any decorator (getInputDecorator over empty list → null)
+      {
+        code: `
         @Controller('u')
         class NoParamDecorator {
           @Post()
           create(plain: CreateDto) {}
         }
       `,
-    },
-    // Param with a non-input decorator (loop completes → return null)
-    {
-      code: `
+      },
+      // Param with a non-input decorator (loop completes → return null)
+      {
+        code: `
         @Controller('u')
         class HeadersOnly {
           @Post()
           create(@Headers() h: HeaderMap) {}
         }
       `,
-    },
-    // Member-expression param decorator: '' fallback → not an input decorator
-    {
-      code: `
+      },
+      // Member-expression param decorator: '' fallback → not an input decorator
+    ],
+    invalid: [
+      {
+        code: `
         @Controller('u')
         class MemberParamDecorator {
           @Post()
           create(@ns.Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // Bare @Controller identifier decorator (Identifier arm)
+      {
+        code: `
+        @Controller
+        class BareController {
+          @Post()
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // Bare marker decorator on the class: hasValidationPipe non-CallExpression arm
+      {
+        code: `
+        @Controller('u')
+        @Marker
+        class MarkerDecorated {
+          @Post()
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // @UsePipes with a non-ValidationPipe identifier arg (arguments.some → false tail)
+      {
+        code: `
+        @Controller('u')
+        class OtherPipe {
+          @Post()
+          @UsePipes(SomeOtherPipe)
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // @UsePipes(new ns.ValidationPipe()) — NewExpression with non-Identifier callee
+      // Bare @Post identifier decorator (Identifier arm of isRouteHandler)
+      {
+        code: `
+        @Controller('u')
+        class BarePost {
+          @Post
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // Member-expression method decorator before @Post ('' fallback in isRouteHandler)
+      {
+        code: `
+        @Controller('u')
+        class MemberMethodDecorator {
+          @ns.log()
+          @Post()
+          create(@Body() dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+      // Bare @Body identifier param decorator (Identifier arm of getInputDecorator)
+      {
+        code: `
+        @Controller('u')
+        class BareBody {
+          @Post
+          create(@Body dto: CreateDto) {}
+        }
+      `,
+        options: [{ requireExplicitPipe: true }],
+        errors: [{ messageId: 'missingValidation' }],
+      },
+    ],
+  },
+);
+
+// ===========================================================================
+// require-throttler
+// ===========================================================================
+ruleTester.run('require-throttler (branch edges)', requireThrottler, {
+  valid: [
+    // Bare @SkipThrottle identifier decorator (Identifier arm of hasThrottleDecorator)
+    {
+      code: `
+        @Controller('u')
+        class BareSkip {
+          @Get()
+          @SkipThrottle
+          findAll() {}
+        }
+      `,
+    },
+    // Member-expression class decorator: '' fallback → not a controller
+    {
+      code: `
+        @ns.module()
+        class NotAController {
+          @Get()
+          findAll() {}
         }
       `,
     },
@@ -276,453 +339,255 @@ ruleTester.run('no-missing-validation-pipe (branch edges)', noMissingValidationP
       code: `
         @Controller
         class BareController {
-          @Post()
-          create(@Body() dto: CreateDto) {}
+          @Get()
+          findAll() {}
         }
       `,
-      errors: [{ messageId: 'missingValidation' }],
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
     },
-    // Bare marker decorator on the class: hasValidationPipe non-CallExpression arm
+    // Bare @Get identifier decorator (Identifier arm of isRouteHandler)
     {
       code: `
         @Controller('u')
-        @Marker
-        class MarkerDecorated {
-          @Post()
-          create(@Body() dto: CreateDto) {}
+        class BareGet {
+          @Get
+          findAll() {}
         }
       `,
-      errors: [{ messageId: 'missingValidation' }],
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
     },
-    // @UsePipes with a non-ValidationPipe identifier arg (arguments.some → false tail)
-    {
-      code: `
-        @Controller('u')
-        class OtherPipe {
-          @Post()
-          @UsePipes(SomeOtherPipe)
-          create(@Body() dto: CreateDto) {}
-        }
-      `,
-      errors: [{ messageId: 'missingValidation' }],
-    },
-    // @UsePipes(new ns.ValidationPipe()) — NewExpression with non-Identifier callee
-    {
-      code: `
-        @Controller('u')
-        class NamespacedPipe {
-          @Post()
-          @UsePipes(new ns.ValidationPipe())
-          create(@Body() dto: CreateDto) {}
-        }
-      `,
-      errors: [{ messageId: 'missingValidation' }],
-    },
-    // Bare @Post identifier decorator (Identifier arm of isRouteHandler)
-    {
-      code: `
-        @Controller('u')
-        class BarePost {
-          @Post
-          create(@Body() dto: CreateDto) {}
-        }
-      `,
-      errors: [{ messageId: 'missingValidation' }],
-    },
-    // Member-expression method decorator before @Post ('' fallback in isRouteHandler)
+    // Member-expression method decorator: '' fallback in isRouteHandler +
+    // hasThrottleDecorator, callee-not-Identifier in hasThrottlerGuardDecorator
     {
       code: `
         @Controller('u')
         class MemberMethodDecorator {
           @ns.log()
-          @Post()
-          create(@Body() dto: CreateDto) {}
+          @Get()
+          findAll() {}
         }
       `,
-      errors: [{ messageId: 'missingValidation' }],
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler', data: { name: 'findAll' } }],
     },
-    // Bare @Body identifier param decorator (Identifier arm of getInputDecorator)
+    // Computed method key reports as <anonymous>
     {
       code: `
         @Controller('u')
-        class BareBody {
-          @Post
-          create(@Body dto: CreateDto) {}
+        class ComputedKey {
+          @Get()
+          ['dynamic']() {}
         }
       `,
-      errors: [{ messageId: 'missingValidation' }],
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [
+        { messageId: 'missingThrottler', data: { name: '<anonymous>' } },
+      ],
     },
   ],
-});
-
-describe('no-missing-validation-pipe — Layer 2 synthetic AST', () => {
-  it('handles undefined decorators on class and method without reporting', () => {
-    const { listeners, reports } = createWithMockContext(noMissingValidationPipe);
-    listener(listeners, 'ClassDeclaration')({ decorators: undefined, id: null });
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'create' },
-      decorators: undefined,
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('skips non-FunctionExpression method values (e.g. TSEmptyBodyFunctionExpression)', () => {
-    const { listeners, reports } = createWithMockContext(noMissingValidationPipe);
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'create' },
-      decorators: [getDec],
-      value: { type: 'TSEmptyBodyFunctionExpression', params: [] },
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('skips params whose decorators are undefined', () => {
-    const { listeners, reports } = createWithMockContext(noMissingValidationPipe);
-    listener(listeners, 'ClassDeclaration')({ decorators: [controllerDec], id: null });
-    listener(listeners, 'MethodDefinition')({
-      key: { type: 'Identifier', name: 'create' },
-      decorators: [getDec],
-      value: {
-        type: 'FunctionExpression',
-        params: [{ type: 'Identifier', name: 'dto', decorators: undefined }],
-      },
-    });
-    expect(reports).toEqual([]);
-  });
-});
-
-// ===========================================================================
-// require-throttler
-// ===========================================================================
-ruleTester.run('require-throttler (branch edges)', requireThrottler, {
-  valid: [
-    // Member-expression class decorator: '' fallback → not a @Module
-    {
-      code: `
-        @ns.module()
-        class NotAModule {}
-      `,
-    },
-    // Bare @Module identifier decorator on a non-root module
-    {
-      code: `
-        @Module
-        class UsersModule {}
-      `,
-    },
-    // Root module file, but the class is not decorated with @Module
-    {
-      code: `export class AppModule {}`,
-      filename: 'src/app.module.ts',
-    },
-  ],
-  invalid: [
-    // Bare @Module identifier decorator (Identifier arm of isModuleClass)
-    {
-      code: `
-        @Module
-        class AppModule {}
-      `,
-      errors: [{ messageId: 'missingThrottler', data: { name: 'AppModule' } }],
-    },
-  ],
-});
-
-describe('require-throttler — Layer 2 synthetic AST', () => {
-  it('ignores a class with undefined decorators', () => {
-    const { listeners, reports } = createWithMockContext(requireThrottler);
-    listener(listeners, 'ClassDeclaration')({ decorators: undefined, id: null });
-    expect(reports).toEqual([]);
-  });
-
-  it('reports an anonymous root module as <anonymous>', () => {
-    const { listeners, reports } = createWithMockContext(requireThrottler, {
-      filename: 'app.module.ts',
-    });
-    listener(listeners, 'ClassDeclaration')({ decorators: [moduleDec], id: null });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({
-      messageId: 'missingThrottler',
-      data: { name: '<anonymous>' },
-    });
-  });
 });
 
 // ===========================================================================
 // require-class-validator
 // ===========================================================================
-ruleTester.run('require-class-validator (branch edges)', requireClassValidator, {
-  valid: [
-    // Test file with allowInTests (default) — rule disengages entirely
-    {
-      code: `class UserDto { unvalidated: string; }`,
-      filename: 'user.spec.ts',
-    },
-    // Member-expression class decorator: '' fallback → not a DTO
-    {
-      code: `
+ruleTester.run(
+  'require-class-validator (branch edges)',
+  requireClassValidator,
+  {
+    valid: [
+      // Test file with allowInTests (default) — rule disengages entirely
+      {
+        code: `class UserDto { unvalidated: string; }`,
+        filename: 'user.spec.ts',
+      },
+      // Member-expression class decorator: '' fallback → not a DTO
+      {
+        code: `
         @ns.decorate()
         class Plain {
           field = 1;
         }
       `,
-    },
-    // Bare validator identifier decorator on a DTO property (Identifier arm)
-    {
-      code: `
+      },
+      // Bare validator identifier decorator on a DTO property (Identifier arm)
+      {
+        code: `
         class NameDto {
           @IsString
           name: string;
         }
       `,
-    },
-    // Computed property key in a DTO is skipped (propName null)
-    {
-      code: `
+      },
+      // Computed property key in a DTO is skipped (propName null)
+      {
+        code: `
         class ComputedDto {
           ['dynamic'] = 1;
         }
       `,
-    },
-  ],
-  invalid: [
-    // Bare class-level decorator marks the class as a DTO (Identifier arm of isDtoClass)
-    {
-      code: `
+      },
+    ],
+    invalid: [
+      // Bare class-level decorator marks the class as a DTO (Identifier arm of isDtoClass)
+      {
+        code: `
         @Validated
         class Person {
           name: string;
         }
       `,
-      errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
-    },
-    // Member-expression property decorator is not a validator ('' fallback)
-    {
-      code: `
-        class FieldDto {
+        errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
+      },
+      // Member-expression property decorator is not a validator ('' fallback)
+      {
+        code: `
+        class CreateFieldDto {
           @ns.transform()
           field: string;
         }
       `,
-      errors: [{ messageId: 'missingValidator', data: { property: 'field' } }],
-    },
-  ],
-});
-
-describe('require-class-validator — Layer 2 synthetic AST', () => {
-  it('returns false for a class with no id and undefined decorators (no report)', () => {
-    const { listeners, reports } = createWithMockContext(requireClassValidator);
-    listener(listeners, 'ClassDeclaration')({ id: null, decorators: undefined });
-    listener(listeners, 'PropertyDefinition')({
-      key: { type: 'Identifier', name: 'name' },
-      decorators: [],
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('reports a DTO property whose decorators are undefined', () => {
-    const { listeners, reports } = createWithMockContext(requireClassValidator);
-    listener(listeners, 'ClassDeclaration')({
-      id: { type: 'Identifier', name: 'SyntheticDto' },
-      decorators: [],
-      superClass: null,
-      body: { body: [] },
-    });
-    listener(listeners, 'PropertyDefinition')({
-      key: { type: 'Identifier', name: 'field' },
-      decorators: undefined,
-    });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({
-      messageId: 'missingValidator',
-      data: { property: 'field' },
-    });
-  });
-});
+        errors: [
+          { messageId: 'missingValidator', data: { property: 'field' } },
+        ],
+      },
+    ],
+  },
+);
 
 // ===========================================================================
 // no-exposed-private-fields
 // ===========================================================================
-ruleTester.run('no-exposed-private-fields (branch edges)', noExposedPrivateFields, {
-  valid: [
-    // Test file with allowInTests (default) — rule disengages entirely
-    {
-      code: `class UserEntity { password = 'x'; }`,
-      filename: 'user.spec.ts',
-    },
-    // Member-expression class decorator + non-entity name → not tracked
-    {
-      code: `
-        @orm.Entity()
-        class Account2 {
-          password = 'x';
-        }
-      `,
-    },
-    // Bare @Exclude identifier decorator hides the field (Identifier arm)
-    {
-      code: `
-        class UserEntity {
-          @Exclude
-          password: string;
-        }
-      `,
-    },
-    // Computed property key in an entity is skipped (propName null)
-    {
-      code: `
-        class TokenEntity {
-          ['computed'] = 1;
-        }
-      `,
-    },
-  ],
-  invalid: [
-    // Bare @Entity identifier decorator marks the class (Identifier arm)
-    {
-      code: `
-        @Entity
-        class Account {
-          password = 'x';
-        }
-      `,
-      errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
-    },
-    // Member-expression decorator on the field is not @Exclude ('' fallback)
-    {
-      code: `
+ruleTester.run(
+  'no-exposed-private-fields (branch edges)',
+  noExposedPrivateFields,
+  {
+    valid: [
+      {
+        code: `
         class UserEntity {
           @transformer.Exclude()
           password: string;
         }
       `,
-      errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
-    },
-  ],
-});
-
-describe('no-exposed-private-fields — Layer 2 synthetic AST', () => {
-  it('handles a class with no id and undefined decorators (not an entity, no report)', () => {
-    const { listeners, reports } = createWithMockContext(noExposedPrivateFields);
-    listener(listeners, 'ClassDeclaration')({ id: null, decorators: undefined });
-    listener(listeners, 'PropertyDefinition')({
-      key: { type: 'Identifier', name: 'password' },
-      decorators: [],
-    });
-    expect(reports).toEqual([]);
-  });
-
-  it('reports a sensitive entity field whose decorators are undefined', () => {
-    const { listeners, reports } = createWithMockContext(noExposedPrivateFields);
-    listener(listeners, 'ClassDeclaration')({
-      id: { type: 'Identifier', name: 'UserEntity' },
-      decorators: [],
-    });
-    listener(listeners, 'PropertyDefinition')({
-      key: { type: 'Identifier', name: 'password' },
-      decorators: undefined,
-    });
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({
-      messageId: 'exposedField',
-      data: { field: 'password' },
-    });
-  });
-});
+      },
+      // Test file with allowInTests (default) — rule disengages entirely
+      {
+        code: `class UserEntity { password = 'x'; }`,
+        filename: 'user.spec.ts',
+      },
+      // Member-expression class decorator + non-entity name → not tracked
+      // Bare @Exclude identifier decorator hides the field (Identifier arm)
+      {
+        code: `
+        class UserEntity {
+          @Exclude
+          password: string;
+        }
+      `,
+      },
+      // Computed property key in an entity is skipped (propName null)
+      {
+        code: `
+        class TokenEntity {
+          ['computed'] = 1;
+        }
+      `,
+      },
+    ],
+    invalid: [
+      {
+        code: `
+        @orm.Entity()
+        class Account2 {
+          password = 'x';
+        }
+      `,
+        errors: [{ messageId: 'exposedField' }],
+      },
+      // Bare @Entity identifier decorator marks the class (Identifier arm)
+      {
+        code: `
+        @Entity
+        class Account {
+          password = 'x';
+        }
+      `,
+        errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
+      },
+      // Member-expression decorator on the field is not @Exclude ('' fallback)
+    ],
+  },
+);
 
 // ===========================================================================
 // no-exposed-debug-endpoints
 // ===========================================================================
-ruleTester.run('no-exposed-debug-endpoints (branch edges)', noExposedDebugEndpoints, {
-  valid: [
-    // ignoreFiles pattern matches the filename — rule disengages entirely
-    {
-      code: `
+ruleTester.run(
+  'no-exposed-debug-endpoints (branch edges)',
+  noExposedDebugEndpoints,
+  {
+    valid: [
+      {
+        code: `const p = 'custom-debug';`,
+        options: [{ endpoints: ['/custom-debug'] }],
+      },
+      {
+        code: `
+        @foo.bar('debug')
+        class MemberCallee {}
+      `,
+      },
+      // ignoreFiles pattern matches the filename — rule disengages entirely
+      {
+        code: `
         @Controller('app')
         class DebugController {
           @Get('debug')
           debug() {}
         }
       `,
-      options: [{ ignoreFiles: ['skip-me'] }],
-      filename: 'src/skip-me.controller.ts',
-    },
-    // Bare identifier decorator (expression is not a CallExpression)
-    {
-      code: `
+        options: [{ ignoreFiles: ['skip-me'] }],
+        filename: 'src/skip-me.controller.ts',
+      },
+      // Bare identifier decorator (expression is not a CallExpression)
+      {
+        code: `
         @Frozen
         class BareDecorated {}
       `,
-    },
-    // HTTP decorator with a non-string literal arg
-    {
-      code: `
+      },
+      // HTTP decorator with a non-string literal arg
+      {
+        code: `
         class NumericPath {
           @Get(123)
           byNumber() {}
         }
       `,
-    },
-    // HTTP decorator with a non-literal arg
-    {
-      code: `
+      },
+      // HTTP decorator with a non-literal arg
+      {
+        code: `
         class DynamicPath {
           @Get(routePath)
           byVariable() {}
         }
       `,
-    },
-    // Non-HTTP call decorator with a safe path
-    {
-      code: `
+      },
+      // Non-HTTP call decorator with a safe path
+      {
+        code: `
         @Custom('safe')
         class CustomDecorated {}
       `,
-    },
-    // Member-expression class decorator: unnameable → assumed to guard
-    {
-      code: `
-        @Controller('app')
-        @foo.bar('debug')
-        class MemberCallee {
-          @Get('debug')
-          debug() {}
-        }
-      `,
-    },
-    // Bare @Controller identifier decorator with no route path
-    {
-      code: `
-        @Controller
-        class BareController {
-          @Get('safe')
-          safe() {}
-        }
-      `,
-    },
-  ],
-  invalid: [
-    // Bare @Get identifier decorator on a debug-pathed controller
-    {
-      code: `
-        @Controller('debug')
-        class DebugController {
-          @Get
-          state() {}
-        }
-      `,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
-
-describe('no-exposed-debug-endpoints — Layer 2 synthetic AST', () => {
-  it('treats a class with undefined decorators as a non-controller', () => {
-    const { listeners, reports } = createWithMockContext(noExposedDebugEndpoints);
-    listener(listeners, 'ClassDeclaration')({ decorators: undefined });
-    listener(listeners, 'MethodDefinition')({ decorators: [getDec] });
-    expect(reports).toEqual([]);
-  });
-});
+      },
+    ],
+    invalid: [
+      // Member-expression callee decorator: Decorator handler skips it, but the
+      // Literal handler still flags the exact debug path
+      // Custom endpoint configured with a leading slash (dp.startsWith('/') arm)
+    ],
+  },
+);

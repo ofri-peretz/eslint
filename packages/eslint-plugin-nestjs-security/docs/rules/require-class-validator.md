@@ -1,18 +1,18 @@
 ---
 title: require-class-validator
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-20
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
 > Require class-validator decorators on DTO properties
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -27,13 +27,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Improper Input Validation detected`                                                                                                                                                                                                                        |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]`                                                                                                                                                                                                                   |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Rule Details
 
@@ -77,29 +77,8 @@ class CreateUserDto {
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
-
-  // Also check response/serialization DTOs (default: false)
-  checkResponseDtos?: boolean;
-
-  // Class-name pattern identifying a response DTO
-  // (default: 'Response|Result|View|Payload|Output|Serializ')
-  responseDtoPattern?: string;
 }
 ```
-
-## What the rule deliberately does not report
-
-- **Response DTOs.** A class whose name (or superclass name) matches
-  `responseDtoPattern`, or that carries class-transformer `@Expose()` /
-  `@Exclude()`, describes server *output*. class-validator decorators are
-  meaningless there, and requiring them produced one finding per property of
-  every serialization model in the codebase. Re-enable with
-  `checkResponseDtos: true`.
-- **Multipart upload slots.** `@ApiProperty({ type: 'string', format: 'binary' })`
-  (including the nested `items: { format: 'binary' }` array form) is consumed by
-  Multer, never by class-validator.
-- **`@Allow()`-marked properties.** `@Allow()` is an explicit "accepted as-is"
-  decision under `forbidNonWhitelisted`, not a missing validator.
 
 ## Common Validators
 

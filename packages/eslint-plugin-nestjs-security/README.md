@@ -1,7 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
-  &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -40,12 +38,14 @@ npm install eslint-plugin-nestjs-security --save-dev
 ```
 
 ## ⚙️ Configuration Presets
+
 | Preset        | Description                                              |
 | :------------ | :------------------------------------------------------- |
 | `recommended` | Enables all security rules with sensible severity levels |
 | `strict`      | All security rules set to 'error' for maximum protection |
 
 ## 📚 Supported Libraries
+
 | Library             | npm                                                                                                                             | Downloads                                                                                                                              | Detection          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
 | `@nestjs/common`    | [![npm](https://img.shields.io/npm/v/@nestjs/common.svg?style=flat-square)](https://www.npmjs.com/package/@nestjs/common)       | [![downloads](https://img.shields.io/npm/dt/@nestjs/common.svg?style=flat-square)](https://www.npmjs.com/package/@nestjs/common)       | Decorators, Guards |
@@ -57,36 +57,22 @@ npm install eslint-plugin-nestjs-security --save-dev
 
 ## ⚠️ Global Configuration Handling
 
-NestJS applies guards, pipes and rate limiting **application-wide**, in a file the
-controller never imports. Since v1.3.0 the plugin discovers those registrations
-itself: on the first finding it locates the project root (nearest `package.json`)
-and scans the bootstrap and `*.module.ts` files once, caching the result.
+> **Static Analysis Limitation:** ESLint analyzes files independently. It cannot detect cross-file configurations like `app.useGlobalGuards()` in `main.ts` while linting `users.controller.ts`.
 
-| Approach             | Example                                                     | Detected? |
-| -------------------- | ----------------------------------------------------------- | :-------: |
-| **Per-Controller**   | `@UseGuards(AuthGuard)` on class                            |    ✅     |
-| **Per-Method**       | `@UseGuards(AuthGuard)` on method                           |    ✅     |
-| **Composite**        | `@AuthJwtAccessProtected()` wrapping `UseGuards`            |    ✅¹    |
-| **Global (main.ts)** | `app.useGlobalGuards()` / `app.useGlobalPipes()`            |    ✅     |
-| **Global (Module)**  | `{ provide: APP_GUARD, useClass: AuthGuard }`               |    ✅     |
-| **Global (Module)**  | `{ provide: APP_PIPE, useClass: ValidationPipe }`           |    ✅     |
-| **Global (Module)**  | `ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])`      |    ✅     |
+### Understanding the Problem
 
-¹ A composite decorator cannot be resolved by a syntax-only linter, so any route
-carrying a decorator the plugin does not recognise is assumed to be protected. A
-missed finding is cheaper than a false positive on somebody else's codebase. Set
-`allowCustomDecorators: false` on `require-guards` if you want the strict
-behaviour back.
+NestJS supports two security configuration approaches:
 
-`ThrottlerGuard` registered as `APP_GUARD` counts as rate limiting, **not** as
-authentication — a project that only throttles still gets `require-guards`
-findings.
+| Approach             | Example                                           | ESLint Can See? |
+| -------------------- | ------------------------------------------------- | :-------------: |
+| **Per-Controller**   | `@UseGuards(AuthGuard)` on class                  |       ✅        |
+| **Per-Method**       | `@UseGuards(AuthGuard)` on method                 |       ✅        |
+| **Global (main.ts)** | `app.useGlobalGuards(new AuthGuard())`            |       ❌        |
+| **Global (Module)**  | `ThrottlerModule.forRoot({ ttl: 60, limit: 10 })` |       ❌        |
 
-### Escape hatch: `assumeGlobal*` and `detectGlobal*` options
+### Solution: `assumeGlobal*` Options
 
-`assumeGlobal*: true` disables a rule outright without scanning the project;
-`detectGlobal*: false` disables the project scan and restores strict per-file
-checking:
+For teams using **global configuration**, set `assumeGlobal*: true` to disable per-file checks:
 
 ```javascript
 // eslint.config.js
@@ -110,13 +96,85 @@ export default [
         'warn',
         { assumeGlobalThrottler: true },
       ],
-
-      // Or keep strict per-file checking and skip the project scan entirely
-      // 'nestjs-security/require-guards': ['error', { detectGlobalGuards: false }],
     },
   },
 ];
 ```
+
+### Your own auth decorator is recognised automatically
+
+Almost no production codebase calls `@UseGuards()` on every route — teams wrap
+it. Measured across ten high-star NestJS repositories, we found five distinct
+wrappers: immich's `@Authenticated({ permission })`, awesome-nest-boilerplate's
+`@Auth([RoleType.USER])`, novu's `@RequireAuthentication()`, plus `@Roles()` and
+`@Permissions()` variants.
+
+The rules match the **vocabulary**, not a fixed list. Any decorator mentioning
+auth, guards, roles, permissions, policies, abilities or scopes counts as access
+control. If yours is named something else entirely — immich also uses
+`@MaintenanceRoute()` — name it explicitly:
+
+```javascript
+'nestjs-security/require-guards': ['error', {
+  authDecorators: ['MaintenanceRoute', 'InternalOnly'],
+}],
+```
+
+### Which routes each rule targets
+
+`require-guards` and `require-throttler` divide the work rather than overlap:
+
+|              | `require-guards`                                                                                                   | `require-throttler`                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| **Protects** | private routes                                                                                                     | public authentication entry points                                                                |
+| **Skips**    | `login`, `register`, `refresh`, `callback`, `webhook`, health probes — a guard on `POST /auth/login` is incoherent | anything already behind auth — you need credentials to reach it, so brute force is not the threat |
+
+Path matching is per **segment**, so `/admin/login-attempts` stays private.
+Override the exempt list with `publicRoutes`, and the throttled set with
+`skipRoutes` — or set `onlySensitiveRoutes: false` to require throttling on
+every route.
+
+### `no-missing-validation-pipe` defaults to what a global pipe cannot save
+
+5 of the 8 real applications we measured register a global `ValidationPipe`, and
+a global pipe validates `@Body() dto: CreateUserDto` perfectly well. By default
+this rule reports only shapes with **no runtime metatype to validate against** —
+a missing annotation, `any`, `unknown`, `object`, an inline type literal. Set
+`requireExplicitPipe: true` to demand a per-route pipe as well.
+
+### The two validation-pipe rules do not overlap
+
+They ask different questions about the same pipe:
+
+|          | `no-missing-validation-pipe`                                 | `require-validation-pipe-whitelist`                |
+| -------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| Question | is this input _validatable at all_?                          | does the pipe _strip what the DTO never declared_? |
+| Looks at | the handler parameter's type                                 | the `ValidationPipe` construction                  |
+| Fires on | `@Body() payload` (no type, `any`, an inline object literal) | `new ValidationPipe()` without `whitelist: true`   |
+| CWE      | CWE-20                                                       | CWE-915 (mass assignment)                          |
+
+A correctly typed DTO still admits mass assignment without `whitelist: true`, and
+a whitelisted pipe still cannot validate an `any`. Both are needed.
+
+### `no-permissive-cors` reports the credentialed wildcard only
+
+`origin: '*'` alone is not reported. Browsers refuse to send cookies to a
+wildcard origin, so a public read-only API can set it safely — and flagging it
+would make the rule noise. What is reported is a wildcard or reflected origin
+**with `credentials: true`**, which switches off same-origin protection for
+every site the victim visits. A function `origin` callback is never reported: it
+is the documented way to validate against an allow-list.
+
+### Composed validator decorators count as validation
+
+If your project wraps class-validator (`@StringField()`,
+`@NumberFieldOptional()`), `require-class-validator` recognises the
+`*Field`/`*FieldOptional` convention. Anything else goes in
+`validatorDecorators: ['MyCheck']`.
+
+Note that bare `@Field()` is **not** treated as validation — that is
+`@nestjs/graphql`'s schema decorator, and treating it as a validator made every
+TypeORM entity look like a validated DTO.
 
 ### Alternative: Use Skip Decorators
 
@@ -133,20 +191,24 @@ The rules recognize common "bypass" decorators for intentionally unprotected end
 @SkipThrottle()  // @nestjs/throttler built-in
 ```
 
-### Where rate limiting is reported
+### 🔮 Future: Cross-File Global Detection (Planned)
 
-`require-throttler` reports **once, on the root module** (`AppModule`, or any
-`@Module` class in `app.module.ts`) when no `ThrottlerModule` is configured
-anywhere in the project. Rate limiting is adopted with one module registration,
-so reporting it on every route described a one-line fix as dozens of errors.
+We're planning dedicated rules to **verify** global configuration exists:
+
+- `require-global-guards` → Ensures `main.ts` contains `app.useGlobalGuards()`
+- `require-global-validation-pipe` → Ensures `main.ts` contains `app.useGlobalPipes()`
+- `require-global-throttler` → Ensures `app.module.ts` imports `ThrottlerModule`
+
+This will enable a "trust but verify" approach for teams using global configuration.
 
 ---
 
 ## 📦 Compatibility
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
+
+| Package | Version                           |
+| :------ | :-------------------------------- |
+| ESLint  | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0`                        |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
@@ -154,46 +216,53 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 
 **Legend**
 
-| Icon | Description |
-| :---: | :--- |
-| 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set to warn in recommended preset. |
-| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-| 💡 | **Suggestions**: Providing code suggestions in IDE. |
-| 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
+| Icon | Description                                                               |
+| :--: | :------------------------------------------------------------------------ |
+|  💼  | **Recommended**: Included in the recommended preset.                      |
+|  ⚠️  | **Warns**: Set to warn in recommended preset.                             |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option.        |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                       |
+|  🚫  | **Deprecated**: This rule is deprecated.                                  |
+|  🟢  | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier.                |
+|  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+|  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-489 |  |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
-| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  |  |  |  |  |
-| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-284 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  |  |  |  |  |
+
+| Rule                                                                                                                                                                                                                              |   CWE   |  OWASP   | CVSS | Description                                                                                                  | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :----------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)               | CWE-489 |          |      | Identifies potential debug, administration, or testing endpoints that are often left exposed in production…  | 🟢  |     |     |     |     |     |
+| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                 | CWE-200 | A01:2021 |      | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not…  | 🟢  |     |     |     |     |     |
+| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)               | CWE-20  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  |     |     |     |     |     |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                               | CWE-942 | A05:2021 |      | This rule detects CORS configured to reflect any origin while allowing credentials, which lets any website…  | 🟢  |     |     |     |     |     |
+| [no-res-bypass-serialization](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-res-bypass-serialization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)             | CWE-200 | A01:2021 |      | This rule detects route handlers that inject @Res() without passthrough and then write an object, which sil… | 🟢  |     |     |     |     |     |
+| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                     | CWE-20  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  |     |     |     |     |     |
+| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                                       | CWE-284 | A01:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  | 💼  |     |     |     |     |
+| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                                 | CWE-770 | A05:2021 |      | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢  |     |     |     |     |     |
+| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-915 | A03:2021 |      | This rule detects ValidationPipe instances that do not set whitelist, which lets a request set DTO properti… | 🟢  |     |     |     |     |     |
+
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
-| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                                           |
+| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.                            |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.                                 |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security)      | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.                                        |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention.                           |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.                                  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.                                   |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.                                     |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)   | MongoDB security best practices.                                      |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening.                                     |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.                               |
 
 <!-- INTERLACE:STAR_CTA:START -->
+
 ## ⭐ Support & follow
 
 If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
@@ -208,8 +277,4 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security"><img src="https://eslint.interlace.tools/images/og-nestjs-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
-</p>
-
-<p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>

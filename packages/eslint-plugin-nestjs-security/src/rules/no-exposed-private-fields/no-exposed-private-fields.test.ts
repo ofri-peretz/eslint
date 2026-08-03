@@ -1,7 +1,7 @@
 /**
  * Tests for no-exposed-private-fields rule
  * Security: CWE-200 (Exposure of Sensitive Information)
- * 
+ *
  * Edge cases to reveal false positives/negatives:
  * - Entity classes with @Entity decorator
  * - DTO classes with Dto/Entity/Model/Schema suffix
@@ -161,15 +161,13 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-        // DTO with exposed secret — opt-in via includeDtos (a DTO field is a
-        // declared contract; see the regression block at the bottom of this file)
+        // Response DTO with exposed secret
         {
           code: `
-            class UserDto {
+            class UserResponseDto {
               secret: string;
             }
           `,
-          options: [{ includeDtos: true }],
           errors: [{ messageId: 'exposedField' }],
         },
         // Entity suffix class
@@ -220,38 +218,7 @@ describe('no-exposed-private-fields', () => {
 
   describe('Invalid Code - Decorated Classes', () => {
     ruleTester.run('invalid - decorated classes', noExposedPrivateFields, {
-      valid: [
-        // @InputType (GraphQL) is a *request* contract — the GraphQL
-        // equivalent of a DTO — so it follows `includeDtos`, which is off
-        // by default. A LoginInput must carry a password.
-        {
-          code: `
-            @InputType()
-            class LoginInput {
-              password: string;
-            }
-          `,
-        },
-        // @ArgsType (GraphQL), same reasoning
-        {
-          code: `
-            @ArgsType()
-            class ResetPasswordArgs {
-              token: string;
-            }
-          `,
-        },
-        // The decorator outranks the class name: an @InputType is an input
-        // even when it is named like an entity.
-        {
-          code: `
-            @InputType()
-            class UserEntity {
-              password: string;
-            }
-          `,
-        },
-      ],
+      valid: [],
       invalid: [
         // @Schema (Mongoose)
         {
@@ -273,8 +240,7 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-        // @InputType (GraphQL) with includeDtos: true — the opt-in restores
-        // the older, noisier behaviour for request contracts.
+        // @InputType (GraphQL)
         {
           code: `
             @InputType()
@@ -282,18 +248,6 @@ describe('no-exposed-private-fields', () => {
               secretToken: string;
             }
           `,
-          options: [{ includeDtos: true }],
-          errors: [{ messageId: 'exposedField' }],
-        },
-        // @ArgsType (GraphQL) with includeDtos: true
-        {
-          code: `
-            @ArgsType()
-            class ResetPasswordArgs {
-              token: string;
-            }
-          `,
-          options: [{ includeDtos: true }],
           errors: [{ messageId: 'exposedField' }],
         },
       ],
@@ -342,102 +296,128 @@ describe('no-exposed-private-fields', () => {
       ],
     });
   });
+});
 
-  describe('DTOs (regression: 44 findings on ack, 22 on brocoders)', () => {
-    ruleTester.run('DTO fields are declared contracts', noExposedPrivateFields, {
-      valid: [
-        // brocoders: auth/dto/login-response.dto.ts — a login response MUST
-        // carry a token; flagging it is a contradiction.
-        {
-          code: `
-            class LoginResponseDto {
-              @ApiProperty()
-              token: string;
-
-              @ApiProperty()
-              refreshToken: string;
-            }
-          `,
-        },
-        // brocoders: auth/dto/auth-reset-password.dto.ts — a password reset
-        // request MUST carry a password.
-        {
-          code: `
-            class AuthResetPasswordDto {
-              @IsNotEmpty()
-              password: string;
-
-              @IsNotEmpty()
-              hash: string;
-            }
-          `,
-        },
-        // ack: app/dtos/app.env.dto.ts — environment validation DTO, never
-        // serialized to a client.
-        {
-          code: `
-            class AppEnvDto {
-              @IsString()
-              AUTH_JWT_ACCESS_TOKEN_SECRET_KEY: string;
-
-              @IsString()
-              DATABASE_PASSWORD: string;
-            }
-          `,
-        },
-        // ack: modules/user/dtos/user.dto.ts
-        {
-          code: `
-            class UserDto {
-              @Expose()
-              passwordExpired: Date;
-            }
-          `,
-        },
+// Regression locks for the token-aligned matcher and the skip rules.
+ruleTester.run('no-exposed-private-fields (matching)', noExposedPrivateFields, {
+  valid: [
+    // A boolean flag says *whether* something is secret; it is not the secret.
+    `
+      class EnvironmentVariableResponseDto {
+        @ApiProperty()
+        isSecret: boolean;
+        hasToken: boolean;
+        requiresPassword;
+      }
+    `,
+    // A login/refresh endpoint returns a token by definition.
+    `
+      class RefreshResponseDto {
+        @ApiProperty()
+        token: string;
+        @ApiProperty()
+        refreshToken: string;
+      }
+    `,
+    `
+      class LoginResponsePayload {
+        accessToken: string;
+      }
+    `,
+    // A request DTO must be able to carry a password: that is inbound payload,
+    // not a leak. Matching every `*Dto` reported every login form in every repo.
+    `
+      class AuthEmailLoginDto {
+        email: string;
+        password: string;
+      }
+    `,
+    `
+      class LoginPayloadDto {
+        accessToken: string;
+      }
+    `,
+    // FP-2: substring matches are not word matches.
+    `
+      @Entity()
+      class OrderEntity {
+        shippingAddress: string;
+        hashtags: string[];
+        pinnedAt: Date;
+        tokenizer: string;
+      }
+    `,
+    // FP-3: a timestamp about a credential is not the credential.
+    `
+      @Entity()
+      class UserEntity {
+        passwordChangedAt: Date;
+        tokenExpiresAt: Date;
+      }
+    `,
+    // Statics are class constants, not instance payload.
+    `
+      @Entity()
+      class UserEntity {
+        static readonly PASSWORD_MIN = 8;
+        static secret = 'build-time';
+      }
+    `,
+    // A class-level @Exclude() (excludeAll strategy) covers every field.
+    `
+      @Entity()
+      @Exclude()
+      class SecretEntity {
+        password: string;
+      }
+    `,
+    // Anonymous class expression with no entity decorator.
+    `const C = class { password: string; };`,
+    // Computed key has no static name.
+    `
+      @Entity()
+      class TokenEntity {
+        [dynamicKey]: string;
+      }
+    `,
+  ],
+  invalid: [
+    // Qualifier-prefixed credentials still match.
+    {
+      code: `
+        @Entity()
+        class UserEntity {
+          hashedPassword: string;
+          userApiKey: string;
+          securityPin: number;
+        }
+      `,
+      errors: [
+        { messageId: 'exposedField' },
+        { messageId: 'exposedField' },
+        { messageId: 'exposedField' },
       ],
-      invalid: [
-        // TRUE POSITIVE (brocoders): TypeORM entity exposing the password hash
-        {
-          code: `
-            @Entity({ name: 'user' })
-            export class UserEntity extends EntityRelationalHelper {
-              @Column({ nullable: true })
-              password?: string;
-            }
-          `,
-          errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
-        },
-        // TRUE POSITIVE (brocoders): mongoose schema exposing the session hash
-        {
-          code: `
-            @Schema({ timestamps: true })
-            export class SessionSchemaClass extends EntityDocumentHelper {
-              @Prop()
-              hash: string;
-            }
-          `,
-          errors: [{ messageId: 'exposedField', data: { field: 'hash' } }],
-        },
-        // Entity suffix without a decorator is still tracked
-        {
-          code: `
-            export class TokenEntity {
-              refreshToken: string;
-            }
-          `,
-          errors: [{ messageId: 'exposedField', data: { field: 'refreshToken' } }],
-        },
-        // includeDtos: true restores the old, noisier behaviour
-        {
-          code: `
-            class LoginResponseDto {
-              token: string;
-            }
-          `,
-          options: [{ includeDtos: true }],
-          errors: [{ messageId: 'exposedField', data: { field: 'token' } }],
-        },
-      ],
-    });
-  });
+    },
+    // snake_case is tokenized the same way.
+    {
+      code: `
+        @Entity()
+        class UserEntity {
+          refresh_token: string;
+        }
+      `,
+      errors: [{ messageId: 'exposedField' }],
+    },
+    // Custom terms extend the defaults.
+    {
+      code: `
+        @Entity()
+        class UserEntity {
+          internalNote: string;
+        }
+      `,
+      options: [{ sensitivePatterns: ['internalNote'] }],
+      errors: [{ messageId: 'exposedField' }],
+    },
+  ],
 });

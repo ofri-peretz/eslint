@@ -13,8 +13,23 @@
  * @see https://docs.nestjs.com/techniques/serialization
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { getDecoratorNames, hasDecoratorNamed } from '../../utils/decorators';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import {
+  enclosingClass,
+  hasDecorator,
+  isTestFile,
+  memberName,
+  type ClassNode,
+} from '../../utils/nest-ast';
+import {
+  compileSensitiveTerms,
+  isSensitiveName,
+} from '../../utils/sensitive-names';
 
 type MessageIds = 'exposedField' | 'useExcludeDecorator';
 
@@ -23,72 +38,42 @@ export interface Options {
   allowInTests?: boolean;
   /** Custom sensitive field patterns. Default: password, secret, token, etc. */
   sensitivePatterns?: string[];
-  /**
-   * Also check DTO classes. A DTO listing `token` or `password` is an explicit
-   * author decision (`LoginResponseDto` *must* carry a token; a
-   * `ResetPasswordDto` *must* carry a password), whereas a persistence entity
-   * exposing the same field leaks it through serialization by accident.
-   * Default: false
-   */
-  includeDtos?: boolean;
 }
 
 type RuleOptions = [Options?];
 
-/** Class decorators that mark a persistence entity / serialized domain model. */
-const ENTITY_DECORATORS: ReadonlySet<string> = new Set([
-  'Entity',
-  'Schema',
-  'Table',
-  'ObjectType',
-  'Model',
-]);
-
 /**
- * Class decorators that mark a GraphQL **input** object.
+ * Field names that must not be serialized into API responses.
  *
- * `@InputType()` / `@ArgsType()` describe what a client *sends*, which is the
- * GraphQL equivalent of a request DTO — a `LoginInput` must carry a `password`
- * and a `ResetPasswordArgs` must carry a `token`. Tracking them by default
- * contradicted the DTO exclusion (`Input$` is already in `DTO_NAME`), so they
- * follow `includeDtos` like every other request contract. `@ObjectType()`
- * stays in the entity set: that is the *response* side, where an accidental
- * `password` field really does leak.
+ * These are matched token-wise, not as substrings — see
+ * `utils/sensitive-names`. Substring matching flagged `shippingAddress`
+ * (contains "pin") and `hashtags` (contains "hash").
  */
-const DTO_DECORATORS: ReadonlySet<string> = new Set(['InputType', 'ArgsType']);
-
-/** Class-name suffixes that mark a persistence entity / domain model. */
-const ENTITY_NAME = /Entity$|Schema$|Model$|Document$|Table$/;
-
-/** Class-name suffixes that mark a data-transfer object. */
-const DTO_NAME = /Dto$|Request$|Response$|Input$|Output$|Payload$/;
-
-// Default sensitive field patterns
-const DEFAULT_SENSITIVE_PATTERNS = [
+const DEFAULT_SENSITIVE_TERMS = [
   'password',
+  'passwordHash',
+  'passwd',
+  'pwd',
   'secret',
+  'clientSecret',
   'token',
-  'apiKey',
-  'apikey',
-  'api_key',
-  'accessKey',
-  'access_key',
-  'secretKey',
-  'secret_key',
-  'privateKey',
-  'private_key',
+  'accessToken',
   'refreshToken',
-  'refresh_token',
+  'sessionToken',
+  'apiKey',
+  'accessKey',
+  'secretKey',
+  'privateKey',
   'salt',
-  'hash',
   'ssn',
   'creditCard',
-  'credit_card',
   'cardNumber',
-  'card_number',
   'cvv',
+  'cvc',
   'pin',
   'otp',
+  'mfaSecret',
+  'totpSecret',
 ];
 
 export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
@@ -109,7 +94,8 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-200',
         owasp: 'A01:2021',
         cvss: 7.5,
-        description: 'Sensitive field "{{field}}" may be exposed in API responses',
+        description:
+          'Sensitive field "{{field}}" may be exposed in API responses',
         severity: 'HIGH',
         fix: 'Add @Exclude() decorator or use class-transformer to exclude from responses',
         documentationLink: 'https://docs.nestjs.com/techniques/serialization',
@@ -117,10 +103,12 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
       useExcludeDecorator: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use Exclude Decorator',
-        description: 'Use @Exclude() from class-transformer to hide sensitive fields',
+        description:
+          'Use @Exclude() from class-transformer to hide sensitive fields',
         severity: 'LOW',
         fix: 'import { Exclude } from "class-transformer"; @Exclude() fieldName: string;',
-        documentationLink: 'https://github.com/typestack/class-transformer#excludeexpose',
+        documentationLink:
+          'https://github.com/typestack/class-transformer#excludeexpose',
       }),
     },
     schema: [
@@ -128,77 +116,111 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          sensitivePatterns: { type: 'array', items: { type: 'string' }, default: [] },
-          includeDtos: { type: 'boolean', default: false },
+          sensitivePatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true, sensitivePatterns: [], includeDtos: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-      allowInTests = true,
-      sensitivePatterns = [],
-      includeDtos = false,
-    } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+  defaultOptions: [{ allowInTests: true, sensitivePatterns: [] }],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const { allowInTests = true, sensitivePatterns = [] } = options as Options;
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && isTestFile(context.filename)) {
       return {};
     }
 
-    // Combine default and custom patterns
-    const allPatterns = [...DEFAULT_SENSITIVE_PATTERNS, ...sensitivePatterns];
-    const patternRegex = new RegExp(allPatterns.join('|'), 'i');
+    const terms = compileSensitiveTerms([
+      ...DEFAULT_SENSITIVE_TERMS,
+      ...sensitivePatterns,
+    ]);
+
+    /** Decorators that mark a class as something serialized back to clients. */
+    const ENTITY_DECORATORS = new Set([
+      'Entity',
+      'Schema',
+      'ObjectType',
+      'InputType',
+      'ArgsType',
+      'ApiProperty',
+    ]);
 
     /**
-     * Check if decorators include @Exclude
-     */
-    function hasExcludeDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      return getDecoratorNames(decorators).includes('Exclude');
-    }
-
-    /**
-     * Is this a persistence entity / serialized domain model?
+     * Classes whose purpose is to deliver a credential to the caller.
      *
-     * Scoped deliberately: an entity that names a `password` column and never
-     * says `@Exclude()` leaks it the first time the object is returned from a
-     * controller. A DTO with the same field name is a declared contract.
+     * A login/refresh/token endpoint returns a token by definition — flagging
+     * `RefreshResponseDto.refreshToken` is noise, not a finding. The risk this
+     * rule exists for is a credential riding along on an *unrelated* payload.
      */
-    function isTrackedClass(node: TSESTree.ClassDeclaration): boolean {
-      if (hasDecoratorNamed(node.decorators, ENTITY_DECORATORS)) return true;
-      // A GraphQL input object is a request contract, not a persisted row —
-      // the decorator outranks the class name here.
-      if (hasDecoratorNamed(node.decorators, DTO_DECORATORS)) return includeDtos;
-      const name = node.id?.name;
-      if (name === undefined) return false;
-      if (ENTITY_NAME.test(name)) return true;
-      return includeDtos && DTO_NAME.test(name);
+    const CREDENTIAL_DELIVERY =
+      /(Login|Auth|Refresh|Token|Session|Credential)\w*(Response|ResponseDto|Payload|Result)$/;
+
+    /**
+     * Whether the class is a *response* shape.
+     *
+     * Deliberately excludes plain `*Dto`. A `LoginDto` or `AuthEmailLoginDto`
+     * must carry a `password` field — that is inbound payload, not a leak, and
+     * matching on `Dto$` reported every login form in every real repository.
+     * Only entities, persisted models and explicitly response-named classes
+     * are serialized back to clients.
+     */
+    function isEntityOrDto(cls: ClassNode): boolean {
+      const name = cls.id?.name;
+      if (name && CREDENTIAL_DELIVERY.test(name)) return false;
+      if (hasDecorator(cls.decorators, ENTITY_DECORATORS)) return true;
+      return name
+        ? /(Entity|Model|Schema|Response|ResponseDto|Payload|View)$/.test(name)
+        : false;
     }
 
-    // Track if we're in an entity class
-    let isInEntityOrDto = false;
+    /**
+     * Whether a member is a boolean flag rather than a credential.
+     *
+     * `isSecret: boolean` on an environment-variable response says *whether* a
+     * value is secret; it is not the secret. Both the declared type and the
+     * predicate-style prefix are checked, since flags are often untyped.
+     */
+    function isFlag(
+      node: TSESTree.PropertyDefinition,
+      propName: string,
+    ): boolean {
+      // Third-person forms matter: `requiresPassword` is as much a flag as
+      // `requirePassword`. The uppercase boundary keeps `hashPassword` out.
+      if (
+        /^(is|are|has|have|can|should|must|allows?|enables?|requires?|uses?|supports?|no)[A-Z]/.test(
+          propName,
+        )
+      ) {
+        return true;
+      }
+      const annotation = node.typeAnnotation?.typeAnnotation.type;
+      return annotation === AST_NODE_TYPES.TSBooleanKeyword;
+    }
 
     return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isInEntityOrDto = isTrackedClass(node);
-      },
-
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
-        if (!isInEntityOrDto) return;
+        const cls = enclosingClass(node);
+        if (!cls || !isEntityOrDto(cls)) return;
 
-        // Get property name
-        const propName =
-          node.key.type === AST_NODE_TYPES.Identifier ? node.key.name : null;
+        // Statics are class constants, never part of an instance's payload.
+        if (node.static) return;
+
+        const propName = memberName(node);
         if (!propName) return;
 
-        // Check if field name matches sensitive patterns
-        if (!patternRegex.test(propName)) return;
+        if (isFlag(node, propName)) return;
+        if (!isSensitiveName(propName, terms)) return;
 
-        // Check if already has @Exclude
-        if (hasExcludeDecorator(node.decorators)) return;
+        // Already excluded, on the field or class-wide (excludeAll strategy).
+        if (hasDecorator(node.decorators, 'Exclude')) return;
+        if (hasDecorator(cls.decorators, 'Exclude')) return;
 
         context.report({
           node,
