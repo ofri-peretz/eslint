@@ -1,5 +1,4 @@
 ---
-'@interlace/eslint-devkit': minor
 'eslint-plugin-pg': patch
 ---
 

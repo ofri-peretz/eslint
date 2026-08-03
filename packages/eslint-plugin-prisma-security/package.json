@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-prisma-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-prisma-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-prisma-security"
   },
   "bugs": {
@@ -93,6 +93,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }
