@@ -1,14 +1,18 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
   "schemaVersion": 1,
+  "timestamp": "2026-08-02T14:28:42.333Z",
   "toolchain": {
-    "node": "v18.16.1",
+    "node": "v24.12.0",
+    "npm": "11.16.0",
     "eslint": "10.7.0",
     "os": "darwin-arm64",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-import-next": "2.3.9"
+    "platform": "darwin-arm64",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go"
   },
   "benchmark": "ILB-Perf \u2014 no-cycle across graph shapes",
-  "timestamp": "2026-08-02T14:28:42.333Z",
   "iterations": 3,
   "environment": {
     "node": "v24.12.0",
