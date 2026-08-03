@@ -112,6 +112,24 @@ describe('error page lock', () => {
     // It replaces the root layout, so without these the page renders nothing.
     expect(globalErrorSource).toContain('<html');
     expect(globalErrorSource).toContain('<body');
+
+    // And its own <head>: Next injects nothing here, so a missing viewport
+    // meta silently drops mobile browsers back to ~980px desktop-zoom
+    // rendering — a broken-looking page on exactly the devices least able to
+    // recover from one.
+    expect(globalErrorSource).toContain('<head');
+    // Two independent checks, not one regex: requiring `name` to precede
+    // `content` in the same tag would go quietly false-negative the first
+    // time a formatter reorders the props.
+    expect(globalErrorSource).toContain('name="viewport"');
+    expect(globalErrorSource).toContain('width=device-width');
+  });
+
+  it('global-error.tsx keeps the skip-link target', () => {
+    // error.tsx and not-found.tsx both carry id="main"; dropping it here would
+    // strand keyboard and screen-reader users on the one page they most need
+    // to escape.
+    expect(globalErrorSource).toContain('id="main"');
   });
 
   it('global-error.tsx stays dependency-free apart from its stylesheet', () => {

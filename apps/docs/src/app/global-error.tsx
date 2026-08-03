@@ -24,8 +24,17 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
+      {/* Next injects nothing here: global-error replaces the root layout,
+          which is what normally supplies these. Without the viewport meta,
+          mobile browsers fall back to ~980px desktop-zoom rendering. */}
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Something went wrong</title>
+      </head>
       <body className="bg-fd-background text-fd-foreground antialiased">
         <main
+          id="main"
           data-slot="global-error-page"
           className="mx-auto flex min-h-screen w-full max-w-prose flex-col items-center justify-center px-6 py-24 text-center"
         >
