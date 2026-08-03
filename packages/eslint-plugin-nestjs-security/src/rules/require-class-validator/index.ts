@@ -27,6 +27,7 @@ import {
   decoratorName,
   decoratorSource,
   moduleRole,
+  isRelativeOrLocal,
   isTestFile,
   memberName,
   type ClassNode,
@@ -42,6 +43,17 @@ export interface Options {
    * class-validator into their own decorators.
    */
   validatorDecorators?: string[];
+  /**
+   * Also report GraphQL `@InputType()` / `@ArgsType()` classes. Default: false.
+   *
+   * The GraphQL schema already enforces scalar types and nullability on every
+   * input field, so the type-confusion this rule guards against is handled
+   * before a resolver runs. What class-validator adds there is *semantic*
+   * validation — length, format, enum — which is worth having but is a
+   * different, opt-in claim. Left on, this shape was 1,449 of 1,773 findings
+   * across the measured codebases, most of them generated filter inputs.
+   */
+  checkGraphqlInputs?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -208,6 +220,7 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [],
           },
+          checkGraphqlInputs: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -218,8 +231,11 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true, validatorDecorators = [] } =
-      options as Options;
+    const {
+      allowInTests = true,
+      validatorDecorators = [],
+      checkGraphqlInputs = false,
+    } = options as Options;
     const origins = collectImportOrigins(context.sourceCode.ast);
     const extraValidators = new Set(validatorDecorators);
 
@@ -233,6 +249,29 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
       'ArgsType',
       'Validated',
     ]);
+
+    /** GraphQL's own input markers, as opposed to `@Validated`. */
+    const GRAPHQL_INPUT_DECORATORS = new Set(['InputType', 'ArgsType']);
+
+    /**
+     * Whether the class is a GraphQL input type rather than a REST DTO.
+     *
+     * Judged by origin where the import resolves: `@InputType` from
+     * `@nestjs/graphql` is definitive. A project that re-exports it through its
+     * own barrel keeps the name, so an unresolved or project-local origin falls
+     * back to the name — neither spelling is used for anything else in Nest.
+     */
+    function isGraphqlInput(cls: ClassNode): boolean {
+      return cls.decorators.some((d) => {
+        if (!GRAPHQL_INPUT_DECORATORS.has(decoratorName(d))) return false;
+        const source = decoratorSource(d, origins);
+        return (
+          !source ||
+          moduleRole(source) === 'graphql' ||
+          isRelativeOrLocal(source)
+        );
+      });
+    }
 
     /**
      * Classes Nest instantiates itself. A provider is wired by the injector,
@@ -353,6 +392,7 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
     function dtoKind(cls: ClassNode): DtoKind {
       // Checked first: a provider can carry a DTO-ish name but never is one.
       if (hasDecorator(cls.decorators, PROVIDER_DECORATORS)) return null;
+      if (!checkGraphqlInputs && isGraphqlInput(cls)) return null;
       if (hasDecorator(cls.decorators, DTO_CLASS_DECORATORS)) return 'declared';
 
       const name = cls.id?.name;

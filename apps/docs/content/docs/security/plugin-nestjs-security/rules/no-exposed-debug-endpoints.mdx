@@ -1,11 +1,6 @@
 ---
-title: no-exposed-debug-endpoints
-description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
-tags: ['security', 'nestjs']
-category: security
-severity: medium
-cwe: CWE-489
-autofix: false
+title: "no-exposed-debug-endpoints"
+description: "title: no-exposed-debug-endpoints"
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,7 +9,19 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
+---
+title: no-exposed-debug-endpoints
+description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
+tags: ['security', 'nestjs']
+category: security
+severity: medium
+cwe: CWE-489
+autofix: false
+---
+
 > **Keywords:** NestJS, debug endpoint, admin path, exposed routes, @Get, @Post, decoractor security, CWE-489, OWASP M8, test endpoints, information disclosure, unauthorized access
+
+Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
 
 **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10 M8](https://owasp.org/www-project-mobile-top-10/)
@@ -30,7 +37,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 | **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug) |
 | **Severity**      | 🟠 HIGH (security misconfiguration)                                       |
 | **Auto-Fix**      | ❌ Not available                                                          |
-| **Category**   | Security |
+| **Category**      | Security                                                                  |
 | **ESLint MCP**    | ✅ Optimized                                                              |
 | **Best For**      | NestJS Controllers                                                        |
 

@@ -525,6 +525,28 @@ const FIXTURES: Fixture[] = [
     `,
     expected: {},
   },
+  {
+    from: 'amplication',
+    what: 'a generated GraphQL filter input with no class-validator decorators',
+    // The GraphQL schema enforces scalar types and nullability before a
+    // resolver runs, so the type-confusion require-class-validator guards
+    // against is already handled. This shape alone was 1,449 of 1,773 corpus
+    // findings — almost all generated filter inputs. Opt in with
+    // `checkGraphqlInputs` for the semantic checks GraphQL does not do.
+    code: `
+      import { Field, InputType } from '@nestjs/graphql';
+
+      @InputType()
+      export class ResourceWhereInput {
+        @Field(() => String, { nullable: true })
+        id?: string;
+
+        @Field(() => String, { nullable: true })
+        name?: string;
+      }
+    `,
+    expected: {},
+  },
 ];
 
 describe('real-world regression lock', () => {

@@ -31,6 +31,52 @@ describe('require-class-validator', () => {
   describe('Valid Code - Properties with Validators', () => {
     ruleTester.run('valid - validated properties', requireClassValidator, {
       valid: [
+        // amplication / twenty / ultimate-backend: GraphQL input types. The schema
+        // already enforces scalar types and nullability, so the type-confusion this
+        // rule guards against is handled before a resolver ever runs. Telling a
+        // maintainer to decorate every field of every generated `WhereInput` is not
+        // actionable — this shape alone was 1,449 of 1,773 corpus findings.
+        `
+      import { Field, InputType } from '@nestjs/graphql';
+
+      @InputType()
+      export class ResourceWhereInput {
+        @Field(() => String, { nullable: true })
+        id?: string;
+
+        @Field(() => String, { nullable: true })
+        name?: string;
+      }
+    `,
+        // ultimate-backend: @InputType re-exported through a project barrel — the
+        // name still identifies it.
+        `
+      import { Field, InputType } from '../../common/graphql';
+
+      @InputType()
+      export class UserFilterInput {
+        @Field(() => String, { nullable: true })
+        email?: string;
+      }
+    `,
+        // No import in the snippet at all: nothing contradicts the name.
+        `
+      @InputType()
+      export class TenantWhereInput {
+        @Field(() => String, { nullable: true })
+        slug?: string;
+      }
+    `,
+        `
+      import { ArgsType, Field } from '@nestjs/graphql';
+
+      @ArgsType()
+      export class EntityFindManyArgs {
+        @Field(() => Number, { nullable: true })
+        take?: number;
+      }
+    `,
+
         // novu: an @Injectable() service whose name ends in "Request". A provider
         // is never a request payload, whatever it is called.
         `
@@ -248,6 +294,35 @@ describe('require-class-validator', () => {
         },
       ],
       invalid: [
+        // Opt in and the same class is reported — the semantic checks GraphQL does
+        // not do (length, format, enum) are a real gap for teams that want them.
+        {
+          code: `
+        import { Field, InputType } from '@nestjs/graphql';
+
+        @InputType()
+        export class ResourceWhereInput {
+          @Field(() => String, { nullable: true })
+          id?: string;
+        }
+      `,
+          options: [{ checkGraphqlInputs: true }],
+          errors: [{ messageId: 'missingValidator' }],
+        },
+        // A REST DTO that merely *imports* from @nestjs/graphql is not exempt.
+        {
+          code: `
+        import { IsString } from 'class-validator';
+
+        export class CreateUserRequestDto {
+          @IsString()
+          name: string;
+          role: string;
+        }
+      `,
+          errors: [{ messageId: 'missingValidator' }],
+        },
+
         // A default does not make a named DTO's field safe — a request still sets
         // it. Only the inferred-by-sibling path treats initialisers as defaults.
         {

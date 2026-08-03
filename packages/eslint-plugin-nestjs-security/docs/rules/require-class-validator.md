@@ -71,6 +71,23 @@ class CreateUserDto {
 }
 ```
 
+## GraphQL input types
+
+`@InputType()` and `@ArgsType()` classes are **not** reported by default. The
+GraphQL schema already enforces scalar types and nullability on every input
+field, so the type-confusion this rule guards against is handled before a
+resolver runs. What class-validator adds there is _semantic_ validation —
+length, format, enum — which is worth having but is a separate, opt-in claim.
+
+Measured across ten NestJS codebases, GraphQL inputs were **1,449 of 1,773**
+findings, the overwhelming majority of them generated `*WhereInput` /
+`*OrderByInput` filter classes where per-field decorators are not actionable.
+
+```js
+// Report them too:
+'nestjs-security/require-class-validator': ['warn', { checkGraphqlInputs: true }]
+```
+
 ## Options
 
 ```typescript

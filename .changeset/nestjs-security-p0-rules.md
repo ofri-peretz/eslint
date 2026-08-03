@@ -67,15 +67,25 @@ findings**. Notable fixes:
 - `no-exposed-private-fields` no longer flags boolean flags (`isSecret`) or
   credential-delivery responses (`RefreshResponseDto.refreshToken`).
 
+### GraphQL input types are out of scope by default
+
+`require-class-validator` no longer reports `@InputType()` / `@ArgsType()`
+classes. The GraphQL schema already enforces scalar types and nullability on
+every input field, so the type-confusion the rule guards against is handled
+before a resolver runs; what class-validator adds there is semantic validation
+(length, format, enum), which is a separate, opt-in claim. This was **1,449 of
+1,773** findings across the measured codebases, overwhelmingly generated
+`*WhereInput` filter classes. Enable `checkGraphqlInputs: true` to report them.
+
 ### New options
 
-`authDecorators`, `publicRoutes`, `validatorDecorators`, `requireExplicitPipe`,
-`onlySensitiveRoutes`, plus `skipRoutes` and `requiredGuards`, which were
-declared but not honoured before.
+`authDecorators`, `publicRoutes`, `validatorDecorators`, `checkGraphqlInputs`,
+`requireExplicitPipe`, `onlySensitiveRoutes`, plus `skipRoutes` and
+`requiredGuards`, which were declared but not honoured before.
 
 ### Tests
 
-513 tests at 100% statement / branch / function / line coverage, including a
+519 tests at 100% statement / branch / function / line coverage, including a
 detection contract (every rule must still fire on the vulnerability it exists
 for, and stay silent on the minimally-different safe twin) and a regression lock
 pinning exact findings for shapes taken from the measured codebases.
