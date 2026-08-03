@@ -32,6 +32,7 @@ import {
   memberName,
   type ClassNode,
 } from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
 
 type MessageIds = 'missingValidator' | 'addValidator';
 
@@ -54,6 +55,17 @@ export interface Options {
    * across the measured codebases, most of them generated filter inputs.
    */
   checkGraphqlInputs?: boolean;
+  /**
+   * Stay quiet when the project registers a ValidationPipe with
+   * `whitelist: true`, which strips undecorated properties. Default: true
+   */
+  detectWhitelistingPipe?: boolean;
+  /**
+   * Treat the project as whitelisting without scanning for it — for setups the
+   * static scan cannot see (options built at runtime, a pipe registered in a
+   * library). Mirrors `assumeGlobalThrottler` on require-throttler. Default: false
+   */
+  assumeWhitelistingPipe?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -221,6 +233,8 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
             default: [],
           },
           checkGraphqlInputs: { type: 'boolean', default: false },
+          detectWhitelistingPipe: { type: 'boolean', default: true },
+          assumeWhitelistingPipe: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -235,7 +249,23 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
       allowInTests = true,
       validatorDecorators = [],
       checkGraphqlInputs = false,
+      detectWhitelistingPipe = true,
+      assumeWhitelistingPipe = false,
     } = options as Options;
+    // A global ValidationPipe with `whitelist: true` strips every property the
+    // DTO does not decorate, so an undecorated property never arrives from a
+    // request — it is dead, not unvalidated. Reporting it under a CWE banner is
+    // a false positive, and it fires on exactly the well-configured apps we most
+    // want to keep quiet: brocoders/nestjs-boilerplate sets whitelist and still
+    // drew 5 findings on server-set fields like `provider` and `socialId`.
+    if (assumeWhitelistingPipe) return {};
+    if (
+      detectWhitelistingPipe &&
+      getProjectContext(context).hasWhitelistingValidationPipe
+    ) {
+      return {};
+    }
+
     const origins = collectImportOrigins(context.sourceCode.ast);
     const extraValidators = new Set(validatorDecorators);
 

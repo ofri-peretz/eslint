@@ -74,6 +74,8 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/require-guards': 'error',
   'nestjs-security/no-missing-validation-pipe': 'warn',
   'nestjs-security/require-throttler': 'warn',
+  // Both enter at 'error': each is a narrow, statically-decidable misconfiguration
+  // with no legitimate use, and each was wrong in real apps we measured.
   'nestjs-security/require-validation-pipe-whitelist': 'error',
   'nestjs-security/no-permissive-cors': 'error',
 
@@ -159,10 +161,10 @@ export default plugin;
 export type { Options as RequireGuardsOptions } from './rules/require-guards';
 export type { Options as NoMissingValidationPipeOptions } from './rules/no-missing-validation-pipe';
 export type { Options as RequireThrottlerOptions } from './rules/require-throttler';
-export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
-export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 export type { Options as RequireValidationPipeWhitelistOptions } from './rules/require-validation-pipe-whitelist';
 export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-cors';
+export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
+export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
 
 /**
@@ -172,9 +174,9 @@ export interface AllNestjsSecurityRulesOptions {
   'require-guards'?: import('./rules/require-guards').Options;
   'no-missing-validation-pipe'?: import('./rules/no-missing-validation-pipe').Options;
   'require-throttler'?: import('./rules/require-throttler').Options;
-  'require-class-validator'?: import('./rules/require-class-validator').Options;
-  'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
   'require-validation-pipe-whitelist'?: import('./rules/require-validation-pipe-whitelist').Options;
   'no-permissive-cors'?: import('./rules/no-permissive-cors').Options;
+  'require-class-validator'?: import('./rules/require-class-validator').Options;
+  'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
   'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
 }

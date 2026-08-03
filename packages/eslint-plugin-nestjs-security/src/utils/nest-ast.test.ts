@@ -35,6 +35,9 @@ import {
   memberName,
   superClassName,
   isTestFile,
+  objectProperties,
+  isTrueLiteral,
+  callReceiver,
   HTTP_METHOD_DECORATORS,
   INPUT_DECORATORS,
   type ClassNode,
@@ -503,5 +506,92 @@ describe('isRelativeOrLocal', () => {
     ['@nestjs/common', false],
   ])('%s -> %s', (source, expected) => {
     expect(isRelativeOrLocal(source)).toBe(expected);
+  });
+});
+
+/**
+ * `objectProperties` decides whether a rule may claim a key is *absent*.
+ * Anything it cannot enumerate exactly returns null, so callers abstain rather
+ * than accuse — a spread or a computed key can define the very key in question.
+ */
+describe('objectProperties', () => {
+  const objectAt = (code: string): TSESTree.ObjectExpression => {
+    const ast = parse(`const x = ${code};`, { range: true, loc: true });
+    const decl = ast.body[0] as TSESTree.VariableDeclaration;
+    return decl.declarations[0].init as TSESTree.ObjectExpression;
+  };
+
+  it('enumerates identifier keys', () => {
+    const props = objectProperties(
+      objectAt('{ whitelist: true, transform: 1 }'),
+    );
+    expect([...(props ?? new Map()).keys()]).toEqual([
+      'whitelist',
+      'transform',
+    ]);
+  });
+
+  it('treats a quoted key as the same key', () => {
+    const props = objectProperties(objectAt("{ 'whitelist': true }"));
+    expect(props?.has('whitelist')).toBe(true);
+  });
+
+  it('returns null on a spread — it could supply any key', () => {
+    expect(
+      objectProperties(objectAt('{ transform: true, ...options }')),
+    ).toBeNull();
+  });
+
+  it('returns null on a computed key we cannot evaluate', () => {
+    expect(objectProperties(objectAt('{ [key]: true }'))).toBeNull();
+  });
+
+  it('does not mistake an identifier-shaped computed key for that name', () => {
+    // `{ [whitelist]: true }` reads the *variable* whitelist, and says nothing
+    // about a property called "whitelist".
+    expect(objectProperties(objectAt('{ [whitelist]: true }'))).toBeNull();
+  });
+
+  it('enumerates an empty object', () => {
+    expect(objectProperties(objectAt('{}'))?.size).toBe(0);
+  });
+});
+
+describe('isTrueLiteral', () => {
+  const valueAt = (code: string): TSESTree.Node => {
+    const ast = parse(`const x = ${code};`, { range: true, loc: true });
+    const decl = ast.body[0] as TSESTree.VariableDeclaration;
+    return decl.declarations[0].init as TSESTree.Node;
+  };
+
+  it('accepts only the literal true', () => {
+    expect(isTrueLiteral(valueAt('true'))).toBe(true);
+    expect(isTrueLiteral(valueAt('false'))).toBe(false);
+    expect(isTrueLiteral(valueAt('1'))).toBe(false);
+    expect(isTrueLiteral(valueAt("'true'"))).toBe(false);
+    // A computed value is a decision we cannot evaluate, not a `true`.
+    expect(isTrueLiteral(valueAt('isProduction'))).toBe(false);
+    expect(isTrueLiteral(undefined)).toBe(false);
+  });
+});
+
+describe('callReceiver', () => {
+  const calleeAt = (code: string): TSESTree.Node => {
+    const ast = parse(`${code};`, { range: true, loc: true });
+    const stmt = ast.body[0] as TSESTree.ExpressionStatement;
+    return (stmt.expression as TSESTree.CallExpression).callee;
+  };
+
+  it('walks back through a chain to the root binding', () => {
+    expect(callReceiver(calleeAt('res.json(x)'))?.name).toBe('res');
+    expect(callReceiver(calleeAt('res.status(200).json(x)'))?.name).toBe('res');
+    expect(
+      callReceiver(calleeAt('res.status(200).type("x").send(y)'))?.name,
+    ).toBe('res');
+  });
+
+  it('returns null when the receiver is not a plain binding', () => {
+    expect(callReceiver(calleeAt('this.res.json(x)'))).toBeNull();
+    expect(callReceiver(calleeAt('(await get()).json(x)'))).toBeNull();
   });
 });

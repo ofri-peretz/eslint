@@ -9,6 +9,9 @@
  * - Private/underscore prefixed fields
  * - Non-DTO classes (should not flag)
  */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
@@ -18,6 +21,49 @@ RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
+
+/**
+ * A minimal on-disk NestJS project. `mode` picks where `whitelist: true` lives:
+ * inline in main.ts, in a relative import (the brocoders shape), behind an
+ * index.ts barrel, or nowhere at all.
+ */
+function fixtureFile(mode: 'inline' | 'imported' | 'barrel' | 'none'): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nestjs-wl-'));
+  fs.writeFileSync(
+    path.join(dir, 'package.json'),
+    '{"name":"fx","private":true}',
+  );
+  const opts = 'export default { transform: true, whitelist: true };';
+  if (mode === 'inline') {
+    fs.writeFileSync(
+      path.join(dir, 'main.ts'),
+      'app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));',
+    );
+  } else if (mode === 'imported') {
+    fs.writeFileSync(path.join(dir, 'validation-options.ts'), opts);
+    fs.writeFileSync(
+      path.join(dir, 'main.ts'),
+      "import validationOptions from './validation-options';\napp.useGlobalPipes(new ValidationPipe(validationOptions));",
+    );
+  } else if (mode === 'barrel') {
+    fs.mkdirSync(path.join(dir, 'config'));
+    fs.writeFileSync(path.join(dir, 'config', 'index.ts'), opts);
+    fs.writeFileSync(
+      path.join(dir, 'main.ts'),
+      "import validationOptions from './config';\napp.useGlobalPipes(new ValidationPipe(validationOptions));",
+    );
+  } else {
+    fs.writeFileSync(
+      path.join(dir, 'validation-options.ts'),
+      'export default { transform: true };',
+    );
+    fs.writeFileSync(
+      path.join(dir, 'main.ts'),
+      "import validationOptions from './validation-options';\napp.useGlobalPipes(new ValidationPipe(validationOptions));",
+    );
+  }
+  return path.join(dir, 'file.dto.ts');
+}
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -518,6 +564,101 @@ ruleTester.run(
         }
       `,
         errors: [{ messageId: 'missingValidator' }],
+      },
+    ],
+  },
+);
+// ─────────────────────────────────────────────────────────────────────────────
+// A global ValidationPipe with `whitelist: true` strips undecorated properties,
+// so they never arrive from a request. Reporting them as unvalidated input is a
+// false positive — measured on brocoders/nestjs-boilerplate, which sets
+// whitelist and still drew 5 findings on server-set fields (`provider`,
+// `socialId`, `path`).
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run(
+  'require-class-validator (whitelisting pipe)',
+  requireClassValidator,
+  {
+    valid: [
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        options: [{ assumeWhitelistingPipe: true }],
+      },
+      // The real scan path: a throwaway project on disk whose main.ts registers
+      // `new ValidationPipe({ whitelist: true })`. Built in the OS temp dir on
+      // purpose — a fixture inside this package would be found by the scan for
+      // every other test and silence them all.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        filename: fixtureFile('inline'),
+      },
+      // The brocoders shape: options live in a relative import.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        filename: fixtureFile('imported'),
+      },
+      // Same, behind an index.ts barrel.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        filename: fixtureFile('barrel'),
+      },
+    ],
+    invalid: [
+      // Same source, without the whitelisting pipe: still reported.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        options: [
+          { assumeWhitelistingPipe: false, detectWhitelistingPipe: false },
+        ],
+        errors: 1,
+      },
+      // Pipe registered, options imported, but no whitelist anywhere → still reported.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        filename: fixtureFile('none'),
+        errors: 1,
       },
     ],
   },

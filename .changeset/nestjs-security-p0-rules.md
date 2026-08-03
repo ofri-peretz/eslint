@@ -2,33 +2,21 @@
 'eslint-plugin-nestjs-security': major
 ---
 
-Three new rules, a large false-positive reduction, and an AST-based rewrite of
+One new rule, a large false-positive reduction, and an AST-based rewrite of
 decorator classification.
 
-**Breaking:** `recommended` gains two rules at `error`
-(`require-validation-pipe-whitelist`, `no-permissive-cors`) and one at `warn`
-(`no-res-bypass-serialization`). `validation` gains
-`require-validation-pipe-whitelist` at `error`. Existing projects can see new
-errors on upgrade — `require-validation-pipe-whitelist` fires in 6 of 9 real
-NestJS codebases measured. Every existing rule got _narrower_, never broader.
+**Breaking:** `recommended` gains `no-res-bypass-serialization` at `warn`
+alongside the two `error`-level rules already added in #327. More importantly,
+`require-class-validator` changes what it considers in scope (see below), and
+several rules got materially narrower. Every rule got _narrower_, never broader.
 
-### New rules
+### New rule
 
-- **`require-validation-pipe-whitelist`** (CWE-915) — a `ValidationPipe` without
-  `whitelist: true` forwards properties the DTO never declared, so a request can
-  set fields the DTO does not mention and `repository.save(dto)` writes them. A
-  second message covers `forbidNonWhitelisted: true` without `whitelist`, which
-  does nothing on its own.
 - **`no-res-bypass-serialization`** (CWE-200) — `@Res()` without
   `passthrough: true` stops every interceptor, so `ClassSerializerInterceptor`
   never runs and `@Exclude()` silently stops applying. Reported only when the
   handler writes a non-literal body; streams, redirects and status literals have
   nothing to serialize.
-- **`no-permissive-cors`** (CWE-942) — a wildcard or reflected origin combined
-  with `credentials: true`. A wildcard _without_ credentials is deliberately not
-  reported: browsers refuse to send cookies to it, so it is a public API rather
-  than a vulnerability. Function `origin` callbacks are never reported — that is
-  the documented allow-list pattern.
 
 ### Decorators are classified by import origin, not by name
 
@@ -85,7 +73,7 @@ before a resolver runs; what class-validator adds there is semantic validation
 
 ### Tests
 
-519 tests at 100% statement / branch / function / line coverage, including a
+581 tests at 100% statement / branch / function / line coverage, including a
 detection contract (every rule must still fire on the vulnerability it exists
 for, and stay silent on the minimally-different safe twin) and a regression lock
 pinning exact findings for shapes taken from the measured codebases.

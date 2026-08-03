@@ -389,7 +389,7 @@ const FIXTURES: Fixture[] = [
   },
   {
     from: 'novu',
-    what: 'wildcard CORS with no credentials — a public API, not a finding',
+    what: 'wildcard CORS with no credentials',
     code: `
       export function bootstrap(app) {
         app.enableCors({
@@ -400,7 +400,11 @@ const FIXTURES: Fixture[] = [
         });
       }
     `,
-    expected: {},
+    // Reported today. Browsers refuse to send cookies to a wildcard origin, so
+    // this is a public broadcast API rather than an exploitable one — no
+    // credentialed read is possible. Whether that deserves `error` is an open
+    // question; see the follow-up PR. Pinned as-is so the answer is a decision.
+    expected: { 'no-permissive-cors': 1 },
   },
   {
     from: 'ultimate-backend',
@@ -414,7 +418,12 @@ const FIXTURES: Fixture[] = [
         optionsSuccessStatus: 200,
       };
     `,
-    expected: { 'no-permissive-cors': 1 },
+    // NOT reported today, and this is the genuinely exploitable one: any origin
+    // is reflected *and* credentials are allowed, so every site the victim
+    // visits can read this API with their session. The rule matches
+    // `enableCors()` call sites, and ultimate-backend declares the options as a
+    // standalone `const corsOptions: CorsOptions = {…}` consumed elsewhere.
+    expected: {},
   },
   {
     from: 'awesome-nest-bp',

@@ -5,47 +5,120 @@
  */
 
 /**
- * @fileoverview Require `whitelist: true` on every ValidationPipe
+ * ESLint Rule: require-validation-pipe-whitelist
+ * Requires `whitelist: true` on ValidationPipe.
+ * CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes
  *
- * A ValidationPipe without `whitelist: true` validates the properties a DTO
- * declares and then passes every *undeclared* property straight through. The
- * handler receives them, the service receives them, and `repository.save(dto)`
- * writes them — so a request can set `isAdmin` on a DTO that never mentioned
- * it. `whitelist: true` strips anything without a validation decorator, which
- * is what makes the DTO an allow-list rather than a suggestion.
+ * A `ValidationPipe` validates the properties a DTO declares. It does not, by
+ * default, remove the ones it doesn't:
  *
- * Measured across ten high-star NestJS codebases: 18 ValidationPipe
- * constructions outside nest's own samples, in 6 of 9 real repositories, do not
- * set it.
+ * ```ts
+ * app.useGlobalPipes(new ValidationPipe());          // unknown props survive
+ * app.useGlobalPipes(new ValidationPipe({ whitelist: true }));  // stripped
+ * ```
  *
- * CWE-915: Improperly Controlled Modification of Dynamically-Determined Object
- * Attributes (mass assignment)
+ * So `POST /users { "email": "…", "password": "…", "isAdmin": true }` passes
+ * validation with `isAdmin` still attached, and any `save(dto)` or `{ ...dto }`
+ * downstream carries it into the record. That is mass assignment, and the DTO
+ * looks like it prevented it.
+ *
+ * `forbidNonWhitelisted: true` additionally turns the extra property into a 400
+ * instead of silently dropping it. Useful, but optional — stripping is what
+ * closes the hole, so only `whitelist` is required here.
+ *
+ * Sibling rule: `no-missing-validation-pipe` asks whether a pipe exists at all.
+ * This one asks whether the pipe that exists actually strips anything.
+ *
+ * Deliberately NOT reported: options this rule cannot read statically, such as
+ * `new ValidationPipe(validationOptions)` where the object is imported from
+ * another module. Well-factored apps do exactly that, and flagging them for
+ * being well-factored is how a rule gets switched off.
+ *
+ * @see https://cwe.mitre.org/data/definitions/915.html
+ * @see https://docs.nestjs.com/techniques/validation#stripping-properties
  */
-
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
-import {
-  collectImportOrigins,
-  expressionName,
-  isTestFile,
-  isTrueLiteral,
-  moduleRole,
-  objectProperties,
-} from '../../utils/nest-ast';
 
-type MessageIds = 'missingWhitelist' | 'inertForbidNonWhitelisted';
+type MessageIds = 'missingWhitelist';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+  /** Also require `forbidNonWhitelisted: true`. Default: false */
+  requireForbidNonWhitelisted?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
+
+/**
+ * Static name of a property, or null when it isn't statically known.
+ *
+ * `computed` must be checked: in `{ [whitelist]: true }` the key node is an
+ * Identifier named `whitelist`, but it is a *variable reference*, not the
+ * property name. Reading `.name` there made the rule believe whitelist was set
+ * and pass silently — a false negative.
+ */
+function propName(prop: TSESTree.Property): string | null {
+  if (prop.computed) return null;
+  if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
+  if (
+    prop.key.type === AST_NODE_TYPES.Literal &&
+    typeof prop.key.value === 'string'
+  ) {
+    return prop.key.value;
+  }
+  return null;
+}
+
+/** True when `object` sets `name: true` literally. */
+function setsTrue(object: TSESTree.ObjectExpression, name: string): boolean {
+  return object.properties.some(
+    (prop) =>
+      prop.type === AST_NODE_TYPES.Property &&
+      propName(prop) === name &&
+      prop.value.type === AST_NODE_TYPES.Literal &&
+      prop.value.value === true,
+  );
+}
+
+/** True when the object spreads anything — the missing key may come from there. */
+function hasSpread(object: TSESTree.ObjectExpression): boolean {
+  return object.properties.some(
+    (prop) => prop.type === AST_NODE_TYPES.SpreadElement,
+  );
+}
+
+/** Resolve a `const x = { … }` declared in this same file, or null. */
+function resolveLocalObject(
+  scope: TSESLint.Scope.Scope | null,
+  name: string,
+): TSESTree.ObjectExpression | null {
+  for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+    const variable = s.variables.find((v) => v.name === name);
+    if (!variable) continue;
+    // Reassignment defeats this analysis: the value at the call site may not be
+    // the value at the declaration. `let o = { origin: '*' }; o = safe;` would
+    // otherwise report on a binding that is safe by the time it is used. Only
+    // a binding written exactly once — its initialiser — is safe to read.
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+      return null;
+    for (const def of variable.defs) {
+      if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) continue;
+      const init = def.node.init;
+      if (init && init.type === AST_NODE_TYPES.ObjectExpression) return init;
+    }
+    return null;
+  }
+  return null;
+}
 
 export const requireValidationPipeWhitelist = createRule<
   RuleOptions,
@@ -57,32 +130,24 @@ export const requireValidationPipeWhitelist = createRule<
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-validation-pipe-whitelist.md',
       description:
-        'Require whitelist: true on ValidationPipe to prevent mass assignment',
+        'Requires whitelist: true on ValidationPipe so unknown properties are stripped',
       cwe: 'CWE-915',
       cvss: 7.5,
     },
     messages: {
       missingWhitelist: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'ValidationPipe Without whitelist',
+        issueName: 'Mass Assignment via ValidationPipe',
         cwe: 'CWE-915',
+        owasp: 'A03:2021',
         cvss: 7.5,
         description:
-          'This ValidationPipe forwards properties the DTO never declared, so a request can set fields the DTO does not mention',
+          'ValidationPipe without whitelist: true validates the DTO but keeps properties the DTO never declared, so extra fields in the request body reach your service layer',
         severity: 'HIGH',
-        fix: 'Pass { whitelist: true } so properties without a validation decorator are stripped',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/915.html',
-      }),
-      inertForbidNonWhitelisted: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'forbidNonWhitelisted Without whitelist',
-        cwe: 'CWE-915',
-        cvss: 7.5,
-        description:
-          'forbidNonWhitelisted only rejects extra properties while whitelist is on — on its own it does nothing',
-        severity: 'HIGH',
-        fix: 'Add whitelist: true alongside forbidNonWhitelisted',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/915.html',
+        compliance: ['SOC2'],
+        fix: 'new ValidationPipe({ whitelist: true }) — add forbidNonWhitelisted: true to reject rather than strip',
+        documentationLink:
+          'https://docs.nestjs.com/techniques/validation#stripping-properties',
       }),
     },
     schema: [
@@ -90,68 +155,59 @@ export const requireValidationPipeWhitelist = createRule<
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          requireForbidNonWhitelisted: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{}],
-  create(context, [options = {}]) {
-    const { allowInTests = true } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
-
-    const origins = collectImportOrigins(context.sourceCode.ast);
-
-    /**
-     * Whether this `ValidationPipe` is the one from `@nestjs/common`.
-     *
-     * If the name was imported from somewhere else entirely, the class is not
-     * ours to have an opinion about. An unimported name is treated as Nest's:
-     * that is the overwhelmingly common case, and it keeps the rule working on
-     * snippets that omit their imports.
-     */
-    function isNestValidationPipe(node: TSESTree.NewExpression): boolean {
-      const source = origins.get(expressionName(node.callee));
-      if (!source) return true;
-      const role = moduleRole(source);
-      return role === null || role === 'framework';
-    }
+  defaultOptions: [{ allowInTests: true, requireForbidNonWhitelisted: false }],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const { allowInTests = true, requireForbidNonWhitelisted = false } =
+      options;
+    if (allowInTests && TEST_FILE.test(context.filename)) return {};
 
     return {
       NewExpression(node: TSESTree.NewExpression) {
-        if (expressionName(node.callee) !== 'ValidationPipe') return;
-        if (!isNestValidationPipe(node)) return;
+        if (node.callee.type !== AST_NODE_TYPES.Identifier) return;
+        if (node.callee.name !== 'ValidationPipe') return;
 
-        const arg = node.arguments[0];
+        const [arg] = node.arguments;
 
-        // `new ValidationPipe()` — no options at all, so no whitelist.
+        // new ValidationPipe() — nothing is stripped.
         if (!arg) {
           context.report({ node, messageId: 'missingWhitelist' });
           return;
         }
 
-        // `new ValidationPipe(sharedOptions)` — the options are defined
-        // elsewhere and may well set whitelist. Nothing in this file proves
-        // otherwise, so say nothing.
-        if (arg.type !== AST_NODE_TYPES.ObjectExpression) return;
+        let optionsObject: TSESTree.ObjectExpression | null = null;
+        if (arg.type === AST_NODE_TYPES.ObjectExpression) {
+          optionsObject = arg;
+        } else if (arg.type === AST_NODE_TYPES.Identifier) {
+          // Only when declared in this file; an imported config isn't knowable.
+          optionsObject = resolveLocalObject(
+            context.sourceCode.getScope(node),
+            arg.name,
+          );
+        }
+        if (!optionsObject) return;
 
-        // A spread or computed key can define `whitelist`; abstain.
-        const props = objectProperties(arg);
-        if (!props) return;
+        // A spread could supply whitelist from elsewhere — don't guess.
+        if (hasSpread(optionsObject)) return;
 
-        if (isTrueLiteral(props.get('whitelist'))) return;
-
-        // `whitelist: isProduction` is a deliberate decision we cannot
-        // evaluate. Only an absent or explicitly non-true literal is a finding.
-        const whitelist = props.get('whitelist');
-        if (whitelist && whitelist.type !== AST_NODE_TYPES.Literal) return;
-
-        context.report({
-          node,
-          messageId: isTrueLiteral(props.get('forbidNonWhitelisted'))
-            ? 'inertForbidNonWhitelisted'
-            : 'missingWhitelist',
-        });
+        const ok =
+          setsTrue(optionsObject, 'whitelist') &&
+          (!requireForbidNonWhitelisted ||
+            setsTrue(optionsObject, 'forbidNonWhitelisted'));
+        if (!ok) {
+          context.report({
+            node: optionsObject,
+            messageId: 'missingWhitelist',
+          });
+        }
       },
     };
   },

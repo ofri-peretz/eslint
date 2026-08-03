@@ -1,6 +1,6 @@
 ---
 title: no-permissive-cors
-description: This rule detects CORS configured to reflect any origin while allowing credentials, which lets any website call ...
+description: Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true.
 tags: ['security', 'nestjs']
 category: security
 severity: high
@@ -9,117 +9,92 @@ owasp: 'A05:2021'
 autofix: false
 ---
 
-> Detect CORS reflecting any origin while allowing credentials
+> Disallows CORS configured to accept any origin
 
 <!-- @rule-summary -->
 
-This rule detects CORS configured to reflect any origin while allowing credentials, which lets any website call ...
+Flags CORS configured to accept any origin — a bare `enableCors()`, `origin: '*'`, or the reflecting `origin: true`.
 <!-- @/rule-summary -->
 
 ## Rule Details
 
-`origin: '*'` on its own is **not** a vulnerability. Browsers refuse to send
-cookies to a wildcard origin, which is exactly why a public read-only API can
-set it safely.
+Three shapes all accept every origin, and only one of them looks obviously wrong:
 
-The dangerous configuration is a wildcard or reflected origin _combined with_
-`credentials: true`. Then every site the victim visits can call the API with the
-victim's session cookie and read the response — the browser's same-origin
-protection has been switched off by the server.
+```ts
+app.enableCors(); // no options → origin defaults to '*'
+app.enableCors({ origin: '*' }); // explicit wildcard
+app.enableCors({ origin: true }); // reflects whatever Origin was sent
+```
 
-This rule reports only that pairing, and only when both values are literals.
-That is what makes it a zero-false-positive rule rather than a noisy one.
+`origin: true` is the one worth understanding. It does not mean "CORS on" — it
+echoes the request's own `Origin` header straight back in
+`Access-Control-Allow-Origin`, so every site passes the check. Unlike `'*'`, it
+also stays valid alongside `credentials: true`, and browsers **will** send
+cookies on those requests. That combination lets any page your user visits read
+authenticated responses from your API.
 
-## OWASP Mapping
-
-- **OWASP Top 10 2021**: A05:2021 - Security Misconfiguration
-- **CWE**: CWE-942 - Permissive Cross-domain Policy with Untrusted Domains
-- **CVSS**: 8.1 (High)
+Measured on five real NestJS applications, both CORS call sites present were
+permissive: one bare `enableCors()` and one `enableCors({ origin: true })`.
 
 ## ❌ Incorrect
 
-```typescript
-// `origin: true` reflects whatever Origin header arrived.
-export const corsOptions: CorsOptions = {
-  origin: true,
-  credentials: true,
-};
+```ts
+app.enableCors();
 
-app.enableCors({ origin: '*', credentials: true });
+app.enableCors({ credentials: true }); // no origin key → default '*' applies
 
-const app = await NestFactory.create(AppModule, {
-  cors: { origin: ['*'], credentials: true },
-});
+app.enableCors({ origin: '*' });
+
+app.enableCors({ origin: true, credentials: true });
 ```
 
 ## ✅ Correct
 
-```typescript
-// An explicit allow-list.
-app.enableCors({
-  origin: process.env.CORS_ORIGINS?.split(',') ?? ['https://app.example.com'],
-  credentials: true,
-});
+```ts
+app.enableCors({ origin: ['https://app.example.com'] });
 
-// A wildcard with no credentials: a public API, not a vulnerability.
-app.enableCors({ origin: '*', methods: ['GET'] });
+app.enableCors({ origin: 'https://app.example.com' });
 
-// A validating callback — the documented pattern, never reported.
-app.enableCors({
-  origin: (origin, callback) => callback(null, allowed.includes(origin)),
-  credentials: true,
-});
+app.enableCors({ origin: false }); // CORS explicitly off
+
+// Resolved at runtime — the rule does not guess at these
+app.enableCors({ origin: configService.get('cors.origin') });
+app.enableCors({ origin: (o, cb) => cb(null, allowed.includes(o)) });
 ```
+
+## What this rule deliberately does not report
+
+A security rule that guesses earns a reputation for noise, so anything not
+statically decidable is left alone:
+
+- an `origin` that is a variable, member expression, template literal, array,
+  regex, or callback
+- an options object imported from another module — `enableCors(corsOptions)`
+  only reports when `corsOptions` is declared in the same file
+- an options object with a spread (`{ ...base }`) and no visible `origin`, since
+  the spread may supply it
+- a variable that is **reassigned** after its declaration. The value at the call
+  site may not be the value at the declaration, so only a binding written exactly
+  once — its initialiser — is read.
 
 ## Options
 
-```typescript
-{
-  // Skip rule in test files (default: true)
-  allowInTests?: boolean;
-}
+```ts
+'nestjs-security/no-permissive-cors': ['error', { allowInTests: true }]
 ```
 
-## How the options object is recognized
-
-Any object literal carrying **both** `origin` and `credentials` is CORS options
-— that pair does not occur together on anything else in a Nest application.
-Matching the object rather than the call site catches the common indirection of
-declaring `const corsOptions: CorsOptions = {…}` in one file and passing it to
-`enableCors` in another, which is how the one real-world instance in the
-measured corpus is written.
+| Option         | Type      | Default | Description                                      |
+| -------------- | --------- | ------- | ------------------------------------------------ |
+| `allowInTests` | `boolean` | `true`  | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
 
 ## When Not To Use It
 
-- If the API is genuinely public _and_ the credentials flag is required for a
-  non-cookie scheme you control end to end. That is rare; prefer an allow-list.
+If the service is a genuinely public, unauthenticated, read-only API where any
+origin reading responses is intended. Even then, prefer `origin: '*'` written
+explicitly over a bare `enableCors()`, so the intent is visible to the next
+reader.
 
-## Known False Negatives
+## Further Reading
 
-### Values assembled at runtime
-
-**Why**: Only literal `true` / `'*'` / `['*']` origins are reported, so nothing
-is asserted about a computed value.
-
-```typescript
-// ❌ NOT DETECTED - origin is a variable
-const corsOptions = { origin: allowAll ? '*' : whitelist, credentials: true };
-```
-
-### Reflect-everything callbacks
-
-**Why**: A function `origin` is the documented way to validate against an
-allow-list. Flagging it would punish the correct pattern, so a callback is never
-reported — even one that always calls back `true`.
-
-```typescript
-// ❌ NOT DETECTED (deliberately) - indistinguishable from a real validator
-app.enableCors({ origin: (o, cb) => cb(null, true), credentials: true });
-```
-
-**Mitigation**: Review origin callbacks by hand; they are few.
-
-### CORS applied by middleware
-
-**Why**: `app.use(cors({...}))` from the Express package is not the Nest shape,
-and belongs to `eslint-plugin-express-security`.
+- [CWE-942: Permissive Cross-domain Policy with Untrusted Domains](https://cwe.mitre.org/data/definitions/942.html)
+- [NestJS — CORS](https://docs.nestjs.com/security/cors)
