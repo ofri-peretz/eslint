@@ -1,8 +1,8 @@
 ---
-'eslint-plugin-sequelize-security': major
+'eslint-plugin-sequelize-security': minor
 ---
 
-New package: `eslint-plugin-sequelize-security` — SQL injection detection for the
+Initial release: `eslint-plugin-sequelize-security` — SQL injection detection for the
 Sequelize ORM.
 
 An ORM is not a defence against SQL injection; it narrows the surface to the
