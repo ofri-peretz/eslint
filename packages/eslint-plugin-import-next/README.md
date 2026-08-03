@@ -96,7 +96,9 @@ Depth accumulates through re-export edges, which is exactly what the rule follow
 
 ### Speed, for completeness
 
-Across five graph shapes at 5,000 files each — deep chain, wide/shallow, flat, dense clusters, and a cold single-file run — `import-next` is **never slower**, wins by ~1.1× on dense graphs and cold single-file runs, and ties on wide and flat ones. On a real 455K-line React codebase it is **8× faster in rule time** and 3.1× end-to-end at 100% detection parity.
+Across graph shapes at 5,000 files each, `import-next` is ~1.1× faster on dense cyclic graphs and on cold single-file runs, and ties on graphs with no cycles to find. The wide/shallow shape is **unresolved** — two runs disagree (0.8× sequential, 1.01× interleaved) and the machine has not been quiet enough to settle it, so no claim is made there. On a real 455K-line React codebase it is **8× faster in rule time** and 3.1× end-to-end at 100% detection parity.
+
+Speed is the smaller story. The deep-chain result above is a difference in kind, not degree.
 
 Detection parity is checked per shape before any timing is trusted, and every number comes from a committed result file:
 

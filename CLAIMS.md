@@ -59,16 +59,31 @@ early, so timing it would score the crash as a win.
 
 | Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
 | --- | --- | --- | --- |
-| "`eslint-plugin-import` crashes on deep import chains; `import-next` completes them" | ilb-perf-import-shapes (`chain-5000`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — official `failed: exit 2` (`RangeError` in its own `lib/scc.js`), ours 11.34s. Standalone repro: [`benchmarks/scripts/repro-deep-chain.mjs`](benchmarks/scripts/repro-deep-chain.mjs) | 2026-08-02 |
-| "Never slower than `eslint-plugin-import` on any graph shape tested" | ilb-perf-import-shapes (5 shapes @ 5,000 files) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — chain: official crashes · wide 2.81s vs 2.80s · flat 2.28s vs 2.23s · dense 3.96s vs 3.64s · single 0.39s vs 0.36s | 2026-08-02 |
-| "~1.1x faster on dense cyclic graphs and cold single-file runs" | ilb-perf-import-shapes (`dense-5000`, `single`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) | 2026-08-02 |
-| "Run-to-run variance ~12x tighter" | ilb-perf-import-shapes (`wide-5000`, n=7 interleaved) | stdev 0.11 ours vs 1.37 official; official threw a 6.05s outlier against a 2.81s median | 2026-08-02 |
+| "`eslint-plugin-import` crashes on deep import chains; `import-next` completes them" | ilb-perf-import-shapes (`chain-5000`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — official `failed: exit 2` (`RangeError` in its own `lib/scc.js`), ours 11.42s. Standalone repro: [`benchmarks/scripts/repro-deep-chain.mjs`](benchmarks/scripts/repro-deep-chain.mjs) | 2026-08-02 |
+| "~1.1x faster on dense cyclic graphs and on cold single-file runs" | ilb-perf-import-shapes (`dense-5000`, `single`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — dense 3.96s vs 3.64s · single 0.39s vs 0.36s (medians) | 2026-08-02 |
+| "Parity on graphs with no cycles to find" | ilb-perf-import-shapes (`flat-5000`) | [2026-08-02.json](benchmarks/results/ilb-perf-import-shapes/2026-08-02.json) — 2.30s vs 2.25s (medians) | 2026-08-02 |
 
-> **Scope limit.** Five synthetic shapes plus one real codebase. "Never slower on
-> any graph shape tested" is exactly as strong as that corpus and no stronger —
-> two of the five shapes are ties, not wins. Do not paraphrase it as "always
-> faster". Medians, not means: on `wide-5000` a single outlier moved the mean
-> enough to invert the verdict.
+> **⚠️ `wide-5000` is unresolved — do not claim a result on it.** Two
+> measurements disagree and neither is trustworthy enough to settle it. The
+> committed sequential run gives **0.8x — us slower** (3.22s vs 3.85s medians);
+> a separate n=7 interleaved run gives **1.01x — a dead tie** (2.81s vs 2.80s).
+> The sequential harness ran all of one plugin's iterations before the other's,
+> which hands any load that builds during the window entirely to whoever goes
+> second, so its verdict is biased against us by construction. `runner.js` now
+> interleaves and alternates order, but the re-run that would settle this has
+> not been done on a quiet machine: the attempt on 2026-08-03 recorded 46s and
+> 78s medians on a shape that measures ~2.8s idle (load average 340 from
+> concurrent builds) and was discarded.
+>
+> **Until a quiet-machine interleaved run exists, the honest statement is that
+> `import-next` wins the deep-chain case outright, is ~1.1x faster on dense and
+> cold-single-file, ties on flat, and is unmeasured on wide.** Do **not** write
+> "never slower on any graph shape tested" — the only committed number for wide
+> contradicts it.
+
+> **Scope limit.** Four usable synthetic shapes plus one real codebase. Medians,
+> not means: on `wide-5000` a single outlier moved the mean enough to invert the
+> verdict in one run.
 
 ### CI/CD impact framework — value, philosophy, methodology
 

@@ -98,35 +98,52 @@ export function runBenchmark(options) {
 
     const sizeResult = { size, plugins: {} };
 
-    for (const plugin of plugins) {
-      console.log(`   🔄 ${plugin.name}...`);
-      
-      const times = [];
-      const configPath = path.join(configsDir, plugin.config);
-      let failure = null;
+    // Interleave the plugins, alternating which one goes first each round.
+    //
+    // Running all of plugin A's iterations and then all of plugin B's makes the
+    // result depend on when the machine happened to be busy: any load that
+    // builds during the window lands entirely on whoever runs second. That is a
+    // systematic bias, not noise, so more iterations do not cancel it — a
+    // sequential run of this suite showed our side at ±0.61 stdev against its
+    // usual ±0.06 purely from going second under background load, which read as
+    // a 0.8x loss on a shape that is a dead tie when interleaved.
+    const times = new Map(plugins.map((p) => [p.name, []]));
+    const failures = new Map();
 
-      for (let i = 0; i < iterations; i++) {
-        process.stdout.write(`      Run ${i + 1}/${iterations}\r`);
-        const run = runEslint(configPath, fixtureDir, path.dirname(fixturesDir));
+    for (let i = 0; i < iterations; i++) {
+      const order = i % 2 === 0 ? plugins : [...plugins].reverse();
+      for (const plugin of order) {
+        if (failures.has(plugin.name)) continue;
+        process.stdout.write(`      Round ${i + 1}/${iterations} — ${plugin.name}\r`);
+        const run = runEslint(
+          path.join(configsDir, plugin.config),
+          fixtureDir,
+          path.dirname(fixturesDir)
+        );
         if (!run.ok) {
-          failure = run.reason;
-          break;
+          failures.set(plugin.name, run.reason);
+          continue;
         }
-        times.push(run.seconds);
+        times.get(plugin.name).push(run.seconds);
       }
+    }
 
-      if (failure) {
+    for (const plugin of plugins) {
+      if (failures.has(plugin.name)) {
         // Record the failure instead of a duration. A crashed run exits early,
         // so timing it would score the crash as a win.
-        sizeResult.plugins[plugin.name] = { failed: true, reason: failure };
-        console.log(`   ❌ ${plugin.name}: FAILED — ${failure}`);
+        const reason = failures.get(plugin.name);
+        sizeResult.plugins[plugin.name] = { failed: true, reason };
+        console.log(`   ❌ ${plugin.name}: FAILED — ${reason}`);
         continue;
       }
 
-      const stats = calculateStats(times);
-      sizeResult.plugins[plugin.name] = { times, stats };
+      const stats = calculateStats(times.get(plugin.name));
+      sizeResult.plugins[plugin.name] = { times: times.get(plugin.name), stats };
 
-      console.log(`   ✅ ${plugin.name}: ${stats.mean.toFixed(2)}s (±${stats.stdDev.toFixed(2)}s)`);
+      console.log(
+        `   ✅ ${plugin.name}: median ${stats.median.toFixed(2)}s (mean ${stats.mean.toFixed(2)}s ±${stats.stdDev.toFixed(2)}s)`
+      );
     }
 
     // Calculate speedup between first two plugins
@@ -143,8 +160,13 @@ export function runBenchmark(options) {
         } failed`;
         console.log(`\n   ⚠️  Speedup: n/a (${sizeResult.speedupNote})`);
       } else {
-        const baseTime = base?.stats.mean;
-        const fastTime = fast?.stats.mean;
+        // Medians, not means. A single outlier is enough to invert the verdict:
+        // on wide-5000 the official plugin threw a 6.05s run against a 2.81s
+        // median, dragging its mean to 3.70s and making us look 0.9x slower on
+        // a shape that is actually a dead tie. This value is written to the
+        // result JSON and read by CLAIMS.md, so it has to be the robust one.
+        const baseTime = base?.stats.median;
+        const fastTime = fast?.stats.median;
 
         if (baseTime && fastTime) {
           const speedup = (baseTime / fastTime).toFixed(1);

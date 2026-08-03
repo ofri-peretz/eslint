@@ -1,5 +1,5 @@
 {
-  "benchmark": "ILB-Perf — no-cycle across graph shapes",
+  "benchmark": "ILB-Perf \u2014 no-cycle across graph shapes",
   "timestamp": "2026-08-02T14:28:42.333Z",
   "iterations": 3,
   "environment": {
@@ -31,7 +31,7 @@
         }
       },
       "speedup": null,
-      "speedupNote": "not comparable — eslint-plugin-import failed"
+      "speedupNote": "not comparable \u2014 eslint-plugin-import failed"
     },
     {
       "size": "wide-5000",
@@ -65,7 +65,8 @@
           }
         }
       },
-      "speedup": 0.9
+      "speedup": 0.8,
+      "speedupBasis": "median"
     },
     {
       "size": "flat-5000",
@@ -99,7 +100,8 @@
           }
         }
       },
-      "speedup": 1
+      "speedup": 1.0,
+      "speedupBasis": "median"
     },
     {
       "size": "dense-5000",
@@ -133,7 +135,8 @@
           }
         }
       },
-      "speedup": 1.1
+      "speedup": 1.1,
+      "speedupBasis": "median"
     },
     {
       "size": "single",
@@ -167,7 +170,8 @@
           }
         }
       },
-      "speedup": 1.1
+      "speedup": 1.1,
+      "speedupBasis": "median"
     }
   ]
 }
