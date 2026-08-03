@@ -154,7 +154,14 @@ rmSync(noCommentsDir, { recursive: true, force: true });
 //    ("context for AI coding agents working on <pkg>", with monorepo-root
 //    install steps), not consumer documentation — it was shipping to npm in 12
 //    packages, 48 kB of instructions that are wrong outside this repo.
-const assets = ['README.md', 'CHANGELOG.md', 'LICENSE', '.npmignore'];
+//
+//    CHANGELOG.md is not copied either. It was 225 kB across the ecosystem —
+//    6% of everything we ship — and it is the one component that grows with
+//    every release forever, so the share only increases. npm does not render
+//    it on the package page; the history stays available on GitHub, in the
+//    npm "Versions" tab, and in the changesets-generated release notes.
+//    README.md is kept: it IS the npm package page.
+const assets = ['README.md', 'LICENSE', '.npmignore'];
 for (const asset of assets) {
   const src = resolve(pkgDir, asset);
   if (existsSync(src)) {
@@ -263,7 +270,12 @@ const stripDistPrefix = (value: unknown): unknown => {
 // Packages list AGENTS.md in `files`, and an allowlist entry can out-rank
 // .npmignore. Drop it here so the two mechanisms can't disagree. `dist/` is
 // also a no-op entry — the tarball root IS dist, so it can never match.
-const DROPPED_FILE_ENTRIES = new Set(['AGENTS.md', 'dist/', 'dist']);
+const DROPPED_FILE_ENTRIES = new Set([
+  'AGENTS.md',
+  'CHANGELOG.md',
+  'dist/',
+  'dist',
+]);
 const publishedFiles = Array.isArray(pkg.files)
   ? (pkg.files as string[]).filter((f) => !DROPPED_FILE_ENTRIES.has(f))
   : pkg.files;

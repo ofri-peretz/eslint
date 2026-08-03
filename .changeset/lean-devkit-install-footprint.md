@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-devkit': major
+'@interlace/eslint-devkit': minor
 'eslint-plugin-import-next': patch
 ---
 
@@ -63,8 +63,8 @@ via `importHelpers: false` (+8 KB of emitted JS to shed a peer every plugin
 declares anyway).
 
 **Every package also stops shipping dead bytes** — 1.5 MB across the
-ecosystem, 5539.4 kB → 3761 kB unpacked (−32.1%), with no consumer-visible
-change. `scripts/build-package.ts` owns all four exclusions:
+ecosystem, 5539.4 kB → 3546 kB unpacked (−36.0%), with no consumer-visible
+change. `scripts/build-package.ts` owns all five exclusions:
 
 - **Source maps** (322 kB, 93 files). `tsconfig.base.json` sets
   `sourceMap: true` and only eslint-devkit opted out. Every published map was
@@ -101,6 +101,12 @@ change. `scripts/build-package.ts` owns all four exclusions:
   `eslint-plugin-*` is pruned; `@interlace/eslint-devkit` is a real library
   whose declarations are the product.
 
+- **`CHANGELOG.md`** (225 kB, 6% of everything shipped). The one component
+  that grows with every release forever, so its share only rises. npm does not
+  render it on the package page — the history stays on GitHub, in npm's
+  "Versions" tab, and in the changesets release notes. `README.md` is kept: it
+  IS the npm package page.
+
 `scripts/check-published-artifacts.ts` (new, wired into `pre-push`,
 `npm run quality`, and the release workflow's pre-publish stage) fails the
 build if any of these comes back, and also locks the discoverability metadata
@@ -129,4 +135,11 @@ missing module, install it explicitly:
 - type-aware rules → `typescript`
 - `eslint-plugin-import-next` → `oxc-resolver` (now declared for you)
 
-Marked `major` because it changes the install contract, not the API.
+Marked `minor`, not `major`. The API is unchanged — no exported symbol was
+removed or retyped — and with npm 7+ the three ex-dependencies are auto-installed
+as peers wherever a real dependency exists. The honest caveat: a strict package
+manager (pnpm without hoisting, or `--legacy-peer-deps`) will now need them
+declared explicitly, which is the one respect in which this is a bigger change
+than the version implies. Dependents pin `^1.4.4`, which already satisfies
+1.5.0, so consumers pick up the slim infrastructure on their next install
+without a range rewrite.
