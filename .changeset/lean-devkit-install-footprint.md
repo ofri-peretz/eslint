@@ -3,17 +3,22 @@
 'eslint-plugin-import-next': patch
 ---
 
-Zero runtime dependencies: install size 5.42 MB → ~0.3 MB, load 271 ms → 14 ms
+Zero runtime dependencies: install 7500 kB → 444 kB, load 242 ms → 13.6 ms
 
 `@interlace/eslint-devkit` is the infrastructure package every plugin in this
 ecosystem depends on, so its dependency tree was every plugin's dependency
-tree — 22 packages pulled in, 5.42 MB reported by packagephobia, and 433
-modules evaluated on every `require`.
+tree — 2 dependencies pulling 22 packages, 5.42 MB as reported by
+packagephobia, and 433 modules evaluated on every `require`.
 
 It now declares **no dependencies at all**. A bare install is one package;
-the tarball is 64 kB packed / 280 kB unpacked; a cold `require` of the
-barrel loads 29 modules in ~14 ms instead of 433 in ~271 ms — roughly a
-quarter-second off every ESLint process start, per plugin.
+the tarball is 65.9 kB packed; a cold `require` of the barrel loads 29
+modules in 13.6 ms instead of 433 in 242 ms — roughly a quarter-second off
+every ESLint process start, per plugin.
+
+End to end, on the same fixture and min-of-10 warm: **ESLint 288 → 216 ms
+(−25%)** and **oxlint 320 → 145 ms (−55%)**. oxlint benefits because it loads
+these plugins through the JS-plugin shims in `tools/oxlint-plugins/`; against
+its 68 ms pure-Rust floor, the JS-plugin overhead fell **252 → 77 ms (−69%)**.
 
 The compiled output only ever made five external `require()` calls. Four were
 avoidable:
@@ -52,13 +57,13 @@ packed plugin lints correctly in a project with no `@typescript-eslint`
 scope, no `typescript`, and no `oxc-resolver` installed.
 
 Two further reductions were measured and rejected as bad trades: lazy-loading
-the resolver and ARIA subtrees (~8 ms of the 14 ms load, but it moves cost
+the resolver and ARIA subtrees (~8 ms of the 13.6 ms load, but it moves cost
 onto `eslint-plugin-import-next`'s per-import hot path), and dropping `tslib`
 via `importHelpers: false` (+8 KB of emitted JS to shed a peer every plugin
 declares anyway).
 
 **Every package also stops shipping dead bytes** — 1.5 MB across the
-ecosystem, 5021.6 kB → 3488.6 kB unpacked (−30.5%), with no consumer-visible
+ecosystem, 5539.4 kB → 3761 kB unpacked (−32.1%), with no consumer-visible
 change. `scripts/build-package.ts` owns all four exclusions:
 
 - **Source maps** (322 kB, 93 files). `tsconfig.base.json` sets
@@ -80,7 +85,7 @@ change. `scripts/build-package.ts` owns all four exclusions:
   re-emits to a scratch dir and copies back only the `.js`. Same compiler,
   same input, output identical apart from comments. Costs ~1.5 s per package
   on a cold build (turbo caches it) and does **not** change load time — V8
-  skips comments cheaply; this is a size win only. Per-file MIT headers go
+  skips comments cheaply (measured 16.15 → 16.01 ms); this is a size win only. Per-file MIT headers go
   with the comments; `LICENSE` still ships at every package root.
 
 - **Generated declarations for the plugins** (595 kB). A plugin is consumed by
@@ -110,6 +115,11 @@ it never blocks**, because bundles legitimately grow and a hard cap would just
 get raised until it meant nothing. The point is that growth becomes a noticed
 decision rather than a surprise found later on npm. `--update` refreshes the
 baseline; `--strict` exits non-zero for a deliberate audit.
+
+Every before/after pair above was measured on the SAME codebase — `origin/main`
+at 8172db04 built in one worktree, this branch in another — min-of-10 warm runs
+on Node 24. Earlier figures in this changeset came from a stale branch and were
+restated on 2026-08-03.
 
 **Migration.** With npm 7+ these are auto-installed as peers where a real
 dependency exists, so most consumers need no change. If you use a strict
