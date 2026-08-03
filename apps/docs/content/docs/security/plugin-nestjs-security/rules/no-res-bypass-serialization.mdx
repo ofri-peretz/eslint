@@ -1,6 +1,12 @@
 ---
-title: "no-res-bypass-serialization"
-description: "title: no-res-bypass-serialization"
+title: no-res-bypass-serialization
+description: "Detect @Res() handlers that write objects past ClassSerializerInterceptor"
+tags: ['security', 'nestjs']
+category: security
+severity: high
+cwe: CWE-200
+owasp: 'A01:2021'
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -8,17 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
-title: no-res-bypass-serialization
-description: This rule detects route handlers that inject @Res() without passthrough and then write an object, which silently ...
-tags: ['security', 'nestjs']
-category: security
-severity: high
-cwe: CWE-200
-owasp: 'A01:2021'
-autofix: false
----
 
 > Detect `@Res()` handlers that write objects past ClassSerializerInterceptor
 

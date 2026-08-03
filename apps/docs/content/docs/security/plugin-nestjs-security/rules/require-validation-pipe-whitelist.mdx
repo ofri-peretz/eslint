@@ -1,6 +1,12 @@
 ---
-title: "require-validation-pipe-whitelist"
-description: "title: require-validation-pipe-whitelist"
+title: require-validation-pipe-whitelist
+description: "Requires whitelist: true on ValidationPipe so unknown properties are stripped"
+tags: ['security', 'nestjs']
+category: security
+severity: high
+cwe: CWE-915
+owasp: "A03:2021"
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -8,17 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
-title: require-validation-pipe-whitelist
-description: Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of reaching the service layer.
-tags: ['security', 'nestjs']
-category: security
-severity: high
-cwe: CWE-915
-owasp: "A03:2021"
-autofix: false
----
 
 > Requires whitelist: true on ValidationPipe so unknown properties are stripped
 

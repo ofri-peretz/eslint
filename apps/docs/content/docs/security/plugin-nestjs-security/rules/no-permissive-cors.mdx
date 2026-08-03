@@ -1,6 +1,12 @@
 ---
-title: "no-permissive-cors"
-description: "title: no-permissive-cors"
+title: no-permissive-cors
+description: "Disallows CORS configured to accept any origin"
+tags: ['security', 'nestjs']
+category: security
+severity: high
+cwe: CWE-942
+owasp: "A05:2021"
+autofix: false
 type_aware: false
 type_aware_status: unaware
 ---
@@ -8,17 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
----
-title: no-permissive-cors
-description: Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true.
-tags: ['security', 'nestjs']
-category: security
-severity: high
-cwe: CWE-942
-owasp: "A05:2021"
-autofix: false
----
 
 > Disallows CORS configured to accept any origin
 
