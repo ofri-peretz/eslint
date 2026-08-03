@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.4.4"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

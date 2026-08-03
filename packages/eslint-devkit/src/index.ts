@@ -43,7 +43,11 @@ export * from './security';
 // Node utilities
 export * from './node';
 
-// Resolver and dependency analysis utilities
+// Resolver and dependency analysis utilities.
+// Kept in the barrel for compatibility — `oxc-resolver` itself is now loaded
+// lazily inside `./resolver`, so importing this package no longer requires the
+// native binary to be installed. Rules that resolve imports should declare
+// `oxc-resolver` in their own dependencies.
 export * from './resolver';
 
 // Other utilities
@@ -78,9 +82,18 @@ export {
 } from './messaging';
 
 /**
- * Re-export commonly used types and utilities from @typescript-eslint/utils
+ * Re-export commonly used types and utilities from typescript-eslint.
+ *
+ * ponytail: both of these used to be runtime imports from
+ * `@typescript-eslint/utils`, which declares a non-optional `typescript` peer
+ * and so pulled a 24 MB compiler into every consumer install. `AST_NODE_TYPES`
+ * is now an inlined table (`./ast-node-types`) and `ESLintUtils` is our own
+ * ported shim (`./rule-creation/rule-creator`). Together they take this
+ * package to zero runtime dependencies. The type-only re-exports below still
+ * point at `utils` — erased at compile time, so they cost nothing.
  */
-export { ESLintUtils, AST_NODE_TYPES } from '@typescript-eslint/utils';
+export { AST_NODE_TYPES } from './ast-node-types';
+export { ESLintUtils } from './rule-creation/rule-creator';
 
 export type {
   TSESLint,
