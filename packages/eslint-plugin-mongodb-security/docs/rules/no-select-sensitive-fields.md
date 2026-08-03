@@ -64,9 +64,12 @@ const userSchema = new Schema({
 
 `find()`, `findOne()` and `findById()` are are not MongoDB-exclusive. This rule only fires when the receiver is
 plausibly a Mongo model, collection or database handle — a PascalCase model
-identifier (`User.find(...)`), a name like `model`/`collection`/`db`, a
-`db.collection('users')` chain, or a value bound to a `mongodb`/`mongoose`
-import.
+identifier (`User.find(...)`), a name ending in `Model`/`Collection`/`Schema`
+(`this.userModel`, the idiomatic `@InjectModel()` injection), a bare
+`db`/`model`/`collection`, a `db.collection('users')` chain, or a value bound
+to a `mongodb`/`mongoose` import. PascalCase counts only for a module-level
+identifier, not for a property reached through `this` — `this.UserRepository`
+is an injected service, not a model.
 
 It stays silent on:
 

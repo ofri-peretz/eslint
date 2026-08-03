@@ -127,6 +127,13 @@ describe('real-world FP regressions', () => {
         code: `db.collection('users').find({ active: true }).toArray();`,
         errors: [{ messageId: 'unboundedFind' }],
       },
+      // The idiomatic NestJS injection — `@InjectModel(Cat.name) catModel`.
+      // An exact-match handle list would miss the commonest Mongoose
+      // receiver in the ecosystem entirely.
+      {
+        code: `const cats = await this.catModel.find({ age: 3 });`,
+        errors: [{ messageId: 'unboundedFind' }],
+      },
     ],
   });
 

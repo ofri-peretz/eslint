@@ -504,6 +504,30 @@ describe('no-unbounded-find — synthetic AST (Layer 2)', () => {
   });
 });
 
+describe('no-select-sensitive-fields — a Program without tokens (Layer 2)', () => {
+  // `TSESTree.Program.tokens` is typed `Token[] | undefined`. Every real
+  // parser decorates tokens, but a custom one need not, and the schema scan
+  // must not throw on it.
+  it('treats a token-less Program as "no sensitive field in view"', () => {
+    const { listeners, reports } = createWithMockContext(
+      noSelectSensitiveFields as unknown as RuleLike,
+      { ast: { type: 'Program', body: [] } },
+    );
+    const listener = listeners.CallExpression as (node: unknown) => void;
+    listener({
+      type: 'CallExpression',
+      callee: {
+        type: 'MemberExpression',
+        object: { type: 'Identifier', name: 'User' },
+        property: { type: 'Identifier', name: 'find' },
+      },
+      arguments: [],
+      parent: { type: 'ExpressionStatement' },
+    });
+    expect(reports).toHaveLength(0);
+  });
+});
+
 describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)', () => {
   // The schema (`items: { type: 'string' }` array) rejects `null` and the
   // destructuring default at create() only fires for `undefined`, so the

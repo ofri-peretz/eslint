@@ -18,6 +18,8 @@ type MessageIds = 'requireTls';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
+const CONNECT_METHODS = new Set(['connect', 'createConnection']);
+
 export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
   name: 'require-tls-connection',
   meta: {
@@ -54,7 +56,6 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const CONNECT_METHODS = new Set(['connect', 'createConnection']);
     const mongo = analyzeMongoScope(context.sourceCode.ast);
 
     return {

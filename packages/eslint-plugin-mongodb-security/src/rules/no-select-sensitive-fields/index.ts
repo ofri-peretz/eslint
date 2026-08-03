@@ -132,7 +132,9 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
      * not, the rule has no basis for claiming the query exposes one.
      */
     const schemaIsSensitive = (): boolean => {
-      for (const token of context.sourceCode.ast.tokens) {
+      // `Program.tokens` is typed optional: a parser that skips token
+      // decoration would otherwise crash the rule.
+      for (const token of context.sourceCode.ast.tokens ?? []) {
         const name =
           token.type === 'Identifier' ? token.value :
           token.type === 'String' ? token.value.slice(1, -1) :

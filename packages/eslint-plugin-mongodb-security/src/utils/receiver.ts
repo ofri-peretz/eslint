@@ -20,8 +20,16 @@ import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 /** Packages whose exports are MongoDB/Mongoose handles. */
 const MONGO_MODULES = new Set(['mongodb', 'mongoose', 'mongodb-client-encryption']);
 
-/** Identifiers that read as a Mongo model/collection/database handle. */
-const MONGO_HANDLE_NAME = /^(db|database|model|models|collection|collections|schema|document|documents)$/i;
+/**
+ * Identifiers that read as a Mongo model/collection/database handle.
+ *
+ * Suffix-matched, because the idiomatic NestJS injection is
+ * `@InjectModel(User.name) private userModel` — `this.userModel.find(...)`,
+ * not `this.model.find(...)`. An exact-match list misses the single most
+ * common Mongoose receiver in the ecosystem.
+ */
+const MONGO_HANDLE_NAME =
+  /^(db|database)$|(^|[a-z_])(model|collection|schema|document)s?$/i;
 
 /** Identifiers that read as a Mongo *connection* handle. */
 const MONGO_CONNECTION_NAME = /^mongo/i;
@@ -58,8 +66,14 @@ function unwrap(node: TSESTree.Node): TSESTree.Node {
   }
 }
 
-/** Every identifier name along a member chain: `db.users` -> ['db', 'users']. */
-function chainNames(node: TSESTree.Node): string[] {
+/**
+ * Every identifier name along a member chain: `db.users` -> ['db', 'users'].
+ * Also reports whether the chain bottoms out at `this`, because the
+ * "PascalCase means Mongoose model" convention applies to module-level
+ * identifiers, not to instance properties — `this.UserRepository` is a
+ * injected service, not a model.
+ */
+function chainNames(node: TSESTree.Node): { names: string[]; rootIsThis: boolean } {
   const names: string[] = [];
   let current = unwrap(node);
   while (current.type === AST_NODE_TYPES.MemberExpression) {
@@ -71,7 +85,7 @@ function chainNames(node: TSESTree.Node): string[] {
   if (current.type === AST_NODE_TYPES.Identifier) {
     names.unshift(current.name);
   }
-  return names;
+  return { names, rootIsThis: current.type === AST_NODE_TYPES.ThisExpression };
 }
 
 export interface MongoScope {
@@ -129,7 +143,7 @@ function collectBindings(program: TSESTree.Program): Set<string> {
     // mongoose.createConnection(...) / client.db(...) — anything rooted in a
     // name we already know to be Mongo.
     if (expr.type === AST_NODE_TYPES.CallExpression) {
-      const names = chainNames(expr.callee);
+      const { names } = chainNames(expr.callee);
       return names.length > 0 && bindings.has(names[0]);
     }
     if (expr.type === AST_NODE_TYPES.AwaitExpression) return isMongoSource(expr.argument);
@@ -193,15 +207,18 @@ export function analyzeMongoScope(program: TSESTree.Program): MongoScope {
       // `db.collection('users').find(...)` — the chain that produced the
       // receiver names a Mongo handle.
       if (receiver.type === AST_NODE_TYPES.CallExpression) {
-        return chainNames(receiver.callee).some(
+        return chainNames(receiver.callee).names.some(
           (name) => bindings.has(name) || MONGO_HANDLE_NAME.test(name),
         );
       }
 
-      const names = chainNames(receiver);
+      const { names, rootIsThis } = chainNames(receiver);
       if (names.length === 0) return false;
       return names.some(
-        (name) => bindings.has(name) || MONGO_HANDLE_NAME.test(name) || isModelStyleName(name),
+        (name) =>
+          bindings.has(name) ||
+          MONGO_HANDLE_NAME.test(name) ||
+          (!rootIsThis && isModelStyleName(name)),
       );
     },
 
@@ -214,10 +231,11 @@ export function analyzeMongoScope(program: TSESTree.Program): MongoScope {
           MONGO_CONSTRUCTORS.has(receiver.callee.name)
         );
       }
-      const names = chainNames(receiver);
       // Unlike models, a connection handle gets no name-shape benefit of the
       // doubt: `client`/`connection` are just as likely Redis or Postgres.
-      return names.some((name) => bindings.has(name) || MONGO_CONNECTION_NAME.test(name));
+      return chainNames(receiver).names.some(
+        (name) => bindings.has(name) || MONGO_CONNECTION_NAME.test(name),
+      );
     },
   };
 

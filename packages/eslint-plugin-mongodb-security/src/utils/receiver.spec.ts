@@ -61,6 +61,10 @@ describe('analyzeMongoScope — model receivers', () => {
     ['a TS `as` cast around the receiver', `(model as Model<T>).find(filter);`],
     ['a non-null assertion', `db!.users.find({});`],
     ['optional chaining', `db?.users?.find({});`],
+    // The idiomatic NestJS injection: @InjectModel(User.name) private userModel
+    ['a `*Model` suffixed property', `this.userModel.find(filter);`],
+    ['a `*Model` suffixed identifier', `catModel.find(filter);`],
+    ['a `*Collection` suffixed property', `this.usersCollection.find(filter);`],
   ])('accepts %s', (_label, code) => {
     expect(analyze(code).isModel).toBe(true);
   });
@@ -77,6 +81,10 @@ describe('analyzeMongoScope — model receivers', () => {
     ['a computed member receiver', `wrappers[key].find(0);`],
     ['a non-Mongo call chain', `getContext().find(0);`],
     ['SCREAMING_CASE (a constant, not a model)', `ROLES.find(0);`],
+    // PascalCase means "Mongoose model" for a module-level identifier, not for
+    // an instance property — injected services are reached through `this`.
+    ['a PascalCase DI property on `this`', `this.UserRepository.findOne({ id });`],
+    ['a PascalCase DI service on `this`', `this.UserService.findOne({ id });`],
   ])('rejects %s', (_label, code) => {
     expect(analyze(code).isModel).toBe(false);
   });
