@@ -156,3 +156,4 @@ packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts
 .review-screens/
+.build-nocomments

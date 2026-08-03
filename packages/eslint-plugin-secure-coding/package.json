@@ -87,7 +87,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.3",
+    "@interlace/eslint-devkit": "^1.4.4",
     "scslre": "^0.3.0",
     "@eslint-community/regexpp": "^4.10.0"
   },

@@ -4,7 +4,7 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 import { fileExistsSync, findFileUpward, statSync } from '../node/fs';
 import { getDirname, joinPath, resolvePath } from '../node/path';
 import {
@@ -41,7 +41,48 @@ export interface ResolverOptions {
 // Per-tsconfig resolver cache: in monorepos, different packages have different
 // tsconfig.json files (with different path aliases). We maintain one resolver
 // per unique tsconfig to ensure correct resolution across package boundaries.
-const oxcResolverCache = new Map<string, InstanceType<typeof OxcResolverFactory>>();
+const oxcResolverCache = new Map<
+  string,
+  InstanceType<typeof OxcResolverFactory>
+>();
+
+// ponytail: `oxc-resolver` ships a ~1.5 MB native NAPI binary, and exactly one
+// plugin in this ecosystem (eslint-plugin-import-next) actually resolves
+// imports. As a hard dependency it was downloaded by all 21 consumers. It is
+// now an OPTIONAL peer, loaded on first use rather than at module load, so
+// importing this devkit no longer requires the binary to be present.
+let factoryRef: typeof OxcResolverFactory | undefined;
+
+/**
+ * Thrown when the optional `oxc-resolver` peer is not installed.
+ *
+ * This is deliberately its own class: `resolveModule` swallows resolution
+ * failures and returns `null` (an unresolvable import is normal), and a
+ * missing peer must NOT disappear down that path — it would turn every
+ * import into a silent non-resolution instead of a fixable install error.
+ */
+export class MissingResolverPeerError extends Error {
+  override readonly name = 'MissingResolverPeerError';
+}
+
+function loadResolverFactory(): typeof OxcResolverFactory {
+  if (factoryRef) {
+    return factoryRef;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load of an optional peer
+    factoryRef = (require('oxc-resolver') as typeof import('oxc-resolver'))
+      .ResolverFactory;
+  } catch (cause) {
+    throw new MissingResolverPeerError(
+      'Import resolution requires the optional peer dependency "oxc-resolver", ' +
+        'which is not installed. Install it alongside this plugin:\n\n' +
+        '  npm install --save-dev oxc-resolver\n',
+      { cause },
+    );
+  }
+  return factoryRef;
+}
 
 // Per-directory tsconfig cache: maps a directory to its nearest tsconfig.json.
 // This avoids repeated upward walks for files in the same directory.
@@ -94,10 +135,20 @@ function getOxcResolver(
   fromFile: string,
 ): InstanceType<typeof OxcResolverFactory> {
   const extensions = options.extensions || [
-    '.ts', '.tsx', '.js', '.jsx', '.d.ts', '.json', '.node',
+    '.ts',
+    '.tsx',
+    '.js',
+    '.jsx',
+    '.d.ts',
+    '.json',
+    '.node',
   ];
   const conditionNames = options.conditionNames || [
-    'import', 'require', 'node', 'default', 'types',
+    'import',
+    'require',
+    'node',
+    'default',
+    'types',
   ];
   const mainFields = options.mainFields || ['module', 'main'];
 
@@ -129,7 +180,8 @@ function getOxcResolver(
     };
   }
 
-  const resolver = new OxcResolverFactory(resolverOptions);
+  const ResolverFactory = loadResolverFactory();
+  const resolver = new ResolverFactory(resolverOptions);
   oxcResolverCache.set(key, resolver);
 
   return resolver;
@@ -254,9 +306,19 @@ export function resolveModule(
     // This bypasses oxc-resolver for the ~80% of imports that are relative.
     // Skip for CSS imports when cssSupport is enabled.
     // =========================================================================
-    if (importPath.startsWith('.') && !(options.cssSupport && isCssImport(importPath))) {
+    if (
+      importPath.startsWith('.') &&
+      !(options.cssSupport && isCssImport(importPath))
+    ) {
       const context = getDirname(fromFile);
-      const defaultExtensions = ['.ts', '.tsx', '.js', '.jsx', '.d.ts', '.json'];
+      const defaultExtensions = [
+        '.ts',
+        '.tsx',
+        '.js',
+        '.jsx',
+        '.d.ts',
+        '.json',
+      ];
       const extensions = options.extensions || defaultExtensions;
       const resolved = resolvePath(context, importPath);
 
@@ -328,7 +390,12 @@ export function resolveModule(
 
     // No resolver succeeded
     return null;
-  } catch {
+  } catch (error) {
+    // A missing optional peer is a setup error the user must fix — never let
+    // it masquerade as "this import doesn't resolve".
+    if (error instanceof MissingResolverPeerError) {
+      throw error;
+    }
     // Resolution failed with unexpected error
     return null;
   }
