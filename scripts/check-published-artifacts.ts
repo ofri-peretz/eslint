@@ -89,6 +89,18 @@ type Violation = {
 const STRIP_SENTINEL = 'Copyright (c) 2025 Ofri Peretz';
 
 /**
+ * Fields that must never survive into a published manifest.
+ *
+ * `scripts` and `devDependencies` are build-time only — npm never runs one in a
+ * consumer's node_modules and never installs the other — but they shipped in
+ * all 27 manifests until 2026-08-03, cluttering the npm page and getting read
+ * by SCA tools that scan installed manifests. build-package.ts deletes them.
+ * Without this check, removing that delete would silently put them back in
+ * every package and nothing in CI would notice.
+ */
+const FORBIDDEN_MANIFEST_FIELDS = ['scripts', 'devDependencies'] as const;
+
+/**
  * Metadata every published package must carry.
  *
  * These are the fields npm's own search ranking and third-party quality
@@ -142,6 +154,7 @@ const exportGaps: { pkg: string; subpath: string; missing: string }[] = [];
 const violations: Violation[] = [];
 const commentRegressions: { pkg: string; files: number }[] = [];
 const metadataGaps: { pkg: string; fields: string[] }[] = [];
+const manifestLeaks: { pkg: string; fields: string[] }[] = [];
 const sizes: { name: string; kb: number }[] = [];
 
 for (const dir of readdirSync(PACKAGES_DIR)) {
@@ -179,6 +192,12 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
     (r) => r.field,
   );
   if (gaps.length > 0) metadataGaps.push({ pkg: meta.name, fields: gaps });
+
+  const leaked = FORBIDDEN_MANIFEST_FIELDS.filter(
+    (f) => f in (manifest as Record<string, unknown>),
+  );
+  if (leaked.length > 0)
+    manifestLeaks.push({ pkg: meta.name, fields: [...leaked] });
 
   // Resolve every target an exports map (and top-level main/types) declares.
   const shipped = new Set(meta.files.map((f) => f.path));
@@ -237,19 +256,19 @@ if (sizes.length === 0) {
 if (JSON_OUT) {
   console.log(
     JSON.stringify(
-      { violations, commentRegressions, metadataGaps, exportGaps, sizes },
+      {
+        violations,
+        commentRegressions,
+        metadataGaps,
+        exportGaps,
+        manifestLeaks,
+        sizes,
+      },
       null,
       2,
     ),
   );
-  process.exit(
-    violations.length ||
-      commentRegressions.length ||
-      metadataGaps.length ||
-      exportGaps.length
-      ? 1
-      : 0,
-  );
+  process.exit(FAILURES.some((n) => n > 0) ? 1 : 0);
 }
 
 const total = sizes.reduce((a, s) => a + s.kb, 0);
@@ -283,6 +302,18 @@ if (exportGaps.length > 0) {
   );
 }
 
+if (manifestLeaks.length > 0) {
+  console.error(
+    `  ❌ ${manifestLeaks.length} manifest(s) still carry build-only fields:\n`,
+  );
+  for (const m of manifestLeaks)
+    console.error(`    ${m.pkg}  ${m.fields.join(', ')}`);
+  console.error(
+    '\n    build-package.ts deletes these; if that stopped, they ship to every\n' +
+      '    consumer and clutter the npm page.\n',
+  );
+}
+
 if (metadataGaps.length > 0) {
   console.error(
     `  ❌ ${metadataGaps.length} package(s) missing discoverability metadata:\n`,
@@ -302,13 +333,15 @@ const FAILURES = [
   commentRegressions.length,
   metadataGaps.length,
   exportGaps.length,
+  manifestLeaks.length,
 ];
 const failed = FAILURES.reduce((a, b) => a + b, 0) > 0;
 
 if (!failed) {
   console.log(
     '  ✅ No source maps, no AGENTS.md, no commented JS;' +
-      ' every declared export resolves; metadata complete.\n',
+      ' every declared export resolves; no build-only manifest fields;' +
+      ' metadata complete.\n',
   );
   process.exit(0);
 }

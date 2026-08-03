@@ -15,7 +15,7 @@
     "eslint-plugin-modularity": 58,
     "eslint-plugin-mongodb-security": 101,
     "eslint-plugin-mysql-security": 19,
-    "eslint-plugin-nestjs-security": 72,
+    "eslint-plugin-nestjs-security": 86,
     "eslint-plugin-node-security": 298,
     "eslint-plugin-operability": 43,
     "eslint-plugin-pg": 91,
