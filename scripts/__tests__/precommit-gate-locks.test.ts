@@ -154,6 +154,29 @@ describe('environment-bound suites declare a suite-level timeout', () => {
     },
   ];
 
+  // Raising `testTimeout` and leaving `hookTimeout` at vitest's 10s default only
+  // looks fixed — hooks do not inherit it. eslint-devkit shipped exactly that
+  // gap, and it failed `git push` on its own: the deep-import-chain suite's
+  // `afterEach` deletes 6,000 files (4.1s idle, past 30s under the 61-way
+  // parallel battery) while the test itself finished inside 30s.
+  it('eslint-devkit declares both timeouts, not just testTimeout', () => {
+    const config = read('packages/eslint-devkit/vitest.config.mts');
+    for (const key of ['testTimeout', 'hookTimeout']) {
+      const declared = new RegExp(`${key}:\\s*([\\d_]+)`).exec(config);
+      expect(
+        declared,
+        `${key} is not declared. Setup/teardown that touches the filesystem is ` +
+          'starved by the same contention as the tests it brackets, and ' +
+          '`hookTimeout` does not inherit `testTimeout`.',
+      ).not.toBeNull();
+      expect(
+        Number(declared![1].replace(/_/g, '')),
+        `${key} below 30s is idle-machine sizing — measured cost under the ` +
+          'parallel battery already exceeded both 10s and 30s.',
+      ).toBeGreaterThanOrEqual(30_000);
+    }
+  });
+
   it.each(SUITES)('$suite', ({ file, suite, why }) => {
     const source = read(file);
     const declaration = new RegExp(
