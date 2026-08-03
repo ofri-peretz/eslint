@@ -24,6 +24,13 @@
 'eslint-plugin-reliability': patch
 'eslint-plugin-secure-coding': patch
 'eslint-plugin-vercel-ai-security': patch
+'eslint-plugin-drizzle-security': patch
+'eslint-plugin-knex-security': patch
+'eslint-plugin-mysql-security': patch
+'eslint-plugin-prisma-security': patch
+'eslint-plugin-sequelize-security': patch
+'eslint-plugin-sqlite-security': patch
+'eslint-plugin-typeorm-security': patch
 ---
 
 Fix the `./oxlint` subpath export, which pointed at `src/oxlint.js` — a file no build produces. `require('<package>/oxlint')` threw MODULE_NOT_FOUND on every published package, while every README documented that exact wiring for oxlint's `jsPlugins`. The export now points at the build output, `dist/src/oxlint.js`.
