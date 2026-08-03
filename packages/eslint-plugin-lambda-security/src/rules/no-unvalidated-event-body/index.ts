@@ -190,6 +190,31 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
+    /**
+     * Walk past value-preserving wrappers so the safe-pattern checks below
+     * see the *semantic* parent. `schema.safeParse(JSON.parse(event.body ??
+     * '{}'))` is a validated parse chain, but `event.body`'s direct parent is
+     * the `??` LogicalExpression, which used to defeat every check and produce
+     * a false positive. Same for `event.body!` and `event.body as string`.
+     * Also walks past `&&` and `||` (all share `LogicalExpression`), which
+     * lets `if (event.httpMethod === 'POST' && event.body)` resolve to the
+     * enclosing `IfStatement` safe-guard rather than the `&&` itself.
+     */
+    function semanticParent(node: TSESTree.Node): TSESTree.Node | undefined {
+      let current = node;
+      let parent = current.parent;
+      while (
+        parent &&
+        (parent.type === AST_NODE_TYPES.LogicalExpression ||
+          parent.type === AST_NODE_TYPES.TSAsExpression ||
+          parent.type === AST_NODE_TYPES.TSNonNullExpression)
+      ) {
+        current = parent;
+        parent = current.parent;
+      }
+      return parent;
+    }
+
     // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
     // here, but it was dead code: `JSON.parse(...)` always satisfies
     // `isValidationCall` first ('parse' is in VALIDATION_INDICATORS), so the
@@ -352,7 +377,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         if (!eventAccess) return;
 
         // Check if this is being validated
-        const parent = node.parent;
+        const parent = semanticParent(node);
 
         // Case: const data = schema.parse(event.body) - this is OK
         if (
