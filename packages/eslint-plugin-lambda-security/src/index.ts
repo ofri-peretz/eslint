@@ -88,7 +88,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-lambda-security',
-    version: '1.2.9',
+    version: '1.2.10',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
