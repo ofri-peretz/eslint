@@ -178,10 +178,8 @@ describe('Mermaid Diagram Syntax Validation', () => {
         'A -->|Safe Pattern| Match[Match/No Match Fast]'
       ];
 
-      const invalidPattern = /-->\s*"\|[^"]*\|/;
-
       for (const example of validExamples) {
-        expect(invalidPattern.test(example)).toBe(false);
+        expect(CHECKS.quotedPipeLabels.test(example)).toBe(false);
       }
     });
 
@@ -193,10 +191,8 @@ describe('Mermaid Diagram Syntax Validation', () => {
         'Construct -->"|Unescaped| Risk[🚨 ReDoS]"'
       ];
 
-      const invalidPattern = /-->\s*"\|[^"]*\|/;
-
       for (const example of invalidExamples) {
-        expect(invalidPattern.test(example)).toBe(true);
+        expect(CHECKS.quotedPipeLabels.test(example)).toBe(true);
       }
     });
   });
@@ -225,8 +221,9 @@ More markdown with -->"|Still Ignore|"
       ]);
 
       // ...and must not leak the prose lines that look like violations.
-      const invalidPattern = /-->\s*"\|[^"]*\|/;
-      expect(inside.some((l) => invalidPattern.test(l.content))).toBe(false);
+      expect(
+        inside.some((l) => CHECKS.quotedPipeLabels.test(l.content))
+      ).toBe(false);
     });
   });
 
