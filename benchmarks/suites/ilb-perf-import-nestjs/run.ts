@@ -21,6 +21,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { globSync } from 'glob';
 import { cloneRepo, resolveBenchDir } from '../../lib/clone-repo';
+import { getToolchain } from '../../lib/toolchain';
+import { capturePreregistration } from '../../lib/preregister';
 
 const SUITE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const BENCHMARKS_ROOT = path.resolve(SUITE_DIR, '..', '..');
@@ -533,9 +535,22 @@ function writeJson(corpus: CorpusSpec, fileCount: number, loc: number, results: 
     comparison[host] = { baseline: baseline.id, vs };
   }
 
+  // See the note in ilb-oxlint-parity/run.ts — never allow a dirty tree to
+  // produce a receipt in CI.
+  const CI = process.argv.includes('--ci') || Boolean(process.env.CI);
+  const prereg = capturePreregistration({ allowDirty: !CI, entrypoint: import.meta.url });
+
   const payload = {
     suite: 'ilb-perf-import-nestjs',
+    // Vocabulary-contract fields + squash-proof receipt — see the note in
+    // ilb-oxlint-parity/run.ts. `timestamp` alone was not enough.
+    bench: 'ILB-Perf',
+    benchVersion: '0.1',
     timestamp: new Date().toISOString(),
+    toolchain: getToolchain(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     environment: {
       node: process.version,
       platform: process.platform,

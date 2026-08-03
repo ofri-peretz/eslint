@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-08-03T02:33:16.687Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "competitor": "oxlint-builtin",
   "host": "oxlint",
   "package": "oxlint",
@@ -2506,5 +2518,6 @@
       "message": "Dependency cycle detected",
       "note": "These paths form a cycle:\n╭──▶ ./testing-injector (packages/testing/testing-injector.ts)\n│         ⬇ imports\n│    ./interfaces (packages/testing/interfaces/index.ts)\n│         ⬇ imports\n│    ./override-by.interface (packages/testing/interfaces/override-by.interface.ts)\n│         ⬇ imports\n│    ../testing-module.builder (packages/testing/testing-module.builder.ts)\n│         ⬇ imports\n│    ./testing-instance-loader (packages/testing/testing-instance-loader.ts)\n╰─────────╯ imports the current file"
     }
-  ]
+  ],
+  "timestamp": "2026-05-17T04:38:53.000Z"
 }
