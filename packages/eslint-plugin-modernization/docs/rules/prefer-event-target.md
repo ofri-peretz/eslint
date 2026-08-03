@@ -73,7 +73,7 @@ emitter.dispatch('change', { value: 42 });
 ```javascript
 {
   rules: {
-    'architecture/prefer-event-target': 'warn'
+    'modernization/prefer-event-target': 'warn'
   }
 }
 ```

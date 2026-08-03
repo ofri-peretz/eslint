@@ -175,18 +175,18 @@ function violationMessage(
   );
 }
 
-// Both layers shell out to `grep` over the whole workspace. The grep itself is
-// sub-second (measured 0.65–0.74s from repo root); what blows the default 5s
-// budget is process spawn + I/O contention when `turbo run test` runs 20+ test
-// processes in parallel. 30s is slack for load, not for the scan — do not "fix"
-// this by widening SHARED_EXCLUDES.
+// Both layers shell out to `git grep` over the whole workspace (~0.25s). What
+// blows vitest's default 5s budget is process spawn + I/O contention when
+// `turbo run test` runs 20+ test processes in parallel. 30s is slack for load,
+// not for the scan — do not "fix" this by widening SHARED_EXCLUDES.
+//
+// (#324 set this timeout while the scan was still `grep -r` over the working
+// tree, and measured it warm at 0.65–0.74s; cold it was 15.4s. The engine is now
+// `git grep`, which is 40x faster and immune to the cold walk — but the timeout
+// stays, because contention is the actual failure mode and it is unbounded.)
 describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
   for (const plugin of DEPRECATED_PLUGINS) {
-    // Explicit timeout: a repo-wide scan is fast (~0.25s) but shells out, so it
-    // is at the mercy of I/O contention under the full `turbo run test` fan-out.
-    // The default 5s left too little headroom and turned contention into a
-    // "violation".
-    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, { timeout: 60_000 }, () => {
+    it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {
       const violations = findMarkdownReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.allowlist),
       );
@@ -196,7 +196,7 @@ describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
       ).toEqual([]);
     });
 
-    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, { timeout: 60_000 }, () => {
+    it(`should not import ${plugin.name} from any code/config file (deleted; use ${plugin.successor})`, () => {
       const violations = findImportReferences(plugin.name).filter(
         (hit) => !isAllowed(hit.file, plugin.importAllowlist),
       );

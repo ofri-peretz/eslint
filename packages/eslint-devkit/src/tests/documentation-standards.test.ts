@@ -12,8 +12,13 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-// Get workspace root (3 levels up from this test file)
-const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
+// This file lives at packages/eslint-devkit/src/tests/ — four `../` reach the
+// repo root. It previously used five, which resolved *above* the repo: every
+// `grep ... packages` below scanned a directory with no `packages/` and returned
+// nothing, and PACKAGES_DIR failed every existsSync, so the whole suite passed
+// vacuously (and the per-plugin describe generated zero tests). Keep this in sync
+// with no-deprecated-plugin-references.test.ts, which resolves the same root.
+const WORKSPACE_ROOT = path.resolve(__dirname, '../../../..');
 const PACKAGES_DIR = path.join(WORKSPACE_ROOT, 'packages');
 
 // List of valid plugin names in the Interlace ecosystem.
@@ -48,6 +53,28 @@ const INVALID_PLUGINS = [
   'eslint-plugin-architecture', // Never existed, was placeholder
 ];
 
+// This guard's own source necessarily contains every name it forbids (in the
+// table above and in the grep patterns below), so it is excluded from its own
+// scans. Same rationale as THIS_TEST in no-deprecated-plugin-references.test.ts.
+const THIS_TEST = 'packages/eslint-devkit/src/tests/documentation-standards.test.ts';
+
+/**
+ * `git grep -l` over tracked files, minus this test.
+ *
+ * `git grep` rather than `grep -r`: it never walks node_modules or any other
+ * gitignored tree, which is both dramatically faster and the reason the old
+ * `.filter(f => !f.includes('node_modules'))` hand-filtering is no longer needed.
+ */
+function grepFiles(pattern: string, pathspecs: string[]): string[] {
+  const cmd = ['git', 'grep', '-l', `"${pattern}"`, '--', ...pathspecs, '2>/dev/null || true'].join(
+    ' ',
+  );
+  return execSync(cmd, { cwd: WORKSPACE_ROOT, encoding: 'utf-8' })
+    .trim()
+    .split('\n')
+    .filter((f) => f && f !== THIS_TEST);
+}
+
 // Every test here shells out to `grep` over the whole workspace. The grep itself
 // is sub-second, but process spawn + I/O contention under `turbo run test`
 // (20+ test processes in parallel) blows the default 5s budget. 30s is slack for
@@ -55,15 +82,11 @@ const INVALID_PLUGINS = [
 describe('Documentation Standards', { timeout: 30_000 }, () => {
   describe('No @eslint/ Prefixed Plugin Names', () => {
     it('should not have @eslint/eslint-plugin-* references in any docs or source', () => {
-      const result = execSync(
-        `grep -r "@eslint/eslint-plugin" packages --include="*.md" --include="*.ts" --include="*.tsx" -l 2>/dev/null || true`,
-        { cwd: WORKSPACE_ROOT, encoding: 'utf-8' },
-      );
-
-      const files = result
-        .trim()
-        .split('\n')
-        .filter((f) => f && !f.includes('node_modules'));
+      const files = grepFiles('@eslint/eslint-plugin', [
+        'packages/**/*.md',
+        'packages/**/*.ts',
+        'packages/**/*.tsx',
+      ]);
 
       expect(files).toEqual([]);
     });
@@ -72,15 +95,7 @@ describe('Documentation Standards', { timeout: 30_000 }, () => {
   describe('No References to Non-Existent Plugins', () => {
     for (const invalidPlugin of INVALID_PLUGINS) {
       it(`should not reference ${invalidPlugin}`, () => {
-        const result = execSync(
-          `grep -r "${invalidPlugin}" packages --include="*.md" --include="*.ts" -l 2>/dev/null || true`,
-          { cwd: WORKSPACE_ROOT, encoding: 'utf-8' },
-        );
-
-        const files = result
-          .trim()
-          .split('\n')
-          .filter((f) => f && !f.includes('node_modules'));
+        const files = grepFiles(invalidPlugin, ['packages/**/*.md', 'packages/**/*.ts']);
 
         expect(files).toEqual([]);
       });
@@ -118,17 +133,26 @@ describe('Documentation Standards', { timeout: 30_000 }, () => {
             expect(pluginMatch[1]).toBe(plugin);
           }
 
-          // Check that config examples use correct prefix
+          // Check that config examples use correct prefix.
+          //
+          // Both severity forms must be covered: the array form
+          // `'x/rule': ['error', {...}]` AND the bare-string form
+          // `'x/rule': 'warn'`. The original pattern only matched the array
+          // form, which is why stale `architecture/` prefixes survived in
+          // maintainability / modernization / node-security docs while their
+          // tests reported green.
           const pluginPrefix = plugin.replace('eslint-plugin-', '');
           const configMatches = content.match(
-            /'([a-z-]+)\/[a-z-]+': \[['"](?:error|warn)/g,
+            /'([a-z-]+)\/[a-z-]+':\s*(?:\[\s*)?['"](?:error|warn|off)['"]/g,
           );
 
           if (configMatches) {
             for (const match of configMatches) {
               const usedPrefix = match.match(/'([a-z-]+)\//)?.[1];
               if (usedPrefix) {
-                expect(usedPrefix).toBe(pluginPrefix);
+                expect(usedPrefix, `${ruleFile}: config example uses '${usedPrefix}/' prefix`).toBe(
+                  pluginPrefix,
+                );
               }
             }
           }
@@ -140,15 +164,11 @@ describe('Documentation Standards', { timeout: 30_000 }, () => {
   describe('LLM Format Documentation Standards', () => {
     it('should have consistent Error Message Format sections where applicable', () => {
       // Find all rule docs that mention LLM-optimized
-      const result = execSync(
-        `grep -r "LLM-optimized" packages --include="*.md" -l 2>/dev/null || true`,
-        { cwd: WORKSPACE_ROOT, encoding: 'utf-8' },
+      const files = grepFiles('LLM-optimized', ['packages/**/*.md']).filter((f) =>
+        f.includes('/docs/'),
       );
 
-      const files = result
-        .trim()
-        .split('\n')
-        .filter((f) => f && !f.includes('node_modules') && f.includes('/docs/'));
+      const missingFormat: string[] = [];
 
       // Check that each file with LLM-optimized mention has proper format
       for (const file of files) {
@@ -164,9 +184,13 @@ describe('Documentation Standards', { timeout: 30_000 }, () => {
             content.includes('```\n🔒') || // Security rules format
             content.includes('errorMessageFormat'); // Config option
 
-          expect(hasErrorFormat).toBe(true);
+          if (!hasErrorFormat) missingFormat.push(file);
         }
       }
+
+      // Collect-then-assert rather than failing on the first offender, so the
+      // message names every doc that needs fixing in one run.
+      expect(missingFormat, `Docs promising LLM-optimized messages without an Error Message Format section:\n  ${missingFormat.join('\n  ')}`).toEqual([]);
     });
   });
 
