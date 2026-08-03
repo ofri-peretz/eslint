@@ -48,7 +48,11 @@ const INVALID_PLUGINS = [
   'eslint-plugin-architecture', // Never existed, was placeholder
 ];
 
-describe('Documentation Standards', () => {
+// Every test here shells out to `grep` over the whole workspace. The grep itself
+// is sub-second, but process spawn + I/O contention under `turbo run test`
+// (20+ test processes in parallel) blows the default 5s budget. 30s is slack for
+// load, not for the scan.
+describe('Documentation Standards', { timeout: 30_000 }, () => {
   describe('No @eslint/ Prefixed Plugin Names', () => {
     it('should not have @eslint/eslint-plugin-* references in any docs or source', () => {
       const result = execSync(
