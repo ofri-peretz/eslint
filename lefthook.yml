@@ -47,16 +47,6 @@ pre-push:
       run: npm run --silent typecheck
     build:
       run: npx --no turbo run build --output-logs=errors-only
-    published-artifacts:
-      # Fails when a package would publish source maps, AGENTS.md, commented
-      # JS, a dangling `exports` subpath, or incomplete metadata. All of these
-      # fail silently — the package installs and lints fine, the tarball is
-      # just wrong. It reads `npm pack --dry-run`, so dist/ must be current;
-      # this group runs in parallel, so it rebuilds first rather than racing
-      # the sibling `build` (turbo cache makes that a no-op). The size report
-      # is advisory and never blocks.
-      # See scripts/check-published-artifacts.ts + check-artifact-size.ts.
-      run: npx --no turbo run build --filter="./packages/*" --output-logs=errors-only && npm run --silent check-published-artifacts && npm run --silent check-artifact-size
     tests:
       run: npx --no turbo run test --output-logs=errors-only
     markdown-full:

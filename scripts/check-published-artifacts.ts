@@ -16,6 +16,14 @@
  *      ("context for AI coding agents working on <pkg>") with monorepo-root
  *      install steps and `nx` commands this repo no longer uses.
  *
+ * WHERE THIS RUNS: `npm run quality` and the release workflow's pre-publish
+ * stage, where it inspects the exact artifact STAGE 3 will publish. It is
+ * deliberately NOT a lefthook pre-push command: that group runs in parallel,
+ * and a gate that reads `dist/` either races the sibling `build` or (if it
+ * builds defensively) runs a second concurrent turbo build over the same
+ * output — which corrupts dist and fails typecheck, shim-verify and build
+ * along with it. Verified the hard way on 2026-08-03.
+ *
  * Both are excluded by scripts/build-package.ts. This gate proves the
  * exclusion still works, because the failure mode is silent: nothing errors,
  * the tarball just gets fatter. Note a root-level .npmignore does NOT do the
