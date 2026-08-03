@@ -95,7 +95,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.3"
+    "@interlace/eslint-devkit": "^1.4.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -111,6 +111,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

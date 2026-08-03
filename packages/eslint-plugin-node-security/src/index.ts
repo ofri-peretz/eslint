@@ -17,6 +17,7 @@ import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
 import { noShellInjection } from './rules/no-shell-injection';
+import { noDynamicCommandString } from './rules/no-dynamic-command-string';
 import { noDynamicAlgorithmSelection } from './rules/no-dynamic-algorithm-selection';
 
 // Migrated rules from secure-coding
@@ -64,6 +65,7 @@ export const rules: Record<
   'no-data-in-temp-storage': noDataInTempStorage,
   'no-ssrf': noSsrf,
   'no-shell-injection': noShellInjection,
+  'no-dynamic-command-string': noDynamicCommandString,
   'no-dynamic-algorithm-selection': noDynamicAlgorithmSelection,
 
   // Migrated rules
@@ -129,6 +131,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-data-in-temp-storage': 'error',
   'node-security/no-ssrf': 'warn',
   'node-security/no-shell-injection': 'error',
+  'node-security/no-dynamic-command-string': 'error',
   'node-security/no-dynamic-algorithm-selection': 'error',
   // Added to `recommended` 2026-08-02. `secure-coding/no-insecure-comparison`
   // was removed from every `secure-coding` preset in favour of this rule, but

@@ -97,7 +97,7 @@
     "generate:tests": "tsx scripts/generate-rule-tests.ts",
     "benchmark:score": "tsx benchmarks/score.ts",
     "benchmark:ci": "tsx benchmarks/score.ts --ci --threshold 80",
-    "quality": "npm run oxlint && npm run audit:portability:ci && npm run oxlint:shims:check && npm run ilb:oxlint-parity:cached && npx turbo run test && npm run lint:md && npm run lint:fixtures && npm run ilb:validate-results && npm run ilb:flagship:smoke && npm run audit:changelogs && npm run audit:claims:selftest && npm run audit:claims",
+    "quality": "npm run oxlint && npm run audit:portability:ci && npm run check-published-artifacts && npm run oxlint:shims:check && npm run ilb:oxlint-parity:cached && npx turbo run test && npm run lint:md && npm run lint:fixtures && npm run ilb:validate-results && npm run ilb:flagship:smoke && npm run audit:changelogs && npm run audit:claims:selftest && npm run audit:claims",
     "audit:rules": "tsx scripts/audit-rule.ts --fleet",
     "audit:rule": "tsx scripts/audit-rule.ts",
     "coverage:gaps": "tsx scripts/coverage-gap-analysis.ts",
@@ -188,7 +188,9 @@
     "verify:artifact:all": "tsx scripts/verify-published-artifact.ts --all",
     "verify:dist-integrity": "tsx scripts/verify-dist-integrity.ts",
     "verify:dist-integrity:release": "tsx scripts/verify-dist-integrity.ts --require-built",
-    "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
+    "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json",
+    "check-published-artifacts": "tsx scripts/check-published-artifacts.ts",
+    "check-artifact-size": "tsx scripts/check-artifact-size.ts"
   },
   "keywords": [
     "eslint",

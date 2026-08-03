@@ -33,12 +33,19 @@ import { ESLint } from 'eslint';
 // Track restoring it; once it has a manifest, add it here.
 // ---------------------------------------------------------------------------
 const PLUGIN_NAMES = [
-  // security (10 of 11 — crypto excluded)
+  // security (17 of 18 — crypto excluded)
   'eslint-plugin-secure-coding',
   'eslint-plugin-node-security',
   'eslint-plugin-browser-security',
   'eslint-plugin-jwt',
   'eslint-plugin-pg',
+  'eslint-plugin-sequelize-security',
+  'eslint-plugin-mysql-security',
+  'eslint-plugin-prisma-security',
+  'eslint-plugin-drizzle-security',
+  'eslint-plugin-knex-security',
+  'eslint-plugin-sqlite-security',
+  'eslint-plugin-typeorm-security',
   'eslint-plugin-mongodb-security',
   'eslint-plugin-express-security',
   'eslint-plugin-nestjs-security',

@@ -73,6 +73,25 @@ const cursor = db.collection('logs').find({});
 const x = 1;
 ```
 
+## Receiver Requirement
+
+`find()` is are not MongoDB-exclusive. This rule only fires when the receiver is
+plausibly a Mongo model, collection or database handle — a PascalCase model
+identifier (`User.find(...)`), a name ending in `Model`/`Collection`/`Schema`
+(`this.userModel`, the idiomatic `@InjectModel()` injection), a bare
+`db`/`model`/`collection`, a `db.collection('users')` chain, or a value bound
+to a `mongodb`/`mongoose` import. PascalCase counts only for a module-level
+identifier, not for a property reached through `this` — `this.UserRepository`
+is an injected service, not a model.
+
+It stays silent on:
+
+- `Array.prototype.find` — an array-literal receiver (`[a, b].find(Boolean)`)
+  or any call whose first argument is a predicate (`list.find((x) => x.id)`).
+  A Mongo `find()` takes a filter object; an array `find` takes a function.
+- Generic repository wrappers and other ORMs (`this.repository.find(...)` on a
+  TypeORM `Repository<T>`).
+
 ## Known False Negatives
 
 ### Limit in Options Object

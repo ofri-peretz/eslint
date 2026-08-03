@@ -11,7 +11,35 @@
  * Provides utilities for type-aware linting rules
  */
 import type { ParserServices, TSESTree } from '@typescript-eslint/utils';
-import * as ts from 'typescript';
+import type * as ts from 'typescript';
+
+/**
+ * ponytail: inlined instead of `import * as ts from 'typescript'`.
+ *
+ * These flags were the ONLY runtime use of the `typescript` package in this
+ * file — and that single `require('typescript')` forced npm to install the
+ * 24 MB compiler into every consumer of every plugin built on this devkit,
+ * including plain-JS projects that never run a type-aware rule. `typescript`
+ * is now an optional peer: present when a type-aware rule needs it, absent
+ * otherwise.
+ *
+ * `ts.TypeFlags` is a public numeric enum that has not renumbered in a
+ * decade. `type-flags.test.ts` asserts these values against the real
+ * compiler and fails the build if that ever stops being true.
+ */
+const TypeFlags = {
+  Any: 1,
+  Unknown: 2,
+  Undefined: 4,
+  Null: 8,
+  String: 32,
+  Number: 64,
+  Boolean: 256,
+  StringLiteral: 1024,
+  NumberLiteral: 2048,
+  BooleanLiteral: 8192,
+  Never: 262144,
+} as const;
 
 /**
  * Context type that can have parser services
@@ -84,7 +112,7 @@ export function getTypeOfNode(
  * Check if a type is any type
  */
 export function isAnyType(type: ts.Type): boolean {
-  if (type.flags & ts.TypeFlags.Any) {
+  if (type.flags & TypeFlags.Any) {
     return true;
   }
 
@@ -99,7 +127,7 @@ export function isAnyType(type: ts.Type): boolean {
  * Check if a type is unknown type
  */
 export function isUnknownType(type: ts.Type): boolean {
-  if (type.flags & ts.TypeFlags.Unknown) {
+  if (type.flags & TypeFlags.Unknown) {
     return true;
   }
 
@@ -114,7 +142,7 @@ export function isUnknownType(type: ts.Type): boolean {
  * Check if a type is never type
  */
 export function isNeverType(type: ts.Type): boolean {
-  return (type.flags & ts.TypeFlags.Never) !== 0;
+  return (type.flags & TypeFlags.Never) !== 0;
 }
 
 /**
@@ -124,14 +152,14 @@ export function isNullableType(type: ts.Type): boolean {
   if (type.isUnion()) {
     return type.types.some(
       (t) =>
-        (t.flags & ts.TypeFlags.Null) !== 0 ||
-        (t.flags & ts.TypeFlags.Undefined) !== 0,
+        (t.flags & TypeFlags.Null) !== 0 ||
+        (t.flags & TypeFlags.Undefined) !== 0,
     );
   }
 
   return (
-    (type.flags & ts.TypeFlags.Null) !== 0 ||
-    (type.flags & ts.TypeFlags.Undefined) !== 0
+    (type.flags & TypeFlags.Null) !== 0 ||
+    (type.flags & TypeFlags.Undefined) !== 0
   );
 }
 
@@ -139,11 +167,11 @@ export function isNullableType(type: ts.Type): boolean {
  * Check if a type is a string type
  */
 export function isStringType(type: ts.Type): boolean {
-  if (type.flags & ts.TypeFlags.String) {
+  if (type.flags & TypeFlags.String) {
     return true;
   }
 
-  if (type.flags & ts.TypeFlags.StringLiteral) {
+  if (type.flags & TypeFlags.StringLiteral) {
     return true;
   }
 
@@ -158,11 +186,11 @@ export function isStringType(type: ts.Type): boolean {
  * Check if a type is a number type
  */
 export function isNumberType(type: ts.Type): boolean {
-  if (type.flags & ts.TypeFlags.Number) {
+  if (type.flags & TypeFlags.Number) {
     return true;
   }
 
-  if (type.flags & ts.TypeFlags.NumberLiteral) {
+  if (type.flags & TypeFlags.NumberLiteral) {
     return true;
   }
 
@@ -177,11 +205,11 @@ export function isNumberType(type: ts.Type): boolean {
  * Check if a type is a boolean type
  */
 export function isBooleanType(type: ts.Type): boolean {
-  if (type.flags & ts.TypeFlags.Boolean) {
+  if (type.flags & TypeFlags.Boolean) {
     return true;
   }
 
-  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+  if (type.flags & TypeFlags.BooleanLiteral) {
     return true;
   }
 
@@ -264,14 +292,14 @@ export function typeMatchesPredicateRecursive(
  * that are safe from object injection attacks.
  */
 export function isStringLiteralType(type: ts.Type): boolean {
-  return (type.flags & ts.TypeFlags.StringLiteral) !== 0;
+  return (type.flags & TypeFlags.StringLiteral) !== 0;
 }
 
 /**
  * Check if a type is a number literal type (e.g., 1, 2, 3)
  */
 export function isNumberLiteralType(type: ts.Type): boolean {
-  return (type.flags & ts.TypeFlags.NumberLiteral) !== 0;
+  return (type.flags & TypeFlags.NumberLiteral) !== 0;
 }
 
 /**
@@ -297,7 +325,7 @@ export function isUnionOfLiterals(type: ts.Type): boolean {
   }
 
   // Boolean literal (true | false)
-  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+  if (type.flags & TypeFlags.BooleanLiteral) {
     return true;
   }
 
@@ -306,9 +334,9 @@ export function isUnionOfLiterals(type: ts.Type): boolean {
     return type.types.every((t) => {
       // Each type in the union must be a literal
       return (
-        (t.flags & ts.TypeFlags.StringLiteral) !== 0 ||
-        (t.flags & ts.TypeFlags.NumberLiteral) !== 0 ||
-        (t.flags & ts.TypeFlags.BooleanLiteral) !== 0
+        (t.flags & TypeFlags.StringLiteral) !== 0 ||
+        (t.flags & TypeFlags.NumberLiteral) !== 0 ||
+        (t.flags & TypeFlags.BooleanLiteral) !== 0
       );
     });
   }

@@ -10,10 +10,6 @@
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
     },
-    "./types": {
-      "types": "./src/types/index.d.ts",
-      "default": "./src/types/index.js"
-    },
     "./oxlint": {
       "types": "./dist/src/oxlint.d.ts",
       "default": "./dist/src/oxlint.js"
@@ -79,7 +75,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.3"
+    "@interlace/eslint-devkit": "^1.4.4"
   },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
@@ -113,6 +109,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

@@ -117,17 +117,17 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
   invalid: [
     // Second argument is not an object — projection cannot be proven safe.
     {
-      code: `db.users.find({}, "name");`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Options object without a projection property.
     {
-      code: `db.users.find({}, { sort: { a: 1 } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { sort: { a: 1 } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // projection value is not an object literal.
     {
-      code: `db.users.find({}, { projection: req.query.p });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: req.query.p });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Sensitive field explicitly included.
@@ -142,12 +142,12 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
     },
     // Exclusion-only projection (no inclusion) is not treated as safe.
     {
-      code: `db.users.find({}, { projection: { name: 0 } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 0 } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
     // Non-boolean/non-numeric projection value never sets hasInclusion.
     {
-      code: `db.users.find({}, { projection: { name: 'x' } });`,
+      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 'x' } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
   ],
@@ -501,6 +501,30 @@ describe('no-unbounded-find — synthetic AST (Layer 2)', () => {
     callExpressionListener(node);
     expect(reports).toHaveLength(1);
     expect((reports[0] as { messageId: string }).messageId).toBe('unboundedFind');
+  });
+});
+
+describe('no-select-sensitive-fields — a Program without tokens (Layer 2)', () => {
+  // `TSESTree.Program.tokens` is typed `Token[] | undefined`. Every real
+  // parser decorates tokens, but a custom one need not, and the schema scan
+  // must not throw on it.
+  it('treats a token-less Program as "no sensitive field in view"', () => {
+    const { listeners, reports } = createWithMockContext(
+      noSelectSensitiveFields as unknown as RuleLike,
+      { ast: { type: 'Program', body: [] } },
+    );
+    const listener = listeners.CallExpression as (node: unknown) => void;
+    listener({
+      type: 'CallExpression',
+      callee: {
+        type: 'MemberExpression',
+        object: { type: 'Identifier', name: 'User' },
+        property: { type: 'Identifier', name: 'find' },
+      },
+      arguments: [],
+      parent: { type: 'ExpressionStatement' },
+    });
+    expect(reports).toHaveLength(0);
   });
 });
 

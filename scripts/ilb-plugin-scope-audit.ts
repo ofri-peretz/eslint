@@ -13,6 +13,7 @@
  *   express      Express/Koa/Fastify router API (app.get, res.send, req.body)
  *   jwt          jsonwebtoken package API
  *   pg           pg (node-postgres) package API
+ *   sequelize    Sequelize ORM API (sequelize.query, Sequelize.literal)
  *   mongodb      mongodb/mongoose API
  *   nestjs       NestJS decorators (@Controller, @UseGuards)
  *   lambda       AWS Lambda handler shape (event, context, callback)
@@ -81,10 +82,16 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-jwt':               ['jwt'],
   'eslint-plugin-pg':                ['pg'],
   // Renamed packages keep their original rule set, namespace and therefore
-  // their environment tags — see AGENTS.md 'every security plugin is
-  // eslint-plugin-*-security'. The old names stay until the deprecations age out.
+  // their environment tags. The old names stay until the deprecations age out.
   'eslint-plugin-jwt-security':        ['jwt'],
   'eslint-plugin-postgresql-security': ['pg'],
+  'eslint-plugin-sequelize-security': ['sequelize'],
+  'eslint-plugin-mysql-security':            ['mysql'],
+  'eslint-plugin-prisma-security':           ['prisma'],
+  'eslint-plugin-drizzle-security':          ['drizzle'],
+  'eslint-plugin-knex-security':             ['knex'],
+  'eslint-plugin-sqlite-security':           ['sqlite'],
+  'eslint-plugin-typeorm-security':          ['typeorm'],
   'eslint-plugin-mongodb-security':  ['mongodb'],
   'eslint-plugin-nestjs-security':   ['nestjs'],
   'eslint-plugin-lambda-security':   ['lambda'],
