@@ -171,18 +171,52 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
  * misses. Scoping to the registering file's imports keeps a sibling app in a
  * monorepo from silencing this one.
  */
+const WHITELIST_TRUE = /\bwhitelist\s*:\s*true\b/;
+/** `export * from './x'` / `export { X } from './x'` — a re-export barrel. */
+const RE_EXPORT = /export\s+(?:\*|\{[^}]*\})\s+from\s+['"](\.[^'"]+)['"]/g;
+
+/**
+ * Whether a global ValidationPipe in this file is configured with
+ * `whitelist: true`, following relative imports.
+ *
+ * One hop is one too few for the commonest NestJS layout:
+ *
+ *   main.ts                    import { OPTS } from './shared/constants'
+ *   shared/constants/index.ts  export * from './common'      ← hop 1 lands here
+ *   shared/constants/common.ts export const OPTS = { whitelist: true }  ← hop 2
+ *
+ * The barrel holds no `whitelist: true`, so the scan concluded the project does
+ * not whitelist and `require-class-validator` reported the very fields the
+ * whitelist exists to strip. So when a hop lands on a pure re-export barrel,
+ * follow its specifiers one step further. Depth stays bounded — barrels only,
+ * never arbitrary chains — because this runs per lint of a project root.
+ */
 function whitelistReachable(source: string, file: string): boolean {
-  if (/\bwhitelist\s*:\s*true\b/.test(source)) return true;
+  if (WHITELIST_TRUE.test(source)) return true;
   const dir = getDirname(file);
-  const specifiers = source.matchAll(/from\s+['"](\.[^'"]+)['"]/g);
-  for (const [, spec] of specifiers) {
-    for (const candidate of [`${spec}.ts`, joinPath(spec, 'index.ts')]) {
-      const imported = readFileSync(resolvePath(dir, candidate));
-      if (imported !== null && /\bwhitelist\s*:\s*true\b/.test(imported))
-        return true;
+
+  const followFrom = (
+    text: string,
+    fromDir: string,
+    viaBarrel: boolean,
+  ): boolean => {
+    for (const [, spec] of text.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+      for (const candidate of [`${spec}.ts`, joinPath(spec, 'index.ts')]) {
+        const resolved = resolvePath(fromDir, candidate);
+        const imported = readFileSync(resolved);
+        if (imported === null) continue;
+        if (WHITELIST_TRUE.test(imported)) return true;
+        // A barrel forwards the answer rather than holding it.
+        RE_EXPORT.lastIndex = 0;
+        if (!viaBarrel && RE_EXPORT.test(imported)) {
+          if (followFrom(imported, getDirname(resolved), true)) return true;
+        }
+      }
     }
-  }
-  return false;
+    return false;
+  };
+
+  return followFrom(source, dir, false);
 }
 
 function analyzeSource(
@@ -294,4 +328,32 @@ export function getProjectContext(
   const scanned = scanProject(root);
   CACHE.set(root, scanned);
   return scanned;
+}
+
+/** class-validator's own authoring API for a custom constraint. */
+const CUSTOM_VALIDATOR_API =
+  /\b(registerDecorator|ValidatorConstraint)\b[\s\S]*?from\s+['"]class-validator['"]|from\s+['"]class-validator['"][\s\S]*?\b(registerDecorator|ValidatorConstraint)\b/;
+
+/**
+ * Whether a project-local module defines a class-validator constraint.
+ *
+ * `@SameAs('password')` is indistinguishable from a decorative decorator by
+ * name alone. What settles it is the module it came from: if that file builds
+ * its decorator with `registerDecorator` or `@ValidatorConstraint` imported
+ * from class-validator, the decorator validates.
+ */
+export function declaresCustomValidator(
+  specifier: string,
+  fromFile: string,
+): boolean {
+  if (!specifier.startsWith('.')) return false;
+  const dir = getDirname(fromFile);
+  for (const candidate of [
+    `${specifier}.ts`,
+    joinPath(specifier, 'index.ts'),
+  ]) {
+    const text = readFileSync(resolvePath(dir, candidate));
+    if (text !== null && CUSTOM_VALIDATOR_API.test(text)) return true;
+  }
+  return false;
 }

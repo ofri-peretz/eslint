@@ -27,7 +27,15 @@ RuleTester.describe = describe;
  * inline in main.ts, in a relative import (the brocoders shape), behind an
  * index.ts barrel, or nowhere at all.
  */
-function fixtureFile(mode: 'inline' | 'imported' | 'barrel' | 'none'): string {
+function fixtureFile(
+  mode:
+    | 'inline'
+    | 'imported'
+    | 'barrel'
+    | 'deep-barrel'
+    | 'custom-validator'
+    | 'none',
+): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nestjs-wl-'));
   fs.writeFileSync(
     path.join(dir, 'package.json'),
@@ -44,6 +52,39 @@ function fixtureFile(mode: 'inline' | 'imported' | 'barrel' | 'none'): string {
     fs.writeFileSync(
       path.join(dir, 'main.ts'),
       "import validationOptions from './validation-options';\napp.useGlobalPipes(new ValidationPipe(validationOptions));",
+    );
+  } else if (mode === 'custom-validator') {
+    // No global pipe here on purpose — the class must be spared because the
+    // decorator validates, not because a whitelist would strip the field.
+    fs.mkdirSync(path.join(dir, 'validators'));
+    fs.writeFileSync(
+      path.join(dir, 'validators', 'same-as.validator.ts'),
+      "import { registerDecorator, ValidationOptions } from 'class-validator';\n" +
+        'export function SameAs(property: string, opts?: ValidationOptions) {\n' +
+        '  return (object: object, propertyName: string) => {\n' +
+        "    registerDecorator({ name: 'sameAs', target: object.constructor, propertyName });\n" +
+        '  };\n}',
+    );
+  } else if (mode === 'deep-barrel') {
+    // The commonest NestJS layout: main.ts imports a barrel, and the barrel
+    // only re-exports. The answer is two hops away, and a one-hop scan
+    // concluded the project does not whitelist — then reported the very fields
+    // the whitelist exists to strip. Real path in the corpus:
+    // nestjs-starter-rest-api/src/{main.ts, shared/constants/index.ts,
+    // shared/constants/common.ts}.
+    fs.mkdirSync(path.join(dir, 'shared'));
+    fs.mkdirSync(path.join(dir, 'shared', 'constants'));
+    fs.writeFileSync(
+      path.join(dir, 'shared', 'constants', 'common.ts'),
+      'export const VALIDATION_PIPE_OPTIONS = { transform: true, whitelist: true };',
+    );
+    fs.writeFileSync(
+      path.join(dir, 'shared', 'constants', 'index.ts'),
+      "export * from './common';",
+    );
+    fs.writeFileSync(
+      path.join(dir, 'main.ts'),
+      "import { VALIDATION_PIPE_OPTIONS } from './shared/constants';\napp.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));",
     );
   } else if (mode === 'barrel') {
     fs.mkdirSync(path.join(dir, 'config'));
@@ -629,6 +670,40 @@ ruleTester.run(
         }
       `,
         filename: fixtureFile('barrel'),
+      },
+      // Two hops: main.ts imports a barrel, the barrel only re-exports, and the
+      // options live beyond it. This is the commonest NestJS layout and a
+      // one-hop scan concluded the project does not whitelist — then reported
+      // the very fields the whitelist exists to strip.
+      {
+        code: `
+        export class FileDto {
+          @IsString()
+          id: string;
+
+          path: string;
+        }
+      `,
+        filename: fixtureFile('deep-barrel'),
+      },
+      // A constraint authored with class-validator's own registerDecorator is
+      // a validator. vivify-nestjs-boilerplate's @SameAs('password') is one,
+      // and was reported as unvalidated. No global pipe in this fixture on
+      // purpose: the class must be spared because the decorator validates, not
+      // because a whitelist would strip the field.
+      {
+        code: `
+        import { SameAs } from './validators/same-as.validator';
+
+        export class RegisterPayload {
+          @IsString()
+          password: string;
+
+          @SameAs('password')
+          passwordConfirmation: string;
+        }
+      `,
+        filename: fixtureFile('custom-validator'),
       },
     ],
     invalid: [

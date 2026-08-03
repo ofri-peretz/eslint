@@ -27,6 +27,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   clearProjectContextCache,
+  declaresCustomValidator,
   findProjectRoot,
   getProjectContext,
   scanProject,
@@ -266,5 +267,55 @@ describe('getProjectContext', () => {
     expect(context.root).toBe('/');
     expect(context.hasGlobalAuthGuard).toBe(false);
     expect(context.globalProviders.size).toBe(0);
+  });
+});
+
+/**
+ * The two paths the barrel-following and custom-validator resolvers take when
+ * the answer is *not* there. Both must terminate and return false — a resolver
+ * that only gets tested on its success path is one that can loop or
+ * over-conclude on real input.
+ */
+describe('cross-file resolvers give up cleanly', () => {
+  it('a barrel that forwards to a module without whitelist does not whitelist', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'nestjs-nb-'));
+    writeFileSync(join(dir, 'package.json'), '{"name":"fx"}');
+    mkdirSync(join(dir, 'config'));
+    writeFileSync(
+      join(dir, 'config', 'plain.ts'),
+      'export const OPTS = { transform: true };',
+    );
+    writeFileSync(join(dir, 'config', 'index.ts'), "export * from './plain';");
+    writeFileSync(
+      join(dir, 'main.ts'),
+      "import { OPTS } from './config';\napp.useGlobalPipes(new ValidationPipe(OPTS));",
+    );
+    clearProjectContextCache();
+    const ctx = scanProject(dir);
+    expect(ctx.hasWhitelistingValidationPipe).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('a bare package specifier is never read from disk', () => {
+    expect(declaresCustomValidator('class-validator', '/tmp/x/file.ts')).toBe(
+      false,
+    );
+    expect(declaresCustomValidator('@nestjs/common', '/tmp/x/file.ts')).toBe(
+      false,
+    );
+  });
+
+  it('a relative module that is not a validator is not one', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'nestjs-cv-'));
+    writeFileSync(
+      join(dir, 'plain.ts'),
+      'export function Plain() { return () => {}; }',
+    );
+    expect(declaresCustomValidator('./plain', join(dir, 'dto.ts'))).toBe(false);
+    // A specifier that resolves to nothing at all.
+    expect(declaresCustomValidator('./missing', join(dir, 'dto.ts'))).toBe(
+      false,
+    );
+    rmSync(dir, { recursive: true, force: true });
   });
 });

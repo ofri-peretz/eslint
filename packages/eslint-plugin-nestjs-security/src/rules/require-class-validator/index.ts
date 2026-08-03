@@ -32,7 +32,10 @@ import {
   memberName,
   type ClassNode,
 } from '../../utils/nest-ast';
-import { getProjectContext } from '../../utils/project-context';
+import {
+  declaresCustomValidator,
+  getProjectContext,
+} from '../../utils/project-context';
 
 type MessageIds = 'missingValidator' | 'addValidator';
 
@@ -380,6 +383,13 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
           const role = moduleRole(source);
           if (role === 'validator') return true;
           if (role) return false;
+          // A project-local module: read it. class-validator's own
+          // `registerDecorator` / `@ValidatorConstraint` is how a custom
+          // constraint is authored, and one built that way validates as much
+          // as `@IsString()`. Name matching cannot see this —
+          // vivify-nestjs-boilerplate's `@SameAs('password')` carries a real
+          // constraint and was reported as unvalidated.
+          if (declaresCustomValidator(source, context.filename)) return true;
         }
         return /.Field(Optional)?$/.test(name);
       });
