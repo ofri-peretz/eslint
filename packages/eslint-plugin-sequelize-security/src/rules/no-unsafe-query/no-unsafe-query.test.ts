@@ -106,6 +106,14 @@ describe('no-unsafe-query', () => {
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
+          name: 'tainted variable reaches the literal sink',
+          code: [
+            'const order = `${sortColumn} DESC`;',
+            'Product.findAll({ order: Sequelize.literal(order) });',
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
           name: 'query built with +=',
           code: [
             "let sql = 'SELECT * FROM Products WHERE 1=1';",

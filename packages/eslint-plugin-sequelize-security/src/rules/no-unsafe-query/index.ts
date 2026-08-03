@@ -38,5 +38,5 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // otherwise miss `literal(`${sortColumn}`)` (no SQL keyword of its own).
   requireSqlKeywords: false,
   fix: 'Pass values via `replacements` or `bind` instead of interpolating them into the SQL string.',
-  documentationLink: 'https://sequelize.org/docs/v6/core-concepts/raw-queries/#replacements',
+  documentationLink: 'https://sequelize.org/docs/v7/querying/raw-queries/',
 });

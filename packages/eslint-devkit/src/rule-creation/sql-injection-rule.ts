@@ -95,6 +95,11 @@ function classify(node: TSESTree.Node, requireSqlKeywords: boolean): UnsafeKind 
     kind = 'template';
   }
   if (kind === false) return false;
+  // `+` is also numeric addition. Without at least one string literal in the
+  // expression there is no evidence this builds SQL at all, and an ungated
+  // instance would report `db.query(1 + offset)`. Templates are exempt: a
+  // template literal is always a string.
+  if (kind === 'concat' && staticText(node).trim() === '') return false;
   if (requireSqlKeywords && !SQL_KEYWORDS.test(staticText(node))) return false;
   return kind;
 }

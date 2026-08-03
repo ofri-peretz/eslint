@@ -98,6 +98,11 @@ describe('createSqlInjectionRule', () => {
         { name: 'plain string +=', code: `let q = 'SELECT 1'; q += ' WHERE active'; db.query(q);` },
         { name: 'non-+= operator', code: `let n = 1; n -= step; db.query(n);` },
         { name: 'member-expression += target', code: `state.q += 'a' + suffix; db.query(state.q);` },
+        // Regression: `+` is also numeric addition. With no string literal in
+        // the expression there is no evidence of SQL, so even the ungated
+        // instance must stay silent.
+        { name: 'numeric addition is not concatenation', code: `db.query(1 + offset);` },
+        { name: 'variable-only addition has no static text', code: `db.query(a + b);` },
       ],
       invalid: [
         {

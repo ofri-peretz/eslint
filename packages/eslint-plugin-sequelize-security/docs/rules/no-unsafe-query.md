@@ -132,6 +132,6 @@ you get exactly one finding per line.
 
 ## Further Reading
 
-- [Sequelize — Raw queries and replacements](https://sequelize.org/docs/v6/core-concepts/raw-queries/#replacements)
+- [Sequelize — Raw queries and replacements](https://sequelize.org/docs/v7/querying/raw-queries/)
 - [OWASP — SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
 - [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
