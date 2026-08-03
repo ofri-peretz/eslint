@@ -53,7 +53,11 @@ describe('methodology receipt — emission lock', () => {
 
   it('finds the suites that emit a pre-registration receipt', () => {
     // Guards the guard: a broken walker would vacuously pass every case below.
-    expect(sources.length).toBeGreaterThanOrEqual(13);
+    // Exact, not a floor. A floor set below the true count cannot detect a
+    // suite *losing* its receipt — at >= 13 the ilb-formatter regression this
+    // number was raised for would have slipped through at 14. Ratchet this
+    // when a suite is added; that edit is the point.
+    expect(sources.length).toBe(15);
   });
 
   it.each(sources.map((p) => [path.relative(REPO_ROOT, p), p]))(
