@@ -1,86 +1,86 @@
 {
   "package": "eslint",
   "period": "last-week",
-  "fetchedAt": "2026-05-09T20:55:42.114Z",
-  "totalDownloads": 127299530,
+  "fetchedAt": "2026-08-02T14:33:34.250Z",
+  "totalDownloads": 213316509,
   "byMajor": [
     {
       "major": 9,
-      "stable": 76901061,
-      "prerelease": 5711,
-      "total": 76906772,
-      "pct": 60.41402666608431
+      "stable": 109061578,
+      "prerelease": 7483,
+      "total": 109069061,
+      "pct": 51.130154675463956
     },
     {
       "major": 8,
-      "stable": 30884217,
-      "prerelease": 90,
-      "total": 30884307,
-      "pct": 24.26113199318175
+      "stable": 60338171,
+      "prerelease": 662,
+      "total": 60338833,
+      "pct": 28.28605872225295
     },
     {
       "major": 10,
-      "stable": 11764764,
-      "prerelease": 346,
-      "total": 11765110,
-      "pct": 9.24206868634943
+      "stable": 23627852,
+      "prerelease": 260,
+      "total": 23628112,
+      "pct": 11.076551041813646
     },
     {
       "major": 7,
-      "stable": 4046824,
-      "prerelease": 72,
-      "total": 4046896,
-      "pct": 3.1790345180378905
+      "stable": 9979846,
+      "prerelease": 237,
+      "total": 9980083,
+      "pct": 4.6785328743590116
     },
     {
       "major": 6,
-      "stable": 1548663,
-      "prerelease": 148,
-      "total": 1548811,
-      "pct": 1.2166667072533575
+      "stable": 4179820,
+      "prerelease": 2341,
+      "total": 4182161,
+      "pct": 1.9605425851029656
     },
     {
       "major": 5,
-      "stable": 820443,
-      "prerelease": 443,
-      "total": 820886,
-      "pct": 0.6448460571692605
+      "stable": 2322674,
+      "prerelease": 670,
+      "total": 2323344,
+      "pct": 1.0891533950614203
     },
     {
       "major": 4,
-      "stable": 634088,
-      "prerelease": 67,
-      "total": 634155,
-      "pct": 0.49815973397545144
+      "stable": 1928883,
+      "prerelease": 187,
+      "total": 1929070,
+      "pct": 0.9043228810762133
     },
     {
       "major": 3,
-      "stable": 407855,
+      "stable": 1174557,
       "prerelease": 0,
-      "total": 407855,
-      "pct": 0.3203900281485721
+      "total": 1174557,
+      "pct": 0.5506170176448931
     },
     {
       "major": 2,
-      "stable": 194637,
-      "prerelease": 137,
-      "total": 194774,
-      "pct": 0.15300449263245514
+      "stable": 515475,
+      "prerelease": 256,
+      "total": 515731,
+      "pct": 0.24176797305453748
     },
     {
       "major": 1,
-      "stable": 55444,
-      "prerelease": 161,
-      "total": 55605,
-      "pct": 0.04368044406762539
+      "stable": 121702,
+      "prerelease": 907,
+      "total": 122609,
+      "pct": 0.057477501659283205
     },
     {
       "major": 0,
-      "stable": 34314,
-      "prerelease": 45,
-      "total": 34359,
-      "pct": 0.026990673099892826
+      "stable": 52702,
+      "prerelease": 246,
+      "total": 52948,
+      "pct": 0.02482133251111849
     }
   ],
-  "latestStable": "10.3.0"
+  "latestStable": "10.8.0"
 }

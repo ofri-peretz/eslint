@@ -101,10 +101,16 @@ If an article is part of a series, it **MUST** include:
 | Type                  | Template                                            | Example                                             |
 | --------------------- | --------------------------------------------------- | --------------------------------------------------- |
 | **Audit Experience**  | "In X audits, Y% of codebases had [issue]"          | "In 47 audits, 80% had hardcoded credentials"       |
-| **Benchmark Results** | "[Tool A] took Xs, [Tool B] took Ys"                | "import took 45s, dependencies took 0.4s"           |
+| **Benchmark Results** | "[Tool A] took Xs, [Tool B] took Ys"                | "import took 148.6s, import-next took 2.7s"¹        |
 | **Coverage Claim**    | "X rules covering Y% of [framework]"                | "75 rules covering 100% of OWASP Top 10"            |
 | **Detection Stats**   | "Catches X% more vulnerabilities than [competitor]" | "2.83x more detections than eslint-plugin-security" |
 | **Remediation Speed** | "Fix in X minutes" or "Y fixes auto-applied"        | "Most issues fixed with single keystroke"           |
+
+> ¹ Every example above must trace to a result file in `benchmarks/results/`. The
+> benchmark row cites [`ilb-perf-import-no-cycle/2026-01-02.json`](../benchmarks/results/ilb-perf-import-no-cycle/2026-01-02.json)
+> and carries its qualifiers wherever it is used: **`no-cycle` rule only, synthetic
+> fixtures, 5,000 files**. Never publish a figure you cannot open the JSON for —
+> see [`CLAIMS.md`](../CLAIMS.md), where an unmeasured "100x" cost a repo-wide sweep.
 
 ### 3.2 Case Study Framework
 

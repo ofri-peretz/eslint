@@ -35,6 +35,7 @@ import {
   type Shape,
   type SyntheticFixture,
 } from './fixtures';
+import { capturePreregistration } from '../../lib/preregister.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SUITE_NAME = 'ilb-formatter';
@@ -1068,11 +1069,21 @@ async function main(): Promise<void> {
     throw new Error('Provenance contract violation: tools.count !== tools.items.length');
   }
 
+  // Squash-proof pre-registration receipt. Without this the envelope carries
+  // the vocabulary-contract fields but no `methodologyHash`, which
+  // scripts/ilb-validate-results.ts treats as fatal rather than as a
+  // grandfathered pre-contract file — so the suite fails its own gate on the
+  // results it just wrote.
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
+
   const result = {
     // Vocabulary-contract fields (required by benchmarks/lib/result-schema.json).
     bench: 'ILB-Formatter',
     benchVersion: METHODOLOGY_VERSION.replace(/^v/, ''),
     timestamp: new Date().toISOString(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain,
     cost,
     effectiveness,
