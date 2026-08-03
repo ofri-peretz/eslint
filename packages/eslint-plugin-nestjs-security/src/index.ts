@@ -157,6 +157,8 @@ export default plugin;
 export type { Options as RequireGuardsOptions } from './rules/require-guards';
 export type { Options as NoMissingValidationPipeOptions } from './rules/no-missing-validation-pipe';
 export type { Options as RequireThrottlerOptions } from './rules/require-throttler';
+export type { Options as RequireValidationPipeWhitelistOptions } from './rules/require-validation-pipe-whitelist';
+export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-cors';
 export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
 export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 
@@ -167,6 +169,8 @@ export interface AllNestjsSecurityRulesOptions {
   'require-guards'?: import('./rules/require-guards').Options;
   'no-missing-validation-pipe'?: import('./rules/no-missing-validation-pipe').Options;
   'require-throttler'?: import('./rules/require-throttler').Options;
+  'require-validation-pipe-whitelist'?: import('./rules/require-validation-pipe-whitelist').Options;
+  'no-permissive-cors'?: import('./rules/no-permissive-cors').Options;
   'require-class-validator'?: import('./rules/require-class-validator').Options;
   'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
 }

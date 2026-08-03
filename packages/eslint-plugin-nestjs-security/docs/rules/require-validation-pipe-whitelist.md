@@ -86,6 +86,9 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
   resolved.
 - An options object containing a spread (`{ ...base }`), since `whitelist` may
   come from the spread.
+- A variable that is **reassigned** after its declaration — only a binding
+  written exactly once is read, since otherwise the declaration's value is not
+  what reaches the call.
 
 ## Options
 

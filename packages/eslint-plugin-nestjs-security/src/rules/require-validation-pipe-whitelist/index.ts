@@ -84,6 +84,11 @@ function resolveLocalObject(
   for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
     const variable = s.variables.find((v) => v.name === name);
     if (!variable) continue;
+    // Reassignment defeats this analysis: the value at the call site may not be
+    // the value at the declaration. `let o = { origin: '*' }; o = safe;` would
+    // otherwise report on a binding that is safe by the time it is used. Only
+    // a binding written exactly once — its initialiser — is safe to read.
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1) return null;
     for (const def of variable.defs) {
       if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) continue;
       const init = def.node.init;

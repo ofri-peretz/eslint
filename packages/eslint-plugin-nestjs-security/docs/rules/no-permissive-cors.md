@@ -72,6 +72,9 @@ statically decidable is left alone:
   only reports when `corsOptions` is declared in the same file
 - an options object with a spread (`{ ...base }`) and no visible `origin`, since
   the spread may supply it
+- a variable that is **reassigned** after its declaration. The value at the call
+  site may not be the value at the declaration, so only a binding written exactly
+  once — its initialiser — is read.
 
 ## Options
 

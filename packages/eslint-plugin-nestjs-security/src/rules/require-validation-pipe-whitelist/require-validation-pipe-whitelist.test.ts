@@ -103,6 +103,14 @@ ruleTester.run('require-validation-pipe-whitelist (coverage gaps)', requireValid
     { code: `const opts = buildOptions(); new ValidationPipe(opts);` },
     // Argument is neither an object literal nor an identifier.
     { code: `new ValidationPipe(buildOptions());` },
+    // Reassigned before use — the declaration is not what reaches the call.
+    {
+      code: `
+        let opts = { transform: true };
+        opts = { whitelist: true };
+        app.useGlobalPipes(new ValidationPipe(opts));
+      `,
+    },
     { code: `new ValidationPipe(config.validation);` },
     // Computed key — cannot be read as `whitelist`, and a spread-free object
     // with an unknown key is still unknown, so stay quiet is wrong here…

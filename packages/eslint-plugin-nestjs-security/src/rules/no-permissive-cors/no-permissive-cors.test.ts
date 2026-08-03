@@ -130,6 +130,23 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
     { code: `app.enableCors({ ...baseCors, credentials: true });` },
     // Origin present but a template literal — not statically decided here.
     { code: 'app.enableCors({ origin: `https://${host}` });' },
+    // Reassigned before use: the declaration's value is not the value at the
+    // call site, so resolving the initialiser would be a false positive.
+    {
+      code: `
+        let corsOptions = { origin: '*' };
+        corsOptions = { origin: 'https://app.example.com' };
+        app.enableCors(corsOptions);
+      `,
+    },
+    // Reassigned the other way — a false negative we accept rather than guess.
+    {
+      code: `
+        let corsOptions = { origin: ['https://app.example.com'] };
+        corsOptions = { origin: '*' };
+        app.enableCors(corsOptions);
+      `,
+    },
   ],
   invalid: [
     // Computed key: `origin` is not provably set and there is no spread to
