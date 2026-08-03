@@ -277,7 +277,7 @@ export function getProjectContext(
       globalProviders: new Set<string>(),
       hasGlobalAuthGuard: false,
       hasGlobalValidationPipe: false,
-    hasWhitelistingValidationPipe: false,
+      hasWhitelistingValidationPipe: false,
       hasGlobalThrottler: false,
     };
   }
