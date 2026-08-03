@@ -5,7 +5,7 @@
       "rules": 53,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "1.2.9",
+      "version": "1.2.10",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 38,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "4.6.0",
+      "version": "4.7.1",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 34,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "3.4.0",
+      "version": "3.4.1",
       "published": true
     },
     {
@@ -29,7 +29,7 @@
       "rules": 23,
       "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "published": true
     },
     {
@@ -37,7 +37,7 @@
       "rules": 20,
       "description": "ESLint plugin for MongoDB and Mongoose security — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "8.2.8",
+      "version": "8.3.1",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "1.4.9",
+      "version": "1.4.11",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "2.2.9",
+      "version": "2.2.10",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 1,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -69,7 +69,7 @@
       "rules": 1,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -77,7 +77,7 @@
       "rules": 1,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -85,7 +85,7 @@
       "rules": 1,
       "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 1,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 1,
       "description": "ESLint plugin for better-sqlite3 / sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 1,
       "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 32,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "1.4.0",
+      "version": "1.5.1",
       "published": true
     },
     {
@@ -125,7 +125,7 @@
       "rules": 16,
       "description": "ESLint plugin for AWS Lambda security — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "1.2.9",
+      "version": "1.2.11",
       "published": true
     },
     {
@@ -133,7 +133,7 @@
       "rules": 12,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "published": true
     },
     {
@@ -141,7 +141,7 @@
       "rules": 61,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.3.10",
+      "version": "2.3.12",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 15,
       "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "4.2.3",
+      "version": "4.2.4",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 13,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.0.9",
+      "version": "3.0.10",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 9,
       "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "3.1.7",
+      "version": "3.1.8",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 8,
       "description": "ESLint plugin for module architecture — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation",
       "category": "quality",
-      "version": "2.1.3",
+      "version": "2.1.4",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 7,
       "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls",
       "category": "quality",
-      "version": "3.0.11",
+      "version": "3.0.12",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 6,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "2.1.3",
+      "version": "2.1.4",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 63,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.2.5",
+      "version": "1.2.6",
       "published": true
     },
     {
@@ -205,12 +205,12 @@
       "rules": 39,
       "description": "ESLint plugin for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "2.1.9",
+      "version": "2.1.10",
       "published": true
     }
   ],
   "totalRules": 484,
   "totalPlugins": 26,
   "allPluginsCount": 26,
-  "generatedAt": "2026-08-03T04:46:26.945Z"
+  "generatedAt": "2026-08-03T17:13:44.342Z"
 }
