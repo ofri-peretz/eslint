@@ -77,13 +77,19 @@ describe('SDK compatibility suites are isolated from the default test run', () =
 
     it('sets no per-file hook timeout, deferring to the compat config', () => {
       const source = read(spec);
-      expect(
-        source,
+      const why =
         'A timeout argument on `beforeAll` overrides vitest.compat.config.mts ' +
-          "and re-creates the bug: nestjs-security's own 30s ceiling still blew " +
-          'on a 209s cold load, and a blown hook reports every test in the file ' +
-          'as skipped. Size the ceiling once, in the compat config.',
-      ).not.toMatch(/^\}, \d/m);
+        "and re-creates the bug: nestjs-security's own 30s ceiling still blew " +
+        'on a 209s cold load, and a blown hook reports every test in the file ' +
+        'as skipped. Size the ceiling once, in the compat config.';
+
+      // Two patterns rather than one, because a hook's closing `}, 30_000)`
+      // can sit at column 0, be indented inside a `describe`, or share a line
+      // with the whole hook body. Matching per-line keeps both anchored — a
+      // single `[\s\S]*?` bridge from `beforeAll(` would happily scan past the
+      // hook's real end and match an unrelated `}, 5` later in the file.
+      expect(source, why).not.toMatch(/^\s*\}\s*,\s*\d[\d_]*\s*\)/m); // multi-line close, any indent
+      expect(source, why).not.toMatch(/\bbeforeAll\(.*\}\s*,\s*\d/); // all on one line
     });
   });
 

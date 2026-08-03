@@ -32,6 +32,13 @@ export default defineConfig({
     // that, not off the ~6s warm case.
     testTimeout: 300_000,
     hookTimeout: 300_000,
+    // Deliberately NOT the `pool: 'vmThreads'` every per-package config uses.
+    // These suites exist to observe how a real SDK resolves and what it exports;
+    // `forks` gives them plain Node module semantics, whereas vmThreads loads
+    // through a VM context that can distort exactly the resolution behavior
+    // under test. Stated rather than left to the default so the divergence from
+    // the other configs reads as intent.
+    pool: 'forks',
     // ponytail: no coverage — these assert upstream export surface, and cover
     // none of our src/.
     coverage: { enabled: false },
