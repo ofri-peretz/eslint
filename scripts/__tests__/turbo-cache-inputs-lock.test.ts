@@ -65,9 +65,17 @@ describe('turbo.json cache inputs', () => {
 
   it('the lock reads a real turbo.json with real tasks', () => {
     // Anti-vacuous guard: every assertion above early-returns on a missing
-    // task, so a wrong path or a reshaped file would pass silently.
+    // task, so a wrong path or a reshaped file would pass silently. Assert
+    // EVERY locked task still exists — checking only `test` would let a
+    // renamed or deleted `test:coverage` slip through with a green lock.
     expect(Object.keys(turbo.tasks).length).toBeGreaterThan(5);
-    expect(turbo.tasks.test).toBeDefined();
+    for (const name of CORRECTNESS_TASKS) {
+      expect(
+        turbo.tasks[name],
+        `turbo.json must still have a "${name}" task — if it was renamed, ` +
+          `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`
+      ).toBeDefined();
+    }
     expect(turbo.tasks.test.dependsOn).toContain('^build');
   });
 });
