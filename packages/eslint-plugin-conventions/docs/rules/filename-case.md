@@ -117,7 +117,7 @@ src/
 ```javascript
 {
   rules: {
-    'architecture/filename-case': 'error'
+    'conventions/filename-case': 'error'
   }
 }
 ```
@@ -127,7 +127,7 @@ src/
 ```javascript
 {
   rules: {
-    'architecture/filename-case': ['error', {
+    'conventions/filename-case': ['error', {
       case: 'pascalCase',
       allowedKebabCase: ['index', 'main']
     }]
@@ -140,7 +140,7 @@ src/
 ```javascript
 {
   rules: {
-    'architecture/filename-case': ['error', {
+    'conventions/filename-case': ['error', {
       case: 'kebabCase',
       allowedPascalCase: ['App', 'Button', 'Modal'],  // React components
       allowedSnakeCase: ['db_migrations'],            // Legacy
@@ -155,7 +155,7 @@ src/
 ```javascript
 {
   rules: {
-    'architecture/filename-case': ['error', {
+    'conventions/filename-case': ['error', {
       case: 'kebabCase',
       allowedUppercaseFiles: []  // Disable all uppercase exceptions
     }]

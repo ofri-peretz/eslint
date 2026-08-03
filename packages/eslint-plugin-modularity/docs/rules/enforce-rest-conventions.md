@@ -89,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'architecture/enforce-rest-conventions': 'error',
+      'modularity/enforce-rest-conventions': 'error',
     },
   },
 ];

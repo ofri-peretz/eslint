@@ -131,7 +131,7 @@ const url = `https://example.com?${params}`; // ✅ Safe
 ```javascript
 {
   rules: {
-    'secure-coding/no-unescaped-url-parameter': ['error', {
+    'browser-security/no-unescaped-url-parameter': ['error', {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['url', 'querystring'], // Trusted URL construction libraries
       ignorePatterns: []                     // Additional safe patterns to ignore

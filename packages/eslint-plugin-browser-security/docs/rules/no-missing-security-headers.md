@@ -17,7 +17,7 @@ ESLint Rule: no-missing-security-headers
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-ESLint Rule: no-missing-security-headers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+ESLint Rule: no-missing-security-headers. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 
@@ -99,7 +99,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'secure-coding/no-missing-security-headers': 'error',
+      'browser-security/no-missing-security-headers': 'error',
     },
   },
 ];

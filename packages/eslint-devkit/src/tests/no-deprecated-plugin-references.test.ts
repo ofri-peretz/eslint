@@ -80,18 +80,11 @@ function isAllowed(relPath: string, allowlist: Array<string | RegExp>): boolean 
   return false;
 }
 
-const SHARED_EXCLUDES = [
-  '--exclude-dir=node_modules',
-  '--exclude-dir=dist',
-  '--exclude-dir=build',
-  '--exclude-dir=.turbo',
-  '--exclude-dir=.next',
-  '--exclude-dir=coverage',
-  '--exclude-dir=benchmark-results',
-  '--exclude-dir=results',
-  '--exclude-dir=.claude',
-  '--exclude-dir=.agent',
-];
+// `git grep` only walks *tracked* files, so node_modules/dist/build/.turbo/.next/
+// coverage/benchmark-results/results and every other gitignored artifact are
+// already out of scope — no --exclude-dir list needed. These two are tracked,
+// so they still need explicit exclusion.
+const SHARED_EXCLUDES = [`':(exclude).claude/'`, `':(exclude).agent/'`];
 
 interface Hit {
   file: string;
@@ -99,9 +92,17 @@ interface Hit {
   snippet: string;
 }
 
-/** Run `grep -rn[E]` with the given args and parse `path:line:content` rows into hits. */
+/**
+ * Run `git grep -n[E]` and parse `path:line:content` rows into hits.
+ *
+ * `git grep` over tracked files rather than `grep -r` over the working tree:
+ * ~0.25s vs 3s warm / 15s cold, because it never walks node_modules or the
+ * other ignored trees. The old walk exceeded vitest's 5s default testTimeout
+ * under the 44-task `turbo run test` fan-out (the lefthook pre-push `tests`
+ * hook), flaking pushes with a timeout that read as a violation.
+ */
 function grepRepo(grepArgs: string[]): Hit[] {
-  const cmd = ['grep', ...grepArgs, '.', '2>/dev/null || true'].join(' ');
+  const cmd = ['git', 'grep', ...grepArgs, '2>/dev/null || true'].join(' ');
   const raw = execSync(cmd, {
     cwd: WORKSPACE_ROOT,
     encoding: 'utf-8',
@@ -128,13 +129,7 @@ function grepRepo(grepArgs: string[]): Hit[] {
 
 /** Mentions of `term` in markdown/MDX. */
 function findMarkdownReferences(term: string): Hit[] {
-  return grepRepo([
-    '-rn',
-    `"${term}"`,
-    '--include="*.md"',
-    '--include="*.mdx"',
-    ...SHARED_EXCLUDES,
-  ]);
+  return grepRepo(['-n', `"${term}"`, '--', `'*.md'`, `'*.mdx'`, ...SHARED_EXCLUDES]);
 }
 
 /**
@@ -147,16 +142,17 @@ function findImportReferences(term: string): Hit[] {
   // (from|import|require) ...quote... <anything>eslint-plugin-crypto
   const pattern = `(from|import|require)[[:space:]]*\\(?[[:space:]]*['\\"][^'\\"]*${term}`;
   return grepRepo([
-    '-rnE',
+    '-nE',
     `"${pattern}"`,
-    '--include="*.mjs"',
-    '--include="*.mts"',
-    '--include="*.cts"',
-    '--include="*.ts"',
-    '--include="*.tsx"',
-    '--include="*.js"',
-    '--include="*.cjs"',
-    '--include="*.jsx"',
+    '--',
+    `'*.mjs'`,
+    `'*.mts'`,
+    `'*.cts'`,
+    `'*.ts'`,
+    `'*.tsx'`,
+    `'*.js'`,
+    `'*.cjs'`,
+    `'*.jsx'`,
     ...SHARED_EXCLUDES,
   ]);
 }
@@ -179,11 +175,15 @@ function violationMessage(
   );
 }
 
-// Both layers shell out to `grep` over the whole workspace. The grep itself is
-// sub-second (measured 0.65–0.74s from repo root); what blows the default 5s
-// budget is process spawn + I/O contention when `turbo run test` runs 20+ test
-// processes in parallel. 30s is slack for load, not for the scan — do not "fix"
-// this by widening SHARED_EXCLUDES.
+// Both layers shell out to `git grep` over the whole workspace (~0.25s). What
+// blows vitest's default 5s budget is process spawn + I/O contention when
+// `turbo run test` runs 20+ test processes in parallel. 30s is slack for load,
+// not for the scan — do not "fix" this by widening SHARED_EXCLUDES.
+//
+// (#324 set this timeout while the scan was still `grep -r` over the working
+// tree, and measured it warm at 0.65–0.74s; cold it was 15.4s. The engine is now
+// `git grep`, which is 40x faster and immune to the cold walk — but the timeout
+// stays, because contention is the actual failure mode and it is unbounded.)
 describe('No Deprecated Plugin References', { timeout: 30_000 }, () => {
   for (const plugin of DEPRECATED_PLUGINS) {
     it(`should not recommend ${plugin.name} in markdown (use ${plugin.successor})`, () => {

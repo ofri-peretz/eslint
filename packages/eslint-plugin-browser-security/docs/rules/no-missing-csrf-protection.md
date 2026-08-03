@@ -17,7 +17,7 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 💼 This rule is set to **error** by default in the `recommended` config.
 
