@@ -10,12 +10,13 @@ describe('eslint-plugin-nestjs-security plugin interface', () => {
   });
 
   /**
-   * `plugin.meta.version` is a hand-maintained string; changesets only rewrites
-   * package.json. It had already drifted — 1.3.0 shipped to npm declaring
-   * itself 1.2.4 — and nothing caught it, because nothing compared them.
+   * `plugin.meta.version` is a second copy of the version, and copies drift:
+   * 1.3.0 shipped to npm declaring itself 1.2.4, and nothing caught it because
+   * nothing compared them.
    *
-   * When this fails during a release, that is the point: bump the string in
-   * src/index.ts to match, in the same commit that bumps the package.
+   * The release tooling does rewrite this string alongside package.json, so
+   * this is not routine friction — it is the check that fires when that sync
+   * misses a package, which is exactly how the 1.2.4 drift happened.
    */
   it('reports the same version as package.json', async () => {
     const pkg = await import('../package.json', { with: { type: 'json' } });
