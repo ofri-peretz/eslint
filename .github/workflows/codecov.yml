@@ -51,9 +51,14 @@ jobs:
       - name: Run tests with coverage
         env:
           FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
-        run: |
-          npx turbo run test:coverage $FILTER_ARG --continue || \
-            npx turbo run test $FILTER_ARG --continue
+        # No `|| npx turbo run test` fallback. Every package declares
+        # `thresholds: { lines: 100, statements: 100, functions: 100,
+        # branches: 100 }`, and a breach makes `test:coverage` exit non-zero —
+        # which the `||` then caught, ran the plain (coverage-free) suite, and
+        # reported green. Coverage regressions were structurally incapable of
+        # failing this job, which is the one job whose entire purpose is to
+        # catch them.
+        run: npx turbo run test:coverage $FILTER_ARG --continue
 
       - name: Locate coverage + JUnit reports
         id: find
