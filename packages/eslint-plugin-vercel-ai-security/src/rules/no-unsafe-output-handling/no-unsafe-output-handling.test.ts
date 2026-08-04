@@ -113,6 +113,26 @@ ruleTester.run('no-unsafe-output-handling (SQL interpolation)', noUnsafeOutputHa
     },
     // A table name that merely *reads* like a pattern is not a value leak
     { code: `db.query(\`SELECT * FROM generated_reports WHERE id = \${id}\`);` },
+    // A *shadowed* `text` is a different variable. Tracking names rather than
+    // resolved bindings reports this, and `text` is common enough that the
+    // false positive would land on ordinary code.
+    {
+      code: `
+        const { text } = await generateText({ prompt: 'Hello' });
+        console.log(text);
+        function render(text) {
+          db.query(\`SELECT * FROM users WHERE name = '\${text}'\`);
+        }
+      `,
+    },
+    // Only `+` builds a string. Other operators compare or compute — there is
+    // no interpolation to report, even on a tracked binding.
+    {
+      code: `
+        const { text } = await generateText({ prompt: 'Hello' });
+        db.query(rowCount > text);
+      `,
+    },
   ],
   invalid: [
     // Destructured `text` interpolated into a template — the reported FN
