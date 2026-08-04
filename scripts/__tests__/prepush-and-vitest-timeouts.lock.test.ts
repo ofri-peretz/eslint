@@ -137,6 +137,45 @@ describe('packages whose tests read their own dist wait for their own build', ()
       '^build',
     );
   });
+
+  // A Package Configuration REPLACES the root task instead of deep-merging it,
+  // so every field it restates silently forks from the root. `inputs` is the
+  // dangerous one: PR #343 set it to `$TURBO_DEFAULT$` to stop turbo replaying
+  // stale PASSes for test tasks, and an explicit list in an override would
+  // reintroduce that bug for just that package — invisibly.
+  it('keeps package test overrides in sync with the root inputs/outputs', () => {
+    const root = readTurbo(path.join(repoRoot, 'turbo.json')).tasks.test;
+    const drifted = offenders
+      .map((file) => {
+        const pkgDir = file.slice(0, file.indexOf(`${path.sep}src${path.sep}`));
+        const cfg = path.join(pkgDir, 'turbo.json');
+        if (!fs.existsSync(cfg)) return null;
+        const test = readTurbo(cfg).tasks?.test;
+        if (!test) return null;
+        const mismatched: string[] = [];
+        for (const field of ['inputs', 'outputs'] as const) {
+          if (
+            test[field] !== undefined &&
+            JSON.stringify(test[field]) !== JSON.stringify(root[field])
+          ) {
+            mismatched.push(
+              `${field}: ${JSON.stringify(test[field])} != root ${JSON.stringify(root[field])}`,
+            );
+          }
+        }
+        return mismatched.length
+          ? `${path.relative(repoRoot, cfg)} — ${mismatched.join('; ')}`
+          : null;
+      })
+      .filter((v): v is string => v !== null);
+
+    expect(
+      drifted,
+      'These package turbo configs restate test inputs/outputs that no longer\n' +
+        'match the root config. Package Configurations replace rather than merge,\n' +
+        `so the drift silently changes caching for that package only:\n  ${drifted.join('\n  ')}`,
+    ).toEqual([]);
+  });
 });
 
 describe('pre-push hook does not race on dist/', () => {

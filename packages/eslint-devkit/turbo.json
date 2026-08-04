@@ -16,18 +16,12 @@
       // and push the pre-commit tests-affected hook past four minutes.
       //
       // Package Configurations replace the task rather than deep-merging it,
-      // so inputs/outputs are restated from the root config.
+      // so inputs/outputs are restated from the root config — and must stay in
+      // sync with it. `$TURBO_DEFAULT$` in particular is load-bearing: #343 set
+      // it to stop turbo replaying stale PASSes for test tasks, and an explicit
+      // input list here would silently reintroduce that bug for this package.
       "dependsOn": ["build"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.lib.json",
-        "tsconfig.spec.json",
-        "vitest.config.mts",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "package.json"
-      ],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     }
   }
