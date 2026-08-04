@@ -231,28 +231,37 @@ describe('computeSCCsFromFile edge cases', () => {
       // no-cycle defaults to an unlimited maxDepth, so nothing capped it — the
       // whole lint run died.
       //
-      // 6,000 clears that observed ceiling by ~20% while costing 6,000 file
-      // writes and reads rather than 10,000. That matters: this suite runs
-      // under `turbo run test`, which executes every package's tests in
-      // parallel, and at 10,000 nodes the I/O contention pushed a ~2s test past
-      // a 120s timeout. If a future platform raises the stack limit past 6,000
-      // this guard weakens, so treat the number as tied to the figure above.
+      // 6,000 clears that observed ceiling by ~20%. If a future platform raises
+      // the stack limit past 6,000 this guard weakens, so treat the number as
+      // tied to the figure above.
       const DEPTH = 6_000;
 
-      // Written directly rather than through createTempFile: that helper calls
-      // realpathSync per file, and 10,000 extra syscalls slow this test enough
-      // to push unrelated tests in the suite past their own timeouts.
+      // The chain is seeded straight into the resolver cache instead of being
+      // materialized on disk. getFileImports() returns cache.dependencies.get()
+      // before it touches the filesystem, and the SCC walk follows
+      // ImportInfo.path, so the traversal Tarjan performs is byte-for-byte the
+      // one it performed against real files — this still indexes 6,000 nodes
+      // and still fails with `RangeError: Maximum call stack size exceeded` if
+      // anyone reintroduces per-node recursion.
+      //
+      // What it drops is pure I/O that proved nothing about the stack guard.
+      // Measured at DEPTH=6,000 on an idle machine: 2,437ms to write the files,
+      // 9,572ms for the resolver to read them back (331KB — it is per-file
+      // syscall overhead, not volume), and 3,700ms for the shared afterEach to
+      // `rmSync` them. That teardown is why this suite intermittently died with
+      // `Hook timed out in 10000ms` under the 58-task `turbo run test` fan-out:
+      // vitest's hookTimeout defaults to 10s and no config here raises it.
       const dir = path.join(testDir, 'src');
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, 'f0.ts'), 'export const f0 = 1;', 'utf-8');
-      for (let i = 1; i < DEPTH; i++) {
-        fs.writeFileSync(
-          path.join(dir, `f${i}.ts`),
-          `import { f${i - 1} } from './f${i - 1}';\nexport const f${i} = 1;\n`,
-          'utf-8',
+      const fileFor = (i: number) => path.join(dir, `f${i}.ts`);
+      for (let i = 0; i < DEPTH; i++) {
+        cache.dependencies.set(
+          fileFor(i),
+          i === 0
+            ? []
+            : [{ path: fileFor(i - 1), source: `./f${i - 1}` }],
         );
       }
-      const head = path.join(dir, `f${DEPTH - 1}.ts`);
+      const head = fileFor(DEPTH - 1);
 
       const sccs = computeSCCsFromFile(head, {
         maxDepth: Infinity,
@@ -263,11 +272,10 @@ describe('computeSCCsFromFile edge cases', () => {
       expect(sccs).toHaveLength(DEPTH);
       expect(sccs.every((s) => !s.hasCycle)).toBe(true);
     },
-    // Writing and walking thousands of files is inherently slow, and far slower
-    // when turbo runs every package's suite concurrently. The default 5s
-    // timeout is nowhere near enough; this budget is sized for the contended
-    // case, not the ~2s it takes on an idle machine.
-    300_000,
+    // Indexing 6,000 nodes is fast now that no I/O is involved, but keep a
+    // generous budget: this suite runs under a `turbo run test` fan-out that
+    // starves every task for CPU.
+    60_000,
   );
 });
 
