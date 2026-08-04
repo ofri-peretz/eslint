@@ -99,6 +99,19 @@ if (all.length === 0) {
 }
 
 const REVERSE_DEPS = reverseDeps(all);
+const MATRIX_MODE = process.argv[2] === '--matrix';
+
+/** Emit the build matrix to GITHUB_OUTPUT (and stdout when run locally). */
+function emitBuildMatrix(shardNumbers: number[]): void {
+  const json = JSON.stringify(shardNumbers);
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `build_shards=${json}\nbuild_any=${shardNumbers.length > 0}\n`,
+    );
+  }
+  console.log(`build_matrix=${json}`);
+}
 
 // ── What to build ───────────────────────────────────────────────────────────
 let selected: BuildPkg[] = all;
@@ -116,6 +129,10 @@ if (process.env.CI_TEST_SHARD_ALL !== '1') {
     process.exit(1);
   }
   if (decision.mode === 'none') {
+    // Emit an EMPTY matrix rather than exiting silently — the workflow feeds
+    // this straight into fromJSON(), and an unset output would be a parse
+    // error, not a skip.
+    if (MATRIX_MODE) emitBuildMatrix([]);
     console.log(`Nothing to build: ${decision.why} vs ${BASE_REF}.`);
     process.exit(0);
   }
@@ -145,6 +162,30 @@ if (process.env.CI_TEST_SHARD_ALL !== '1') {
 // reintroducing exactly the duplication this sharding removes, while every
 // job still reported success. So: if either variable is set at all, both must
 // be valid.
+// `--matrix <total>` prints the GitHub matrix of build shards that have work,
+// for `strategy.matrix.shard: fromJSON(...)` — the same trick the test sharder
+// uses. Without it the matrix is static [1,2,3,4] and every shard spins up a
+// runner, pays ~24s of checkout+setup, discovers it owns nothing affected, and
+// exits 0. On a typical one-plugin PR that is 3 wasted runner slots against an
+// account-wide cap of 20, which is the binding constraint on this repo's CI.
+if (MATRIX_MODE) {
+  const total = Number(process.argv[3]);
+  if (!Number.isInteger(total) || total < 1) {
+    console.error('Usage: node scripts/ci-build.mts --matrix <shardTotal>');
+    process.exit(2);
+  }
+  const ordered = [...all].sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+  const buckets = bucket(ordered, total);
+  const selectedNames = new Set(selected.map((p) => p.name));
+  const live = buckets
+    .map((b, i) => ({ shard: i + 1, pkgs: b.filter((p) => selectedNames.has(p.name)) }))
+    .filter((s) => s.pkgs.length > 0);
+  for (const s of live) console.log(`  build shard ${s.shard}: ${s.pkgs.map((p) => p.name).join(', ')}`);
+  console.log(`Dispatching ${live.length} of ${total} build shards (${note}).`);
+  emitBuildMatrix(live.map((s) => s.shard));
+  process.exit(0);
+}
+
 const rawShard = process.env.CI_BUILD_SHARD;
 const rawTotal = process.env.CI_BUILD_SHARD_TOTAL;
 const shardIndex = Number(rawShard ?? '0');
