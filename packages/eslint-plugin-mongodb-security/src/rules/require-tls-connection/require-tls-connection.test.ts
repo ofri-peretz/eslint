@@ -48,6 +48,18 @@ describe('require-tls-connection', () => {
         {
           code: `mongoose.connect(uri, { tls: true });`,
         },
+        // Quoted keys are the same config. Matching only identifier keys
+        // reported these as missing TLS — a false positive on secure code,
+        // and the reason the report used to carry no suggestion.
+        {
+          code: `mongoose.connect(uri, { 'tls': true });`,
+        },
+        {
+          code: `mongoose.connect(uri, { "ssl": true });`,
+        },
+        {
+          code: `mongoose.createConnection(uri, { 'ssl': true, w: 1 });`,
+        },
         // Allowed in test files
         {
           code: `if (x == y) {}`,

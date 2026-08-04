@@ -453,6 +453,13 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     `mongoose['connect'](uri);`,
     // Zero arguments — nothing to report on.
     `mongoose.connect();`,
+    // A quoted key is the same option. This sat in `invalid` below, asserting
+    // `suggestions: []` — the rule reported secure config and then had nothing
+    // to offer, which is what a false positive looks like from the inside. The
+    // test was reaching a branch that only existed because `hasTls` matched
+    // identifier keys while the repair lookup stripped quotes.
+    `mongoose.connect(uri, { 'tls': true });`,
+    `mongoose.connect(uri, { "ssl": true });`,
   ],
   invalid: [
     // Spread-only options — tls cannot be proven present.
@@ -463,11 +470,13 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
         suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { ...opts, tls: true });` }],
       }],
     },
-    // String-literal 'tls' key is not recognized (Identifier keys only).
+    // A quoted key that is NOT true still reports, and is repairable in place.
     {
-      code: `mongoose.connect(uri, { 'tls': true });`,
-      // Nothing to rewrite — the key is already tls: true, just quoted.
-      errors: [{ messageId: 'requireTls', suggestions: [] }],
+      code: `mongoose.connect(uri, { 'tls': false });`,
+      errors: [{
+        messageId: 'requireTls',
+        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { 'tls': true });` }],
+      }],
     },
   ],
 });

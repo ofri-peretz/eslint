@@ -94,46 +94,49 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const hasTls = optionsArg.properties.some((prop) => {
-          if (prop.type !== AST_NODE_TYPES.Property) return false;
-          const key = prop.key.type === AST_NODE_TYPES.Identifier ? prop.key.name : null;
-          return (key === 'tls' || key === 'ssl') &&
-            prop.value.type === AST_NODE_TYPES.Literal &&
-            prop.value.value === true;
-        });
+        // Key text with quotes stripped, matching the `existing` lookup below.
+        // Reading `prop.key.name` instead accepted only identifier keys, so
+        // `{ 'tls': true }` — valid, secure, and common in configs copied from
+        // JSON — was reported as missing TLS.
+        const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
+          if (prop.type !== AST_NODE_TYPES.Property) return null;
+          const key = context.sourceCode.getText(prop.key).replaceAll(/['"]/g, '');
+          return key === 'tls' || key === 'ssl' ? key : null;
+        };
+
+        const hasTls = optionsArg.properties.some(
+          (prop) =>
+            tlsKey(prop) !== null &&
+            (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
+            ((prop as TSESTree.Property).value as TSESTree.Literal).value === true,
+        );
 
         if (!hasTls) {
           // A `tls`/`ssl` key that is present but not `true` gets its value
           // flipped; appending a second one would emit a duplicate key.
-          const existing = optionsArg.properties.find((prop) => {
-            if (prop.type !== AST_NODE_TYPES.Property) return false;
-            // Key text rather than node shape: catches `tls`, `'tls'` and
-            // `"ssl"` in one comparison.
-            const key = context.sourceCode.getText(prop.key).replaceAll(/['"]/g, '');
-            return key === 'tls' || key === 'ssl';
-          }) as TSESTree.Property | undefined;
+          const existing = optionsArg.properties.find((prop) => tlsKey(prop) !== null) as
+            | TSESTree.Property
+            | undefined;
           const lastProperty = optionsArg.properties.at(-1);
-          // A quoted `'tls': true` still reports (the key check above only
-          // accepts identifier keys) but there is nothing to rewrite — offering
-          // a no-op suggestion is worse than offering none.
-          const alreadyTrue =
-            existing?.value.type === AST_NODE_TYPES.Literal && existing.value.value === true;
+          // No `alreadyTrue` guard here any more. It existed to suppress a
+          // no-op suggestion on `{ 'tls': true }`, which only reached this
+          // branch because `hasTls` above missed quoted keys. Now that it does
+          // not, reaching here means no tls/ssl key is `true`, so there is
+          // always something worth rewriting.
           context.report({
             node,
             messageId: 'requireTls',
-            suggest: alreadyTrue
-              ? undefined
-              : [
-                  {
-                    messageId: 'suggestionAddTls',
-                    fix: (fixer: TSESLint.RuleFixer) => {
-                      if (existing) return fixer.replaceText(existing.value, 'true');
-                      return lastProperty
-                        ? fixer.insertTextAfter(lastProperty, ', tls: true')
-                        : fixer.replaceText(optionsArg, '{ tls: true }');
-                    },
-                  },
-                ],
+            suggest: [
+              {
+                messageId: 'suggestionAddTls',
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  if (existing) return fixer.replaceText(existing.value, 'true');
+                  return lastProperty
+                    ? fixer.insertTextAfter(lastProperty, ', tls: true')
+                    : fixer.replaceText(optionsArg, '{ tls: true }');
+                },
+              },
+            ],
           });
         }
       },
