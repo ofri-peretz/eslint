@@ -222,53 +222,47 @@ describe('computeSCCsFromFile edge cases', () => {
     expect(cache.sccIndex.has(a)).toBe(false);
   });
 
-  it(
-    'traverses an import chain far deeper than the JS call stack',
-    () => {
-      // Regression: Tarjan used to recurse once per node and threw
-      // `RangeError: Maximum call stack size exceeded`. The recursive version
-      // died at file 4,974 of a 5,000-node chain on Node 24 / darwin-arm64, and
-      // no-cycle defaults to an unlimited maxDepth, so nothing capped it — the
-      // whole lint run died.
-      //
-      // 6,000 clears that observed ceiling by ~20% while costing 6,000 file
-      // writes and reads rather than 10,000. That matters: this suite runs
-      // under `turbo run test`, which executes every package's tests in
-      // parallel, and at 10,000 nodes the I/O contention pushed a ~2s test past
-      // a 120s timeout. If a future platform raises the stack limit past 6,000
-      // this guard weakens, so treat the number as tied to the figure above.
-      const DEPTH = 6_000;
+  it('traverses an import chain far deeper than the JS call stack', () => {
+    // Regression: Tarjan used to recurse once per node and threw
+    // `RangeError: Maximum call stack size exceeded`. The recursive version
+    // died at file 4,974 of a 5,000-node chain on Node 24 / darwin-arm64, and
+    // no-cycle defaults to an unlimited maxDepth, so nothing capped it — the
+    // whole lint run died.
+    //
+    // 6,000 clears that observed ceiling by ~20%. If a future platform raises
+    // the stack limit past 6,000 this guard weakens, so treat the number as
+    // tied to the figure above.
+    const DEPTH = 6_000;
 
-      // Written directly rather than through createTempFile: that helper calls
-      // realpathSync per file, and 10,000 extra syscalls slow this test enough
-      // to push unrelated tests in the suite past their own timeouts.
-      const dir = path.join(testDir, 'src');
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, 'f0.ts'), 'export const f0 = 1;', 'utf-8');
-      for (let i = 1; i < DEPTH; i++) {
-        fs.writeFileSync(
-          path.join(dir, `f${i}.ts`),
-          `import { f${i - 1} } from './f${i - 1}';\nexport const f${i} = 1;\n`,
-          'utf-8',
-        );
-      }
-      const head = path.join(dir, `f${DEPTH - 1}.ts`);
+    // The chain is seeded straight into `cache.dependencies` rather than
+    // written to disk. Both `computeSCCsFromFile`'s discovery pass and
+    // `tarjanStrongConnect`'s edge reads go through `getFileImports`, which
+    // returns a cached entry before it touches the filesystem — so this is the
+    // same graph the on-disk fixture produced, minus 6,000 writes, 6,000 reads
+    // and a 6,000-file recursive delete in `afterEach`. That I/O was the whole
+    // cost: under the 58-task `turbo run test` fan-out the cleanup alone blew
+    // the 10s Vitest hook timeout and failed the suite. Depth, not disk, is
+    // what this test guards.
+    const dir = path.join(testDir, 'src');
+    const nodePath = (i: number) => path.join(dir, `f${i}.ts`);
 
-      const sccs = computeSCCsFromFile(head, {
-        maxDepth: Infinity,
-        ...baseOptions(),
-      });
+    cache.dependencies.set(nodePath(0), []);
+    for (let i = 1; i < DEPTH; i++) {
+      cache.dependencies.set(nodePath(i), [
+        { path: nodePath(i - 1), source: `./f${i - 1}` },
+      ]);
+    }
+    const head = nodePath(DEPTH - 1);
 
-      // A strictly descending chain is acyclic: one singleton SCC per file.
-      expect(sccs).toHaveLength(DEPTH);
-      expect(sccs.every((s) => !s.hasCycle)).toBe(true);
-    },
-    // Writing and walking thousands of files is inherently slow, and far slower
-    // when turbo runs every package's suite concurrently. The default 5s
-    // timeout is nowhere near enough; this budget is sized for the contended
-    // case, not the ~2s it takes on an idle machine.
-    300_000,
-  );
+    const sccs = computeSCCsFromFile(head, {
+      maxDepth: Infinity,
+      ...baseOptions(),
+    });
+
+    // A strictly descending chain is acyclic: one singleton SCC per file.
+    expect(sccs).toHaveLength(DEPTH);
+    expect(sccs.every((s) => !s.hasCycle)).toBe(true);
+  });
 });
 
 describe('isFileInCycle', () => {
