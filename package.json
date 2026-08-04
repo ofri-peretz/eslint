@@ -88,6 +88,7 @@
     "test:compat": "vitest run --config vitest.compat.config.mts",
     "test:precommit-locks": "vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/precommit-gate-locks.test.ts",
     "test:runtime-deps": "vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/runtime-deps.test.ts",
+    "test:documented-options": "vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/documented-options-exist.test.ts",
     "oxlint:verify-runtime": "tsx scripts/verify-oxlint-runtime.ts",
     "oxlint:verify-runtime:update": "tsx scripts/verify-oxlint-runtime.ts --update",
     "audit:meta": "tsx scripts/audit-rule-meta-completeness.ts",
