@@ -45,13 +45,15 @@ const INTERLACE_PLUGINS = [
 const PLUGIN_ALIASES = Object.fromEntries(INTERLACE_PLUGINS.map(pluginSource));
 
 export default defineConfig({
-  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
-  resolve: {
-    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
-  },
   root: __dirname,
   resolve: {
-    alias: PLUGIN_ALIASES,
+    alias: {
+      ...PLUGIN_ALIASES,
+      // Devkit alongside the plugins, for the same reason: vitest resolves to
+      // source so a run needs no pre-built dist, which is what lets the `test`
+      // turbo task declare `dependsOn: []`.
+      '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts'),
+    },
   },
   test: {
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
