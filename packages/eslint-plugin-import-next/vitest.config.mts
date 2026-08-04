@@ -22,7 +22,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     testTimeout: 30000, // Increase timeout for tests that require file system resolution
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
