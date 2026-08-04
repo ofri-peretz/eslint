@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Toast static-path render lock.
  *
