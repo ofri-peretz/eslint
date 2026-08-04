@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Social Embeds Integrity Tests
  * 
@@ -13,8 +14,9 @@
  * valid data from the Twitter/X API.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'fs';
+import { globSync } from 'glob';
 import { join, resolve } from 'path';
 import { getTweet } from 'react-tweet/api';
 import { shouldFailSync } from '../../scripts/sync-tweet-cache';
@@ -41,33 +43,14 @@ const TWEET_PATTERNS = [
 // Utility Functions
 // ============================================================================
 
-function getAllSourceFiles(dir: string, extensions: string[] = ['.tsx', '.jsx', '.ts', '.js', '.mdx']): string[] {
-  const files: string[] = [];
-  
-  if (!existsSync(dir)) {
-    return files;
-  }
-  
-  const entries = readdirSync(dir);
-  
-  for (const entry of entries) {
-    const fullPath = join(dir, entry);
-    
-    // Skip node_modules and hidden directories
-    if (entry.startsWith('.') || entry === 'node_modules' || entry === '__tests__') {
-      continue;
-    }
-    
-    const stat = statSync(fullPath);
-    
-    if (stat.isDirectory()) {
-      files.push(...getAllSourceFiles(fullPath, extensions));
-    } else if (extensions.some(ext => entry.endsWith(ext))) {
-      files.push(fullPath);
-    }
-  }
-  
-  return files;
+function getAllSourceFiles(dir: string, pattern = '**/*.{tsx,jsx,ts,js,mdx}'): string[] {
+  // glob skips dot-directories by default, matching the old hand-rolled walk.
+  return globSync(pattern, {
+    cwd: dir,
+    absolute: true,
+    nodir: true,
+    ignore: ['**/node_modules/**', '**/__tests__/**'],
+  });
 }
 
 function extractTweetIds(content: string): { id: string; context: string }[] {
@@ -96,63 +79,136 @@ function getRelativePath(fullPath: string, baseDir: string): string {
   return fullPath.replace(baseDir + '/', '');
 }
 
+const DEVTO_CARD_PATTERNS = [
+  // DevToCard component: <DevToCard path="username/slug" />
+  /<DevToCard\s+[^>]*path=["']([^"']+)["']/g,
+];
+
+function extractDevToArticlePaths(content: string): { path: string; context: string }[] {
+  const paths: { path: string; context: string }[] = [];
+
+  for (const pattern of DEVTO_CARD_PATTERNS) {
+    pattern.lastIndex = 0;
+
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const path = match[1];
+      const startIndex = Math.max(0, match.index - 20);
+      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
+      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
+
+      paths.push({ path, context });
+    }
+  }
+
+  return paths;
+}
+
+// ============================================================================
+// Corpus — one walk, one read pass, shared by every test below
+// ============================================================================
+
+interface Refs {
+  files: string[];
+  contexts: string[];
+}
+
+interface SocialCorpus {
+  fileCount: number;
+  /** Tweet ID → where it is embedded (paths relative to content/ or src/). */
+  tweets: Map<string, Refs>;
+  /** DEV.to article path → where it is embedded (paths relative to the app root). */
+  articles: Map<string, Refs>;
+}
+
+let cached: SocialCorpus | undefined;
+
+function addRef(map: Map<string, Refs>, key: string, file: string, context: string) {
+  const existing = map.get(key) ?? { files: [], contexts: [] };
+  if (!existing.files.includes(file)) {
+    existing.files.push(file);
+    existing.contexts.push(context);
+  }
+  map.set(key, existing);
+}
+
+/**
+ * Scan src/ and content/ once, lazily. Lazy — not module scope — so the read
+ * cost lands inside a test's timeout budget instead of during collection,
+ * where vitest has no timeout to give it.
+ *
+ * Six separate sites (four identical `beforeAll` blocks plus two inline scans
+ * in the cache tests) used to walk both trees and re-read every file. Only the
+ * extracted embed references are retained, never the file contents.
+ */
+function corpus(): SocialCorpus {
+  if (cached) return cached;
+
+  const files = [
+    ...getAllSourceFiles(DOCS_ROOT),
+    ...getAllSourceFiles(CONTENT_ROOT, '**/*.{mdx,md}'),
+  ];
+
+  const c: SocialCorpus = { fileCount: files.length, tweets: new Map(), articles: new Map() };
+
+  for (const file of files) {
+    const content = readFileSync(file, 'utf-8');
+
+    for (const { id, context } of extractTweetIds(content)) {
+      const rel = file.includes('content/')
+        ? getRelativePath(file, CONTENT_ROOT)
+        : getRelativePath(file, DOCS_ROOT);
+      addRef(c.tweets, id, rel, context);
+    }
+
+    for (const { path, context } of extractDevToArticlePaths(content)) {
+      addRef(c.articles, path, getRelativePath(file, APP_ROOT), context);
+    }
+  }
+
+  cached = c;
+  return c;
+}
+
 // ============================================================================
 // Tests: Tweet Embed Validation
 // ============================================================================
 
 describe('Social Embeds - Tweet Integrity', () => {
-  let tweetReferences: Map<string, { files: string[]; contexts: string[] }>;
-  
-  beforeAll(async () => {
-    tweetReferences = new Map();
-    
-    // Scan source files
-    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
-    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
-    const allFiles = [...sourceFiles, ...contentFiles];
-    
-    for (const file of allFiles) {
-      const content = readFileSync(file, 'utf-8');
-      const tweets = extractTweetIds(content);
-      
-      for (const { id, context } of tweets) {
-        const existing = tweetReferences.get(id) ?? { files: [], contexts: [] };
-        const relativePath = file.includes('content/') 
-          ? getRelativePath(file, CONTENT_ROOT)
-          : getRelativePath(file, DOCS_ROOT);
-        
-        if (!existing.files.includes(relativePath)) {
-          existing.files.push(relativePath);
-          existing.contexts.push(context);
-        }
-        
-        tweetReferences.set(id, existing);
-      }
-    }
+  // Most checks in this file assert "no broken embeds found", which a corpus of
+  // zero files satisfies perfectly — and the embed tests below explicitly bail
+  // out early when nothing was found. This guard is the only thing standing
+  // between a broken glob and a green, meaningless suite.
+  it('should scan a non-empty corpus', () => {
+    expect(corpus().fileCount).toBeGreaterThan(400);
   });
 
   it('should find tweet embeds in source files', () => {
+    const { tweets: tweetReferences } = corpus();
+
     // This test documents what tweet embeds exist
     if (tweetReferences.size === 0) {
       console.log('No tweet embeds found in source files');
       return;
     }
-    
+
     console.log(`Found ${tweetReferences.size} unique tweet ID(s) across docs:`);
     for (const [id, { files }] of tweetReferences) {
       console.log(`  - Tweet ${id}: used in ${files.join(', ')}`);
     }
-    
+
     expect(tweetReferences.size).toBeGreaterThan(0);
   });
 
   it('should validate all tweet IDs are fetchable (no "Tweet not found" errors)', async () => {
+    const { tweets: tweetReferences } = corpus();
+
     if (tweetReferences.size === 0) {
       console.log('No tweets to validate');
       return;
     }
 
-    const brokenTweets: { 
+    const brokenTweets: {
       id: string; 
       files: string[]; 
       error: string 
@@ -218,38 +274,10 @@ To fix: Update the tweet ID in the file(s) listed above.
 // ============================================================================
 
 describe('Social Embeds - Static Validation', () => {
-  let tweetReferences: Map<string, { files: string[]; contexts: string[] }>;
-  
-  beforeAll(async () => {
-    tweetReferences = new Map();
-    
-    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
-    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
-    const allFiles = [...sourceFiles, ...contentFiles];
-    
-    for (const file of allFiles) {
-      const content = readFileSync(file, 'utf-8');
-      const tweets = extractTweetIds(content);
-      
-      for (const { id, context } of tweets) {
-        const existing = tweetReferences.get(id) ?? { files: [], contexts: [] };
-        const relativePath = file.includes('content/') 
-          ? getRelativePath(file, CONTENT_ROOT)
-          : getRelativePath(file, DOCS_ROOT);
-        
-        if (!existing.files.includes(relativePath)) {
-          existing.files.push(relativePath);
-          existing.contexts.push(context);
-        }
-        
-        tweetReferences.set(id, existing);
-      }
-    }
-  });
-
   it('should not have obviously invalid tweet IDs (too short/long)', () => {
+    const { tweets: tweetReferences } = corpus();
     const invalidIds: { id: string; files: string[]; reason: string }[] = [];
-    
+
     for (const [id, { files }] of tweetReferences) {
       // Twitter IDs are typically 18-19 digits for recent tweets
       // Very old tweets might be shorter (10+ digits)
@@ -292,8 +320,9 @@ describe('Social Embeds - Static Validation', () => {
   });
 
   it('should not have duplicate tweet embeds across pages', () => {
+    const { tweets: tweetReferences } = corpus();
     const duplicates: { id: string; count: number; files: string[] }[] = [];
-    
+
     for (const [id, { files }] of tweetReferences) {
       if (files.length > 1) {
         duplicates.push({
@@ -331,22 +360,10 @@ describe('Social Embeds - Cache Validation', () => {
     }
 
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    
-    // Extract all tweet IDs from source files
-    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
-    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
-    const allFiles = [...sourceFiles, ...contentFiles];
-    
-    const usedTweetIds = new Set<string>();
-    
-    for (const file of allFiles) {
-      const content = readFileSync(file, 'utf-8');
-      const tweets = extractTweetIds(content);
-      tweets.forEach(({ id }) => usedTweetIds.add(id));
-    }
-    
+
+    const usedTweetIds = corpus().tweets.keys();
     const missingFromCache: string[] = [];
-    
+
     for (const id of usedTweetIds) {
       if (!cache.tweets[id]) {
         missingFromCache.push(id);
@@ -502,72 +519,24 @@ describe('sync-tweet-cache exit policy', () => {
 // Tests: DEV.to Embed Validation
 // ============================================================================
 
-const DEVTO_CARD_PATTERNS = [
-  // DevToCard component: <DevToCard path="username/slug" />
-  /<DevToCard\s+[^>]*path=["']([^"']+)["']/g,
-];
-
-function extractDevToArticlePaths(content: string): { path: string; context: string }[] {
-  const paths: { path: string; context: string }[] = [];
-  
-  for (const pattern of DEVTO_CARD_PATTERNS) {
-    pattern.lastIndex = 0;
-    
-    let match;
-    while ((match = pattern.exec(content)) !== null) {
-      const path = match[1];
-      const startIndex = Math.max(0, match.index - 20);
-      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
-      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
-      
-      paths.push({ path, context });
-    }
-  }
-  
-  return paths;
-}
-
 describe('Social Embeds - DEV.to Article Integrity', () => {
-  let articleReferences: Map<string, { files: string[]; contexts: string[] }>;
-  
-  beforeAll(() => {
-    articleReferences = new Map();
-    
-    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
-    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
-    const allFiles = [...sourceFiles, ...contentFiles];
-    
-    for (const file of allFiles) {
-      const content = readFileSync(file, 'utf-8');
-      const articles = extractDevToArticlePaths(content);
-      
-      for (const { path, context } of articles) {
-        const existing = articleReferences.get(path) || { files: [], contexts: [] };
-        const relativePath = getRelativePath(file, APP_ROOT);
-        
-        if (!existing.files.includes(relativePath)) {
-          existing.files.push(relativePath);
-          existing.contexts.push(context);
-        }
-        
-        articleReferences.set(path, existing);
-      }
-    }
-    
+  it('should find DEV.to article embeds in source files', () => {
+    const { articles: articleReferences } = corpus();
+
     if (articleReferences.size > 0) {
       console.log(`Found ${articleReferences.size} unique DEV.to article(s) across docs:`);
       for (const [path, { files }] of articleReferences) {
         console.log(`  - Article "${path}": used in ${files.join(', ')}`);
       }
     }
-  });
 
-  it('should find DEV.to article embeds in source files', () => {
     // This just logs what was found - not a failure if empty
     expect(articleReferences).toBeDefined();
   });
 
   it('should validate all DEV.to article paths are fetchable', async () => {
+    const { articles: articleReferences } = corpus();
+
     if (articleReferences.size === 0) {
       console.log('No DEV.to article embeds found - skipping API validation');
       return;
@@ -630,21 +599,10 @@ describe('Social Embeds - DEV.to Cache Validation', () => {
     }
 
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    
-    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
-    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
-    const allFiles = [...sourceFiles, ...contentFiles];
-    
-    const usedPaths = new Set<string>();
-    
-    for (const file of allFiles) {
-      const content = readFileSync(file, 'utf-8');
-      const articles = extractDevToArticlePaths(content);
-      articles.forEach(({ path }) => usedPaths.add(path));
-    }
-    
+
+    const usedPaths = corpus().articles.keys();
     const missingFromCache: string[] = [];
-    
+
     for (const path of usedPaths) {
       if (!cache.articles[path]) {
         missingFromCache.push(path);
