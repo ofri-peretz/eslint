@@ -1171,19 +1171,19 @@
       "detection": "structural-api",
       "confidence": "enforcement"
     },
-    "require-class-validator": {
-      "environment": "nestjs",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
     "no-exposed-private-fields": {
       "environment": "nestjs",
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
     },
-    "no-exposed-debug-endpoints": {
+    "no-res-bypass-serialization": {
       "environment": "nestjs",
-      "detection": "structural-pattern",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-unguarded-swagger": {
+      "environment": "nestjs",
+      "detection": "structural-api",
       "confidence": "enforcement"
     }
   },
