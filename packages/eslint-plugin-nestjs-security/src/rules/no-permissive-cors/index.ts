@@ -52,6 +52,38 @@ import { expressionName, objectProperties } from '../../utils/nest-ast';
 const ENV_HINT =
   /\b(NODE_ENV|APP_ENV|ENVIRONMENT|isDev|isDevelopment|isLocal|isTest|isProd|isProduction|devMode|development|production)\b/;
 
+/**
+ * …but a branch about the environment is only an excuse when it restricts the
+ * call to a *non-production* environment.
+ *
+ * `if (process.env.NODE_ENV === 'production') app.enableCors({ origin: '*' })`
+ * mentions the environment and is the worst case there is. Direction has to be
+ * read, not just the presence of an environment word.
+ *
+ * Two shapes count as development-scoped, and nothing else does:
+ *   - the condition names a development-ish environment (`development`,
+ *     `test`, `local`, `staging`, `isDev`, `devMode`), or
+ *   - it *negates* a production one (`NODE_ENV !== 'production'`, `!isProd`).
+ */
+const DEV_ENVIRONMENT =
+  /\b(isDev|isDevelopment|isLocal|isTest|devMode|dev|development|test|local|staging)\b/i;
+const PROD_ENVIRONMENT = /\b(isProd|isProduction|production|prod)\b/i;
+const NEGATION = /!==|!=|\bnot\b|^\s*!/;
+
+function isDevelopmentScoped(text: string): boolean {
+  const negated = NEGATION.test(text);
+  if (PROD_ENVIRONMENT.test(text)) {
+    // `NODE_ENV !== 'production'` gates development; `=== 'production'` does
+    // the opposite and must keep reporting.
+    return negated;
+  }
+  if (DEV_ENVIRONMENT.test(text)) {
+    // `NODE_ENV !== 'development'` is a production gate wearing a dev word.
+    return !negated;
+  }
+  return false;
+}
+
 type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
 
 export interface Options {
@@ -197,8 +229,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           test = current.test;
         else if (current.type === AST_NODE_TYPES.LogicalExpression)
           test = current.left;
-        if (test && ENV_HINT.test(context.sourceCode.getText(test)))
-          return true;
+        if (test) {
+          const text = context.sourceCode.getText(test);
+          if (ENV_HINT.test(text) && isDevelopmentScoped(text)) return true;
+        }
         current = current.parent;
       }
       return false;

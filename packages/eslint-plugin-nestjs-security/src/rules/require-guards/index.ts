@@ -346,7 +346,11 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     // single-file rule can know it exists. Without it the rule reports every
     // route of a correctly-configured application.
     const project = detectGlobalGuards ? getProjectContext(context) : null;
-    if (project?.hasGlobalAuthGuard) {
+    // A global registration proves *a* guard runs, not that it is the one the
+    // config demands. With `requiredGuards: ['RolesGuard']`, a global AuthGuard
+    // would otherwise clear every route of a requirement it does not satisfy —
+    // and the scan reads module text, so it cannot tell which class it found.
+    if (project?.hasGlobalAuthGuard && requiredGuards.length === 0) {
       return {};
     }
 

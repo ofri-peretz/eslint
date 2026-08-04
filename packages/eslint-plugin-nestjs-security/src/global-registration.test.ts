@@ -245,3 +245,41 @@ describe('require-guards consults the rest of the project scan', () => {
     ).toBeGreaterThan(0);
   });
 });
+
+describe('a global guard does not satisfy a specific requiredGuards list', () => {
+  it('keeps reporting when the required guard cannot be shown to be the global one', () => {
+    // The scan reads module text and records only that *a* guard is registered.
+    // Treating that as proof of a RolesGuard requirement would clear every
+    // route in the project of a requirement nothing enforces.
+    context.hasGlobalAuthGuard = true;
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('admin')
+          class AdminController {
+            @Delete(':id')
+            remove(@Param('id') id) {}
+          }
+        `,
+        { requiredGuards: ['RolesGuard'] },
+      ),
+    ).toBeGreaterThan(0);
+  });
+
+  it('still goes quiet with no requiredGuards configured', () => {
+    context.hasGlobalAuthGuard = true;
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('admin')
+          class AdminController {
+            @Delete(':id')
+            remove(@Param('id') id) {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+});

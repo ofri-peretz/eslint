@@ -11,6 +11,27 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+    // Development-scoped: named directly, or by negating production.
+    `
+      if (process.env.NODE_ENV !== 'production') {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
+    `
+      if (process.env.NODE_ENV === 'development') {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
+    `
+      if (isDev) {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
+    `
+      if (!isProduction) {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
     // truthy/src/main.ts: a permissive origin fenced behind a development
     // check cannot reach production. Reporting it at the same CVSS 8.1 as an
     // unconditional one is what makes a security rule read as noise.
@@ -107,6 +128,43 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ],
   invalid: [
+    // The worst case there is, and it mentions the environment — so testing
+    // only for an environment word suppressed it.
+    {
+      code: `
+        if (process.env.NODE_ENV === 'production') {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    {
+      code: `
+        if (isProd) {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    // An environment we cannot classify is not an excuse. `qa` may well be
+    // internet-facing, and the rule has no way to know it is not.
+    {
+      code: `
+        if (process.env.APP_ENV === 'qa') {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    // A dev word read backwards is a production gate.
+    {
+      code: `
+        if (process.env.NODE_ENV !== 'development') {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
     // A condition that is not about the environment proves nothing about
     // production — this still reaches real users.
     {
