@@ -1,0 +1,38 @@
+{
+  "repo": "lodash",
+  "meta": {
+    "stars": 60000,
+    "commit": "a02353279093cca0fea1c8cc468ffbf03bb3485b",
+    "category": "Utility Library (FP corpus)",
+    "plugins": [
+      "secure-coding",
+      "node-security"
+    ],
+    "fpEdge": true,
+    "srcGlob": "fp/**/*.js"
+  },
+  "fileCount": 4,
+  "loc": 951,
+  "timing": {
+    "runsMs": [
+      1476,
+      1246,
+      1341
+    ],
+    "medianMs": 1341,
+    "meanMs": 1354,
+    "stddevMs": 94,
+    "cv": 7,
+    "msPerFile": 335.25
+  },
+  "peakRssMb": 134,
+  "findings": {
+    "total": 41,
+    "errors": 0,
+    "warnings": 41,
+    "filesWithFindings": 1,
+    "densityPerKloc": 43.11,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}

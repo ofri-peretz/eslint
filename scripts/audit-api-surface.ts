@@ -39,6 +39,23 @@ const REPO_ROOT = path.resolve(HERE, '..');
 const MANIFEST_PATH = path.join(REPO_ROOT, '.agent', 'api-surface-manifest.json');
 const MD_PATH = path.join(REPO_ROOT, 'benchmark-results', 'api-surface-coverage.md');
 
+/**
+ * An API on the target surface that is deliberately NOT a rule target —
+ * because it is not a security sink for this plugin's threat model, not
+ * because we haven't got to it yet. These are subtracted from the denominator
+ * so `coverage_pct` measures the surface that can actually be attacked.
+ *
+ * Every entry carries a `reason`. That is the whole safeguard: without it,
+ * excluding an API is indistinguishable from hiding a gap, and the metric
+ * becomes something you raise by editing JSON. `auditManifest` rejects a
+ * missing or hand-wavy reason, so "it's niche" / "rare" can never buy a
+ * point — rarity is a prioritisation argument, not a scope argument.
+ */
+export interface OutOfScopeApi {
+  api: string;
+  reason: string;
+}
+
 export interface PluginEntry {
   plugin: string;
   surface: string;
@@ -49,7 +66,23 @@ export interface PluginEntry {
   ruleCount: number;
   uncovered_examples: string[];
   notes: string;
+  /** Absent is equivalent to `[]` — every API counts until argued otherwise. */
+  outOfScope?: OutOfScopeApi[];
 }
+
+/** Denominator for coverage: the security-relevant slice of the surface. */
+export function inScopeTotal(p: PluginEntry): number {
+  return p.callableApis_total - (p.outOfScope?.length ?? 0);
+}
+
+/**
+ * Reasons that describe how *often* an API is misused, rather than whether
+ * misuse is a security problem. A rare sink is a low-priority gap, not an
+ * out-of-scope API — letting these through would reintroduce exactly the
+ * gaming this field exists to prevent.
+ */
+const FREQUENCY_NOT_SCOPE = /\b(niche|rare|rarely|uncommon|low[- ]traffic|low[- ]frequency|infrequent|not common)\b/i;
+const MIN_REASON_LENGTH = 20;
 
 interface Manifest {
   $schema?: string;
@@ -76,17 +109,49 @@ export interface AuditFinding {
 export function auditManifest(m: Manifest): AuditFinding[] {
   const findings: AuditFinding[] = [];
   for (const p of m.plugins) {
-    if (p.callableApis_covered > p.callableApis_total) {
+    const seenApis = new Set<string>();
+    for (const o of p.outOfScope ?? []) {
+      const reason = (o.reason ?? '').trim();
+      if (reason.length < MIN_REASON_LENGTH) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `outOfScope "${o.api}" needs a substantive reason (got ${reason.length} chars); an unjustified exclusion is a hidden gap`,
+        });
+      } else if (FREQUENCY_NOT_SCOPE.test(reason)) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `outOfScope "${o.api}" is argued from frequency ("${reason}"), not threat model — a rare sink is a low-priority gap, keep it in the denominator`,
+        });
+      }
+      if (seenApis.has(o.api)) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `outOfScope lists "${o.api}" twice, which would deflate the denominator by 2`,
+        });
+      }
+      seenApis.add(o.api);
+    }
+
+    const denominator = inScopeTotal(p);
+    if (denominator < 0) {
       findings.push({
         plugin: p.plugin,
         severity: 'error',
-        message: `covered (${p.callableApis_covered}) > total (${p.callableApis_total})`,
+        message: `outOfScope (${p.outOfScope?.length ?? 0}) exceeds total (${p.callableApis_total})`,
+      });
+    }
+    if (p.callableApis_covered > denominator) {
+      findings.push({
+        plugin: p.plugin,
+        severity: 'error',
+        message: `covered (${p.callableApis_covered}) > in-scope total (${denominator})`,
       });
     }
     const computedPct =
-      p.callableApis_total > 0
-        ? Math.round((p.callableApis_covered / p.callableApis_total) * 100)
-        : 0;
+      denominator > 0 ? Math.round((p.callableApis_covered / denominator) * 100) : 0;
     if (Math.abs(computedPct - p.coverage_pct) > 1) {
       findings.push({
         plugin: p.plugin,
@@ -193,12 +258,24 @@ function renderMarkdown(m: Manifest): string {
   sections.push('');
   sections.push(
     table({
-      head: ['Plugin', 'Surface', 'Total APIs', 'Covered', 'Coverage %', 'Rule count', 'At/above floor?'],
-      align: ['left', 'left', 'right', 'right', 'right', 'right', 'center'],
+      head: [
+        'Plugin',
+        'Surface',
+        'Total APIs',
+        'Out of scope',
+        'In scope',
+        'Covered',
+        'Coverage %',
+        'Rule count',
+        'At/above floor?',
+      ],
+      align: ['left', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'center'],
       rows: m.plugins.map((p) => [
         `\`${p.plugin}\``,
         p.surface,
         p.callableApis_total,
+        p.outOfScope?.length ?? 0,
+        inScopeTotal(p),
         p.callableApis_covered,
         `${p.coverage_pct}%`,
         p.ruleCount,
@@ -229,6 +306,12 @@ function renderMarkdown(m: Manifest): string {
         perPluginBody.push(`  - ${e}`);
       }
     }
+    if (p.outOfScope && p.outOfScope.length > 0) {
+      perPluginBody.push('- **Out of scope (excluded from the denominator):**');
+      for (const o of p.outOfScope) {
+        perPluginBody.push(`  - \`${o.api}\` — ${o.reason}`);
+      }
+    }
     perPluginBody.push('');
   }
   sections.push(collapsible('Per-plugin notes + uncovered examples', perPluginBody.join('\n')));
@@ -236,7 +319,7 @@ function renderMarkdown(m: Manifest): string {
 
   sections.push(
     howToRead(
-      '- **API-surface coverage** (`distribution/EVALUATION_METRICS.md` §2) — the `Coverage %` column. Per-plugin floor 60%. Aggregate is informational.\n- **Critical gaps** are plugins within 5 points of the floor — fix surface coverage proactively before a new rule pushes them below.\n- **Status badge** is green when every plugin is at/above the floor; red on any miss.',
+      '- **API-surface coverage** (`distribution/EVALUATION_METRICS.md` §2) — the `Coverage %` column, computed as `Covered / In scope`. Per-plugin floor 60%. Aggregate is informational.\n- **In scope** is `Total APIs` minus the `Out of scope` count: APIs that are not security sinks under this plugin\'s threat model. Each carries a written reason, and the audit rejects reasons that argue from rarity rather than threat model — so an unclosed gap can never be relabelled into a higher score.\n- **Critical gaps** are plugins within 5 points of the floor — fix surface coverage proactively before a new rule pushes them below.\n- **Status badge** is green when every plugin is at/above the floor; red on any miss.',
     ),
   );
 
