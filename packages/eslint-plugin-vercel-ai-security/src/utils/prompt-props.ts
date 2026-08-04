@@ -30,8 +30,16 @@ export function isSystemPromptProp(name: string | null): boolean {
  * that is semantically identical. Computed keys (`{ [k]: x }`) stay `null` — the
  * name genuinely isn't known statically.
  */
-export function getStaticPropName(key: TSESTree.Node): string | null {
-  if (key.type === AST_NODE_TYPES.Identifier) return key.name;
-  if (key.type === AST_NODE_TYPES.Literal && typeof key.value === 'string') return key.value;
+export function getStaticPropName(prop: TSESTree.Property): string | null {
+  // A computed key is a variable reference, not a name. In
+  // `{ [instructions]: value }` the key node is an Identifier called
+  // `instructions`, but the property being set is whatever that variable holds —
+  // unknowable here. Reading `.name` made these rules treat an arbitrary
+  // property as the system prompt.
+  if (prop.computed) return null;
+  if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
+  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
+    return prop.key.value;
+  }
   return null;
 }

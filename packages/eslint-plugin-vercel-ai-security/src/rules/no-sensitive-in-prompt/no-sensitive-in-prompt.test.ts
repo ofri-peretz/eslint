@@ -269,3 +269,18 @@ ruleTester.run('no-sensitive-in-prompt (quoted key)', noSensitiveInPrompt, {
     },
   ],
 });
+
+// Computed key whose variable is named exactly like the property. The existing
+// computed-key fixture uses `[k]`, which never collided and so never caught the
+// bug: `{ [instructions]: … }` was read as the literal `instructions`.
+ruleTester.run('no-sensitive-in-prompt (computed key collision)', noSensitiveInPrompt, {
+  valid: [
+    {
+      code: `
+        const instructions = 'temperature';
+        generateText({ model, [instructions]: apiKey });
+      `,
+    },
+  ],
+  invalid: [],
+});
