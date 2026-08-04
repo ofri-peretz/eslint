@@ -24,6 +24,7 @@ export const GLOBAL_INPUTS = new Set([
   'scripts/ci-test-shard.mts',
   'scripts/ci-build.mts',
   'scripts/lib/ci-shard-affected.mts',
+  'scripts/lib/ci-changed-files.mts',
 ]);
 
 /** Minimal shape needed here; both sharders' package types are compatible. */
