@@ -110,17 +110,25 @@ runs:
     # Turborepo never evicts its own local cache — it is append-only, so a
     # restored dir grows monotonically across runs (observed locally: 39 GB /
     # 48,938 entries; in CI the `build` lineage grew 341 MB -> 1224 MB).
-    # Prune here, after the restore and before any turbo task runs, so the
-    # post-job save on main captures the pruned tree. Entries older than the
-    # window that are still valid simply rebuild once and get re-saved.
+    # Prune after the restore and before any turbo task runs, so the post-job
+    # save captures the pruned tree. Entries older than the window that are
+    # still valid simply rebuild once and get re-saved.
+    #
+    # main-only, and that condition is load-bearing: branch jobs restore
+    # read-only, so a prune there would delete entries nothing re-saves —
+    # turbo would rebuild those tasks and discard the result, making PR runs
+    # slower than doing nothing at all.
     - name: Prune stale Turbo cache entries
-      if: inputs.turbo-cache == 'true'
+      if: inputs.turbo-cache == 'true' && github.ref == 'refs/heads/main'
       shell: bash
       run: |
         set -euo pipefail
         [ -d .turbo/cache ] || exit 0
         before=$(du -sm .turbo/cache | cut -f1)
         find .turbo/cache -type f -mtime +7 -delete 2>/dev/null || true
+        # -type f leaves the parent dirs behind; they'd be tarred into the
+        # saved artifact and counted against the 10 GB quota for nothing.
+        find .turbo/cache -mindepth 1 -type d -empty -delete 2>/dev/null || true
         echo "Turbo cache pruned: ${before}MB -> $(du -sm .turbo/cache | cut -f1)MB"
 
     - name: Restore Playwright browser cache
