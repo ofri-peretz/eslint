@@ -5,7 +5,7 @@
       "rules": 53,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "1.2.10",
+      "version": "1.2.11",
       "published": true
     },
     {
@@ -29,7 +29,7 @@
       "rules": 23,
       "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "1.4.2",
+      "version": "1.5.0",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "2.2.10",
+      "version": "2.2.11",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 2,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 2,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -125,7 +125,7 @@
       "rules": 2,
       "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 32,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "1.5.1",
+      "version": "1.5.2",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 16,
       "description": "ESLint plugin for AWS Lambda security — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "1.2.11",
+      "version": "1.3.0",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 12,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "1.4.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 13,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.0.10",
+      "version": "3.0.11",
       "published": true
     },
     {
@@ -245,7 +245,7 @@
       "rules": 63,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.2.6",
+      "version": "1.2.7",
       "published": true
     },
     {
