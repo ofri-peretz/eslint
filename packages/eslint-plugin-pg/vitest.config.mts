@@ -42,7 +42,7 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'pg', color: 'cyan' },
     // Use vmThreads for better performance

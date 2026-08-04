@@ -34,7 +34,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     // Global setup runs once before all tests to ensure coverage directories exist
     globalSetup: ['../../vitest.global-setup.ts'],
     env: {
