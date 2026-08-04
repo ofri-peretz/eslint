@@ -25,7 +25,11 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
   // turbo. `CI_TEST_SHARD_PLAN_ONLY=1` makes it exit right after printing that
   // plan — that env var, not the shard arithmetic, is what keeps this lock from
   // invoking the real suite.
-  const out = execFileSync('npx', ['tsx', SCRIPT, String(shard), String(total)], {
+  // `node`, not `npx tsx`: the workflow runs `node scripts/ci-test-shard.mts`,
+  // and tsx is not a dependency of this repo — `npx tsx` would hit the registry
+  // at test time and exercise esbuild's transform instead of Node's native
+  // .mts type stripping, i.e. lock a code path production does not use.
+  const out = execFileSync('node', [SCRIPT, String(shard), String(total)], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1' },

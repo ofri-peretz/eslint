@@ -105,11 +105,41 @@ jobs:
         if: steps.decide.outputs.run == 'true'
         with:
           fetch-depth: 50
+      # Pin Node from .nvmrc before running a .mts file. The runner default is
+      # Node 22, which cannot execute type annotations without
+      # --experimental-strip-types: the step would error, emit no `shards`
+      # output, and every test shard would be skipped while this gate still
+      # reported success — precisely the silent-pass class this workflow exists
+      # to prevent. `install: false` because matrix mode imports only node:
+      # builtins and ./lib, so npm ci would be pure cost.
+      - uses: ./.github/actions/setup
+        if: steps.decide.outputs.run == 'true'
+        with:
+          turbo-cache: "false"
+          install: "false"
       - id: matrix
         if: steps.decide.outputs.run == 'true'
         env:
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: node scripts/ci-test-shard.mts --matrix 10
+
+      # The matrix step is now a single point of failure for the whole test
+      # gate: if it dies, `shards` is empty, every shard's `if` evaluates false,
+      # all of them skip, and the aggregate gate still goes green. That is the
+      # exact silent-pass this workflow was rewritten to eliminate, so assert
+      # the output exists rather than trusting the step's exit code alone.
+      - name: Guard — the shard matrix must have been computed
+        if: steps.decide.outputs.run == 'true'
+        env:
+          SHARDS: ${{ steps.matrix.outputs.shards }}
+          HEAVY: ${{ steps.matrix.outputs.heavy }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SHARDS" ] || [ -z "$HEAVY" ]; then
+            echo "::error::The shard matrix step produced no output. Every test shard would skip while this gate reported success. Failing instead."
+            exit 1
+          fi
+          echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
 
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
@@ -287,7 +317,7 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test:coverage\`, 4 shards, all packages |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test:coverage\`, 10 shards, affected-filtered |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (all packages, cache-accelerated) |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
