@@ -231,23 +231,23 @@ A user writes a config:
 
 ```js
 // eslint.config.js
-import secureCoding from '@interlace/eslint-plugin-secure-coding';
+import secureCoding from 'eslint-plugin-secure-coding';
 
 export default [
   {
     plugins: { 'secure-coding': secureCoding },
     rules: {
-      'secure-coding/no-eval': 'error',
+      'secure-coding/no-hardcoded-credentials': 'error',
     },
   },
 ];
 ```
 
-ESLint resolves `secure-coding/no-eval` by:
+ESLint resolves `secure-coding/no-hardcoded-credentials` by:
 
 1. Look up the plugin named `'secure-coding'` in the config's `plugins`
    map → finds the `secureCoding` import.
-2. Look up `'no-eval'` in `secureCoding.rules` → finds the rule module
+2. Look up `'no-hardcoded-credentials'` in `secureCoding.rules` → finds the rule module
    (the `{ meta, create }` object).
 3. Call `create(context)` for each file being linted.
 

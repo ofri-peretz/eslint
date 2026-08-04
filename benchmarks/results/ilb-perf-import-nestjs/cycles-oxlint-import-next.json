@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-08-03T02:33:16.741Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "competitor": "oxlint-import-next",
   "host": "oxlint",
   "package": "eslint-plugin-import-next + oxlint",
@@ -3684,5 +3696,6 @@
       "line": 14,
       "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | CRITICAL\n   Fix: Split internal-core-module-factory into .core and .extended | https://en.wikipedia.org/wiki/Circular_dependency"
     }
-  ]
+  ],
+  "timestamp": "2026-05-17T04:38:53.000Z"
 }

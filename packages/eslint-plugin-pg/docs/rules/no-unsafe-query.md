@@ -152,6 +152,17 @@ await client.query(format('SELECT * FROM %I.users', userSchema));
 - When using a query builder (Drizzle, Kysely) that handles parameterization
 - In migration files with static SQL
 
+## Implementation
+
+The AST work — concatenation, template interpolation, and taint through a
+variable — is not Postgres-specific, so it lives in `@interlace/eslint-devkit`
+as `createSqlInjectionRule`. This rule instantiates it with the pg sink
+(`.query()`) and the pg remediation copy (`$1, $2`, node-postgres docs).
+
+Each driver plugin instantiates the same detector with its own sinks and
+remediation copy, so a project only ever installs the rule for the driver it
+actually uses — and only ever gets one finding per line.
+
 ## Related Rules
 
 - [check-query-params](./check-query-params.md) - Validates parameter count

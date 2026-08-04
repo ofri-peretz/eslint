@@ -75,7 +75,7 @@ const lastChar = string.at(-1);
 ```javascript
 {
   rules: {
-    'architecture/prefer-at': 'warn'
+    'modernization/prefer-at': 'warn'
   }
 }
 ```

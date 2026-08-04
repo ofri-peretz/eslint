@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-vercel-ai-security",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-vercel-ai-security"
   },
   "bugs": {
@@ -86,7 +86,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.4"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^4.0.16",
@@ -102,6 +102,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }
