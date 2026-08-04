@@ -62,6 +62,37 @@ describe('no-insecure-comparison', () => {
     });
   });
 
+  describe('Nullish comparison (== null / != null)', () => {
+    ruleTester.run('valid - idiomatic nullish check', noInsecureComparison, {
+      valid: [
+        // `x == null` matches null AND undefined in one comparison. Rewriting
+        // it to `=== null` drops the undefined case, so the rule must not
+        // report it — core `eqeqeq` exempts it under `smart` for the same
+        // reason. Regression guard for the behaviour-changing autofix.
+        'if (body == null) { return 0; }',
+        'if (body != null) { send(body); }',
+        'const size = length == null ? compute() : length;',
+        'if (null == body) { return 0; }',
+        'if (null != body) { send(body); }',
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('invalid - non-null loose equality is suggestion-only', noInsecureComparison, {
+      valid: [],
+      invalid: [
+        {
+          // Still reported, but with NO auto-applied `output`: swapping == for
+          // === changes behaviour when operand types differ, so it may only be
+          // offered as a suggestion.
+          code: 'if (count == "5") { go(); }',
+          output: null,
+          errors: [{ messageId: 'insecureComparison', suggestions: 1 }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Loose Equality', () => {
     ruleTester.run('invalid - loose equality operator', noInsecureComparison, {
       valid: [],
@@ -79,7 +110,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
         {
           code: 'if (user.id == userId) {}',
@@ -94,7 +125,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (user.id === userId) {}',
+          output: null,
         },
         {
           code: 'const result = a == b ? 1 : 0;',
@@ -109,7 +140,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'const result = a === b ? 1 : 0;',
+          output: null,
         },
       ],
     });
@@ -132,22 +163,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x !== y) {}',
-        },
-        {
-          code: 'if (value != null) {}',
-          errors: [
-            {
-              messageId: 'insecureComparison',
-              suggestions: [
-                {
-                  messageId: 'useStrictEquality',
-                  output: 'if (value !== null) {}',
-                },
-              ],
-            },
-          ],
-          output: 'if (value !== null) {}',
+          output: null,
         },
       ],
     });
@@ -178,7 +194,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
       ],
     });
@@ -218,7 +234,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
       ],
     });
@@ -497,7 +513,7 @@ describe('no-insecure-comparison', () => {
                 ],
               },
             ],
-            output: "if (node.key === 'foo') {}",
+            output: null,
           },
           // Has an ImportDeclaration, but its source does not match any
           // AST_TOOL_PACKAGES entry — the scan loop must continue past it
@@ -522,10 +538,7 @@ describe('no-insecure-comparison', () => {
                 ],
               },
             ],
-            output: `
-              import React from 'react';
-              if (node.key === 'foo') {}
-            `,
+            output: null,
           },
         ],
       },
