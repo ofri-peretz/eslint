@@ -1,0 +1,34 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      // `build`, not the root's `^build`. src/no-runtime-optional-peer.test.ts
+      // scans this package's OWN dist/src. `^build` orders upstream builds
+      // only, so devkit#build — scheduled because every plugin depends on
+      // devkit — runs concurrently with devkit#test, and
+      // scripts/build-package.ts rmSync's dist before rebuilding. The test then
+      // fails with `ENOENT: scandir .../eslint-devkit/dist/src`, intermittently
+      // and only under the parallel fan-out.
+      //
+      // Scoped to this package on purpose: setting `dependsOn: ["build"]` at
+      // the root would pull docs' full Next build into every `turbo run test`
+      // and push the pre-commit tests-affected hook past four minutes.
+      //
+      // Package Configurations replace the task rather than deep-merging it,
+      // so inputs/outputs are restated from the root config.
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "tsconfig.spec.json",
+        "vitest.config.mts",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "package.json"
+      ],
+      "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
+    }
+  }
+}

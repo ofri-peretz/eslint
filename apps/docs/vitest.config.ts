@@ -50,6 +50,10 @@ export default defineConfig({
     // lefthook pre-push `tests` hook runs, which starves every task for I/O.
     // These tests are I/O-bound, not compute-bound; give them room.
     testTimeout: 30_000,
+    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
+    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
+    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    hookTimeout: 30_000,
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',

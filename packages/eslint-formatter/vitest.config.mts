@@ -14,6 +14,10 @@ export default defineConfig({
     // behind the lefthook pre-push hook. Same remedy as
     // eslint-plugin-import-next/vitest.config.mts.
     testTimeout: 30_000,
+    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
+    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
+    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    hookTimeout: 30_000,
     pool: 'vmThreads',
     coverage: {
       enabled: true,
