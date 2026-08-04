@@ -78,7 +78,12 @@
     "@interlace/eslint-devkit": "^1.6.1"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "@aws-sdk/client-lambda": "^3.0.0",
+    "@middy/core": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@middy/http-cors": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@middy/http-security-headers": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@middy/validator": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
     "@aws-sdk/client-lambda": {
