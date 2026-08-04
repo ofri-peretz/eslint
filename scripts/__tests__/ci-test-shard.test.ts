@@ -22,8 +22,9 @@ const SHARD_TOTAL = 4;
 /** Run the splitter in list-only mode by reading its plan off stdout. */
 function planFor(shard: number, total = SHARD_TOTAL): string[] {
   // The script prints "  <name>  (<task>)" per selected package before running
-  // turbo. Invoke with a total larger than the package count so the turbo call
-  // is never reached for an empty shard, and parse the listing for the rest.
+  // turbo. `CI_TEST_SHARD_PLAN_ONLY=1` makes it exit right after printing that
+  // plan — that env var, not the shard arithmetic, is what keeps this lock from
+  // invoking the real suite.
   const out = execFileSync('npx', ['tsx', SCRIPT, String(shard), String(total)], {
     cwd: REPO_ROOT,
     encoding: 'utf8',

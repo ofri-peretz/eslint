@@ -30,7 +30,15 @@ it('declares no duplicate exports subpaths', () => {
   // read raw text. `./breadcrumb` and `./progress` were each declared twice
   // before this lock existed — harmless while the values matched, but the day
   // they diverge the manifest means something different from how it reads.
-  const declared = [...manifestRaw.matchAll(/^\s{4}"(\.\/[^"]+)":/gm)].map((m) => m[1]);
+  // No indentation anchor: `^\s{4}` would silently match nothing the day
+  // Prettier reformats package.json, leaving `declared` empty and this test
+  // green having checked nothing — the exact failure mode this file exists to
+  // catch. `exports` is the only field with `./` keys, and values can't match
+  // because the pattern requires a `:` right after the closing quote.
+  const declared = [...manifestRaw.matchAll(/"(\.\/[^"]+)":/g)].map((m) => m[1]);
+  // Guard the guard, on `declared` itself rather than the parsed map, so a
+  // regex that stops matching fails loudly instead of passing vacuously.
+  expect(declared.length, 'duplicate-key regex matched nothing — check the manifest format').toBeGreaterThan(20);
   const seen = new Set<string>();
   const dupes = declared.filter((k) => (seen.has(k) ? true : (seen.add(k), false)));
   expect(dupes).toEqual([]);
