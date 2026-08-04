@@ -28,6 +28,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { overlayJs } from './lib/overlay-js';
 import process from 'node:process';
 
 const pkgDir = process.cwd();
@@ -120,25 +121,7 @@ const stripResult = spawnSync(
 );
 
 if (stripResult.status === 0) {
-  let copied = 0;
-  const overlayJs = (fromDir: string, toDir: string): void => {
-    for (const entry of readdirSync(fromDir, { withFileTypes: true })) {
-      const from = join(fromDir, entry.name);
-      const to = join(toDir, entry.name);
-      if (entry.isDirectory()) {
-        // Create the target dir rather than requiring it: pass 1 emits only
-        // .d.ts now, so a directory holding just .js would not exist yet.
-        mkdirSync(to, { recursive: true });
-        overlayJs(from, to);
-      } else if (entry.name.endsWith('.js')) {
-        // Copy unconditionally — this pass is the only source of .js, so
-        // gating on an existing target would copy nothing at all.
-        copyFileSync(from, to);
-        copied++;
-      }
-    }
-  };
-  overlayJs(noCommentsDir, join(distDir, 'src'));
+  const copied = overlayJs(noCommentsDir, join(distDir, 'src'));
   if (copied === 0) {
     // tsc reported success yet produced no .js to copy back. That is a broken
     // build pipeline, not a degraded optimisation — failing here is the only
