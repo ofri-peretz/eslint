@@ -102,6 +102,10 @@ const stripResult = spawnSync(
     '-p',
     tsconfig,
     '--removeComments',
+    // tsconfig.lib.json now sets emitDeclarationOnly (pass 1 wants declarations
+    // only). This pass is the ONLY producer of .js, so it must opt back in.
+    '--emitDeclarationOnly',
+    'false',
     // Also drops the `//# sourceMappingURL=` pragma, which `--removeComments`
     // leaves behind (tsc emits it separately). Without this the overlaid .js
     // would point at maps that step 3b deletes.
@@ -122,8 +126,13 @@ if (stripResult.status === 0) {
       const from = join(fromDir, entry.name);
       const to = join(toDir, entry.name);
       if (entry.isDirectory()) {
-        if (existsSync(to)) overlayJs(from, to);
-      } else if (entry.name.endsWith('.js') && existsSync(to)) {
+        // Create the target dir rather than requiring it: pass 1 emits only
+        // .d.ts now, so a directory holding just .js would not exist yet.
+        mkdirSync(to, { recursive: true });
+        overlayJs(from, to);
+      } else if (entry.name.endsWith('.js')) {
+        // Copy unconditionally — this pass is the only source of .js, so
+        // gating on an existing target would copy nothing at all.
         copyFileSync(from, to);
         copied++;
       }
