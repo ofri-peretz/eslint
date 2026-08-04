@@ -274,3 +274,16 @@ ruleTester.run('require-validated-prompt (instructions prop)', requireValidatedP
     },
   ],
 });
+
+// Computed key colliding with the property name — see no-dynamic-system-prompt.
+ruleTester.run('require-validated-prompt (computed key collision)', requireValidatedPrompt, {
+  valid: [
+    {
+      code: `
+        const instructions = 'topP';
+        generateText({ model, [instructions]: userInput });
+      `,
+    },
+  ],
+  invalid: [],
+});

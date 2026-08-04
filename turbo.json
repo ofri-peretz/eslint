@@ -28,30 +28,12 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.lib.json",
-        "tsconfig.spec.json",
-        "vitest.config.mts",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "package.json"
-      ],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.lib.json",
-        "tsconfig.spec.json",
-        "vitest.config.mts",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "package.json"
-      ],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },
     "lint": {
