@@ -28,10 +28,14 @@
  */
 
 import { configs as importNextConfigs } from 'eslint-plugin-import-next';
-import { configs as pgConfigs } from 'eslint-plugin-pg';
+// pg / jwt were renamed to the -security names and the old npm packages are
+// deprecated. The shipped config must not install a deprecated dependency, so
+// it points at the new names; the rule namespaces (`pg/`, `jwt/`) are unchanged,
+// which is why nothing downstream of these imports had to move.
+import { configs as pgConfigs } from 'eslint-plugin-postgresql-security';
 import { configs as secureCodingConfigs } from 'eslint-plugin-secure-coding';
 import { configs as mongoConfigs } from 'eslint-plugin-mongodb-security';
-import { configs as jwtConfigs } from 'eslint-plugin-jwt';
+import { configs as jwtConfigs } from 'eslint-plugin-jwt-security';
 import { configs as browserConfigs } from 'eslint-plugin-browser-security';
 import { configs as reactFeaturesConfigs } from 'eslint-plugin-react-features';
 import { configs as reactA11yConfigs } from 'eslint-plugin-react-a11y';

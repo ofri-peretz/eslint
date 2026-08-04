@@ -46,7 +46,7 @@
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
       "version": "1.4.11",
-      "published": true
+      "published": false
     },
     {
       "name": "eslint-plugin-postgresql-security",
@@ -62,7 +62,7 @@
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
       "version": "2.2.11",
-      "published": true
+      "published": false
     },
     {
       "name": "eslint-plugin-jwt-security",
@@ -257,8 +257,8 @@
       "published": true
     }
   ],
-  "totalRules": 525,
-  "totalPlugins": 32,
+  "totalRules": 497,
+  "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-04"
 }
