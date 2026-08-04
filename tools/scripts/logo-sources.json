@@ -1,0 +1,22 @@
+{
+  "_comment": "Upstream source for every mark in apps/docs/public/logos/. Re-fetch these, then run normalize-logos.mjs. Always pick the variant that reads on white (npm's README background).",
+  "interlace": { "url": "apps/docs/public/icon-light.svg", "note": "local; light-pair mark for white backgrounds" },
+  "eslint": { "url": "apps/docs/public/eslint-logo.svg", "note": "local; carries its own prefers-color-scheme dark override" },
+  "oxlint": { "url": "https://oxc.rs/oxc-dark.svg", "note": "oxc names its variants by INK colour, not background — '-dark' is the dark-ink file for light backgrounds" },
+  "node": { "url": "https://nodejs.org/static/logos/jsIconGreen.svg" },
+  "nestjs": { "url": "https://nestjs.com/img/logo-small.svg" },
+  "express": { "url": "https://expressjs.com/images/logos/logo-express-black.svg", "note": "'-white' is invisible on npm's white background" },
+  "react": { "url": "https://cdn.simpleicons.org/react/087EA4", "note": "react.dev light-theme blue; brand cyan 61DAFB is unreadable on white" },
+  "mongodb": { "url": "https://cdn.simpleicons.org/mongodb/47A248" },
+  "postgresql": { "url": "https://cdn.simpleicons.org/postgresql/4169E1" },
+  "mysql": { "url": "https://cdn.simpleicons.org/mysql/4479A1" },
+  "sqlite": { "url": "https://cdn.simpleicons.org/sqlite/003B57" },
+  "prisma": { "url": "https://cdn.simpleicons.org/prisma/2D3748" },
+  "drizzle": { "url": "https://cdn.simpleicons.org/drizzle/000000", "note": "brand lime C5F74F is unreadable on white; drizzle's own site uses black on light" },
+  "typeorm": { "url": "https://cdn.simpleicons.org/typeorm/FE0803" },
+  "sequelize": { "url": "https://cdn.simpleicons.org/sequelize/52B0E7" },
+  "vercel": { "url": "https://cdn.simpleicons.org/vercel/000000" },
+  "jwt": { "url": "https://cdn.simpleicons.org/jsonwebtokens/000000" },
+  "knex": { "url": "https://knexjs.org/knex-logo.svg", "note": "not in simple-icons" },
+  "lambda": { "url": "https://icon.icepanel.io/AWS/svg/Compute/Lambda.svg", "note": "not in simple-icons; AWS blocks direct hotlinking from awsstatic" }
+}
