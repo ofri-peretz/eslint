@@ -30,6 +30,8 @@ export const noUnscopedMutation = createUnscopedMutationRule({
     },
   },
   methods: ['deleteMany', 'updateMany'],
+  modules: ['@prisma/client', '.prisma/client'],
+  receiverPattern: /^(prisma|db|database|client|tx|trx)$|[Pp]risma$|[Cc]lient$/,
   fix: 'Pass a `where` filter, e.g. `prisma.user.deleteMany({ where: { id } })`.',
   documentationLink:
     'https://www.prisma.io/docs/orm/prisma-client/queries/crud#delete-all-records',

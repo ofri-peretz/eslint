@@ -23,33 +23,40 @@ const ruleTester = new RuleTester({
   },
 });
 
+/** Opens the rule's import gate; see `modules` on the factory config. */
+const DRIVER = "import { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n";
+
 describe('no-unscoped-mutation', () => {
   describe('Valid — filtered, or not a bulk mutation', () => {
     ruleTester.run('valid', noUnscopedMutation, {
       valid: [
         {
           name: 'deleteMany with a where filter',
-          code: 'await prisma.user.deleteMany({ where: { active: false } });',
+          code: DRIVER + 'await prisma.user.deleteMany({ where: { active: false } });',
         },
         {
           name: 'updateMany with where alongside data',
-          code: 'await prisma.post.updateMany({ where: { authorId }, data: { published: false } });',
+          code: DRIVER + 'await prisma.post.updateMany({ where: { authorId }, data: { published: false } });',
         },
         {
           name: 'single-record delete is inherently scoped',
-          code: 'await prisma.user.delete({ where: { id } });',
+          code: DRIVER + 'await prisma.user.delete({ where: { id } });',
         },
         {
           name: 'reads are untouched',
-          code: 'await prisma.user.findMany();',
+          code: DRIVER + 'await prisma.user.findMany();',
+        },
+        {
+          name: 'a same-named method on a non-Prisma receiver is not a query',
+          code: DRIVER + 'await repo.deleteMany();',
         },
         {
           name: 'a filter built elsewhere cannot be read — deliberate false negative',
-          code: 'await prisma.user.deleteMany(buildFilter(req.query));',
+          code: DRIVER + 'await prisma.user.deleteMany(buildFilter(req.query));',
         },
         {
           name: 'nested transaction call with a filter',
-          code: 'await prisma.$transaction([prisma.user.deleteMany({ where: { id } })]);',
+          code: DRIVER + 'await prisma.$transaction([prisma.user.deleteMany({ where: { id } })]);',
         },
       ],
       invalid: [],
@@ -62,22 +69,27 @@ describe('no-unscoped-mutation', () => {
       invalid: [
         {
           name: 'deleteMany with no arguments empties the table',
-          code: 'await prisma.user.deleteMany();',
+          code: DRIVER + 'await prisma.user.deleteMany();',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'deleteMany with an empty options object',
-          code: 'await prisma.user.deleteMany({});',
+          code: DRIVER + 'await prisma.user.deleteMany({});',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'updateMany with data but no filter rewrites every row',
-          code: 'await prisma.user.updateMany({ data: { role: "admin" } });',
+          code: DRIVER + 'await prisma.user.updateMany({ data: { role: "admin" } });',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'unscoped deleteMany inside a transaction',
-          code: 'await prisma.$transaction([prisma.session.deleteMany()]);',
+          code: DRIVER + 'await prisma.$transaction([prisma.session.deleteMany()]);',
+          errors: [{ messageId: 'unscopedMutation' }],
+        },
+        {
+          name: 'an empty where matches every row, so it is not a filter',
+          code: DRIVER + 'await prisma.user.deleteMany({ where: {} });',
           errors: [{ messageId: 'unscopedMutation' }],
         },
       ],

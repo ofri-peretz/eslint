@@ -15,9 +15,14 @@ check for a single ORM; this generalizes it.
 
 The detection lives in one place, `createUnscopedMutationRule` in
 `@interlace/eslint-devkit`, and each plugin instantiates it with its own sinks and
-remediation copy — the same shape `createSqlInjectionRule` already uses. Both
-places scope can live are checked for every sink: an options-object filter and a
-chained `.where()`.
+remediation copy — the same shape `createSqlInjectionRule` already uses. Each
+plugin declares where its scope lives: an options-object filter for Prisma, a
+chained `.where*()` for Drizzle and Knex.
+
+Every instantiation is gated on the driver: the rule is silent in files that
+never import it, and silent on receivers that do not read as a driver handle.
+Without that gate, `delete` and `update` would match `map.delete(key)` and
+`store.update(patch)` — method names alone are not discriminators.
 
 | Plugin | Sinks | Where scope comes from |
 | :--- | :--- | :--- |

@@ -24,24 +24,33 @@ const ruleTester = new RuleTester({
   },
 });
 
+/** Opens the rule's import gate; see `modules` on the factory config. */
+const DRIVER = "import Knex from 'knex';\n";
+
 describe('no-unscoped-mutation', () => {
   describe('Valid — a where clause is chained', () => {
     ruleTester.run('valid', noUnscopedMutation, {
       valid: [
-        { name: 'del after where', code: "await knex('users').where({ id }).del();" },
-        { name: 'del before where', code: "await knex('users').del().where({ id });" },
-        { name: 'whereIn variant', code: "await knex('users').whereIn('id', ids).del();" },
-        { name: 'whereRaw variant', code: "await knex('users').whereRaw('id = ?', [id]).del();" },
-        { name: 'whereNull variant', code: "await knex('users').whereNull('deleted_at').del();" },
+        { name: 'del after where', code: DRIVER + "await knex('users').where({ id }).del();" },
+        { name: 'del before where', code: DRIVER + "await knex('users').del().where({ id });" },
+        { name: 'whereIn variant', code: DRIVER + "await knex('users').whereIn('id', ids).del();" },
+        { name: 'whereRaw variant', code: DRIVER + "await knex('users').whereRaw('id = ?', [id]).del();" },
+        { name: 'whereNull variant', code: DRIVER + "await knex('users').whereNull('deleted_at').del();" },
         {
           name: 'update with values and a filter',
-          code: "await knex('users').where({ id }).update({ active: false });",
+          code: DRIVER + "await knex('users').where({ id }).update({ active: false });",
         },
         {
           name: 'andWhere chained after an initial clause',
-          code: "await knex('users').where({ id }).andWhere({ tenant }).del();",
+          code: DRIVER + "await knex('users').where({ id }).andWhere({ tenant }).del();",
         },
-        { name: 'reads are untouched', code: "await knex('users').select('*');" },
+        { name: 'reads are untouched', code: DRIVER + "await knex('users').select('*');" },
+        { name: 'orWhereIn variant', code: DRIVER + "await knex('users').del().orWhereIn('id', ids);" },
+        { name: 'orWhereNull variant', code: DRIVER + "await knex('users').del().orWhereNull('deleted_at');" },
+        { name: 'orWhereRaw variant', code: DRIVER + "await knex('users').del().orWhereRaw('id = ?', [id]);" },
+        { name: 'whereWrapped variant', code: DRIVER + "await knex('users').whereWrapped(fn).del();" },
+        { name: 'whereILike variant', code: DRIVER + "await knex('users').whereILike('name', p).del();" },
+        { name: 'Map.delete is not a query', code: DRIVER + 'cache.delete(key);' },
       ],
       invalid: [],
     });
@@ -53,17 +62,17 @@ describe('no-unscoped-mutation', () => {
       invalid: [
         {
           name: 'del with no clause empties the table',
-          code: "await knex('users').del();",
+          code: DRIVER + "await knex('users').del();",
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'update with values but no clause rewrites every row',
-          code: "await knex('users').update({ role: 'admin' });",
+          code: DRIVER + "await knex('users').update({ role: 'admin' });",
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'returning does not scope the mutation',
-          code: "await knex('users').del().returning('id');",
+          code: DRIVER + "await knex('users').del().returning('id');",
           errors: [{ messageId: 'unscopedMutation' }],
         },
       ],

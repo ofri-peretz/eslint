@@ -31,6 +31,8 @@ export const noUnscopedMutation = createUnscopedMutationRule({
   },
   methods: ['delete', 'update'],
   argumentRole: 'table',
+  modules: ['drizzle-orm'],
+  receiverPattern: /^(db|database|drizzle|tx|trx)$|[Dd]b$/,
   fix: 'Chain a `.where()` clause, e.g. `db.delete(users).where(eq(users.id, id))`.',
   documentationLink: 'https://orm.drizzle.team/docs/delete',
 });

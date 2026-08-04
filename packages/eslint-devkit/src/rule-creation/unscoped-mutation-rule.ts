@@ -66,6 +66,27 @@ export interface UnscopedMutationRuleConfig {
   /** Bulk-mutation sink methods, e.g. `['deleteMany', 'updateMany']`. */
   readonly methods: readonly string[];
   /**
+   * Modules whose exports are this driver's handles, e.g. `['drizzle-orm']`.
+   * A file that imports none of them is skipped entirely.
+   *
+   * Method names alone are hopeless discriminators — `delete` and `update` are
+   * also `Map.prototype.delete`, `Set.prototype.delete`, and the vocabulary of
+   * every store wrapper ever written. Without this gate the Drizzle and Knex
+   * instantiations report `map.delete(key)`. Same reasoning as
+   * `eslint-plugin-mongodb-security`'s `receiver.ts`.
+   */
+  readonly modules: readonly string[];
+  /**
+   * Identifiers that read as a handle for this driver, matched against the
+   * base of the receiver chain (`db` in `db.delete(users)`, `prisma` in
+   * `prisma.user.deleteMany()`).
+   *
+   * Checked in addition to the import gate, because importing `knex` in a file
+   * does not make every `.delete()` in it a query. A handle assigned from an
+   * imported binding is accepted regardless of its name.
+   */
+  readonly receiverPattern: RegExp;
+  /**
    * What the sink's arguments mean for this driver. The same AST — a lone
    * identifier argument — means opposite things per driver, so it cannot be
    * inferred:
@@ -147,7 +168,9 @@ export function hasTruthyKey(obj: TSESTree.ObjectExpression, keys: readonly stri
     if (prop.type !== AST_NODE_TYPES.Property) return false;
     const name = propertyKeyName(prop);
     if (name === undefined || !keys.includes(name)) return false;
-    return !(prop.value.type === AST_NODE_TYPES.Literal && prop.value.value === false);
+    // Any falsy literal is a disabled flag — `truncate: null` and
+    // `truncate: 0` are no more a truncate than `truncate: false`.
+    return !(prop.value.type === AST_NODE_TYPES.Literal && !prop.value.value);
   });
 }
 
@@ -173,7 +196,19 @@ export function hasArgumentScope(
         if (prop.type === AST_NODE_TYPES.SpreadElement) return true;
         const name = propertyKeyName(prop);
         // A computed or unreadable key may be the scope key.
-        return name === undefined || scopeKeys.includes(name);
+        if (name === undefined) return true;
+        if (!scopeKeys.includes(name)) return false;
+        // `where: {}` is not a filter — Prisma and friends read an empty
+        // object as "match all", so it deletes the table just like a missing
+        // `where` does. The key being present is not enough.
+        if (
+          prop.type === AST_NODE_TYPES.Property &&
+          prop.value.type === AST_NODE_TYPES.ObjectExpression &&
+          prop.value.properties.length === 0
+        ) {
+          return false;
+        }
+        return true;
       });
     }
     return arg.type !== AST_NODE_TYPES.Literal;
@@ -232,6 +267,91 @@ export function chainMethodNames(node: TSESTree.CallExpression): Set<string> {
  * readable filter in the arguments, and no scoping method anywhere in its
  * chain.
  */
+/**
+ * Local binding names introduced by importing any of `modules`.
+ *
+ * Covers both `import { drizzle } from 'drizzle-orm'` and
+ * `const knex = require('knex')`, including the destructured and namespace
+ * forms. An empty set means the file does not touch the driver at all.
+ */
+export function driverBindings(
+  program: TSESTree.Program,
+  modules: readonly string[],
+): Set<string> {
+  const names = new Set<string>();
+  const isDriver = (source: string): boolean =>
+    modules.some((m) => source === m || source.startsWith(`${m}/`));
+
+  for (const stmt of program.body) {
+    if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
+      if (typeof stmt.source.value !== 'string' || !isDriver(stmt.source.value)) continue;
+      for (const spec of stmt.specifiers) names.add(spec.local.name);
+      continue;
+    }
+    // `const knex = require('knex')` / `const { drizzle } = require('drizzle-orm')`
+    if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
+    for (const decl of stmt.declarations) {
+      const init = decl.init;
+      if (
+        !init ||
+        init.type !== AST_NODE_TYPES.CallExpression ||
+        init.callee.type !== AST_NODE_TYPES.Identifier ||
+        init.callee.name !== 'require'
+      ) {
+        continue;
+      }
+      const arg = init.arguments[0];
+      if (
+        !arg ||
+        arg.type !== AST_NODE_TYPES.Literal ||
+        typeof arg.value !== 'string' ||
+        !isDriver(arg.value)
+      ) {
+        continue;
+      }
+      if (decl.id.type === AST_NODE_TYPES.Identifier) names.add(decl.id.name);
+      if (decl.id.type === AST_NODE_TYPES.ObjectPattern) {
+        for (const prop of decl.id.properties) {
+          if (prop.type === AST_NODE_TYPES.Property && prop.value.type === AST_NODE_TYPES.Identifier) {
+            names.add(prop.value.name);
+          }
+        }
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Name at the base of a receiver chain, or `undefined` when it is not an
+ * identifier.
+ *
+ * `db.delete(users)` → `db`; `prisma.user.deleteMany()` → `prisma`;
+ * `this.db.delete(t)` → `db`, since `this` carries no name of its own.
+ */
+export function receiverBaseName(node: TSESTree.MemberExpression): string | undefined {
+  let cursor: TSESTree.Node = node.object;
+  for (;;) {
+    if (cursor.type === AST_NODE_TYPES.MemberExpression) {
+      // `this.db` — the useful name is the property, not the `this`.
+      if (
+        cursor.object.type === AST_NODE_TYPES.ThisExpression &&
+        !cursor.computed &&
+        cursor.property.type === AST_NODE_TYPES.Identifier
+      ) {
+        return cursor.property.name;
+      }
+      cursor = cursor.object;
+      continue;
+    }
+    if (cursor.type === AST_NODE_TYPES.CallExpression) {
+      cursor = cursor.callee;
+      continue;
+    }
+    return cursor.type === AST_NODE_TYPES.Identifier ? cursor.name : undefined;
+  }
+}
+
 export function createUnscopedMutationRule(
   config: UnscopedMutationRuleConfig,
 ): TSESLint.RuleModule<UnscopedMutationMessageIds, []> {
@@ -282,8 +402,18 @@ export function createUnscopedMutationRule(
     },
     defaultOptions: [],
     create(context) {
+      // Bindings introduced by importing the driver. Empty means this file
+      // never touches it, and the rule stays silent for the whole file.
+      let bindings = new Set<string>();
+
       return {
+        Program(program: TSESTree.Program) {
+          bindings = driverBindings(program, config.modules);
+        },
+
         CallExpression(node: TSESTree.CallExpression) {
+          if (bindings.size === 0) return;
+
           if (
             node.callee.type !== AST_NODE_TYPES.MemberExpression ||
             node.callee.computed ||
@@ -292,6 +422,12 @@ export function createUnscopedMutationRule(
           ) {
             return;
           }
+
+          // Importing the driver does not make every `.delete()` in the file a
+          // query — the receiver has to read as a driver handle too.
+          const base = receiverBaseName(node.callee);
+          if (base === undefined) return;
+          if (!bindings.has(base) && !config.receiverPattern.test(base)) return;
 
           // `destroy({ truncate: true })` passes the scope check by having an
           // options object, so it is tested first.

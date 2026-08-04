@@ -24,29 +24,48 @@ const ruleTester = new RuleTester({
   },
 });
 
+/** Opens the rule's import gate; see `modules` on the factory config. */
+const DRIVER = "import { eq } from 'drizzle-orm';\n";
+
 describe('no-unscoped-mutation', () => {
   describe('Valid — a where clause is chained', () => {
     ruleTester.run('valid', noUnscopedMutation, {
       valid: [
         {
           name: 'delete with a chained where',
-          code: 'await db.delete(users).where(eq(users.id, id));',
+          code: DRIVER + 'await db.delete(users).where(eq(users.id, id));',
         },
         {
           name: 'update with set and where',
-          code: 'await db.update(users).set({ active: false }).where(eq(users.id, id));',
+          code: DRIVER + 'await db.update(users).set({ active: false }).where(eq(users.id, id));',
         },
         {
           name: 'where before returning',
-          code: 'await db.delete(users).where(eq(users.id, id)).returning();',
+          code: DRIVER + 'await db.delete(users).where(eq(users.id, id)).returning();',
         },
         {
           name: 'reads are untouched',
-          code: 'await db.select().from(users);',
+          code: DRIVER + 'await db.select().from(users);',
         },
         {
           name: 'insert is not a bulk mutation',
-          code: 'await db.insert(users).values({ name });',
+          code: DRIVER + 'await db.insert(users).values({ name });',
+        },
+        {
+          name: 'Map.delete is not a query',
+          code: DRIVER + 'cache.delete(key);',
+        },
+        {
+          name: 'Set.delete is not a query',
+          code: DRIVER + 'seen.delete(value);',
+        },
+        {
+          name: 'a store update is not a query',
+          code: DRIVER + 'store.update(patch);',
+        },
+        {
+          name: 'a file that never imports the driver is skipped entirely',
+          code: 'const cache = new Map(); cache.delete(key); db.delete(users);',
         },
       ],
       invalid: [],
@@ -59,17 +78,17 @@ describe('no-unscoped-mutation', () => {
       invalid: [
         {
           name: 'delete with no where empties the table',
-          code: 'await db.delete(users);',
+          code: DRIVER + 'await db.delete(users);',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'update with set but no where rewrites every row',
-          code: 'await db.update(users).set({ role: "admin" });',
+          code: DRIVER + 'await db.update(users).set({ role: "admin" });',
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
           name: 'returning does not scope the mutation',
-          code: 'await db.delete(users).returning();',
+          code: DRIVER + 'await db.delete(users).returning();',
           errors: [{ messageId: 'unscopedMutation' }],
         },
       ],

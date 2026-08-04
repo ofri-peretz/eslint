@@ -112,7 +112,7 @@ out of `flagship` until measured.
 | # | Rule | CWE | Sev | Why it is not covered by `no-unsafe-query` | FP |
 |---|---|---|---|---|---|
 | O1 | `no-raw-identifier-interpolation` | CWE-89 | error | Table/column/order-by identifiers **cannot be parameterized** — the tagged-template escape everyone recommends does not save you here. Anchor: Drizzle GHSA-gpj5-g38j-94v9. | near-zero |
-| O2 | `no-unscoped-mutation` | CWE-284 | error | `deleteMany()`/`updateMany()`/`.del()`/`.destroy({truncate:true})` with no `where` — mass data loss. This is `eslint-plugin-drizzle`'s *entire* published surface; we generalize it to 7 drivers. | near-zero (purely syntactic) |
+| O2 | `no-unscoped-mutation` | CWE-284 | error | `deleteMany()`/`updateMany()`/`.del()` with no filter — mass data loss. This is `eslint-plugin-drizzle`'s *entire* published surface; we generalize it. **Shipped for Prisma, Drizzle and Knex only** — see §5.1 for why Sequelize and TypeORM are excluded. | near-zero (driver-gated) |
 | O3 | `no-mass-assignment` | CWE-915 | error | `req.body` spread straight into `create`/`update`/`values()` — the standard privilege-escalation path (set `role`, `isAdmin`, `ownerId`). | low (allowlist option) |
 | O4 | `require-tls` | CWE-319 | error | `ssl:false`, `rejectUnauthorized:false`, `sslmode=disable` in connection config. Explicitly moved here from `node-security` by the taxonomy contract. | ~zero (literal props) |
 | O5 | `no-hardcoded-credentials` | CWE-798 | error | Inline password in a connection string/config object. | low |

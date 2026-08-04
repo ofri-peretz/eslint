@@ -6,6 +6,12 @@
 
 export type NoUnsafeQueryOptions = [];
 
+/**
+ * Options for `no-unscoped-mutation`.
+ *
+ * The rule takes none: what counts as a scoped mutation is fixed by the
+ * driver's own API, not by project preference.
+ */
 export type NoUnscopedMutationOptions = [];
 
 export interface AllDrizzleRulesOptions {
