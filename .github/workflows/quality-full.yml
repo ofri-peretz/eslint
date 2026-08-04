@@ -117,6 +117,19 @@ jobs:
           next-cache: "true"
       - name: Build via Turbo
         run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+      # Runs here because the artifacts already exist — no extra runner, no
+      # second build, ~5s. Reads the emitted JS for module-scope requires of
+      # packages the manifest does not guarantee are installed. On PRs the build
+      # is filtered to affected packages, so this checks those; main builds all.
+      # The exhaustive `npm run verify:published-install` actually installs each
+      # tarball and is ~2.5min — too slow for every push, kept for pre-release.
+      - name: Runtime dependency check (published packages must be requirable)
+        run: npm run verify:runtime-deps
+      # The detection logic itself is locked: a plausible tidy-up of either the
+      # eager-require pattern or the optional-peer rule silently disarms the gate
+      # above, so both mutations are asserted against.
+      - name: Lock the runtime-dependency detection logic
+        run: npm run test:runtime-deps
 
   typecheck:
     name: Typecheck (whole-graph tsgo)
