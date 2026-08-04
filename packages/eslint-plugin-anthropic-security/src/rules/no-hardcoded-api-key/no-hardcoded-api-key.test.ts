@@ -43,12 +43,20 @@ ruleTester.run('no-hardcoded-api-key', noHardcodedApiKey, {
   invalid: [
     {
       code: `${IMPORT}\nconst c = new Anthropic({ apiKey: 'sk-ant-api03-hardcoded' });`,
-      errors: [{ messageId: 'hardcodedApiKey' }],
+      errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'apiKey' } }],
     },
-    // authToken is the same class of credential
+    // authToken is the same class of credential. `data` is asserted on both
+    // this and the apiKey case on purpose: the message interpolates {{prop}}
+    // into the description AND the fix hint, and without pinning it the rule
+    // could name either option for either input and still pass on messageId.
     {
       code: `${IMPORT}\nconst c = new Anthropic({ authToken: 'tok-live-123' });`,
-      errors: [{ messageId: 'hardcodedApiKey' }],
+      errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'authToken' } }],
+    },
+    // Quoted credential key — the prop name still comes from the source.
+    {
+      code: `${IMPORT}\nconst c = new Anthropic({ 'authToken': 'tok-live-123' });`,
+      errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'authToken' } }],
     },
     // Agent SDK shares the client options
     {
