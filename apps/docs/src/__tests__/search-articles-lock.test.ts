@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Cmd+K Articles Search Lock
  *
