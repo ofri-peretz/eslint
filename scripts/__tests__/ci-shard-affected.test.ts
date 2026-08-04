@@ -292,3 +292,44 @@ describe('shard assignment does not depend on the affected set', () => {
     }
   });
 });
+
+/**
+ * `emitDeclarationOnly` is only safe where something else emits the .js.
+ *
+ * scripts/build-package.ts compiles twice — `tsc --build` for the artifact,
+ * then a `--removeComments` pass that copies only the .js back over dist. That
+ * second pass is what lets pass 1 skip .js emit entirely.
+ *
+ * Packages that do NOT build through build-package.ts have no second pass, so
+ * setting emitDeclarationOnly there produces a dist with .d.ts and no runtime
+ * code at all. That is exactly what happened to @interlace/ui, whose build is
+ * a plain `tsc -b`: every consumer broke with "Can't resolve
+ * '@interlace/ui/cn'", and it took a CI run to surface because the package
+ * still "built" successfully — it just emitted nothing executable.
+ */
+describe('emitDeclarationOnly requires a second .js-emitting pass', () => {
+  it('every package with emitDeclarationOnly builds via build-package.ts', () => {
+    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const pkgsDir = path.join(root, 'packages');
+    const offenders: string[] = [];
+    let checked = 0;
+
+    for (const entry of fs.readdirSync(pkgsDir)) {
+      const tsconfig = path.join(pkgsDir, entry, 'tsconfig.lib.json');
+      const manifest = path.join(pkgsDir, entry, 'package.json');
+      if (!fs.existsSync(tsconfig) || !fs.existsSync(manifest)) continue;
+      if (!/"emitDeclarationOnly"\s*:\s*true/.test(fs.readFileSync(tsconfig, 'utf8'))) continue;
+      checked++;
+      const build = JSON.parse(fs.readFileSync(manifest, 'utf8')).scripts?.build ?? '';
+      if (!build.includes('build-package')) offenders.push(`${entry} (build: ${build || 'none'})`);
+    }
+
+    expect(checked, 'no package sets emitDeclarationOnly — this lock would be vacuous').toBeGreaterThan(5);
+    expect(
+      offenders,
+      `these packages set emitDeclarationOnly but do not build through ` +
+        `scripts/build-package.ts, so nothing emits their .js and they would ` +
+        `ship declarations with no runtime code`,
+    ).toEqual([]);
+  });
+});
