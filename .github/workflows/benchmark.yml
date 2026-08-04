@@ -10,24 +10,20 @@ name: ILB Benchmark Regression Gate
 #   tsx scripts/ilb-regression-check.ts --update-baseline
 #   git commit benchmark-results/baseline.json
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT run on pull requests — deliberately.
+#
+# This workflow costs 5 of the account's 20 concurrent GitHub-hosted job
+# slots. Measured 2026-08-04: one PR fanned out to 37 jobs across 11 workflows,
+# oversubscribing the budget 1.9x on its own, and 82% of all CI job-time was
+# spent queueing for a runner rather than computing.
+#
+# This is drift detection, not per-change correctness, and it already has a
+# weekly Tue cron backstop — so the PR trigger bought a slower queue for every
+# contributor in exchange for signal the cron delivers anyway. Run it on demand
+# with `workflow_dispatch` when a change plausibly affects it.
+# ─────────────────────────────────────────────────────────────────────────────
 on:
-  pull_request:
-    branches: [main]
-    types: [ready_for_review, labeled, synchronize]
-    paths:
-      - 'packages/eslint-plugin-*/**'
-      - 'packages/eslint-devkit/**'
-      - 'packages/eslint-formatter/**'
-      - 'benchmarks/suites/ilb-formatter/**'
-      - 'benchmarks/results/ilb-formatter/baseline.json'
-      - 'scripts/ilb-*.ts'
-      - 'scripts/audit-rule-meta-completeness.ts'
-      - 'scripts/audit-cwe-rendering.ts'
-      - 'scripts/codemod-lift-cwe-to-meta-docs.ts'
-      - 'scripts/tsconfig.json'
-      - 'benchmarks/tsconfig.scripts.json'
-      - 'benchmark-results/baseline.json'
-      - '.github/workflows/benchmark.yml'
   workflow_dispatch:
     inputs:
       repos:
