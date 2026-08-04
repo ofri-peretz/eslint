@@ -123,6 +123,12 @@ jobs:
       # above, so both mutations are asserted against.
       - name: Lock the runtime-dependency detection logic
         run: npm run test:runtime-deps
+      # Every rule schema sets additionalProperties: false, so an option that
+      # exists only in the docs aborts the consumer's whole lint run — and
+      # configuring a rule means copying the name out of our documentation.
+      # ~2s, no build needed.
+      - name: Documented rule options must exist in the schema
+        run: npm run test:documented-options
 
   typecheck:
     name: Typecheck (whole-graph tsgo)
