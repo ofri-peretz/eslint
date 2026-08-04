@@ -19,8 +19,8 @@ if (body === null) return 0;  // no longer matches undefined
 
 `undefined == null` is `true`; `undefined === null` is `false`. The fix
 changed runtime behaviour and introduced bugs in consumer code. It is now a
-suggestion rather than an auto-applied fix — the rewrite is never
-behaviour-preserving when the operands differ in type, not only for null.
+suggestion rather than an auto-applied fix — the rewrite is not guaranteed to
+preserve behaviour when the operands differ in type, not only for null.
 
 Separately, `x == null` / `x != null` is no longer reported at all. It is the
 idiomatic nullish check, deliberately matching both null and undefined, which

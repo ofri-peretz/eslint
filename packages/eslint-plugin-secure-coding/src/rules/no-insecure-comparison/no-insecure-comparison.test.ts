@@ -83,11 +83,21 @@ describe('no-insecure-comparison', () => {
       invalid: [
         {
           // Still reported, but with NO auto-applied `output`: swapping == for
-          // === changes behaviour when operand types differ, so it may only be
-          // offered as a suggestion.
+          // === can change behaviour when operand types differ, so it may only
+          // be offered as a suggestion the author opts into.
           code: 'if (count == "5") { go(); }',
           output: null,
-          errors: [{ messageId: 'insecureComparison', suggestions: 1 }],
+          errors: [
+            {
+              messageId: 'insecureComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: 'if (count === "5") { go(); }',
+                },
+              ],
+            },
+          ],
         },
       ],
     });

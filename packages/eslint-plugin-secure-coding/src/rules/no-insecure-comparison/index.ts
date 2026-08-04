@@ -41,7 +41,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       cvss: 5.3,
     },
     // No `fixable`: this rule emits suggestions only. Rewriting `==` to `===`
-    // is not behaviour-preserving, so it must never run under `--fix`.
+    // is not guaranteed to preserve behaviour, so it must not run under
+    // `--fix`.
     hasSuggestions: true,
     messages: {
       insecureComparison: formatLLMMessage({
@@ -325,9 +326,10 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             strictOperator,
             example,
           },
-          // No `fix` here on purpose: swapping `==` for `===` changes runtime
-          // behaviour whenever the operands differ in type, so it cannot run
-          // under `--fix`. Offered as a suggestion the author opts into.
+          // No `fix` here on purpose: swapping `==` for `===` can change
+          // runtime behaviour when the operands differ in type, so it is not
+          // safe to run under `--fix`. Offered as a suggestion the author
+          // opts into.
           suggest: [
             {
               messageId: 'useStrictEquality',
