@@ -290,13 +290,23 @@ const publishedFiles = Array.isArray(pkg.files)
   ? (pkg.files as string[]).filter((f) => !DROPPED_FILE_ENTRIES.has(f))
   : pkg.files;
 
-const publishedPkg = {
+// Fields that exist only to build the package. `scripts` (build/test/typecheck)
+// and `devDependencies` cannot do anything in a consumer's node_modules — npm
+// never runs them and never installs them — but they ship in every manifest,
+// clutter the npm page's dependency section, and get picked up by SCA tools
+// scanning installed manifests. None of our packages declares a lifecycle hook
+// (preinstall/postinstall/prepare/...), so nothing observable changes.
+const BUILD_ONLY_FIELDS = ['scripts', 'devDependencies'] as const;
+
+const publishedPkg: Record<string, unknown> = {
   ...pkg,
   ...(publishedFiles ? { files: publishedFiles } : {}),
   main: stripDistPrefix(pkg.main),
   types: stripDistPrefix(pkg.types),
   exports: stripDistPrefix(pkg.exports),
 };
+for (const field of BUILD_ONLY_FIELDS) delete publishedPkg[field];
+
 writeFileSync(
   join(distDir, 'package.json'),
   JSON.stringify(publishedPkg, null, 2) + '\n',

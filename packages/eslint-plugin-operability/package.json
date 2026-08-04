@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-operability",
-  "version": "3.0.11",
-  "description": "ESLint plugin for production operability \u2014 bans debug code and console logging in production, verbose error messages, and process.exit calls.",
+  "version": "3.0.12",
+  "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.4"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",

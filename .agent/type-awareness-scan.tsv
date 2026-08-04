@@ -211,6 +211,8 @@ mongodb-security	no-hardcoded-credentials	unaware
 nestjs-security	require-guards	unaware	
 nestjs-security	require-class-validator	unaware	
 nestjs-security	require-throttler	unaware	
+nestjs-security	require-validation-pipe-whitelist	unaware	
+nestjs-security	no-permissive-cors	unaware	
 nestjs-security	no-missing-validation-pipe	unaware	
 nestjs-security	no-exposed-debug-endpoints	unaware	
 nestjs-security	no-exposed-private-fields	unaware	
