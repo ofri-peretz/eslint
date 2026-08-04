@@ -106,6 +106,29 @@ function checkPlugin(pkg: string): Violation | null {
     reasons.push(`missing ecosystem logo \`/logos/${eco}.svg\` in prelude logo row`);
   }
 
+  // Presence alone would let a shuffled row through, so pin the canonical
+  // order too: Interlace -> ecosystem -> oxlint -> ESLint. Positions are read
+  // from the prelude only — a stray mention further down the README must not
+  // be able to satisfy the ordering.
+  const prelude = content.slice(0, content.indexOf('## Description') + 1 || content.length);
+  const at = (name: string) => prelude.indexOf(`/logos/${name}.svg`);
+  const iInterlace = at('interlace');
+  const iOxlint = at('oxlint');
+  const iEslint = at('eslint');
+  const iEco = eco ? at(eco) : -1;
+  const present = [iInterlace, iOxlint, iEslint, ...(eco ? [iEco] : [])].every((i) => i !== -1);
+  if (present) {
+    const sequence = eco
+      ? [iInterlace, iEco, iOxlint, iEslint]
+      : [iInterlace, iOxlint, iEslint];
+    const ordered = sequence.every((v, i) => i === 0 || sequence[i - 1] < v);
+    if (!ordered) {
+      reasons.push(
+        `logo row is out of canonical order (expected: Interlace → ${eco ? `${eco} → ` : ''}oxlint → ESLint)`,
+      );
+    }
+  }
+
   // Every referenced mark must actually exist on the docs site, or npm renders
   // a broken image that camo then caches as immutable.
   for (const m of content.matchAll(/\/logos\/([a-z0-9-]+)\.svg/g)) {
