@@ -74,8 +74,8 @@
         },
         "reading_time_minutes": {
           "type": "integer",
-          "minimum": 1,
-          "description": "Estimated reading time"
+          "minimum": 0,
+          "description": "Estimated reading time; 0 when Dev.to returns null (update-articles-data.ts coerces via `?? 0`)"
         },
         "positive_reactions_count": {
           "type": "integer",
