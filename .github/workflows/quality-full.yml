@@ -143,6 +143,28 @@ jobs:
           # the args must word-split into separate --filter flags.
           npx turbo run test $ARGS
 
+  # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
+  # tools/*, benchmarks), so turbo has no task for it and `turbo run test`
+  # never reaches scripts/__tests__. Until now the only file under it that CI
+  # ever executed was oxlint-export-lock.test.ts, pinned by name in
+  # oxlint-parity.yml — gap-closure, sync-source-versions and the newer
+  # repo-config locks (turbo cache inputs, this workflow's shard partitioner)
+  # were all dead weight: committed, green locally, never run by the gate.
+  # 190 tests in that suite, and the gate was running a fraction of them.
+  scripts-tests:
+    name: Script & Repo-Config Locks
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Run scripts/__tests__
+        run: npm run --silent test:scripts
+
   build:
     name: Build (Turbo)
     needs: gate
@@ -195,12 +217,13 @@ jobs:
     name: Quality (Full) Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [gate, test, build, typecheck, portability]
+    needs: [gate, test, scripts-tests, build, typecheck, portability]
     if: always() && needs.gate.outputs.run == 'true'
     steps:
       - name: Render gate report
         env:
           R_TEST: ${{ needs.test.result }}
+          R_SCRIPTS: ${{ needs['scripts-tests'].result }}
           R_BUILD: ${{ needs.build.result }}
           R_TYPECHECK: ${{ needs.typecheck.result }}
           R_PORTABILITY: ${{ needs.portability.result }}
@@ -217,7 +240,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_TEST" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
+          for r in "$R_TEST" "$R_SCRIPTS" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -232,6 +255,7 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\`, sharded (affected on PRs) |"
+            echo "| Script/config locks | $(icon "$R_SCRIPTS") $R_SCRIPTS         | \`scripts/__tests__\` — outside every workspace |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
