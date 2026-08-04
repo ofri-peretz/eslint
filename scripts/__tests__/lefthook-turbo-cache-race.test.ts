@@ -29,28 +29,55 @@ import { resolve } from 'node:path';
 
 const LEFTHOOK = resolve(__dirname, '..', '..', 'lefthook.yml');
 
-/** `{ hookName: [command line, ...] }` — a deliberately small YAML reader. */
+/**
+ * `{ hookName: [command text, ...] }` — a deliberately small YAML reader.
+ *
+ * Block scalars have to be expanded, not skipped. `run: |` puts nothing on the
+ * `run:` line itself; the command lives in the indented block beneath it. An
+ * earlier version of this parser captured the literal `"|"` for those, so
+ * `tests-affected` — which is a block scalar containing `turbo run test` —
+ * was invisible to every assertion below. A lock that cannot see half the
+ * commands it guards is the vacuous-lock failure this file exists to prevent.
+ */
 export function parseHookCommands(yaml: string): Record<string, string[]> {
   const hooks: Record<string, string[]> = {};
   let hook: string | null = null;
+  const lines = yaml.split('\n');
 
-  for (const line of yaml.split('\n')) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
     if (/^\s*#/.test(line) || line.trim() === '') continue;
 
     // Top-level key with no indentation is a hook name (`pre-push:`).
     const hookMatch = /^([a-z-]+):\s*$/.exec(line);
     if (hookMatch) {
-      hook = hookMatch[1];
+      hook = hookMatch[1]!;
       hooks[hook] ??= [];
       continue;
     }
     if (hook === null) continue;
 
-    // `run:` lines carry the actual command. Both `run: cmd` and the block
-    // forms end up with the command text on the same line here, which is all
-    // this lock needs.
-    const runMatch = /^\s+run:\s*(.+)$/.exec(line);
-    if (runMatch) hooks[hook].push(runMatch[1].trim());
+    const runMatch = /^(\s+)run:\s*(.*)$/.exec(line);
+    if (!runMatch) continue;
+    const [, indent, rest] = runMatch as unknown as [string, string, string];
+
+    // Inline form: `run: some command`.
+    if (rest.trim() !== '' && !/^[|>][-+\d]*$/.test(rest.trim())) {
+      hooks[hook]!.push(rest.trim());
+      continue;
+    }
+
+    // Block form: consume every line indented deeper than the `run:` key.
+    const body: string[] = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      const next = lines[j]!;
+      if (next.trim() === '') continue;
+      const nextIndent = /^(\s*)/.exec(next)![1]!.length;
+      if (nextIndent <= indent.length) break;
+      body.push(next.trim());
+      i = j;
+    }
+    hooks[hook]!.push(body.join('\n'));
   }
   return hooks;
 }
@@ -156,6 +183,45 @@ describe('the lock itself', () => {
   it('ignores comments and blank lines when parsing', () => {
     const hooks = parseHookCommands(['# comment', '', 'pre-push:', '  a:', '    run: echo hi'].join('\n'));
     expect(hooks['pre-push']).toEqual(['echo hi']);
+  });
+
+  // Regression: `run: |` puts nothing on the `run:` line. Capturing the literal
+  // `"|"` made every command written as a block scalar invisible to the
+  // assertions above — including `tests-affected`, which invokes turbo.
+  it('expands block scalars instead of capturing the pipe', () => {
+    const hooks = parseHookCommands(
+      [
+        'pre-commit:',
+        '  tests-affected:',
+        '    run: |',
+        '      if git rev-parse --quiet origin/main; then',
+        '        npx --no turbo run test --filter="...[origin/main]"',
+        '      fi',
+        '  other:',
+        '    run: echo done',
+      ].join('\n'),
+    );
+    const commands = hooks['pre-commit']!;
+    expect(commands).toHaveLength(2);
+    expect(commands[0]).toContain('turbo run test');
+    expect(commands[0]).not.toBe('|');
+    expect(commands[1]).toBe('echo done');
+  });
+
+  it('sees a turbo invocation hidden inside a block scalar', () => {
+    const hooks = parseHookCommands(
+      ['pre-push:', '  a:', '    run: npx turbo run build', '  b:', '    run: |', '      npx turbo run test'].join('\n'),
+    );
+    // Two separate turbo processes — the very thing this file guards — and the
+    // old parser reported only one.
+    expect(turboInvocations(hooks['pre-push'] ?? [])).toHaveLength(2);
+  });
+
+  it('stops the block at the next key rather than swallowing the file', () => {
+    const hooks = parseHookCommands(
+      ['pre-push:', '  a:', '    run: |', '      echo one', '  b:', '    run: echo two'].join('\n'),
+    );
+    expect(hooks['pre-push']).toEqual(['echo one', 'echo two']);
   });
 
   it('ignores run: lines that appear before any hook', () => {
