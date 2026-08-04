@@ -74,4 +74,21 @@ describe('checkTaxonomy', () => {
     expect(report.staleAllowlist).toHaveLength(1);
     expect(report.staleAllowlist[0]).toContain('delete the entry');
   });
+
+  it('flags a PARTIALLY migrated entry, naming the tokens that are gone', () => {
+    // The likelier real case: someone moves one of a rule's SDK gates and
+    // leaves the rest. The entry must be updated, not deleted — so this
+    // reports the missing token WITHOUT the "delete the entry" instruction.
+    const partial = [
+      { file: 'p/src/rules/known/index.ts', tokens: ['express', 'fastify'], reason: 'grandfathered' },
+    ];
+    const report = checkTaxonomy(
+      [{ file: 'p/src/rules/known/index.ts', source: `n === 'express'` }],
+      partial,
+    );
+    expect(report.violations).toEqual([]);
+    expect(report.staleAllowlist).toHaveLength(1);
+    expect(report.staleAllowlist[0]).toContain('fastify');
+    expect(report.staleAllowlist[0]).not.toContain('delete the entry');
+  });
 });
