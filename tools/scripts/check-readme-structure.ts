@@ -138,8 +138,16 @@ function checkPlugin(pkg: string): Violation | null {
   const rulesHeaderIdx = content.indexOf('## Rules');
   const canonicalHeader =
     '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
-  const ruleTableRegex =
-    /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
+  // Cells are matched with padding tolerance: a formatter that column-aligns
+  // the table (`| Rule    |   CWE   |`) must not make the gate silently stop
+  // covering that plugin. eslint-plugin-nestjs-security went unchecked this way
+  // from #336 until this fix.
+  const ruleTableRegex = new RegExp(
+    ['Rule', 'CWE', 'OWASP', 'CVSS', 'Description', '🧠', '💼', '⚠️', '🔧', '💡', '🚫']
+      .map((c) => `\\|\\s*${c}\\s*`)
+      .join('') + '\\|\\n\\|[\\s:|\\-]+\\|\\n(?:\\|[^\\n]*\\|\\n?)+',
+    'g',
+  );
   const ruleTableMatches = Array.from(content.matchAll(ruleTableRegex));
   if (ruleTableMatches.length === 0) {
     reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);
