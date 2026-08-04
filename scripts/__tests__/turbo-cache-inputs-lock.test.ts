@@ -87,11 +87,13 @@ describe('turbo.json cache inputs', () => {
     //   conventions, modernization, modularity, operability, reliability —
     //          no vitest config at all, so nothing aliases devkit to source.
     //          Give them a config with the alias and the override can go.
-    //   @interlace/eslint-config — its vitest config aliases plugins from a
-    //          hand-maintained INTERLACE_PLUGINS list that has drifted: 19 of
-    //          26 plugins, missing all 7 ORM-security ones. Its
-    //          ecosystem-integrity test imports them, so they resolve through
-    //          node_modules to dist/. Fix the list and this override can go.
+    //
+    // The meta-config package used to be a seventh exception: its vitest
+    // config aliased plugins from a hand-maintained list that had drifted to
+    // 19 of 26, so the 7 ORM-security plugins resolved through node_modules to
+    // dist/ and needed a build. Completing that list removed the need — its
+    // test now pulls 1 task and 0 builds, down from 27 — so no override for it
+    // exists here or in turbo.json. Do not re-add one.
     //
     // The point of this lock is that the exception list stays SHORT and
     // explicit. A new blanket `^build` on the default task would serialise the

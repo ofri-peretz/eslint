@@ -140,16 +140,36 @@ if (process.env.CI_TEST_SHARD_ALL !== '1') {
 // ["^build"]`), and that upstream set — devkit, ui — is duplicated across
 // shards that need it. That is a handful of small packages, not the 34-package
 // duplication that plain `--filter=...<pkg>` per shard produced.
-const shardIndex = Number(process.env.CI_BUILD_SHARD ?? '0');
-const shardTotal = Number(process.env.CI_BUILD_SHARD_TOTAL ?? '0');
-const sharded = Number.isInteger(shardIndex) && Number.isInteger(shardTotal) && shardTotal > 1;
+// A malformed value must not silently degrade to "build everything". If it
+// did, a typo in the matrix would put the FULL build on all four runners —
+// reintroducing exactly the duplication this sharding removes, while every
+// job still reported success. So: if either variable is set at all, both must
+// be valid.
+const rawShard = process.env.CI_BUILD_SHARD;
+const rawTotal = process.env.CI_BUILD_SHARD_TOTAL;
+const shardIndex = Number(rawShard ?? '0');
+const shardTotal = Number(rawTotal ?? '0');
+if (rawShard !== undefined || rawTotal !== undefined) {
+  const bad =
+    !Number.isInteger(shardIndex) ||
+    !Number.isInteger(shardTotal) ||
+    shardTotal < 1 ||
+    shardIndex < 1 ||
+    shardIndex > shardTotal;
+  if (bad) {
+    console.error(
+      `::error::Malformed build shard configuration: CI_BUILD_SHARD=${rawShard ?? '(unset)'} ` +
+        `CI_BUILD_SHARD_TOTAL=${rawTotal ?? '(unset)'}. Both must be integers with ` +
+        `1 <= shard <= total. Refusing to fall back to an unsharded build — that would ` +
+        `run the full build on every runner.`,
+    );
+    process.exit(2);
+  }
+}
+const sharded = shardTotal > 1;
 
 let mine = selected;
 if (sharded) {
-  if (shardIndex < 1 || shardIndex > shardTotal) {
-    console.error(`::error::CI_BUILD_SHARD=${shardIndex} out of range 1..${shardTotal}.`);
-    process.exit(2);
-  }
   // Bucket the FULL workspace list, then intersect with `selected` — never
   // bucket the affected subset directly.
   //
