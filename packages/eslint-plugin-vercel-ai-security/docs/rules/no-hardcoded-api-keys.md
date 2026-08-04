@@ -78,10 +78,9 @@ const openai = createOpenAI();
 
 ## ⚙️ Options
 
-| Option         | Type       | Default                                                              | Description                                          |
-| -------------- | ---------- | -------------------------------------------------------------------- | ---------------------------------------------------- |
-| `keyPatterns`  | `string[]` | `['apiKey', 'api_key', 'token', 'secret', 'credential', 'password']` | Property names to check                              |
-| `minKeyLength` | `number`   | `20`                                                                 | Minimum string length to consider as a potential key |
+| Option            | Type       | Default                                                            | Description                          |
+| ----------------- | ---------- | ------------------------------------------------------------------ | ------------------------------------ |
+| `apiKeyPatterns`  | `string[]` | `['apiKey', 'api_key', 'token', 'secret', 'credentials']`          | Property names that contain API keys |
 
 ## 🛡️ Why This Matters
 
