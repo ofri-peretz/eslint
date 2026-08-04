@@ -1,11 +1,11 @@
 ---
 title: require-validation-pipe-whitelist
-description: Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of reaching the service layer.
+description: "Requires whitelist: true on ValidationPipe so unknown properties are stripped"
 tags: ['security', 'nestjs']
 category: security
 severity: high
 cwe: CWE-915
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -25,8 +25,8 @@ A `ValidationPipe` validates the properties a DTO declares. By default it does
 not remove the ones it doesn't:
 
 ```ts
-app.useGlobalPipes(new ValidationPipe());                     // extras survive
-app.useGlobalPipes(new ValidationPipe({ whitelist: true }));  // extras stripped
+app.useGlobalPipes(new ValidationPipe()); // extras survive
+app.useGlobalPipes(new ValidationPipe({ whitelist: true })); // extras stripped
 ```
 
 So this request:
@@ -90,6 +90,9 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
   resolved.
 - An options object containing a spread (`{ ...base }`), since `whitelist` may
   come from the spread.
+- A variable that is **reassigned** after its declaration — only a binding
+  written exactly once is read, since otherwise the declaration's value is not
+  what reaches the call.
 
 ## Options
 
@@ -100,9 +103,9 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
 }]
 ```
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `allowInTests` | `boolean` | `true` | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
+| Option                        | Type      | Default | Description                                                                |
+| ----------------------------- | --------- | ------- | -------------------------------------------------------------------------- |
+| `allowInTests`                | `boolean` | `true`  | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts`                           |
 | `requireForbidNonWhitelisted` | `boolean` | `false` | Also require `forbidNonWhitelisted: true`, rejecting rather than stripping |
 
 ## When Not To Use It

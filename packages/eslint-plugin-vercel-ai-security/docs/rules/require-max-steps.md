@@ -97,9 +97,9 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option           | Type     | Default     | Description                         |
-| ---------------- | -------- | ----------- | ----------------------------------- |
-| `maxRecommended` | `number` | `undefined` | Warn if maxSteps exceeds this value |
+| Option              | Type     | Default | Description                            |
+| ------------------- | -------- | ------- | -------------------------------------- |
+| `suggestedMaxSteps` | `number` | `5`     | Step limit named in the fix message    |
 
 ## 🛡️ Why This Matters
 
