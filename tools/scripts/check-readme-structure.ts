@@ -21,6 +21,7 @@ const logosDir = path.join(process.cwd(), 'apps', 'docs', 'public', 'logos');
 // plugins and carry Interlace + oxlint + ESLint only. Keep in sync with the
 // row documented in .agent/rules/readme-structure.md.
 const ECOSYSTEM_LOGO: Record<string, string> = {
+  'eslint-plugin-browser-security': 'chromium',
   'eslint-plugin-drizzle-security': 'drizzle',
   'eslint-plugin-express-security': 'express',
   'eslint-plugin-jwt': 'jwt',

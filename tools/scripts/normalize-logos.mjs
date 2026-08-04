@@ -41,9 +41,20 @@ for (const file of readdirSync(src).filter((f) => f.endsWith('.svg'))) {
   // Re-open the source root as a nested <svg> filling the canvas. Nested <svg>
   // honours its own viewBox, so the original geometry (and any <style>,
   // <defs>, gradients) survives untouched.
+  //
+  // Keep every other attribute off the source root. Marks that colour
+  // themselves with a root-level `fill` (simple-icons does this — Claude ships
+  // fill="#D97757") render black if the attribute is dropped, and the loss is
+  // invisible until someone looks at the rendered logo.
+  const kept = open[0]
+    .replace(/^<svg\b/i, '')
+    .replace(/\/?>$/, '')
+    .replace(/\s(?:x|y|width|height|viewBox|preserveAspectRatio|xmlns)\s*=\s*"[^"]*"/gi, '')
+    .trim();
+
   const inner =
     `<svg x="0" y="0" width="${BOX_W}" height="${BOX_H}" viewBox="${vb[1]}" ` +
-    `preserveAspectRatio="xMidYMid meet" overflow="visible">`;
+    `preserveAspectRatio="xMidYMid meet" overflow="visible"${kept ? ` ${kept}` : ''}>`;
   const body = s.slice(open.index + open[0].length);
 
   writeFileSync(

@@ -82,6 +82,19 @@ render wildly different footprints and baseline-align badly. Hot-linking the
 vendor or a GitHub `camo` URL is forbidden: npm re-proxies README images through
 camo with `immutable`, so a single bad fetch is cached permanently.
 
+Raster-only marks (the GitHub-avatar sources) are downscaled to 180px and
+inlined into that same canvas as a `data:` URI — an SVG loaded via `<img>`
+cannot fetch external resources, so a sibling `.png` would silently render
+blank. Sources and per-mark notes live in
+[`tools/scripts/logo-sources.json`](../../tools/scripts/logo-sources.json).
+
+**Always look at a regenerated mark on white before shipping it.** Two failure
+modes are invisible to tooling: a truncated PNG still reports valid dimensions
+to `file` yet renders as a partial band, and a mark that colours itself with a
+root-level `fill` (simple-icons ships Claude as `fill="#D97757"`) renders solid
+black if that attribute is dropped when the root tag is rewritten. Both shipped
+briefly here and both were caught only by rendering the logo.
+
 Pick the variant that reads on **white** — npm's README background. Note the
 naming conventions collide: Interlace's `icon-light.svg` means *for light
 backgrounds* (dark ink), while oxc's `oxc-light.svg` means *light-coloured ink*
