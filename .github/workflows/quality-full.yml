@@ -325,6 +325,11 @@ jobs:
           R_BUILD: ${{ needs.build.result }}
           R_TYPECHECK: ${{ needs.typecheck.result }}
           R_PORTABILITY: ${{ needs.portability.result }}
+          # Needed to tell a LEGITIMATE skip from a broken one. `heavy` is false
+          # when the diff touches no package source; `any` is false when no
+          # testable package is affected.
+          HEAVY: ${{ needs.gate.outputs.heavy }}
+          ANY: ${{ needs.gate.outputs.any }}
         run: |
           set -euo pipefail
           icon() {
@@ -337,10 +342,37 @@ jobs:
             esac
           }
 
+          # A skipped job is a PASS only when the gate deliberately skipped it.
+          #
+          # This used to be a flat `[ "$r" = "success" ]`, which meant a
+          # markdown-only PR — where `heavy=false` skips build/typecheck/
+          # portability and `any=false` skips the test shards — hard-FAILED the
+          # required check instead of fast-passing. The skip optimisation was
+          # unusable: skipping the work made the gate red.
+          #
+          # `cancelled` and `failure` are never a pass, and a skip is only
+          # accepted against the gate output that authorised it, so an upstream
+          # failure cascading into a skip is still caught.
           all_pass=true
-          for r in "$R_TEST" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
-            [ "$r" = "success" ] || all_pass=false
-          done
+          check() { # $1=result $2=allowed-to-be-skipped(true/false) $3=label
+            case "$1" in
+              success) return 0 ;;
+              skipped)
+                if [ "$2" = "true" ]; then
+                  echo "note: $3 skipped by the gate (nothing affected) — counted as pass."
+                  return 0
+                fi
+                echo "::error::$3 was skipped but the gate did not authorise it."
+                return 1 ;;
+              *) return 1 ;;
+            esac
+          }
+          [ "$ANY"   = "true" ] && test_skip_ok=false || test_skip_ok=true
+          [ "$HEAVY" = "true" ] && heavy_skip_ok=false || heavy_skip_ok=true
+          check "$R_TEST"        "$test_skip_ok"  "Unit tests"       || all_pass=false
+          check "$R_BUILD"       "$heavy_skip_ok" "Build"            || all_pass=false
+          check "$R_TYPECHECK"   "$heavy_skip_ok" "Typecheck"        || all_pass=false
+          check "$R_PORTABILITY" "$heavy_skip_ok" "Rule portability" || all_pass=false
           if $all_pass; then
             header="✅ All heavy quality gates passed"
           else
@@ -353,7 +385,7 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test\` + coverage thresholds, 10 shards, affected-filtered |"
-            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (all packages, cache-accelerated) |"
+            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\`, 4 shards, affected-filtered |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo ""
