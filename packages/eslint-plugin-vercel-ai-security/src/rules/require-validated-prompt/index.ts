@@ -222,7 +222,7 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
       for (const prop of optionsArg.properties) {
         if (prop.type !== AST_NODE_TYPES.Property) continue;
         
-        const keyName = getStaticPropName(prop.key);
+        const keyName = getStaticPropName(prop);
 
         if (keyName === 'prompt') {
           const result = hasUnsafeUserInput(prop.value);
