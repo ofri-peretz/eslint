@@ -196,3 +196,37 @@ describe('shards partition the work', () => {
     }
   });
 });
+
+/**
+ * A vitest run that matches no files must never be a pass.
+ *
+ * devkit's `test:dist` names one file on the command line, but a CLI positional
+ * filter does NOT override the config's `exclude` — so when that file was
+ * excluded outright, vitest matched nothing and printed "No test files found".
+ * It exited 1 only because `passWithNoTests` is false. Flip that flag and the
+ * same gate reports success having verified nothing, which is the failure mode
+ * this repo keeps rediscovering.
+ */
+describe('no vitest config may pass with zero tests', () => {
+  it('passWithNoTests is never true', () => {
+    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const configs: string[] = [];
+    for (const ws of ['packages', 'apps', 'tools']) {
+      const dir = path.join(root, ws);
+      if (!fs.existsSync(dir)) continue;
+      for (const entry of fs.readdirSync(dir)) {
+        for (const name of ['vitest.config.mts', 'vitest.config.ts']) {
+          const f = path.join(dir, entry, name);
+          if (fs.existsSync(f)) configs.push(f);
+        }
+      }
+    }
+    expect(configs.length, 'found no vitest configs — this lock would be vacuous').toBeGreaterThan(5);
+
+    const offenders = configs.filter((f) => /passWithNoTests:\s*true/.test(fs.readFileSync(f, 'utf8')));
+    expect(
+      offenders.map((f) => path.relative(root, f)),
+      'these configs would report success when their filter matches no test files',
+    ).toEqual([]);
+  });
+});

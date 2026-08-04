@@ -70,7 +70,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit",
-    "test:dist": "vitest run --config vitest.config.mts --coverage.enabled=false --reporter=dot src/no-runtime-optional-peer.test.ts"
+    "test:dist": "VITEST_DIST=1 vitest run --config vitest.config.mts --coverage.enabled=false --reporter=dot src/no-runtime-optional-peer.test.ts"
   },
   "peerDependencies": {
     "@typescript-eslint/utils": "^7.0.0 || ^8.0.0",
