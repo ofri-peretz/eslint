@@ -105,6 +105,8 @@
     "ilb:wild:list": "tsx scripts/ilb-wild.ts --list",
     "ilb:wild:results": "tsx scripts/ilb-wild.ts --results",
     "ilb:edge": "tsx scripts/ilb-wild.ts --fp-corpus",
+    "ilb:edge:triage": "tsx scripts/audit-edge-ground-truth.ts",
+    "ilb:edge:triage:strict": "tsx scripts/audit-edge-ground-truth.ts --strict",
     "ilb:cwe-corpus": "npm run ilb:cwe-corpus -w @interlace/benchmarks",
     "ilb:arena": "npm run ilb:arena -w @interlace/benchmarks",
     "ilb:arena:quality": "npm run ilb:arena-quality -w @interlace/benchmarks",
