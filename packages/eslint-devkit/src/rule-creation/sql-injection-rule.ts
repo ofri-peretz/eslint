@@ -23,7 +23,13 @@
  * plugins (`secure-coding`, `node-security`, `browser-security`).
  */
 
-import { AST_NODE_TYPES, TSESLint, TSESTree } from '@typescript-eslint/utils';
+// AST_NODE_TYPES must come from the local shim, not upstream. It is an enum —
+// a *runtime value* — and `@typescript-eslint/utils` is an optional peer that npm
+// does not install, so importing it here made every published plugin throw
+// "Cannot find module '@typescript-eslint/utils'" on a clean install. Types are
+// erased at compile time and stay safe to import from upstream.
+import { AST_NODE_TYPES } from '../ast-node-types';
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 
 /** Message ids every rule built by this factory reports. */
