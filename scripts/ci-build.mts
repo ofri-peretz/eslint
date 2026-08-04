@@ -101,6 +101,19 @@ if (all.length === 0) {
 const REVERSE_DEPS = reverseDeps(all);
 const MATRIX_MODE = process.argv[2] === '--matrix';
 
+/**
+ * Record the slice so the post-build checks know which dist/ dirs MUST exist.
+ * Without it, verify-runtime-deps.ts cannot tell "this shard built nothing, by
+ * design" from "the build silently produced nothing", and has to treat both as
+ * failure.
+ */
+function writeBuiltPackages(pkgs: BuildPkg[]): void {
+  fs.writeFileSync(
+    path.join(REPO_ROOT, '.ci-built-packages.json'),
+    JSON.stringify(pkgs.map((p) => ({ name: p.name, dir: p.dir, emitsDist: p.emitsDist })), null, 2),
+  );
+}
+
 /** Emit the build matrix to GITHUB_OUTPUT (and stdout when run locally). */
 function emitBuildMatrix(shardNumbers: number[]): void {
   const json = JSON.stringify(shardNumbers);
@@ -239,21 +252,16 @@ for (const p of mine) console.log(`  ${p.name}  (${p.cost} source files)`);
 // An empty slice is legitimate: this shard owns packages, none affected. Stated
 // rather than inferred from silence, same as the test sharder.
 if (mine.length === 0) {
+  // Record the empty slice BEFORE exiting. The post-build steps still run, and
+  // verify-runtime-deps.ts refuses to pass having inspected 0 artifacts — a
+  // guard that is right when a build was expected and wrong here, where the
+  // shard correctly owns nothing affected. Writing [] tells it the difference.
+  writeBuiltPackages([]);
   console.log('Nothing for this shard to build.');
   process.exit(0);
 }
 
-// Record the slice so the post-build checks know what dist/ dirs MUST exist.
-// Without this, verify-runtime-deps.ts skips packages with no dist and reports
-// success — vacuously green if the build produced nothing at all.
-fs.writeFileSync(
-  path.join(REPO_ROOT, '.ci-built-packages.json'),
-  JSON.stringify(
-    mine.map((p) => ({ name: p.name, dir: p.dir, emitsDist: p.emitsDist })),
-    null,
-    2,
-  ),
-);
+writeBuiltPackages(mine);
 
 if (process.env.CI_BUILD_PLAN_ONLY === '1') process.exit(0);
 

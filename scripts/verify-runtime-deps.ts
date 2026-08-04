@@ -89,9 +89,21 @@ if (expected) {
   }
 }
 
-if (checked.length === 0) {
-  console.error('::error::Verified 0 packages. This gate cannot pass without inspecting at least one built artifact.');
+// 0 checked is only a defect when something was supposed to be there. A build
+// shard whose bucket holds no affected package legitimately produces nothing —
+// it writes an empty expectation list to say so. Without that distinction this
+// guard failed correct, empty shards (observed on PR #368, Build 1/4).
+const expectedDistCount = expected?.filter((e) => e.emitsDist).length ?? null;
+if (checked.length === 0 && expectedDistCount !== 0) {
+  console.error(
+    expectedDistCount === null
+      ? '::error::Verified 0 packages and no build manifest was found. This gate cannot pass without inspecting at least one built artifact.'
+      : `::error::Verified 0 packages, but the build claimed ${expectedDistCount} publishable package(s). The build did not emit what it claimed to.`,
+  );
   process.exit(1);
+}
+if (checked.length === 0) {
+  console.log('This shard built no publishable package — nothing to verify.');
 }
 
 if (violations.length > 0) {
