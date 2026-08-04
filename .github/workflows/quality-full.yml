@@ -54,9 +54,13 @@ jobs:
   gate:
     name: Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    # Was 1 minute when this job only read event metadata. It now also resolves
+    # the affected package list to shard the test matrix, which needs a checkout
+    # and a dependency install (~26s warm).
+    timeout-minutes: 6
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      shards: ${{ steps.shard.outputs.matrix }}
     steps:
       - id: decide
         env:
@@ -81,19 +85,63 @@ jobs:
             echo "::notice::Draft PR without \`run-full-ci\` label — skipping heavy quality gates. Mark ready-for-review or apply the label to promote."
           fi
 
+      # Resolve which packages turbo would actually test (already narrowed by
+      # TURBO_FILTER_ARGS on PRs) and split them across the matrix below.
+      # Sharding has to happen here rather than in the test job because turbo
+      # ORs multiple `--filter` args — there is no way to intersect "affected"
+      # with "this shard's packages" from inside the shard.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        if: steps.decide.outputs.run == 'true'
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        if: steps.decide.outputs.run == 'true'
+      - name: Compute test shards
+        id: shard
+        if: steps.decide.outputs.run == 'true'
+        env:
+          SHARD_COUNT: "4"
+        run: |
+          set -euo pipefail
+          # pipefail matters: a turbo failure here must not yield an empty
+          # matrix, which would skip every test and still report green.
+          MATRIX=$(npx --no turbo run test ${{ env.TURBO_FILTER_ARGS }} --dry=json \
+            | node scripts/ci/shard-test-packages.mjs "$SHARD_COUNT")
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
   test:
-    name: Unit Tests (Turbo)
+    # The suffix makes each shard distinguishable in the checks UI. Safe to
+    # rename: branch protection requires only `oxlint (fast pass)` and
+    # `Quality (Full) Gate`, never this job directly.
+    name: Unit Tests (Turbo) ${{ matrix.shard }}
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      # Report every shard's result rather than cancelling siblings on the
+      # first failure — one red shard should not hide the state of the others.
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.gate.outputs.shards) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - name: Run tests via Turbo
-        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
+        env:
+          PACKAGES: ${{ matrix.packages }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PACKAGES" ]; then
+            echo "::notice::No affected packages with tests — nothing to run."
+            exit 0
+          fi
+          ARGS=""
+          for p in $PACKAGES; do ARGS="$ARGS --filter=$p"; done
+          # shellcheck disable=SC2086 — package names never contain spaces and
+          # the args must word-split into separate --filter flags.
+          npx turbo run test $ARGS
 
   build:
     name: Build (Turbo)
@@ -183,7 +231,7 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\`, sharded (affected on PRs) |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
