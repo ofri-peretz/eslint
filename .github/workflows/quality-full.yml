@@ -215,8 +215,14 @@ jobs:
           # Build gets its own lineage so it stops competing with the test
           # shards for one cache key on main.
           turbo-cache-scope: build
-      - name: Build via Turbo
-        run: npx turbo run build
+      - name: Build via Turbo (affected only)
+        env:
+          # Same filter as the test shards. Build is the longest job on this
+          # gate (230s for all 30 tasks at a 0% cache hit rate) and therefore
+          # sets the end-to-end floor, so filtering it is the single biggest
+          # remaining reduction. main / cron / dispatch build everything.
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+        run: node scripts/ci-build.mts
       # Runs here because the artifacts already exist — no extra runner, no
       # second build, ~5s. Reads the emitted JS for module-scope requires of
       # packages the manifest does not guarantee are installed. Every package is

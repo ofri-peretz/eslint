@@ -21,6 +21,7 @@ export const GLOBAL_INPUTS = new Set([
   '.github/actions/setup/action.yml',
   '.github/workflows/quality-full.yml',
   'scripts/ci-test-shard.mts',
+  'scripts/ci-build.mts',
   'scripts/lib/ci-shard-affected.mts',
 ]);
 

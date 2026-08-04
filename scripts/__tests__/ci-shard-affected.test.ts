@@ -33,6 +33,9 @@ describe('decideAffected', () => {
     // against the subset the new logic happens to pick.
     expect(GLOBAL_INPUTS.has('scripts/ci-test-shard.mts')).toBe(true);
     expect(GLOBAL_INPUTS.has('scripts/lib/ci-shard-affected.mts')).toBe(true);
+    // ci-build.mts too: a change to the build filter must be validated by a
+    // full build, not by the filter it is changing.
+    expect(GLOBAL_INPUTS.has('scripts/ci-build.mts')).toBe(true);
   });
 
   it('selects only the packages whose directories changed', () => {
