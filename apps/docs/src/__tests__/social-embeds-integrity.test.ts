@@ -155,7 +155,10 @@ function corpus(): SocialCorpus {
     const content = readFileSync(file, 'utf-8');
 
     for (const { id, context } of extractTweetIds(content)) {
-      const rel = file.includes('content/')
+      // Prefix check, not `file.includes('content/')` as the old code had: a
+      // checkout under any ancestor directory literally named `content` made
+      // that substring true for every src/ file too, yielding a wrong relpath.
+      const rel = file.startsWith(CONTENT_ROOT + '/')
         ? getRelativePath(file, CONTENT_ROOT)
         : getRelativePath(file, DOCS_ROOT);
       addRef(c.tweets, id, rel, context);
