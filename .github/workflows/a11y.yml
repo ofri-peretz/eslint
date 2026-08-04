@@ -82,13 +82,19 @@ jobs:
       # before invoking the spec so playwright doesn't crash with
       # "Could not find a production build in the '.next' directory".
       #
-      # Go through turbo rather than two raw `npm run build --workspace=` calls:
-      # `dependsOn: ["^build"]` pulls @interlace/ui in as a dependency, and the
-      # shared Turbo cache lets this replay the `docs#build` that quality-full
-      # and lighthouse already produced for the same SHA instead of rebuilding
-      # the site a third time.
+      # Go through turbo rather than two raw `npm run build --workspace=` calls
+      # so the output lands in the shared Turbo cache and can replay the
+      # `docs#build` that quality-full and lighthouse already produced for the
+      # same SHA instead of rebuilding the site a third time.
+      #
+      # `--only` is load-bearing. Without it, `--filter=docs` expands via
+      # `dependsOn: ["^build"]` to all 21 workspaces docs depends on, and a
+      # cold cache measured 189s vs the ~120s the two npm calls took (a11y job
+      # 3.0m -> 4.6m on this PR's first run). `--only` restricts execution to
+      # exactly the two builds the old commands ran, so the cold path matches
+      # the previous behaviour and the warm path replays from cache.
       - name: Build docs (production, via Turbo)
-        run: npx turbo run build --filter=docs
+        run: npx turbo run build --filter=docs --filter=@interlace/ui --only
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
