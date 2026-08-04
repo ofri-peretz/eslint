@@ -14,7 +14,11 @@ name: Accessibility
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # `opened`/`reopened` so a PR created directly as non-draft (single push,
+    # no later `synchronize`) still runs the axe scan — without them this
+    # workflow can be required by branch protection yet never report.
+    # quality-full.yml already carries this fix; a11y never got it.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - 'apps/docs/**'
       - 'packages/ui/**'

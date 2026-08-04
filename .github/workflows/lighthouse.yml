@@ -27,7 +27,9 @@ name: Lighthouse (Web Vitals Budget)
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # See a11y.yml — `opened`/`reopened` are required for a PR created
+    # directly as non-draft to trigger this at all.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - "apps/docs/**"
       - "packages/eslint-devkit/**"
