@@ -87,6 +87,11 @@ describe('turbo.json cache inputs', () => {
     //   conventions, modernization, modularity, operability, reliability —
     //          no vitest config at all, so nothing aliases devkit to source.
     //          Give them a config with the alias and the override can go.
+    //   @interlace/eslint-config — its vitest config aliases plugins from a
+    //          hand-maintained INTERLACE_PLUGINS list that has drifted: 19 of
+    //          26 plugins, missing all 7 ORM-security ones. Its
+    //          ecosystem-integrity test imports them, so they resolve through
+    //          node_modules to dist/. Fix the list and this override can go.
     //
     // The point of this lock is that the exception list stays SHORT and
     // explicit. A new blanket `^build` on the default task would serialise the
@@ -94,6 +99,7 @@ describe('turbo.json cache inputs', () => {
     const EXPECTED_EXCEPTIONS = new Set([
       'docs', 'eslint-plugin-conventions', 'eslint-plugin-modernization',
       'eslint-plugin-modularity', 'eslint-plugin-operability', 'eslint-plugin-reliability',
+      '@interlace/eslint-config',
     ]);
     for (const task of ['test', 'test:coverage'] as const) {
       expect(

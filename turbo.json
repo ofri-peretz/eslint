@@ -24,6 +24,12 @@
         "!.next/cache/**"
       ]
     },
+    "@interlace/eslint-config#test": {
+      "dependsOn": ["^build"]
+    },
+    "@interlace/eslint-config#test:coverage": {
+      "dependsOn": ["^build"]
+    },
     "docs#test": {
       "dependsOn": ["^build"]
     },
