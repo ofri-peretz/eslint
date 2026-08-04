@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { auditFindings, classifyFinding, shapeOf, type Finding } from '../audit-edge-ground-truth.ts';
+import {
+  auditFindings,
+  classifyFinding,
+  escapeProse,
+  shapeOf,
+  type Finding,
+} from '../audit-edge-ground-truth.ts';
 
 const f = (over: Partial<Finding> = {}): Finding => ({
   rule: 'secure-coding/detect-object-injection',
@@ -29,6 +35,24 @@ describe('edge ground truth: shapeOf', () => {
   it('falls back to the callee for non-indexing findings', () => {
     expect(shapeOf('const s = new Set();')).toBe('Set(...)');
     expect(shapeOf('force = force || this.version !== other;')).toBe('other');
+  });
+});
+
+describe('edge ground truth: escapeProse', () => {
+  it('escapes the backslash itself, so an already-escaped input is not corrupted', () => {
+    // Escaping `_` before `\` would turn `\_` into `\\_` and flip its meaning.
+    expect(escapeProse('a\\b')).toBe('a\\\\b');
+    expect(escapeProse('\\_')).toBe('\\\\\\_');
+  });
+
+  it('escapes every character markdown would read as emphasis, code or a link', () => {
+    expect(escapeProse('__proto__')).toBe('\\_\\_proto\\_\\_');
+    expect(escapeProse('([\\w-]*?)')).toBe('(\\[\\\\w-\\]\\*?)');
+    expect(escapeProse('pipe | and <tag>')).toBe('pipe \\| and \\<tag\\>');
+  });
+
+  it('leaves ordinary prose untouched', () => {
+    expect(escapeProse('plain text with no markup')).toBe('plain text with no markup');
   });
 });
 

@@ -82,6 +82,8 @@ export function classifyFinding(f: Finding): string {
   return `${f.rule}::${shape}`;
 }
 
+export { escapeProse };
+
 export function shapeOf(rawText: string): string {
   const text = rawText.trim();
   const bracket = text.match(/([A-Za-z_$][\w$.]*)\s*\[\s*([^\]]+?)\s*\]/);
@@ -223,9 +225,16 @@ function codeCell(raw: string): string {
   return flat.length === 0 ? '—' : `\`${flat}\``;
 }
 
-/** Reasons quote real identifiers like `__proto__`; keep them from becoming emphasis. */
+/**
+ * Reasons are hand-written prose quoting real identifiers (`__proto__`,
+ * `([\w-]*?)`), so they carry characters markdown reads as emphasis, code or
+ * links. Escape every significant character in one pass — including the
+ * backslash itself, which is why this is a character class rather than a
+ * sequence of `.replace()` calls: escaping `_` before `\` would corrupt an
+ * already-backslashed input.
+ */
 function escapeProse(text: string): string {
-  return text.replace(/_/g, '\\_');
+  return text.replace(/[\\`*_[\]<>|]/g, (ch) => `\\${ch}`);
 }
 
 function renderMarkdown(a: AuditResult): string {
