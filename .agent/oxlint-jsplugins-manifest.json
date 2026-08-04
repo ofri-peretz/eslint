@@ -1410,12 +1410,6 @@
       "ruleCount": 8,
       "rules": [
         {
-          "name": "no-exposed-debug-endpoints",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
           "name": "no-exposed-private-fields",
           "portability": "compatible",
           "blockers": [],
@@ -1434,7 +1428,13 @@
           "isTypeAware": false
         },
         {
-          "name": "require-class-validator",
+          "name": "no-res-bypass-serialization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-swagger",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3112,11 +3112,11 @@
       "no-unsafe-query"
     ],
     "nestjs-security": [
-      "no-exposed-debug-endpoints",
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
       "no-permissive-cors",
-      "require-class-validator",
+      "no-res-bypass-serialization",
+      "no-unguarded-swagger",
       "require-guards",
       "require-throttler",
       "require-validation-pipe-whitelist"
