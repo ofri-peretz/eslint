@@ -1,5 +1,36 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.2.11
+
+### Patch Changes
+
+- [#359](https://github.com/ofri-peretz/eslint/pull/359) [`b2e887b`](https://github.com/ofri-peretz/eslint/commit/b2e887bb5dec8eff3d2907e4422e382abaac99d5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Document the options the rules actually accept
+
+  Ten option names appeared in rule docs but not in the rules' schemas. Because
+  every schema sets `additionalProperties: false`, copying one out of the docs
+  did not fail quietly — it aborted the whole lint run:
+
+  ```
+  Key "rules": Key "vercel-ai-security/no-hardcoded-api-keys":
+    Value {"keyPatterns":[...]} should NOT have additional properties.
+    Unexpected property "keyPatterns". Expected properties: "apiKeyPatterns".
+  ```
+
+  Six of the seven affected tables were fictional end to end — not one
+  documented option existed. Affected rules: `no-hardcoded-api-keys`,
+  `no-unsafe-output-handling`, `require-abort-signal`, `require-max-steps`,
+  `require-max-tokens`, `require-tool-schema` and
+  `browser-security/no-sensitive-localstorage`.
+
+  Three "Mitigation: configure X" notes pointed at knobs that are hardcoded and
+  were never configurable; they now say so instead of promising a fix that
+  cannot be applied.
+
+  No rule behaviour changes — this is documentation catching up to the schemas.
+
+- Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:
+  - @interlace/eslint-devkit@1.7.0
+
 ## 1.2.10
 
 ### Patch Changes

@@ -1,3 +1,108 @@
+## 1.5.0
+
+### Minor Changes
+
+- [#262](https://github.com/ofri-peretz/eslint/pull/262) [`4a89231`](https://github.com/ofri-peretz/eslint/commit/4a892319d10a3e00798ddb6ec9446b934369c726) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Catch AI output interpolated into SQL, and accept `max_output_tokens`
+
+  `no-unsafe-output-handling` now walks a template literal's `${...}`
+  expressions and the operands of a `+` chain instead of pattern-matching the
+  whole source text. This closes a false negative where a tracked binding —
+  ``const { text } = await generateText(...); db.query(`... ${text}`)`` — was
+  missed even though the eval and innerHTML branches already tracked it. Text
+  matching only ever caught the `${result.text}` spelling, because the patterns
+  look for `.text` while the destructured source reads `text`. It also drops a
+  false positive on SQL whose literal text merely contained a pattern word
+  (e.g. a `generated_reports` table name).
+
+  `require-max-tokens` now accepts `max_output_tokens`. It already accepted the
+  snake_case spelling of the v4 name (`max_tokens`) but not of the v5 one, so a
+  call bounded through a provider-shaped config object was still reported.
+
+### Patch Changes
+
+- [#359](https://github.com/ofri-peretz/eslint/pull/359) [`b2e887b`](https://github.com/ofri-peretz/eslint/commit/b2e887bb5dec8eff3d2907e4422e382abaac99d5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Document the options the rules actually accept
+
+  Ten option names appeared in rule docs but not in the rules' schemas. Because
+  every schema sets `additionalProperties: false`, copying one out of the docs
+  did not fail quietly — it aborted the whole lint run:
+
+  ```
+  Key "rules": Key "vercel-ai-security/no-hardcoded-api-keys":
+    Value {"keyPatterns":[...]} should NOT have additional properties.
+    Unexpected property "keyPatterns". Expected properties: "apiKeyPatterns".
+  ```
+
+  Six of the seven affected tables were fictional end to end — not one
+  documented option existed. Affected rules: `no-hardcoded-api-keys`,
+  `no-unsafe-output-handling`, `require-abort-signal`, `require-max-steps`,
+  `require-max-tokens`, `require-tool-schema` and
+  `browser-security/no-sensitive-localstorage`.
+
+  Three "Mitigation: configure X" notes pointed at knobs that are hardcoded and
+  were never configurable; they now say so instead of promising a fix that
+  cannot be applied.
+
+  No rule behaviour changes — this is documentation catching up to the schemas.
+
+- [#358](https://github.com/ofri-peretz/eslint/pull/358) [`1b8c0df`](https://github.com/ofri-peretz/eslint/commit/1b8c0df38d460dda7d18e886c891984208e62259) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix SDK peer declarations that npm silently ignored
+
+  Seven plugins listed their target SDKs under `peerDependenciesMeta` with
+  `{"optional": true}` but never declared them in `peerDependencies`. npm drops
+  any `peerDependenciesMeta` entry that has no matching `peerDependencies` key,
+  so the metadata was inert — these packages effectively declared **no SDK peer
+  at all**. Nothing warned: the failure mode of a dependency you never declared
+  is silence.
+
+  Each SDK now appears in both maps, matching the shape `eslint-plugin-pg` and
+  `eslint-plugin-mongodb-security` already use — a supported major range in
+  `peerDependencies`, `optional: true` in `peerDependenciesMeta`:
+
+  | Plugin               | SDK                            | Range                                        |
+  | :------------------- | :----------------------------- | :------------------------------------------- |
+  | `express-security`   | `express`                      | `^4.0.0 \|\| ^5.0.0`                         |
+  |                      | `helmet`                       | `^6.0.0 \|\| ^7.0.0 \|\| ^8.0.0`             |
+  |                      | `cors`                         | `^2.0.0`                                     |
+  |                      | `csurf`                        | `^1.0.0`                                     |
+  |                      | `express-rate-limit`           | `^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0 \|\| ^8.0.0` |
+  | `jwt`                | `jsonwebtoken`                 | `^8.0.0 \|\| ^9.0.0`                         |
+  |                      | `@nestjs/jwt`                  | `^9.0.0 \|\| ^10.0.0 \|\| ^11.0.0`           |
+  |                      | `express-jwt`                  | `^7.0.0 \|\| ^8.0.0`                         |
+  |                      | `jose`                         | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0`             |
+  |                      | `jwks-rsa`                     | `^3.0.0 \|\| ^4.0.0`                         |
+  |                      | `jwt-decode`                   | `^3.0.0 \|\| ^4.0.0`                         |
+  | `lambda-security`    | `@aws-sdk/client-lambda`       | `^3.0.0`                                     |
+  |                      | `@middy/core`                  | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/http-cors`             | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/http-security-headers` | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/validator`             | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  | `maintainability`    | `typescript`                   | `>=4.8.4`                                    |
+  | `nestjs-security`    | `@nestjs/common`               | `^9.0.0 \|\| ^10.0.0 \|\| ^11.0.0`           |
+  |                      | `@nestjs/throttler`            | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0`             |
+  |                      | `class-validator`              | `^0.14.0 \|\| ^0.15.0`                       |
+  |                      | `class-transformer`            | `^0.5.0`                                     |
+  | `react-features`     | `typescript`                   | `>=4.8.4`                                    |
+  | `vercel-ai-security` | `ai`                           | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+
+  Ranges were taken from each SDK's real release history, bounded below by the
+  oldest major whose call shape the rules still match and above by the current
+  major. `cors`, `csurf`, `class-transformer` and `@aws-sdk/client-lambda` have
+  only ever shipped one usable major. The `ai` range spans v4 because
+  `require-max-steps` deliberately accepts both the v4 `maxSteps` option and the
+  v5+ `stopWhen` form. The two `typescript` entries reuse the `>=4.8.4` bound
+  `@interlace/eslint-devkit` already declares, since these are the same
+  type-aware-graceful rules behind the same optional TS program.
+
+  Every range admits the version this repo's `__compatibility__` specs are
+  actually tested against, so the declaration cannot drift from what CI proves.
+
+  **Nothing to migrate.** Every entry stays optional, so no install adds a
+  package or emits a warning when the SDK is absent. What changes is that a
+  consumer on an unsupported major now gets a peer warning instead of nothing —
+  which was the point of the metadata in the first place.
+
+- Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:
+  - @interlace/eslint-devkit@1.7.0
+
 ## 1.4.2
 
 ### Patch Changes
