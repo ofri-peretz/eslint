@@ -27,6 +27,7 @@ import {
   createRequireTlsRule,
   isLiteralBoolean,
   looksLikeConnectionConfig,
+  inConnectionPosition,
   urlDisablesTls,
 } from './require-tls-rule';
 import { AST_NODE_TYPES, TSESTree } from '@typescript-eslint/utils';
@@ -105,6 +106,21 @@ describe('createRequireTlsRule', () => {
       { code: `${IMPORT}const hint = 'pass sslmode=disable to skip TLS';` },
       // A value libpq does not accept — not a real disable.
       { code: `${IMPORT}const dsn = 'mysql://h/db?sslmode=disabled-for-now';` },
+      // Importing the driver does not make every string a connection string.
+      // A bare assignment is indistinguishable from a fixture, a doc example
+      // or an error-message template, so it is not reported even though the
+      // DSN itself would qualify in a connection position.
+      { code: `${IMPORT}const example = 'mysql://u:p@h/db?sslmode=disable';` },
+      {
+        code: `${IMPORT}const MESSAGE = 'never use mysql://u:p@h/db?sslmode=disable in prod';`,
+      },
+      {
+        code: `${IMPORT}const fixtures = ['mysql://u:p@h/db?sslmode=disable'];`,
+      },
+      // An argument to something that is not a driver handle.
+      { code: `${IMPORT}log('mysql://u:p@h/db?sslmode=disable');` },
+      // A property whose key is not connection-shaped.
+      { code: `${IMPORT}const doc = { example: 'mysql://u:p@h/db?sslmode=disable' };` },
     ],
     invalid: [
       {
@@ -131,11 +147,11 @@ describe('createRequireTlsRule', () => {
         errors: [{ messageId: 'certificateValidationDisabled' }],
       },
       {
-        code: `${IMPORT}const dsn = 'mysql://u:p@h/db?sslmode=disable';`,
+        code: `${IMPORT}const c = mysql.createConnection('mysql://u:p@h/db?sslmode=disable');`,
         errors: [{ messageId: 'tlsDisabled' }],
       },
       {
-        code: `${IMPORT}const dsn = 'mysql://u:p@h/db?ssl=false&pool=5';`,
+        code: `${IMPORT}const config = { host: 'h', uri: 'mysql://u:p@h/db?ssl=false&pool=5' };`,
         errors: [{ messageId: 'tlsDisabled' }],
       },
       // A spread sits in the property list and is skipped — it carries no key
@@ -201,7 +217,7 @@ describe('createRequireTlsRule', () => {
         // still report and so would every doc comment. The lock is the pair:
         // this reports, the prose case above stays valid.
         {
-          code: `${IMPORT}const dsn = 'mysql://h/db?sslmode=disable';`,
+          code: `${IMPORT}const c = mysql.createConnection('mysql://h/db?sslmode=disable');`,
           errors: [{ messageId: 'tlsDisabled' }],
         },
       ],
@@ -260,6 +276,79 @@ describe('looksLikeConnectionConfig', () => {
       properties: [{ type: AST_NODE_TYPES.SpreadElement }],
     } as unknown as TSESTree.ObjectExpression;
     expect(looksLikeConnectionConfig(spread, ['host'])).toBe(false);
+  });
+});
+
+/**
+ * L2 unit tests for the URL position gate.
+ *
+ * Three of its branches cannot be produced from source: ESLint always hands the
+ * visitor a parented node, a Literal is never a callee, and the chained-call
+ * receiver form needs a shape no driver actually publishes. Per the quality
+ * contract they are exercised directly rather than ignored.
+ */
+describe('inConnectionPosition', () => {
+  const KEYS = ['connection', 'uri', 'url'];
+  const DRIVERS = new Set(['mysql']);
+  const lit = (parent?: unknown): TSESTree.Literal =>
+    ({ type: AST_NODE_TYPES.Literal, value: 'mysql://h/db?sslmode=disable', parent } as unknown as TSESTree.Literal);
+
+  it('is false for a node with no parent', () => {
+    expect(inConnectionPosition(lit(undefined), KEYS, DRIVERS)).toBe(false);
+  });
+
+  it('is false for a literal that is a property KEY rather than its value', () => {
+    const node = lit();
+    (node as { parent?: unknown }).parent = {
+      type: AST_NODE_TYPES.Property,
+      computed: false,
+      key: node,
+      value: { type: AST_NODE_TYPES.Identifier, name: 'x' },
+    };
+    expect(inConnectionPosition(node, KEYS, DRIVERS)).toBe(false);
+  });
+
+  it('is false when the literal sits on a call but is not one of its arguments', () => {
+    const node = lit();
+    (node as { parent?: unknown }).parent = {
+      type: AST_NODE_TYPES.CallExpression,
+      callee: { type: AST_NODE_TYPES.Identifier, name: 'mysql' },
+      arguments: [],
+    };
+    expect(inConnectionPosition(node, KEYS, DRIVERS)).toBe(false);
+  });
+
+  it('walks a chained-call receiver back to the driver binding', () => {
+    const node = lit();
+    (node as { parent?: unknown }).parent = {
+      type: AST_NODE_TYPES.CallExpression,
+      // `mysql.pool().connect('mysql://…')` — the base is two hops away.
+      callee: {
+        type: AST_NODE_TYPES.MemberExpression,
+        object: {
+          type: AST_NODE_TYPES.CallExpression,
+          callee: {
+            type: AST_NODE_TYPES.MemberExpression,
+            object: { type: AST_NODE_TYPES.Identifier, name: 'mysql' },
+          },
+        },
+      },
+      arguments: [node],
+    };
+    expect(inConnectionPosition(node, KEYS, DRIVERS)).toBe(true);
+  });
+
+  it('is false when that chain bottoms out somewhere other than the driver', () => {
+    const node = lit();
+    (node as { parent?: unknown }).parent = {
+      type: AST_NODE_TYPES.CallExpression,
+      callee: {
+        type: AST_NODE_TYPES.MemberExpression,
+        object: { type: AST_NODE_TYPES.Identifier, name: 'logger' },
+      },
+      arguments: [node],
+    };
+    expect(inConnectionPosition(node, KEYS, DRIVERS)).toBe(false);
   });
 });
 

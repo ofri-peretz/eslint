@@ -186,6 +186,65 @@ export function urlDisablesTls(value: string, schemes: readonly string[]): boole
 }
 
 /**
+ * Is this string literal actually being used as a connection string?
+ *
+ * The object path earns its low false-positive rate by requiring a
+ * connection-shaped neighbour before a TLS key counts. The URL path needs the
+ * same discipline: a `mysql://…?sslmode=disable` string is only a finding where
+ * a driver would read it. Two positions qualify —
+ *
+ *   - a connection-named property: `{ connection: 'postgres://…' }`,
+ *     `{ url: '…' }`, `{ uri: '…' }`
+ *   - an argument to a call on a driver binding:
+ *     `mysql.createConnection('mysql://…')`, `new Sequelize('postgres://…')`
+ *
+ * Deliberately NOT qualifying: a bare `const dsn = 'mysql://…'`. It is
+ * indistinguishable from a fixture, a doc example, or an error-message
+ * template, and reporting it is the exact false positive that makes a security
+ * plugin the one users switch off. The cost is a false negative when the DSN is
+ * built in one statement and passed in another.
+ */
+export function inConnectionPosition(
+  node: TSESTree.Literal,
+  connectionKeys: readonly string[],
+  bindings: ReadonlySet<string>,
+): boolean {
+  const parent = node.parent;
+  if (!parent) return false;
+
+  if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+    const name = propertyKeyName(parent);
+    return name !== undefined && connectionKeys.includes(name);
+  }
+
+  if (
+    parent.type === AST_NODE_TYPES.CallExpression ||
+    parent.type === AST_NODE_TYPES.NewExpression
+  ) {
+    if (!parent.arguments.includes(node)) return false;
+    return calleeBaseIsDriver(parent.callee, bindings);
+  }
+
+  return false;
+}
+
+/** Does this callee chain start at a name introduced by importing the driver? */
+function calleeBaseIsDriver(callee: TSESTree.Node, bindings: ReadonlySet<string>): boolean {
+  let cursor: TSESTree.Node = callee;
+  for (;;) {
+    if (cursor.type === AST_NODE_TYPES.MemberExpression) {
+      cursor = cursor.object;
+      continue;
+    }
+    if (cursor.type === AST_NODE_TYPES.CallExpression) {
+      cursor = cursor.callee;
+      continue;
+    }
+    return cursor.type === AST_NODE_TYPES.Identifier && bindings.has(cursor.name);
+  }
+}
+
+/**
  * Build a CWE-319 rule for the given driver.
  *
  * Reports a config object only when a TLS key is explicitly disabled with a
@@ -321,6 +380,12 @@ export function createRequireTlsRule(
           if (bindings.size === 0) return;
           if (typeof node.value !== 'string') return;
           if (!urlDisablesTls(node.value, urlSchemes)) return;
+          // Importing the driver does not make every string in the file a
+          // connection string. Without this the rule reports a fixture, a doc
+          // example, an error-message template — anything that happens to
+          // contain a DSN — which is precisely the false-positive class the
+          // object path is careful to avoid.
+          if (!inConnectionPosition(node, connectionKeys, bindings)) return;
           context.report({ node, messageId: 'tlsDisabled' });
         },
       };
