@@ -95,5 +95,8 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "docs": false
   }
 }

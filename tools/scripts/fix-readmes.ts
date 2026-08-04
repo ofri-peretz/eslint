@@ -58,8 +58,13 @@ const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
+    // jwt / pg are the deprecated pre-rename names. They keep their entries so
+    // the generator can still regenerate their READMEs while the deprecation
+    // ages out; the -security names below are the ones that ship.
     'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
+    'eslint-plugin-jwt-security': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
     'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    'eslint-plugin-postgresql-security': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
     'eslint-plugin-sequelize-security': 'Security rules for the Sequelize ORM (SQL injection prevention in raw queries).',
     'eslint-plugin-mysql-security': 'Security rules for mysql2 / mysql (SQL injection prevention in raw queries).',
     'eslint-plugin-prisma-security': 'Security rules for @prisma/client (SQL injection prevention in raw queries).',
