@@ -126,3 +126,16 @@ ruleTester.run('require-rag-content-validation (quoted key)', requireRagContentV
     },
   ],
 });
+
+// Computed key colliding with the property name — see no-dynamic-system-prompt.
+ruleTester.run('require-rag-content-validation (computed key collision)', requireRagContentValidation, {
+  valid: [
+    {
+      code: `
+        const instructions = 'seed';
+        streamText({ [instructions]: await retrieve(query) });
+      `,
+    },
+  ],
+  invalid: [],
+});
