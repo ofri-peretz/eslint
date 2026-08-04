@@ -291,7 +291,12 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       // createMicroservice has no HTTP surface and no cors option.
       if (method !== 'create' && method !== 'createApplicationContext') return;
 
-      const options = node.arguments[1];
+      // The options object is always last, but not always second:
+      // `NestFactory.create(AppModule, new FastifyAdapter(), { cors: true })`
+      // is the documented Fastify spelling and puts it third. Reading
+      // `arguments[1]` saw the adapter and gave up.
+      const options = node.arguments.at(-1);
+      if (node.arguments.length < 2) return;
       if (options?.type !== AST_NODE_TYPES.ObjectExpression) return;
       const props = objectProperties(options);
       // A spread could supply `cors`; cannot prove its absence or its shape.

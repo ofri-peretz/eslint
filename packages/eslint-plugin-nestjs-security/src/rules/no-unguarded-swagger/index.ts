@@ -78,6 +78,7 @@ export const noUnguardedSwagger = createRule<RuleOptions, MessageIds>({
         issueName: 'Swagger UI Served Unconditionally',
         cwe: 'CWE-200',
         cvss: 5.3,
+        owasp: 'A01:2021',
         description:
           'SwaggerModule.setup() runs on every boot, publishing every route, DTO and auth scheme to anonymous callers in production',
         severity: 'MEDIUM',

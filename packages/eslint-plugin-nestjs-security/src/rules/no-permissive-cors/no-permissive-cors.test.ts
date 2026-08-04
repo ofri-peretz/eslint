@@ -128,6 +128,16 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ],
   invalid: [
+    // The documented Fastify spelling puts the options object third, so
+    // reading `arguments[1]` found the adapter and gave up.
+    {
+      code: `
+        const app = await NestFactory.create(AppModule, new FastifyAdapter(), {
+          cors: { origin: '*', credentials: true },
+        });
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
     // The worst case there is, and it mentions the environment — so testing
     // only for an environment word suppressed it.
     {
