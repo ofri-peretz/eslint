@@ -228,7 +228,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-react-features',
-    version: '1.2.6',
+    version: '1.2.7',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
