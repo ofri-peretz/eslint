@@ -34,6 +34,13 @@ inputs:
     description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
     required: false
     default: "true"
+  turbo-cache-scope:
+    description: >-
+      Optional cache-lineage name. Jobs sharing a scope share one cache entry;
+      different scopes get independent lineages. Set this for matrix jobs (e.g.
+      "test-shard-3") so parallel shards stop racing for a single key.
+    required: false
+    default: "shared"
   playwright-cache:
     description: Restore + save the Playwright browser cache (~/.cache/ms-playwright). Set to "true" for jobs that run Playwright.
     required: false
@@ -87,25 +94,38 @@ runs:
     # GitHub was LRU-evicting the 431 MB node_modules entries and every job
     # paid a cold `npm ci`.
     #
-    # Now: one `turbo-<os>-<sha>` lineage every job restores from, and only
-    # pushes to main write it back. PRs read main's cache and save nothing.
+    # Lineage is per `turbo-cache-scope`, and that matters more than it looks.
+    # With a single shared key, every job on main raced to save it: GitHub's
+    # cache reserves a key atomically, so the first writer won and the rest were
+    # discarded. Only one job's outputs were ever banked per commit, which is
+    # why a restored cache still produced `Cached: 0 cached, 8 total` — the
+    # entry held the Build job's artifacts, not the test shards'.
+    #
+    # Scoped keys give each shard its own lineage. Because bucketing is
+    # deterministic, shard N always handles the same packages, so its cache is
+    # exactly the set it needs. The lineages are disjoint, not duplicated: total
+    # size stays ~one full cache split N ways, so this does not eat the 10 GB
+    # quota. PRs restore read-only and save nothing, so extra shards cost zero
+    # quota there.
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: .turbo/cache
-        key: turbo-${{ runner.os }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-shared-
 
     - name: Turbo cache (main — restore + save)
       if: inputs.turbo-cache == 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: .turbo/cache
-        key: turbo-${{ runner.os }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-shared-
 
     # Turborepo never evicts its own local cache — it is append-only, so a
     # restored dir grows monotonically across runs (observed locally: 39 GB /

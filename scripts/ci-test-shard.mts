@@ -24,7 +24,30 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 /** Workspace globs that can hold testable packages. */
 const WORKSPACE_DIRS = ['packages', 'apps', 'tools'];
 
-type Pkg = { name: string; dir: string; task: 'test:coverage' | 'test' };
+type Pkg = { name: string; dir: string; task: 'test:coverage' | 'test'; cost: number };
+
+/**
+ * Cost proxy for balancing: number of test files in the package.
+ *
+ * Not wall-clock — that would need a results database and would drift. File
+ * count tracks runtime closely enough here (measured 738 files across 33
+ * packages, and the observed 54s/299s shard split matched their file counts),
+ * and it is derivable from the tree with no state to maintain.
+ */
+function countTestFiles(dir: string): number {
+  let n = 0;
+  const walk = (d: string) => {
+    if (!fs.existsSync(d)) return;
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === 'dist' || e.name === 'coverage') continue;
+      const fp = path.join(d, e.name);
+      if (e.isDirectory()) walk(fp);
+      else if (/\.(test|spec)\.(ts|tsx|mjs|js)$/.test(e.name)) n++;
+    }
+  };
+  walk(dir);
+  return n;
+}
 
 /**
  * Packages allowed to have no test task at all. Anything else missing one is a
@@ -49,13 +72,40 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
       // workspaces that have tests but no coverage task (docs,
       // cwe-analytics-engine) — dropping them would be a coverage regression
       // disguised as a sharding change.
-      if (pkg.scripts?.['test:coverage']) testable.push({ name: pkg.name, dir, task: 'test:coverage' });
-      else if (pkg.scripts?.test) testable.push({ name: pkg.name, dir, task: 'test' });
+      const task = pkg.scripts?.['test:coverage'] ? 'test:coverage' : pkg.scripts?.test ? 'test' : null;
+      if (task) testable.push({ name: pkg.name, dir, task, cost: countTestFiles(path.join(abs, entry)) });
       else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
     }
   }
-  testable.sort((a, b) => a.name.localeCompare(b.name));
+  // Sort by cost desc, name asc as tiebreak. Descending order is what makes the
+  // LPT bucketing below effective, and the name tiebreak keeps it deterministic
+  // so a package keeps its shard (and therefore its Turbo cache key) run to run.
+  testable.sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
   return { testable, untested };
+}
+
+/**
+ * Longest-processing-time-first bucketing: walk packages heaviest-first, each
+ * into the currently-lightest shard.
+ *
+ * Replaces round-robin-by-name, which put `docs` (83 test files),
+ * `react-features` (70) and `devkit` (32) in one bucket and produced a 54s vs
+ * 299s split — 5.5x, with three runners idle while one finished.
+ *
+ * LPT's max bucket cannot go below the largest single package, so past N=10
+ * `docs` alone (83 files of 738) is the binding constraint and extra shards
+ * only add idle jobs. See the shard-count table in the PR description.
+ */
+function bucket(pkgs: Pkg[], total: number): Pkg[][] {
+  const shards: Pkg[][] = Array.from({ length: total }, () => []);
+  const load = new Array<number>(total).fill(0);
+  for (const p of pkgs) {
+    let lightest = 0;
+    for (let i = 1; i < total; i++) if (load[i] < load[lightest]) lightest = i;
+    shards[lightest].push(p);
+    load[lightest] += p.cost;
+  }
+  return shards;
 }
 
 const shardIndex = Number(process.argv[2]);
@@ -85,10 +135,17 @@ if (untested.length > 0) {
 }
 
 // Round-robin so slow packages spread across shards instead of clustering.
-const mine = testable.filter((_, i) => i % shardTotal === shardIndex - 1);
+const shards = bucket(testable, shardTotal);
+const mine = shards[shardIndex - 1];
 
-console.log(`Shard ${shardIndex}/${shardTotal} — ${mine.length} of ${testable.length} testable packages:`);
-for (const p of mine) console.log(`  ${p.name}  (${p.task})`);
+const loads = shards.map((s) => s.reduce((n, p) => n + p.cost, 0));
+const myLoad = loads[shardIndex - 1];
+console.log(
+  `Shard ${shardIndex}/${shardTotal} — ${mine.length} of ${testable.length} packages, ` +
+    `${myLoad} of ${loads.reduce((a, b) => a + b, 0)} test files ` +
+    `(balance across shards: ${Math.min(...loads)}–${Math.max(...loads)} files)`,
+);
+for (const p of mine) console.log(`  ${p.name}  (${p.task}, ${p.cost} test files)`);
 
 if (mine.length === 0) {
   console.error(`::error::Shard ${shardIndex}/${shardTotal} selected 0 packages out of ${testable.length}. Reduce shardTotal — an empty shard reports success without testing anything.`);

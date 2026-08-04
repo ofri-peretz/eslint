@@ -102,25 +102,43 @@ jobs:
   # already declares in its vitest.config.mts are enforced on PRs. Previously
   # only plain `test` ran here, so those thresholds were dead config on every
   # PR and only took effect in the push-to-main codecov job.
+  # 10 shards is the measured optimum, not a guess. Packages are bucketed
+  # longest-first (LPT) by test-file count, so the longest bucket can never be
+  # smaller than the largest single package: `docs` holds 83 of the repo's 738
+  # test files. Balance by shard count:
+  #
+  #   N=4  max=185 files   N=8  max=93
+  #   N=6  max=123         N=10 max=83  <- equals `docs`, the floor
+  #   N=12/16/20 -> still 83, just with progressively more idle runners
+  #
+  # Going past 10 cannot shorten the critical path; it only adds ~17s-overhead
+  # jobs that finish early. Dropping below 83 means splitting `docs` itself.
   test:
-    name: Unit Tests + Coverage (${{ matrix.shard }}/4)
+    name: Unit Tests + Coverage (${{ matrix.shard }}/10)
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       # Don't cancel sibling shards on the first failure — one broken package
-      # shouldn't hide the results of the other three.
+      # shouldn't hide the results of the others.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        # Shards don't need history — nothing here diffs against origin/main.
+        # Full history on a repo this size is pure setup cost per shard.
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: ./.github/actions/setup
-      - name: Run shard ${{ matrix.shard }} of 4
-        run: npx tsx scripts/ci-test-shard.mts ${{ matrix.shard }} 4
+        with:
+          # Own lineage per shard. Sharing one key made the shards race to save
+          # it on main, so only one shard's outputs were ever banked and the
+          # rest ran cold every time (`Cached: 0 cached, 8 total`).
+          turbo-cache-scope: test-shard-${{ matrix.shard }}
+      - name: Run shard ${{ matrix.shard }} of 10
+        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
   build:
     name: Build (Turbo)
@@ -135,6 +153,9 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
+          # Build gets its own lineage so it stops competing with the test
+          # shards for one cache key on main.
+          turbo-cache-scope: build
       - name: Build via Turbo
         run: npx turbo run build
       # Runs here because the artifacts already exist — no extra runner, no
@@ -167,6 +188,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: typecheck
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster

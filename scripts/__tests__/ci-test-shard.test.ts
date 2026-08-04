@@ -17,7 +17,7 @@ import url from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'ci-test-shard.mts');
-const SHARD_TOTAL = 4;
+const SHARD_TOTAL = 10;
 
 /** Run the splitter in list-only mode by reading its plan off stdout. */
 function planFor(shard: number, total = SHARD_TOTAL): string[] {
@@ -30,7 +30,12 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
     encoding: 'utf8',
     env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1' },
   });
-  return [...out.matchAll(/^ {2}(\S+)\s{2}\((test|test:coverage)\)$/gm)].map((m) => m[1]);
+  const names = [...out.matchAll(/^ {2}(\S+) {2}\((?:test|test:coverage), \d+ test files\)$/gm)].map((m) => m[1]);
+  // Fail loudly rather than returning [] if the plan format changes — an empty
+  // parse would make "no duplicates" and "covers everything" trivially pass or
+  // fail for the wrong reason.
+  if (names.length === 0) throw new Error(`shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`);
+  return names;
 }
 
 describe('shard partitioning', () => {
