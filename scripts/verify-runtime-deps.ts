@@ -41,8 +41,9 @@ function emittedJs(dir: string): string[] {
 // subset, and without an expected list there is no way to tell a correct subset
 // apart from a build that silently produced nothing.
 const expectedPath = join(resolve(__dirname, '..'), '.ci-built-packages.json');
-const expected: string[] | null = existsSync(expectedPath)
-  ? (JSON.parse(readFileSync(expectedPath, 'utf-8')) as string[])
+type BuiltEntry = { name: string; dir: string; emitsDist: boolean };
+const expected: BuiltEntry[] | null = existsSync(expectedPath)
+  ? (JSON.parse(readFileSync(expectedPath, 'utf-8')) as BuiltEntry[])
   : null;
 
 const violations: Violation[] = [];
@@ -72,11 +73,12 @@ if (expected) {
   // Only packages that actually emit a dist/ are checkable; apps and private
   // workspaces do not publish one. Intersect against what the build produced
   // rather than demanding all of them.
-  const missing = expected.filter(
-    (name) =>
-      !checked.includes(name) &&
-      existsSync(join(PACKAGES, name.replace(/^@[^/]+\//, ''), 'package.json')),
-  );
+  // `emitsDist` comes from the build script itself, so this no longer guesses a
+  // directory from the package name — that guess mapped
+  // @interlace/eslint-config to packages/eslint-config (the real dir is
+  // eslint-config-interlace) and demanded a dist from private, build-less
+  // packages like @interlace/eslint-formatter-sarif.
+  const missing = expected.filter((e) => e.emitsDist && !checked.includes(e.name)).map((e) => e.name);
   if (missing.length > 0) {
     console.error(
       `::error::These packages were built by this shard but have no dist/package.json to verify:\n` +

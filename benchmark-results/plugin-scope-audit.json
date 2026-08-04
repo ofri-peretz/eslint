@@ -1,23 +1,8 @@
 {
-  "generatedAt": "2026-08-04T07:39:56.472Z",
-  "findings": [
-    {
-      "plugin": "eslint-plugin-nestjs-security",
-      "rule": "no-res-bypass-serialization",
-      "invariant": "I1",
-      "detail": "Missing manifest entry"
-    },
-    {
-      "plugin": "eslint-plugin-nestjs-security",
-      "rule": "no-unguarded-swagger",
-      "invariant": "I1",
-      "detail": "Missing manifest entry"
-    }
-  ],
+  "generatedAt": "2026-08-04T02:51:24.731Z",
+  "findings": [],
   "summary": {
-    "total": 2,
-    "byInvariant": {
-      "I1": 2
-    }
+    "total": 0,
+    "byInvariant": {}
   }
 }

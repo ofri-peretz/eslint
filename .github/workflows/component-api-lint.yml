@@ -25,7 +25,11 @@ on:
       # crash every lint run (e.g. the duplicate react-features plugin
       # registration, 2026-07-04), so config changes must run this gate.
       - 'eslint.config.mjs'
-      - 'packages/eslint-config-interlace/**'
+      # Source only. This gate lints packages/ui primitives; it resolves the
+      # preset through this package, so its rule source matters — but a change
+      # to its vitest config or tests cannot affect what eslint reports, and
+      # matching the whole package dragged this job onto unrelated PRs.
+      - 'packages/eslint-config-interlace/src/**'
       - '.github/workflows/component-api-lint.yml'
   push:
     branches: [main]

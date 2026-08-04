@@ -30,7 +30,7 @@ import { decideAffected, reverseDeps, bucket, manifestDeps, type AffectedPkg } f
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
 const BASE_REF = process.env.CI_TEST_SHARD_BASE ?? 'origin/main';
 
-type BuildPkg = AffectedPkg & { cost: number };
+type BuildPkg = AffectedPkg & { cost: number; emitsDist: boolean };
 
 /**
  * Cost proxy for build balancing: source files under src/. Same reasoning as
@@ -69,6 +69,12 @@ function workspaces(): BuildPkg[] {
         dir: `${wsDir}/${entry}`,
         deps: manifestDeps(pkg),
         cost: countSourceFiles(path.join(abs, entry)),
+        // Only packages built by scripts/build-package.ts emit a publishable
+        // dist/package.json. Apps (`next build`) and private helpers with no
+        // build script never do — demanding one from them made the post-build
+        // verification fail on @interlace/eslint-formatter-sarif, which is
+        // private:true with no build script at all.
+        emitsDist: typeof pkg.scripts?.build === 'string' && pkg.scripts.build.includes('build-package'),
       });
     }
   }
@@ -176,19 +182,23 @@ if (mine.length === 0) {
   process.exit(0);
 }
 
-if (process.env.CI_BUILD_PLAN_ONLY === '1') process.exit(0);
-
-// Plain `--filter=<pkg>`. Never `...<pkg>` — dependents are already in the
-// closure above and bucketed to their own shard.
-const filters = mine.map((p) => `--filter=${p.name}`);
 // Record the slice so the post-build checks know what dist/ dirs MUST exist.
 // Without this, verify-runtime-deps.ts skips packages with no dist and reports
 // success — vacuously green if the build produced nothing at all.
 fs.writeFileSync(
   path.join(REPO_ROOT, '.ci-built-packages.json'),
-  JSON.stringify(mine.map((p) => p.name), null, 2),
+  JSON.stringify(
+    mine.map((p) => ({ name: p.name, dir: p.dir, emitsDist: p.emitsDist })),
+    null,
+    2,
+  ),
 );
 
+if (process.env.CI_BUILD_PLAN_ONLY === '1') process.exit(0);
+
+// Plain `--filter=<pkg>`. Never `...<pkg>` — dependents are already in the
+// closure above and bucketed to their own shard.
+const filters = mine.map((p) => `--filter=${p.name}`);
 const args = ['turbo', 'run', 'build', ...filters];
 console.log(`\n$ npx ${args.join(' ')}\n`);
 try {
