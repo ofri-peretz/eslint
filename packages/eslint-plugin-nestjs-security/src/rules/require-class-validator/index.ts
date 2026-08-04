@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { getProjectContext } from '../../utils/project-context';
 import {
   getDecoratorCall,
   getDecoratorNames,
@@ -33,6 +34,17 @@ export interface Options {
   checkResponseDtos?: boolean;
   /** Class-name pattern identifying a response DTO. Default: see below. */
   responseDtoPattern?: string;
+  /**
+   * Stay quiet when the project registers a ValidationPipe with
+   * `whitelist: true`, which strips undecorated properties. Default: true
+   */
+  detectWhitelistingPipe?: boolean;
+  /**
+   * Treat the project as whitelisting without scanning for it — for setups the
+   * static scan can't see (options built at runtime, a pipe registered in a
+   * library). Mirrors `assumeGlobalThrottler` on require-throttler. Default: false
+   */
+  assumeWhitelistingPipe?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -210,6 +222,8 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
           allowInTests: { type: 'boolean', default: true },
           checkResponseDtos: { type: 'boolean', default: false },
           responseDtoPattern: { type: 'string' },
+          detectWhitelistingPipe: { type: 'boolean', default: true },
+          assumeWhitelistingPipe: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -221,11 +235,24 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
       allowInTests = true,
       checkResponseDtos = false,
       responseDtoPattern = DEFAULT_RESPONSE_DTO_PATTERN,
+      detectWhitelistingPipe = true,
+      assumeWhitelistingPipe = false,
     } = options as Options;
     const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    // A global ValidationPipe with `whitelist: true` strips every property the
+    // DTO does not decorate, so an undecorated property never arrives from a
+    // request — it is dead, not unvalidated. Reporting it under a CWE banner is
+    // a false positive, and it fires on exactly the well-configured apps we most
+    // want to keep quiet: brocoders/nestjs-boilerplate sets whitelist and still
+    // drew 5 findings on server-set fields like `provider` and `socialId`.
+    if (assumeWhitelistingPipe) return {};
+    if (detectWhitelistingPipe && getProjectContext(context).hasWhitelistingValidationPipe) {
       return {};
     }
 
