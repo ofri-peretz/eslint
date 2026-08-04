@@ -33,6 +33,42 @@ describe('no-exposed-private-fields', () => {
   describe('Valid Code - Properly Excluded Fields', () => {
     ruleTester.run('valid - excluded fields', noExposedPrivateFields, {
       valid: [
+        // prisma-starter/src/user/models/user.model.ts:36 — @HideField() is
+        // @nestjs/graphql's @Exclude(): the property never reaches the schema.
+        `
+      @ObjectType()
+      class UserModel {
+        @HideField()
+        password: string;
+      }
+    `,
+        // twenty/.../api-key-token.dto.ts and .../auth-token-pair.dto.ts — an
+        // @ObjectType() named after the credential exists to return it. This used
+        // to be reported because the decorator was checked before the name.
+        `
+      @ObjectType()
+      class ApiKeyToken {
+        @Field(() => String)
+        token: string;
+      }
+    `,
+        `
+      @ObjectType()
+      class AuthTokenPairDTO {
+        @Field(() => AuthToken)
+        accessToken: AuthToken;
+        @Field(() => AuthToken)
+        refreshToken: AuthToken;
+      }
+    `,
+        // prisma-starter/src/auth/models/token.model.ts — the bare name.
+        `
+      @ObjectType()
+      class Token {
+        @Field(() => GraphQLJWT, { description: 'JWT access token' })
+        accessToken: string;
+      }
+    `,
         // A GraphQL @InputType is submitted by the client and never returned, so a
         // credential-named field on it cannot be *exposed* — this rule is CWE-200,
         // data leaving. Previously asserted as a finding; that expectation was
@@ -141,6 +177,30 @@ describe('no-exposed-private-fields', () => {
         },
       ],
       invalid: [
+        // Persistence still outranks the name: a stored credential is serialized
+        // outward whatever the class is called.
+        {
+          code: `
+        @Entity()
+        class ApiKeyToken {
+          @Column()
+          apiSecret: string;
+        }
+      `,
+          errors: [{ messageId: 'exposedField' }],
+        },
+        // …and a credential riding along on an unrelated payload is the finding
+        // this rule exists for.
+        {
+          code: `
+        @ObjectType()
+        class UserProfileModel {
+          @Field()
+          apiSecret: string;
+        }
+      `,
+          errors: [{ messageId: 'exposedField' }],
+        },
         // "Cannot prove excluded" is not "proved excluded". A non-literal
         // projection value and a spread both leave the question open, so the rule
         // proceeds and reports rather than assuming safety.

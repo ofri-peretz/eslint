@@ -155,12 +155,21 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      * which made every `@InputType()` a reporting surface for a rule about
      * data leaving. `@ObjectType()` stays — that one is returned.
      */
-    const ENTITY_DECORATORS = new Set([
-      'Entity',
-      'Schema',
-      'ObjectType',
-      'ApiProperty',
-    ]);
+    /**
+     * Persistence. A stored class is serialized outward whatever it is called,
+     * so its name cannot argue it out of scope.
+     */
+    const PERSISTED_DECORATORS = new Set(['Entity', 'Schema']);
+
+    /**
+     * Transport. `@ObjectType()` and `@ApiProperty` say the class is returned
+     * to a caller — which is exactly the question the name answers next. These
+     * used to sit in the same set as the persistence decorators, so an
+     * `@ObjectType() class ApiKeyToken` short-circuited to "in scope" before
+     * the credential-delivery check could run, and twenty's entire auth DTO
+     * directory was reported for carrying the token it exists to return.
+     */
+    const TRANSPORT_DECORATORS = new Set(['ObjectType', 'ApiProperty']);
 
     /**
      * Classes whose purpose is to deliver a credential to the caller.
@@ -171,6 +180,18 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
      */
     const CREDENTIAL_DELIVERY =
       /(Login|SignIn|SignUp|Register|Auth|Refresh|Token|Session|Credential|Verify|Otp|Mfa|TwoFactor)\w*(Response|ResponseDto|Payload|Result)$/;
+
+    /**
+     * Classes named after the credential they carry.
+     *
+     * `ApiKeyToken`, `AuthTokenPairDTO`, `LoginTokenDTO`, `RotateClientSecretDTO`,
+     * and the bare `Token` model prisma-starter returns from its login
+     * mutation — the credential is the payload, not a passenger on it. The
+     * name must *end* with the credential word (optionally followed by a shape
+     * suffix), so `UserEntity` with a `token` column stays firmly in scope.
+     */
+    const CREDENTIAL_NAMED =
+      /(^|[a-z])(Token|Credential|Secret|ApiKey|Otp|Mfa)(Pair)?(DTO|Dto|Object|Output|Model)?$/;
 
     /**
      * Whether the class is a *response* shape.
@@ -197,9 +218,11 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
       // Checked first: a persisted class is serialized outward whatever it is
       // called, so `@Entity() class CreateAuditEntry` must stay in scope even
       // though its name opens with an inbound verb.
-      if (hasDecorator(cls.decorators, ENTITY_DECORATORS)) return true;
+      if (hasDecorator(cls.decorators, PERSISTED_DECORATORS)) return true;
       if (name && CREDENTIAL_DELIVERY.test(name)) return false;
+      if (name && CREDENTIAL_NAMED.test(name)) return false;
       if (name && INBOUND_NAME.test(name)) return false;
+      if (hasDecorator(cls.decorators, TRANSPORT_DECORATORS)) return true;
       return name
         ? /(Entity|Model|Schema|Response|ResponseDto|Payload|View)$/.test(name)
         : false;
@@ -262,6 +285,11 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         // Already excluded, on the field or class-wide (excludeAll strategy).
         if (hasDecorator(node.decorators, 'Exclude')) return;
         if (hasDecorator(cls.decorators, 'Exclude')) return;
+        // `@HideField()` is @nestjs/graphql's `@Exclude()`: it drops the
+        // property from the generated schema, so it is never resolvable.
+        // prisma-starter/src/user/models/user.model.ts:36 marks `password`
+        // exactly this way and was reported anyway.
+        if (hasDecorator(node.decorators, 'HideField')) return;
 
         // Or excluded by the ORM's own projection, which is the idiomatic
         // mechanism in each stack and a stronger guarantee than @Exclude():
