@@ -40,7 +40,14 @@ on:
     # surfaces in time for the weekly engineering review, and any promoted
     # PR runs the full matrix via the `run-full-ci` label gate. Moved to
     # Saturday to stagger off the Sunday-morning weekly-cron burst.
-    - cron: '30 4 * * 6' # Sat 04:30 UTC
+    # Sat 09:30 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: '30 9 * * 6' # Sat 04:30 UTC
   workflow_dispatch:
 
 concurrency:
