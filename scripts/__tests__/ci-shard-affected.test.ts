@@ -9,6 +9,9 @@
  * file exists so `bug` can't be quietly softened into a pass later.
  */
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
 import { decideAffected, GLOBAL_INPUTS, type AffectedPkg } from '../lib/ci-shard-affected.mts';
 
 const PKGS: AffectedPkg[] = [
@@ -71,5 +74,29 @@ describe('decideAffected', () => {
     for (const p of [...PKGS.map((p) => p.dir), 'packages/unknown', 'tools/whatever']) {
       expect(decideAffected([`${p}/src/x.ts`], PKGS).mode).not.toBe('none');
     }
+  });
+});
+
+describe('unit tests never need a build', () => {
+  it('every vitest config consuming a workspace package aliases it to source', () => {
+    // This is what lets `test` run with `dependsOn: []`. If a new package
+    // imports @interlace/eslint-devkit without the alias, vitest resolves it
+    // through node_modules to dist/ — the test then silently requires a build,
+    // and the whole parallel-build/test design regresses without any check
+    // going red. Fail here instead.
+    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const offenders: string[] = [];
+    for (const entry of fs.readdirSync(path.join(root, 'packages'))) {
+      const dir = path.join(root, 'packages', entry);
+      const cfg = path.join(dir, 'vitest.config.mts');
+      const manifest = path.join(dir, 'package.json');
+      if (!fs.existsSync(cfg) || !fs.existsSync(manifest)) continue;
+      const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
+      if (!deps['@interlace/eslint-devkit']) continue;
+      const src = fs.readFileSync(cfg, 'utf8');
+      if (!/@interlace\/eslint-devkit['"]\s*:\s*resolve\(/.test(src)) offenders.push(entry);
+    }
+    expect(offenders, `these vitest configs use @interlace/eslint-devkit but do not alias it to source: ${offenders.join(', ')}`).toEqual([]);
   });
 });

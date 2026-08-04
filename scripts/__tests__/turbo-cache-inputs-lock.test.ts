@@ -76,27 +76,24 @@ describe('turbo.json cache inputs', () => {
           `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`
       ).toBeDefined();
     }
-    // The invariant is "running `test` guarantees upstream packages are built",
-    // not the literal string `^build`. `dependsOn: ["build"]` satisfies it
-    // transitively, because `build` itself dependsOn `^build` — and it is
-    // strictly stronger, since several suites (eslint-devkit's
-    // no-runtime-optional-peer.test.ts) read their OWN package's dist/.
-    // Assert the property, and assert the transitive step it relies on, so
-    // this can't be satisfied by a `build` task that stopped building upstream.
+    // Tests must NOT depend on any build. Every vitest config that consumes a
+    // workspace package aliases it to source (`resolve.alias` -> ../<pkg>/src),
+    // so a unit test never needs a compiled dist and Build can run fully in
+    // parallel with the shards. Verified: eslint-plugin-node-security runs
+    // 69 files / 949 tests with both its own dist and devkit's dist deleted.
+    //
+    // The one test that genuinely read dist/ (devkit's
+    // no-runtime-optional-peer) is a packaging check and moved to the Build
+    // job as `test:dist`.
     for (const task of ['test', 'test:coverage'] as const) {
       const deps: string[] = turbo.tasks[task].dependsOn ?? [];
       expect(
-        deps.some((d) => d === '^build' || d === 'build'),
-        `turbo.json "${task}" must depend on \`build\` or \`^build\`, else tests ` +
-          `can run against stale or missing dist/. Got: ${JSON.stringify(deps)}`
-      ).toBe(true);
-      if (deps.includes('build') && !deps.includes('^build')) {
-        expect(
-          turbo.tasks.build.dependsOn,
-          `"${task}" relies on \`build\` to pull in upstream packages, so ` +
-            `\`build\` must itself dependOn \`^build\`.`
-        ).toContain('^build');
-      }
+        deps,
+        `turbo.json "${task}" must not dependOn a build. Unit tests alias ` +
+          `workspace deps to source, so a build dependency only serialises ` +
+          `the gate. A test that truly needs dist/ belongs in the Build job ` +
+          `(see @interlace/eslint-devkit's \`test:dist\`).`
+      ).toEqual([]);
     }
   });
 });

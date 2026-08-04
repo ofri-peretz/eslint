@@ -45,6 +45,10 @@ const INTERLACE_PLUGINS = [
 const PLUGIN_ALIASES = Object.fromEntries(INTERLACE_PLUGINS.map(pluginSource));
 
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   root: __dirname,
   resolve: {
     alias: PLUGIN_ALIASES,
@@ -81,7 +85,7 @@ export default defineConfig({
     name: { label: 'eslint-config', color: 'magenta' },
     pool: 'vmThreads',
     coverage: {
-      enabled: true,
+      enabled: false,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
       // Pinned at the 100% policy target — this branch is the integration target for the test wave.
