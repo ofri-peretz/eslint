@@ -100,7 +100,7 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
  */
 function bucket(pkgs: Pkg[], total: number): Pkg[][] {
   const shards: Pkg[][] = Array.from({ length: total }, () => []);
-  const load = new Array<number>(total).fill(0);
+  const load: number[] = Array.from({ length: total }, () => 0);
   for (const p of pkgs) {
     let lightest = 0;
     for (let i = 1; i < total; i++) if (load[i] < load[lightest]) lightest = i;

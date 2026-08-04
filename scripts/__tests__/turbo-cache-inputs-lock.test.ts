@@ -76,6 +76,27 @@ describe('turbo.json cache inputs', () => {
           `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`
       ).toBeDefined();
     }
-    expect(turbo.tasks.test.dependsOn).toContain('^build');
+    // The invariant is "running `test` guarantees upstream packages are built",
+    // not the literal string `^build`. `dependsOn: ["build"]` satisfies it
+    // transitively, because `build` itself dependsOn `^build` — and it is
+    // strictly stronger, since several suites (eslint-devkit's
+    // no-runtime-optional-peer.test.ts) read their OWN package's dist/.
+    // Assert the property, and assert the transitive step it relies on, so
+    // this can't be satisfied by a `build` task that stopped building upstream.
+    for (const task of ['test', 'test:coverage'] as const) {
+      const deps: string[] = turbo.tasks[task].dependsOn ?? [];
+      expect(
+        deps.some((d) => d === '^build' || d === 'build'),
+        `turbo.json "${task}" must depend on \`build\` or \`^build\`, else tests ` +
+          `can run against stale or missing dist/. Got: ${JSON.stringify(deps)}`
+      ).toBe(true);
+      if (deps.includes('build') && !deps.includes('^build')) {
+        expect(
+          turbo.tasks.build.dependsOn,
+          `"${task}" relies on \`build\` to pull in upstream packages, so ` +
+            `\`build\` must itself dependOn \`^build\`.`
+        ).toContain('^build');
+      }
+    }
   });
 });

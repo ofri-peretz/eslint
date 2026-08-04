@@ -11,6 +11,7 @@
  * @see OWASP ASI05: Unexpected Code Execution
  */
 
+import type { TSESLint } from '@interlace/eslint-devkit';
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeOutputExecution' | 'unsafeOutputInSQL' | 'unsafeOutputInHTML';
@@ -118,13 +119,35 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     const sqlPatterns = ['query', 'execute', 'run', 'raw'];
     
     /**
-     * Names of variables locally bound to the result of a known AI SDK call.
+     * Variables locally bound to the result of a known AI SDK call.
      * Tracks the idiomatic `const { text } = await generateText(...)` and
      * `const result = await streamText(...)` patterns. Without this, the
      * heuristic pattern match (`result.text`, `aiOutput`, …) missed every
      * destructured-`text` case (real FN found by the OWASP-LLM02 corpus).
+     *
+     * Keyed on the resolved scope variable, not the name: `text` is one of the
+     * most common identifiers there is, so a name set reports any unrelated
+     * `text` parameter in a file that happens to also destructure one from an
+     * AI call.
      */
-    const aiBoundNames = new Set<string>();
+    const aiBoundVariables = new Set<TSESLint.Scope.Variable>();
+
+    /**
+     * Whether an identifier is a read of a binding holding AI output.
+     *
+     * Asks the tracked variables which identifiers refer to them, rather than
+     * resolving the identifier back to a variable — scope analysis has already
+     * linked the two, and going this direction has no unresolved case to
+     * handle. A shadowing `text` is a different variable, so its identifier is
+     * simply not among these references.
+     */
+    function isAIBound(node: TSESTree.Node): boolean {
+      if (node.type !== 'Identifier') return false;
+      for (const variable of aiBoundVariables) {
+        if (variable.references.some((r) => r.identifier === node)) return true;
+      }
+      return false;
+    }
 
     const AI_SDK_CALLS = new Set(['generateText', 'streamText', 'generateObject', 'streamObject']);
 
@@ -145,13 +168,12 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
      */
     function isLikelyAIOutput(node: TSESTree.Node): boolean {
       // Direct member access into a tracked variable: `result.text`, `out.text`
-      if (node.type === 'MemberExpression' && node.object.type === 'Identifier' &&
-          aiBoundNames.has(node.object.name)) {
+      if (node.type === 'MemberExpression' && isAIBound(node.object)) {
         return true;
       }
       // Bare reference to a tracked variable (covers destructured `text` from
       // `const { text } = await generateText(...)`).
-      if (node.type === 'Identifier' && aiBoundNames.has(node.name)) {
+      if (isAIBound(node)) {
         return true;
       }
       // Original heuristic — still useful for `result.text`-shaped source even
@@ -160,18 +182,43 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       return aiOutputPatterns.some((pattern: string) => text.includes(pattern));
     }
 
+    /**
+     * Check an interpolated string for AI output.
+     *
+     * Descends into the *parts* that carry values — a template literal's
+     * `${...}` expressions and the operands of a `+` chain — instead of
+     * pattern-matching the node's whole source text. Text matching only ever
+     * caught `db.query(`... ${result.text}`)`; the tracked-binding case
+     * `const { text } = await generateText(...); db.query(`... ${text}`)`
+     * fell through, because the source reads `text` while the patterns look
+     * for `.text`. The eval and innerHTML branches already consulted
+     * aiBoundNames directly, so only the SQL branch had this gap.
+     */
+    function containsAIOutput(node: TSESTree.Node): boolean {
+      if (node.type === 'TemplateLiteral') {
+        return node.expressions.some(containsAIOutput);
+      }
+      if (node.type === 'BinaryExpression') {
+        // `+` only. Nested chains parse left-associatively: `'a' + b + c` is
+        // `('a' + b) + c`. Any other operator — `db.query(rows > limit)` — is a
+        // comparison or arithmetic, not a query being built out of a value, so
+        // there is nothing interpolated to report.
+        return (
+          node.operator === '+' &&
+          (containsAIOutput(node.left) || containsAIOutput(node.right))
+        );
+      }
+      return isLikelyAIOutput(node);
+    }
+
     return {
       // Track `const r = await generateText(...)` / `const { text } = ...` shapes
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (!node.init || !isAISDKCall(node.init)) return;
-        if (node.id.type === 'Identifier') {
-          aiBoundNames.add(node.id.name);
-        } else if (node.id.type === 'ObjectPattern') {
-          for (const prop of node.id.properties) {
-            if (prop.type === 'Property' && prop.value.type === 'Identifier') {
-              aiBoundNames.add(prop.value.name);
-            }
-          }
+        // Covers `const r = ...` and every binding in `const { text, usage } = ...`
+        // without walking the pattern by hand.
+        for (const variable of sourceCode.getDeclaredVariables(node)) {
+          aiBoundVariables.add(variable);
         }
       },
 
@@ -202,7 +249,7 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
           for (const arg of node.arguments) {
             if (arg.type === 'TemplateLiteral' || arg.type === 'BinaryExpression') {
               // Check if template/concatenation includes AI output
-              if (isLikelyAIOutput(arg)) {
+              if (containsAIOutput(arg)) {
                 context.report({
                   node: arg,
                   messageId: 'unsafeOutputInSQL',

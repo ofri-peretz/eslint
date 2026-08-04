@@ -25,12 +25,14 @@
       ]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "//": "`build`, not `^build`: suites like eslint-devkit's no-runtime-optional-peer.test.ts read their OWN package's dist/. With only ^build that dist existed by accident — whichever job last wrote the shared Turbo cache happened to include it. Per-shard cache scopes removed the accident and exposed the missing edge. `build` transitively covers ^build.",
+      "dependsOn": ["build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
+      "//": "See the `test` task — depends on the package's own build for the same reason.",
+      "dependsOn": ["build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },

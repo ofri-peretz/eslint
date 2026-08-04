@@ -24,15 +24,15 @@ describe('decideAffected', () => {
     expect(decideAffected(null, PKGS).mode).toBe('all');
   });
 
-  it.each(GLOBAL_INPUTS)('runs everything when %s changes', (file) => {
+  it.each([...GLOBAL_INPUTS])('runs everything when %s changes', (file) => {
     expect(decideAffected([file], PKGS).mode).toBe('all');
   });
 
   it('treats its own sources as global inputs', () => {
     // A change to the sharder must be validated against the full suite, not
     // against the subset the new logic happens to pick.
-    expect(GLOBAL_INPUTS).toContain('scripts/ci-test-shard.mts');
-    expect(GLOBAL_INPUTS).toContain('scripts/lib/ci-shard-affected.mts');
+    expect(GLOBAL_INPUTS.has('scripts/ci-test-shard.mts')).toBe(true);
+    expect(GLOBAL_INPUTS.has('scripts/lib/ci-shard-affected.mts')).toBe(true);
   });
 
   it('selects only the packages whose directories changed', () => {

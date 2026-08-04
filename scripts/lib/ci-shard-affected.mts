@@ -12,7 +12,7 @@
  * change to the bucketing or the decision below must be validated against the
  * whole suite, not against the subset the new logic happens to select.
  */
-export const GLOBAL_INPUTS = [
+export const GLOBAL_INPUTS = new Set([
   'package-lock.json',
   'turbo.json',
   'tsconfig.base.json',
@@ -22,7 +22,7 @@ export const GLOBAL_INPUTS = [
   '.github/workflows/quality-full.yml',
   'scripts/ci-test-shard.mts',
   'scripts/lib/ci-shard-affected.mts',
-];
+]);
 
 /** Minimal shape needed here; the sharder's Pkg is structurally compatible. */
 export type AffectedPkg = { name: string; dir: string };
@@ -46,7 +46,7 @@ export type Decision =
  */
 export function decideAffected(changed: string[] | null, testable: AffectedPkg[]): Decision {
   if (changed === null) return { mode: 'all', why: 'no merge-base with the base ref' };
-  if (changed.some((f) => GLOBAL_INPUTS.includes(f))) return { mode: 'all', why: 'a global input changed' };
+  if (changed.some((f) => GLOBAL_INPUTS.has(f))) return { mode: 'all', why: 'a global input changed' };
 
   const touchedDirs = new Set(
     changed.map((f) => f.split('/').slice(0, 2).join('/')).filter((d) => /^(packages|apps|tools)\//.test(d)),
