@@ -11,7 +11,8 @@
  * package always lands on the same shard number across runs and its Turbo
  * cache key stays stable.
  *
- * Usage: tsx scripts/ci-test-shard.mts <shardIndex 1-based> <shardTotal>
+ * Usage: node scripts/ci-test-shard.mts <shardIndex 1-based> <shardTotal>
+ *    or: node scripts/ci-test-shard.mts --matrix <shardTotal>   (emit GH matrix)
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -109,13 +110,40 @@ function bucket(pkgs: Pkg[], total: number): Pkg[][] {
   return shards;
 }
 
-const shardIndex = Number(process.argv[2]);
+// `--matrix <total>` prints the GitHub matrix of shards that actually have
+// work, for `strategy.matrix.shard: fromJSON(...)`.
+//
+// This is the single most valuable thing this script does, because runners —
+// not CPU — are the binding constraint. Measured on PR #356: 4640s of job time
+// was spent queueing for a runner versus 1052s computing (82%), with Typecheck
+// waiting 732s to run for 81s. Under those conditions a fixed 10-way matrix on
+// a one-package PR would acquire ten runners so nine could print "nothing to
+// do" — actively worse than not sharding. Emitting only the non-empty shards
+// keeps job count proportional to the size of the change.
+const MATRIX_MODE = process.argv[2] === '--matrix';
+
+/** Write the shard list to GITHUB_OUTPUT (and stdout when run locally). */
+function emitMatrix(shardNumbers: number[]): void {
+  const json = JSON.stringify(shardNumbers);
+  console.log(`matrix=${json}`);
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `shards=${json}\nany=${shardNumbers.length > 0}\n`);
+  }
+}
+
+const shardIndex = MATRIX_MODE ? 0 : Number(process.argv[2]);
 const shardTotal = Number(process.argv[3]);
 
-if (!Number.isInteger(shardIndex) || !Number.isInteger(shardTotal) || shardIndex < 1 || shardTotal < 1 || shardIndex > shardTotal) {
-  console.error(`Usage: tsx scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N>`);
+if (!MATRIX_MODE && (!Number.isInteger(shardIndex) || shardIndex < 1 || shardIndex > shardTotal)) {
+  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N>`);
+  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N>`);
   process.exit(2);
 }
+if (!Number.isInteger(shardTotal) || shardTotal < 1) {
+  console.error(`shardTotal must be a positive integer`);
+  process.exit(2);
+}
+
 
 const { testable, untested } = discoverPackages();
 
@@ -136,7 +164,7 @@ if (untested.length > 0) {
 }
 
 const shards = bucket(testable, shardTotal);
-let mine = shards[shardIndex - 1];
+let mine = MATRIX_MODE ? [] : shards[shardIndex - 1];
 
 // ── Affected filtering ──────────────────────────────────────────────────────
 //
@@ -176,6 +204,8 @@ function changedFiles(): string[] | null {
 
 const runAll = process.env.CI_TEST_SHARD_ALL === '1';
 let filterNote = 'all packages (filtering disabled)';
+/** null = no filtering; otherwise the affected package names. */
+let affected: Set<string> | null = null;
 
 if (!runAll) {
   const changed = changedFiles();
@@ -185,17 +215,37 @@ if (!runAll) {
     console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
     process.exit(1);
   } else if (decision.mode === 'none') {
+    if (MATRIX_MODE) {
+      // Empty matrix -> GitHub spawns zero jobs, so a no-package PR costs no
+      // runners at all instead of N that each start up only to no-op.
+      emitMatrix([]);
+      console.log(`Nothing to test: ${decision.why} vs ${BASE_REF}.`);
+      process.exit(0);
+    }
     console.log(`Nothing to test: ${decision.why} vs ${BASE_REF}.`);
     console.log(`Changed files (${changed!.length}): ${changed!.slice(0, 10).join(', ')}${changed!.length > 10 ? ' …' : ''}`);
     process.exit(0);
   } else if (decision.mode === 'all') {
     filterNote = `all packages (${decision.why})`;
   } else {
+    affected = decision.names;
     // Keep this shard's slice of the affected set. Downstream dependents are
     // picked up by turbo's `...<pkg>` operator when the filters are built.
-    mine = mine.filter((p) => decision.names.has(p.name));
-    filterNote = `${decision.names.size} package(s) affected vs ${BASE_REF}`;
+    mine = mine.filter((p) => affected!.has(p.name));
+    filterNote = `${affected.size} package(s) affected vs ${BASE_REF}`;
   }
+}
+
+if (MATRIX_MODE) {
+  const live = shards
+    .map((s, i) => ({ shard: i + 1, pkgs: affected ? s.filter((p) => affected!.has(p.name)) : s }))
+    .filter((s) => s.pkgs.length > 0);
+  for (const s of live) {
+    console.log(`  shard ${s.shard}: ${s.pkgs.map((p) => p.name).join(', ')}`);
+  }
+  console.log(`Dispatching ${live.length} of ${shardTotal} shards (${filterNote}).`);
+  emitMatrix(live.map((s) => s.shard));
+  process.exit(0);
 }
 
 const loads = shards.map((s) => s.reduce((n, p) => n + p.cost, 0));

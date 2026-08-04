@@ -69,6 +69,8 @@ jobs:
     timeout-minutes: 1
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      shards: ${{ steps.matrix.outputs.shards }}
+      any: ${{ steps.matrix.outputs.any }}
     steps:
       - id: decide
         env:
@@ -93,6 +95,21 @@ jobs:
             echo "::notice::Draft PR without \`run-full-ci\` label — skipping heavy quality gates. Mark ready-for-review or apply the label to promote."
           fi
 
+      # Compute the shard matrix here, in the job that already exists, so the
+      # test matrix contains only shards that actually have work. Runners are
+      # the scarce resource (measured on PR #356: 4640s queueing vs 1052s
+      # computing, 82%), so spawning ten jobs for a one-package PR would cost
+      # nine runner acquisitions to print "nothing to do".
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        if: steps.decide.outputs.run == 'true'
+        with:
+          fetch-depth: 50
+      - id: matrix
+        if: steps.decide.outputs.run == 'true'
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+        run: node scripts/ci-test-shard.mts --matrix 10
+
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
   # the same task and trade one cache hit for N cold runs. Whole-package buckets
@@ -116,7 +133,7 @@ jobs:
   test:
     name: Unit Tests + Coverage (${{ matrix.shard }}/10)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.any == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -124,7 +141,7 @@ jobs:
       # shouldn't hide the results of the others.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shard: ${{ fromJSON(needs.gate.outputs.shards) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         # Enough history for `git merge-base HEAD origin/main` — the affected
