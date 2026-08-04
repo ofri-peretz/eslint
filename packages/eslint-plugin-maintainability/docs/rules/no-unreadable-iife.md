@@ -73,7 +73,7 @@ const config = (() => {
 ```javascript
 {
   rules: {
-    'architecture/no-unreadable-iife': 'warn'
+    'maintainability/no-unreadable-iife': 'warn'
   }
 }
 ```

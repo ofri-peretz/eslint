@@ -11,7 +11,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
-import ts from 'typescript';
+import { aliasSymbolFlag } from '../utils/typescript-peer';
 
 type MessageIds = 'named';
 
@@ -62,7 +62,7 @@ export const named = createRule<RuleOptions, MessageIds>({
         let symbol = checker?.getSymbolAtLocation?.(tsNode);
 
         // Resolve alias if needed
-        if (symbol && (symbol.flags & ts.SymbolFlags.Alias)) {
+        if (symbol && (symbol.flags & aliasSymbolFlag())) {
             try {
                 symbol = checker?.getAliasedSymbol?.(symbol);
             } catch {

@@ -50,7 +50,7 @@
     "typecheck:benchmarks": "tsc --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -83,6 +83,7 @@
     "oxlint:shims": "tsx scripts/generate-oxlint-shims.ts",
     "oxlint:shims:check": "tsx scripts/generate-oxlint-shims.ts --check",
     "oxlint:shims:verify": "tsx scripts/verify-oxlint-shims.ts",
+    "verify:published-install": "tsx scripts/verify-published-install.ts",
     "test:oxlint-exports": "vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/oxlint-export-lock.test.ts",
     "oxlint:verify-runtime": "tsx scripts/verify-oxlint-runtime.ts",
     "oxlint:verify-runtime:update": "tsx scripts/verify-oxlint-runtime.ts --update",
@@ -97,7 +98,7 @@
     "generate:tests": "tsx scripts/generate-rule-tests.ts",
     "benchmark:score": "tsx benchmarks/score.ts",
     "benchmark:ci": "tsx benchmarks/score.ts --ci --threshold 80",
-    "quality": "npm run oxlint && npm run audit:portability:ci && npm run oxlint:shims:check && npm run ilb:oxlint-parity:cached && npx turbo run test && npm run lint:md && npm run lint:fixtures && npm run ilb:validate-results && npm run ilb:flagship:smoke && npm run audit:changelogs && npm run audit:claims:selftest && npm run audit:claims",
+    "quality": "npm run oxlint && npm run audit:portability:ci && npm run check-published-artifacts && npm run oxlint:shims:check && npm run ilb:oxlint-parity:cached && npx turbo run test && npm run lint:md && npm run lint:fixtures && npm run ilb:validate-results && npm run ilb:flagship:smoke && npm run audit:changelogs && npm run audit:claims:selftest && npm run audit:claims",
     "audit:rules": "tsx scripts/audit-rule.ts --fleet",
     "audit:rule": "tsx scripts/audit-rule.ts",
     "coverage:gaps": "tsx scripts/coverage-gap-analysis.ts",
@@ -188,7 +189,9 @@
     "verify:artifact:all": "tsx scripts/verify-published-artifact.ts --all",
     "verify:dist-integrity": "tsx scripts/verify-dist-integrity.ts",
     "verify:dist-integrity:release": "tsx scripts/verify-dist-integrity.ts --require-built",
-    "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json"
+    "oxlint:flagship": "oxlint -c .oxlintrc.flagship.json",
+    "check-published-artifacts": "tsx scripts/check-published-artifacts.ts",
+    "check-artifact-size": "tsx scripts/check-artifact-size.ts"
   },
   "keywords": [
     "eslint",

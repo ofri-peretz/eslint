@@ -37,6 +37,57 @@ const PATTERNS = [
       /(?:no-cycle|cycle detection|circular dep\w*|import-next)[^.\n]{0,40}?100\s*[x×]\s*faster/i,
     replacement: '3.1x faster end-to-end / 8x faster in pure rule time',
   },
+  {
+    id: 'import-next-sub-second',
+    // The 100x sweep missed a second fabrication that travelled with it:
+    // "45s → 0.4s", "<1s (100x faster)". No run in benchmarks/results/ is
+    // sub-second — the floor is 1.05s (synthetic, 1K files) and the real
+    // codebase is 4.9s rule time / 16.7s end-to-end. A sub-second lint
+    // figure in this repo is unmeasured by construction.
+    //
+    // Known over-reach: `linting` / `lint time` are broader than the other
+    // keywords, which are tightly scoped to this product claim. A legitimate
+    // sub-second figure for a *different* tool ("CI linting finished in
+    // 0.4s" for oxlint) would be flagged. That is the deliberate trade — a
+    // sub-second lint number in this repo should have to justify itself —
+    // and ALLOWLIST is the escape hatch. Expect this arm to be the most
+    // likely source of future friction.
+    // The lookbehind is load-bearing: without it, the `.59s` inside a measured
+    // `148.59s` reads as a sub-second figure and the guard flags its own
+    // evidence. Window spans sentences (`[^\n]`) because the fabrication was
+    // written as two: "…takes 45s to lint. Our replacement takes 0.4s."
+    regex:
+      /(?:eslint-plugin-import|import-next|no-cycle|cycle detection|lint time|linting)[^\n]{0,80}?(?:(?<![\d.])0?\.\d+\s*s(?:ec|econds)?\b|<\s*1\s*s\b|\bsub-second\b)/i,
+    replacement:
+      '2.71s at 5K files (synthetic, no-cycle only) or 4.9s rule time (real codebase)',
+  },
+  {
+    id: 'import-next-sub-second-reversed',
+    // Value-first form: "0.4s for import-next linting". The forward pattern
+    // requires the context term to precede the duration, so this shape sat
+    // inside the documented scope while matching neither pattern — the same
+    // gap the `-reversed` twin of the 100x pattern exists to close.
+    //
+    // Deliberately a NARROWER keyword set than the forward arm: it drops the
+    // generic `lint time` / `linting`. Value-first phrasing is how other
+    // tools' legitimate figures are written ("Sub-second linting on large
+    // repos" describes oxlint in ecosystem.mdx), so keeping the generic terms
+    // here produced a false positive on a live marketing surface — which must
+    // never be silenced by an ALLOWLIST entry. Product-scoped terms only.
+    regex:
+      /(?<![\d.])(?:0?\.\d+\s*s(?:ec|econds)?\b|<\s*1\s*s\b|\bsub-second\b)[^\n]{0,80}?(?:eslint-plugin-import|import-next|no-cycle|cycle detection)/i,
+    replacement:
+      '2.71s at 5K files (synthetic, no-cycle only) or 4.9s rule time (real codebase)',
+  },
+  {
+    id: 'unmeasured-sub-second-transition',
+    // Context-free form of the same fabrication: any "Ns → 0.Xs" pairing.
+    // Catches it in a diagram or table cell where the subject sits on a
+    // different line than the number, out of reach of the pair window.
+    regex: /\b\d+(?:\.\d+)?\s*s\b\s*(?:→|->|to)\s*(?<![\d.])0?\.\d+\s*s\b/i,
+    replacement:
+      '148.6s → 2.71s at 5K files (synthetic, no-cycle only), citing the result JSON',
+  },
 ];
 
 /**
@@ -128,7 +179,20 @@ function selftest() {
     // "faster" and the subject, which a naive \s+ would refuse to cross.
     '**100x faster** cycle detection in `import-next`',
     '_100x faster_ circular dependency analysis',
+    // The sub-second fabrication that rode along with the 100x claim.
+    '├── Tactic: "45s → 0.4s" benchmark viral content',
+    '| **Performance benchmarks** | "10K files: import took 45s, import-next took 0.4s" |',
+    '- "Reduced lint time from 45s to 0.4s in production"',
+    '| `no-cycle` | 45s+ on large monorepos | <1s (100x faster) |',
+    'eslint-plugin-import takes 45s to lint. Our replacement takes 0.4s.',
+    'Docs surfaces carried a supporting table: 15.0s → 0.15s',
+    // Value-first: the duration leads, the subject follows.
+    '0.4s for import-next linting on a 10K-file repo',
+    'Down to 0.4s with no-cycle enabled',
   ];
+  // Value-first phrasing about a *different* tool is legitimate and must not
+  // be flagged — this exact line lives in ecosystem.mdx and describes oxlint.
+  const goodReversed = 'Sub-second linting on large repos. 790 stock rules';
   const good = [
     'Catching vulnerabilities during code review is 100x cheaper than fixing them',
     '| Native Rust ports in oxlint | ~50–100× faster |',
@@ -137,19 +201,44 @@ function selftest() {
     'Vite and esbuild offer 10-100x faster builds.',
     '8x faster cycle detection',
     'Scaled APIs 100x',
+    // Measured figures must survive — the floor is 1.05s, never sub-second.
+    'no-cycle rule time: 148.59s vs 2.71s at 5,000 files (synthetic)',
+    'import-next finishes the 1K-file corpus in 1.05s',
+    '| `docs.yml` | ~45s | docs structure validation |',
+    'Cut no-cycle rule time 8x on a 5,736-file React codebase',
+    'p95 budget per rule is 0.4s',
   ];
   // Claim split across two Markdown lines — caught via the pair window.
   const badPair = ['Cycle detection is now', '100x faster than the official plugin'];
+  // Same, for the sub-second arms. The pair window is generic, but without
+  // these the wrapped-line path is only ever exercised for the 100x pattern.
+  const badPairSubSecond = ['eslint-plugin-import lint run completes in', '0.4s'];
+  const badPairTransition = ['Cut the suite from 45s', 'to 0.4s in production'];
 
   const matches = (s) => PATTERNS.some((p) => p.regex.test(normalize(s)));
 
   for (const s of bad) assert.equal(matches(s), true, `should flag: ${s}`);
   for (const s of good) assert.equal(matches(s), false, `should NOT flag: ${s}`);
+  assert.equal(
+    matches(goodReversed),
+    false,
+    'value-first phrasing about another tool must not be flagged'
+  );
 
   assert.equal(
     matches(badPair.join(' ')),
     true,
     'should flag a claim wrapped across two lines'
+  );
+  assert.equal(
+    matches(badPairSubSecond.join(' ')),
+    true,
+    'should flag a sub-second claim wrapped across two lines'
+  );
+  assert.equal(
+    matches(badPairTransition.join(' ')),
+    true,
+    'should flag an Ns -> 0.Xs transition wrapped across two lines'
   );
   assert.equal(
     CORRECTION_MARKER.test('- **Performance**: faster. _(Corrected 2026-08-02: originally read "up to 100x faster")_'),
@@ -164,7 +253,7 @@ function selftest() {
 
   console.log(
     `✅ selftest passed (${bad.length} flagged, ${good.length} ignored, ` +
-      '1 wrapped-line, 2 correction-marker)'
+      '3 wrapped-line, 2 correction-marker)'
   );
 }
 

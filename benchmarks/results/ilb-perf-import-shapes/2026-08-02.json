@@ -1,0 +1,189 @@
+{
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "schemaVersion": 1,
+  "timestamp": "2026-08-02T14:28:42.333Z",
+  "toolchain": {
+    "node": "v24.12.0",
+    "npm": "11.16.0",
+    "eslint": "10.7.0",
+    "os": "darwin-arm64",
+    "platform": "darwin-arm64",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go"
+  },
+  "benchmark": "ILB-Perf \u2014 no-cycle across graph shapes",
+  "iterations": 3,
+  "environment": {
+    "node": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "results": [
+    {
+      "size": "chain-5000",
+      "plugins": {
+        "eslint-plugin-import": {
+          "failed": true,
+          "reason": "exit 2:     at Map.forEach (<anonymous>) |     at visitNode (node_modules/eslint-plugin-import/lib/scc.js:51:29) |     at node_modules/eslint-plugin-import/lib/scc.js:67:13"
+        },
+        "eslint-plugin-import-next": {
+          "times": [
+            11.4459845,
+            11.1423805,
+            11.424252166
+          ],
+          "stats": {
+            "mean": 11.337539055333332,
+            "median": 11.424252166,
+            "min": 11.1423805,
+            "max": 11.4459845,
+            "stdDev": 0.1382828499251136
+          }
+        }
+      },
+      "speedup": null,
+      "speedupNote": "not comparable \u2014 eslint-plugin-import failed"
+    },
+    {
+      "size": "wide-5000",
+      "plugins": {
+        "eslint-plugin-import": {
+          "times": [
+            3.224341834,
+            3.140511959,
+            3.835955042
+          ],
+          "stats": {
+            "mean": 3.400269611666667,
+            "median": 3.224341834,
+            "min": 3.140511959,
+            "max": 3.835955042,
+            "stdDev": 0.30997118967111054
+          }
+        },
+        "eslint-plugin-import-next": {
+          "times": [
+            4.40953325,
+            3.847094792,
+            2.930037125
+          ],
+          "stats": {
+            "mean": 3.7288883889999997,
+            "median": 3.847094792,
+            "min": 2.930037125,
+            "max": 4.40953325,
+            "stdDev": 0.6097577449310791
+          }
+        }
+      },
+      "speedup": 0.8,
+      "speedupBasis": "median"
+    },
+    {
+      "size": "flat-5000",
+      "plugins": {
+        "eslint-plugin-import": {
+          "times": [
+            2.306365084,
+            2.222733333,
+            2.299484125
+          ],
+          "stats": {
+            "mean": 2.276194180666667,
+            "median": 2.299484125,
+            "min": 2.222733333,
+            "max": 2.306365084,
+            "stdDev": 0.0379067590641285
+          }
+        },
+        "eslint-plugin-import-next": {
+          "times": [
+            2.254237,
+            2.182678958,
+            2.255872125
+          ],
+          "stats": {
+            "mean": 2.230929361,
+            "median": 2.254237,
+            "min": 2.182678958,
+            "max": 2.255872125,
+            "stdDev": 0.03412471685536462
+          }
+        }
+      },
+      "speedup": 1.0,
+      "speedupBasis": "median"
+    },
+    {
+      "size": "dense-5000",
+      "plugins": {
+        "eslint-plugin-import": {
+          "times": [
+            3.992381833,
+            3.932282041,
+            3.962506292
+          ],
+          "stats": {
+            "mean": 3.9623900553333335,
+            "median": 3.962506292,
+            "min": 3.932282041,
+            "max": 3.992381833,
+            "stdDev": 0.024535775007565614
+          }
+        },
+        "eslint-plugin-import-next": {
+          "times": [
+            3.812881417,
+            3.642364792,
+            3.459411125
+          ],
+          "stats": {
+            "mean": 3.6382191113333335,
+            "median": 3.642364792,
+            "min": 3.459411125,
+            "max": 3.812881417,
+            "stdDev": 0.14433341454836154
+          }
+        }
+      },
+      "speedup": 1.1,
+      "speedupBasis": "median"
+    },
+    {
+      "size": "single",
+      "plugins": {
+        "eslint-plugin-import": {
+          "times": [
+            0.395467334,
+            0.384568041,
+            0.385331708
+          ],
+          "stats": {
+            "mean": 0.3884556943333333,
+            "median": 0.385331708,
+            "min": 0.384568041,
+            "max": 0.395467334,
+            "stdDev": 0.004967770454513257
+          }
+        },
+        "eslint-plugin-import-next": {
+          "times": [
+            0.358278959,
+            0.367545,
+            0.363277708
+          ],
+          "stats": {
+            "mean": 0.363033889,
+            "median": 0.363277708,
+            "min": 0.358278959,
+            "max": 0.367545,
+            "stdDev": 0.0037867721286949214
+          }
+        }
+      },
+      "speedup": 1.1,
+      "speedupBasis": "median"
+    }
+  ]
+}

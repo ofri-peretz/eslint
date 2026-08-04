@@ -211,6 +211,8 @@ mongodb-security	no-hardcoded-credentials	unaware
 nestjs-security	require-guards	unaware	
 nestjs-security	require-class-validator	unaware	
 nestjs-security	require-throttler	unaware	
+nestjs-security	require-validation-pipe-whitelist	unaware	
+nestjs-security	no-permissive-cors	unaware	
 nestjs-security	no-missing-validation-pipe	unaware	
 nestjs-security	no-exposed-debug-endpoints	unaware	
 nestjs-security	no-exposed-private-fields	unaware	
@@ -416,3 +418,10 @@ reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
 modernization	prefer-template-literal	unaware	
 modularity	no-mutable-exports	unaware	
+sequelize-security	no-unsafe-query	unaware	
+mysql-security	no-unsafe-query	unaware	
+prisma-security	no-unsafe-query	unaware	
+drizzle-security	no-unsafe-query	unaware	
+knex-security	no-unsafe-query	unaware	
+sqlite-security	no-unsafe-query	unaware	
+typeorm-security	no-unsafe-query	unaware	

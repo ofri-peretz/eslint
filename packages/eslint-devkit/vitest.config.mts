@@ -24,6 +24,12 @@ export default defineConfig({
   root: __dirname,
   plugins: [],
   test: {
+    // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
+    // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
+    // an idle machine and mis-reports contention as failure. A hang still fails,
+    // just at 30s instead of 5s.
+    testTimeout: 30_000,
+
     globals: true,
     environment: 'node',
     watch: false,
