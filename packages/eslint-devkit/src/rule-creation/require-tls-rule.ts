@@ -174,10 +174,15 @@ export function looksLikeConnectionConfig(
  * (a doc comment, an error message) is not a finding, and matched with a word
  * boundary so `sslmode=disabled-for-now` — not a real libpq value — does not
  * silently pass either.
+ *
+ * The terminator accepts `#` as well as `&`: a URL fragment ends the query
+ * string just as a separator does, so `?sslmode=disable#frag` is the same
+ * finding as `?sslmode=disable`. Terminating on `&` alone made it a silent
+ * false negative.
  */
 export function urlDisablesTls(value: string, schemes: readonly string[]): boolean {
   if (!schemes.some((scheme) => value.startsWith(`${scheme}://`))) return false;
-  return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(value);
+  return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:[&#]|$)/i.test(value);
 }
 
 /**

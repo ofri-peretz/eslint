@@ -34,7 +34,7 @@ export const requireTls = createRequireTlsRule({
   },
   modules: ['sequelize', 'sequelize-typescript'],
   connectionKeys: ['dialectOptions', 'dialect', 'replication'],
-  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb', 'mssql'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
   fix: 'Keep TLS on and supply the CA — `dialectOptions: { ssl: { require: true, ca } }`.',
   documentationLink:
     'https://sequelize.org/docs/v6/other-topics/dialect-specific-things/#postgresql',

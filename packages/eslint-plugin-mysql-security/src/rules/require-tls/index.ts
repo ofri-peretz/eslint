@@ -31,7 +31,7 @@ export const requireTls = createRequireTlsRule({
       confidence: 'high',
     },
   },
-  modules: ['mysql2', 'mysql', 'mysql2/promise'],
+  modules: ['mysql2', 'mysql'],
   connectionKeys: ['connectionLimit', 'waitForConnections', 'multipleStatements'],
   urlSchemes: ['mysql'],
   fix: 'Keep TLS on and give the driver the server CA — `ssl: { ca: fs.readFileSync(caPath) }`. `ssl: "Amazon RDS"` selects a bundled CA on RDS.',

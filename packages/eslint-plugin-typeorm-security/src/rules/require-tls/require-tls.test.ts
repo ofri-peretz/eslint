@@ -52,6 +52,14 @@ describe('require-tls', () => {
           name: 'flag resolved at runtime',
           code: DRIVER + "export const ds = new DataSource({ type: 'postgres', ssl: sslConfig });",
         },
+        // `mssql` was in `urlSchemes` and never could have matched: SQL Server
+        // connection strings have no `sslmode` parameter — its TLS knob is
+        // `trustServerCertificate`, covered as a property below. Listing the
+        // scheme was phantom coverage, and this case pins that it stays out.
+        {
+          name: 'an mssql URL is not scanned for sslmode',
+          code: DRIVER + "export const ds = new DataSource({ type: 'mssql', url: 'mssql://h/db?sslmode=disable' });",
+        },
         {
           name: 'no typeorm import — not this plugin’s file',
           code: "const options = { type: 'postgres', ssl: false };",

@@ -277,4 +277,14 @@ describe('urlDisablesTls', () => {
     expect(urlDisablesTls('mysql://h/db?sslmode=require', ['mysql'])).toBe(false);
     expect(urlDisablesTls('mysql://h/db?sslmode=disabled-for-now', ['mysql'])).toBe(false);
   });
+
+  // Regression: the terminator was `(?:&|$)`, so a fragment made the finding
+  // vanish. A `#` ends the query string exactly as `&` separates within it.
+  it('a URL fragment does not hide the parameter', () => {
+    expect(urlDisablesTls('mysql://h/db?sslmode=disable#frag', ['mysql'])).toBe(true);
+    expect(urlDisablesTls('mysql://h/db?ssl=false#x', ['mysql'])).toBe(true);
+    expect(urlDisablesTls('mysql://h/db?x=1&sslmode=disable#frag', ['mysql'])).toBe(true);
+    // Still not a match when the value is not a real disable.
+    expect(urlDisablesTls('mysql://h/db?sslmode=require#frag', ['mysql'])).toBe(false);
+  });
 });

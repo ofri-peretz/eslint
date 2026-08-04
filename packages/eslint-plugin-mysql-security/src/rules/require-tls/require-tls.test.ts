@@ -94,6 +94,20 @@ describe('require-tls', () => {
           code: DRIVER + "const pool = mysql.createPool({ connectionLimit: 10, ssl: false });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
+        // Regression: `modules` no longer lists 'mysql2/promise' explicitly —
+        // `driverBindings` already matches any path under a listed module. The
+        // subpath import must still open the gate, or dropping the redundant
+        // entry would have been a silent loss of coverage.
+        {
+          name: 'the mysql2/promise subpath still opens the gate',
+          code: "import mysql from 'mysql2/promise';\nconst c = mysql.createConnection({ host, ssl: false });",
+          errors: [{ messageId: 'tlsDisabled' }],
+        },
+        {
+          name: 'a URL fragment does not hide the parameter',
+          code: DRIVER + "const c = mysql.createConnection('mysql://u:p@h/db?sslmode=disable#frag');",
+          errors: [{ messageId: 'tlsDisabled' }],
+        },
       ],
     });
   });

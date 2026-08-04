@@ -33,7 +33,7 @@ export const requireTls = createRequireTlsRule({
   // `connection` is Knex's nested config bag; `client` and `searchPath` mark an
   // object as a Knex config rather than an arbitrary options object.
   connectionKeys: ['connection', 'client', 'searchPath'],
-  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mysql2'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql'],
   fix: 'Keep TLS on and give Knex the server CA — `connection: { ssl: { ca: fs.readFileSync(caPath) } }`.',
   documentationLink: 'https://knexjs.org/guide/#configuration-options',
 });

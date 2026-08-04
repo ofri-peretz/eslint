@@ -35,7 +35,7 @@ export const requireTls = createRequireTlsRule({
   },
   modules: ['typeorm'],
   connectionKeys: ['extra', 'type', 'entities', 'synchronize', 'options'],
-  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb', 'mssql'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
   fix: 'Keep TLS on and supply the CA — `ssl: { ca: fs.readFileSync(caPath) }`, or `extra: { ssl: { ca } }` for driver passthrough.',
   documentationLink: 'https://typeorm.io/data-source-options',
 });
