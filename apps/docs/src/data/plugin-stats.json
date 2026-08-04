@@ -29,7 +29,7 @@
       "rules": 23,
       "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "published": true
     },
     {
@@ -141,7 +141,7 @@
       "rules": 61,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.3.12",
+      "version": "2.3.13",
       "published": true
     },
     {
@@ -212,5 +212,5 @@
   "totalRules": 484,
   "totalPlugins": 26,
   "allPluginsCount": 26,
-  "generatedAt": "2026-08-03T17:13:44.342Z"
+  "generatedAt": "2026-08-04T02:32:45.468Z"
 }
