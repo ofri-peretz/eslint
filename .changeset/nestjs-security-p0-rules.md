@@ -114,14 +114,23 @@ enforcement when it only documents a scheme.
   literals). The previous strict behaviour is available via
   `requireExplicitPipe: true`.
 - `require-throttler` targets unauthenticated sensitive routes only, making it
-  the complement of `require-guards` rather than an overlap. Re-triaged in this
-  release and left unchanged: all 40 findings across both corpora are real
-  brute-force surface, including immich's unthrottled
-  `@Post('admin/maintenance/login')`.
+  the complement of `require-guards` rather than an overlap. Its route matching
+  is now token-aligned: `'authors'.includes('auth')` and
+  `'tokenize'.includes('token')` are both true, so an author listing was being
+  told to rate-limit itself. A sensitive token still counts in any position, so
+  `verifyEmail` and `resendVerifyEmail` remain in scope.
+- `no-missing-validation-pipe` no longer skips a whole file when a global
+  `ValidationPipe` is registered. A global pipe is evidence about typed DTOs and
+  nothing else — it has no metatype for `any`, `unknown`, `object`, a type
+  literal or an unannotated parameter, and passes those through exactly as a
+  local pipe would. It also accepts any parameter-scoped pipe rather than one
+  literally named `ValidationPipe`, since `@Param('id', UserByIdPipe)` resolves
+  and throws; the built-in `Parse*Pipe` family is excluded because it coerces a
+  scalar and cannot check a DTO's shape.
 
 ### Tests
 
-621 tests at 100% statement / branch / function / line coverage, including a
+629 tests at 100% statement / branch / function / line coverage, including a
 detection contract (every rule must still fire on the vulnerability it exists
 for, and stay silent on the minimally-different safe twin) and regression locks
 pinning exact findings for shapes taken from the measured codebases.

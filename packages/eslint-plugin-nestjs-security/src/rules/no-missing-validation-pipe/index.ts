@@ -134,12 +134,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     // The registration lives in another file, so this is the only way a
     // single-file rule can know it exists. Without it the rule reports every
     // route of a correctly-configured application.
-    if (
-      detectGlobalPipes &&
-      getProjectContext(context).hasGlobalValidationPipe
-    ) {
-      return {};
-    }
+    //
+    // It suppresses per parameter, not per file. Returning early here also hid
+    // `any`, `unknown`, `object`, type literals and unannotated inputs — the
+    // shapes carrying no runtime metatype, which a global pipe passes straight
+    // through exactly as a local one would. A global registration is evidence
+    // about typed DTOs and about nothing else.
+    const hasGlobalPipe =
+      detectGlobalPipes && getProjectContext(context).hasGlobalValidationPipe;
 
     /**
      * Whether @UsePipes(...) on this node installs a ValidationPipe.
@@ -154,6 +156,35 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       return call.arguments.some(
         (arg) => expressionName(arg) === 'ValidationPipe',
       );
+    }
+
+    /** Built-ins that coerce a scalar and cannot validate a DTO's shape. */
+    const TRANSFORM_ONLY_PIPE = /^(Parse\w*Pipe|DefaultValuePipe)$/;
+
+    /**
+     * Whether a parameter decorator carries a pipe.
+     *
+     * `@Body()` / `@Body('key')` do not; `@Body(SomePipe)`,
+     * `@Body(new ValidationPipe())` and `@Body('key', SomePipe)` do. The first
+     * argument is a property key only when it is a string literal, so anything
+     * else in that position — and anything at all after it — is a pipe.
+     *
+     * The built-in `Parse*Pipe` family is excluded: it coerces one scalar and
+     * cannot check a DTO's shape, so `@Body(new ParseIntPipe()) dto: CreateDto`
+     * is still unvalidated. Every other pipe is assumed to do its job — NestJS's
+     * own samples pass `@Param('id', UserByIdPipe)`, which resolves the id to an
+     * entity and throws when it cannot.
+     */
+    function hasParameterPipe(decorator: TSESTree.Decorator): boolean {
+      const args = decoratorCall(decorator)?.arguments ?? [];
+      return args.some((arg, index) => {
+        const isPropertyKey =
+          index === 0 &&
+          arg.type === AST_NODE_TYPES.Literal &&
+          typeof arg.value === 'string';
+        if (isPropertyKey) return false;
+        return !TRANSFORM_ONLY_PIPE.test(expressionName(arg));
+      });
     }
 
     /**
@@ -229,17 +260,21 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           );
           if (!inputDecorator) continue;
 
-          // A parameter-scoped pipe (`@Body(new ValidationPipe())`) validates it.
-          if (
-            decoratorCall(inputDecorator)?.arguments.some(
-              (arg) => expressionName(arg) === 'ValidationPipe',
-            )
-          ) {
-            continue;
-          }
+          // A parameter-scoped pipe validates or transforms the value, and it
+          // does not have to be *the* ValidationPipe to do so.
+          // `@Param('id', UserByIdPipe)` resolves the id to an entity and
+          // throws when it cannot — NestJS's own samples spell it that way,
+          // and matching the literal name `ValidationPipe` reported every one
+          // of them. Any argument past the property key is a pipe: that is
+          // what the parameter decorator's signature means.
+          if (hasParameterPipe(inputDecorator)) continue;
 
           // Scalars are coerced by the framework.
           if (isScalarTyped(param)) continue;
+
+          // A global pipe validates a typed DTO wherever it is declared — but
+          // it has no metatype to validate an unvalidatable shape against.
+          if (hasGlobalPipe && !isUnvalidatable(param)) continue;
 
           // By default only report what no ValidationPipe could have saved.
           // Opt into requireExplicitPipe to demand a per-route pipe as well.

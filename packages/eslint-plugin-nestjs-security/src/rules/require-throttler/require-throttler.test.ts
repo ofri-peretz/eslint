@@ -5,6 +5,23 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-throttler', requireThrottler, {
   valid: [
+    // Substring matching reported these: 'authors'.includes('auth') and
+    // 'tokenize'.includes('token') are both true. An author listing is not a
+    // credential endpoint, and saying so costs the rule its credibility.
+    `
+      @Controller('authors')
+      class AuthorsController {
+        @Get()
+        getAuthors() {}
+      }
+    `,
+    `
+      @Controller('utils')
+      class UtilsController {
+        @Post('tokenize')
+        tokenize(@Body() dto) {}
+      }
+    `,
     // Non-sensitive routes are covered by a global ThrottlerModule by default.
     `
       @Controller('articles')
@@ -120,6 +137,19 @@ ruleTester.run('require-throttler', requireThrottler, {
     },
   ],
   invalid: [
+    // …while a sensitive token in any position still counts. The corpus names
+    // these handlers verb-first as often as noun-first, so suffix-only
+    // matching would drop most of them.
+    {
+      code: `
+        @Controller('account')
+        class AccountController {
+          @Post('verify')
+          verifyEmail(@Body() dto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
     // ========== INVALID: Controller without throttling ==========
     {
       code: `

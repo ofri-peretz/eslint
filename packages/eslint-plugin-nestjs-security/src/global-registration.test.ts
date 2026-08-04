@@ -76,6 +76,15 @@ function run(rule: string, code: string, options?: unknown): number {
 interface Case {
   rule: string;
   code: string;
+  /**
+   * Options every assertion in this file applies to the case.
+   *
+   * `no-missing-validation-pipe` needs them: by default it reports only shapes
+   * no pipe could validate, and a global pipe cannot validate those either, so
+   * its default-mode findings are unsuppressable by design. The suppression
+   * this file is testing lives in `requireExplicitPipe` mode, on a typed DTO.
+   */
+  baseOptions?: Record<string, unknown>;
   /** The context flag the app-wide registration sets. */
   flag: keyof typeof context;
   /** The option that turns the scan off. */
@@ -99,11 +108,12 @@ const CASES: Case[] = [
     rule: 'no-missing-validation-pipe',
     flag: 'hasGlobalValidationPipe',
     option: 'detectGlobalPipes',
+    baseOptions: { requireExplicitPipe: true },
     code: `
       @Controller('users')
       class UsersController {
         @Post()
-        create(@Body() payload) {}
+        create(@Body() payload: CreateUserDto) {}
       }
     `,
   },
@@ -126,24 +136,26 @@ describe('rules consult the project scan for global registrations', () => {
   // vacuously if the rule never fires at all, so prove it fires.
   it.each(CASES)(
     '$rule reports when nothing is registered app-wide',
-    ({ rule, code }) => {
-      expect(run(rule, code)).toBeGreaterThan(0);
+    ({ rule, code, baseOptions }) => {
+      expect(run(rule, code, baseOptions)).toBeGreaterThan(0);
     },
   );
 
   it.each(CASES)(
     '$rule stays silent once $flag is set',
-    ({ rule, code, flag }) => {
+    ({ rule, code, flag, baseOptions }) => {
       (context[flag] as boolean) = true;
-      expect(run(rule, code)).toBe(0);
+      expect(run(rule, code, baseOptions)).toBe(0);
     },
   );
 
   it.each(CASES)(
     '$rule reports again with $option disabled',
-    ({ rule, code, flag, option }) => {
+    ({ rule, code, flag, option, baseOptions }) => {
       (context[flag] as boolean) = true;
-      expect(run(rule, code, { [option]: false })).toBeGreaterThan(0);
+      expect(
+        run(rule, code, { ...baseOptions, [option]: false }),
+      ).toBeGreaterThan(0);
     },
   );
 });

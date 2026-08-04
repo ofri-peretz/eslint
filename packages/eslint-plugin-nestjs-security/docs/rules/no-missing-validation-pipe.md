@@ -117,11 +117,9 @@ new ValidationPipe({
 
 - If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
 
-## Known False Negatives
+## Cross-File Detection
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Registered app-wide — **detected**
+### Registered app-wide
 
 The rule scans the project's module and bootstrap files and stays silent when it
 finds an app-wide registration, so this is _not_ a false positive:
@@ -134,6 +132,10 @@ app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 Turn the scan off with `detectGlobalPipes: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalPipes: true` covers those.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
 
 ### Conditional Pipe Application
 

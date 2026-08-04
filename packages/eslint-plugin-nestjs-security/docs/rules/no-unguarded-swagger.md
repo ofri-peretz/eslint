@@ -1,6 +1,6 @@
 ---
 title: no-unguarded-swagger
-description: This rule detects SwaggerModule.setup running unconditionally in an application bootstrap, which publishes the ...
+description: This rule detects SwaggerModule.setup() running unconditionally in an application bootstrap, which publishes every route, DTO shape and declared auth scheme to anonymous callers in production.
 tags: ['security', 'nestjs']
 category: security
 severity: medium
@@ -13,7 +13,7 @@ autofix: false
 
 <!-- @rule-summary -->
 
-This rule detects SwaggerModule.setup running unconditionally in an application bootstrap, which publishes the ...
+This rule detects `SwaggerModule.setup()` running unconditionally in an application bootstrap, which publishes every route, DTO shape and declared auth scheme to anonymous callers in production.
 
 <!-- @/rule-summary -->
 

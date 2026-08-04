@@ -17,7 +17,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 > Detect `SwaggerModule.setup()` running unconditionally in an application bootstrap
 
-This rule detects SwaggerModule.setup running unconditionally in an application bootstrap, which publishes the ...
+This rule detects `SwaggerModule.setup()` running unconditionally in an application bootstrap, which publishes every route, DTO shape and declared auth scheme to anonymous callers in production.
 
 ## Rule Details
 

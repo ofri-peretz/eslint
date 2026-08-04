@@ -34,6 +34,7 @@ import {
   type ClassNode,
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
+import { tokenize } from '../../utils/sensitive-names';
 
 type MessageIds = 'missingThrottler' | 'addThrottler';
 
@@ -109,18 +110,32 @@ const SENSITIVE_ROUTE_TOKENS = [
   'session',
 ];
 
+const SENSITIVE_ROUTE_TOKEN_SET: ReadonlySet<string> = new Set(
+  SENSITIVE_ROUTE_TOKENS,
+);
+
 // Deliberately NOT in the list: 'search', 'upload', 'email', 'sms'. Those are
 // capacity and cost concerns, not credential abuse — and in the corpus they are
 // almost always authenticated endpoints, where brute force is not the threat.
 // immich's `@Post('smart')` search sat behind `@Authenticated` and was reported
 // purely because "search" was on the list.
 
-/** Whether a route path or handler name looks credential/abuse-prone. */
+/**
+ * Whether a route path or handler name looks credential/abuse-prone.
+ *
+ * Matched per token, not by substring. `lower.includes('auth')` is true of
+ * `authors`, `AuthorsController` and `authorize`, and true of `tokenize` for
+ * `token` — a rule that reports an author listing for rate limiting is telling
+ * the reader it does not understand the code.
+ *
+ * A sensitive token counts in any position: the corpus names these handlers
+ * `verifyEmail`, `requestPasswordReset` and `resendVerifyEmail` as often as it
+ * names them `login`, so suffix-only matching would drop most of them.
+ */
 function isSensitiveRoute(candidates: readonly string[]): boolean {
-  return candidates.some((c) => {
-    const lower = c.toLowerCase();
-    return SENSITIVE_ROUTE_TOKENS.some((t) => lower.includes(t));
-  });
+  return candidates.some((c) =>
+    tokenize(c).some((token) => SENSITIVE_ROUTE_TOKEN_SET.has(token)),
+  );
 }
 
 export const requireThrottler = createRule<RuleOptions, MessageIds>({

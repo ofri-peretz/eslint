@@ -92,11 +92,9 @@ export class AppModule {}
 - If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
-## Known False Negatives
+## Cross-File Detection
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Registered app-wide — **detected**
+### Registered app-wide
 
 The rule scans the project's module and bootstrap files and stays silent when it
 finds an app-wide registration, so this is _not_ a false positive:
@@ -113,7 +111,9 @@ Turn the scan off with `detectGlobalThrottler: false` if you want the routes rep
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalThrottler: true` covers those.
 
-**Mitigation**: Set `assumeGlobalThrottler: true` in rule options.
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
 
 ### Custom Rate Limiting
 

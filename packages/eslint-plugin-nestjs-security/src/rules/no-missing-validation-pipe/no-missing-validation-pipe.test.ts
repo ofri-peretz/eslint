@@ -5,6 +5,32 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
   valid: [
+    // nest-framework/.../hello.controller.ts:29 — a custom pipe resolves the id
+    // to an entity and throws when it cannot. Matching the literal name
+    // `ValidationPipe` reported every one of NestJS's own samples.
+    `
+      @Controller('users')
+      class UsersController {
+        @Get(':id')
+        findOne(@Param('id', UserByIdPipe) user: any) {}
+      }
+    `,
+    `
+      @Controller('users')
+      class UsersController {
+        @Post()
+        create(@Body(CustomValidationPipe) dto: any) {}
+      }
+    `,
+    // A pipe built by a factory has no name to resolve. Unnameable is not the
+    // same as absent — something is installed, so the rule abstains.
+    `
+      @Controller('users')
+      class UsersController {
+        @Post()
+        create(@Body(buildPipe({ transform: true })) dto: any) {}
+      }
+    `,
     // Optional scalar query params are unions, not unvalidated objects.
     `
       @Controller('u')
@@ -115,6 +141,29 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
     },
   ],
   invalid: [
+    // A global ValidationPipe cannot validate what carries no runtime class.
+    // The early return that used to skip the whole file on a global
+    // registration hid exactly these.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() payload: any) {}
+        }
+      `,
+      errors: [{ messageId: 'missingValidation' }],
+    },
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() payload) {}
+        }
+      `,
+      errors: [{ messageId: 'missingValidation' }],
+    },
     // ========== INVALID: Missing ValidationPipe with DTO body ==========
     {
       code: `
