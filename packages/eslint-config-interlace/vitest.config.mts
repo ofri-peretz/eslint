@@ -40,6 +40,16 @@ const INTERLACE_PLUGINS = [
   'eslint-plugin-operability',
   'eslint-plugin-modularity',
   'eslint-plugin-modernization',
+  // The 7 ORM-security plugins. These were missing while the meta-config
+  // already shipped them, so `await import(name)` in ecosystem-integrity.test
+  // fell through to node_modules -> dist/ and needed a build.
+  'eslint-plugin-drizzle-security',
+  'eslint-plugin-knex-security',
+  'eslint-plugin-mysql-security',
+  'eslint-plugin-prisma-security',
+  'eslint-plugin-sequelize-security',
+  'eslint-plugin-sqlite-security',
+  'eslint-plugin-typeorm-security',
 ] as const;
 
 const PLUGIN_ALIASES = Object.fromEntries(INTERLACE_PLUGINS.map(pluginSource));

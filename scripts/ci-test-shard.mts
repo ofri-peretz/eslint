@@ -18,7 +18,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { decideAffected } from './lib/ci-shard-affected.mts';
+import { decideAffected, reverseDeps, bucket, manifestDeps } from './lib/ci-shard-affected.mts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -26,7 +26,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 /** Workspace globs that can hold testable packages. */
 const WORKSPACE_DIRS = ['packages', 'apps', 'tools'];
 
-type Pkg = { name: string; dir: string; task: 'test:coverage' | 'test'; cost: number };
+type Pkg = { name: string; dir: string; task: 'test:coverage' | 'test'; cost: number; deps: string[] };
 
 /**
  * Cost proxy for balancing: number of test files in the package.
@@ -86,7 +86,7 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
           : pkg.scripts?.['test:coverage']
             ? 'test:coverage'
             : null;
-      if (task) testable.push({ name: pkg.name, dir, task, cost: countTestFiles(path.join(abs, entry)) });
+      if (task) testable.push({ name: pkg.name, dir, task, cost: countTestFiles(path.join(abs, entry)), deps: manifestDeps(pkg) });
       else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
     }
   }
@@ -95,30 +95,6 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
   // so a package keeps its shard (and therefore its Turbo cache key) run to run.
   testable.sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
   return { testable, untested };
-}
-
-/**
- * Longest-processing-time-first bucketing: walk packages heaviest-first, each
- * into the currently-lightest shard.
- *
- * Replaces round-robin-by-name, which put `docs` (83 test files),
- * `react-features` (70) and `devkit` (32) in one bucket and produced a 54s vs
- * 299s split — 5.5x, with three runners idle while one finished.
- *
- * LPT's max bucket cannot go below the largest single package, so past N=10
- * `docs` alone (83 files of 738) is the binding constraint and extra shards
- * only add idle jobs. See the shard-count table in the PR description.
- */
-function bucket(pkgs: Pkg[], total: number): Pkg[][] {
-  const shards: Pkg[][] = Array.from({ length: total }, () => []);
-  const load: number[] = Array.from({ length: total }, () => 0);
-  for (const p of pkgs) {
-    let lightest = 0;
-    for (let i = 1; i < total; i++) if (load[i] < load[lightest]) lightest = i;
-    shards[lightest].push(p);
-    load[lightest] += p.cost;
-  }
-  return shards;
 }
 
 // `--matrix <total>` prints the GitHub matrix of shards that actually have
@@ -167,6 +143,7 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 
 
 const { testable, untested } = discoverPackages();
+const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to
 // report a green check having executed nothing (observed on PR #355:
@@ -230,7 +207,7 @@ let affected: Set<string> | null = null;
 
 if (!runAll) {
   const changed = changedFiles();
-  const decision = decideAffected(changed, testable);
+  const decision = decideAffected(changed, testable, REVERSE_DEPS);
   if (decision.mode === 'bug') {
     console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
     console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
@@ -252,10 +229,12 @@ if (!runAll) {
     filterNote = `all packages (${decision.why})`;
   } else {
     affected = decision.names;
-    // Keep this shard's slice of the affected set. Downstream dependents are
-    // picked up by turbo's `...<pkg>` operator when the filters are built.
+    // `decision.names` is already the dependent CLOSURE, so intersecting it with
+    // this shard's bucket yields a true partition: each affected package runs on
+    // exactly one shard. Previously the closure was applied per shard via
+    // `--filter=...<pkg>`, so every shard re-ran every downstream package.
     mine = mine.filter((p) => affected!.has(p.name));
-    filterNote = `${affected.size} package(s) affected vs ${BASE_REF}`;
+    filterNote = `${affected.size} package(s) affected (incl. dependents) vs ${BASE_REF}`;
   }
 }
 
@@ -306,12 +285,13 @@ let failed = false;
 for (const task of ['test:coverage', 'test'] as const) {
   const group = mine.filter((p) => p.task === task);
   if (group.length === 0) continue;
-  // `...<pkg>` includes packages that depend on <pkg>. When filtering by
-  // affected, a change to eslint-devkit must still exercise the 20 plugins
-  // built on it — testing only the changed package would be the fast-but-wrong
-  // version of this optimisation. Turbo dedupes across filters, and dependents
-  // outside this shard's bucket are cheap replays from its warm cache.
-  const spec = runAll ? (p: Pkg) => `--filter=${p.name}` : (p: Pkg) => `--filter=...${p.name}`;
+  // Plain `--filter=<pkg>`, never `...<pkg>`. Dependents are already in the
+  // affected closure and bucketed into whichever shard owns them; re-expanding
+  // here would run them again on every shard that happens to hold an upstream
+  // package. A change to eslint-devkit still exercises all 20 plugins built on
+  // it — they are in the closure — but each plugin runs once, not once per
+  // shard.
+  const spec = (p: Pkg) => `--filter=${p.name}`;
   // `--` forwards the rest to the package script, i.e. to `vitest run`.
   // `dot` is the cheapest reporter: one character per file instead of a line
   // per file across 742 files, with failures still printed in full. This is

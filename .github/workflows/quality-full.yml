@@ -195,9 +195,17 @@ jobs:
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
+  # Sharded across runners. A single runner running `turbo run build` for 34
+  # packages queues them behind its own 4-vCPU concurrency limit — measured
+  # 230s. Build work has no outlier (no package over 25s), so splitting it is
+  # effective in a way test sharding is not.
   build:
-    name: Build (Turbo)
+    name: Build (${{ matrix.shard }}/4)
     needs: gate
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     # `heavy` is false when the diff touches no package source at all — a
     # root README, a workflow comment, a .md doc. Nothing those can break is
     # observable to build/typecheck/portability, and markdown still gets linted
@@ -217,11 +225,11 @@ jobs:
           turbo-cache-scope: build
       - name: Build via Turbo (affected only)
         env:
-          # Same filter as the test shards. Build is the longest job on this
-          # gate (230s for all 30 tasks at a 0% cache hit rate) and therefore
-          # sets the end-to-end floor, so filtering it is the single biggest
-          # remaining reduction. main / cron / dispatch build everything.
+          # Same affected filter as the test shards; main / cron / dispatch
+          # build everything.
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          CI_BUILD_SHARD: ${{ matrix.shard }}
+          CI_BUILD_SHARD_TOTAL: "4"
         run: node scripts/ci-build.mts
       # Runs here because the artifacts already exist — no extra runner, no
       # second build, ~5s. Reads the emitted JS for module-scope requires of
@@ -236,8 +244,15 @@ jobs:
       # unit suite, so `test` does not have to dependOn `build` — a unit test
       # should never wait on a compile. Same invariant as the step above,
       # asserted at the source level.
+      # Only on the shard that actually built devkit — the packaging lock reads
+      # its dist/, which no other shard has.
       - name: Devkit must not require an optional peer at runtime
-        run: npm run test:dist --workspace=@interlace/eslint-devkit
+        run: |
+          if grep -q '"@interlace/eslint-devkit"' .ci-built-packages.json; then
+            npm run test:dist --workspace=@interlace/eslint-devkit
+          else
+            echo "devkit not built by shard ${{ matrix.shard }} — checked on the shard that owns it."
+          fi
       # The detection logic itself is locked: a plausible tidy-up of either the
       # eager-require pattern or the optional-peer rule silently disarms the gate
       # above, so both mutations are asserted against.
@@ -246,12 +261,14 @@ jobs:
       # the whole scripts/__tests__ directory). Kept here anyway: this step sits
       # next to the gate it protects, and the duplicate run costs ~5s.
       - name: Lock the runtime-dependency detection logic
+        if: matrix.shard == 1
         run: npm run test:runtime-deps
       # Every rule schema sets additionalProperties: false, so an option that
       # exists only in the docs aborts the consumer's whole lint run — and
       # configuring a rule means copying the name out of our documentation.
       # ~2s, no build needed.
       - name: Documented rule options must exist in the schema
+        if: matrix.shard == 1
         run: npm run test:documented-options
 
   typecheck:

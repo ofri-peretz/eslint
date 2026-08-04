@@ -12,7 +12,14 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { decideAffected, GLOBAL_INPUTS, type AffectedPkg } from '../lib/ci-shard-affected.mts';
+import {
+  bucket,
+  decideAffected,
+  expandDependents,
+  GLOBAL_INPUTS,
+  reverseDeps,
+  type AffectedPkg,
+} from '../lib/ci-shard-affected.mts';
 
 const PKGS: AffectedPkg[] = [
   { name: 'eslint-plugin-jwt', dir: 'packages/eslint-plugin-jwt' },
@@ -98,5 +105,94 @@ describe('unit tests never need a build', () => {
       if (!/@interlace\/eslint-devkit['"]\s*:\s*resolve\(/.test(src)) offenders.push(entry);
     }
     expect(offenders, `these vitest configs use @interlace/eslint-devkit but do not alias it to source: ${offenders.join(', ')}`).toEqual([]);
+  });
+});
+
+/**
+ * Shards must PARTITION the work, not replicate it.
+ *
+ * The regression this locks: both sharders used to build their turbo filters as
+ * `--filter=...<pkg>` — package *and its dependents* — once per shard. Dependents
+ * were not restricted to the shard's own bucket, so a shard holding any plugin
+ * pulled in every downstream workspace, and so did every other shard. Ten shards
+ * ran the same downstream tests ten times. The code justified it as "cheap
+ * replays from a warm cache", but PR jobs restore the Turbo cache read-only under
+ * a per-SHA key, so they were full re-runs.
+ *
+ * The fix is ordering: expand dependents ONCE into a closure, then partition the
+ * closure. These tests lock both halves — the closure is still complete, and the
+ * partition has no overlap.
+ */
+describe('shards partition the work', () => {
+  const GRAPH: AffectedPkg[] = [
+    { name: 'devkit', dir: 'packages/eslint-devkit', deps: [] },
+    { name: 'plugin-a', dir: 'packages/plugin-a', deps: ['devkit'] },
+    { name: 'plugin-b', dir: 'packages/plugin-b', deps: ['devkit'] },
+    { name: 'meta', dir: 'packages/meta', deps: ['plugin-a', 'plugin-b'] },
+    { name: 'docs', dir: 'apps/docs', deps: ['meta', 'vendor-external'] },
+    { name: 'unrelated', dir: 'packages/unrelated', deps: [] },
+  ];
+  const REV = reverseDeps(GRAPH);
+
+  it('reverseDeps ignores dependencies outside the workspace', () => {
+    // `vendor-external` is an npm dep, not a workspace. If it leaked into the
+    // graph, an unrelated registry package could drag the whole repo in.
+    expect([...REV.keys()].sort()).toEqual(['devkit', 'meta', 'plugin-a', 'plugin-b']);
+  });
+
+  it('expands transitively — a devkit change reaches docs', () => {
+    // Two hops: devkit -> plugin-a -> meta -> docs. A shallow (direct-only)
+    // expansion would stop at the plugins and silently skip docs.
+    expect([...expandDependents(['devkit'], REV)].sort()).toEqual([
+      'devkit', 'docs', 'meta', 'plugin-a', 'plugin-b',
+    ]);
+    expect(expandDependents(['devkit'], REV).has('unrelated')).toBe(false);
+  });
+
+  it('terminates on a dependency cycle', () => {
+    const cyclic = reverseDeps([
+      { name: 'x', dir: 'packages/x', deps: ['y'] },
+      { name: 'y', dir: 'packages/y', deps: ['x'] },
+    ]);
+    expect([...expandDependents(['x'], cyclic)].sort()).toEqual(['x', 'y']);
+  });
+
+  it('decideAffected returns the closure when given the graph', () => {
+    const d = decideAffected(['packages/eslint-devkit/src/index.ts'], GRAPH, REV);
+    expect(d.mode).toBe('some');
+    if (d.mode !== 'some') return;
+    // Every dependent is present — this is what makes a plain `--filter=<pkg>`
+    // safe. Drop the closure and the sharders would under-test.
+    expect([...d.names].sort()).toEqual(['devkit', 'docs', 'meta', 'plugin-a', 'plugin-b']);
+  });
+
+  it('bucketing the closure yields disjoint shards covering it exactly once', () => {
+    const d = decideAffected(['packages/eslint-devkit/src/index.ts'], GRAPH, REV);
+    if (d.mode !== 'some') throw new Error('expected some');
+    const sel = GRAPH.filter((p) => d.names.has(p.name)).map((p) => ({ ...p, cost: 1 }));
+    for (const n of [1, 3, 10]) {
+      const flat = bucket(sel, n).flat().map((p) => p.name);
+      expect(new Set(flat).size, `shardTotal=${n} duplicated a package across shards`).toBe(flat.length);
+      expect(flat.sort()).toEqual([...d.names].sort());
+    }
+  });
+
+  it('neither sharder uses turbo\'s `...<pkg>` dependent operator', () => {
+    // The direct lock on the bug. `--filter=...<pkg>` inside a per-shard command
+    // re-expands dependents on every shard, which is the duplication itself.
+    // Dependents belong in the closure above, not in the filter.
+    for (const f of ['ci-test-shard.mts', 'ci-build.mts']) {
+      const scriptsDir = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+      const src = fs.readFileSync(path.join(scriptsDir, f), 'utf8');
+      const offenders = src
+        .split('\n')
+        .filter((l) => /--filter=\$\{?\.\.\.|--filter=\.\.\./.test(l) && !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'));
+      expect(
+        offenders,
+        `${f} builds a turbo filter with the \`...\` dependent operator. That re-expands ` +
+          `dependents on EVERY shard, so the same packages run once per shard. Put them in ` +
+          `the affected closure (decideAffected + reverseDeps) and filter with a plain name.`,
+      ).toEqual([]);
+    }
   });
 });

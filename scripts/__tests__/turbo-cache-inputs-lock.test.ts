@@ -99,7 +99,6 @@ describe('turbo.json cache inputs', () => {
     const EXPECTED_EXCEPTIONS = new Set([
       'docs', 'eslint-plugin-conventions', 'eslint-plugin-modernization',
       'eslint-plugin-modularity', 'eslint-plugin-operability', 'eslint-plugin-reliability',
-      '@interlace/eslint-config',
     ]);
     for (const task of ['test', 'test:coverage'] as const) {
       expect(

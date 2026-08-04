@@ -35,6 +35,16 @@ function emittedJs(dir: string): string[] {
   return out;
 }
 
+// Written by scripts/ci-build.mts: the packages THIS runner built. Present
+// only in CI. Turning "dist is absent" from a silent skip into a hard failure
+// is the whole point — a sharded build means each runner legitimately holds a
+// subset, and without an expected list there is no way to tell a correct subset
+// apart from a build that silently produced nothing.
+const expectedPath = join(resolve(__dirname, '..'), '.ci-built-packages.json');
+const expected: string[] | null = existsSync(expectedPath)
+  ? (JSON.parse(readFileSync(expectedPath, 'utf-8')) as string[])
+  : null;
+
 const violations: Violation[] = [];
 const checked: string[] = [];
 
@@ -57,6 +67,30 @@ for (const dir of readdirSync(PACKAGES).sort()) {
 }
 
 console.log(`Checked runtime requires across ${checked.length} built package(s).\n`);
+
+if (expected) {
+  // Only packages that actually emit a dist/ are checkable; apps and private
+  // workspaces do not publish one. Intersect against what the build produced
+  // rather than demanding all of them.
+  const missing = expected.filter(
+    (name) =>
+      !checked.includes(name) &&
+      existsSync(join(PACKAGES, name.replace(/^@[^/]+\//, ''), 'package.json')),
+  );
+  if (missing.length > 0) {
+    console.error(
+      `::error::These packages were built by this shard but have no dist/package.json to verify:\n` +
+        missing.map((m) => `  - ${m}`).join('\n') +
+        `\nThe build did not emit what it claimed to. Refusing to report success.`,
+    );
+    process.exit(1);
+  }
+}
+
+if (checked.length === 0) {
+  console.error('::error::Verified 0 packages. This gate cannot pass without inspecting at least one built artifact.');
+  process.exit(1);
+}
 
 if (violations.length > 0) {
   for (const v of violations) {
