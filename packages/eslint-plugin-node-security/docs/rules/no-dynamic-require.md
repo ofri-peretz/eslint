@@ -75,7 +75,7 @@ const plugin = plugins[name];
 ```javascript
 {
   rules: {
-    'architecture/no-dynamic-require': 'warn'
+    'node-security/no-dynamic-require': 'warn'
   }
 }
 ```

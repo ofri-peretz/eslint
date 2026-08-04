@@ -89,17 +89,19 @@ Apply different rules to different file types:
 import browserSecurity from 'eslint-plugin-browser-security';
 import secureCoding from 'eslint-plugin-secure-coding';
 import jwt from 'eslint-plugin-jwt';
+import pg from 'eslint-plugin-pg';
 
 export default [
   browserSecurity.configs.recommended,
   secureCoding.configs.recommended,
   jwt.configs.recommended,
+  pg.configs.recommended,
 
   // Stricter rules for API routes
   {
     files: ['**/api/**/*.ts', '**/routes/**/*.ts'],
     rules: {
-      'secure-coding/no-sql-injection': 'error',
+      'pg/no-unsafe-query': 'error',
       'jwt/no-algorithm-none': 'error',
     },
   },

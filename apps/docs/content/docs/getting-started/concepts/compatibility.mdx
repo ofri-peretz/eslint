@@ -13,7 +13,7 @@ Interlace is published as ~37 npm packages (20 ESLint plugins + 11 MCP servers +
 Compatibility here covers three axes: **which lint engine** runs your rules (ESLint floor, Oxlint automated peer, Biome + TSC native on the roadmap), **which ESLint major** you're on, and **which Node version** the host requires.
 
 <Callout type="info" title="Last data refresh">
-  **2026-05-09** — npm download share refreshed weekly via `npm run stats:eslint-versions`. The numbers below come from a live npm-registry pull, not a marketing claim.
+  **2026-08-02** — npm download share refreshed weekly via `npm run stats:eslint-versions`. The numbers below come from a live npm-registry pull, not a marketing claim.
 </Callout>
 
 ---
@@ -22,15 +22,15 @@ Compatibility here covers three axes: **which lint engine** runs your rules (ESL
 
 | ESLint major | Weekly downloads | Share | Status |
 | :--- | ---: | ---: | :--- |
-| **v10** | 11.8M | 9.24% | ✅ Supported (forward-looking) |
-| **v9** | 76.9M | 60.4% | ✅ Supported (current default) |
-| **v8** | 30.9M | 24.3% | ✅ Supported (legacy active) |
-| v7 and older | 7.7M | 6.1% | ❌ Unsupported (EOL) |
+| **v10** | 23.6M | 11.08% | ✅ Supported (forward-looking) |
+| **v9** | 109.1M | 51.13% | ✅ Supported (current default) |
+| **v8** | 60.3M | 28.29% | ✅ Supported (legacy active) |
+| v7 and older | 20.3M | 9.51% | ❌ Unsupported (EOL) |
 
 **All published packages declare** `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` **as a peer dependency.** No exceptions, no per-plugin variance.
 
-<Callout type="success" title="Together: ~94% of weekly ESLint downloads">
-  v8 + v9 + v10 cover **94% of every `npm install eslint` happening today**. If you're on a supported version, every Interlace plugin works.
+<Callout type="success" title="Together: ~90% of weekly ESLint downloads">
+  v8 + v9 + v10 cover **90.5% of every `npm install eslint` happening today**. If you're on a supported version, every Interlace plugin works.
 </Callout>
 
 ---
@@ -78,7 +78,7 @@ A major version is **supported** when either of these holds:
     title="The 20% gate"
     icon={<Activity />}
   >
-    The version has **≥20% of weekly downloads** on npm. v8 (24%) and v9 (60%) earn their place this way. Versions that drop below 20% on two consecutive refreshes become deprecation candidates.
+    The version has **≥20% of weekly downloads** on npm. v8 (28%) and v9 (51%) earn their place this way. Versions that drop below 20% on two consecutive refreshes become deprecation candidates.
   </Card>
   <Card
     title="Forward-looking exception"

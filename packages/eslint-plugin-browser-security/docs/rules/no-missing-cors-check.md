@@ -17,7 +17,7 @@ Detects missing CORS validation (wildcard CORS, missing origin check) that can a
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
-Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 

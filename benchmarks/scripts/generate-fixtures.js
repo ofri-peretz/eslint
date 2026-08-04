@@ -9,17 +9,36 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.join(__dirname, '..');
-const BENCHMARKS_DIR = path.join(ROOT_DIR, 'benchmarks');
+// Suites live in `suites/`, not `benchmarks/` — this pointed at a directory
+// that has never existed, so generated fixtures landed where run-benchmark.js
+// does not look and the synthetic suite could not be reproduced from source.
+const BENCHMARKS_DIR = path.join(ROOT_DIR, 'suites');
+
+// Generator key -> suite directory under `suites/`. Without this the `import`
+// generator writes to `suites/import/`, while the runner reads
+// `suites/ilb-perf-import/`.
+const SUITE_DIRS = {
+  import: 'ilb-perf-import',
+  shapes: 'ilb-perf-import',
+  security: 'ilb-cwe-corpus',
+};
 
 // Fixture generators for each benchmark type
 const GENERATORS = {
   import: generateImportFixtures,
   security: generateSecurityFixtures,
+  shapes: generateShapeFixtures,
 };
 
 const SIZES = {
   import: [1000, 5000, 10000],
   security: [1000, 5000],
+  // Graph *shapes*, not sizes. The `import` fixtures above are a single shape —
+  // a deep linear chain — which is the best case for a plugin that amortizes
+  // traversal across files. These cover the shapes that are worst for us, so
+  // "faster than the official plugin" can be claimed over a matrix rather than
+  // over one favourable graph. All hold file count at 5,000 except `single`.
+  shapes: ['chain-5000', 'wide-5000', 'flat-5000', 'dense-5000', 'single'],
 };
 
 // Parse CLI args
@@ -52,7 +71,7 @@ async function main() {
       continue;
     }
 
-    const fixturesDir = path.join(BENCHMARKS_DIR, name, 'fixtures');
+    const fixturesDir = path.join(BENCHMARKS_DIR, SUITE_DIRS[name] ?? name, 'fixtures');
     
     for (const size of sizes) {
       await generator(fixturesDir, size);
@@ -120,6 +139,109 @@ function generateBarrelFile(count) {
     exports.push(`export { helper${i}, util${i} } from './file${i}.js';`);
   }
   return exports.join('\n');
+}
+
+// ============ Shape Fixtures ============
+
+/**
+ * Emit one graph shape. `shape` is "<name>-<count>" (or "single").
+ *
+ * Each shape stresses a different part of cycle detection:
+ *
+ * - chain  — file[i] imports file[i-1] and file[i-5]; depth ~= count.
+ *            Same shape as the `import` fixtures. Deep traversal, heavily
+ *            amortizable. Our best case; included so the matrix has its
+ *            own baseline rather than referencing another suite.
+ * - wide   — 5,000 leaves over a 20-module core; depth 2. Nothing to
+ *            amortize, so per-file setup cost is the whole story.
+ * - flat   — no local imports at all. Pure per-file overhead with no graph;
+ *            isolates fixed cost from traversal cost.
+ * - dense  — 1,000 mutually-importing clusters of 5. Maximum number of
+ *            distinct SCCs, so the cycle-reporting path dominates.
+ * - single — one file importing one other. The cold editor-on-save case,
+ *            where a shared cache has exactly one file to amortize over.
+ */
+function generateShapeFixtures(baseDir, shape) {
+  const dir = path.join(baseDir, String(shape));
+  const [name, countRaw] = String(shape).split('-');
+  const count = countRaw ? parseInt(countRaw, 10) : 1;
+
+  console.log(`\n📁 Generating shape fixture: ${shape}...`);
+
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true });
+  }
+  fs.mkdirSync(dir, { recursive: true });
+
+  const startTime = Date.now();
+  const write = (i, body) =>
+    fs.writeFileSync(path.join(dir, `file${i}.js`), body);
+  const decl = i =>
+    `export const helper${i} = () => 'helper ${i}';\nexport default function main${i}() { return helper${i}(); }\n`;
+
+  switch (name) {
+    case 'chain':
+      for (let i = 0; i < count; i++) {
+        const imports = [];
+        if (i > 0) imports.push(`import { helper${i - 1} } from './file${i - 1}.js';`);
+        if (i > 5) imports.push(`import { helper${i - 5} } from './file${i - 5}.js';`);
+        write(i, `${imports.join('\n')}\n${decl(i)}`);
+      }
+      break;
+
+    case 'wide': {
+      // 20 core modules; every other file imports two of them. Depth 2.
+      const core = 20;
+      for (let i = 0; i < core; i++) write(i, decl(i));
+      for (let i = core; i < count; i++) {
+        const a = i % core;
+        // Offset is in [1, core-1] so b !== a. Importing the same module twice
+        // would re-declare the binding and turn the file into a parse error,
+        // which silently removes it from cycle analysis.
+        const b = (a + 1 + (i % (core - 1))) % core;
+        write(
+          i,
+          `import { helper${a} } from './file${a}.js';\n` +
+            `import { helper${b} } from './file${b}.js';\n${decl(i)}`
+        );
+      }
+      break;
+    }
+
+    case 'flat':
+      for (let i = 0; i < count; i++) {
+        write(i, `import { useState } from 'react';\n${decl(i)}`);
+      }
+      break;
+
+    case 'dense': {
+      // Clusters of 5, each a complete cycle: every member imports every other.
+      const clusterSize = 5;
+      for (let i = 0; i < count; i++) {
+        const base = Math.floor(i / clusterSize) * clusterSize;
+        const imports = [];
+        for (let j = base; j < base + clusterSize; j++) {
+          if (j !== i && j < count) {
+            imports.push(`import { helper${j} } from './file${j}.js';`);
+          }
+        }
+        write(i, `${imports.join('\n')}\n${decl(i)}`);
+      }
+      break;
+    }
+
+    case 'single':
+      write(0, `import { helper1 } from './file1.js';\n${decl(0)}`);
+      write(1, decl(1));
+      break;
+
+    default:
+      console.log(`❌ Unknown shape: ${name}`);
+      return;
+  }
+
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`✅ ${shape} in ${duration}s`);
 }
 
 // ============ Security Fixtures ============

@@ -439,29 +439,44 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
     /**
-     * True when a literal prefix rules out every dangerous name. `obj['node' +
-     * i]` always *begins* with `node`, so it can never equal `__proto__`,
-     * `prototype` or `constructor` whatever `i` holds — building keys by
-     * concatenating onto a fixed prefix is how real code namespaces them.
+     * True when a literal operand of a `+` pins one end of the key to text no
+     * dangerous name has.
      *
-     * Only a *prefix* counts. A trailing literal (`arr[a + 1]`) is deliberately
-     * not treated as safe: `+` between a value and a number still runs through
-     * string concatenation, and the rule's threat model covers unintended-key
-     * writes beyond the three prototype names.
+     * `obj['node' + i]` always *begins* with `node`; `array[offset + 1]` always
+     * *ends* with `1`. Neither can equal `__proto__`, `prototype` or
+     * `constructor` whatever the other operand holds — even under string
+     * concatenation, which is the case that makes `+` unprovable in general.
+     * `offset + 1` is the dominant real-world index form once the offset is a
+     * function parameter, where nothing about the declaration proves numeric.
+     *
+     * Scoped to `dangerousProperties`, so narrowing that option correctly
+     * narrows what counts as disqualifying.
      */
-    const hasSafeLiteralPrefix = (node: TSESTree.Node): boolean => {
+    const hasDisqualifyingLiteralAffix = (node: TSESTree.Node): boolean => {
       if (
         node.type !== AST_NODE_TYPES.BinaryExpression ||
         (node as TSESTree.BinaryExpression).operator !== '+'
       ) {
         return false;
       }
-      const left = (node as TSESTree.BinaryExpression).left as TSESTree.Node;
-      if (left.type !== AST_NODE_TYPES.Literal) return false;
-      const v = (left as TSESTree.Literal).value;
-      if (typeof v !== 'string' || v.length === 0) return false;
-      // Safe unless a dangerous name could still start with this prefix.
-      return !dangerousProperties.some((d) => d.startsWith(v));
+      const bin = node as TSESTree.BinaryExpression;
+      const literalText = (n: TSESTree.Node): string | null => {
+        if (n.type !== AST_NODE_TYPES.Literal) return null;
+        const v = (n as TSESTree.Literal).value;
+        if (typeof v !== 'string' && typeof v !== 'number') return null;
+        const s = String(v);
+        return s.length > 0 ? s : null;
+      };
+
+      const prefix = literalText(bin.left as TSESTree.Node);
+      if (prefix !== null && !dangerousProperties.some((d) => d.startsWith(prefix))) {
+        return true;
+      }
+      const suffix = literalText(bin.right as TSESTree.Node);
+      if (suffix !== null && !dangerousProperties.some((d) => d.endsWith(suffix))) {
+        return true;
+      }
+      return false;
     };
 
     /**
@@ -471,19 +486,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // SAFE: the key is provably numeric, or is namespaced behind a literal
       // prefix. Both are facts about the expression's shape, not its naming —
       // rename every identifier and the answer is unchanged.
-      if (isNumericKey(propertyNode) || hasSafeLiteralPrefix(propertyNode)) {
+      if (isNumericKey(propertyNode) || hasDisqualifyingLiteralAffix(propertyNode)) {
         return false;
       }
 
-      // SAFE: Common numeric index variable names (i, j, k, index, idx, n)
-      // These are typically loop counters for array access
-      if (propertyNode.type === AST_NODE_TYPES.Identifier) {
-        const name = propertyNode.name;
-        const numericIndexNames = new Set(['i', 'j', 'k', 'index', 'idx', 'n', 'len']);
-        if (numericIndexNames.has(name)) {
-          return false;
-        }
-      }
+      // NOTE: an allowlist of index-looking *names* (i, j, k, index, idx, n,
+      // len) used to sit here. It was unsound in both directions — it cleared
+      // `function put(o, k) { o[k] = 1 }`, where `k` is an untrusted parameter
+      // that merely looks like a counter, and it missed every real index not
+      // on the list (`offset`, `lastIndex`, `stride`). `isNumericKey` now
+      // resolves the identifier to its declaration instead, which covers the
+      // genuine counters and refuses the parameters.
 
       // SAFE: SCREAMING_SNAKE_CASE identifiers are TypeScript module-level constants
       // (e.g. PATH_METADATA, METHOD_METADATA, PARAMTYPES_METADATA, BRANCH_EFFECT).
@@ -801,11 +814,85 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           const name = (callee as TSESTree.Identifier).name;
           if (name === 'Number' || name === 'parseInt' || name === 'parseFloat') return true;
         }
+        // `Math.floor(...)` and friends always return a number — the standard
+        // way an index is computed (`const j = Math.floor(Math.random() * n)`).
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Math' &&
+          callee.property.type === AST_NODE_TYPES.Identifier
+        ) {
+          return true;
+        }
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
-        return isLoopCounterIdentifier(node as TSESTree.Identifier);
+        return isNumericIdentifier(node as TSESTree.Identifier);
       }
       return false;
+    };
+
+    /**
+     * True when the identifier provably holds a number — decided from how the
+     * variable is *defined*, not from what it is called.
+     *
+     * `values[valueStart + k]` is ordinary index arithmetic, but `+` between
+     * two identifiers proves nothing on its own. Resolving each operand to its
+     * declaration settles it: if every value the variable ever receives is a
+     * provably-numeric expression, the sum is numeric and the key can never be
+     * `__proto__` / `prototype` / `constructor`.
+     *
+     * Deliberately conservative — a parameter, a `for..of` binding, or a
+     * single non-numeric assignment anywhere leaves the variable unproven and
+     * the access still reports. That keeps the analysis on the safe side of
+     * the FP/FN trade: it can only ever fail to clear a safe access, never
+     * clear an unsafe one.
+     */
+    const numericVarCache = new WeakMap<object, boolean>();
+    const numericVarInProgress = new WeakSet<object>();
+
+    const isNumericIdentifier = (node: TSESTree.Identifier): boolean => {
+      if (isLoopCounterIdentifier(node)) return true;
+
+      const scope = context.sourceCode.getScope(node);
+      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      if (!variable || variable.defs.length === 0) return false;
+
+      const cached = numericVarCache.get(variable);
+      if (cached !== undefined) return cached;
+      // `let i = 0; i = i + 1;` refers to itself. Treat the in-flight variable
+      // as numeric so the cycle terminates on its other operands rather than
+      // recursing; if any of those are non-numeric the whole result is still
+      // false.
+      if (numericVarInProgress.has(variable)) return true;
+      numericVarInProgress.add(variable);
+
+      let result = false;
+      const def = variable.defs[0];
+      const declarator = def.node;
+      if (
+        declarator?.type === AST_NODE_TYPES.VariableDeclarator &&
+        declarator.init &&
+        // `for (const k of ...)` has no init and must not qualify.
+        declarator.parent?.type === AST_NODE_TYPES.VariableDeclaration
+      ) {
+        result = isNumericKey(declarator.init);
+        if (result) {
+          // Every later write has to stay numeric, or the variable can hold a
+          // string by the time the access runs.
+          for (const ref of variable.references) {
+            const written = ref.writeExpr;
+            if (!written || written === declarator.init) continue;
+            if (!isNumericKey(written)) {
+              result = false;
+              break;
+            }
+          }
+        }
+      }
+
+      numericVarInProgress.delete(variable);
+      numericVarCache.set(variable, result);
+      return result;
     };
 
     /**

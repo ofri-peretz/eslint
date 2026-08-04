@@ -55,6 +55,34 @@ describe('detect-object-injection', () => {
         { code: 'const v = arr[~mask];' },
         { code: 'const v = arr[base ** exp];' },
         { code: 'const v = arr[1 + 2];' },
+        // A literal on *either* side pins one end of the key to text no
+        // dangerous name has: "1..." on the left, "...1" on the right.
+        { code: 'obj[1 + userInput] = value;' },
+        { code: 'const v = array[offset + 1];' },
+        // ── Operands resolved through scope, not naming ──────────────────
+        // `+` between two identifiers proves nothing by itself; resolving each
+        // to a numeric declaration does. This is the ILB-Edge index-arithmetic
+        // class (`targetTrack.values[valueStart + k]`).
+        {
+          code: `
+            const valueStart = 0;
+            const k = 2;
+            const v = values[valueStart + k];
+          `,
+        },
+        {
+          code: `
+            let offset = 0;
+            offset = offset + 1;
+            buffer[offset] = 1;
+          `,
+        },
+        {
+          code: `
+            const stride = itemSize * 3;
+            const v = array[stride];
+          `,
+        },
         // ── Literal prefix rules out every dangerous name ────────────────
         // `'node' + i` always starts with "node", so it can never be
         // '__proto__' / 'prototype' / 'constructor'.
@@ -180,10 +208,39 @@ describe('detect-object-injection', () => {
           code: 'obj[prefix + userInput] = value;',
           errors: 1,
         },
+        // A boolean/null literal operand pins nothing useful — only string and
+        // numeric literals produce a predictable affix.
+        {
+          code: 'obj[true + userInput] = value;',
+          errors: 1,
+        },
         // A literal prefix a dangerous name could still start with
         // disqualifies nothing: '__proto__'.startsWith('__pro') is true.
         {
           code: "obj['__pro' + rest] = value;",
+          errors: 1,
+        },
+        // ── Scope resolution must not become an escape hatch ─────────────
+        // Numeric at declaration, attacker-controlled later: the variable is
+        // not numeric by the time the access runs, so it must still report.
+        {
+          code: `
+            let key = 0;
+            key = req.query.k;
+            obj[key] = value;
+          `,
+          errors: 1,
+        },
+        // A parameter has no declaration to inspect — the contract belongs to
+        // the caller, so it stays unproven and reported.
+        {
+          code: 'function put(o, k) { o[k] = 1; }',
+          errors: 1,
+        },
+        // A `for..of` binding over an arbitrary iterable is a string with no
+        // numeric declaration to prove anything, so it still reports.
+        {
+          code: 'for (const k of userSuppliedKeys) { dst[k] = 1; }',
           errors: 1,
         },
         // Non-arithmetic operators prove nothing about the key's type:
@@ -199,13 +256,6 @@ describe('detect-object-injection', () => {
         // An empty prefix constrains nothing — `'' + x` is just String(x).
         {
           code: "obj['' + userInput] = value;",
-          errors: 1,
-        },
-        // A *numeric* left operand is not a string prefix: `1 + x` can be
-        // "1__proto__"-ish only in theory, but more importantly it proves
-        // nothing about the tail, so the access stays reported.
-        {
-          code: 'obj[1 + userInput] = value;',
           errors: 1,
         },
         // Note: Rule may not detect all dynamic property access patterns
@@ -1175,7 +1225,7 @@ describe('detect-object-injection', () => {
         },
         // isNumericKey: BinaryExpression with non-numeric operator (+) — false arm of op check (branch 81)
         {
-          code: 'const x = arr[a + 1];',
+          code: 'const x = arr[a + b];',
           errors: [{ messageId: 'objectInjection' }],
         },
         // isNumericKey: CallExpression with non-Identifier callee (MemberExpression) — false arm (branch 84)

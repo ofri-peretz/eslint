@@ -6,10 +6,10 @@ pre-commit:
   parallel: true
   commands:
     oxlint:
-      glob: "packages/**/*.{ts,tsx,js,mjs}"
+      glob: 'packages/**/*.{ts,tsx,js,mjs}'
       run: npm run --silent oxlint
     markdown:
-      glob: "**/*.md"
+      glob: '**/*.md'
       run: npx --no markdownlint-cli2 {staged_files}
     shim-drift:
       run: npm run --silent oxlint:shims:check
@@ -24,7 +24,7 @@ pre-commit:
       # Validates that every ESLint rule lives in the correct plugin and that
       # its detection method matches its severity. Runs only when rule source
       # files or the manifest change. See scripts/ilb-plugin-scope-audit.ts.
-      glob: "{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}"
+      glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}'
       run: npm run --silent ilb:scope-audit
     tests-affected:
       run: |

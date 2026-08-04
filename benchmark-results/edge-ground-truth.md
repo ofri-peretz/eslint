@@ -1,6 +1,6 @@
 # ILB-Edge ground truth
 
-> 2759 findings across 276 pattern classes — 4 labelled, 272 awaiting a verdict.
+> 2539 findings across 274 pattern classes — 4 labelled, 270 awaiting a verdict.
 
 Every finding on the Edge corpus belongs to a pattern class, and every class
 carries a written verdict. **FP** classes are rule bugs and must reach zero;
@@ -10,18 +10,18 @@ published FP number.
 
 | Findings | Verdict | Class | Example |
 |---:|:--|:--|:--|
-| 1013 | ✅ TP | `secure-coding/detect-object-injection::obj[<ident>]` | `let animationMorphTargets = animationToMorphTargets[ name ];` |
-| 275 | 🔴 FP | `secure-coding/detect-object-injection::obj[<arithmetic expr>]` | `targetTrack.values[ valueStart + k ] -= referenceValue[ k ];` |
+| 1019 | ✅ TP | `secure-coding/detect-object-injection::obj[<ident>]` | `let animationMorphTargets = animationToMorphTargets[ name ];` |
 | 199 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<ident>.<field>]` | `indicesByUUID[ lastCachedObject.uuid ] = index;` |
 | 146 | ⚠️ unlabelled | `secure-coding/no-unchecked-loop-condition::for(...)` | `for ( let i = startIndex; i < endIndex; i ++ ) {` |
 | 110 | ⚠️ unlabelled | `node-security/no-timing-unsafe-compare::if(...)` | `if ( key === undefined ) return; // no data` |
 | 66 | 🔴 FP | `node-security/no-buffer-overread::obj[<arithmetic expr>]` | `const timeNext = times[ i + 1 ];` |
+| 55 | 🔴 FP | `secure-coding/detect-object-injection::obj[<arithmetic expr>]` | `value !== values[ offsetN + j ] ) {` |
 | 53 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::Set(...)` | `nodeData.subBuilds = nodeData.subBuilds  new Set();` |
-| 51 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<complex expr>]` | `indices[ arguments[ i ].uuid ] = i;` |
+| 50 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<complex expr>]` | `indices[ arguments[ i ].uuid ] = i;` |
 | 47 | 🔴 FP | `node-security/no-buffer-overread::obj[<ident>]` | `const time = times[ i ];` |
 | 38 | ⚠️ unlabelled | `secure-coding/no-redos-vulnerable-regex::other` | `const pattern = /^([\w-]*?)([\d]+)$/;` |
-| 31 | ⚠️ unlabelled | `secure-coding/detect-object-injection::other` | `(idToHashMap)[/** @type {ModuleId} */ (moduleId)] = hashLeng` |
 | 31 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::allocate(...)` | `allocate(5 + lengths.length * 4);` |
+| 30 | ⚠️ unlabelled | `secure-coding/detect-object-injection::other` | `(idToHashMap)[/** @type {ModuleId} */ (moduleId)] = hashLeng` |
 | 25 | ⚠️ unlabelled | `node-security/no-timing-unsafe-compare::obj[<ident>]` | `while ( key !== undefined && key[ valuePropertyName ] === un` |
 | 25 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[this.<field>]` | `this.targetObject[ this.propertyName ] = buffer[ offset ];` |
 | 24 | ⚠️ unlabelled | `secure-coding/no-unchecked-loop-condition::while(...)` | `while ( parameters.length < inputs.length ) {` |
@@ -46,7 +46,6 @@ published FP number.
 | 6 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::WeakTupleMap(...)` | `const memCache = new WeakTupleMap();` |
 | 6 | ⚠️ unlabelled | `secure-coding/no-improper-sanitization::if(...)` | `else if (_ifTwoCodePointsAreValidEscape(input, pos)) {` |
 | 6 | ⚠️ unlabelled | `node-security/no-unsafe-buffer-alloc::Buffer.allocUnsafe(...)` | `currentBuffer = Buffer.allocUnsafe(allocationScope.allocatio` |
-| 5 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<numeric literal>]` | `_tables.uint32View[ 0 ] = _tables.mantissaTable[ _tables.off` |
 | 5 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::this._copyBufferToTexture(...)` | `this._copyBufferToTexture( mipmap, textureData.texture, text` |
 | 5 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<string literal>]` | `definitions[process.env.${key}] = defValue;` |
 | 5 | ⚠️ unlabelled | `secure-coding/detect-object-injection::moduleGraph.getMeta(...)` | `return moduleGraph.getMeta(this)[idsSymbol]  this.ids;` |
@@ -67,6 +66,7 @@ published FP number.
 | 4 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::Buffer.from(...)` | `Buffer.from(` |
 | 4 | ⚠️ unlabelled | `secure-coding/detect-non-literal-regexp::other` | `const RE_HOSTNAME = /^(?:[^/.]+(?:\.[^/]+)+localhost)$/;` |
 | 3 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::Quaternion(...)` | `const referenceQuat = new Quaternion().fromArray( referenceV` |
+| 3 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<numeric literal>]` | `_tables.uint32View[ 0 ] = _tables.mantissaTable[ _tables.off` |
 | 3 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::obj[<numeric literal>]` | `a.fromBufferAttribute( positionAttr, indexArr[ 0 ] );` |
 | 3 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::_morphVec4.fromBufferAttribute(...)` | `_morphVec4.fromBufferAttribute( morphTarget, j );` |
 | 3 | ⚠️ unlabelled | `secure-coding/no-unchecked-loop-condition::obj[<ident>]` | `for ( const uuid of json.inputNodes[ property ] ) {` |
@@ -140,7 +140,6 @@ published FP number.
 | 2 | ⚠️ unlabelled | `node-security/detect-non-literal-fs-filename::fs.mkdir(...)` | `fs.mkdir(p, (err) => {` |
 | 2 | ⚠️ unlabelled | `node-security/detect-non-literal-fs-filename::fs.mkdirSync(...)` | `fs.mkdirSync(p);` |
 | 2 | ⚠️ unlabelled | `react-internal/no-production-logging::other` | `// eslint-disable-next-line react-internal/no-production-log` |
-| 1 | ⚠️ unlabelled | `secure-coding/detect-object-injection::obj[<update expr>]` | `result[ dstOffset ++ ] = values[ srcOffset + j ];` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::interpolant.resultBuffer.slice(...)` | `referenceValue = interpolant.resultBuffer.slice( startIndex,` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::referenceQuat.toArray(...)` | `referenceQuat.toArray( referenceValue );` |
 | 1 | ⚠️ unlabelled | `node-security/no-timing-unsafe-compare::for(...)` | `for ( let i = 0; i !== nKeys; i ++ ) {` |
@@ -236,7 +235,6 @@ published FP number.
 | 1 | ⚠️ unlabelled | `secure-coding/no-redos-vulnerable-regex::iu.test(...)` | `/^(?:[_\p{L}][_0-9\p{L}]*)?\(.*\)$/iu.test(trimmed)` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-redos-vulnerable-regex::contenthash(...)` | `const CONTENT_HASH_DETECT_REGEXP = /\[contenthash(?::\w+)?\]` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-redos-vulnerable-regex::id.replace(...)` | `return id.replace(/(^[.-][^a-z0-9_-])+/gi, "_");` |
-| 1 | ⚠️ unlabelled | `secure-coding/detect-object-injection::connection.getActiveState(...)` | `(modules)[i + 1] = connection.getActiveState(runtime);` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::skipConnectionBuffer.push(...)` | `skipConnectionBuffer.push([refModule, connections]);` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::skipBuffer.push(...)` | `skipBuffer.push(refModule);` |
 | 1 | ⚠️ unlabelled | `secure-coding/no-unlimited-resource-allocation::queueBuffer.push(...)` | `queueBuffer.push({` |
@@ -289,7 +287,7 @@ published FP number.
 
 ## Open FP classes (the work list)
 
-- **275× `secure-coding/detect-object-injection::obj[<arithmetic expr>]`** — Array index arithmetic over identifiers, e.g. `targetTrack.values[valueStart + k]`. The result is numeric in every real path, so it can never be '\_\_proto\_\_'/'prototype'/'constructor', but `+` between two identifiers is not provably numeric from the expression alone. Closing this needs the operands' numeric-ness resolved through scope analysis (the generalisation of the existing isLoopCounterIdentifier) rather than a suppression.
 - **66× `node-security/no-buffer-overread::obj[<arithmetic expr>]`** — Fires on plain JS array indexing such as `const timeNext = times[i + 1]` inside a bounded `for` loop in three.js KeyframeTrack. `times` is a keyframe Float32Array, not a Node Buffer — the only 'Buffer' identifiers in three.js are WebGPU GPUBuffer. A buffer-overread rule must key off an actual Buffer/DataView receiver before reporting.
+- **55× `secure-coding/detect-object-injection::obj[<arithmetic expr>]`** — Array index arithmetic over identifiers, e.g. `targetTrack.values[valueStart + k]`. The result is numeric in every real path, so it can never be '\_\_proto\_\_'/'prototype'/'constructor', but `+` between two identifiers is not provably numeric from the expression alone. Closing this needs the operands' numeric-ness resolved through scope analysis (the generalisation of the existing isLoopCounterIdentifier) rather than a suppression.
 - **47× `node-security/no-buffer-overread::obj[<ident>]`** — Same root cause as the arithmetic variant: `const time = times[i]` on an ordinary array. Reporting requires evidence the receiver is a Node Buffer or DataView; a bare identifier index on an unknown object is not that evidence.
 

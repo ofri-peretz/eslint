@@ -17,7 +17,7 @@ Detects clickjacking vulnerabilities and missing frame protections
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 💼 This rule is set to **error** in the `recommended` config.
 
@@ -87,7 +87,7 @@ const csp = "default-src 'self'"; // No frame protection!
 ```javascript
 {
   rules: {
-    'secure-coding/no-clickjacking': ['error', {
+    'browser-security/no-clickjacking': ['error', {
       trustedSources: ['self', 'https://trusted.com'],
       requireFrameBusting: true,
       detectTransparentOverlays: true
