@@ -34,7 +34,7 @@ const SAMPLE_RULE: RuleMeta = {
 
 describe('renderRulesTable', () => {
   it('emits the canonical 11-column schema with glyph for type-unaware', () => {
-    const out = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality');
+    const out = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality', 'eslint-plugin-reliability');
     expect(out.split('\n')[0]).toBe(
       '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |',
     );
@@ -49,8 +49,8 @@ describe('renderRulesTable', () => {
   it('uses 🟡 for optional and 🟠 for aware', () => {
     const refining: RuleMeta = { ...SAMPLE_RULE, typeStatus: 'optional' };
     const graceful: RuleMeta = { ...SAMPLE_RULE, typeStatus: 'aware' };
-    expect(renderRulesTable([refining], 'reliability', 'quality')).toContain('🟡');
-    expect(renderRulesTable([graceful], 'reliability', 'quality')).toContain('🟠');
+    expect(renderRulesTable([refining], 'reliability', 'quality', 'eslint-plugin-reliability')).toContain('🟡');
+    expect(renderRulesTable([graceful], 'reliability', 'quality', 'eslint-plugin-reliability')).toContain('🟠');
   });
 
   it('sorts rules alphabetically by name', () => {
@@ -59,7 +59,7 @@ describe('renderRulesTable', () => {
       { ...SAMPLE_RULE, name: 'apple' },
       { ...SAMPLE_RULE, name: 'mango' },
     ];
-    const out = renderRulesTable(rules, 'reliability', 'quality');
+    const out = renderRulesTable(rules, 'reliability', 'quality', 'eslint-plugin-reliability');
     const order = out.match(/\[(apple|mango|zebra)\]/g) ?? [];
     expect(order).toEqual(['[apple]', '[mango]', '[zebra]']);
   });
@@ -94,7 +94,7 @@ describe('spliceTable', () => {
 ## 📦 Compatibility
 `;
 
-  const NEW_TABLE = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality');
+  const NEW_TABLE = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality', 'eslint-plugin-reliability');
 
   it('on first run wraps the existing rule table with markers and leaves neighbors intact', () => {
     const { content, modified } = spliceTable(FIXTURE, NEW_TABLE);
