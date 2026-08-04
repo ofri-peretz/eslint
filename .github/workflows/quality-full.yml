@@ -103,7 +103,7 @@ jobs:
       # the scarce resource (measured on PR #356: 4640s queueing vs 1052s
       # computing, 82%), so spawning ten jobs for a one-package PR would cost
       # nine runner acquisitions to print "nothing to do".
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: steps.decide.outputs.run == 'true'
         with:
           fetch-depth: 50
@@ -193,7 +193,7 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.gate.outputs.shards) }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         # Enough history for `git merge-base HEAD origin/main` — the affected
         # filter needs it. Not fetch-depth: 0; a shallow window is plenty and
         # full history on this repo is real setup cost times ten shards.
@@ -233,9 +233,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
+          # 50, not 0. ci-build.mts only needs a merge-base with origin/main,
+          # which the gate and the test shards already resolve at this depth.
+          fetch-depth: 50
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
@@ -303,9 +305,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
+          # Typecheck reads no git history — it is `tsgo --build` over the
+          # solution plus `tsc --noEmit` for @interlace/ui, both file-based.
+          # A full clone was pure cost.
+          fetch-depth: 1
       - uses: ./.github/actions/setup
         with:
           turbo-cache-scope: typecheck
@@ -324,7 +329,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
