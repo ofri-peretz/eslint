@@ -421,7 +421,10 @@ modularity	no-mutable-exports	unaware
 sequelize-security	no-unsafe-query	unaware	
 mysql-security	no-unsafe-query	unaware	
 prisma-security	no-unsafe-query	unaware	
+prisma-security	no-unscoped-mutation	unaware	
 drizzle-security	no-unsafe-query	unaware	
+drizzle-security	no-unscoped-mutation	unaware	
 knex-security	no-unsafe-query	unaware	
+knex-security	no-unscoped-mutation	unaware	
 sqlite-security	no-unsafe-query	unaware	
 typeorm-security	no-unsafe-query	unaware	

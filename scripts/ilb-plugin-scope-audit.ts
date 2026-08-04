@@ -529,6 +529,25 @@ function main() {
   manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
   const findings = validateManifest(manifest);
 
+  /**
+   * Is the on-disk report the same as this one, ignoring `generatedAt`?
+   *
+   * Read-and-catch rather than `existsSync` + `readFileSync`, to avoid the
+   * file-system race CodeQL flags on the check-then-read shape.
+   */
+  function isReportUnchanged(filePath: string, next: Record<string, unknown>): boolean {
+    try {
+      const existing = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const a = { ...existing };
+      const b = { ...next };
+      Reflect.deleteProperty(a, 'generatedAt');
+      Reflect.deleteProperty(b, 'generatedAt');
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }
+
   // Build report
   const report = {
     generatedAt: new Date().toISOString(),
@@ -542,10 +561,20 @@ function main() {
     report.summary.byInvariant[f.invariant] = (report.summary.byInvariant[f.invariant] ?? 0) + 1;
   }
 
-  // Write report
+  // Write report — only when the findings actually changed.
+  //
+  // This file is tracked, and `generatedAt` moves on every run. Writing it
+  // unconditionally left the tree dirty after each audit, which is enough to
+  // make lefthook's stash/restore cycle conflict with itself: the hook writes
+  // the file, then fails to reapply the stash it took before the hook ran, and
+  // the commit aborts with "Unable to restore previously hidden unstaged
+  // changes". Skipping the no-op write removes that failure entirely.
   const benchDir = path.join(ROOT, 'benchmark-results');
   if (!fs.existsSync(benchDir)) fs.mkdirSync(benchDir, { recursive: true });
-  fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n');
+  const serialized = JSON.stringify(report, null, 2) + '\n';
+  if (!isReportUnchanged(REPORT_PATH, report)) {
+    fs.writeFileSync(REPORT_PATH, serialized);
+  }
 
   if (PRINT || findings.length > 0) {
     console.log('\n══════════════════════════════════════════════════════════════════════');

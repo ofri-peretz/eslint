@@ -10,3 +10,5 @@ export * from './mock-context';
 // Shared CWE-89 detector — see sql-injection-rule.ts for why it lives here
 // rather than inside a single database plugin.
 export * from './sql-injection-rule';
+// Shared CWE-284 detector — same reasoning, for unscoped bulk mutations.
+export * from './unscoped-mutation-rule';
