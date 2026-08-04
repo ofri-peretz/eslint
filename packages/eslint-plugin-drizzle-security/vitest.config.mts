@@ -37,7 +37,7 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'drizzle', color: 'blue' },
     pool: 'vmThreads',
