@@ -3092,12 +3092,11 @@
       "no-unsafe-query"
     ],
     "nestjs-security": [
-      "no-exposed-debug-endpoints",
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
       "no-permissive-cors",
       "no-res-bypass-serialization",
-      "require-class-validator",
+      "no-unguarded-swagger",
       "require-guards",
       "require-throttler",
       "require-validation-pipe-whitelist"

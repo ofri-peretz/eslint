@@ -68,6 +68,7 @@ crypto	no-hardcoded-crypto-key	unaware
 express-security	require-csrf-protection	unaware	
 express-security	require-express-body-parser-limits	unaware	
 express-security	no-cors-credentials-wildcard	unaware	
+express-security	no-exposed-debug-endpoints	unaware	
 express-security	no-graphql-introspection-production	unaware	
 express-security	require-rate-limiting	unaware	
 express-security	no-insecure-cookie-options	unaware	
@@ -160,6 +161,7 @@ jwt	require-issued-at	unaware
 lambda-security	require-timeout-handling	unaware	
 lambda-security	no-permissive-cors-response	unaware	
 lambda-security	no-missing-authorization-check	unaware	
+lambda-security	no-exposed-debug-endpoints	unaware	
 lambda-security	no-error-swallowing	unaware	
 lambda-security	no-user-controlled-requests	unaware	
 lambda-security	no-unbounded-batch-processing	unaware	
