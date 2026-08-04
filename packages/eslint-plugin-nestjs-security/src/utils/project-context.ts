@@ -163,11 +163,7 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
  * monorepo from silencing this one.
  */
 
-function analyzeSource(
-  source: string,
-  into: MutableContext,
-  file: string,
-): void {
+function analyzeSource(source: string, into: MutableContext): void {
   PROVIDE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
   let registersPipeViaToken = false;
@@ -225,7 +221,7 @@ export function scanProject(
   for (const file of collectConfigFiles(root, limits)) {
     const source = readFileSync(file);
     if (source !== null) {
-      analyzeSource(source, accumulator, file);
+      analyzeSource(source, accumulator);
     }
   }
 
