@@ -127,10 +127,11 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
-        # Shards don't need history — nothing here diffs against origin/main.
-        # Full history on a repo this size is pure setup cost per shard.
+        # Enough history for `git merge-base HEAD origin/main` — the affected
+        # filter needs it. Not fetch-depth: 0; a shallow window is plenty and
+        # full history on this repo is real setup cost times ten shards.
         with:
-          fetch-depth: 1
+          fetch-depth: 50
       - uses: ./.github/actions/setup
         with:
           # Own lineage per shard. Sharing one key made the shards race to save
@@ -138,6 +139,12 @@ jobs:
           # rest ran cold every time (`Cached: 0 cached, 8 total`).
           turbo-cache-scope: test-shard-${{ matrix.shard }}
       - name: Run shard ${{ matrix.shard }} of 10
+        env:
+          # Affected-filter on PRs; run the full battery everywhere else.
+          # A PR's blast radius is knowable from its diff, so most PRs test 1-2
+          # packages instead of 33. main / cron / dispatch have no meaningful
+          # base to diff against and are the backstop, so they run everything.
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
   build:

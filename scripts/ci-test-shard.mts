@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { decideAffected } from './lib/ci-shard-affected.mts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -134,22 +135,91 @@ if (untested.length > 0) {
   process.exit(1);
 }
 
-// Round-robin so slow packages spread across shards instead of clustering.
 const shards = bucket(testable, shardTotal);
-const mine = shards[shardIndex - 1];
+let mine = shards[shardIndex - 1];
+
+// ── Affected filtering ──────────────────────────────────────────────────────
+//
+// `--filter=...[origin/main]` was removed in #356 because turbo exits 0 when a
+// filter selects nothing, so a PR touching only workflows reported a green
+// tests check having run none. The speed it bought was real, though — most PRs
+// touch one or two packages out of 33.
+//
+// This brings the speed back without the silent pass, by making the empty case
+// explicit and guarded rather than implicit:
+//
+//   • A change to any global input (lockfile, turbo.json, base tsconfig, the
+//     setup action, this script) has unbounded blast radius -> run everything.
+//   • Otherwise run only packages whose own directory changed, plus everything
+//     downstream of them via turbo's `...` dependency operator.
+//   • If any file under packages/|apps/|tools/ changed but the affected set
+//     came out empty, that is a bug in this logic, not a fast path -> hard
+//     error. This is the invariant the old filter lacked.
+//   • Genuinely nothing testable changed -> say so explicitly and exit 0. That
+//     is a correct pass, and it is stated rather than inferred from silence.
+//
+// Set CI_TEST_SHARD_ALL=1 (main, cron, dispatch) to skip filtering entirely.
+const BASE_REF = process.env.CI_TEST_SHARD_BASE ?? 'origin/main';
+
+
+function changedFiles(): string[] | null {
+  try {
+    const base = execFileSync('git', ['merge-base', 'HEAD', BASE_REF], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+    const out = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: REPO_ROOT, encoding: 'utf8' });
+    return out.split('\n').filter(Boolean);
+  } catch {
+    // No base ref (shallow clone, detached main, fork) — cannot reason about
+    // the diff, so fall back to running everything rather than guessing.
+    return null;
+  }
+}
+
+const runAll = process.env.CI_TEST_SHARD_ALL === '1';
+let filterNote = 'all packages (filtering disabled)';
+
+if (!runAll) {
+  const changed = changedFiles();
+  const decision = decideAffected(changed, testable);
+  if (decision.mode === 'bug') {
+    console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
+    console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
+    process.exit(1);
+  } else if (decision.mode === 'none') {
+    console.log(`Nothing to test: ${decision.why} vs ${BASE_REF}.`);
+    console.log(`Changed files (${changed!.length}): ${changed!.slice(0, 10).join(', ')}${changed!.length > 10 ? ' …' : ''}`);
+    process.exit(0);
+  } else if (decision.mode === 'all') {
+    filterNote = `all packages (${decision.why})`;
+  } else {
+    // Keep this shard's slice of the affected set. Downstream dependents are
+    // picked up by turbo's `...<pkg>` operator when the filters are built.
+    mine = mine.filter((p) => decision.names.has(p.name));
+    filterNote = `${decision.names.size} package(s) affected vs ${BASE_REF}`;
+  }
+}
 
 const loads = shards.map((s) => s.reduce((n, p) => n + p.cost, 0));
-const myLoad = loads[shardIndex - 1];
+const bucketed = shards[shardIndex - 1];
 console.log(
-  `Shard ${shardIndex}/${shardTotal} — ${mine.length} of ${testable.length} packages, ` +
-    `${myLoad} of ${loads.reduce((a, b) => a + b, 0)} test files ` +
-    `(balance across shards: ${Math.min(...loads)}–${Math.max(...loads)} files)`,
+  `Shard ${shardIndex}/${shardTotal} — ${bucketed.length} of ${testable.length} packages bucketed, ` +
+    `${loads[shardIndex - 1]} of ${loads.reduce((a, b) => a + b, 0)} test files ` +
+    `(balance: ${Math.min(...loads)}–${Math.max(...loads)}) — running ${filterNote}`,
 );
 for (const p of mine) console.log(`  ${p.name}  (${p.task}, ${p.cost} test files)`);
 
-if (mine.length === 0) {
-  console.error(`::error::Shard ${shardIndex}/${shardTotal} selected 0 packages out of ${testable.length}. Reduce shardTotal — an empty shard reports success without testing anything.`);
+// An empty *bucket* means shardTotal exceeds what the partition can fill — a
+// job that reports success having tested nothing. Still fatal.
+if (bucketed.length === 0) {
+  console.error(`::error::Shard ${shardIndex}/${shardTotal} was allocated 0 packages out of ${testable.length}. Reduce shardTotal — an empty shard reports success without testing anything.`);
   process.exit(1);
+}
+
+// An empty *selection* after affected-filtering is legitimate and common: this
+// shard owns packages, none of which this PR touched. Distinct from the case
+// above, and stated explicitly rather than passing silently.
+if (mine.length === 0) {
+  console.log(`None of this shard's ${bucketed.length} packages were affected by this change — nothing to run.`);
+  process.exit(0);
 }
 
 // Plan-only mode: print the selection and exit, without running anything. Used
@@ -163,7 +233,13 @@ let failed = false;
 for (const task of ['test:coverage', 'test'] as const) {
   const group = mine.filter((p) => p.task === task);
   if (group.length === 0) continue;
-  const args = ['turbo', 'run', task, ...group.map((p) => `--filter=${p.name}`)];
+  // `...<pkg>` includes packages that depend on <pkg>. When filtering by
+  // affected, a change to eslint-devkit must still exercise the 20 plugins
+  // built on it — testing only the changed package would be the fast-but-wrong
+  // version of this optimisation. Turbo dedupes across filters, and dependents
+  // outside this shard's bucket are cheap replays from its warm cache.
+  const spec = runAll ? (p: Pkg) => `--filter=${p.name}` : (p: Pkg) => `--filter=...${p.name}`;
+  const args = ['turbo', 'run', task, ...group.map(spec)];
   console.log(`\n$ npx ${args.join(' ')}\n`);
   try {
     execFileSync('npx', args, { cwd: REPO_ROOT, stdio: 'inherit' });
