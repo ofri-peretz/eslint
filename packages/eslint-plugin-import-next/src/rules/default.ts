@@ -12,7 +12,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
-import ts from 'typescript';
+import { loadTypeScript } from '../utils/typescript-peer';
 
 type MessageIds = 'noDefaultExport';
 
@@ -65,9 +65,11 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
         if (moduleSymbol && !symbol) {
           // If module symbol exists but we can't resolve the default import symbol,
           // check if exports contain "default"
+          const tsModule = loadTypeScript();
           if (
+            tsModule &&
             moduleSymbol.exports &&
-            !moduleSymbol.exports.has(ts.InternalSymbolName.Default)
+            !moduleSymbol.exports.has(tsModule.InternalSymbolName.Default)
           ) {
             context.report({
               node,

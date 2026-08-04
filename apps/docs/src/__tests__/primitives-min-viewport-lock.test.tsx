@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Primitives MIN_VIEWPORT + client/server contract lock.
  *
