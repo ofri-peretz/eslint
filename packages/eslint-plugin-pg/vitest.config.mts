@@ -47,7 +47,7 @@ export default defineConfig({
       '**/coverage/**',
       'src/__compatibility__/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'pg', color: 'cyan' },
     // Use vmThreads for better performance

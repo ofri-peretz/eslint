@@ -23,7 +23,7 @@ export default defineConfig({
     // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
     // run that backs `turbo run test` and the lefthook pre-commit hook.
     exclude: [...configDefaults.exclude, 'src/__compatibility__/**'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {
       enabled: true,

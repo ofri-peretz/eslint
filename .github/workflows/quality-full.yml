@@ -47,7 +47,19 @@ permissions:
   contents: read
 
 env:
-  TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
+  # No `--filter=...[origin/main]`. It made both Build and Unit Tests report a
+  # green check having executed nothing whenever a PR touched only workflows,
+  # root docs or configs — observed on PR #355:
+  #
+  #   • Packages in scope: //
+  #   • Running test in 1 packages
+  #   WARNING  No tasks were executed as part of this run.
+  #   Tasks:    0 successful, 0 total
+  #
+  # Turbo's own cache already provides the affected-detection speedup: packages
+  # whose inputs are unchanged replay from cache instead of rebuilding. The
+  # filter bought nothing the cache wasn't already giving us, and cost the
+  # correctness of every check that used it.
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
@@ -81,19 +93,34 @@ jobs:
             echo "::notice::Draft PR without \`run-full-ci\` label — skipping heavy quality gates. Mark ready-for-review or apply the label to promote."
           fi
 
+  # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
+  # so splitting inside a package would make each shard an uncacheable slice of
+  # the same task and trade one cache hit for N cold runs. Whole-package buckets
+  # keep every `<pkg>#test:coverage` a normal, cacheable Turbo task.
+  #
+  # Runs `test:coverage` so the `thresholds: { lines: 100, ... }` each package
+  # already declares in its vitest.config.mts are enforced on PRs. Previously
+  # only plain `test` ran here, so those thresholds were dead config on every
+  # PR and only took effect in the push-to-main codecov job.
   test:
-    name: Unit Tests (Turbo)
+    name: Unit Tests + Coverage (${{ matrix.shard }}/4)
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    strategy:
+      # Don't cancel sibling shards on the first failure — one broken package
+      # shouldn't hide the results of the other three.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - name: Run tests via Turbo
-        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
+      - name: Run shard ${{ matrix.shard }} of 4
+        run: npx tsx scripts/ci-test-shard.mts ${{ matrix.shard }} 4
 
       # Workspace-level locks: keep slow, unbounded work out of the lefthook
       # pre-commit path — SDK compat suites excluded from the default run (and
@@ -116,11 +143,12 @@ jobs:
         with:
           next-cache: "true"
       - name: Build via Turbo
-        run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+        run: npx turbo run build
       # Runs here because the artifacts already exist — no extra runner, no
       # second build, ~5s. Reads the emitted JS for module-scope requires of
-      # packages the manifest does not guarantee are installed. On PRs the build
-      # is filtered to affected packages, so this checks those; main builds all.
+      # packages the manifest does not guarantee are installed. Every package is
+      # built now (the affected filter was removed — see the env block), so this
+      # checks all of them on PRs as well as main.
       # The exhaustive `npm run verify:published-install` actually installs each
       # tarball and is ~2.5min — too slow for every push, kept for pre-release.
       - name: Runtime dependency check (published packages must be requirable)
@@ -128,6 +156,10 @@ jobs:
       # The detection logic itself is locked: a plausible tidy-up of either the
       # eager-require pattern or the optional-peer rule silently disarms the gate
       # above, so both mutations are asserted against.
+      #
+      # `npm run test:scripts` in quality.yml now also covers this file (it runs
+      # the whole scripts/__tests__ directory). Kept here anyway: this step sits
+      # next to the gate it protects, and the duplicate run costs ~5s.
       - name: Lock the runtime-dependency detection logic
         run: npm run test:runtime-deps
       # Every rule schema sets additionalProperties: false, so an option that
@@ -209,8 +241,8 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
-            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test:coverage\`, 4 shards, all packages |"
+            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (all packages, cache-accelerated) |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo ""

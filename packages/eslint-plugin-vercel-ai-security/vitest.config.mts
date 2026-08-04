@@ -44,7 +44,7 @@ export default defineConfig({
       '**/coverage/**',
       'src/__compatibility__/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'vercel-ai-security', color: 'cyan' },
     pool: 'vmThreads',
