@@ -2212,6 +2212,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Prisma's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit) with Prisma bulk-mutation sinks."
     }
   },
   "eslint-plugin-drizzle-security": {
@@ -2220,6 +2226,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Drizzle's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit); Drizzle scope arrives as a chained .where()."
     }
   },
   "eslint-plugin-knex-security": {
@@ -2228,6 +2240,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Knex's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit); Knex scope arrives as a chained .where*() clause."
     }
   },
   "eslint-plugin-sqlite-security": {

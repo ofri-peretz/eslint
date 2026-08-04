@@ -230,3 +230,65 @@ describe('no vitest config may pass with zero tests', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Shard assignment must be a pure function of the repo, never of the diff.
+ *
+ * The Turbo cache is scoped per shard (turbo-cache-scope: build-N /
+ * test-shard-N). If a package's shard number moved with the affected set —
+ * shard 2 on one PR, shard 3 on the next — its cached output would sit in a
+ * lineage the next run never restores, and every build would miss while still
+ * reporting "cache enabled". Silent, and it looks like sharding simply not
+ * helping.
+ *
+ * Both sharders therefore bucket the FULL package list and intersect with the
+ * affected set afterwards. Bucketing the affected subset directly is the bug.
+ */
+describe('shard assignment does not depend on the affected set', () => {
+  const scriptsDir = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+
+  it('bucket() is called on the full universe, not the filtered selection', () => {
+    // ci-build.mts: must bucket `all` (every workspace), then filter by name.
+    const build = fs.readFileSync(path.join(scriptsDir, 'ci-build.mts'), 'utf8');
+    expect(
+      /bucket\(\s*ordered\s*,/.test(build) && /\[\.\.\.all\]\.sort/.test(build),
+      'ci-build.mts must sort/bucket `all`, not `selected` — bucketing the affected ' +
+        'subset makes a package hop shards between PRs and invalidates its per-shard ' +
+        'Turbo cache lineage on every run.',
+    ).toBe(true);
+    expect(
+      /bucket\(\s*\[?\.*selected/.test(build),
+      'ci-build.mts appears to bucket `selected` directly — see above.',
+    ).toBe(false);
+
+    // ci-test-shard.mts: buckets `testable` (all test-bearing packages) before
+    // the affected filter is applied to `mine`.
+    const test = fs.readFileSync(path.join(scriptsDir, 'ci-test-shard.mts'), 'utf8');
+    expect(
+      /bucket\(testable,\s*shardTotal\)/.test(test),
+      'ci-test-shard.mts must bucket `testable` (the full universe) — see above.',
+    ).toBe(true);
+  });
+
+  it('bucketing is deterministic for a fixed input', () => {
+    const items = Array.from({ length: 20 }, (_, i) => ({ name: `p${i}`, cost: (i * 7) % 13 }));
+    const a = bucket([...items].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name)), 4);
+    const b = bucket([...items].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name)), 4);
+    expect(a.map((s) => s.map((p) => p.name))).toEqual(b.map((s) => s.map((p) => p.name)));
+  });
+
+  it('removing an unaffected package from the SELECTION does not move others', () => {
+    // The property the lock above enforces structurally, asserted behaviourally:
+    // bucket the full list once, then filter — every survivor keeps its shard.
+    const all = Array.from({ length: 20 }, (_, i) => ({ name: `p${i}`, cost: (i * 7) % 13 }));
+    const ordered = [...all].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name));
+    const buckets = bucket(ordered, 4);
+    const shardOf = (n: string) => buckets.findIndex((b) => b.some((p) => p.name === n));
+
+    const affected = new Set(['p3', 'p11', 'p17']);
+    const filtered = buckets.map((b) => b.filter((p) => affected.has(p.name)));
+    for (const n of affected) {
+      expect(filtered.findIndex((b) => b.some((p) => p.name === n)), `${n} moved shard`).toBe(shardOf(n));
+    }
+  });
+});

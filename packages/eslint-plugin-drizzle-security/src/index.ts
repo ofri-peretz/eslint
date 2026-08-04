@@ -15,12 +15,14 @@
 import { TSESLint } from '@interlace/eslint-devkit';
 
 import { noUnsafeQuery } from './rules/no-unsafe-query';
+import { noUnscopedMutation } from './rules/no-unscoped-mutation';
 
 /**
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   'no-unsafe-query': noUnsafeQuery,
+  'no-unscoped-mutation': noUnscopedMutation,
 };
 
 /**
@@ -75,4 +77,4 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
  */
 export default plugin;
 
-export type { AllDrizzleRulesOptions, NoUnsafeQueryOptions } from './types/index';
+export type { AllDrizzleRulesOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';

@@ -58,7 +58,7 @@
     },
     {
       "name": "eslint-plugin-drizzle-security",
-      "rules": 1,
+      "rules": 2,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
@@ -66,8 +66,16 @@
     },
     {
       "name": "eslint-plugin-knex-security",
-      "rules": 1,
+      "rules": 2,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.1.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-prisma-security",
+      "rules": 2,
+      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
       "published": true
@@ -76,14 +84,6 @@
       "name": "eslint-plugin-mysql-security",
       "rules": 1,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-prisma-security",
-      "rules": 1,
-      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
       "published": true
@@ -209,8 +209,8 @@
       "published": true
     }
   ],
-  "totalRules": 484,
+  "totalRules": 487,
   "totalPlugins": 26,
   "allPluginsCount": 26,
-  "generatedAt": "2026-08-04T02:32:45.468Z"
+  "generatedAt": "2026-08-04"
 }

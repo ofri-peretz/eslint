@@ -220,9 +220,15 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
-          # Build gets its own lineage so it stops competing with the test
-          # shards for one cache key on main.
-          turbo-cache-scope: build
+          # One lineage PER BUILD SHARD. A single `build` scope meant all four
+          # shards raced to save the same key on main — GitHub reserves a cache
+          # key atomically, so the first writer won and the other three were
+          # discarded, banking one shard's outputs per commit. Because shard
+          # assignment is a pure function of the repo (see ci-build.mts), shard
+          # N always holds the same packages, so its lineage is exactly the set
+          # it needs. The `turbo-<os>-build-` restore-key prefix still lets a
+          # shard fall back to any sibling's lineage on a cold start.
+          turbo-cache-scope: build-${{ matrix.shard }}
       - name: Build via Turbo (affected only)
         env:
           # Same affected filter as the test shards; main / cron / dispatch

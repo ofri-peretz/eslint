@@ -144,17 +144,24 @@ if (sharded) {
     console.error(`::error::CI_BUILD_SHARD=${shardIndex} out of range 1..${shardTotal}.`);
     process.exit(2);
   }
-  // Sorted heaviest-first (name asc as tiebreak) so bucketing is both effective
-  // and deterministic — a package keeps its shard, and therefore its Turbo
-  // cache key, run to run.
-  const ordered = [...selected].sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+  // Bucket the FULL workspace list, then intersect with `selected` — never
+  // bucket the affected subset directly.
+  //
+  // Shard assignment has to depend only on the repo, not on the diff. The
+  // Turbo cache is scoped per shard (turbo-cache-scope: build-N), so if a
+  // package's shard number moved with the affected set — shard 2 on one PR,
+  // shard 3 on the next — its cached output would sit in a lineage the next
+  // run never restores, and every build would miss. Bucketing the whole list
+  // keeps `package -> shard` a pure function of the repo.
+  const ordered = [...all].sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
   const buckets = bucket(ordered, shardTotal);
-  mine = buckets[shardIndex - 1];
+  const selectedNames = new Set(selected.map((p) => p.name));
+  mine = buckets[shardIndex - 1].filter((p) => selectedNames.has(p.name));
   const loads = buckets.map((b) => b.reduce((n, p) => n + p.cost, 0));
   console.log(
-    `Build shard ${shardIndex}/${shardTotal} — ${mine.length} of ${selected.length} packages, ` +
-      `${loads[shardIndex - 1]} of ${loads.reduce((a, b) => a + b, 0)} source files ` +
-      `(balance: ${Math.min(...loads)}-${Math.max(...loads)}) — ${note}`,
+    `Build shard ${shardIndex}/${shardTotal} — ${mine.length} of ${selected.length} selected ` +
+      `(${buckets[shardIndex - 1].length} bucketed, balance ${Math.min(...loads)}-${Math.max(...loads)} ` +
+      `source files across the full ${all.length}-package partition) — ${note}`,
   );
 } else {
   console.log(`Building ${note}.`);

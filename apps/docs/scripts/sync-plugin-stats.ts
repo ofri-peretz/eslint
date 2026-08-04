@@ -229,7 +229,15 @@ async function main() {
     totalRules, // Reflects only published rules for backward compatibility
     totalPlugins: stats.filter(p => p.published).length, // Reflects only published plugins
     allPluginsCount: stats.length,
-    generatedAt: new Date().toISOString(),
+    // Date, not wall-clock. `writeIfChanged` below already suppresses no-op
+    // rewrites, but it cannot help when the data legitimately changes on two
+    // branches at once: each writes its own millisecond timestamp, and the
+    // merge then conflicts on a line carrying no information. Whoever wins
+    // that conflict with `--theirs` silently takes the other branch's rule
+    // counts too, which is how a 487-rule manifest quietly became 484.
+    // Day granularity makes same-day regenerations byte-identical, so the
+    // file only conflicts when the actual data disagrees.
+    generatedAt: new Date().toISOString().slice(0, 10),
   };
 
   const numbers = buildNumbersManifest(stats, output.generatedAt);
