@@ -113,6 +113,16 @@ runs:
     # size stays ~one full cache split N ways, so this does not eat the 10 GB
     # quota. PRs restore read-only and save nothing, so extra shards cost zero
     # quota there.
+    #
+    # The `-build-` fallback is load-bearing. `test`/`test:coverage` dependsOn
+    # `build`, so a shard has to materialize its packages' whole dependency
+    # chain. Its own lineage only holds its own outputs, so without a fallback
+    # into the Build job's lineage every shard cold-builds the graph
+    # independently — ten shards, ten copies of eslint-devkit and friends,
+    # which looks exactly like "the sharding does nothing". Build's lineage
+    # holds dist for every package, so falling back to it lets a shard replay
+    # dependencies instead of rebuilding them. Order matters: own scope first
+    # (most specific), then build, then the legacy `shared` name.
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
@@ -121,6 +131,7 @@ runs:
         key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
           turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
           turbo-${{ runner.os }}-shared-
 
     - name: Turbo cache (main — restore + save)
@@ -131,6 +142,7 @@ runs:
         key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
           turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
           turbo-${{ runner.os }}-shared-
 
     # Turborepo never evicts its own local cache — it is append-only, so a
