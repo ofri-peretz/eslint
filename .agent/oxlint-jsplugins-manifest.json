@@ -1,12 +1,27 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-04",
-  "totalPlugins": 26,
-  "totalRules": 436,
-  "oxlintCompatible": 436,
+  "totalPlugins": 32,
+  "totalRules": 466,
+  "oxlintCompatible": 466,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "short": "anthropic-security",
+      "shim": "tools/oxlint-plugins/interlace-anthropic-security.cjs",
+      "subpath": "eslint-plugin-anthropic-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-browser-security",
       "short": "browser-security",
@@ -584,6 +599,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-gemini-security",
+      "short": "gemini-security",
+      "shim": "tools/oxlint-plugins/interlace-gemini-security.cjs",
+      "subpath": "eslint-plugin-gemini-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-disabled-safety-settings",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "import-next",
       "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
@@ -1010,6 +1040,93 @@
       ]
     },
     {
+      "package": "eslint-plugin-jwt-security",
+      "short": "jwt-security",
+      "shim": "tools/oxlint-plugins/interlace-jwt-security.cjs",
+      "subpath": "eslint-plugin-jwt-security/oxlint",
+      "ruleCount": 13,
+      "rules": [
+        {
+          "name": "no-algorithm-confusion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-algorithm-none",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-decode-without-verify",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-secret",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-payload",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-timestamp-manipulation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-secret",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-algorithm-whitelist",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-audience-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-expiration",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-issued-at",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-issuer-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-max-age",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-knex-security",
       "short": "knex-security",
       "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
@@ -1198,6 +1315,21 @@
         },
         {
           "name": "maintainability/no-unreadable-iife",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "mcp-sdk-security",
+      "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
+      "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "require-tool-input-schema",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1691,6 +1823,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-openai-security",
+      "short": "openai-security",
+      "shim": "tools/oxlint-plugins/interlace-openai-security.cjs",
+      "subpath": "eslint-plugin-openai-security/oxlint",
+      "ruleCount": 1,
+      "rules": [
+        {
+          "name": "no-browser-api-key-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-operability",
       "short": "operability",
       "shim": "tools/oxlint-plugins/interlace-operability.cjs",
@@ -1740,6 +1887,93 @@
       "short": "pg",
       "shim": "tools/oxlint-plugins/interlace-pg.cjs",
       "subpath": "eslint-plugin-pg/oxlint",
+      "ruleCount": 13,
+      "rules": [
+        {
+          "name": "check-query-params",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-batch-insert-loop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-floating-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-ssl",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-client-release",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-select-all",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-transaction-on-pool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-copy-from",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-search-path",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-pool-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prevent-double-release",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "postgresql-security",
+      "shim": "tools/oxlint-plugins/interlace-postgresql-security.cjs",
+      "subpath": "eslint-plugin-postgresql-security/oxlint",
       "ruleCount": 13,
       "rules": [
         {

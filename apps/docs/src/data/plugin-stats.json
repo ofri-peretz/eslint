@@ -49,11 +49,43 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-postgresql-security",
+      "rules": 15,
+      "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
+      "category": "security",
+      "version": "1.5.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-jwt",
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
       "version": "2.2.10",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-jwt-security",
+      "rules": 13,
+      "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
+      "category": "security",
+      "version": "2.3.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-mcp-sdk-security",
+      "rules": 4,
+      "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, so handlers never run on unvalidated client-supplied arguments",
+      "category": "security",
+      "version": "0.1.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-anthropic-security",
+      "rules": 2,
+      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
+      "category": "security",
+      "version": "0.1.0",
       "published": true
     },
     {
@@ -65,11 +97,27 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-gemini-security",
+      "rules": 2,
+      "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, which disables harm filtering",
+      "category": "security",
+      "version": "0.1.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-knex-security",
       "rules": 2,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-openai-security",
+      "rules": 2,
+      "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
+      "category": "security",
+      "version": "0.1.0",
       "published": true
     },
     {
@@ -209,8 +257,8 @@
       "published": true
     }
   ],
-  "totalRules": 487,
-  "totalPlugins": 26,
-  "allPluginsCount": 26,
+  "totalRules": 525,
+  "totalPlugins": 32,
+  "allPluginsCount": 32,
   "generatedAt": "2026-08-04"
 }
