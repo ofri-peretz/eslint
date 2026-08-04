@@ -72,6 +72,8 @@ jobs:
       shards: ${{ steps.matrix.outputs.shards }}
       any: ${{ steps.matrix.outputs.any }}
       heavy: ${{ steps.matrix.outputs.heavy }}
+      build_shards: ${{ steps.build_matrix.outputs.build_shards }}
+      build_any: ${{ steps.build_matrix.outputs.build_any }}
     steps:
       - id: decide
         env:
@@ -123,6 +125,18 @@ jobs:
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: node scripts/ci-test-shard.mts --matrix 10
 
+      # Same treatment for the build matrix. It was static [1,2,3,4], so on a
+      # PR touching one plugin all four shards acquired a runner, paid ~24s of
+      # checkout+setup, found they owned nothing affected, and exited 0. Warm,
+      # a build shard does 2-8s of real work inside a ~24s job — the overhead
+      # IS the job — so dispatching empty ones is pure waste of the scarce
+      # resource. Measured on a true single-plugin diff: 1 of 4 shards.
+      - id: build_matrix
+        if: steps.decide.outputs.run == 'true'
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+        run: node scripts/ci-build.mts --matrix 4
+
       # The matrix step is now a single point of failure for the whole test
       # gate: if it dies, `shards` is empty, every shard's `if` evaluates false,
       # all of them skip, and the aggregate gate still goes green. That is the
@@ -133,10 +147,15 @@ jobs:
         env:
           SHARDS: ${{ steps.matrix.outputs.shards }}
           HEAVY: ${{ steps.matrix.outputs.heavy }}
+          BUILD_SHARDS: ${{ steps.build_matrix.outputs.build_shards }}
         run: |
           set -euo pipefail
           if [ -z "$SHARDS" ] || [ -z "$HEAVY" ]; then
             echo "::error::The shard matrix step produced no output. Every test shard would skip while this gate reported success. Failing instead."
+            exit 1
+          fi
+          if [ -z "$BUILD_SHARDS" ]; then
+            echo "::error::The build shard matrix is empty. scripts/ci-build.mts --matrix did not emit build_shards, so every build shard would silently skip while this gate reported success."
             exit 1
           fi
           echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
@@ -205,12 +224,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: ${{ fromJSON(needs.gate.outputs.build_shards) }}
     # `heavy` is false when the diff touches no package source at all — a
     # root README, a workflow comment, a .md doc. Nothing those can break is
     # observable to build/typecheck/portability, and markdown still gets linted
     # by quality.yml, which is a separate workflow and always runs.
-    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.build_any == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -330,6 +349,7 @@ jobs:
           # testable package is affected.
           HEAVY: ${{ needs.gate.outputs.heavy }}
           ANY: ${{ needs.gate.outputs.any }}
+          BUILD_ANY: ${{ needs.gate.outputs.build_any }}
         run: |
           set -euo pipefail
           icon() {
@@ -370,7 +390,8 @@ jobs:
           [ "$ANY"   = "true" ] && test_skip_ok=false || test_skip_ok=true
           [ "$HEAVY" = "true" ] && heavy_skip_ok=false || heavy_skip_ok=true
           check "$R_TEST"        "$test_skip_ok"  "Unit tests"       || all_pass=false
-          check "$R_BUILD"       "$heavy_skip_ok" "Build"            || all_pass=false
+          [ "$BUILD_ANY" = "true" ] && build_skip_ok=false || build_skip_ok=true
+          check "$R_BUILD"       "$build_skip_ok" "Build"            || all_pass=false
           check "$R_TYPECHECK"   "$heavy_skip_ok" "Typecheck"        || all_pass=false
           check "$R_PORTABILITY" "$heavy_skip_ok" "Rule portability" || all_pass=false
           if $all_pass; then
