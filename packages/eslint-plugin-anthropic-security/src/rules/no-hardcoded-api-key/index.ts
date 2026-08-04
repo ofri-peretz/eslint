@@ -21,7 +21,13 @@ const ANTHROPIC_MODULE_PREFIX = '@anthropic-ai/';
 
 const KEY_PROPS = new Set(['apiKey', 'authToken']);
 
-type KeyVerdict = 'literal' | 'safe' | 'unreadable';
+/**
+ * `literal` carries the property name that actually held the credential.
+ * `KEY_PROPS` has two members, so a bare verdict left the caller guessing —
+ * and it guessed `apiKey`, naming the wrong option whenever `authToken` was
+ * the offender.
+ */
+type KeyVerdict = { kind: 'literal'; prop: string } | { kind: 'safe' } | { kind: 'unreadable' };
 
 /**
  * Whether the client options literal carries an inline credential.
@@ -33,18 +39,23 @@ type KeyVerdict = 'literal' | 'safe' | 'unreadable';
  */
 function readCredential(options: TSESTree.ObjectExpression): KeyVerdict {
   for (const prop of options.properties) {
-    if (prop.type === 'SpreadElement') return 'unreadable';
+    if (prop.type === 'SpreadElement') return { kind: 'unreadable' };
     if (prop.computed) continue;
-    const isCredential =
-      (prop.key.type === 'Identifier' && KEY_PROPS.has(prop.key.name)) ||
-      (prop.key.type === 'Literal' && KEY_PROPS.has(String(prop.key.value)));
-    if (!isCredential) continue;
-    if (prop.value.type !== 'Literal') return 'safe';
+    const name =
+      prop.key.type === 'Identifier'
+        ? prop.key.name
+        : prop.key.type === 'Literal'
+          ? String(prop.key.value)
+          : null;
+    if (name === null || !KEY_PROPS.has(name)) continue;
+    if (prop.value.type !== 'Literal') return { kind: 'safe' };
     // An empty string is a placeholder, not a credential.
-    if (typeof prop.value.value === 'string' && prop.value.value.length > 0) return 'literal';
-    return 'safe';
+    if (typeof prop.value.value === 'string' && prop.value.value.length > 0) {
+      return { kind: 'literal', prop: name };
+    }
+    return { kind: 'safe' };
   }
-  return 'safe';
+  return { kind: 'safe' };
 }
 
 export const noHardcodedApiKey = createRule<[], MessageIds>({
@@ -82,8 +93,9 @@ export const noHardcodedApiKey = createRule<[], MessageIds>({
     function inspect(node: TSESTree.Node, args: TSESTree.CallExpressionArgument[]): void {
       const options = args[0];
       if (options?.type !== 'ObjectExpression') return;
-      if (readCredential(options) === 'literal') {
-        candidates.push({ node, prop: 'apiKey' });
+      const verdict = readCredential(options);
+      if (verdict.kind === 'literal') {
+        candidates.push({ node, prop: verdict.prop });
       }
     }
 
