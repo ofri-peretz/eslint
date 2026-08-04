@@ -32,6 +32,11 @@ const context = {
   hasGlobalAuthGuard: false,
   hasGlobalValidationPipe: false,
   hasGlobalThrottler: false,
+  // The rule under test only reports where guards are the mechanism in use, so
+  // this fixture has to look like a project that authenticates. Leaving it
+  // false made every case here silent for the wrong reason.
+  hasAuthMechanism: true,
+  authMiddlewareTargets: new Set<string>(),
 };
 
 vi.mock('./utils/project-context', () => ({
@@ -45,8 +50,9 @@ const linter = new Linter({ configType: 'flat' });
 beforeEach(() => {
   context.hasGlobalAuthGuard = false;
   context.hasGlobalValidationPipe = false;
-  context.hasWhitelistingValidationPipe = false;
   context.hasGlobalThrottler = false;
+  context.hasAuthMechanism = true;
+  context.authMiddlewareTargets = new Set<string>();
 });
 
 function run(rule: string, code: string, options?: unknown): number {
@@ -140,4 +146,90 @@ describe('rules consult the project scan for global registrations', () => {
       expect(run(rule, code, { [option]: false })).toBeGreaterThan(0);
     },
   );
+});
+
+describe('require-guards consults the rest of the project scan', () => {
+  it('stays silent in a project with no authentication system at all', () => {
+    // Nothing to forget a guard on. 38 of 94 corpus1 findings were NestJS's
+    // own tutorial samples, none of which authenticate anything.
+    context.hasAuthMechanism = false;
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('cats')
+          class CatsController {
+            @Get('all')
+            findAll() {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('stays silent for a controller an auth middleware covers, by class name', () => {
+    context.authMiddlewareTargets = new Set(['CatsController']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('cats')
+          class CatsController {
+            @Get('all')
+            findAll() {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('stays silent when the middleware prefix matches the controller path', () => {
+    context.authMiddlewareTargets = new Set(['cats']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('cats')
+          class CatsController {
+            @Get('all')
+            findAll() {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('falls back to the handler path when the controller carries no prefix', () => {
+    // realworld/src/user/user.controller.ts — `@Controller()` with `@Get('user')`,
+    // and user.module.ts applies AuthMiddleware to `{path: 'user'}`.
+    context.authMiddlewareTargets = new Set(['user']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller()
+          class UserController {
+            @Get('user')
+            findMe(@User() user) {}
+          }
+        `,
+      ),
+    ).toBe(0);
+  });
+
+  it('still reports a controller the middleware does not cover', () => {
+    context.authMiddlewareTargets = new Set(['articles']);
+    expect(
+      run(
+        'require-guards',
+        `
+          @Controller('admin')
+          class AdminController {
+            @Delete(':id')
+            remove(@Param('id') id) {}
+          }
+        `,
+      ),
+    ).toBeGreaterThan(0);
+  });
 });

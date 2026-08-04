@@ -5,6 +5,110 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-guards', requireGuards, {
   valid: [
+    // amplication/.../auth.controller.ts — an auth entry point is qualified by
+    // its provider (`auth0Login`) or its transport (`githubCallback`), and
+    // exact-name matching reported every one of them.
+    `
+      @Controller('/')
+      class AuthController {
+        @Get(AUTH_LOGIN_PATH)
+        auth0Login(@Req() request) {}
+      }
+    `,
+    `
+      @Controller('/')
+      class AuthController {
+        @Get(CALLBACK_PATH)
+        githubCallback(@Req() request) {}
+      }
+    `,
+    // …including the verb-suffixed twin that distinguishes two handlers on one
+    // path. `post` says nothing about the route; `callback` does.
+    `
+      @Controller('/')
+      class AuthController {
+        @Post(CALLBACK_PATH)
+        auth0CallbackPost(@Req() request) {}
+      }
+    `,
+    // brocoders-bp/src/auth/auth.controller.ts:78 — the path splits into two
+    // segments and the term is the hyphenated one. The handler name here
+    // carries none of it, so the path join is the only thing that can clear it.
+    `
+      @Controller('auth')
+      class AuthController {
+        @Post('reset/password')
+        handle(@Body() dto) {}
+      }
+    `,
+    // …and the same shape via the handler name.
+    `
+      @Controller('auth')
+      class AuthController {
+        @Post('reset/password')
+        resetPassword(@Body() dto) {}
+      }
+    `,
+    // truthy/src/app.controller.ts and nestjs-starter-rest-api: the same
+    // scaffold spelled with an empty string, which means what the bare form
+    // means.
+    `
+      @Controller('')
+      class AppController {
+        @Get('')
+        index() {}
+      }
+    `,
+    // squareboat-nestjs-boilerplate/.../auth.controller.ts:68 and
+    // truthy/.../auth.controller.ts:101 — recovery and activation are entry
+    // points, and the corpus spells recovery in four different word orders.
+    `
+      @Controller('auth')
+      class AuthController {
+        @Post('request-password-reset')
+        requestPasswordReset(@Body() dto) {}
+      }
+    `,
+    `
+      @Controller('auth')
+      class AuthController {
+        @Post('recovery')
+        passwordReset(@Body() dto) {}
+      }
+    `,
+    `
+      @Controller('auth')
+      class AuthController {
+        @Get('/auth/activate-account')
+        activateAccount(@Query() q) {}
+      }
+    `,
+    // The `nest new` scaffold, kept and never guarded: `GET /` with no path on
+    // either decorator and nothing to identify a resource.
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        getHello(): string { return this.appService.getHello(); }
+      }
+    `,
+    // amplication/.../subscription.controller.ts:20 — a webhook that
+    // authenticates by comparing a shared secret. There is no guard because
+    // there is no NestJS-side identity to establish.
+    `
+      @Controller('subscriptions')
+      class SubscriptionController {
+        @Post('updateStatus')
+        async updateStatus(@Headers('stigg-webhooks-secret') secret, @Body() dto) {}
+      }
+    `,
+    `
+      @Controller('hooks')
+      class HooksController {
+        @Post('github')
+        async onPush(@Headers('x-hub-signature-256') signature, @Body() body) {}
+      }
+    `,
     // nest-hackathon-starter: a liveness probe on the root controller. There is
     // no path segment to match and the handler is `healthCheck`, so exact-name
     // matching missed it and a void-returning probe was reported at CRITICAL.
@@ -290,6 +394,126 @@ ruleTester.run('require-guards', requireGuards, {
     },
   ],
   invalid: [
+    // Each narrowing above is bounded. A public term in the middle of a name
+    // is a resource listing, not an entry point.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('audit')
+          getLoginHistory(@Query() q) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // The scaffold exemption needs all of: no path either side, no parameter,
+    // and GET. Any one of them missing puts the route back in scope.
+    {
+      code: `
+        @Controller()
+        class AppController {
+          @Post()
+          create(@Body() dto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      code: `
+        @Controller()
+        class AppController {
+          @Get()
+          findAll(@Query() query) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      code: `
+        @Controller('reports')
+        class ReportsController {
+          @Get()
+          listReports() {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // "password" alone is not recovery — this manages stored credentials and
+    // is exactly the route that must be guarded.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('passwords')
+          listPasswords(@Query() q) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A non-empty path on an otherwise scaffold-shaped route.
+    {
+      code: `
+        @Controller('')
+        class AppController {
+          @Get('users')
+          index() {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A header parameter only clears the route when it carries a credential.
+    {
+      code: `
+        @Controller('hooks')
+        class HooksController {
+          @Post('github')
+          onPush(@Headers('content-type') type, @Body() body) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A non-literal header name proves nothing about what is read.
+    {
+      code: `
+        @Controller('hooks')
+        class HooksController {
+          @Post('github')
+          onPush(@Headers(HEADER) value, @Body() body) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A decorated parameter that is not @Headers at all.
+    {
+      code: `
+        @Controller('hooks')
+        class HooksController {
+          @Post('github')
+          onPush(@Body('signature') signature) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // awesome-nest-bp/src/modules/post/post.controller.ts:82 and :94 — three
+    // siblings carry @Auth and these two do not. This is the finding the rule
+    // exists for, and no narrowing above may swallow it.
+    {
+      code: `
+        @Controller('posts')
+        class PostController {
+          @Get(':id')
+          @Auth([])
+          getPost(@Param('id') id) {}
+
+          @Put(':id')
+          updatePost(@Param('id') id, @Body() dto) {}
+
+          @Delete(':id')
+          deletePost(@Param('id') id) {}
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }, { messageId: 'missingGuards' }],
+    },
     // A health *token* inside a longer name is not a probe. `deleteHealthRecord`
     // is a destructive route that happens to mention health, and tokenising
     // must not exempt it.
@@ -444,6 +668,8 @@ ruleTester.run('require-guards', requireGuards, {
       errors: [{ messageId: 'missingGuards' }],
     },
     // Non-literal and non-string path arguments yield no segments to match.
+    // They must not be mistaken for *no path*: the scaffold exemption tests
+    // whether the decorator has an argument, not whether one could be read.
     {
       code: `
         @Controller(ADMIN_PREFIX)

@@ -148,7 +148,60 @@ const DEFAULT_PUBLIC_ROUTES = [
   'public',
   'oauth',
   'sso',
+  // An activation link is the same concept as `verify` and `confirm`, which
+  // are already here: a one-time URL mailed to someone who is by definition
+  // not logged in yet.
+  'activate',
+  'activation',
+  'activate-account',
 ];
+
+/**
+ * Password recovery, whatever order the words come in.
+ *
+ * The corpus spells it `reset-password`, `password-reset`,
+ * `request-password-reset`, `forgotPassword` and `resetPassword`. Enumerating
+ * those is how a name list grows to eight entries and then to eight lists;
+ * matching the combination instead costs one predicate and does not grow.
+ */
+const RECOVERY_VERB: ReadonlySet<string> = new Set([
+  'reset',
+  'forgot',
+  'forgotten',
+  'request',
+  'recover',
+  'recovery',
+]);
+
+function isPasswordRecovery(tokens: readonly string[]): boolean {
+  return (
+    tokens.includes('password') && tokens.some((t) => RECOVERY_VERB.has(t))
+  );
+}
+
+/** Verb suffixes used to tell two handlers on one path apart. */
+const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+]);
+
+/**
+ * Header names that carry a credential.
+ *
+ * A webhook receiver authenticates by comparing a shared secret or an HMAC
+ * signature inside the handler — the mechanism Stripe, GitHub and Stigg all
+ * document. There is no guard because there is no NestJS-side identity to
+ * establish, and demanding one is wrong. Real instance:
+ * `amplication/.../subscription.controller.ts:20` reads
+ * `@Headers("stigg-webhooks-secret")` and throws on a mismatch.
+ */
+const CREDENTIAL_HEADER =
+  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature/i;
 
 /** A route handler awaiting resolution once every class in the file is known. */
 interface Pending {
@@ -292,7 +345,16 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     // The registration lives in another file, so this is the only way a
     // single-file rule can know it exists. Without it the rule reports every
     // route of a correctly-configured application.
-    if (detectGlobalGuards && getProjectContext(context).hasGlobalAuthGuard) {
+    const project = detectGlobalGuards ? getProjectContext(context) : null;
+    if (project?.hasGlobalAuthGuard) {
+      return {};
+    }
+
+    // "You forgot a guard here" only means something where guards are the
+    // mechanism. A project with no authentication at all has no guard to
+    // forget, and reporting each of its routes teaches the reader to disable
+    // the rule. 38 of 94 corpus1 findings were NestJS's own tutorial samples.
+    if (project !== null && !project.hasAuthMechanism) {
       return {};
     }
 
@@ -396,6 +458,30 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       const handler = rawHandler.toLowerCase();
       if (publicSet.has(handler)) return true;
 
+      // An auth entry point is rarely named exactly `login`. It is qualified by
+      // its provider or transport — `auth0Login`, `githubCallback`,
+      // `awsMarketplaceCallback`, `auth0Logout` — and exact matching reported
+      // every one of them. Match the trailing token, and the trailing pair
+      // joined, so hyphenated terms (`reset-password`) also land.
+      //
+      // Only the tail counts: `getLoginHistory` reads as a resource listing and
+      // stays in scope, while `<qualifier>Login` reads as the entry point
+      // itself. Unlike the probe check this is not restricted to GET — a login
+      // or a callback is normally a POST.
+      // A trailing HTTP verb disambiguates two handlers on one path
+      // (`auth0Callback` / `auth0CallbackPost`); it says nothing about what the
+      // route is, so it must not hide the term that does.
+      const parts = tokenize(rawHandler).filter(
+        (token, index, all) =>
+          index < all.length - 1 || !HTTP_VERB_SUFFIX.has(token),
+      );
+      const last = parts[parts.length - 1];
+      const pair = parts.slice(-2).join('-');
+      if ((last !== undefined && publicSet.has(last)) || publicSet.has(pair)) {
+        return true;
+      }
+      if (isPasswordRecovery(parts)) return true;
+
       // A liveness/readiness probe is often only identifiable by its handler
       // name: `@Controller('')` + `@Get()` + `healthCheck()` has no path
       // segment to match, and exact-name matching reported a void-returning
@@ -415,18 +501,139 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
 
       // Both decorators are guaranteed present: the caller already established
       // this is a route handler on a @Controller class.
-      const segments = [
-        ...pathSegments(
+      const controllerPath = pathSegments(
+        findDecorator(cls.decorators, 'Controller') as TSESTree.Decorator,
+      );
+      const routePath = pathSegments(
+        findDecorator(
+          node.decorators,
+          HTTP_METHOD_DECORATORS,
+        ) as TSESTree.Decorator,
+      );
+      const segments = [...controllerPath, ...routePath];
+
+      // `@Controller()` + `@Get()` + a handler taking nothing is the route
+      // `GET /` — the controller `nest new` writes, kept and never guarded.
+      // It names no resource, accepts no input and identifies nothing to
+      // authorize. 15 of 32 remaining corpus1 findings were this exact shape,
+      // nine of them the same generated file across one monorepo's services.
+      //
+      // Every clause is load-bearing: a path argument, a parameter or a
+      // non-GET method all take it out of this exemption, so a real collection
+      // read cannot slip through by being mounted at the root.
+      //
+      // The test is *no argument*, not *no resolvable segment*. Those are not
+      // the same thing: `@Controller(ADMIN_PREFIX)` yields no segments because
+      // the path is a constant this rule cannot read, and treating unreadable
+      // as absent would exempt every route behind a constant prefix.
+      if (
+        hasNoPathArgument(
           findDecorator(cls.decorators, 'Controller') as TSESTree.Decorator,
-        ),
-        ...pathSegments(
+        ) &&
+        hasNoPathArgument(
           findDecorator(
             node.decorators,
             HTTP_METHOD_DECORATORS,
           ) as TSESTree.Decorator,
-        ),
-      ];
-      return segments.some((seg) => publicSet.has(seg));
+        ) &&
+        node.value.params.length === 0 &&
+        routeMethodName(node) === 'Get'
+      ) {
+        return true;
+      }
+      if (segments.some((seg) => publicSet.has(seg))) return true;
+
+      // `@Post('reset/password')` splits into two segments, and the term the
+      // list carries is the hyphenated `reset-password`. Join adjacent
+      // segments so the path spelling and the option spelling can meet.
+      for (let i = 0; i + 1 < segments.length; i++) {
+        if (publicSet.has(`${segments[i]}-${segments[i + 1]}`)) return true;
+      }
+      // …and the path can spell recovery as one hyphenated segment
+      // (`request-password-reset`) or as several.
+      return isPasswordRecovery(segments.flatMap((seg) => seg.split('-')));
+    }
+
+    /**
+     * Whether an authentication middleware covers this controller.
+     *
+     * `configure(consumer).apply(AuthMiddleware).forRoutes(...)` authenticates
+     * without a single `@UseGuards`, and the registration is in the module
+     * file. The match is at controller granularity — which routes of the
+     * controller the middleware covers is decided by path patterns this rule
+     * cannot line up statically, so it abstains for the controller rather than
+     * accusing routes it cannot clear.
+     */
+    function middlewareProtected(
+      node: TSESTree.MethodDefinition,
+      cls: ClassNode,
+    ): boolean {
+      const targets = project?.authMiddlewareTargets;
+      if (targets === undefined || targets.size === 0) return false;
+      if (cls.id?.name !== undefined && targets.has(cls.id.name)) return true;
+      // The prefix can live on either decorator. RealWorld's UserController is
+      // `@Controller()` with `@Get('user')` on the handler, so keying only on
+      // the controller prefix left its middleware-protected routes reported.
+      const prefix =
+        pathSegments(
+          findDecorator(cls.decorators, 'Controller') as TSESTree.Decorator,
+        )[0] ??
+        pathSegments(
+          findDecorator(
+            node.decorators,
+            HTTP_METHOD_DECORATORS,
+          ) as TSESTree.Decorator,
+        )[0];
+      return prefix !== undefined && targets.has(prefix);
+    }
+
+    /**
+     * Whether a route decorator carries no path at all — `@Controller` bare,
+     * `@Controller()` or `@Get()`. Both decorators are guaranteed present: the
+     * caller already established this is a route handler on a controller.
+     */
+    function hasNoPathArgument(decorator: TSESTree.Decorator): boolean {
+      const call = decoratorCall(decorator);
+      if (call === null || call.arguments.length === 0) return true;
+      // `@Controller('')` and `@Get('')` mean exactly what the bare forms mean.
+      // Two corpus2 boilerplates spell the scaffold that way, and counting an
+      // empty string as a path left them reported.
+      return call.arguments.every(
+        (arg) =>
+          arg.type === AST_NODE_TYPES.Literal &&
+          typeof arg.value === 'string' &&
+          arg.value.replace(/\//g, '') === '',
+      );
+    }
+
+    /**
+     * Whether the handler takes a credential header as a parameter.
+     *
+     * Presence of the parameter is the evidence. Proving the value is then
+     * *compared* would mean following it through the body, and a handler that
+     * asks for `@Headers('x-hub-signature')` and ignores it is not a shape that
+     * occurs — whereas reporting every signature-verified webhook does.
+     */
+    function verifiesCredentialHeader(
+      node: TSESTree.MethodDefinition,
+    ): boolean {
+      return node.value.params.some((param) =>
+        // Every parameter node in the union carries `decorators`; a route
+        // handler is never a constructor, so the parameter-property arm that
+        // would make it optional cannot occur here.
+        param.decorators.some((decorator) => {
+          const call = decoratorCall(decorator);
+          if (call === null || expressionName(call.callee) !== 'Headers') {
+            return false;
+          }
+          return call.arguments.some(
+            (arg) =>
+              arg.type === AST_NODE_TYPES.Literal &&
+              typeof arg.value === 'string' &&
+              CREDENTIAL_HEADER.test(arg.value),
+          );
+        }),
+      );
     }
 
     function registerClass(node: ClassNode): void {
@@ -445,6 +652,8 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         if (!isRouteHandler(node)) return;
         if (hasPublicDecorator(node.decorators)) return;
         if (hasPublicDecorator(cls.decorators)) return;
+        if (middlewareProtected(node, cls)) return;
+        if (verifiesCredentialHeader(node)) return;
 
         pending.push({ node, cls, name: memberName(node) ?? '<anonymous>' });
       },

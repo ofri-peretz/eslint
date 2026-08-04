@@ -105,12 +105,14 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
       `,
       errors: [{ messageId: 'missingGuards', data: { name: 'findAll' } }],
     },
-    // Bare @Controller identifier decorator (Identifier arm of hasControllerDecorator)
+    // Bare @Controller identifier decorator (Identifier arm of hasControllerDecorator).
+    // The route needs a path: bare `@Controller` + `@Get()` + a handler taking
+    // nothing is the `GET /` scaffold, which the rule now exempts.
     {
       code: `
         @Controller
         class BareController {
-          @Get()
+          @Get('all')
           findAll() {}
         }
       `,

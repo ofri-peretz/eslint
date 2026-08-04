@@ -275,3 +275,180 @@ describe('getProjectContext', () => {
  * that only gets tested on its success path is one that can loop or
  * over-conclude on real input.
  */
+
+describe('scanProject — is there an authentication system at all', () => {
+  it('reads an auth dependency out of the manifest', () => {
+    const root = mkdtempSync(join(tmpdir(), 'nestjs-security-'));
+    roots.push(root);
+    writeFileSync(
+      join(root, 'package.json'),
+      '{"name":"app","dependencies":{"@nestjs/passport":"^10.0.0"}}',
+    );
+    expect(scanProject(root).hasAuthMechanism).toBe(true);
+  });
+
+  it('is false when the manifest declares nothing and no module names a guard', () => {
+    // nest-framework/sample/06-mongoose and 23 of its siblings. Reporting each
+    // of their routes produced 38 of 94 corpus findings and taught nothing.
+    const root = makeProject({
+      'src/cats/cats.module.ts': `
+        @Module({ controllers: [CatsController], providers: [CatsService] })
+        export class CatsModule {}
+      `,
+    });
+    expect(scanProject(root).hasAuthMechanism).toBe(false);
+  });
+
+  it('is true for a hand-rolled guard with no dependency to declare', () => {
+    // The clause that stops this from switching the rule off: a project can
+    // authenticate with a CanActivate of its own and import nothing.
+    const root = makeProject({
+      'src/app.module.ts': `
+        @Module({ providers: [{ provide: APP_GUARD, useClass: MyGuard }] })
+        export class AppModule {}
+      `,
+    });
+    expect(scanProject(root).hasAuthMechanism).toBe(true);
+  });
+
+  it('is true when the manifest cannot be read', () => {
+    // "Cannot tell" must never read as "no auth here".
+    const root = mkdtempSync(join(tmpdir(), 'nestjs-security-'));
+    roots.push(root);
+    expect(scanProject(root).hasAuthMechanism).toBe(true);
+  });
+});
+
+describe('scanProject — authentication middleware', () => {
+  it('collects the routes an auth middleware is applied to', () => {
+    // realworld/src/article/article.module.ts — the canonical RealWorld
+    // implementation authenticates entirely through middleware, so a
+    // guard-only rule reported all 20 of its routes.
+    const root = makeProject({
+      'src/article/article.module.ts': `
+        export class ArticleModule implements NestModule {
+          public configure(consumer: MiddlewareConsumer) {
+            consumer
+              .apply(AuthMiddleware)
+              .forRoutes(
+                {path: 'articles/feed', method: RequestMethod.GET},
+                {path: 'articles/:slug', method: RequestMethod.DELETE},
+              );
+          }
+        }
+      `,
+    });
+    const targets = scanProject(root).authMiddlewareTargets;
+    expect(targets.has('articles')).toBe(true);
+    // Only the first segment is kept: a parameterised tail cannot be lined up
+    // with a @Controller prefix plus a handler path.
+    expect(targets.has('articles/:slug')).toBe(false);
+  });
+
+  it('accepts a controller passed by class reference', () => {
+    const root = makeProject({
+      'src/user/user.module.ts': `
+        export class UserModule implements NestModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer.apply(JwtMiddleware).forRoutes(UserController);
+          }
+        }
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.has('UserController')).toBe(
+      true,
+    );
+  });
+
+  it('ignores middleware that is not authentication', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        export class AppModule implements NestModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer.apply(LoggerMiddleware).forRoutes('cats');
+            consumer.apply(AuthLoggerMiddleware).forRoutes('dogs');
+          }
+        }
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+
+  it('ignores an apply() with no forRoutes chained to it', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        export class AppModule implements NestModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer.apply(AuthMiddleware);
+            const unrelated = compute();
+            other.forRoutes('cats');
+          }
+        }
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+
+  it('ignores a forRoutes whose argument list never closes', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        consumer.apply(AuthMiddleware).forRoutes('cats'
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+
+  it('ignores a path that is only a route parameter', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        export class AppModule implements NestModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer.apply(AuthMiddleware).forRoutes({path: ':id', method: RequestMethod.ALL});
+          }
+        }
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+});
+
+describe('scanProject — the shapes forRoutes resolution must survive', () => {
+  it('ignores an auth middleware in a file with no forRoutes at all', () => {
+    const root = makeProject({
+      'src/app.module.ts': `
+        export class AppModule {
+          configure(consumer) { consumer.apply(AuthMiddleware); }
+        }
+      `,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+
+  it('ignores a forRoutes that is referenced but never called', () => {
+    const root = makeProject({
+      'src/app.module.ts': `consumer.apply(AuthMiddleware).forRoutes`,
+    });
+    expect(scanProject(root).authMiddlewareTargets.size).toBe(0);
+  });
+});
+
+describe('scanProject — nested calls inside forRoutes', () => {
+  it('reads a forRoutes argument list containing a nested call', () => {
+    // The paren counter earns its place here: stopping at the first `)` would
+    // truncate the list after `routesOf(...)` and lose every later entry.
+    const root = makeProject({
+      'src/app.module.ts': `
+        export class AppModule implements NestModule {
+          configure(consumer: MiddlewareConsumer) {
+            consumer
+              .apply(AuthMiddleware)
+              .forRoutes(routesOf(AdminController), {path: 'billing', method: RequestMethod.ALL});
+          }
+        }
+      `,
+    });
+    const targets = scanProject(root).authMiddlewareTargets;
+    expect(targets.has('AdminController')).toBe(true);
+    expect(targets.has('billing')).toBe(true);
+  });
+});

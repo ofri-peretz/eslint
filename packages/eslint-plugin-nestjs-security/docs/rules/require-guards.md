@@ -119,73 +119,140 @@ class UsersController {
 
 ## Recognized Skip Decorators
 
-- `@Public()`
-- `@SkipAuth()`
-- `@AllowAnonymous()`
-- `@NoAuth()`
+- `@Public()`, `@IsPublic()`
+- `@SkipAuth()`, `@NoAuth()`
+- `@AllowAnonymous()`, `@Anonymous()`
+- `@HealthCheck()` — `@nestjs/terminus` marks a probe, which is public by design
 
-## When Not To Use It
+## When It Abstains
 
-- If you have `app.useGlobalGuards()` in `main.ts`, set `assumeGlobalGuards: true`
-- For intentionally public endpoints, use `@Public()` decorator
+Each of these was measured. Together they took the rule from **94 findings on
+corpus1, of which ~9 were real, to 14** — without losing a single true positive.
 
-## Known False Negatives
+### The project has no authentication system
 
-The following patterns are **not detected** due to static analysis limitations:
+A rule that says "this route has no guard" only means something where guards
+are the mechanism. The scan looks for an auth dependency in `package.json` and
+for a guard, strategy or `JwtModule` named in any module file; when it finds
+neither, it stays silent for the whole project.
 
-### Global Guards in Separate Module
+**38 of the original 94 findings were NestJS's own `sample/*` tutorial apps**,
+only one of which (`19-auth-jwt`) authenticates anything.
 
-**Why**: Global guards in main.ts or module providers are not linked.
+Conservative on purpose: an unreadable or absent manifest counts as _yes_, so
+the rule keeps reporting. A hand-rolled `CanActivate` with no dependency to
+declare is picked up by the module scan.
 
-```typescript
-// ❌ NOT DETECTED - Global guard exists elsewhere
-// main.ts: app.useGlobalGuards(new AuthGuard())
-// controller.ts: No @UseGuards needed, but flagged
-```
-
-**Mitigation**: Set `assumeGlobalGuards: true` in rule options.
-
-### Custom Authorization Decorators
-
-**Why**: Custom decorators wrapping guards are not recognized.
+### Authentication is applied as middleware
 
 ```typescript
-// ❌ NOT DETECTED - Custom auth decorator
-@CustomAuth('admin') // Internally applies AuthGuard
-class AdminController {}
-```
-
-**Mitigation**: Add custom decorator to recognized skip decorators list.
-
-### Guard Applied via Inheritance
-
-**Why**: Guards on parent controller are not visible.
-
-```typescript
-// ❌ NOT DETECTED - Guard on parent
-@UseGuards(AuthGuard)
-class BaseController {}
-
-class UsersController extends BaseController {
-  @Get()
-  findAll() {} // Protected by inheritance, but not detected
+// realworld/src/article/article.module.ts — no @UseGuards anywhere in the app
+export class ArticleModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes(
+        { path: 'articles/feed', method: RequestMethod.GET },
+        { path: 'articles/:slug', method: RequestMethod.DELETE },
+      );
+  }
 }
 ```
 
-**Mitigation**: Apply guards explicitly on each controller.
+Middleware is a first-class NestJS auth mechanism, and a guard-only rule
+reports the entire application: **20 findings, one repository**. The rule
+abstains for any controller whose prefix — or whose own route path, or whose
+class name — appears in a `forRoutes` list attached to an auth middleware.
 
-### Registered app-wide — **detected**
+Deliberately coarse. Lining a `forRoutes` pattern up with a controller prefix
+plus a handler path is not something a static match gets right, so it abstains
+per controller rather than clearing routes it cannot actually clear.
 
-The rule scans the project's module and bootstrap files and stays silent when it
-finds an app-wide registration, so this is _not_ a false positive:
+### The handler verifies a credential header
 
 ```typescript
-@Module({
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
-})
-export class AppModule {}
+// amplication/.../subscription.controller.ts:20
+@Post('updateStatus')
+async updateStatus(@Headers('stigg-webhooks-secret') secret, @Body() dto) {
+  if (secret !== this.stiggWebhooksSecret) throw new Error('Invalid secret');
+}
 ```
 
-Turn the scan off with `detectGlobalGuards: false` if you want the routes reported anyway.
-What the scan still cannot resolve is a registration built at runtime or
-supplied by a library — `assumeGlobalGuards: true` covers those.
+A webhook receiver authenticates by comparing a shared secret or an HMAC
+signature — what Stripe, GitHub and Stigg all document. There is no NestJS-side
+identity to establish, so there is no guard to demand.
+
+### The route is `GET /` with nothing to identify
+
+```typescript
+@Controller()
+class AppController {
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+The controller `nest new` writes. No path on either decorator, no parameter,
+GET — it names no resource and accepts no input. **15 of the 32 findings that
+survived the first two abstentions were this exact shape**, nine of them the
+same generated file across one monorepo's services.
+
+Every clause is load-bearing: a path, a parameter, or any other method puts the
+route back in scope. And the test is _no argument_, not _no readable path_ —
+`@Controller(ADMIN_PREFIX)` is still reported.
+
+### The route is an authentication entry point
+
+`login`, `callback`, `register`, `refresh`, `reset-password`, `webhook`,
+`oauth` and the rest of `publicRoutes`, matched against the controller prefix,
+the route path (including adjacent segments joined, so `@Post('reset/password')`
+meets `reset-password`) and the trailing token of the handler name.
+
+The trailing token is what makes `auth0Login`, `githubCallback` and
+`auth0CallbackPost` work — an entry point is nearly always qualified by its
+provider or transport. Only the tail counts, so `getLoginHistory` reads as a
+resource listing and stays in scope.
+
+## When Not To Use It
+
+- If `app.useGlobalGuards()` runs in `main.ts` and the project scan cannot see
+  it, set `assumeGlobalGuards: true`.
+- For an intentionally public endpoint the list does not cover, use `@Public()`
+  or add the segment to `publicRoutes`.
+
+## Known False Negatives
+
+### A guard on a parent controller in another file
+
+```typescript
+// base.controller.ts
+@UseGuards(AuthGuard)
+export class BaseController {}
+
+// users.controller.ts — the extends chain is followed within one file only
+class UsersController extends BaseController {
+  @Get('all')
+  findAll() {} // protected, and correctly not reported
+}
+```
+
+**Why**: the rule follows `extends` inside the file it is linting, so a base
+class declared elsewhere is invisible. It abstains rather than accuse.
+
+### Every route in a middleware-covered controller
+
+Abstaining per controller means a genuinely unguarded route in a controller
+whose siblings are middleware-protected is not reported.
+
+**Mitigation**: `forRoutes` lists are short and live in the module file — read
+them alongside the controller.
+
+### A collection read mounted at the application root
+
+The `GET /` exemption above clears a zero-parameter root GET. A handler that
+returns a full collection from `GET /` is not reported.
+
+**Mitigation**: none needed in practice — across 32,251 corpus files, every
+instance of this shape was the `nest new` scaffold.
