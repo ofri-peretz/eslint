@@ -6,6 +6,9 @@
 
 export type NoUnsafeQueryOptions = [];
 
+export type NoUnscopedMutationOptions = [];
+
 export interface AllPrismaRulesOptions {
   'prisma-security/no-unsafe-query': NoUnsafeQueryOptions;
+  'prisma-security/no-unscoped-mutation': NoUnscopedMutationOptions;
 }

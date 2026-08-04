@@ -29,7 +29,7 @@
       "rules": 23,
       "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "published": true
     },
     {
@@ -58,7 +58,7 @@
     },
     {
       "name": "eslint-plugin-drizzle-security",
-      "rules": 1,
+      "rules": 2,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
@@ -66,8 +66,16 @@
     },
     {
       "name": "eslint-plugin-knex-security",
-      "rules": 1,
+      "rules": 2,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.1.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-prisma-security",
+      "rules": 2,
+      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
       "published": true
@@ -76,14 +84,6 @@
       "name": "eslint-plugin-mysql-security",
       "rules": 1,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-prisma-security",
-      "rules": 1,
-      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.1.1",
       "published": true
@@ -141,7 +141,7 @@
       "rules": 61,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.3.12",
+      "version": "2.3.13",
       "published": true
     },
     {
@@ -209,8 +209,8 @@
       "published": true
     }
   ],
-  "totalRules": 484,
+  "totalRules": 487,
   "totalPlugins": 26,
   "allPluginsCount": 26,
-  "generatedAt": "2026-08-03T17:13:44.342Z"
+  "generatedAt": "2026-08-04T01:22:59.135Z"
 }

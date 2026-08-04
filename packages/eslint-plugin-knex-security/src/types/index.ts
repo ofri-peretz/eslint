@@ -6,6 +6,9 @@
 
 export type NoUnsafeQueryOptions = [];
 
+export type NoUnscopedMutationOptions = [];
+
 export interface AllKnexRulesOptions {
   'knex-security/no-unsafe-query': NoUnsafeQueryOptions;
+  'knex-security/no-unscoped-mutation': NoUnscopedMutationOptions;
 }

@@ -6,6 +6,9 @@
 
 export type NoUnsafeQueryOptions = [];
 
+export type NoUnscopedMutationOptions = [];
+
 export interface AllDrizzleRulesOptions {
   'drizzle-security/no-unsafe-query': NoUnsafeQueryOptions;
+  'drizzle-security/no-unscoped-mutation': NoUnscopedMutationOptions;
 }
