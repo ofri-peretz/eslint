@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://vercel.com/docs/ai-sdk" target="_blank"><img src="https://eslint.interlace.tools/logos/vercel.svg" alt="Vercel AI SDK" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/oxlint-logo.svg" alt="oxlint" height="90" /></a>
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://www.npmjs.com/package/ai" target="_blank"><img src="https://eslint.interlace.tools/vercel-logo.svg" alt="Vercel AI SDK" height="90" /></a>
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
