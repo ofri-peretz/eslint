@@ -47,7 +47,7 @@ on:
     # to 8am EDT and lands in working hours.
     # Also moved off the 04:00-05:00 UTC cluster where several other crons
     # already stack and compete for the 20 concurrent job slots.
-    - cron: '30 9 * * 6' # Sat 04:30 UTC
+    - cron: '30 9 * * 6' # Sat 09:30 UTC = 5:30am EDT / 4:30am EST
   workflow_dispatch:
 
 concurrency:
@@ -58,35 +58,8 @@ permissions:
   contents: read
 
 jobs:
-  gate:
-    name: Gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    outputs:
-      run: ${{ steps.decide.outputs.run }}
-    steps:
-      - id: decide
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          IS_DRAFT: ${{ github.event.pull_request.draft }}
-          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" != "pull_request" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Draft PR without \`run-full-ci\` label — skipping cross-version matrix."
-          fi
-
   matrix:
     name: ${{ matrix.bench }} · node24 · eslint-${{ matrix.eslint }}
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: ${{ matrix.experimental }}

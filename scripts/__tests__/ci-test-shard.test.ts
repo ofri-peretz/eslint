@@ -32,7 +32,13 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
   const out = execFileSync('node', [SCRIPT, String(shard), String(total)], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1' },
+    // CI_TEST_SHARD_ALL=1 is required, not incidental. Without it the script
+    // applies affected filtering against origin/main, so on a branch touching
+    // a few packages the plan is the FILTERED subset — and the assertions
+    // below ("covers every package exactly once", "no shard empty") would then
+    // be checking the diff rather than the partition, passing vacuously on a
+    // branch that changed nothing.
+    env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1', CI_TEST_SHARD_ALL: '1' },
   });
   const names = [...out.matchAll(/^ {2}(\S+) {2}\((?:test|test:coverage), \d+ test files\)$/gm)].map((m) => m[1]);
   // Fail loudly rather than returning [] if the plan format changes — an empty

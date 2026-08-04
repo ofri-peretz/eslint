@@ -329,7 +329,7 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test:coverage\`, 10 shards, affected-filtered |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test\` + coverage thresholds, 10 shards, affected-filtered |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (all packages, cache-accelerated) |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
