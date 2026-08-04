@@ -18,6 +18,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { changedFilesSince, warnUnresolvedBase } from './lib/ci-changed-files.mts';
 import { decideAffected, reverseDeps, bucket, manifestDeps } from './lib/ci-shard-affected.mts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
@@ -189,15 +190,10 @@ const BASE_REF = process.env.CI_TEST_SHARD_BASE ?? 'origin/main';
 
 
 function changedFiles(): string[] | null {
-  try {
-    const base = execFileSync('git', ['merge-base', 'HEAD', BASE_REF], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-    const out = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: REPO_ROOT, encoding: 'utf8' });
-    return out.split('\n').filter(Boolean);
-  } catch {
-    // No base ref (shallow clone, detached main, fork) — cannot reason about
-    // the diff, so fall back to running everything rather than guessing.
-    return null;
-  }
+  const r = changedFilesSince(BASE_REF, REPO_ROOT);
+  if (r.ok) return r.changed;
+  warnUnresolvedBase(r.why);
+  return null;
 }
 
 const runAll = process.env.CI_TEST_SHARD_ALL === '1';

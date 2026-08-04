@@ -123,6 +123,11 @@ jobs:
         if: steps.decide.outputs.run == 'true'
         env:
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: node scripts/ci-test-shard.mts --matrix 10
 
       # Same treatment for the build matrix. It was static [1,2,3,4], so on a
@@ -135,6 +140,11 @@ jobs:
         if: steps.decide.outputs.run == 'true'
         env:
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: node scripts/ci-build.mts --matrix 4
 
       # The matrix step is now a single point of failure for the whole test
@@ -212,6 +222,11 @@ jobs:
           # packages instead of 33. main / cron / dispatch have no meaningful
           # base to diff against and are the backstop, so they run everything.
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
   # Sharded across runners. A single runner running `turbo run build` for 34
@@ -255,6 +270,11 @@ jobs:
           # Same affected filter as the test shards; main / cron / dispatch
           # build everything.
           CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
           CI_BUILD_SHARD: ${{ matrix.shard }}
           CI_BUILD_SHARD_TOTAL: "4"
         run: node scripts/ci-build.mts
