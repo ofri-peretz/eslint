@@ -21,7 +21,16 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom', // Changed from 'node' to support React component testing
+    // Node by default; the handful of suites that actually render opt in with a
+    // `// @vitest-environment jsdom` docblock. jsdom is constructed per test
+    // FILE, and only ~9 of the 74 files here touch a DOM — the rest are
+    // structural / repo-scan locks. Measured on the 55 node-safe .ts files:
+    // jsdom spent 192.70s of CPU building environments (22.25s wall) against
+    // 3ms (6.59s wall) on node, for identical results (822/822 passing, test
+    // time unchanged at ~41s). That CPU is not free under the 58-task
+    // `turbo run test` fan-out — it starves the I/O-bound scan suites, which is
+    // how they end up near their timeouts in the lefthook pre-push battery.
+    environment: 'node',
     watch: false,
     include: [
       'tests/**/*.test.ts',
@@ -43,6 +52,13 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
+    // Most of this suite is structural lock tests that glob + read the whole
+    // monorepo (mermaid-syntax alone reads ~940 markdown files). That is ~0.3s
+    // warm but ~6s cold, so vitest's 5s default turned a cold page cache into a
+    // "failure" — reliably, under the 44-task `turbo run test` fan-out that the
+    // lefthook pre-push `tests` hook runs, which starves every task for I/O.
+    // These tests are I/O-bound, not compute-bound; give them room.
+    testTimeout: 30_000,
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',

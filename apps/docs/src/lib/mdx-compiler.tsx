@@ -19,6 +19,30 @@ import type { PluggableList } from 'unified';
 
 // The compiler is instantiated per-request so remarkPlugins can be provided in mdxOptions
 
+/**
+ * `remarkImage` fetches every external image at build time just to read its
+ * intrinsic size. The plugin READMEs we render carry ~275 shields.io badges,
+ * so a single shields.io hiccup failed the whole prerender — that's exactly
+ * how PR #286 went red:
+ *
+ *   [Remark Image] Failed obtain image size for
+ *   https://img.shields.io/npm/dt/@nestjs/core.svg (502)
+ *
+ * (fumadocs soft-fails `.svg` URLs, but badge URLs carry `?style=flat-square`,
+ * so the `.svg` suffix check never matched.)
+ *
+ * `external: false` drops the fetch entirely: external images render through
+ * the `img` override in `src/mdx-components.tsx`, which reserves layout space
+ * without knowing the intrinsic size. Locked by
+ * `src/__tests__/remote-image-offline-lock.test.tsx`.
+ *
+ * ponytail: the override reserves a nominal box (20px tall for badge hosts)
+ * rather than the exact intrinsic size. If a README ever needs pixel-exact
+ * reservation, cache the dimensions alongside the content — do not put the
+ * build back on the network.
+ */
+const REMARK_IMAGE_OPTIONS = { external: false } as const;
+
 export interface CompiledContent {
   /** The compiled MDX component (render as <Body />) */
   Body: React.ComponentType;
@@ -173,6 +197,7 @@ export async function compileRemoteMDX(
   // Create compiler instance with our dynamic remark plugins
   const localCompiler = createCompiler({
     remarkPlugins,
+    remarkImageOptions: REMARK_IMAGE_OPTIONS,
   });
 
   const result = await localCompiler.compile({
@@ -208,6 +233,7 @@ export async function compileRemoteMarkdown(
   // Create compiler instance with our dynamic remark plugins
   const localCompiler = createCompiler({
     remarkPlugins,
+    remarkImageOptions: REMARK_IMAGE_OPTIONS,
   });
 
   const result = await localCompiler.compile({

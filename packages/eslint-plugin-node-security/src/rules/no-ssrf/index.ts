@@ -45,8 +45,10 @@ const HTTP_CLIENT_METHODS = new Set([
 ]);
 
 // Object names that are HTTP client libraries
+// `needle.get(url)` is covered here; the `needle('get', url)` verb-first form
+// is not — the URL sits in argument 1, and this rule only reads argument 0.
 const HTTP_CLIENT_OBJECTS = new Set([
-  'axios', 'got', 'superagent', 'request', 'http', 'https', 'undici',
+  'axios', 'got', 'superagent', 'request', 'http', 'https', 'undici', 'needle',
 ]);
 
 // Function names that indicate URL validation

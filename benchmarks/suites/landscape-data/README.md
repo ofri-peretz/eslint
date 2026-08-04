@@ -46,3 +46,19 @@ definition bumps `benchVersion`. Summary:
 npm run ilb:landscape          # requires authenticated gh CLI; ~2 min, $0
 node benchmarks/suites/landscape-data/harvest.mjs --force   # redo today's snapshot
 ```
+
+## Pre-registration receipt
+
+The envelope carries `methodologyHash` — sha256 over the concatenated bytes of
+every file in `methodologyPaths`, in listed order. For this suite that is
+`harvest.mjs` (all queries, windows, and filters are inline) plus its transitive
+repo-local imports (`lib/toolchain.ts`, `lib/preregister.ts`,
+`lib/methodology.ts`). Recompute from a clone:
+
+```bash
+cat $(jq -r '.methodologyPaths[]' benchmarks/results/landscape-data/<date>.json) | shasum -a 256
+```
+
+`methodologyCommit` is also recorded but is a **branch** SHA that this repo's
+squash-merge drops — it is a convenience pointer, not proof. See
+[benchmarks/README.md §10](../../README.md#verifying-a-published-methodology-hash).

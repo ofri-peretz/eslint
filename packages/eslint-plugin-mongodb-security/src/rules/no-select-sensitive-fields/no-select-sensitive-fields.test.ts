@@ -61,7 +61,7 @@ describe('no-select-sensitive-fields', () => {
       invalid: [
         // Triggers selectSensitiveFields: user input in query
         {
-          code: `db.users.find({ username: req.body.username });`,
+          code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({ username: req.body.username });`,
           errors: [{ messageId: 'selectSensitiveFields' }],
         },
       ],

@@ -420,6 +420,49 @@ npm run ilb:regression     # gate against benchmark-results/baseline.json
 
 If a number in this repo doesn't match what you reproduce, open an issue with the corpus version and your environment (`node --version`, `process.platform`).
 
+### Verifying a published methodology hash
+
+Every result carries two pre-registration receipts. They are not interchangeable:
+
+| Field | What it is | Resolvable from a fresh clone? |
+| :--- | :--- | :--- |
+| `methodologyCommit` | `git rev-parse HEAD` at run start — a **branch** commit | **No.** This repo squash-merges: the branch is collapsed into a new commit on `main` and the original is dropped. The SHA resolves on github.com only while the PR ref survives. |
+| `methodologyHash` | sha256 of the files that define the run's method | **Yes.** Content-addressed, so squash / rebase / force-push cannot break it. |
+
+Treat `methodologyCommit` as a convenience pointer, never as proof. A `200` from
+`github.com/…/commit/<sha>` is not evidence the commit is in `main` — the same
+trap as GitHub's `merge_commit_sha`, which is populated for open PRs too. The
+check that actually answers the question:
+
+```bash
+git merge-base --is-ancestor <methodologyCommit> origin/main && echo in-main || echo not-in-main
+```
+
+`methodologyHash` is `sha256:<hex>` over the **concatenated bytes of every file
+in `methodologyPaths`, in listed order**. `methodologyPaths` is the suite
+entrypoint followed by its transitive repo-local imports (sorted); bare
+specifiers are excluded because the `toolchain` block already pins those. The
+path list ships in the envelope so the hash is self-describing — an unversioned
+"hash of some files" would be no better than a dead SHA.
+
+Recompute it from a clone, checked out at the revision the result claims:
+
+```bash
+RESULT=benchmarks/results/ilb-remediation/2026-08-02.json
+cat $(jq -r '.methodologyPaths[]' "$RESULT") | shasum -a 256
+jq -r '.methodologyHash' "$RESULT"
+```
+
+The first command's hex must equal the second's, minus the `sha256:` prefix. A
+mismatch means the methodology moved after the run — which is exactly what the
+receipt exists to make visible. Definition and helper live in
+[`lib/methodology.ts`](./lib/methodology.ts); shape is enforced by
+`npm run ilb:validate-results` and emission is locked by
+`benchmarks/__tests__/methodology-lock.test.ts`.
+
+Results produced before 2026-08-02 predate the field and carry only
+`methodologyCommit`; the validator warns rather than fails on those.
+
 ### Where target OSS repos get cloned (ILB-Wild)
 
 | Priority | Path | When |

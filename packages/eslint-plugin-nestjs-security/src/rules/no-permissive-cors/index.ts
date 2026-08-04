@@ -1,0 +1,209 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-permissive-cors
+ * Flags CORS configured to accept any origin.
+ * CWE-942: Permissive Cross-domain Policy with Untrusted Domains
+ *
+ * Three shapes, all of which accept every origin:
+ *
+ * ```ts
+ * app.enableCors();                    // no options → origin defaults to '*'
+ * app.enableCors({ origin: '*' });     // explicit wildcard
+ * app.enableCors({ origin: true });    // reflects whatever Origin was sent
+ * ```
+ *
+ * `origin: true` is the one worth understanding. It is not "enabled" — it echoes
+ * the request's own `Origin` header back in `Access-Control-Allow-Origin`, so
+ * every site passes. Unlike `'*'`, it also remains valid alongside
+ * `credentials: true`, and browsers *will* send cookies on those requests. That
+ * combination lets any page a victim visits read authenticated responses.
+ *
+ * Deliberately NOT reported: an origin this rule cannot evaluate statically —
+ * `enableCors({ origin: config.get('cors') })`, a variable imported from another
+ * module, a function callback. Those are the shapes a correctly-configured app
+ * uses, and guessing at them is how a security rule earns a reputation for noise.
+ *
+ * @see https://cwe.mitre.org/data/definitions/942.html
+ * @see https://docs.nestjs.com/security/cors
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
+
+export interface Options {
+  /** Allow in test files. Default: true */
+  allowInTests?: boolean;
+}
+
+type RuleOptions = [Options?];
+
+const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
+
+/** Resolve a `const x = { … }` declared in this same file, or null. */
+function resolveLocalObject(
+  scope: TSESLint.Scope.Scope | null,
+  name: string,
+): TSESTree.ObjectExpression | null {
+  for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+    const variable = s.variables.find((v) => v.name === name);
+    if (!variable) continue;
+    // Reassignment defeats this analysis: the value at the call site may not be
+    // the value at the declaration. `let o = { origin: '*' }; o = safe;` would
+    // otherwise report on a binding that is safe by the time it is used. Only
+    // a binding written exactly once — its initialiser — is safe to read.
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1) return null;
+    for (const def of variable.defs) {
+      if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) continue;
+      const init = def.node.init;
+      if (init && init.type === AST_NODE_TYPES.ObjectExpression) return init;
+    }
+    return null;
+  }
+  return null;
+}
+
+/** The `origin` property of a CORS options object, or undefined when absent. */
+function findOriginProperty(options: TSESTree.ObjectExpression): TSESTree.Property | undefined {
+  for (const prop of options.properties) {
+    if (prop.type !== AST_NODE_TYPES.Property) continue;
+    // A computed key is a variable reference, not a name: in `{ [origin]: '*' }`
+    // the key node is an Identifier called `origin` but says nothing about which
+    // property is being set.
+    if (prop.computed) continue;
+    const key =
+      prop.key.type === AST_NODE_TYPES.Identifier
+        ? prop.key.name
+        : prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
+          ? prop.key.value
+          : null;
+    if (key === 'origin') return prop;
+  }
+  return undefined;
+}
+
+/** True when the object spreads anything — `origin` may be supplied from there. */
+function hasSpread(object: TSESTree.ObjectExpression): boolean {
+  return object.properties.some((prop) => prop.type === AST_NODE_TYPES.SpreadElement);
+}
+
+export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
+  name: 'no-permissive-cors',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-permissive-cors.md',
+      description: 'Disallows CORS configured to accept any origin',
+      cwe: 'CWE-942',
+      cvss: 7.5,
+    },
+    messages: {
+      defaultOrigin: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Permissive CORS',
+        cwe: 'CWE-942',
+        owasp: 'A05:2021',
+        cvss: 7.5,
+        description:
+          'enableCors() with no options defaults to Access-Control-Allow-Origin: * — every site can read this API',
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: "Pass the origins you actually serve: app.enableCors({ origin: ['https://app.example.com'] })",
+        documentationLink: 'https://docs.nestjs.com/security/cors',
+      }),
+      wildcardOrigin: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Permissive CORS',
+        cwe: 'CWE-942',
+        owasp: 'A05:2021',
+        cvss: 7.5,
+        description:
+          "origin: '*' lets every site read responses from this API",
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: "Replace the wildcard with an explicit allowlist: origin: ['https://app.example.com']",
+        documentationLink: 'https://docs.nestjs.com/security/cors',
+      }),
+      reflectedOrigin: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Reflected CORS Origin',
+        cwe: 'CWE-942',
+        owasp: 'A05:2021',
+        cvss: 8.1,
+        description:
+          'origin: true echoes the request Origin back, so every site passes — and unlike a wildcard it stays valid with credentials: true, letting any page read authenticated responses',
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: "Replace with an explicit allowlist: origin: ['https://app.example.com']",
+        documentationLink: 'https://cwe.mitre.org/data/definitions/942.html',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [{ allowInTests: true }],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+    const { allowInTests = true } = options;
+    if (allowInTests && TEST_FILE.test(context.filename)) return {};
+
+    /** Report on the `origin` value when it accepts everything. */
+    function checkOptionsObject(optionsNode: TSESTree.ObjectExpression, reportOn: TSESTree.Node): void {
+      const originProp = findOriginProperty(optionsNode);
+      if (!originProp) {
+        // A spread could carry `origin` in from elsewhere — don't guess.
+        if (hasSpread(optionsNode)) return;
+        // Otherwise no origin is set, and the CORS default is '*'.
+        context.report({ node: reportOn, messageId: 'defaultOrigin' });
+        return;
+      }
+      const value = originProp.value;
+      if (value.type === AST_NODE_TYPES.Literal) {
+        if (value.value === '*') {
+          context.report({ node: originProp, messageId: 'wildcardOrigin' });
+        } else if (value.value === true) {
+          context.report({ node: originProp, messageId: 'reflectedOrigin' });
+        }
+      }
+      // Anything else (identifier, member expression, array, function, template)
+      // is either a real allowlist or not statically knowable — stay quiet.
+    }
+
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        const property = node.callee.property;
+        if (property.type !== AST_NODE_TYPES.Identifier || property.name !== 'enableCors') return;
+
+        const [arg] = node.arguments;
+
+        // app.enableCors() — options omitted entirely.
+        if (!arg) {
+          context.report({ node, messageId: 'defaultOrigin' });
+          return;
+        }
+
+        if (arg.type === AST_NODE_TYPES.ObjectExpression) {
+          checkOptionsObject(arg, node);
+          return;
+        }
+
+        // app.enableCors(corsOptions) — only when the object is declared in this
+        // file. An imported config is not knowable here, so it is left alone.
+        if (arg.type === AST_NODE_TYPES.Identifier) {
+          const resolved = resolveLocalObject(context.sourceCode.getScope(node), arg.name);
+          if (resolved) checkOptionsObject(resolved, node);
+        }
+      },
+    };
+  },
+});

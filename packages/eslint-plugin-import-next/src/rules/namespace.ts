@@ -11,7 +11,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
-import ts from 'typescript';
+import { loadTypeScript } from '../utils/typescript-peer';
 
 type MessageIds = 'namespace';
 
@@ -61,7 +61,7 @@ export const namespace = createRule<RuleOptions, MessageIds>({
 
         if (symbol && symbol.declarations && symbol.declarations.length > 0) {
           const declaration = symbol.declarations[0];
-          if (declaration.kind === ts.SyntaxKind.NamespaceImport) {
+          if (declaration.kind === loadTypeScript()?.SyntaxKind.NamespaceImport) {
             // If we have a namespace import, the symbol should refer to the module.
             // We need to check if the property being accessed exists on the module exports.
 

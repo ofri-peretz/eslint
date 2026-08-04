@@ -19,6 +19,12 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
+    // Never fetch external images at build time just to measure them — one
+    // flaky third-party host (shields.io 502'd on PR #286) would otherwise
+    // fail the whole prerender. External images render unsized through the
+    // `img` override in `src/mdx-components.tsx`.
+    // Locked by `src/__tests__/remote-image-offline-lock.test.tsx`.
+    remarkImageOptions: { external: false },
     // Twoslash - TypeScript inline hints in code blocks
     // Use ```ts twoslash or ```tsx twoslash to enable
     // Note: ```mermaid fences are dispatched to <Mermaid> via a `pre`

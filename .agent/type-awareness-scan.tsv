@@ -82,6 +82,13 @@ express-security	no-user-controlled-render-locals	unaware
 express-security	no-static-root-exposure	unaware	
 express-security	require-case-insensitive-path-guard	unaware	
 express-security	require-query-type-guard	unaware	
+express-security	no-disabled-helmet-protections	unaware	
+express-security	require-strict-transport-security	unaware	
+express-security	no-unsafe-csp-directives	unaware	
+express-security	no-permissive-trust-proxy	unaware	
+express-security	require-route-authentication	unaware	
+express-security	no-client-controlled-authorization	unaware	
+express-security	no-idor-resource-access	unaware	
 import-next	no-commonjs	unaware	
 import-next	enforce-team-boundaries	unaware	
 import-next	no-namespace	unaware	
@@ -204,6 +211,8 @@ mongodb-security	no-hardcoded-credentials	unaware
 nestjs-security	require-guards	unaware	
 nestjs-security	require-class-validator	unaware	
 nestjs-security	require-throttler	unaware	
+nestjs-security	require-validation-pipe-whitelist	unaware	
+nestjs-security	no-permissive-cors	unaware	
 nestjs-security	no-missing-validation-pipe	unaware	
 nestjs-security	no-exposed-debug-endpoints	unaware	
 nestjs-security	no-exposed-private-fields	unaware	
@@ -402,9 +411,17 @@ vercel-ai-security	no-hardcoded-api-keys	unaware
 conventions	no-json-schema-tags	unaware	backfilled docs 2026-05-10
 node-security	no-deprecated-buffer	unaware	backfilled docs 2026-05-10
 node-security	no-ssrf	unaware	backfilled docs 2026-05-10
+node-security	no-dynamic-command-string	unaware	
 node-security	no-unsafe-buffer-alloc	unaware	
 react-a11y	alt-text	unaware	backfilled docs 2026-05-10
 reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
 modernization	prefer-template-literal	unaware	
 modularity	no-mutable-exports	unaware	
+sequelize-security	no-unsafe-query	unaware	
+mysql-security	no-unsafe-query	unaware	
+prisma-security	no-unsafe-query	unaware	
+drizzle-security	no-unsafe-query	unaware	
+knex-security	no-unsafe-query	unaware	
+sqlite-security	no-unsafe-query	unaware	
+typeorm-security	no-unsafe-query	unaware	

@@ -37,6 +37,13 @@
     { "path": "./packages/eslint-plugin-react-features/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-reliability/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-secure-coding/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-sequelize-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-mysql-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-prisma-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-drizzle-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-knex-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-sqlite-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-typeorm-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-config-interlace/tsconfig.lib.json" }
   ]
