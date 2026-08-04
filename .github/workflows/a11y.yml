@@ -14,7 +14,11 @@ name: Accessibility
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # `opened`/`reopened` so a PR created directly as non-draft (single push,
+    # no later `synchronize`) still runs the axe scan — without them this
+    # workflow can be required by branch protection yet never report.
+    # quality-full.yml already carries this fix; a11y never got it.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - 'apps/docs/**'
       - 'packages/ui/**'
@@ -73,15 +77,26 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: apps/docs
 
-      - name: Build @interlace/ui
-        run: npm run build --workspace=@interlace/ui
-
       # Playwright's webServer runs `npm run start` in CI (next start), which
       # requires `.next/` from a production build. Build the docs app once
       # before invoking the spec so playwright doesn't crash with
       # "Could not find a production build in the '.next' directory".
-      - name: Build docs (production)
-        run: npm run build --workspace=docs
+      #
+      # Go through turbo rather than two raw `npm run build --workspace=` calls
+      # so the output lands in the shared Turbo cache and can replay the
+      # `docs#build` that quality-full and lighthouse already produced for the
+      # same SHA instead of rebuilding the site a third time.
+      #
+      # `--only` is load-bearing. Without it, `--filter=docs` expands via
+      # `dependsOn: ["^build"]` to all 21 workspaces docs depends on, and a
+      # cold cache measured 189s vs the ~120s the two npm calls took (a11y job
+      # 3.0m -> 4.6m on this PR's first run). `--only` restricts execution to
+      # exactly the two builds the old commands ran, so the cold path matches
+      # the previous behaviour and the warm path replays from cache.
+      - name: Build docs (production, via Turbo)
+        run: npx turbo run build --filter=docs --filter=@interlace/ui --only
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
 
       - name: Run strict a11y scan (Playwright + axe)
         run: npm run test:a11y
