@@ -118,6 +118,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-typeorm-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-typeorm-security) | CWE-89 | A03:2021 |  | Prevent SQL injection by disallowing string concatenation or interpolated template literals in TypeORM raw… | 🟢 | 💼 |  |  |  |  |
+| [require-tls](https://eslint.interlace.tools/docs/security/plugin-typeorm-security/rules/require-tls?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-typeorm-security) | CWE-319 | A02:2021 |  | Require TLS on TypeORM DataSource connections, so queries and credentials are not sent in cleartext and the… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

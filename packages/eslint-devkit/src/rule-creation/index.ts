@@ -12,3 +12,5 @@ export * from './mock-context';
 export * from './sql-injection-rule';
 // Shared CWE-284 detector — same reasoning, for unscoped bulk mutations.
 export * from './unscoped-mutation-rule';
+// Shared CWE-319 detector — cleartext / unverified database connections.
+export * from './require-tls-rule';

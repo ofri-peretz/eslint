@@ -3,6 +3,7 @@
   "defaultOpen": false,
   "pages": [
     "no-unsafe-query",
-    "no-unscoped-mutation"
+    "no-unscoped-mutation",
+    "require-tls"
   ]
 }

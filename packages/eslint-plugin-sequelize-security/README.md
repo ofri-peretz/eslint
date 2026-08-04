@@ -120,6 +120,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-89 | A03:2021 |  | Detects SQL injection in raw Sequelize queries built with string concatenation or template literals | 🟢 | 💼 |  |  |  |  |
+| [require-tls](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/require-tls?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-319 | A02:2021 |  | Require TLS on Sequelize connections, so queries and credentials are not sent in cleartext and the server i… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

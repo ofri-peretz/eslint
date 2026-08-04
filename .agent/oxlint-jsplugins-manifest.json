@@ -1144,6 +1144,12 @@
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "require-tls",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
         }
       ]
     },
@@ -1528,6 +1534,12 @@
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-tls",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2935,6 +2947,12 @@
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "require-tls",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
         }
       ]
     },
@@ -2962,6 +2980,12 @@
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-tls",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
