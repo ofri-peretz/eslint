@@ -533,3 +533,48 @@ describe('no-insecure-comparison', () => {
   });
 });
 
+
+/**
+ * Regression lock — word-level secret detection.
+ *
+ * The timing-attack half of this rule used to substring-match secret keywords
+ * against the WHOLE expression source text, with `key`, `auth` and `mac` on the
+ * keyword list. That turned `if (key === "__non_webpack_require__")` (webpack)
+ * into a CWE-208 timing-attack finding, and would equally have fired on
+ * `monkey`, `keyword`, `machine` and `author`. Matching is now on identifier
+ * word segments.
+ */
+describe('no-insecure-comparison — word-level secret matching', () => {
+  ruleTester.run('no-insecure-comparison', noInsecureComparison, {
+    valid: [
+      // Verbatim shape from webpack lib/RuntimeTemplate.js
+      'if (key === "__non_webpack_require__") {}',
+      // Words that merely CONTAIN a keyword must not match.
+      'if (monkey === other) {}',
+      'if (keyword === other) {}',
+      'if (machine === other) {}',
+      'if (author === other) {}',
+      'if (obj.keys === other) {}',
+      // Computed member access: the property is a Literal, not an Identifier,
+      // so it contributes no name segment.
+      'if (headers["x-custom"] === other) {}',
+      // Call expressions contribute their callee name only.
+      'if (getValue() === other) {}',
+    ],
+    invalid: [
+      // TRUE POSITIVES: real secret comparisons still report.
+      {
+        code: 'if (providedToken === storedToken) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+      {
+        code: 'if (req.headers.apiKey === config.apiKey) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+      {
+        code: 'if (computedHmac !== expectedSignature) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+    ],
+  });
+});

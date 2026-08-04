@@ -2,7 +2,7 @@
 
 This document tracks current focus areas and forward-looking plans for the Interlace ESLint ecosystem. Authoritative sources for measured claims live in [`CLAIMS.md`](./CLAIMS.md); this file is the narrative.
 
-Last refresh: 2026-05-13.
+Last refresh: 2026-08-02.
 
 ---
 
@@ -99,7 +99,7 @@ We support **ESLint v8, v9, and v10** (v10 included per our forward-looking [sup
 - **v11 → support window opens** as soon as v11.0.0 ships (forward-looking rule), without waiting for share data
 - **EOL milestones** — track upstream ESLint EOL announcements; align removals with the next major release
 
-Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
+Last data refresh: 2026-08-02 (v9: 51.13%, v8: 28.29%, v10: 11.08%). v8 is **up** 4pp since the 2026-05-09 refresh and sits well clear of the 20% gate, so the v8-deprecation trigger has not moved closer; v10 gained ~1.8pp and is still below it.
 
 ---
 
@@ -111,7 +111,7 @@ Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
 - ~~**Public scorecard page** (`/scorecard`)~~ — ✅ shipped 2026-05-16. Auto-renders from the latest dated JSON in [`benchmarks/results/ilb-flagship/`](./benchmarks/results/ilb-flagship/) that covers all 10 flagship rules — provenance block (ESLint / oxlint / Node versions + run date + link to source JSON), per-rule latency + findings table, and the cache-effectiveness median row. Lock tests at [`apps/docs/src/__tests__/scorecard-lock.test.ts`](./apps/docs/src/__tests__/scorecard-lock.test.ts) and [`apps/docs/src/__tests__/scorecard-source-integrity.test.ts`](./apps/docs/src/__tests__/scorecard-source-integrity.test.ts) pin the page surface and the data loader respectively.
 - **Real external corpus integration** — today's `ilb-cwe-corpus` is self-authored. A real NIST Juliet adaptation (or OWASP Benchmark JS port, or extended real-OSS-corpus replay) is the path to defensible F1 numbers.
 - **Statistical rigor in benches** — `--repeat=N`, median + 95% Wilson CIs on every cited number (known limitation per `ilb-flagship` suite).
-- ~~**`@interlace/eslint-config` meta-package**~~ — ✅ shipped 2026-05-16. One install + one import for `flagship`, `security`, `quality`, `react`, or full `recommended` (19 plugins). See [`packages/eslint-config-interlace`](./packages/eslint-config-interlace/README.md). Structural locks at [`packages/eslint-config-interlace/src/index.test.ts`](./packages/eslint-config-interlace/src/index.test.ts) pin the flagship preset to `.agent/flagship-rules.md` and fail closed if any plugin drops its `recommended` / `flagship` export.
+- ~~**Meta-config package**~~ — ❌ **not shipping.** ESLint config is composed per repository from the individual plugins, so consumers take only what they need. The internal `packages/eslint-config-interlace` workspace stays `private: true` — it exists solely to lint this monorepo's component API and to host the structural lock at [`packages/eslint-config-interlace/src/index.test.ts`](./packages/eslint-config-interlace/src/index.test.ts), which pins the flagship preset to `.agent/flagship-rules.md` and fails closed if any plugin drops its `recommended` / `flagship` export. It is not published and not recommended.
 
 ### Backlog
 

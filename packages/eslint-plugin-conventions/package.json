@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-conventions",
-  "version": "4.2.1",
-  "description": "ESLint rules for team-specific disciplinary patterns and code conventions.",
+  "version": "4.2.4",
+  "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -29,19 +29,31 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "conventions",
+    "code-style",
+    "naming-conventions",
+    "filename-case",
+    "magic-numbers",
+    "todo-comments",
+    "deprecation",
     "clean-code",
     "consistency",
-    "llm-optimized"
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -49,7 +61,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-conventions"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-conventions",
@@ -67,6 +79,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

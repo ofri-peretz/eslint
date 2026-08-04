@@ -24,7 +24,7 @@ export function FeaturedProject({ stars, downloads }: FeaturedProjectProps) {
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             Interlace ESLint Ecosystem
           </h2>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
+          <p className="mt-3 max-w-[42rem] text-muted-foreground">
             18 specialized plugins. 332+ security rules. 100% OWASP Top 10
             coverage. Built for the AI/Agentic era — LLM-friendly error
             messages mean Claude / Cursor / Copilot can fix vulnerabilities

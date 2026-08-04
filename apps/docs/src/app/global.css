@@ -15,8 +15,14 @@
 /* App-agnostic theme: shadcn-token bridge, Shiki AAA boosts, fumadocs TOC
    overrides, remote-content base, lightweight CSS animations. Lives in
    @interlace/ui so every consumer gets the same baseline. Brand colors
-   (purple primary) below stay app-specific. */
+   (burnt-orange primary) below stay app-specific. */
 @import '@interlace/ui/styles/theme.css';
+/* Baseline brand layer synced from `interlace/docs-baseline` in the agents
+   repo (AUTO-GENERATED — edit there, then `npm run docs-baseline:sync`).
+   Source of the `--brand-mark-bar-*` fills the nav lockup reads
+   (see `src/lib/layout.shared.tsx` + nav-brand-lock.test.tsx). Its fd-token
+   values never win here: every app override below carries !important. */
+@import '../../.interlace/css/brand.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -27,23 +33,28 @@
 /* Scan @interlace/ui dist for class usage in primitives + decorative components */
 @source "../../../../packages/ui/dist";
 
+/* Scan the synced interlace baseline — Tailwind's default scanner skips
+   dot-directories, so classes that appear ONLY in .interlace/** are never
+   generated without this. */
+@source "../../.interlace";
+
 /* =========================================
    BRAND COLORS - ESLint Interlace
-   Override fumadocs neutral theme with purple accent.
+   Override fumadocs neutral theme with burnt-orange accent.
    WCAG 2 AAA-compliant: ≥7:1 contrast for normal text on background,
    ≥4.5:1 for large/UI text. Verified via @axe-core color-contrast-enhanced.
    ========================================= */
 
 /* Light mode - AAA contrast on white */
 :root {
-  /* Primary purple — 7.7:1 on white (AAA pass for normal text) */
-  --color-fd-primary: hsl(263, 80%, 30%) !important;
+  /* Primary burnt orange — #7d350c, 8.8:1 on white (AAA pass for normal text) */
+  --color-fd-primary: hsl(22, 82%, 27%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
 
   /* shadcn-style primary tokens (used by `bg-primary` / `text-primary-foreground`
      in @interlace/ui Button + similar). Match fd-primary so the visual
      identity is consistent and contrast on white is AAA. */
-  --primary: hsl(263, 80%, 30%);
+  --primary: hsl(22, 82%, 27%);
   --primary-foreground: hsl(0, 0%, 100%);
 
   /* Foreground for body text — 19.6:1 on white (well clear of AAA) */
@@ -56,7 +67,7 @@
   --color-fd-accent-foreground: hsl(0, 0%, 9%) !important;
 
   /* Ring/focus color — UI element threshold (≥3:1 vs adjacent colors) */
-  --color-fd-ring: hsl(263, 70%, 45%) !important;
+  --color-fd-ring: hsl(22, 82%, 34%) !important;
 
   /* shadcn-token bridge + Tailwind v4 @theme-side aliases now live in
    * @interlace/ui/styles/theme.css (imported at top). Brand-specific
@@ -65,11 +76,11 @@
   /* shadcn chart palette — five hues for `<ChartContainer>` series colors.
      App-local because the chart primitive lives in `@/components/ui/chart`.
      Light-mode values pass ≥4.5:1 on `bg-card` (white). */
-  --chart-1: oklch(0.55 0.22 264);
-  --chart-2: oklch(0.55 0.16 162);
-  --chart-3: oklch(0.55 0.16 36);
-  --chart-4: oklch(0.55 0.2 320);
-  --chart-5: oklch(0.55 0.16 90);
+  --chart-1: oklch(0.55 0.16 41);
+  --chart-2: oklch(0.55 0.14 162);
+  --chart-3: oklch(0.55 0.18 264);
+  --chart-4: oklch(0.55 0.14 90);
+  --chart-5: oklch(0.55 0.13 200);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -79,13 +90,13 @@
 
 /* Dark mode - AAA contrast on near-black */
 .dark {
-  /* Primary purple — 8.5:1 on hsl(0, 0%, 4%) (AAA pass) */
-  --color-fd-primary: hsl(270, 80%, 80%) !important;
+  /* Primary light burnt orange — #fbb99a, 11.8:1 on hsl(0, 0%, 4%) (AAA pass) */
+  --color-fd-primary: hsl(19, 92%, 79%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 5%) !important;
 
   /* shadcn-style primary tokens — match fd-primary for visual consistency
      and AAA contrast on near-black bg. */
-  --primary: hsl(270, 80%, 80%);
+  --primary: hsl(19, 92%, 79%);
   --primary-foreground: hsl(0, 0%, 5%);
 
   /* Foreground — 18:1 on near-black (well past AAA) */
@@ -98,15 +109,15 @@
   --color-fd-accent-foreground: hsl(0, 0%, 98%) !important;
 
   /* Ring/focus color */
-  --color-fd-ring: hsl(270, 75%, 75%) !important;
+  --color-fd-ring: hsl(19, 85%, 74%) !important;
 
   /* Dark-mode chart palette — lifted lightness so each series stays
      ≥4.5:1 on `bg-card` (near-black). */
-  --chart-1: oklch(0.78 0.16 264);
-  --chart-2: oklch(0.78 0.14 162);
-  --chart-3: oklch(0.78 0.14 36);
-  --chart-4: oklch(0.78 0.16 320);
-  --chart-5: oklch(0.78 0.14 90);
+  --chart-1: oklch(0.78 0.14 41);
+  --chart-2: oklch(0.78 0.12 162);
+  --chart-3: oklch(0.78 0.16 264);
+  --chart-4: oklch(0.78 0.12 90);
+  --chart-5: oklch(0.78 0.11 200);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -120,7 +131,7 @@
      - Fumadocs TOC single-line indicator + popover spacing + responsive visibility
      - Remote-content styling (README / changelog / rule-doc)
      - Lightweight CSS animations (fade-in-up / slide-in-left / scale-in)
-   Brand-specific bits (purple primary colors above) stay in this file.
+   Brand-specific bits (burnt-orange primary colors above) stay in this file.
    ========================================= */
 
 /* Base styling is provided by fumadocs-ui/css/preset.css */
@@ -131,7 +142,7 @@
 /* =========================================
    MARKETING-SURFACE CTA TOKENS
    --------------------------------------------------------
-   Brand purples used by BorderBeam (homepage code-window) and
+   Brand oranges/greens used by BorderBeam (homepage code-window) and
    ShimmerButton (final-CTA + hero secondary). Defined here so JSX
    call sites read `var(--cta-*)` instead of raw hex/rgba literals —
    the `react-features/component-api/no-raw-color-literal` rule
@@ -144,14 +155,16 @@
    different brand on each theme.
    ========================================= */
 :root {
-  /* BorderBeam on the homepage code-window (purple-500 → violet-600) */
-  --cta-beam-from: #a855f7;
-  --cta-beam-to: #7c3aed;
+  /* BorderBeam on the homepage code-window (brand orange → bottle green,
+     the decorative dark-surface pair) */
+  --cta-beam-from: #f4794a;
+  --cta-beam-to: #0d9460;
 
-  /* ShimmerButton primary — purple-400 spark over a purple-700→800 fill */
-  --cta-shimmer: #c084fc;
-  --cta-bg-start: #6d28d9;
-  --cta-bg-end: #5b21b6;
+  /* ShimmerButton primary — light orange spark over a burnt-orange fill
+     (fill pair keeps ≥4.5:1 with the white label) */
+  --cta-shimmer: #fbb99a;
+  --cta-bg-start: #a84c17;
+  --cta-bg-end: #7d350c;
   --cta-bg-gradient: linear-gradient(
     135deg,
     var(--cta-bg-start) 0%,
@@ -163,4 +176,30 @@
      light-theme flash during hydration (~12% white keeps the boundary
      legible on either surface). */
   --cta-secondary-bg: rgba(255, 255, 255, 0.12);
+
+  /* =========================================
+     BRAND MARK TOKENS
+     --------------------------------------------------------
+     Fills for the inline brand marks, defined via tokens so their JSX
+     call sites read `var(--*)` instead of raw hex literals (R19 /
+     `no-raw-color-literal` doctrine — same reasoning as --cta-*).
+
+     - --brand-mark-bar-*: the Interlace two-bar mark in the top nav
+       (`src/lib/layout.shared.tsx`) is NOT defined here — it comes from
+       the synced `.interlace/css/brand.css` (imported at top), the
+       ecosystem-wide source for the nav-lockup fills.
+     - --eslint-mark-*: the official ESLint hexagon in the homepage
+       hero badge (`src/components/home/hero-section.tsx`). Colors are
+       ESLint's own — light theme keeps the purple pair, dark theme
+       uses their white/grey dark-variant fills (mirrors the
+       `prefers-color-scheme` block ESLint ships inside
+       `public/eslint-logo.svg`, but keyed to the site's `.dark`
+       class so the mark follows the THEME, not the OS). */
+  --eslint-mark-outer: #4b32c3;
+  --eslint-mark-inner: #8080f2;
+}
+
+.dark {
+  --eslint-mark-outer: #ffffff;
+  --eslint-mark-inner: #999999;
 }

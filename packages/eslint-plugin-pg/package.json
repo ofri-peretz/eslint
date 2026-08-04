@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-pg",
-  "version": "1.4.7",
-  "description": "ESLint plugin with security and best practices rules for the pg Node.js driver",
+  "version": "1.4.11",
+  "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-pg",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-pg"
   },
   "bugs": {
@@ -38,16 +38,32 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
     "interlace-security",
     "pg",
     "postgres",
     "postgresql",
     "node-postgres",
-    "security",
+    "sql",
+    "sql-injection",
+    "cwe-89",
+    "database",
+    "database-security",
+    "connection-pool",
     "best-practices",
-    "code-quality",
-    "llm-optimized"
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
@@ -63,7 +79,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.1"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -78,6 +94,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

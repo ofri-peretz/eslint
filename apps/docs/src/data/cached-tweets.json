@@ -1,6 +1,6 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-07-17T01:39:03.763Z",
+  "_lastUpdated": "2026-07-31T02:29:36.714Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",
@@ -61,13 +61,53 @@
         "name": "summary_large_image",
         "url": "https://t.co/5aWCclnWlG",
         "binding_values": {
+          "photo_image_full_size_large": {
+            "image_value": {
+              "height": 419,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=800x419",
+              "width": 800
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image": {
+            "image_value": {
+              "height": 168,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=400x400",
+              "width": 400
+            },
+            "type": "IMAGE"
+          },
           "description": {
-            "string_value": "A data-driven protocol for assessing a new codebase in under 30 minutes. Use automated static analysis to generate immediate risk heatmaps for CTOs and VPs.",
+            "string_value": "A 30-minute static-analysis protocol for any inherited Node.js codebase — human- or AI-written: the three ESLint plugins to install, the jq one-liner that ranks findings by rule, and how to read the...",
             "type": "STRING"
           },
           "domain": {
             "string_value": "dev.to",
             "type": "STRING"
+          },
+          "thumbnail_image_large": {
+            "image_value": {
+              "height": 320,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=800x320_1",
+              "width": 762
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_small": {
+            "image_value": {
+              "height": 202,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=386x202",
+              "width": 386
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_original": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=orig",
+              "width": 1000
+            },
+            "type": "IMAGE"
           },
           "site": {
             "scribe_key": "publisher_id",
@@ -77,6 +117,30 @@
               "path": []
             }
           },
+          "photo_image_full_size_small": {
+            "image_value": {
+              "height": 202,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=386x202",
+              "width": 386
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_large": {
+            "image_value": {
+              "height": 419,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=800x419",
+              "width": 800
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_small": {
+            "image_value": {
+              "height": 60,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=144x144",
+              "width": 144
+            },
+            "type": "IMAGE"
+          },
           "creator": {
             "type": "USER",
             "user_value": {
@@ -84,104 +148,31 @@
               "path": []
             }
           },
-          "vanity_url": {
-            "scribe_key": "vanity_url",
-            "string_value": "dev.to",
-            "type": "STRING"
-          },
-          "title": {
-            "string_value": "The 30-Minute Security Audit: A Static Analysis Protocol for Onboarding",
-            "type": "STRING"
-          },
-          "card_url": {
-            "scribe_key": "card_url",
-            "string_value": "https://t.co/5aWCclnWlG",
-            "type": "STRING"
-          },
-          "photo_image_full_size_large": {
-            "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=800x419",
-              "width": 764
-            },
-            "type": "IMAGE"
-          },
-          "thumbnail_image": {
-            "image_value": {
-              "height": 200,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=400x400",
-              "width": 400
-            },
-            "type": "IMAGE"
-          },
-          "thumbnail_image_large": {
-            "image_value": {
-              "height": 300,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x600",
-              "width": 600
-            },
-            "type": "IMAGE"
-          },
-          "summary_photo_image_small": {
-            "image_value": {
-              "height": 202,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=386x202",
-              "width": 386
-            },
-            "type": "IMAGE"
-          },
-          "thumbnail_image_original": {
-            "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
-              "width": 800
-            },
-            "type": "IMAGE"
-          },
-          "photo_image_full_size_small": {
-            "image_value": {
-              "height": 202,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=386x202",
-              "width": 386
-            },
-            "type": "IMAGE"
-          },
-          "summary_photo_image_large": {
-            "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=800x419",
-              "width": 764
-            },
-            "type": "IMAGE"
-          },
-          "thumbnail_image_small": {
-            "image_value": {
-              "height": 72,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=144x144",
-              "width": 144
-            },
-            "type": "IMAGE"
-          },
           "thumbnail_image_x_large": {
             "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
-              "width": 800
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
           "photo_image_full_size_original": {
             "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
-              "width": 800
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=orig",
+              "width": 1000
             },
             "type": "IMAGE"
+          },
+          "vanity_url": {
+            "scribe_key": "vanity_url",
+            "string_value": "dev.to",
+            "type": "STRING"
           },
           "photo_image_full_size": {
             "image_value": {
               "height": 314,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x314",
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=600x314",
               "width": 600
             },
             "type": "IMAGE"
@@ -190,58 +181,46 @@
             "image_color_value": {
               "palette": [
                 {
-                  "percentage": 92.11,
+                  "percentage": 93.68,
                   "rgb": {
-                    "blue": 236,
-                    "green": 229,
-                    "red": 226
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
                   }
                 },
                 {
-                  "percentage": 5.9,
+                  "percentage": 6.22,
                   "rgb": {
-                    "blue": 0,
-                    "green": 0,
-                    "red": 0
-                  }
-                },
-                {
-                  "percentage": 2.65,
-                  "rgb": {
-                    "blue": 113,
-                    "green": 110,
-                    "red": 110
+                    "blue": 127,
+                    "green": 116,
+                    "red": 116
                   }
                 }
               ]
             },
             "type": "IMAGE_COLOR"
           },
+          "title": {
+            "string_value": "The 30-Minute Security Audit: 140 Gemini-Written Functions, 102 Shipped Vulnerable",
+            "type": "STRING"
+          },
           "summary_photo_image_color": {
             "image_color_value": {
               "palette": [
                 {
-                  "percentage": 92.11,
+                  "percentage": 93.68,
                   "rgb": {
-                    "blue": 236,
-                    "green": 229,
-                    "red": 226
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
                   }
                 },
                 {
-                  "percentage": 5.9,
+                  "percentage": 6.22,
                   "rgb": {
-                    "blue": 0,
-                    "green": 0,
-                    "red": 0
-                  }
-                },
-                {
-                  "percentage": 2.65,
-                  "rgb": {
-                    "blue": 113,
-                    "green": 110,
-                    "red": 110
+                    "blue": 127,
+                    "green": 116,
+                    "red": 116
                   }
                 }
               ]
@@ -250,16 +229,16 @@
           },
           "summary_photo_image_x_large": {
             "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
-              "width": 800
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
           "summary_photo_image": {
             "image_value": {
               "height": 314,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=600x314",
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=600x314",
               "width": 600
             },
             "type": "IMAGE"
@@ -268,27 +247,19 @@
             "image_color_value": {
               "palette": [
                 {
-                  "percentage": 92.11,
+                  "percentage": 93.68,
                   "rgb": {
-                    "blue": 236,
-                    "green": 229,
-                    "red": 226
+                    "blue": 35,
+                    "green": 15,
+                    "red": 14
                   }
                 },
                 {
-                  "percentage": 5.9,
+                  "percentage": 6.22,
                   "rgb": {
-                    "blue": 0,
-                    "green": 0,
-                    "red": 0
-                  }
-                },
-                {
-                  "percentage": 2.65,
-                  "rgb": {
-                    "blue": 113,
-                    "green": 110,
-                    "red": 110
+                    "blue": 127,
+                    "green": 116,
+                    "red": 116
                   }
                 }
               ]
@@ -297,17 +268,22 @@
           },
           "photo_image_full_size_x_large": {
             "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=png&name=2048x2048_2_exp",
-              "width": 800
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=png&name=2048x2048_2_exp",
+              "width": 1000
             },
             "type": "IMAGE"
           },
+          "card_url": {
+            "scribe_key": "card_url",
+            "string_value": "https://t.co/5aWCclnWlG",
+            "type": "STRING"
+          },
           "summary_photo_image_original": {
             "image_value": {
-              "height": 400,
-              "url": "https://pbs.twimg.com/card_img/2058331603030659072/l5fc1Wmt?format=jpg&name=orig",
-              "width": 800
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2082618560145199104/2mHXd_fg?format=jpg&name=orig",
+              "width": 1000
             },
             "type": "IMAGE"
           }
@@ -315,7 +291,7 @@
       },
       "isEdited": false,
       "isStaleEdit": false,
-      "_cachedAt": "2026-07-17T01:39:03.257Z"
+      "_cachedAt": "2026-07-31T02:29:36.206Z"
     }
   }
 }

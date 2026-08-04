@@ -133,7 +133,7 @@ Every fixture under [`corpus/`](./corpus/) carries:
 
 ---
 
-## 2. The 10 benches at a glance
+## 2. The 13 benches at a glance
 
 Each bench is **single-dimension** (one bench, one number), **versioned** (corpus changes bump the version), and has **a frozen corpus** (pinned commits / fixed prompts / deterministic seeds). The Cost / Effectiveness / Latency columns are the triad — `n/a` means the aspect is genuinely not applicable to that bench, not that we forgot.
 
@@ -150,6 +150,8 @@ Each bench is **single-dimension** (one bench, one number), **versioned** (corpu
 | 9 | **ILB-LLM-Tokens** | Are per-finding rule messages cheap to feed to LLMs? | `meanTokensO200k` vs V1 · SLO: ≤ V1 (security/v2-compact) | n/a (cost-only bench) | n/a | `npm run ilb:llm:tokens` |
 | 9b | **ILB-LLM-Fix** | Can the LLM act on them? | reported (informational) | `passRate` · SLO: ≥ 80 % | API round-trip time per call | `npm run ilb:llm:fix` |
 | 10 | **ILB-Formatter** | Is the whole-run formatter cheaper than ESLint's `stylish` and does it preserve every TP/FP attribution signal? | `meanTokensO200k` vs `eslint-stylish` · SLO: `interlace-compact` ≤ 0 % | `signalScore` 0–4 · SLO: structured formats = 4.0/4 | `latencyMsP50` (median of 5) · SLO: ≤ 50 ms at `large`, ≤ 250 ms at `extreme` | `npm run ilb:formatter` |
+| 11 | **ILB-Remediation** | Of the rules that *claim* to fix or suggest, how many actually do — for us and for every free ESLint-native competitor? | n/a | implemented ÷ declared, plus dead declarations named on both sides · SLO: 0 dead declarations of our own | n/a (source-level scan) | `npm run ilb:remediation` |
+| 12 | **ILB-Landscape** | For every tool in the panel (ours included), what does its license actually permit, and how alive is it? | n/a | verbatim-cited license terms + releases/12mo + median issue first-response · SLO: every judgment cell carries a primary-source quote | n/a (public-API harvest) | `npm run ilb:landscape` |
 
 For live numbers see [`benchmark-results/scorecard.md`](../benchmark-results/scorecard.md). Don't paste numbers into this README — they go stale.
 
@@ -417,6 +419,49 @@ npm run ilb:regression     # gate against benchmark-results/baseline.json
 ```
 
 If a number in this repo doesn't match what you reproduce, open an issue with the corpus version and your environment (`node --version`, `process.platform`).
+
+### Verifying a published methodology hash
+
+Every result carries two pre-registration receipts. They are not interchangeable:
+
+| Field | What it is | Resolvable from a fresh clone? |
+| :--- | :--- | :--- |
+| `methodologyCommit` | `git rev-parse HEAD` at run start — a **branch** commit | **No.** This repo squash-merges: the branch is collapsed into a new commit on `main` and the original is dropped. The SHA resolves on github.com only while the PR ref survives. |
+| `methodologyHash` | sha256 of the files that define the run's method | **Yes.** Content-addressed, so squash / rebase / force-push cannot break it. |
+
+Treat `methodologyCommit` as a convenience pointer, never as proof. A `200` from
+`github.com/…/commit/<sha>` is not evidence the commit is in `main` — the same
+trap as GitHub's `merge_commit_sha`, which is populated for open PRs too. The
+check that actually answers the question:
+
+```bash
+git merge-base --is-ancestor <methodologyCommit> origin/main && echo in-main || echo not-in-main
+```
+
+`methodologyHash` is `sha256:<hex>` over the **concatenated bytes of every file
+in `methodologyPaths`, in listed order**. `methodologyPaths` is the suite
+entrypoint followed by its transitive repo-local imports (sorted); bare
+specifiers are excluded because the `toolchain` block already pins those. The
+path list ships in the envelope so the hash is self-describing — an unversioned
+"hash of some files" would be no better than a dead SHA.
+
+Recompute it from a clone, checked out at the revision the result claims:
+
+```bash
+RESULT=benchmarks/results/ilb-remediation/2026-08-02.json
+cat $(jq -r '.methodologyPaths[]' "$RESULT") | shasum -a 256
+jq -r '.methodologyHash' "$RESULT"
+```
+
+The first command's hex must equal the second's, minus the `sha256:` prefix. A
+mismatch means the methodology moved after the run — which is exactly what the
+receipt exists to make visible. Definition and helper live in
+[`lib/methodology.ts`](./lib/methodology.ts); shape is enforced by
+`npm run ilb:validate-results` and emission is locked by
+`benchmarks/__tests__/methodology-lock.test.ts`.
+
+Results produced before 2026-08-02 predate the field and carry only
+`methodologyCommit`; the validator warns rather than fails on those.
 
 ### Where target OSS repos get cloned (ILB-Wild)
 

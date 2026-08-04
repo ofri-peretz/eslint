@@ -560,3 +560,85 @@ describe('no-unsafe-deserialization', () => {
     });
   });
 });
+
+/**
+ * Regression lock — corpus false positives.
+ *
+ * On a 1,470-file corpus (webpack, lodash, eslint-plugin-import, two NestJS
+ * boilerplates) this rule produced 35 findings at CVSS 9.8 CRITICAL. All 35
+ * came from two patterns:
+ *
+ *  1. `await new Promise(resolve => setTimeout(resolve, 1000))` — an ordinary
+ *     sleep. `setTimeout` is on the dangerous-function list, and `resolve` is
+ *     an enclosing arrow-function parameter, which the rule treats as
+ *     untrusted input.
+ *  2. `super.deserialize(context)` — webpack's serialization protocol,
+ *     repeated in every `Dependency` subclass (33 of the 35).
+ *
+ * `setTimeout` IS a code-execution sink in its implied-eval form, so the
+ * string-argument case must keep firing.
+ */
+describe('no-unsafe-deserialization — corpus regression', () => {
+  ruleTester.run('timer + self-delegating deserialize', noUnsafeDeserialization, {
+    valid: [
+      // Verbatim from ack-nestjs-boilerplate
+      // src/modules/notification/services/notification.email.processor.service.ts:538
+      'async function run() { await new Promise(resolve => setTimeout(resolve, 1000)); }',
+      'function schedule(cb) { setTimeout(cb, 1000); }',
+      'function schedule(cb) { setInterval(cb, 1000); }',
+      'function schedule(cb) { window.setTimeout(cb, 1000); }',
+      'function poll(cb) { setTimeout(() => cb(), 0); }',
+      'setTimeout();',
+      'function f(a, b) { setTimeout(a + b, 100); }',
+      // Verbatim shape from webpack lib/Module.js:1321 and ~30 sibling files
+      'class Dep extends Base { deserialize(context) { super.deserialize(context); } }',
+      'class Dep extends Base { restore(context) { this.deserialize(context); } }',
+      // "Inside a deserializer implementation" — every owner shape.
+      // MethodDefinition (webpack's `static deserialize(context)` factories)
+      'class M { static deserialize(context) { const o = new M(); o.deserialize(context); return o; } }',
+      // FunctionDeclaration
+      'function deserialize(ctx) { middleware.deserialize(ctx); }',
+      // Object method / Property
+      'const codec = { deserialize(context) { helper.deserialize(context); } };',
+      // Arrow assigned to a deserializer-named binding
+      'const fromJSON = (ctx) => { middleware.deserialize(ctx); };',
+    ],
+    invalid: [
+      // TRUE POSITIVE: implied eval — setTimeout compiling a string.
+      {
+        code: 'function run(userCode) { setTimeout("alert(" + userCode + ")", 100); }',
+        errors: [
+          {
+            messageId: 'dangerousEvalUsage',
+            suggestions: [
+              {
+                messageId: 'useSafeDeserializer',
+                output: 'function run(userCode) { JSON.parse("alert(" + userCode + ")"); }',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'function run(userCode) { setInterval(`do(${userCode})`, 100); }',
+        errors: [
+          {
+            messageId: 'dangerousEvalUsage',
+            suggestions: [
+              {
+                messageId: 'useSafeDeserializer',
+                output: 'function run(userCode) { JSON.parse(`do(${userCode})`); }',
+              },
+            ],
+          },
+        ],
+      },
+      // TRUE POSITIVE: a real third-party deserializer on untrusted input is
+      // untouched by the `super` / `this` exemption.
+      {
+        code: 'function handle(req) { serialize.unserialize(req.body.payload); }',
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+    ],
+  });
+});

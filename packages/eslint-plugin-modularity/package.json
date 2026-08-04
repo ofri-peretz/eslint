@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-modularity",
-  "version": "2.1.1",
-  "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance.",
+  "version": "2.1.4",
+  "description": "ESLint plugin for module architecture — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-modularity",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-modularity"
   },
   "bugs": {
@@ -37,13 +37,20 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "modularity",
+    "architecture",
+    "clean-architecture",
+    "boundaries",
     "ddd",
     "domain-driven-design",
-    "architecture",
+    "module-boundaries",
+    "rest-conventions",
     "llm-optimized",
     "ai-assistant",
     "typescript"
@@ -53,7 +60,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
@@ -66,6 +73,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

@@ -23,54 +23,65 @@
  *   - Verified at https://webaim.org/resources/contrastchecker/ — every
  *     primary/foreground pair below clears the floor for its mode.
  *
- * Source palette: Tailwind violet — violet-50 through violet-950.
- *   Light primary: violet-700 (#6d28d9) → 7.34:1 on white (AAA body)
- *   Dark primary:  violet-400 (#a78bfa) → 7.42:1 on near-black (AAA body)
+ * Source palette: the Interlace mark — burnt orange (see render-cover.sh).
+ *   Light primary: #7d350c → 8.80:1 on white (AAA)
+ *   Dark primary:  #fbb99a → 11.79:1 on near-black (AAA)
+ *
+ * Replaced the Tailwind-violet palette this system shipped with. Every pair
+ * below was re-measured after the swap; none regressed.
  */
 
 /* ─────────────────────────────────────────────────────────────────
  *  LIGHT — default
  * ──────────────────────────────────────────────────────────────── */
 :root {
-  /* Brand */
-  --interlace-primary: #6d28d9;            /* violet-700 — AAA on white */
-  --interlace-primary-hover: #5b21b6;      /* violet-800 */
-  --interlace-primary-active: #4c1d95;     /* violet-900 */
+  /* Brand
+   *
+   * Burnt orange, from the mark. #7d350c measures 8.80:1 on white, 8.12:1
+   * on `--accent` (#fef4ed), and 7.46:1 on its OWN 10% tint — that last one
+   * is the binding constraint. `bg-primary/10` + `text-primary` is a stock
+   * shadcn badge pattern, and it composites to #f3ebe7 on white; a lighter
+   * orange (#8a3a10) landed at 6.63:1 there and axe failed the enhanced
+   * check. This value tracks violet-800's old profile (8.98 / 7.56) so the
+   * AAA floor holds on every catalogue surface AND on brand-tinted ones. */
+  --interlace-primary: #7d350c;            /* 8.80:1 on white (AAA) */
+  --interlace-primary-hover: #6b2b09;      /* 10.63:1 on white */
+  --interlace-primary-active: #4d2009;     /* 13.76:1 on white */
   --interlace-primary-foreground: #ffffff;
-  --interlace-primary-subtle: #ede9fe;     /* violet-100 — for tinted backgrounds */
-  --interlace-primary-subtle-foreground: #4c1d95;
+  --interlace-primary-subtle: #fef4ed;     /* warm tint for backgrounds */
+  --interlace-primary-subtle-foreground: #4d2009;  /* 12.70:1 on subtle (AAA) */
 
   /* Surface */
   --interlace-background: #ffffff;
-  --interlace-foreground: #0a0a0f;         /* near-black, slight violet tint */
+  --interlace-foreground: #0d0b09;         /* near-black, slight warm tint */
   --interlace-card: #ffffff;
-  --interlace-card-foreground: #0a0a0f;
+  --interlace-card-foreground: #0d0b09;
   --interlace-popover: #ffffff;
-  --interlace-popover-foreground: #0a0a0f;
-  --interlace-muted: #f5f3fa;              /* violet-tinted neutral */
-  --interlace-muted-foreground: #6b6580;
-  --interlace-border: #e5e3ec;
-  --interlace-input: #e5e3ec;
+  --interlace-popover-foreground: #0d0b09;
+  --interlace-muted: #faf7f4;              /* warm-tinted neutral */
+  --interlace-muted-foreground: #4d453c;   /* 8.06:1 on white (AAA body) */
+  --interlace-border: #eae7e2;
+  --interlace-input: #eae7e2;
   --interlace-ring: var(--interlace-primary);
 
   /* Accent */
-  --interlace-accent: #ede9fe;             /* violet-100 */
-  --interlace-accent-foreground: #4c1d95;  /* violet-900 — 9.31:1 on accent */
+  --interlace-accent: #fef4ed;             /* warm tint */
+  --interlace-accent-foreground: #73300d;  /* 8.98:1 on accent (AAA) */
 
   /* Secondary */
-  --interlace-secondary: #f1f0f6;
-  --interlace-secondary-foreground: #1a1825;
+  --interlace-secondary: #f5f3f0;
+  --interlace-secondary-foreground: #1f1a15;
 
-  /* Destructive (Tailwind red-600) */
-  --interlace-destructive: #dc2626;
+  /* Destructive (Tailwind red-800 — text-destructive on white ≈ 8.0:1, AAA) */
+  --interlace-destructive: #991b1b;
   --interlace-destructive-foreground: #ffffff;
 
-  /* Success (Tailwind emerald-600) */
-  --interlace-success: #059669;
+  /* Success (Tailwind emerald-800 — text-success on white ≈ 7.3:1, AAA) */
+  --interlace-success: #065f46;
   --interlace-success-foreground: #ffffff;
 
-  /* Warning (Tailwind amber-600) */
-  --interlace-warning: #d97706;
+  /* Warning (Tailwind amber-900 — text-warning on white ≈ 8.5:1, AAA) */
+  --interlace-warning: #78350f;
   --interlace-warning-foreground: #ffffff;
 
   /* Radii (8/12/16 — three-step scale) */
@@ -84,45 +95,49 @@
  * ──────────────────────────────────────────────────────────────── */
 .dark,
 [data-theme='dark'] {
-  /* Brand — invert weight: 400 (lighter) on dark */
-  --interlace-primary: #a78bfa;            /* violet-400 — AAA on dark */
-  --interlace-primary-hover: #c4b5fd;      /* violet-300 */
-  --interlace-primary-active: #ddd6fe;     /* violet-200 */
-  --interlace-primary-foreground: #1e1b2e; /* near-black */
-  --interlace-primary-subtle: #2e1065;     /* violet-950 — for tinted backgrounds */
-  --interlace-primary-subtle-foreground: #ddd6fe;
+  /* Brand — inverted weight: a light tint of the same burnt orange, so
+   * both directions clear AAA. text-primary on near-black is 11.79:1, and
+   * bg-primary with text-primary-foreground (#0a0a0a) is the same 11.79:1.
+   * The cover orange #f4794a is only 7.24:1 here, too dark to carry the
+   * bidirectional pair, hence the lighter tint. */
+  --interlace-primary: #fbb99a;            /* 11.79:1 on dark bg (AAA) */
+  --interlace-primary-hover: #fcc9b0;      /* 13.31:1 */
+  --interlace-primary-active: #fdd6c2;     /* 14.68:1 */
+  --interlace-primary-foreground: #0a0a0a; /* near-black — 11.79:1 on primary */
+  --interlace-primary-subtle: #3d1a08;     /* tinted background */
+  --interlace-primary-subtle-foreground: #fdd6c2;  /* 11.54:1 on subtle (AAA) */
 
   /* Surface */
-  --interlace-background: #0a0a0f;
-  --interlace-foreground: #ededf2;
-  --interlace-card: #14131c;
-  --interlace-card-foreground: #ededf2;
-  --interlace-popover: #14131c;
-  --interlace-popover-foreground: #ededf2;
-  --interlace-muted: #14131c;
-  --interlace-muted-foreground: #a09cb3;
-  --interlace-border: #1f1d2b;
-  --interlace-input: #1f1d2b;
+  --interlace-background: #0a0a0a;
+  --interlace-foreground: #f0ede9;
+  --interlace-card: #171412;
+  --interlace-card-foreground: #f0ede9;
+  --interlace-popover: #171412;
+  --interlace-popover-foreground: #f0ede9;
+  --interlace-muted: #171412;
+  --interlace-muted-foreground: #c9c3bb;   /* 9.6:1 on #0a0a0a (AAA) */
+  --interlace-border: #252019;
+  --interlace-input: #252019;
   --interlace-ring: var(--interlace-primary);
 
   /* Accent */
-  --interlace-accent: #2e1065;             /* violet-950 */
-  --interlace-accent-foreground: #ddd6fe;  /* violet-200 — 9.85:1 on accent */
+  --interlace-accent: #3d1a08;             /* deep warm tint */
+  --interlace-accent-foreground: #fcc9b0;  /* 10.46:1 on accent (AAA) */
 
   /* Secondary */
-  --interlace-secondary: #1c1a26;
-  --interlace-secondary-foreground: #ededf2;
+  --interlace-secondary: #201c17;
+  --interlace-secondary-foreground: #f0ede9;
 
-  /* Destructive */
-  --interlace-destructive: #ef4444;        /* red-500 — lighter on dark */
-  --interlace-destructive-foreground: #0a0a0f; /* 6.6:1 on #ef4444 (was #1e1b2e at 4.45 — sub-AA) */
+  /* Destructive (red-300 — text-destructive on near-black ≈ 9:1, AAA) */
+  --interlace-destructive: #fca5a5;
+  --interlace-destructive-foreground: #0a0a0a;
 
-  /* Success */
-  --interlace-success: #10b981;            /* emerald-500 */
-  --interlace-success-foreground: #1e1b2e;
+  /* Success (emerald-400 — ≈ 8.5:1 on near-black, AAA) */
+  --interlace-success: #34d399;
+  --interlace-success-foreground: #052e16;
 
-  /* Warning */
-  --interlace-warning: #f59e0b;            /* amber-500 */
+  /* Warning (amber-500 — 7.7:1 on near-black, AAA) */
+  --interlace-warning: #f59e0b;
   --interlace-warning-foreground: #1e1b2e;
 }
 
@@ -161,7 +176,7 @@
    * surfaces our Section / SectionHeader stories render — just below
    * the WCAG 2.2 AA 4.5:1 floor and gates Storybook a11y CI red.
    *
-   * Rebinding to the brand muted-foreground (a darker purple-grey in
+   * Rebinding to the brand muted-foreground (a darker warm grey in
    * light, lighter in dark) clears the threshold and keeps brand
    * consistency between shadcn-styled and fumadocs-styled surfaces.
    */

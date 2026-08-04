@@ -65,17 +65,17 @@ export interface HeroProps {
   secondaryCta?: HeroCta;
   /** Optional install command shown in a code-styled box with a border beam. */
   installCommand?: string;
-  /** Spotlight color (CSS color expr). Defaults to brand purple. */
+  /** Spotlight color (CSS color expr). Defaults to brand orange. */
   spotlightColor?: string;
-  /** Border-beam start color. Defaults to brand purple. */
+  /** Border-beam start color. Defaults to brand orange. */
   beamColorFrom?: string;
-  /** Border-beam end color. Defaults to brand purple. */
+  /** Border-beam end color. Defaults to brand green. */
   beamColorTo?: string;
 }
 
-const DEFAULT_SPOTLIGHT = 'hsl(250 95% 64%)';
-const DEFAULT_BEAM_FROM = 'hsl(250 95% 64%)';
-const DEFAULT_BEAM_TO = 'hsl(280 80% 60%)';
+const DEFAULT_SPOTLIGHT = 'hsl(17 89% 55%)';
+const DEFAULT_BEAM_FROM = 'hsl(17 89% 55%)';
+const DEFAULT_BEAM_TO = 'hsl(157 84% 32%)';
 
 function isAbsoluteUrl(href: string): boolean {
   return /^https?:\/\//.test(href);
@@ -138,13 +138,13 @@ export function Hero({
             <br />
             <FlipWords
               words={flipWords}
-              className="bg-gradient-to-r from-fd-primary to-purple-400 bg-clip-text text-transparent"
+              className="bg-gradient-to-r from-fd-primary to-orange-400 bg-clip-text text-transparent"
             />
           </>
         ) : null}
       </h1>
 
-      <p className="max-w-2xl text-lg text-fd-muted-foreground md:text-xl">{tagline}</p>
+      <p className="max-w-[42rem] text-lg text-fd-muted-foreground md:text-xl">{tagline}</p>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
         <CtaLink cta={primaryCta} primary />

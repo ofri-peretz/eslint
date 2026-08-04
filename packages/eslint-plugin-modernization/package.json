@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-modernization",
-  "version": "2.1.1",
-  "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance.",
+  "version": "2.1.4",
+  "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray).",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -20,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-modernization",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-modernization"
   },
   "bugs": {
@@ -37,12 +37,20 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "modernization",
     "es2022",
     "modern-javascript",
+    "ecmascript",
+    "refactoring",
+    "codemod",
+    "auto-fix",
+    "legacy-code",
     "llm-optimized",
     "ai-assistant",
     "typescript"
@@ -52,7 +60,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.6.1"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
@@ -65,6 +73,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

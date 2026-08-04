@@ -73,7 +73,7 @@ function renderCta(cta: HeroCosmicCTA | undefined) {
 
 /**
  * Cosmic landing-hero preset for fumadocs sites: starfield + shooting stars
- * + meteors over a deep purple-to-black gradient. Drop-in replacement for a
+ * + meteors over a deep brand-orange-to-black gradient. Drop-in replacement for a
  * hand-rolled hero — pass headline / tagline / CTAs and you're done.
  */
 export function HeroCosmic({
@@ -95,10 +95,10 @@ export function HeroCosmic({
     shootingMaxSpeed: 35,
     shootingMinDelay: 600,
     shootingMaxDelay: 2500,
-    shootingStarColor: '#c084fc',
+    shootingStarColor: '#f4794a',
     shootingTrailColor: '#2EB9DF',
     meteorCount: 3,
-    meteorColor: '#e9d5ff',
+    meteorColor: '#fbb99a',
     meteorMinDuration: 12,
     meteorMaxDuration: 30,
     ...effects,
@@ -110,7 +110,7 @@ export function HeroCosmic({
       className={cn('relative', className)}
       style={{ contain: 'paint', clipPath: 'inset(0)' }}
     >
-      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-purple-950 via-slate-950 to-black">
+      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-orange-950 via-slate-950 to-black">
         <StarsBackground
           starDensity={e.starDensity}
           allStarsTwinkle
@@ -143,7 +143,7 @@ export function HeroCosmic({
           </h1>
 
           {tagline ? (
-            <p className="mx-auto mb-16 max-w-2xl text-lg leading-relaxed text-purple-100/90 drop-shadow md:text-xl">
+            <p className="mx-auto mb-16 max-w-[42rem] text-lg leading-relaxed text-orange-100/90 drop-shadow md:text-xl">
               {tagline}
             </p>
           ) : null}

@@ -218,7 +218,7 @@ export function ArticlesClient({
       <div className="fixed inset-0 -z-10 h-screen w-screen pointer-events-none">
         <BackgroundBeamsWithCollision
           className="pointer-events-none"
-          containerClassName="!h-screen !min-h-screen !max-h-none !bg-linear-to-b !from-white !to-neutral-100 dark:!from-purple-950 dark:!via-slate-950 dark:!to-black"
+          containerClassName="!h-screen !min-h-screen !max-h-none !bg-linear-to-b !from-white !to-neutral-100 dark:!from-orange-950 dark:!via-slate-950 dark:!to-black"
           hideCollisionSurface
         >
           <div className="sr-only">Background Effect</div>
@@ -229,7 +229,7 @@ export function ArticlesClient({
         {/* Hero — single fade on the wrapper (MOTION_PHILOSOPHY.md). */}
         <div className="text-center max-w-3xl mx-auto space-y-4 motion-safe:animate-fade-in-up" suppressHydrationWarning>
           <div
-            className="inline-flex items-center gap-2 bg-fd-primary/10 dark:bg-purple-500/20 text-fd-primary dark:text-purple-300 text-sm font-medium px-4 py-1.5 rounded-full border border-fd-primary/20 dark:border-purple-500/30 backdrop-blur-sm"
+            className="inline-flex items-center gap-2 bg-fd-primary/10 dark:bg-orange-500/20 text-fd-primary dark:text-orange-300 text-sm font-medium px-4 py-1.5 rounded-full border border-fd-primary/20 dark:border-orange-500/30 backdrop-blur-sm"
             suppressHydrationWarning
           >
             <BookOpen className="size-4" />
@@ -238,7 +238,7 @@ export function ArticlesClient({
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-fd-foreground dark:text-white dark:drop-shadow-lg" suppressHydrationWarning>
             Technical Insights
           </h1>
-          <p className="text-lg text-fd-muted-foreground dark:text-purple-100/80 leading-relaxed dark:drop-shadow" suppressHydrationWarning>
+          <p className="text-lg text-fd-muted-foreground dark:text-orange-100/80 leading-relaxed dark:drop-shadow" suppressHydrationWarning>
             Deep dives into ESLint security, JavaScript performance, and modern development practices.
           </p>
           <div className="flex justify-center pt-2">
@@ -321,7 +321,7 @@ export function ArticlesClient({
           suppressHydrationWarning
         >
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="relative flex-1 min-w-[200px] max-w-[28rem]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-fd-muted-foreground" aria-hidden />
               <input
                 type="text"
@@ -433,7 +433,7 @@ export function ArticlesClient({
                       className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200",
                         params.tags.includes(tag)
-                          ? "bg-fd-primary text-fd-primary-foreground shadow-lg shadow-purple-500/20"
+                          ? "bg-fd-primary text-fd-primary-foreground shadow-lg shadow-orange-500/20"
                           : "bg-fd-muted text-fd-muted-foreground hover:bg-fd-accent hover:text-fd-accent-foreground border border-fd-border",
                       )}
                     >
@@ -530,7 +530,7 @@ export function ArticlesClient({
                         disabled={totalPages <= 1}
                         className={cn(
                           "w-10 h-10 transition-colors duration-200",
-                          currentPage === pageNum && "shadow-lg shadow-purple-500/20",
+                          currentPage === pageNum && "shadow-lg shadow-orange-500/20",
                         )}
                         data-testid={`page-${pageNum}`}
                         aria-current={currentPage === pageNum ? 'page' : undefined}

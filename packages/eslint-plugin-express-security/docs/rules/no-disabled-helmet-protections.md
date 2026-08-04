@@ -1,0 +1,149 @@
+---
+title: no-disabled-helmet-protections
+description: This rule detects helmet options that switch a shipped security-header default off, leaving a mounted helmet with the exposure of no helmet at all
+tags: ['security', 'express']
+category: security
+severity: high
+cwe: CWE-693
+autofix: false
+---
+
+> Disallow disabling helmet security-header defaults: contentSecurityPolicy, frameguard/xFrameOptions, noSniff/xContentTypeOptions, referrerPolicy, hidePoweredBy/xPoweredBy, crossOriginResourcePolicy, crossOriginOpenerPolicy
+
+<!-- @rule-summary -->
+
+This rule detects helmet options that switch a shipped security-header default off, leaving a mounted helmet with the exposure of no helmet at all
+<!-- @/rule-summary -->
+
+**Severity:** 🔴 High
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+
+## Rule Details
+
+`require-helmet` proves the middleware is mounted. It cannot see that the mount turned the protections off:
+
+```js
+app.use(helmet({ contentSecurityPolicy: false, frameguard: false }));
+```
+
+That app ships no `Content-Security-Policy` and no `X-Frame-Options` — identical headers to an app with no helmet — while every reviewer scanning for `app.use(helmet(` reads it as protected. The `false` is usually a temporary unblock (a third-party widget, an iframe embed) that never gets revisited.
+
+The rule fires on `helmet({ <protection>: false })` for the protections below, in both the helmet ≤6 and helmet 7+ spellings:
+
+| Option (helmet ≤6 / 7+)                 | Header no longer sent           |
+| --------------------------------------- | ------------------------------- |
+| `contentSecurityPolicy`                 | `Content-Security-Policy`       |
+| `frameguard` / `xFrameOptions`          | `X-Frame-Options`               |
+| `noSniff` / `xContentTypeOptions`       | `X-Content-Type-Options`        |
+| `referrerPolicy`                        | `Referrer-Policy`               |
+| `hidePoweredBy` / `xPoweredBy`          | `X-Powered-By` removal          |
+| `crossOriginResourcePolicy`             | `Cross-Origin-Resource-Policy`  |
+| `crossOriginOpenerPolicy`               | `Cross-Origin-Opener-Policy`    |
+
+`hsts` / `strictTransportSecurity` belong to [`require-strict-transport-security`](./require-strict-transport-security.md), and CSP *directive contents* to [`no-unsafe-csp-directives`](./no-unsafe-csp-directives.md) — no finding is reported twice.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// CSP off — an injected <script> executes normally
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// Clickjacking guard off (helmet ≤6 spelling)
+app.use(helmet({ frameguard: false, hsts: { maxAge: 31536000 } }));
+
+// MIME-sniffing guard off (helmet 7+ spelling)
+app.use(helmet({ xContentTypeOptions: false }));
+
+// Referrer-Policy off — full URLs leak to third parties
+app.use(helmet({ referrerPolicy: false }));
+
+// Framework fingerprint kept
+app.use(helmet({ hidePoweredBy: false }));
+```
+
+### ✅ Correct
+
+```javascript
+// Keep the defaults
+app.use(helmet());
+
+// Customise a protection instead of disabling it
+app.use(
+  helmet({
+    contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } },
+    referrerPolicy: { policy: 'no-referrer' },
+  }),
+);
+
+// Protections that are not security headers are not policed
+app.use(helmet({ dnsPrefetchControl: false, ieNoOpen: false }));
+```
+
+## Suggestions
+
+The rule offers one editor suggestion (no auto-fix): **remove the `<option>: false` entry** so the helmet default applies again. Whichever comma keeps the object literal valid is removed with it.
+
+## Options
+
+| Option           | Type       | Default | Description                                                                      |
+| ---------------- | ---------- | ------- | -------------------------------------------------------------------------------- |
+| `allowDisabled`  | `string[]` | `[]`    | Helmet option names that may be disabled without a report (e.g. a CSP set at the CDN edge) |
+
+```json
+{
+  "rules": {
+    "express-security/no-disabled-helmet-protections": [
+      "error",
+      { "allowDisabled": ["contentSecurityPolicy"] }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+If the security headers are set by a reverse proxy or CDN in front of every environment (and that config is itself reviewed), list the options in `allowDisabled` rather than disabling the rule wholesale.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Config Held In A Variable
+
+**Why**: No data-flow analysis — only an object literal passed directly to `helmet()` is inspected.
+
+```typescript
+// ❌ NOT DETECTED
+const helmetConfig = { contentSecurityPolicy: false };
+app.use(helmet(helmetConfig));
+```
+
+**Mitigation**: Inline the config, or lint the config module with a project-specific rule.
+
+### Non-Literal Disable Value
+
+**Why**: The value must be the `false` literal.
+
+```typescript
+// ❌ NOT DETECTED
+app.use(helmet({ noSniff: process.env.NODE_ENV !== 'production' }));
+```
+
+**Mitigation**: Prefer a literal; environment-conditional protections are a production incident waiting for a bad deploy.
+
+### Computed Option Keys
+
+**Why**: `{ [key]: false }` has no statically known option name.
+
+```typescript
+// ❌ NOT DETECTED
+app.use(helmet({ [flagName]: false }));
+```
+
+## Further Reading
+
+- [CWE-693: Protection Mechanism Failure](https://cwe.mitre.org/data/definitions/693.html)
+- [OWASP A05:2021 – Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
+- [Helmet documentation](https://helmetjs.github.io/)

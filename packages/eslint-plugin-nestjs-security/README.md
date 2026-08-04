@@ -1,5 +1,7 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -54,22 +56,37 @@ npm install eslint-plugin-nestjs-security --save-dev
 ---
 
 ## ⚠️ Global Configuration Handling
-> **Static Analysis Limitation:** ESLint analyzes files independently. It cannot detect cross-file configurations like `app.useGlobalGuards()` in `main.ts` while linting `users.controller.ts`.
 
-### Understanding the Problem
+NestJS applies guards, pipes and rate limiting **application-wide**, in a file the
+controller never imports. Since v1.3.0 the plugin discovers those registrations
+itself: on the first finding it locates the project root (nearest `package.json`)
+and scans the bootstrap and `*.module.ts` files once, caching the result.
 
-NestJS supports two security configuration approaches:
+| Approach             | Example                                                     | Detected? |
+| -------------------- | ----------------------------------------------------------- | :-------: |
+| **Per-Controller**   | `@UseGuards(AuthGuard)` on class                            |    ✅     |
+| **Per-Method**       | `@UseGuards(AuthGuard)` on method                           |    ✅     |
+| **Composite**        | `@AuthJwtAccessProtected()` wrapping `UseGuards`            |    ✅¹    |
+| **Global (main.ts)** | `app.useGlobalGuards()` / `app.useGlobalPipes()`            |    ✅     |
+| **Global (Module)**  | `{ provide: APP_GUARD, useClass: AuthGuard }`               |    ✅     |
+| **Global (Module)**  | `{ provide: APP_PIPE, useClass: ValidationPipe }`           |    ✅     |
+| **Global (Module)**  | `ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])`      |    ✅     |
 
-| Approach             | Example                                           | ESLint Can See? |
-| -------------------- | ------------------------------------------------- | :-------------: |
-| **Per-Controller**   | `@UseGuards(AuthGuard)` on class                  |       ✅        |
-| **Per-Method**       | `@UseGuards(AuthGuard)` on method                 |       ✅        |
-| **Global (main.ts)** | `app.useGlobalGuards(new AuthGuard())`            |       ❌        |
-| **Global (Module)**  | `ThrottlerModule.forRoot({ ttl: 60, limit: 10 })` |       ❌        |
+¹ A composite decorator cannot be resolved by a syntax-only linter, so any route
+carrying a decorator the plugin does not recognise is assumed to be protected. A
+missed finding is cheaper than a false positive on somebody else's codebase. Set
+`allowCustomDecorators: false` on `require-guards` if you want the strict
+behaviour back.
 
-### Solution: `assumeGlobal*` Options
+`ThrottlerGuard` registered as `APP_GUARD` counts as rate limiting, **not** as
+authentication — a project that only throttles still gets `require-guards`
+findings.
 
-For teams using **global configuration**, set `assumeGlobal*: true` to disable per-file checks:
+### Escape hatch: `assumeGlobal*` and `detectGlobal*` options
+
+`assumeGlobal*: true` disables a rule outright without scanning the project;
+`detectGlobal*: false` disables the project scan and restores strict per-file
+checking:
 
 ```javascript
 // eslint.config.js
@@ -93,6 +110,9 @@ export default [
         'warn',
         { assumeGlobalThrottler: true },
       ],
+
+      // Or keep strict per-file checking and skip the project scan entirely
+      // 'nestjs-security/require-guards': ['error', { detectGlobalGuards: false }],
     },
   },
 ];
@@ -113,15 +133,12 @@ The rules recognize common "bypass" decorators for intentionally unprotected end
 @SkipThrottle()  // @nestjs/throttler built-in
 ```
 
-### 🔮 Future: Cross-File Global Detection (Planned)
+### Where rate limiting is reported
 
-We're planning dedicated rules to **verify** global configuration exists:
-
-- `require-global-guards` → Ensures `main.ts` contains `app.useGlobalGuards()`
-- `require-global-validation-pipe` → Ensures `main.ts` contains `app.useGlobalPipes()`
-- `require-global-throttler` → Ensures `app.module.ts` imports `ThrottlerModule`
-
-This will enable a "trust but verify" approach for teams using global configuration.
+`require-throttler` reports **once, on the root module** (`AppModule`, or any
+`@Module` class in `app.module.ts`) when no `ThrottlerModule` is configured
+anywhere in the project. Rate limiting is adopted with one module registration,
+so reporting it on every route described a one-line fix as dozens of errors.
 
 ---
 
@@ -154,9 +171,11 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-489 |  |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
 | [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  |  |  |  |  |
 | [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-942 | A05:2021 |  | Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true. | 🟢 |  |  |  |  |  |
 | [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
 | [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-284 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  |  |  |  |  |
+| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-770 | A05:2021 |  | Reports once, on the root module, when the application configures no rate limiter (ThrottlerModule + Thrott… | 🟢 |  |  |  |  |  |
+| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-915 | A03:2021 |  | Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of rea… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
@@ -191,4 +210,8 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security"><img src="https://eslint.interlace.tools/images/og-nestjs-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>

@@ -21,6 +21,8 @@ import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { getToolchain } from '../../lib/toolchain.ts';
+import { capturePreregistration } from '../../lib/preregister.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -45,8 +47,13 @@ const THRESHOLD = Number.parseFloat(ARG('--threshold', '0.95'));
 // Plugins enabled in oxlint must match what the ESLint config loads, otherwise
 // oxlint reports findings ESLint never sees and parity collapses to noise.
 // Default mirrors eslint.benchmark.config.mjs (security plugins).
+// NOTE: names here are filtered against the manifest (`allowedShorts`), so a
+// stale entry is silently dropped rather than erroring — keep it accurate.
+// `crypto` was removed 2026-08-02: eslint-plugin-crypto was consolidated into
+// node-security (PR #167) and its rules are covered under that plugin.
+// Locked by scripts/__tests__/oxlint-export-lock.test.ts.
 const PLUGINS_DEFAULT = [
-  'secure-coding', 'node-security', 'pg', 'crypto', 'express-security',
+  'secure-coding', 'node-security', 'pg', 'express-security',
   'browser-security', 'jwt', 'mongodb-security', 'nestjs-security',
   'lambda-security', 'vercel-ai-security',
 ];
@@ -344,9 +351,26 @@ function main() {
   const total = d.shared + d.eslintOnly.length + d.oxlintOnly.length;
   const parityRate = total === 0 ? 1.0 : d.shared / total;
 
+  // `allowDirty` is documented "NOT for CI" (benchmarks/lib/preregister.ts:112):
+  // a hash computed over uncommitted method files looks verifiable but is not,
+  // which is the precise failure this receipt exists to prevent. Locally it
+  // stays permissive so a work-in-progress run still completes.
+  const prereg = capturePreregistration({ allowDirty: !CI, entrypoint: import.meta.url });
+
   const envelope = {
     suite: 'ilb-oxlint-parity',
     version: '1.0',
+    // Vocabulary-contract fields (benchmarks/lib/result-schema.json) plus the
+    // squash-proof receipt. Without these every run wrote a file that
+    // ilb-validate-results could only grandfather as a warning — the debt grew
+    // by one file per run and never shrank.
+    bench: 'ILB-Wild',
+    benchVersion: '0.1',
+    timestamp: new Date().toISOString(),
+    toolchain: getToolchain(),
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     runAt: new Date().toISOString(),
     corpus: path.relative(REPO_ROOT, CORPUS),
     eslintFindings: eslintFindings.length,

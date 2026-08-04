@@ -15,17 +15,6 @@ import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace
 
 type MessageIds = 'missingMaxTokens';
 
-/**
- * Option keys that bound output tokens.
- * AI SDK v5+ renamed `maxTokens` to `maxOutputTokens` (`CallSettings.maxOutputTokens`);
- * the v4 names stay accepted so v4 codebases keep passing. snake_case variants cover
- * OpenAI-shaped proxies that forward the raw wire name.
- */
-const MAX_TOKEN_KEYS = new Set([
-  'maxOutputTokens', 'max_output_tokens', // v5+
-  'maxTokens', 'max_tokens',              // v4
-]);
-
 export interface Options {
   /** Default max tokens to suggest */
   suggestedLimit?: number;
@@ -42,7 +31,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-tokens.md',
-      description: 'Require an output token limit (maxOutputTokens / maxTokens) in generateText and streamText calls',
+      description: 'Require maxTokens limit in generateText and streamText calls',
       cwe: 'CWE-770',
       cvss: 6.5,
     },
@@ -53,10 +42,10 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-770',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} call without an output token limit can lead to excessive resource consumption',
+        description: '{{function}} call without a token limit can lead to excessive resource consumption',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add maxOutputTokens option: {{function}}({ maxOutputTokens: 4096, ... }) — on AI SDK v4 the option is maxTokens',
+        fix: 'Add a token limit: {{function}}({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4)',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/generating-text',
       }),
     },
@@ -109,7 +98,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if a token limit is present (v5+ maxOutputTokens or v4 maxTokens)
+        // Check if a token limit is present: maxTokens (v4) or maxOutputTokens (v5+ rename)
         const hasMaxTokens = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
           const keyName = prop.key.type === 'Identifier'
@@ -117,7 +106,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
             : prop.key.type === 'Literal'
               ? String(prop.key.value)
               : null;
-          return keyName !== null && MAX_TOKEN_KEYS.has(keyName);
+          return keyName === 'maxTokens' || keyName === 'max_tokens' || keyName === 'maxOutputTokens';
         });
 
         if (!hasMaxTokens) {

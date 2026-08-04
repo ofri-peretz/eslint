@@ -1,5 +1,7 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -134,8 +136,8 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-778 |  |  | This rule identifies AI SDK calls that aren't preceded by logging statements | 🟢 |  |  |  |  |  |
 | [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-20 |  |  | This rule identifies code patterns where embeddings are stored in vector databases without validation. | 🟢 |  |  |  |  |  |
 | [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-755 |  |  | This rule identifies AI SDK calls that aren't wrapped in try-catch blocks | 🟢 |  |  |  |  |  |
-| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies AI SDK calls that use tools but don't specify a step limit (stopWhen on v5+, maxSteps on v4) | 🟢 |  |  |  |  |  |
-| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify an output token limit (maxOutputTokens on v5+, maxTokens on v4) | 🟢 |  |  |  |  |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies AI SDK calls that use tools but don't specify a step limit (maxSteps or stopWhen) | 🟢 |  |  |  |  |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens) | 🟢 |  |  |  |  |  |
 | [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-200 |  |  | This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file s… | 🟢 |  |  |  |  |  |
 | [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-707 |  |  | This rule identifies code patterns where AI-generated output is displayed to users without validation or fa… | 🟢 |  |  |  |  |  |
 | [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-74 |  |  | This rule identifies code patterns where content retrieved from vector stores or document retrieval systems… | 🟢 |  |  |  |  |  |
@@ -177,4 +179,8 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-vercel-ai-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>

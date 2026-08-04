@@ -18,7 +18,7 @@
 
 ### The Interview Story
 
-> _"I identified that the ESLint ecosystem was stuck in 2020—built for humans, not agents. I rebuilt the static analysis layer from the ground up with AI-native messaging, 100x faster dependency analysis, and OWASP-mapped security rules. The plugins now have X weekly downloads, proving the market needed this."_
+> _"I identified that the ESLint ecosystem was stuck in 2020—built for humans, not agents. I rebuilt the static analysis layer from the ground up with AI-native messaging, an `import-next` plugin that lints a 455K-LoC codebase 3.1x faster end-to-end with circular-dependency detection on, and OWASP-mapped security rules. The plugins now have X weekly downloads, proving the market needed this."_
 
 This is a **Staff-level product engineering story**, not a "I made some npm packages" story.
 
@@ -63,7 +63,8 @@ This is a **Staff-level product engineering story**, not a "I made some npm pack
 ```
 Phase 1: eslint-plugin-import-next (The Trojan Horse)
 ├── Target: Frustrated eslint-plugin-import users
-├── Tactic: "45s → 0.4s" benchmark viral content
+├── Tactic: "148s → 2.7s" no-cycle benchmark content (synthetic, 5K files)
+├── Tactic: "crashes on deep chains, we complete them" (categorical, no benchmark needed)
 ├── Goal: 50K weekly downloads
 └── Timeline: 6-12 months
 
@@ -90,7 +91,8 @@ Phase 4: Viral Breakout
 
 | Lever                      | How To Pull It                                      |
 | -------------------------- | --------------------------------------------------- |
-| **Performance benchmarks** | "10K files: import took 45s, import-next took 0.4s" |
+| **Performance benchmarks** | "5,736-file React codebase: 8x faster rule time, 3.1x end-to-end, 100% parity for standard `import/no-cycle` detection" ([latest.json](../benchmarks/results/ilb-perf-import-no-cycle/latest.json) — `kpiStatus.detectionParity`, which also records 3 extra barrel-export-specific cycles) |
+| **Deep-graph capability** | "6,000-module chain: `import/no-cycle` crashes, `import-next/no-cycle` finishes in 18s" ([repro](../benchmarks/scripts/repro-deep-chain.mjs) — categorical, needs no benchmark) |
 | **Drop-in migration**      | Zero friction replacement guides                    |
 | **The Badge**              | Social proof viral loop in READMEs                  |
 | **AGENTS.md standard**     | Novel contribution to AI tooling ecosystem          |
@@ -105,9 +107,10 @@ Phase 4: Viral Breakout
 
 | Aspect      | eslint-plugin-import    | import-next                     |
 | ----------- | ----------------------- | ------------------------------- |
-| Performance | 45s+ on large monorepos | <1s (100x faster)               |
+| Performance | 51.7s on a 455K-LoC repo | 16.7s (3.1x faster e2e, 8x rule time) |
 | Incremental | No                      | Yes (shared caching)            |
-| Memory      | OOM on large repos      | Bounded                         |
+| Memory      | 4,035 MB peak RSS       | 4,064 MB — parity, not a win    |
+| Deep graphs (`no-cycle` only) | Crashes — stack overflow in its SCC pass | Completes — iterative SCC |
 | AI-Native   | No                      | Structured remediation messages |
 
 ### vs. eslint-plugin-unicorn
@@ -142,7 +145,7 @@ Phase 4: Viral Breakout
 2. **AI-Native Messaging (AEO)** — Messages designed for LLM consumption
 3. **MCP Integration Strategy** — Ahead of the ecosystem curve
 4. **OWASP-Mapped Security** — Enterprise compliance built-in
-5. **100x Performance Claims** — Quantifiable, benchmarkable value
+5. **Benchmarked Performance Claims** — every number registered in `CLAIMS.md` against a result file
 
 ### The "Builder Who Ships" Narrative
 
@@ -154,7 +157,7 @@ You're not an AI researcher. You're a **builder who can take ambiguous problems 
 
 ### Short-term (0-3 months)
 
-- [ ] Publish "45s → 0.4s" benchmark blog post
+- [x] Publish the no-cycle benchmark blog post — shipped as ["eslint-plugin-import Spends 148s Finding Circular Deps in 5,000 Files. import-next Does It in 2.7s."](https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa) (slug is legacy; title is correct). The 148s → 2.7s pair is the **`no-cycle` rule alone on a synthetic 5,000-file corpus** — the article body carries that scope; quote it with the qualifier attached.
 - [ ] Submit template PRs to Vercel/Next.js starters with eslint-plugin-vercel-ai-security
 - [ ] Launch "Security Badge" campaign for README viral loop
 - [ ] Create interactive StackBlitz demos with "Auto-Fix" button

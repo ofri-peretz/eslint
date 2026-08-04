@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: mysql-security",
+    "icon": "Database",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

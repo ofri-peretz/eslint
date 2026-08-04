@@ -71,14 +71,59 @@ class CreateUserDto {
 }
 ```
 
+## Whitelisting pipes silence this rule
+
+If the project registers a global `ValidationPipe` with `whitelist: true`, this
+rule stays quiet. Whitelisting **strips** every property a DTO does not decorate,
+so an undecorated property never arrives from a request — it is dead code, not
+unvalidated input, and reporting it under a CWE banner is a false positive.
+
+Detection checks the file that registers the pipe, then that file's own relative
+imports (one hop), since the options are usually a `ValidationPipeOptions` const
+in its own module. Set `detectWhitelistingPipe: false` to disable the check, or
+`assumeWhitelistingPipe: true` when your setup isn't statically detectable.
+
+Measured on brocoders/nestjs-boilerplate — which whitelists — this removed all 5
+findings on server-set fields (`provider`, `socialId`, `path`) while leaving the
+three apps that don't whitelist fully reported.
+
 ## Options
 
 ```typescript
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Also check response/serialization DTOs (default: false)
+  checkResponseDtos?: boolean;
+
+  // Class-name pattern identifying a response DTO
+  // (default: 'Response|Result|View|Payload|Output|Serializ')
+  responseDtoPattern?: string;
+
+  // Stay quiet when the project registers a ValidationPipe with
+  // `whitelist: true`, which strips undecorated properties (default: true)
+  detectWhitelistingPipe?: boolean;
+
+  // Treat the project as whitelisting without scanning for it, for setups the
+  // static scan can't see (default: false)
+  assumeWhitelistingPipe?: boolean;
 }
 ```
+
+## What the rule deliberately does not report
+
+- **Response DTOs.** A class whose name (or superclass name) matches
+  `responseDtoPattern`, or that carries class-transformer `@Expose()` /
+  `@Exclude()`, describes server *output*. class-validator decorators are
+  meaningless there, and requiring them produced one finding per property of
+  every serialization model in the codebase. Re-enable with
+  `checkResponseDtos: true`.
+- **Multipart upload slots.** `@ApiProperty({ type: 'string', format: 'binary' })`
+  (including the nested `items: { format: 'binary' }` array form) is consumed by
+  Multer, never by class-validator.
+- **`@Allow()`-marked properties.** `@Allow()` is an explicit "accepted as-is"
+  decision under `forbidNonWhitelisted`, not a missing validator.
 
 ## Common Validators
 

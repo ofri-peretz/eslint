@@ -104,4 +104,20 @@ describe('HeroSection — DOM render lock', () => {
       expect(btn.className).toMatch(/\bpy-3\b/);
     }
   });
+
+  // The "Built for ESLint" badge rides HeroCosmic's `footer` slot — a
+  // refactor of the preset that silently drops `footer` would pass the
+  // source-text lock in nav-brand-lock.test.tsx, so pin the rendered
+  // outcome here too: badge text AND the inlined ESLint hexagon (token
+  // fills) must reach the DOM.
+  it('renders the "Built for ESLint" badge with the ESLint mark in the DOM', () => {
+    const { container, getByText } = render(<HeroSection />);
+    const label = getByText(/Built for ESLint/i);
+    expect(label).toBeTruthy();
+    const badge = label.closest('span');
+    expect(badge, 'badge pill must wrap the label').not.toBeNull();
+    const mark = badge!.querySelector('path[fill="var(--eslint-mark-outer)"]');
+    expect(mark, 'ESLint hexagon must render inside the badge').not.toBeNull();
+    expect(container).toBeTruthy();
+  });
 });

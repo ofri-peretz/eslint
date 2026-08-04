@@ -18,6 +18,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-unsafe-dynamic-require',
       'no-buffer-overread',
       'no-deprecated-buffer',
+      'no-unsafe-buffer-alloc',
       'no-toctou-vulnerability',
       'no-zip-slip',
       'no-arbitrary-file-access',
@@ -25,6 +26,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       // no-pii-in-logs removed 2026-05-31: duplicate of secure-coding/no-pii-in-logs
       'no-ssrf',
       'no-shell-injection',
+      'no-dynamic-command-string',
       'no-dynamic-algorithm-selection',
       'detect-suspicious-dependencies',
       'lock-file',
@@ -65,6 +67,23 @@ describe('eslint-plugin-node-security plugin interface', () => {
       expect(recommendedRules['node-security/detect-child-process']).toBe(
         'error',
       );
+    });
+
+    // Regression lock. `secure-coding/no-insecure-comparison` was removed from
+    // every secure-coding preset in favour of this rule, but this rule was not
+    // in any `recommended` preset — so CWE-697 timing-unsafe comparison briefly
+    // had no preset coverage anywhere in the ecosystem while the migration note
+    // told users it lived here. If this rule leaves `recommended` again, the
+    // migration note in
+    // `packages/eslint-plugin-secure-coding/src/index.ts` becomes false.
+    it('keeps no-timing-unsafe-compare in recommended (CWE-697 preset coverage)', () => {
+      const recommendedRules = configs['recommended'].rules || {};
+      expect(
+        recommendedRules['node-security/no-timing-unsafe-compare'],
+        'no-timing-unsafe-compare must stay in recommended: it is the documented ' +
+          'replacement for secure-coding/no-insecure-comparison, which was removed ' +
+          'from every secure-coding preset.',
+      ).toBeDefined();
     });
 
     it('should provide strict configuration', () => {

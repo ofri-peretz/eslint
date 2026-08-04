@@ -1,14 +1,12 @@
 {
-    "title": "Documentation",
-    "defaultOpen": true,
-    "pages": [
-        "getting-started",
-        "components",
-        "benchmarks",
-        "design",
-        "security",
-        "quality",
-        "integrations",
-        "learn"
-    ]
+  "title": "Documentation",
+  "defaultOpen": true,
+  "pages": [
+    "getting-started",
+    "benchmarks",
+    "security",
+    "quality",
+    "integrations",
+    "learn"
+  ]
 }

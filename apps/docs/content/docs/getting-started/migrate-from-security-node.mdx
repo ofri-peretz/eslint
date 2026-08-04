@@ -1,0 +1,97 @@
+---
+title: Migrate from eslint-plugin-security-node
+description: Rule-by-rule mapping from eslint-plugin-security-node (last published Jan 2024) to maintained Interlace equivalents
+icon: PackageX
+---
+
+## Scope of this guide
+
+[`eslint-plugin-security-node`](https://www.npmjs.com/package/eslint-plugin-security-node) ships 22 rules for Node.js security linting. Its latest release is **v1.1.4, published 2024-01-03** — there have been no releases since.
+
+This page maps each of its 22 rules to the closest Interlace equivalent, or states plainly that no equivalent exists. It is a mechanical mapping, not a comparison review.
+
+> **Pinned source.** Rule IDs below were read from `require('eslint-plugin-security-node').rules` of **v1.1.4** (npm `dist-tags.latest`), retrieved from the npm registry on **2026-07-31**. If a later version ever publishes, re-verify against it.
+
+## Coverage summary
+
+| Status | Count |
+| :--- | :--- |
+| Direct equivalent | 13 |
+| Partial equivalent (see notes) | 3 |
+| No equivalent — gap | 6 |
+
+## Rule-by-rule mapping
+
+Rule IDs in the first column are the exact keys exported by `security-node` v1.1.4 (including the upstream typo in `…-exrpress-session`).
+
+| `security-node` rule | Status | Interlace equivalent | Notes |
+| :--- | :---: | :--- | :--- |
+| `detect-absence-of-name-option-in-exrpress-session` | ✗ gap | — | No `express-session` rules in `eslint-plugin-express-security`. |
+| `detect-buffer-unsafe-allocation` | ✓ | [`node-security/no-unsafe-buffer-alloc`](/docs/security/plugin-node-security/rules/no-unsafe-buffer-alloc) | Both flag `Buffer.allocUnsafe()` unconditionally (CWE-908). Ours also covers `Buffer.allocUnsafeSlow()`, exempts `Buffer.allocUnsafe(n).fill(0)`, and offers a `Buffer.alloc` suggestion. Not to be confused with `node-security/no-deprecated-buffer`, which targets the deprecated `Buffer()`/`new Buffer()` constructor (CWE-676). |
+| `detect-child-process` | ✓ | [`node-security/detect-child-process`](/docs/security/plugin-node-security/rules/detect-child-process) | Same rule name. Related: `node-security/no-shell-injection`. |
+| `detect-crlf` | ✗ gap | — | Log forging (CWE-117) via user input in log calls. `secure-coding/no-pii-in-logs` targets PII exposure, not CRLF forging — different concern. |
+| `detect-dangerous-redirects` | ✓ | `express-security/no-user-controlled-redirect` | Flags user-controlled `res.redirect()` arguments. Browser-side counterpart: `browser-security/no-insecure-redirects`. |
+| `detect-eval-with-expr` | ✓ | [`node-security/detect-eval-with-expression`](/docs/security/plugin-node-security/rules/detect-eval-with-expression) | Browser-side counterpart: `browser-security/no-eval`. |
+| `detect-html-injection` | ✓ | [`browser-security/no-innerhtml`](/docs/security/plugin-browser-security/rules/no-innerhtml) | Non-literal `innerHTML` / DOM-injection sinks. |
+| `detect-improper-exception-handling` | ◐ partial | [`reliability/no-silent-errors`](/docs/quality/plugin-reliability/rules/no-silent-errors) | Upstream rule validates `process.on('uncaughtException')` handlers (non-empty callback, `process.exit` with non-zero code). No Interlace rule checks that specific contract; `no-silent-errors` covers the swallowed-error part only. |
+| `detect-insecure-randomness` | ✓ | [`node-security/no-math-random-crypto`](/docs/security/plugin-node-security/rules/no-math-random-crypto) | `Math.random()` in security-sensitive contexts. |
+| `detect-non-literal-require-calls` | ✓ | [`node-security/no-unsafe-dynamic-require`](/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | Related: `node-security/no-dynamic-require`. |
+| `detect-nosql-injection` | ✓ | [`mongodb-security/no-operator-injection`](/docs/security/plugin-mongodb-security/rules/no-operator-injection) | Related: `mongodb-security/no-unsafe-where`, `mongodb-security/no-unsafe-query`. |
+| `detect-option-multiplestatements-in-mysql` | ✗ gap | — | No `mysql`/`mysql2` plugin. The SQL plugin (`eslint-plugin-pg`) targets PostgreSQL clients. |
+| `detect-option-rejectunauthorized-in-nodejs-httpsrequest` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `rejectUnauthorized: false` in TLS/HTTPS options. |
+| `detect-option-unsafe-in-serialize-javascript-npm-package` | ✗ gap | — | No rule targets `serialize-javascript`'s `unsafe: true` option. `secure-coding/no-unsafe-deserialization` covers deserialization sinks, not this serialization option. |
+| `detect-possible-timing-attacks` | ✓ | [`node-security/no-timing-unsafe-compare`](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | Related: `secure-coding/no-insecure-comparison`. |
+| `detect-runinthiscontext-method-in-nodes-vm` | ✗ gap | — | No rules for the Node.js `vm` module. |
+| `detect-security-missconfiguration-cookie` | ✓ | [`express-security/no-insecure-cookie-options`](/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | Express cookie flags (`httpOnly`, `secure`, …). Browser-side counterpart: `browser-security/require-cookie-secure-attrs`. |
+| `detect-sql-injection` | ◐ partial | [`pg/no-unsafe-query`](/docs/security/plugin-pg/rules/no-unsafe-query) | Upstream rule flags string-built queries for any SQL client. `eslint-plugin-pg` (`no-unsafe-query`, `check-query-params`) covers PostgreSQL clients; string-built `mysql`/`mysql2` queries are not covered. |
+| `detect-unhandled-async-errors` | ◐ partial | [`reliability/no-unhandled-promise`](/docs/quality/plugin-reliability/rules/no-unhandled-promise) | Equivalent lives in a quality plugin (`eslint-plugin-reliability`), not a security plugin. |
+| `detect-unhandled-event-errors` | ✗ gap | — | No rule requires an `'error'` listener on `EventEmitter` instances. |
+| `disable-ssl-across-node-server` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `NODE_TLS_REJECT_UNAUTHORIZED = '0'`. |
+| `non-literal-reg-expr` | ✓ | [`secure-coding/detect-non-literal-regexp`](/docs/security/plugin-secure-coding/rules/detect-non-literal-regexp) | Related: `secure-coding/no-redos-vulnerable-regex`, `secure-coding/no-unsafe-regex-construction`. |
+
+## Config migration
+
+The 13 direct-mapping rules span five plugins. Install the ones your codebase needs:
+
+```bash
+npm install --save-dev eslint-plugin-node-security eslint-plugin-secure-coding eslint-plugin-express-security eslint-plugin-mongodb-security eslint-plugin-browser-security
+```
+
+Add `eslint-plugin-pg` or `eslint-plugin-reliability` if the partial rows above apply to you.
+
+<Tabs items={['Before (security-node)', 'After (Interlace)']}>
+<Tab value="Before (security-node)">
+```json title=".eslintrc.json"
+{
+  "plugins": ["security-node"],
+  "extends": ["plugin:security-node/recommended"]
+}
+```
+</Tab>
+<Tab value="After (Interlace)">
+```js title="eslint.config.js"
+import nodeSecurity from 'eslint-plugin-node-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import expressSecurity from 'eslint-plugin-express-security';
+import mongodbSecurity from 'eslint-plugin-mongodb-security';
+import browserSecurity from 'eslint-plugin-browser-security';
+
+export default [
+  nodeSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  expressSecurity.configs.recommended,
+  mongodbSecurity.configs.recommended,
+  browserSecurity.configs.recommended,
+];
+```
+</Tab>
+</Tabs>
+
+Still on `.eslintrc`? Do the [flat-config migration](/docs/getting-started/flat-config) first — all Interlace plugins support flat config natively (legacy configs are also exported).
+
+## If you depend on one of the 6 gaps
+
+The gaps are listed above exactly as measured; nothing here substitutes for them today. Options:
+
+- Keep `eslint-plugin-security-node` installed **alongside** the Interlace plugins, enabling only its gap rules (`detect-crlf`, `detect-unhandled-event-errors`, `detect-runinthiscontext-method-in-nodes-vm`, `detect-option-multiplestatements-in-mysql`, `detect-option-unsafe-in-serialize-javascript-npm-package`, `detect-absence-of-name-option-in-exrpress-session`). ESLint runs both without conflict; note the upstream package targets ESLint 8-era APIs.
+- [Open an issue](https://github.com/ofri-peretz/eslint/issues) if one of the gaps matters to your codebase — gap reports directly feed rule prioritization.

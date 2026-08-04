@@ -19,21 +19,21 @@ import {
 ESLint Interlace is a comprehensive ecosystem of **security and quality ESLint plugins** designed to protect your JavaScript and TypeScript applications from vulnerabilities while enforcing best practices.
 
 <Callout type="info" title="Multiple Plugins, One Ecosystem">
-  ESLint Interlace provides **18+ specialized plugins** that work independently
-  or together. Install only what you need—each plugin is published separately on
-  npm.
+  ESLint Interlace provides **<Stat of="plugins.total" /> specialized plugins**
+  that work independently or together. Install only what you need—each plugin is
+  published separately on npm.
 </Callout>
 
 ## Why Interlace?
 
 <Cards>
   <Card title="🛡️ Security First" href="/docs/security">
-    11+ security plugins protecting against XSS, SQL injection, insecure tokens,
-    weak cryptography, and more.
+    <Stat of="plugins.security" /> security plugins protecting against XSS, SQL
+    injection, insecure tokens, weak cryptography, and more.
   </Card>
   <Card title="📐 Quality Enforced" href="/docs/quality">
-    7+ quality plugins ensuring code conventions, modularity, reliability, and
-    modern patterns.
+    <Stat of="plugins.quality" /> quality plugins ensuring code conventions,
+    modularity, reliability, and modern patterns.
   </Card>
   <Card
     title="🤖 AI-Native"
@@ -142,33 +142,35 @@ npx eslint .
 
 Protect your application from common vulnerabilities:
 
-| Plugin                 | Focus Area                                      | Rules |
-| ---------------------- | ----------------------------------------------- | ----- |
-| **browser-security**   | XSS prevention, DOM security                    | 50+   |
-| **jwt**                | Token security, algorithm confusion             | 13    |
-| **express-security**   | Express.js hardening                            | 14    |
-| **node-security**      | Server-side security patterns (includes crypto) | 31    |
-| **mongodb-security**   | NoSQL injection prevention                      | 19    |
-| **pg**                 | PostgreSQL security                             | 15    |
-| **secure-coding**      | General injection prevention                    | 26    |
-| **vercel-ai-security** | AI SDK safety                                   | 22    |
-| **lambda-security**    | AWS Lambda security                             | 16    |
-| **nestjs-security**    | NestJS security patterns                        | 10    |
-| **crypto**             | _(Deprecated)_ Merged into node-security        | —     |
+| Plugin                 | Focus Area                                      | Rules                                    |
+| ---------------------- | ----------------------------------------------- | ---------------------------------------- |
+| **browser-security**   | XSS prevention, DOM security                    | <Stat plugin="browser-security" />       |
+| **jwt**                | Token security, algorithm confusion             | <Stat plugin="jwt" />                    |
+| **express-security**   | Express.js hardening                            | <Stat plugin="express-security" />       |
+| **node-security**      | Server-side security patterns (includes crypto) | <Stat plugin="node-security" />          |
+| **mongodb-security**   | NoSQL injection prevention                      | <Stat plugin="mongodb-security" />       |
+| **pg**                 | PostgreSQL security                             | <Stat plugin="pg" />                     |
+| **secure-coding**      | General injection prevention                    | <Stat plugin="secure-coding" />          |
+| **vercel-ai-security** | AI SDK safety                                   | <Stat plugin="vercel-ai-security" />     |
+| **lambda-security**    | AWS Lambda security                             | <Stat plugin="lambda-security" />        |
+| **nestjs-security**    | NestJS security patterns                        | <Stat plugin="nestjs-security" />        |
+| **crypto**             | _(Deprecated)_ Merged into node-security        | —                                        |
 
 ### Quality & Architecture Plugins
 
 Enforce best practices and maintainability:
 
-| Plugin              | Focus Area                                 | Rules |
-| ------------------- | ------------------------------------------ | ----- |
-| **import-next**     | Import organization (100x faster no-cycle) | 61    |
-| **conventions**     | Team coding standards                      | 9     |
-| **maintainability** | Code readability                           | 8     |
-| **reliability**     | Error handling patterns                    | 8     |
-| **modularity**      | Clean architecture                         | 7     |
-| **operability**     | Logging and metrics                        | 6     |
-| **modernization**   | ES2022+ patterns                           | 5     |
+| Plugin              | Focus Area                                 | Rules                              |
+| ------------------- | ------------------------------------------ | ---------------------------------- |
+| **import-next**     | Import organization (8x faster no-cycle)   | <Stat plugin="import-next" />      |
+| **conventions**     | Team coding standards                      | <Stat plugin="conventions" />      |
+| **maintainability** | Code readability                           | <Stat plugin="maintainability" />  |
+| **reliability**     | Error handling patterns                    | <Stat plugin="reliability" />      |
+| **modularity**      | Clean architecture                         | <Stat plugin="modularity" />       |
+| **operability**     | Logging and metrics                        | <Stat plugin="operability" />      |
+| **modernization**   | ES2022+ patterns                           | <Stat plugin="modernization" />    |
+| **react-features**  | Modern React patterns                      | <Stat plugin="react-features" />   |
+| **react-a11y**      | React accessibility                        | <Stat plugin="react-a11y" />       |
 
 <Callout type="success" title="Start Secure">
   Ready to protect your codebase? Head to the [Installation

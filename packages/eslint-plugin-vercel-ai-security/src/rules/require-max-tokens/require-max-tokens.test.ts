@@ -45,6 +45,26 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
         });
       `,
     },
+    // v5+ rename: maxOutputTokens
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          maxOutputTokens: 4096,
+        });
+      `,
+    },
+    // v5+ rename on streamText
+    {
+      code: `
+        await streamText({
+          model: 'openai/gpt-5',
+          messages,
+          maxOutputTokens: 2048,
+        });
+      `,
+    },
     // Not an AI function
     {
       code: `

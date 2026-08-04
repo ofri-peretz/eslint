@@ -30,6 +30,10 @@ This rule identifies code patterns where system prompts contain dynamic or user-
 
 This rule identifies code patterns where system prompts contain dynamic or user-controlled content. Dynamic system prompts can lead to agent confusion attacks where the AI's core behavior can be manipulated.
 
+Both spellings of the system-prompt option are checked. AI SDK v7 renamed it to
+`instructions` and marks `system` as deprecated, so the examples below apply
+identically to `instructions:`.
+
 ## ❌ Incorrect Code
 
 ```typescript

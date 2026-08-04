@@ -1,0 +1,17 @@
+{
+  "cwe": "CWE-295",
+  "name": "Improper Certificate Validation",
+  "owasp": "A07:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-node-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "reject-unauthorized-false.js", "description": "https.request({ rejectUnauthorized: false })" },
+      { "file": "tls-checkserveridentity-noop.js", "description": "tls.connect with checkServerIdentity: () => undefined" }
+    ],
+    "safe": [
+      { "file": "tls-default-verification.js", "description": "https.request with default certificate verification" },
+      { "file": "tls-checkserveridentity-validates.js", "description": "Custom checkServerIdentity that delegates + returns errors" }
+    ]
+  }
+}

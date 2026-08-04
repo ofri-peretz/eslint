@@ -1,6 +1,6 @@
 ---
 title: require-max-tokens
-description: "This rule identifies AI SDK calls that don't specify an output token limit (maxOutputTokens on v5+, maxTokens on v4)"
+description: "This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens)"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -12,7 +12,7 @@ autofix: false
 
 
 <!-- @rule-summary -->
-This rule identifies AI SDK calls that don't specify an output token limit (maxOutputTokens on v5+, maxTokens on v4)
+This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens)
 <!-- @/rule-summary -->
 
 ## 📊 Rule Details
@@ -28,7 +28,12 @@ This rule identifies AI SDK calls that don't specify an output token limit (maxO
 
 ## 🔍 What This Rule Detects
 
-This rule identifies AI SDK calls that don't specify an output token limit — `maxOutputTokens` on AI SDK v5+, `maxTokens` on v4. Without limits, AI responses can consume excessive tokens, leading to high costs and potential denial of service.
+This rule identifies AI SDK calls that don't specify a token limit. Without limits, AI responses can consume excessive tokens, leading to high costs and potential denial of service.
+
+Both idioms satisfy the rule:
+
+- **AI SDK v4**: `maxTokens: 4096`
+- **AI SDK v5+**: `maxOutputTokens: 4096` (v5 renamed `maxTokens`)
 
 ## ❌ Incorrect Code
 
@@ -49,32 +54,27 @@ await streamText({
 ## ✅ Correct Code
 
 ```typescript
-// AI SDK v5+ — maxOutputTokens
+// With token limit
 await generateText({
   model: openai('gpt-4'),
   prompt: 'Write a story',
-  maxOutputTokens: 4096,
+  maxTokens: 4096,
 });
 
 // Streaming with limit
 await streamText({
   model: anthropic('claude-3'),
   prompt: 'Explain quantum physics',
-  maxOutputTokens: 2048,
+  maxTokens: 2048,
 });
 
-// AI SDK v4 — maxTokens, still accepted by this rule
+// AI SDK v5+: maxOutputTokens replaces maxTokens
 await generateText({
-  model: openai('gpt-4'),
+  model: 'openai/gpt-5',
   prompt: 'Write a story',
-  maxTokens: 4096,
+  maxOutputTokens: 4096,
 });
 ```
-
-> **SDK versions:** v4 used `maxTokens`; v5+ renamed it to `maxOutputTokens`
-> (`CallSettings.maxOutputTokens`). The rule accepts either, plus the
-> `max_tokens` / `max_output_tokens` snake_case variants used by
-> OpenAI-shaped proxies.
 
 ## ⚙️ Options
 

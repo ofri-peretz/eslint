@@ -172,6 +172,19 @@ describe('Homepage: Structure Lock', () => {
       expect(homepageSource).toContain('function CatchCard');
     });
 
+    it('CatchCard link keeps min-w-0 (grid-item overflow regression, 2026-07-31)', () => {
+      // Grid items default to `min-width: auto`, so the snippet <pre>'s
+      // unbreakable min-content (the SQL template line) propagated into
+      // the track and forced 13px of page-level horizontal overflow at
+      // 375px. `min-w-0` on the card Link lets the track shrink and the
+      // pre scroll internally. Reproduce by removing the class and
+      // measuring documentElement.scrollWidth at a 375px viewport.
+      const catchCardBody = homepageSource.slice(
+        homepageSource.indexOf('function CatchCard'),
+      );
+      expect(catchCardBody).toMatch(/className="[^"]*\bmin-w-0\b[^"]*group block|className="[^"]*group block[^"]*\bmin-w-0\b[^"]*"/);
+    });
+
     it('shows the SQL-injection example (CWE-89, pg/no-unsafe-query)', () => {
       expect(homepageSource).toContain('CWE-89');
       expect(homepageSource).toContain('pg/no-unsafe-query');
@@ -264,7 +277,7 @@ describe('HeroSection: Structure Lock', () => {
       expect(heroSource).toContain('starDensity');
     });
 
-    it('has customized star color (purple)', () => {
+    it('has customized star color (brand orange)', () => {
       // Now lives as a default in HeroCosmic's `effects.shootingStarColor`.
       expect(heroSource).toMatch(
         /(starColor|shootingStarColor)[\s\S]{0,40}#[a-fA-F0-9]{6}/,
@@ -329,9 +342,9 @@ describe('HeroSection: Structure Lock', () => {
       // surfaces. The migration to Tailwind v4 canonical `bg-linear-to-b`
       // happened at the same time, so accept both the legacy and canonical
       // forms (with or without the `dark:` prefix) — what matters is that
-      // the deep-purple gradient stays paired with the cosmic surface.
+      // the deep-orange gradient stays paired with the cosmic surface.
       expect(heroSource).toMatch(
-        /(?:bg-(?:gradient|linear)-to-b\s+from-purple-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-purple-950)/,
+        /(?:bg-(?:gradient|linear)-to-b\s+from-orange-950|dark:bg-(?:gradient|linear)-to-b\s+dark:from-orange-950)/,
       );
     });
 
@@ -516,16 +529,22 @@ describe('Homepage: Code Block WCAG Compliance', () => {
   });
 
   describe('Light/Dark Theme Color Contrast', () => {
-    it('uses theme-aware purple for keywords (WCAG 4.5:1 contrast)', () => {
-      expect(homepageSource).toContain('text-purple-600 dark:text-purple-400');
+    // Brand chassis: the keyword hue is burnt orange, never violet. The light
+    // shades are the -800 steps because this block sits on #f1f1f1, where the
+    // -600 steps measured 2.83:1 (amber) and 2.85:1 (green) — both below AA
+    // (brand QA sweep, 2026-08-02). On that surface the -800 steps measure
+    // orange 8.36:1, amber 5.97:1, green 6.31:1.
+    it('uses theme-aware burnt orange for keywords — never violet (WCAG 4.5:1)', () => {
+      expect(homepageSource).toContain('text-orange-800 dark:text-orange-300');
+      expect(homepageSource).not.toContain('text-purple-600');
     });
 
     it('uses theme-aware amber/yellow for identifiers (WCAG 4.5:1 contrast)', () => {
-      expect(homepageSource).toContain('text-amber-600 dark:text-yellow-400');
+      expect(homepageSource).toContain('text-amber-800 dark:text-yellow-400');
     });
 
     it('uses theme-aware green for strings (WCAG 4.5:1 contrast)', () => {
-      expect(homepageSource).toContain('text-green-600 dark:text-green-400');
+      expect(homepageSource).toContain('text-green-800 dark:text-green-400');
     });
 
     it('uses fd-muted-foreground for comments (theme-aware)', () => {
@@ -604,8 +623,10 @@ describe('HeroSection: Meteors Lock', () => {
   // refactor can't silently re-introduce the drift.
   // ──────────────────────────────────────────────────────────────────
 
-  it('cosmic meteor color matches Nuxt blog-old (`#e9d5ff`)', () => {
-    expect(heroSource).toContain("meteorColor: '#e9d5ff'");
+  it('cosmic meteor color is the brand light-orange tint (`#fbb99a`)', () => {
+    // Rebranded 2026-07 from the Nuxt blog-old `#e9d5ff` violet tint; the
+    // timing/density parity asserts below still pin the blog-old cadence.
+    expect(heroSource).toContain("meteorColor: '#fbb99a'");
   });
 
   it('cosmic meteor count matches Nuxt blog-old (3, NOT the 22 from the registry primitive)', () => {
@@ -803,12 +824,14 @@ describe('Homepage: Visual Identity Lock', () => {
       expect(homepageSource).toContain('text-orange-500');
     });
 
-    it('uses purple accent for quality pillar', () => {
-      expect(homepageSource).toContain('text-purple-500');
+    it('uses emerald accent for quality pillar', () => {
+      // Icon (decorative, large-shape 3:1) + AA action text (4.5:1 normal size).
+      expect(homepageSource).toContain('text-emerald-600 mb-6');
+      expect(homepageSource).toContain('text-emerald-700 dark:text-emerald-400');
     });
 
     it('uses gradient CTA styling', () => {
-      expect(homepageSource).toContain('from-purple-500');
+      expect(homepageSource).toContain('from-orange-500');
     });
   });
 

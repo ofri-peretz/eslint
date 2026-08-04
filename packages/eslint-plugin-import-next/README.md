@@ -1,5 +1,7 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -56,6 +58,53 @@ npm install eslint-plugin-import-next --save-dev
 | Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
 | :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
 | All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
+
+## 🧬 Deep dependency graphs
+
+`import/no-cycle` **crashes** on deep import chains. `import-next/no-cycle` does not.
+
+Cycle detection is a strongly-connected-components pass over your module graph. Done recursively — one JavaScript stack frame per module — a chain deeper than the engine's call stack throws `RangeError: Maximum call stack size exceeded`. ESLint then exits 2 with **no results at all**: not a slow lint, no lint. Both rules default to unlimited traversal depth, so nothing caps the descent.
+
+`import-next` runs the same traversal on an explicit stack, so its ceiling is heap rather than stack.
+
+### See it yourself
+
+```bash
+npm i -D eslint eslint-plugin-import eslint-plugin-import-next
+curl -O https://raw.githubusercontent.com/ofri-peretz/eslint/main/benchmarks/scripts/repro-deep-chain.mjs
+node repro-deep-chain.mjs 6000
+```
+
+```text
+chain depth: 6000 modules
+
+eslint-plugin-import         FAILED after 93.6s — RangeError: Error while loading rule 'import/no-cycle': Maximum call stack size exceeded
+eslint-plugin-import-next    completed in 18.2s
+```
+
+Measured on Node 24 / darwin-arm64 with ESLint 10.7. The exact depth at which the recursive implementation dies varies with Node version and platform stack size — around 5,000 modules here.
+
+### Chains get deep by accident
+
+Hand-written 5,000-module chains are rare. These are not:
+
+- generated clients and schema bindings, where each type re-exports the next
+- barrel files (`index.ts`) re-exporting barrels, several layers down
+- long `export … from` ladders in a monorepo's shared packages
+
+Depth accumulates through re-export edges, which is exactly what the rule follows.
+
+### Speed, for completeness
+
+Across graph shapes at 5,000 files each, `import-next` is ~1.1× faster on dense cyclic graphs and on cold single-file runs, and ties on graphs with no cycles to find. The wide/shallow shape is **unresolved** — two runs disagree (0.8× sequential, 1.01× interleaved) and the machine has not been quiet enough to settle it, so no claim is made there. On a real 455K-line React codebase it is **8× faster in rule time** and 3.1× end-to-end at 100% detection parity.
+
+Speed is the smaller story. The deep-chain result above is a difference in kind, not degree.
+
+Detection parity is checked per shape before any timing is trusted, and every number comes from a committed result file:
+
+- [`benchmarks/results/ilb-perf-import-shapes/`](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/results/ilb-perf-import-shapes)
+- [`benchmarks/results/ilb-perf-import-no-cycle/`](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/results/ilb-perf-import-no-cycle)
+- [methodology](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/suites/ilb-perf-import/methodology.md)
 
 ## 📦 Compatibility
 | Package | Version |
@@ -173,4 +222,8 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next"><img src="https://eslint.interlace.tools/images/og-import-next.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>

@@ -144,19 +144,19 @@
       "environment": "browser",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-cors-check"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-cors-check"
     },
     "no-missing-csrf-protection": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-csrf-protection"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-csrf-protection"
     },
     "no-missing-security-headers": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-security-headers"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-security-headers"
     },
     "no-password-in-url": {
       "environment": "universal",
@@ -307,52 +307,39 @@
     }
   },
   "eslint-plugin-express-security": {
-    "require-helmet": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-permissive-cors": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-csrf-protection": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "no-insecure-cookie-options": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-rate-limiting": {
-      "environment": "express",
-      "detection": "naming-heuristic",
-      "confidence": "review-prompt"
-    },
-    "no-graphql-introspection-production": {
-      "environment": "express",
-      "detection": "structural-api",
-      "confidence": "review-prompt"
-    },
     "no-cors-credentials-wildcard": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "require-express-body-parser-limits": {
+    "no-error-details-in-response": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks catch-clause params and error-first callback params into res.send/json sinks via a scope frame stack."
+    },
+    "no-exposed-debug-endpoints": {
       "environment": "express",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-express-unsafe-regex-route": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "no-exposed-debug-endpoints": {
+    "no-graphql-introspection-production": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-host-header-in-links": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks req.headers.host / req.get('host') assignments into URL construction and mail sinks within a function — conservative same-scope flow, not a name match."
+    },
+    "no-insecure-cookie-options": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
@@ -361,25 +348,122 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-csrf-protection": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-security-headers": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
+    },
+    "no-permissive-cors": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-data-in-query": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Token-based matching of sensitive parameter names on req.query reads — names are the signal, so ships as warn per I3."
+    },
+    "no-static-root-exposure": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on express.static/serveIndex argument shapes (__dirname, '.', process.cwd(), traversal segments, non-literal joins)."
     },
     "no-user-controlled-redirect": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on res.redirect(req.query.*) AST shape \u2014 structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+      "notes": "Fires on res.redirect(req.query.*) AST shape — structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+    },
+    "no-user-controlled-render-locals": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the res.render(view, req.body|query|params) AST shape incl. spreads. The shape carries the signal, but the request/response roots are matched against fixed name sets (req/request/ctx, res/response/reply), so an unconventional alias is not tracked."
+    },
+    "require-case-insensitive-path-guard": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Protected-path detection keys off configurable path literals (admin/api/dashboard/...), so it ships as warn."
+    },
+    "require-csrf-protection": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-express-body-parser-limits": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-helmet": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-query-type-guard": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt",
+      "notes": "String-method call on a req.query member with no typeof/Array.isArray/String() guard in scope; ships as warn while cross-function flow is untracked."
+    },
+    "require-rate-limiting": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-disabled-helmet-protections": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on helmet({ <protection>: false }) option shapes (CSP/frameguard/noSniff/referrerPolicy/hidePoweredBy, helmet 6 and 7 spellings)."
+    },
+    "require-strict-transport-security": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory — disabled, max-age below floor, includeSubDomains false."
+    },
+    "no-unsafe-csp-directives": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "CSP directive literals: 'unsafe-inline'/'unsafe-eval'/wildcard sources, frame-ancestors '*', missing frame-ancestors under useDefaults:false, upgradeInsecureRequests:null."
+    },
+    "no-permissive-trust-proxy": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') — req.ip becomes client-controlled (CWE-348)."
+    },
+    "require-route-authentication": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Route-path vocabulary decides what counts as a critical function, so it ships as warn per I3. Structural around it: registration shape, middleware chain, principal read in the handler."
+    },
+    "no-client-controlled-authorization": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Structural half is req.body/query/params/headers/cookies member reads in a decision position; the authorization-attribute vocabulary (role/permission/userId) is the name-based half, so it ships as warn per I3."
+    },
+    "no-idor-resource-access": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based — ships as warn per I3."
     }
   },
   "eslint-plugin-import-next": {
@@ -627,13 +711,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "import-style": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-jwt": {
@@ -989,6 +1073,16 @@
       "detection": "structural-api",
       "confidence": "review-prompt"
     },
+    "require-validation-pipe-whitelist": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
     "require-class-validator": {
       "environment": "nestjs",
       "detection": "structural-pattern",
@@ -1020,6 +1114,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-unsafe-buffer-alloc": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
     },
     "no-unsafe-dynamic-require": {
       "environment": "node",
@@ -1070,7 +1169,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use CI tooling instead \u2014 this checks filesystem for lock file existence, not AST analysis"
+      "deprecated": "Use CI tooling instead — this checks filesystem for lock file existence, not AST analysis"
     },
     "no-dynamic-dependency-loading": {
       "environment": "universal",
@@ -1182,6 +1281,12 @@
       "detection": "structural-api",
       "confidence": "enforcement",
       "notes": "crypto.createHash/Hmac/Cipher with dynamic first arg. Attacker controls algorithm = downgrade attack. Static literals are already checked by no-weak-hash-algorithm."
+    },
+    "no-dynamic-command-string": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Shell binary + -c/-Command argv position with an assembled string, or a non-escaping command-runner (execaCommand/$.raw). Distinct from no-shell-injection (CWE-78 exec concat)."
     }
   },
   "eslint-plugin-operability": {
@@ -1473,13 +1578,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "wcag-aa": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-react-features": {
@@ -1917,7 +2022,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "no-privilege-escalation": {
       "environment": "universal",
@@ -1933,7 +2038,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "no-hardcoded-credentials": {
       "environment": "universal",
@@ -1969,7 +2074,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use a dedicated electron-security plugin \u2014 Electron requires framework-specific context"
+      "deprecated": "Use a dedicated electron-security plugin — Electron requires framework-specific context"
     },
     "no-hardcoded-session-tokens": {
       "environment": "universal",
@@ -1985,7 +2090,7 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-vercel-ai-security": {
@@ -2083,6 +2188,62 @@
       "environment": "vercel-ai",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-sequelize-security": {
+    "no-unsafe-query": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Sequelize's raw-SQL sinks: sequelize.query() and Sequelize.literal()."
+    }
+  },
+  "eslint-plugin-mysql-security": {
+    "no-unsafe-query": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with MySQL's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-prisma-security": {
+    "no-unsafe-query": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Prisma's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-drizzle-security": {
+    "no-unsafe-query": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Drizzle's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-knex-security": {
+    "no-unsafe-query": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Knex's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-sqlite-security": {
+    "no-unsafe-query": {
+      "environment": "sqlite",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with SQLite's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-typeorm-security": {
+    "no-unsafe-query": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with TypeORM's raw-SQL sinks."
     }
   }
 }

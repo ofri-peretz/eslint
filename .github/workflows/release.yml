@@ -229,6 +229,21 @@ jobs:
         # since STAGE 2 just built them. A missing dist/ is a hard release stop.
         run: npm run verify:dist-integrity:release
 
+      - name: Published-artifact gate
+        # Runs on the EXACT artifact STAGE 2 built and STAGE 3 will publish —
+        # the only place this can be checked with certainty. Locally, any
+        # `tsc --build` over the solution (e.g. `npm run typecheck`) re-emits
+        # into dist/ and undoes build-package.ts's post-processing; a rebuild
+        # restores it. Here nothing re-runs tsc, so what is checked is what
+        # ships.
+        run: npm run check-published-artifacts
+
+      - name: Artifact size report
+        # Advisory only — never blocks a release. Bundles legitimately grow;
+        # this exists so growth is a decision rather than a surprise.
+        continue-on-error: true
+        run: npm run check-artifact-size
+
   # ─────────────────────────────────────────────────────────────────────────
   # STAGE 3 — Publish each package in parallel (matrix fan-out).
   # ─────────────────────────────────────────────────────────────────────────

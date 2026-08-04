@@ -111,7 +111,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    'architecture/enforce-naming': ['error', {
+    'modularity/enforce-naming': ['error', {
       domain: 'e-commerce',
       glossaryUrl: 'https://wiki.company.com/glossary',
       terms: [
@@ -144,7 +144,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    'architecture/enforce-naming': ['error', {
+    'modularity/enforce-naming': ['error', {
       domain: 'finance',
       glossaryUrl: 'https://internal.bank.com/glossary',
       terms: [
@@ -177,7 +177,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    'architecture/enforce-naming': ['error', {
+    'modularity/enforce-naming': ['error', {
       domain: 'healthcare',
       glossaryUrl: 'https://hipaa.health.gov/glossary',
       terms: [
@@ -210,7 +210,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    'architecture/enforce-naming': ['error', {
+    'modularity/enforce-naming': ['error', {
       domain: 'shipping',
       terms: [
         {
@@ -298,7 +298,7 @@ function calculateOrderTotal(order: Order) {
 ```javascript
 {
   rules: {
-    'architecture/enforce-naming': ['error', {
+    'modularity/enforce-naming': ['error', {
       domain: 'e-commerce',
       terms: [
         {
