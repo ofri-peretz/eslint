@@ -1,11 +1,11 @@
 ---
 title: no-permissive-cors
-description: Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true.
+description: "Disallows CORS configured to accept any origin"
 tags: ['security', 'nestjs']
 category: security
 severity: high
 cwe: CWE-942
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -24,8 +24,8 @@ Flags CORS configured to accept any origin — a bare `enableCors()`, `origin: '
 Three shapes all accept every origin, and only one of them looks obviously wrong:
 
 ```ts
-app.enableCors();                 // no options → origin defaults to '*'
-app.enableCors({ origin: '*' });  // explicit wildcard
+app.enableCors(); // no options → origin defaults to '*'
+app.enableCors({ origin: '*' }); // explicit wildcard
 app.enableCors({ origin: true }); // reflects whatever Origin was sent
 ```
 
@@ -76,6 +76,9 @@ statically decidable is left alone:
   only reports when `corsOptions` is declared in the same file
 - an options object with a spread (`{ ...base }`) and no visible `origin`, since
   the spread may supply it
+- a variable that is **reassigned** after its declaration. The value at the call
+  site may not be the value at the declaration, so only a binding written exactly
+  once — its initialiser — is read.
 
 ## Options
 
@@ -83,9 +86,9 @@ statically decidable is left alone:
 'nestjs-security/no-permissive-cors': ['error', { allowInTests: true }]
 ```
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `allowInTests` | `boolean` | `true` | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
+| Option         | Type      | Default | Description                                      |
+| -------------- | --------- | ------- | ------------------------------------------------ |
+| `allowInTests` | `boolean` | `true`  | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
 
 ## When Not To Use It
 
