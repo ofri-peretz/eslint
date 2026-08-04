@@ -26,7 +26,7 @@ export default defineConfig({
     testTimeout: 30000, // Increase timeout for tests that require file system resolution
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
-      enabled: false,
+      enabled: true,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
       // Pinned at the 100% policy target — this branch is the integration target for the test wave.

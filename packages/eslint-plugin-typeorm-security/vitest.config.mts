@@ -42,7 +42,7 @@ export default defineConfig({
     name: { label: 'typeorm', color: 'blue' },
     pool: 'vmThreads',
     coverage: {
-      enabled: false,
+      enabled: true,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
       thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
