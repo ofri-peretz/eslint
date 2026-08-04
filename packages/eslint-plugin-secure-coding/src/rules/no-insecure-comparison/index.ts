@@ -40,7 +40,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-697',
       cvss: 5.3,
     },
-    fixable: 'code',
+    // No `fixable`: this rule emits suggestions only. Rewriting `==` to `===`
+    // is not behaviour-preserving, so it must never run under `--fix`.
     hasSuggestions: true,
     messages: {
       insecureComparison: formatLLMMessage({
