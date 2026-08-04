@@ -29,9 +29,7 @@ import { requireValidationPipeWhitelist } from './rules/require-validation-pipe-
 import { noPermissiveCors } from './rules/no-permissive-cors';
 
 // P1 Rules
-import { requireClassValidator } from './rules/require-class-validator';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
-import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
 import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
 
@@ -50,9 +48,7 @@ export const rules: Record<
   'no-permissive-cors': noPermissiveCors,
 
   // P1 - Data Validation & Exposure
-  'require-class-validator': requireClassValidator,
   'no-exposed-private-fields': noExposedPrivateFields,
-  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
   'no-res-bypass-serialization': noResBypassSerialization,
   'no-unguarded-swagger': noUnguardedSwagger,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
@@ -82,9 +78,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/no-permissive-cors': 'error',
 
   // P1 - Data Validation
-  'nestjs-security/require-class-validator': 'warn',
   'nestjs-security/no-exposed-private-fields': 'warn',
-  'nestjs-security/no-exposed-debug-endpoints': 'error',
   'nestjs-security/no-res-bypass-serialization': 'warn',
   'nestjs-security/no-unguarded-swagger': 'warn',
 };
@@ -147,7 +141,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       'nestjs-security/no-missing-validation-pipe': 'error',
-      'nestjs-security/require-class-validator': 'error',
       'nestjs-security/require-validation-pipe-whitelist': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
@@ -166,7 +159,6 @@ export type { Options as NoMissingValidationPipeOptions } from './rules/no-missi
 export type { Options as RequireThrottlerOptions } from './rules/require-throttler';
 export type { Options as RequireValidationPipeWhitelistOptions } from './rules/require-validation-pipe-whitelist';
 export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-cors';
-export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
 export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
 export type { Options as NoUnguardedSwaggerOptions } from './rules/no-unguarded-swagger';
@@ -180,7 +172,6 @@ export interface AllNestjsSecurityRulesOptions {
   'require-throttler'?: import('./rules/require-throttler').Options;
   'require-validation-pipe-whitelist'?: import('./rules/require-validation-pipe-whitelist').Options;
   'no-permissive-cors'?: import('./rules/no-permissive-cors').Options;
-  'require-class-validator'?: import('./rules/require-class-validator').Options;
   'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
   'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
   'no-unguarded-swagger'?: import('./rules/no-unguarded-swagger').Options;

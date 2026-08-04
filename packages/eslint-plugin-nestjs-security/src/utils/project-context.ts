@@ -44,15 +44,6 @@ export interface NestProjectContext {
   hasGlobalAuthGuard: boolean;
   /** A pipe (`APP_PIPE` / `useGlobalPipes`) is registered app-wide. */
   hasGlobalValidationPipe: boolean;
-  /**
-   * A global ValidationPipe is configured with `whitelist: true`.
-   *
-   * This matters because whitelisting *strips* every property a DTO does not
-   * declare with a class-validator decorator. An undecorated property is
-   * therefore not attacker-controllable — it never arrives — so reporting it as
-   * unvalidated input is a false positive.
-   */
-  hasWhitelistingValidationPipe: boolean;
   /** Rate limiting is configured app-wide (ThrottlerModule + guard). */
   hasGlobalThrottler: boolean;
 }
@@ -171,53 +162,6 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
  * misses. Scoping to the registering file's imports keeps a sibling app in a
  * monorepo from silencing this one.
  */
-const WHITELIST_TRUE = /\bwhitelist\s*:\s*true\b/;
-/** `export * from './x'` / `export { X } from './x'` — a re-export barrel. */
-const RE_EXPORT = /export\s+(?:\*|\{[^}]*\})\s+from\s+['"](\.[^'"]+)['"]/g;
-
-/**
- * Whether a global ValidationPipe in this file is configured with
- * `whitelist: true`, following relative imports.
- *
- * One hop is one too few for the commonest NestJS layout:
- *
- *   main.ts                    import { OPTS } from './shared/constants'
- *   shared/constants/index.ts  export * from './common'      ← hop 1 lands here
- *   shared/constants/common.ts export const OPTS = { whitelist: true }  ← hop 2
- *
- * The barrel holds no `whitelist: true`, so the scan concluded the project does
- * not whitelist and `require-class-validator` reported the very fields the
- * whitelist exists to strip. So when a hop lands on a pure re-export barrel,
- * follow its specifiers one step further. Depth stays bounded — barrels only,
- * never arbitrary chains — because this runs per lint of a project root.
- */
-function whitelistReachable(source: string, file: string): boolean {
-  if (WHITELIST_TRUE.test(source)) return true;
-  const dir = getDirname(file);
-
-  const followFrom = (
-    text: string,
-    fromDir: string,
-    viaBarrel: boolean,
-  ): boolean => {
-    for (const [, spec] of text.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
-      for (const candidate of [`${spec}.ts`, joinPath(spec, 'index.ts')]) {
-        const resolved = resolvePath(fromDir, candidate);
-        const imported = readFileSync(resolved);
-        if (imported === null) continue;
-        if (WHITELIST_TRUE.test(imported)) return true;
-        // A barrel forwards the answer rather than holding it.
-        RE_EXPORT.lastIndex = 0;
-        if (!viaBarrel && RE_EXPORT.test(imported)) {
-          if (followFrom(imported, getDirname(resolved), true)) return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  return followFrom(source, dir, false);
-}
 
 function analyzeSource(
   source: string,
@@ -255,9 +199,6 @@ function analyzeSource(
   // a monorepo, one app's whitelisting pipe silenced every other app's DTO
   // findings, because the flag carries across files. Measured on a 5-app corpus
   // where only one app whitelists — it zeroed all four others.
-  if (fileRegistersPipe && whitelistReachable(source, file)) {
-    into.hasWhitelistingValidationPipe = true;
-  }
   if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
   if (THROTTLER_MODULE_RE.test(source)) into.hasGlobalThrottler = true;
 }
@@ -266,7 +207,6 @@ interface MutableContext {
   globalProviders: Set<string>;
   hasGlobalAuthGuard: boolean;
   hasGlobalValidationPipe: boolean;
-  hasWhitelistingValidationPipe: boolean;
   hasGlobalThrottler: boolean;
 }
 
@@ -279,7 +219,6 @@ export function scanProject(
     globalProviders: new Set<string>(),
     hasGlobalAuthGuard: false,
     hasGlobalValidationPipe: false,
-    hasWhitelistingValidationPipe: false,
     hasGlobalThrottler: false,
   };
 
@@ -317,7 +256,6 @@ export function getProjectContext(
       globalProviders: new Set<string>(),
       hasGlobalAuthGuard: false,
       hasGlobalValidationPipe: false,
-      hasWhitelistingValidationPipe: false,
       hasGlobalThrottler: false,
     };
   }
@@ -328,32 +266,4 @@ export function getProjectContext(
   const scanned = scanProject(root);
   CACHE.set(root, scanned);
   return scanned;
-}
-
-/** class-validator's own authoring API for a custom constraint. */
-const CUSTOM_VALIDATOR_API =
-  /\b(registerDecorator|ValidatorConstraint)\b[\s\S]*?from\s+['"]class-validator['"]|from\s+['"]class-validator['"][\s\S]*?\b(registerDecorator|ValidatorConstraint)\b/;
-
-/**
- * Whether a project-local module defines a class-validator constraint.
- *
- * `@SameAs('password')` is indistinguishable from a decorative decorator by
- * name alone. What settles it is the module it came from: if that file builds
- * its decorator with `registerDecorator` or `@ValidatorConstraint` imported
- * from class-validator, the decorator validates.
- */
-export function declaresCustomValidator(
-  specifier: string,
-  fromFile: string,
-): boolean {
-  if (!specifier.startsWith('.')) return false;
-  const dir = getDirname(fromFile);
-  for (const candidate of [
-    `${specifier}.ts`,
-    joinPath(specifier, 'index.ts'),
-  ]) {
-    const text = readFileSync(resolvePath(dir, candidate));
-    if (text !== null && CUSTOM_VALIDATOR_API.test(text)) return true;
-  }
-  return false;
 }

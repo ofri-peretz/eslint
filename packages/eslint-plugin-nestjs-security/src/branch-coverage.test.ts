@@ -23,9 +23,7 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireGuards } from './rules/require-guards';
 import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
 import { requireThrottler } from './rules/require-throttler';
-import { requireClassValidator } from './rules/require-class-validator';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
-import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
 const ruleTester = new RuleTester();
 
@@ -392,69 +390,6 @@ ruleTester.run('require-throttler (branch edges)', requireThrottler, {
 // ===========================================================================
 // require-class-validator
 // ===========================================================================
-ruleTester.run(
-  'require-class-validator (branch edges)',
-  requireClassValidator,
-  {
-    valid: [
-      // Test file with allowInTests (default) — rule disengages entirely
-      {
-        code: `class UserDto { unvalidated: string; }`,
-        filename: 'user.spec.ts',
-      },
-      // Member-expression class decorator: '' fallback → not a DTO
-      {
-        code: `
-        @ns.decorate()
-        class Plain {
-          field = 1;
-        }
-      `,
-      },
-      // Bare validator identifier decorator on a DTO property (Identifier arm)
-      {
-        code: `
-        class NameDto {
-          @IsString
-          name: string;
-        }
-      `,
-      },
-      // Computed property key in a DTO is skipped (propName null)
-      {
-        code: `
-        class ComputedDto {
-          ['dynamic'] = 1;
-        }
-      `,
-      },
-    ],
-    invalid: [
-      // Bare class-level decorator marks the class as a DTO (Identifier arm of isDtoClass)
-      {
-        code: `
-        @Validated
-        class Person {
-          name: string;
-        }
-      `,
-        errors: [{ messageId: 'missingValidator', data: { property: 'name' } }],
-      },
-      // Member-expression property decorator is not a validator ('' fallback)
-      {
-        code: `
-        class CreateFieldDto {
-          @ns.transform()
-          field: string;
-        }
-      `,
-        errors: [
-          { messageId: 'missingValidator', data: { property: 'field' } },
-        ],
-      },
-    ],
-  },
-);
 
 // ===========================================================================
 // no-exposed-private-fields
@@ -524,70 +459,3 @@ ruleTester.run(
 // ===========================================================================
 // no-exposed-debug-endpoints
 // ===========================================================================
-ruleTester.run(
-  'no-exposed-debug-endpoints (branch edges)',
-  noExposedDebugEndpoints,
-  {
-    valid: [
-      {
-        code: `const p = 'custom-debug';`,
-        options: [{ endpoints: ['/custom-debug'] }],
-      },
-      {
-        code: `
-        @foo.bar('debug')
-        class MemberCallee {}
-      `,
-      },
-      // ignoreFiles pattern matches the filename — rule disengages entirely
-      {
-        code: `
-        @Controller('app')
-        class DebugController {
-          @Get('debug')
-          debug() {}
-        }
-      `,
-        options: [{ ignoreFiles: ['skip-me'] }],
-        filename: 'src/skip-me.controller.ts',
-      },
-      // Bare identifier decorator (expression is not a CallExpression)
-      {
-        code: `
-        @Frozen
-        class BareDecorated {}
-      `,
-      },
-      // HTTP decorator with a non-string literal arg
-      {
-        code: `
-        class NumericPath {
-          @Get(123)
-          byNumber() {}
-        }
-      `,
-      },
-      // HTTP decorator with a non-literal arg
-      {
-        code: `
-        class DynamicPath {
-          @Get(routePath)
-          byVariable() {}
-        }
-      `,
-      },
-      // Non-HTTP call decorator with a safe path
-      {
-        code: `
-        @Custom('safe')
-        class CustomDecorated {}
-      `,
-      },
-    ],
-    invalid: [
-      // Member-expression callee decorator: Decorator handler skips it, but the
-      // Literal handler still flags the exact debug path
-      // Custom endpoint configured with a leading slash (dp.startsWith('/') arm)
-    ],
-  },
-);

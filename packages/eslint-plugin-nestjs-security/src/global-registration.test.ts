@@ -31,7 +31,6 @@ const context = {
   globalProviders: new Set<string>(),
   hasGlobalAuthGuard: false,
   hasGlobalValidationPipe: false,
-  hasWhitelistingValidationPipe: false,
   hasGlobalThrottler: false,
 };
 
@@ -87,18 +86,6 @@ const CASES: Case[] = [
       class UsersController {
         @Delete(':id')
         remove(@Param('id') id: string) {}
-      }
-    `,
-  },
-  {
-    rule: 'no-exposed-debug-endpoints',
-    flag: 'hasGlobalAuthGuard',
-    option: 'detectGlobalGuards',
-    code: `
-      @Controller('internal')
-      class OpsController {
-        @Get('debug')
-        dump() {}
       }
     `,
   },

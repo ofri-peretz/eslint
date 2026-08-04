@@ -32,13 +32,11 @@ describe('eslint-plugin-nestjs-security plugin interface', () => {
       'require-throttler',
       'require-validation-pipe-whitelist',
       'no-permissive-cors',
-      'require-class-validator',
       'no-exposed-private-fields',
-      'no-exposed-debug-endpoints',
       'no-res-bypass-serialization',
       'no-unguarded-swagger',
     ]);
-    expect(ruleKeys.length).toBe(10);
+    expect(ruleKeys.length).toBe(8);
   });
 
   describe('configurations', () => {

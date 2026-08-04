@@ -69,13 +69,6 @@ const FIXTURES: Record<string, string> = {
     }
   `,
   // Debug-path defaults: 'admin' must stay reported.
-  'no-exposed-debug-endpoints': `
-    @Controller('admin')
-    class OpsController {
-      @Get('debug')
-      dump() {}
-    }
-  `,
   // Sensitive-route defaults: login must stay reported.
   'require-throttler': `
     @Controller('auth')
@@ -85,13 +78,6 @@ const FIXTURES: Record<string, string> = {
     }
   `,
   // Validator-decorator defaults: @IsEmail must still count as validation.
-  'require-class-validator': `
-    class CreateUserDto {
-      @IsEmail()
-      email: string;
-      role: string;
-    }
-  `,
   // Sensitive-term defaults: password must stay reported.
   'no-exposed-private-fields': `
     @Entity()

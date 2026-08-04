@@ -149,25 +149,6 @@ const PROBES: Probe[] = [
     `,
   },
   {
-    rule: 'require-class-validator',
-    what: 'an unvalidated field on a request DTO (CWE-20)',
-    vulnerable: `
-      class CreateUserDto {
-        @IsEmail()
-        email: string;
-        role: string;
-      }
-    `,
-    safe: `
-      class CreateUserDto {
-        @IsEmail()
-        email: string;
-        @IsIn(['user'])
-        role: string;
-      }
-    `,
-  },
-  {
     rule: 'no-exposed-private-fields',
     what: 'a credential serialized out of an entity (CWE-200)',
     vulnerable: `
@@ -187,25 +168,6 @@ const PROBES: Probe[] = [
         @Exclude()
         @Column()
         password: string;
-      }
-    `,
-  },
-  {
-    rule: 'no-exposed-debug-endpoints',
-    what: 'an unguarded admin route (CWE-489)',
-    vulnerable: `
-      @Controller('internal')
-      class OpsController {
-        @Get('debug')
-        dump() {}
-      }
-    `,
-    safe: `
-      @Controller('internal')
-      class OpsController {
-        @Get('debug')
-        @UseGuards(AdminGuard)
-        dump() {}
       }
     `,
   },

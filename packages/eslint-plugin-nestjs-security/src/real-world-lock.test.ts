@@ -254,36 +254,6 @@ const FIXTURES: Fixture[] = [
   },
   {
     from: 'synthesised',
-    what: 'a decorator named like a validator but imported from @nestjs/graphql',
-    // The package settles it: the name must not override the origin.
-    code: `
-      import { Field, ObjectType } from '@nestjs/graphql';
-
-      @ObjectType()
-      export class CreateThingDto {
-        @Field()
-        name: string;
-      }
-    `,
-    expected: { 'require-class-validator': 1 },
-  },
-  {
-    from: 'synthesised',
-    what: 'a validator imported from class-validator under an alias',
-    // The origin settles it even though the local name is unrecognisable.
-    code: `
-      import { IsString as MustBeText } from 'class-validator';
-
-      export class CreateThingDto {
-        @MustBeText()
-        name: string;
-        other: string;
-      }
-    `,
-    expected: { 'require-class-validator': 1 },
-  },
-  {
-    from: 'synthesised',
     what: 'a locally declared auth decorator with an auth-ish name',
     code: `
       import { Controller, Get } from '@nestjs/common';
@@ -355,7 +325,9 @@ const FIXTURES: Fixture[] = [
         dump() {}
       }
     `,
-    expected: { 'require-guards': 1, 'no-exposed-debug-endpoints': 1 },
+    // no-exposed-debug-endpoints was removed: it produced 0 findings across
+    // 401 controller files in both corpora. require-guards still covers this.
+    expected: { 'require-guards': 1 },
   },
   {
     from: 'brocoders',
