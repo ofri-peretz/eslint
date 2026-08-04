@@ -24,20 +24,25 @@ name: Oxlint Parity Gate
 # Turborepo migration: shims pointing at a stale dist path that loads
 # half the rules silently. Ratchet locks any future drift.
 
-# ─────────────────────────────────────────────────────────────────────────────
-# NOT run on pull requests — deliberately.
-#
-# This workflow costs 4 of the account's 20 concurrent GitHub-hosted job
-# slots. Measured 2026-08-04: one PR fanned out to 37 jobs across 11 workflows,
-# oversubscribing the budget 1.9x on its own, and 82% of all CI job-time was
-# spent queueing for a runner rather than computing.
-#
-# This is drift detection, not per-change correctness, and it already has a
-# weekly Sun cron backstop — so the PR trigger bought a slower queue for every
-# contributor in exchange for signal the cron delivers anyway. Run it on demand
-# with `workflow_dispatch` when a change plausibly affects it.
-# ─────────────────────────────────────────────────────────────────────────────
 on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+    paths:
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
+      - 'tools/oxlint-plugins/**'
+      - 'scripts/audit-rule-portability.ts'
+      - 'scripts/generate-oxlint-shims.ts'
+      - 'scripts/verify-oxlint-shims.ts'
+      - 'scripts/__tests__/oxlint-export-lock.test.ts'
+      - 'scripts/__tests__/vitest.config.mts'
+      - '.agent/oxlint-portability-baseline.json'
+      - '.agent/oxlint-jsplugins-manifest.json'
+      - 'benchmarks/suites/ilb-oxlint-parity/**'
+      - '.oxlintrc*.json'
+      - '.github/workflows/oxlint-parity.yml'
+      - 'package.json'
   workflow_dispatch:
   schedule:
     - cron: "35 4 * * 0"
@@ -99,10 +104,15 @@ jobs:
       - name: Shim/manifest file-drift check
         run: npm run oxlint:shims:check
 
+  # Cron / dispatch only. The cheap `static-audit` job above is the per-change
+  # correctness check — it catches shim drift and portability regressions, which
+  # is what a PR needs. This job is a ~3.3m runtime smoke that costs a scarce
+  # runner slot (20 concurrent, account-wide) for signal the weekly cron and the
+  # static audit already cover between them.
   runtime-and-parity:
     name: Runtime smoke + parity (cached)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     # ~1–2m typical: build (cached/filtered) + shim smoke + cached parity bench.
     # The cache at `.agent/oxlint-parity-cache.json` short-circuits unchanged
