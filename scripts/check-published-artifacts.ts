@@ -101,6 +101,45 @@ const STRIP_SENTINEL = 'Copyright (c) 2025 Ofri Peretz';
 const FORBIDDEN_MANIFEST_FIELDS = ['scripts', 'devDependencies'] as const;
 
 /**
+ * Bare specifiers a package may `require()` at runtime without declaring them.
+ *
+ * Node builtins only. Everything else must appear in `dependencies` or
+ * `peerDependencies`, and anything declared as a dependency must actually be
+ * loaded — both halves matter and both were violated before 2026-08-03:
+ * eslint-plugin-import-next `require`d `typescript` while declaring it nowhere
+ * (it worked only because something else in the tree installed it), and 24
+ * plugins declared `tslib` that their emitted JS never loads.
+ */
+const NODE_BUILTINS = new Set([
+  'assert',
+  'buffer',
+  'child_process',
+  'crypto',
+  'events',
+  'fs',
+  'http',
+  'https',
+  'module',
+  'net',
+  'os',
+  'path',
+  'process',
+  'querystring',
+  'readline',
+  'stream',
+  'string_decoder',
+  'timers',
+  'tls',
+  'tty',
+  'url',
+  'util',
+  'v8',
+  'vm',
+  'worker_threads',
+  'zlib',
+]);
+
+/**
  * Metadata every published package must carry.
  *
  * These are the fields npm's own search ranking and third-party quality
@@ -155,6 +194,8 @@ const violations: Violation[] = [];
 const commentRegressions: { pkg: string; files: number }[] = [];
 const metadataGaps: { pkg: string; fields: string[] }[] = [];
 const manifestLeaks: { pkg: string; fields: string[] }[] = [];
+const depMismatches: { pkg: string; undeclared: string[]; unused: string[] }[] =
+  [];
 const sizes: { name: string; kb: number }[] = [];
 
 for (const dir of readdirSync(PACKAGES_DIR)) {
@@ -192,6 +233,53 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
     (r) => r.field,
   );
   if (gaps.length > 0) metadataGaps.push({ pkg: meta.name, fields: gaps });
+
+  // What the emitted JS actually loads, versus what the manifest promises.
+  const required = new Set<string>();
+  for (const f of meta.files) {
+    if (!f.path.endsWith('.js')) continue;
+    const js = readFileSync(join(distDir, f.path), 'utf8');
+    for (const m of js.matchAll(/require\((["'])([^"']+)\1\)/g)) {
+      const spec = m[2];
+      if (spec.startsWith('.') || spec.startsWith('node:')) continue;
+      if (NODE_BUILTINS.has(spec)) continue;
+      // '@scope/pkg/sub' and 'pkg/sub' both resolve to their package root.
+      const parts = spec.split('/');
+      required.add(
+        spec.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0],
+      );
+    }
+  }
+  const declaredDeps = Object.keys(
+    (manifest as { dependencies?: Record<string, string> }).dependencies ?? {},
+  );
+  const declaredPeers = Object.keys(
+    (manifest as { peerDependencies?: Record<string, string> })
+      .peerDependencies ?? {},
+  );
+  const anyDeclared = new Set([...declaredDeps, ...declaredPeers]);
+  const undeclared = [...required].filter((r) => !anyDeclared.has(r)).sort();
+  // A dependency this package never loads itself is still justified when it
+  // exists to satisfy an OPTIONAL PEER of one of its own dependencies. That is
+  // the eslint-plugin-import-next -> oxc-resolver case: devkit declares
+  // oxc-resolver as an optional peer and lazily requires it, and import-next is
+  // the one plugin that needs the native binary present, so it declares it
+  // directly. Without this, the check would report a real pattern as dead.
+  const satisfiesPeerOf = (dep: string): boolean =>
+    declaredDeps.some((owner) => {
+      const ownerPkg = join(ROOT, 'node_modules', owner, 'package.json');
+      if (!existsSync(ownerPkg)) return false;
+      const om = JSON.parse(readFileSync(ownerPkg, 'utf8')) as {
+        peerDependencies?: Record<string, string>;
+      };
+      return dep in (om.peerDependencies ?? {});
+    });
+
+  const unused = declaredDeps
+    .filter((d) => !required.has(d) && !satisfiesPeerOf(d))
+    .sort();
+  if (undeclared.length > 0 || unused.length > 0)
+    depMismatches.push({ pkg: meta.name, undeclared, unused });
 
   const leaked = FORBIDDEN_MANIFEST_FIELDS.filter(
     (f) => f in (manifest as Record<string, unknown>),
@@ -258,6 +346,7 @@ const FAILURES = [
   metadataGaps.length,
   exportGaps.length,
   manifestLeaks.length,
+  depMismatches.length,
 ];
 
 if (sizes.length === 0) {
@@ -276,6 +365,7 @@ if (JSON_OUT) {
         metadataGaps,
         exportGaps,
         manifestLeaks,
+        depMismatches,
         sizes,
       },
       null,
@@ -316,6 +406,29 @@ if (exportGaps.length > 0) {
   );
 }
 
+if (depMismatches.length > 0) {
+  console.error(
+    `  ❌ ${depMismatches.length} package(s) whose manifest disagrees with what they load:\n`,
+  );
+  for (const m of depMismatches) {
+    console.error(`    ${m.pkg}`);
+    if (m.undeclared.length)
+      console.error(
+        `      requires but does not declare: ${m.undeclared.join(', ')}` +
+          '   ← breaks on a clean install',
+      );
+    if (m.unused.length)
+      console.error(
+        `      declares but never requires  : ${m.unused.join(', ')}` +
+          '   ← dead dependency edge',
+      );
+  }
+  console.error(
+    '\n    A dependency the code never loads is weight every consumer pays for.\n' +
+      '    A require with no declaration works only until someone installs cleanly.\n',
+  );
+}
+
 if (manifestLeaks.length > 0) {
   console.error(
     `  ❌ ${manifestLeaks.length} manifest(s) still carry build-only fields:\n`,
@@ -344,7 +457,7 @@ if (!failed) {
   console.log(
     '  ✅ No source maps, no AGENTS.md, no commented JS;' +
       ' every declared export resolves; no build-only manifest fields;' +
-      ' metadata complete.\n',
+      ' dependencies match what is loaded; metadata complete.\n',
   );
   process.exit(0);
 }

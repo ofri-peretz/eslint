@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Layout Primitives Lock Tests
  *

@@ -75,7 +75,6 @@
     "@typescript-eslint/utils": "^7.0.0 || ^8.0.0",
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
     "oxc-resolver": "^11.24.2",
-    "tslib": "^2.3.0",
     "typescript": ">=4.8.4"
   },
   "peerDependenciesMeta": {

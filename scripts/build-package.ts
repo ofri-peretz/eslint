@@ -107,6 +107,15 @@ const stripResult = spawnSync(
     // would point at maps that step 3b deletes.
     '--sourceMap',
     'false',
+    // Inline the TypeScript helpers instead of requiring them from `tslib`.
+    // tslib was a NON-OPTIONAL peer of eslint-devkit, which every plugin then
+    // had to declare as a dependency to satisfy — 27 manifests carrying a
+    // 124 kB package so that 12 `require("tslib")` calls could resolve.
+    // Inlining costs ~9.5 kB of emitted JS in devkit and lets tslib disappear
+    // from every manifest. Only the SHIPPED javascript is re-emitted this way;
+    // the workspace build that typecheck reads is untouched.
+    '--importHelpers',
+    'false',
     '--outDir',
     noCommentsDir,
     '--tsBuildInfoFile',

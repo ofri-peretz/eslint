@@ -69,8 +69,8 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
     "better-sqlite3": "^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
     "sqlite3": "^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -82,7 +82,6 @@
     }
   },
   "dependencies": {
-    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.6.1"
   },
   "devDependencies": {
