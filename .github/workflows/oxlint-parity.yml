@@ -45,7 +45,14 @@ on:
       - 'package.json'
   workflow_dispatch:
   schedule:
-    - cron: "35 4 * * 0"
+    # Sun 10:00 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: "0 10 * * 0"
 
 concurrency:
   group: oxlint-parity-${{ github.ref }}
@@ -104,10 +111,15 @@ jobs:
       - name: Shim/manifest file-drift check
         run: npm run oxlint:shims:check
 
+  # Cron / dispatch only. The cheap `static-audit` job above is the per-change
+  # correctness check — it catches shim drift and portability regressions, which
+  # is what a PR needs. This job is a ~3.3m runtime smoke that costs a scarce
+  # runner slot (20 concurrent, account-wide) for signal the weekly cron and the
+  # static audit already cover between them.
   runtime-and-parity:
     name: Runtime smoke + parity (cached)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     # ~1–2m typical: build (cached/filtered) + shim smoke + cached parity bench.
     # The cache at `.agent/oxlint-parity-cache.json` short-circuits unchanged

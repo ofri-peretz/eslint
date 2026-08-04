@@ -21,22 +21,33 @@ name: ILB Cross-Version Matrix
 # default. Promote a row to required status only after it's been green for
 # 14 consecutive runs (per the lifecycle gate in benchmarks/README.md §1).
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT run on pull requests — deliberately.
+#
+# This workflow costs 9 of the account's 20 concurrent GitHub-hosted job
+# slots. Measured 2026-08-04: one PR fanned out to 37 jobs across 11 workflows,
+# oversubscribing the budget 1.9x on its own, and 82% of all CI job-time was
+# spent queueing for a runner rather than computing.
+#
+# This is drift detection, not per-change correctness, and it already has a
+# weekly Sat cron backstop — so the PR trigger bought a slower queue for every
+# contributor in exchange for signal the cron delivers anyway. Run it on demand
+# with `workflow_dispatch` when a change plausibly affects it.
+# ─────────────────────────────────────────────────────────────────────────────
 on:
-  pull_request:
-    branches: [main]
-    types: [ready_for_review, labeled, synchronize]
-    paths:
-      - 'packages/eslint-plugin-*/**'
-      - 'packages/eslint-devkit/**'
-      - 'benchmarks/**'
-      - 'scripts/ilb-*.ts'
-      - '.github/workflows/eslint-version-matrix.yml'
   schedule:
     # Downgraded from nightly to weekly — quota conservation. Drift still
     # surfaces in time for the weekly engineering review, and any promoted
     # PR runs the full matrix via the `run-full-ci` label gate. Moved to
     # Saturday to stagger off the Sunday-morning weekly-cron burst.
-    - cron: '30 4 * * 6' # Sat 04:30 UTC
+    # Sat 09:30 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: '30 9 * * 6' # Sat 09:30 UTC = 5:30am EDT / 4:30am EST
   workflow_dispatch:
 
 concurrency:
@@ -47,35 +58,8 @@ permissions:
   contents: read
 
 jobs:
-  gate:
-    name: Gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    outputs:
-      run: ${{ steps.decide.outputs.run }}
-    steps:
-      - id: decide
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          IS_DRAFT: ${{ github.event.pull_request.draft }}
-          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" != "pull_request" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Draft PR without \`run-full-ci\` label — skipping cross-version matrix."
-          fi
-
   matrix:
     name: ${{ matrix.bench }} · node24 · eslint-${{ matrix.eslint }}
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: ${{ matrix.experimental }}

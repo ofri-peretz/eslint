@@ -10,24 +10,20 @@ name: ILB Benchmark Regression Gate
 #   tsx scripts/ilb-regression-check.ts --update-baseline
 #   git commit benchmark-results/baseline.json
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT run on pull requests — deliberately.
+#
+# This workflow costs 5 of the account's 20 concurrent GitHub-hosted job
+# slots. Measured 2026-08-04: one PR fanned out to 37 jobs across 11 workflows,
+# oversubscribing the budget 1.9x on its own, and 82% of all CI job-time was
+# spent queueing for a runner rather than computing.
+#
+# This is drift detection, not per-change correctness, and it already has a
+# weekly Tue cron backstop — so the PR trigger bought a slower queue for every
+# contributor in exchange for signal the cron delivers anyway. Run it on demand
+# with `workflow_dispatch` when a change plausibly affects it.
+# ─────────────────────────────────────────────────────────────────────────────
 on:
-  pull_request:
-    branches: [main]
-    types: [ready_for_review, labeled, synchronize]
-    paths:
-      - 'packages/eslint-plugin-*/**'
-      - 'packages/eslint-devkit/**'
-      - 'packages/eslint-formatter/**'
-      - 'benchmarks/suites/ilb-formatter/**'
-      - 'benchmarks/results/ilb-formatter/baseline.json'
-      - 'scripts/ilb-*.ts'
-      - 'scripts/audit-rule-meta-completeness.ts'
-      - 'scripts/audit-cwe-rendering.ts'
-      - 'scripts/codemod-lift-cwe-to-meta-docs.ts'
-      - 'scripts/tsconfig.json'
-      - 'benchmarks/tsconfig.scripts.json'
-      - 'benchmark-results/baseline.json'
-      - '.github/workflows/benchmark.yml'
   workflow_dispatch:
     inputs:
       repos:
@@ -40,7 +36,14 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "20 4 * * 2" # Tue 04:20 UTC — weekly (staggered off the Sunday burst)
+    # Tue 09:00 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: "0 9 * * 2" # Tue 09:00 UTC = 5:00am EDT / 4:00am EST
 
 concurrency:
   group: ilb-bench-${{ github.ref }}

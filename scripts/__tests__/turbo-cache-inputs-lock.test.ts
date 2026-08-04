@@ -76,6 +76,50 @@ describe('turbo.json cache inputs', () => {
           `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`
       ).toBeDefined();
     }
-    expect(turbo.tasks.test.dependsOn).toContain('^build');
+    // The DEFAULT test task must not depend on any build: vitest configs alias
+    // workspace deps to source, so a unit test needs no compiled dist and Build
+    // runs fully in parallel with the shards. Verified by deleting dist —
+    // eslint-plugin-node-security runs 69 files / 949 tests without it.
+    //
+    // Six workspaces are genuine exceptions, each for a stated reason:
+    //   docs — imports @interlace/ui SUBPATH exports (`@interlace/ui/cn`),
+    //          which map to dist/. A bare-name alias cannot cover 56 subpaths.
+    //   conventions, modernization, modularity, operability, reliability —
+    //          no vitest config at all, so nothing aliases devkit to source.
+    //          Give them a config with the alias and the override can go.
+    //
+    // The meta-config package used to be a seventh exception: its vitest
+    // config aliased plugins from a hand-maintained list that had drifted to
+    // 19 of 26, so the 7 ORM-security plugins resolved through node_modules to
+    // dist/ and needed a build. Completing that list removed the need — its
+    // test now pulls 1 task and 0 builds, down from 27 — so no override for it
+    // exists here or in turbo.json. Do not re-add one.
+    //
+    // The point of this lock is that the exception list stays SHORT and
+    // explicit. A new blanket `^build` on the default task would serialise the
+    // whole gate again, which is what this PR removed.
+    const EXPECTED_EXCEPTIONS = new Set([
+      'docs', 'eslint-plugin-conventions', 'eslint-plugin-modernization',
+      'eslint-plugin-modularity', 'eslint-plugin-operability', 'eslint-plugin-reliability',
+    ]);
+    for (const task of ['test', 'test:coverage'] as const) {
+      expect(
+        turbo.tasks[task].dependsOn ?? [],
+        `turbo.json "${task}" (the DEFAULT) must not dependOn a build — that ` +
+          `serialises every shard behind a compile. Per-package overrides are ` +
+          `the escape hatch; see EXPECTED_EXCEPTIONS.`
+      ).toEqual([]);
+    }
+    const overrides = Object.keys(turbo.tasks)
+      .filter((k) => /#test(:coverage)?$/.test(k))
+      .map((k) => k.split('#')[0]);
+    const unexpected = [...new Set(overrides)].filter((p) => !EXPECTED_EXCEPTIONS.has(p));
+    expect(
+      unexpected,
+      `these workspaces gained a per-package test build dependency without ` +
+        `being listed as a known exception: ${unexpected.join(', ')}. Either ` +
+        `alias their workspace deps to source in a vitest config, or add them ` +
+        `here with the reason.`
+    ).toEqual([]);
   });
 });

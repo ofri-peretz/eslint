@@ -15,9 +15,7 @@
         "tsconfig.lib.json",
         "package.json",
         "README.md",
-        "CHANGELOG.md",
         "LICENSE",
-        "AGENTS.md",
         ".npmignore"
       ],
       "outputs": [
@@ -26,13 +24,49 @@
         "!.next/cache/**"
       ]
     },
+    "docs#test": {
+      "dependsOn": ["^build"]
+    },
+    "docs#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test:coverage": {
+      "dependsOn": ["^build"]
+    },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },
@@ -44,7 +78,7 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "tsconfig.json", "tsconfig.lib.json", "package.json"],
-      "outputs": []
+      "outputs": [".tsbuildinfo"]
     },
     "//#oxlint": {
       "inputs": [".oxlintrc.json", "packages/**/src/**"],

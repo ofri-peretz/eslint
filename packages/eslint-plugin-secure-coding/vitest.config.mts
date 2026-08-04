@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 
 /**
  * Vitest configuration for eslint-plugin-secure-coding package
@@ -10,6 +11,10 @@ import { defineConfig } from 'vitest/config';
  * - JUnit reporting for CI/CD pipeline integration
  */
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   root: __dirname,
   plugins: [],
   test: {

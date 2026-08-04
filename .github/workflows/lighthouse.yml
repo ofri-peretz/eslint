@@ -32,9 +32,14 @@ on:
     types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - "apps/docs/**"
-      - "packages/eslint-devkit/**"
+      - "packages/ui/**"
       - ".github/workflows/lighthouse.yml"
       - "apps/docs/lighthouserc.json"
+      # `packages/eslint-devkit/**` used to be here and pulled this 9.9m job
+      # onto every PR that touched the devkit — but apps/docs does not depend
+      # on eslint-devkit at all (checked its manifest), so a devkit change
+      # cannot move a single web-vital. packages/ui replaces it: that one does
+      # ship into the docs bundle.
   workflow_dispatch:
   schedule:
     - cron: "5 4 * * 3" # Wed 04:05 UTC — weekly (staggered off the Sunday burst)
