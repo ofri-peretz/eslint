@@ -146,9 +146,10 @@ const weatherTool = createTool({
 });
 ```
 
-**Mitigation**: none available — the schema property names this rule looks for
-are fixed and not configurable. Declare the tool with `tool({ inputSchema })`
-directly rather than through a custom helper.
+**Mitigation**: none available for custom helpers — the schema property names
+this rule looks for are fixed and not configurable. Declare the tool directly
+instead, with `tool({ inputSchema })` on AI SDK v5+ or `tool({ parameters })`
+on v4; both satisfy the rule.
 
 ## 📚 References
 
