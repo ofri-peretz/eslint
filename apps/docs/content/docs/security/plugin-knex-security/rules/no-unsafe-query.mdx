@@ -1,0 +1,79 @@
+---
+title: no-unsafe-query
+description: Prevent SQL injection by disallowing string concatenation or interpolated template literals in knex.raw() calls.
+tags: ['security', 'knex']
+category: security
+severity: critical
+cwe: CWE-89
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+**CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Detects SQL injection in Knex raw queries. This rule is part of [`eslint-plugin-knex-security`](https://www.npmjs.com/package/eslint-plugin-knex-security).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
+
+## Rule Details
+
+Reports three shapes when they reach a raw-SQL sink:
+
+1. String concatenation — `knex.raw('SELECT ... ' + value)`
+2. Template interpolation — ``knex.raw(`SELECT ... ${value}`)``
+3. A variable tainted by either, including via `+=`, then passed to a sink
+
+### Sinks
+
+`knex.raw()` and `.raw()` on a query builder.
+
+### ❌ Incorrect
+
+```typescript
+await knex.raw(`SELECT * FROM users WHERE id = ${userId}`);
+
+await knex.raw('SELECT * FROM users WHERE email = ' + email);
+
+let sql = 'SELECT * FROM products WHERE 1=1';
+sql += ` AND name = '${name}'`;
+await knex.raw(sql);
+```
+
+### ✅ Correct
+
+```typescript
+knex.raw('SELECT * FROM users WHERE id = ?', [userId]);
+```
+
+## Known limitations
+
+- Only identifier member access is matched, so `knex['raw'](...)` is a false negative.
+- Taint tracking is single-scope and name-based — it does not follow a query
+  string across function boundaries.
+
+## Implementation
+
+The detection is shared across the driver plugins via `createSqlInjectionRule`
+in `@interlace/eslint-devkit`; this rule supplies Knex's sinks and
+remediation copy. Install the plugin matching your stack and you get exactly
+one finding per line.
+
+## Further Reading
+
+- [Knex — parameterized queries](https://knexjs.org/guide/raw.html#raw-parameter-binding)
+- [OWASP — SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
+- [CWE-89](https://cwe.mitre.org/data/definitions/89.html)

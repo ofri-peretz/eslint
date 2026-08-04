@@ -15,6 +15,13 @@
         "plugin-lambda-security",
         "plugin-mongodb-security",
         "plugin-pg",
+        "plugin-sequelize-security",
+        "plugin-mysql-security",
+        "plugin-prisma-security",
+        "plugin-drizzle-security",
+        "plugin-knex-security",
+        "plugin-sqlite-security",
+        "plugin-typeorm-security",
         "plugin-vercel-ai-security",
         "plugin-crypto"
     ]

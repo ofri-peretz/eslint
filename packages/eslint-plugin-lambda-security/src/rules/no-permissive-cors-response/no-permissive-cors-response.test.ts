@@ -79,6 +79,12 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
         return { data: '*', headers: { 'Access-Control-Allow-Origin': '*' } };
       `,
     },
+    // ========== VALID: Implicit-return arrow, non-Lambda shape ==========
+    {
+      code: `
+        const config = () => ({ headers: { 'Access-Control-Allow-Origin': '*' } });
+      `,
+    },
   ],
   invalid: [
     // ========== INVALID: Wildcard origin in return ==========
@@ -153,6 +159,47 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
       `,
       filename: 'handler.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // ========== INVALID: Explicit-return response factory ==========
+    // Locks the docs claim that response factories ARE detected.
+    {
+      code: `
+        function createResponse(body) {
+          return {
+            statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify(body)
+          };
+        }
+      `,
+      output: `
+        function createResponse(body) {
+          return {
+            statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': "https://your-domain.com" },
+            body: JSON.stringify(body)
+          };
+        }
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // ========== INVALID: Implicit-return arrow response helper ==========
+    {
+      code: `
+        const jsonResponse = (statusCode, data) => ({
+          statusCode,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify(data)
+        });
+      `,
+      output: `
+        const jsonResponse = (statusCode, data) => ({
+          statusCode,
+          headers: { 'Access-Control-Allow-Origin': "https://your-domain.com" },
+          body: JSON.stringify(data)
+        });
+      `,
       errors: [{ messageId: 'permissiveCors' }],
     },
   ],

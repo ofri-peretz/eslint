@@ -196,3 +196,30 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A computed key whose variable is named exactly like the property.
+// `{ [instructions]: x }` has an Identifier key called `instructions`, but it is
+// a variable reference — the property being set is unknown. Reading it as the
+// literal name made these rules treat an arbitrary property as the system
+// prompt. The collision case is the only one that was broken.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSystemPrompt, {
+  valid: [
+    {
+      code: `
+        const instructions = 'temperature';
+        streamText({ model, [instructions]: \`\${x}\` });
+      `,
+    },
+    {
+      code: `
+        const system = 'topP';
+        generateText({ model, [system]: buildValue() });
+      `,
+    },
+    // Numeric literal key — not a string, so not a statically known name.
+    { code: 'generateText({ model, 0: buildValue() });' },
+  ],
+  invalid: [],
+});

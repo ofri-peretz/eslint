@@ -11,6 +11,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isTestFile } from '../../utils/paths';
 
 type MessageIds = 'debugModeProduction';
 export interface Options { allowInTests?: boolean; }
@@ -46,9 +47,9 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const inTestFile = isTestFile(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && inTestFile) {
       return {};
     }
 
