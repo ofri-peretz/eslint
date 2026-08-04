@@ -49,23 +49,62 @@ Implications for authors:
 
 ### 1. Logo
 
-Two marks side by side — the Interlace mark and the ESLint mark — each linking
-to its own home. (Before 2026-07-30 this was a single co-branded lockup,
-`eslint-interlace-logo-light.svg`; that asset still exists on the docs site
-for older published npm versions but is no longer used by new READMEs.)
+A row of marks, each linking to its own home, in this fixed order:
+
+**Interlace → ecosystem → oxlint → ESLint**
+
+Every plugin carries Interlace, oxlint and ESLint. The 17 plugins that target a
+specific ecosystem also carry that vendor's mark in slot 2; the generic quality
+plugins (conventions, import-next, maintainability, modernization, modularity,
+operability, reliability, secure-coding, browser-security) omit it and ship a
+three-mark row. The per-plugin mapping is the `ECOSYSTEM_LOGO` table in
+[`tools/scripts/check-readme-structure.ts`](../../tools/scripts/check-readme-structure.ts),
+which is also the gate.
 
 ```markdown
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://nodejs.org" target="_blank"><img src="https://eslint.interlace.tools/logos/node.svg" alt="Node.js" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 ```
 
+**Why `/logos/*.svg` and not the vendor's own URL.** Every mark is vendored into
+`apps/docs/public/logos/` and normalised by `tools/scripts/normalize-logos.mjs`
+into a shared **120×90** canvas via a nested `<svg preserveAspectRatio>`; the
+source artwork is untouched, only its placement. Without that, a wordmark
+(express, oxlint) and a square icon (node, mongodb) at the same `height=90`
+render wildly different footprints and baseline-align badly. Hot-linking the
+vendor or a GitHub `camo` URL is forbidden: npm re-proxies README images through
+camo with `immutable`, so a single bad fetch is cached permanently.
+
+Raster-only marks (the GitHub-avatar sources) are downscaled to 180px and
+inlined into that same canvas as a `data:` URI — an SVG loaded via `<img>`
+cannot fetch external resources, so a sibling `.png` would silently render
+blank. Sources and per-mark notes live in
+[`tools/scripts/logo-sources.json`](../../tools/scripts/logo-sources.json).
+
+**Always look at a regenerated mark on white before shipping it.** Two failure
+modes are invisible to tooling: a truncated PNG still reports valid dimensions
+to `file` yet renders as a partial band, and a mark that colours itself with a
+root-level `fill` (simple-icons ships Claude as `fill="#D97757"`) renders solid
+black if that attribute is dropped when the root tag is rewritten. Both shipped
+briefly here and both were caught only by rendering the logo.
+
+Pick the variant that reads on **white** — npm's README background. Note the
+naming conventions collide: Interlace's `icon-light.svg` means *for light
+backgrounds* (dark ink), while oxc's `oxc-light.svg` means *light-coloured ink*
+(for dark backgrounds). The correct oxlint source is `oxc-dark.svg`, and the
+correct Express source is `logo-express-black.svg`, not `-white`.
+
 No `# Title` H1 — the logos are the visual anchor. The Interlace link gets a
 `utm_source=github&utm_medium=referral&utm_campaign=<package>` stamp from
-`scripts/stamp-utm-links.ts`; the ESLint link points at eslint.org (not an
-owned property) and stays un-stamped.
+`scripts/stamp-utm-links.ts`; the ecosystem, oxlint and ESLint links point at
+properties we don't own and stay un-stamped.
 
 ### 2. Tagline
 
