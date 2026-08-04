@@ -4,7 +4,7 @@
  * Verifies that the Vercel AI SDK exports the interfaces our ESLint rules depend on.
  *
  * @sdk ai (Vercel AI SDK)
- * @last-updated 2026-01-02
+ * @last-updated 2026-07-28
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -69,6 +69,14 @@ describe('Vercel AI SDK Interface Compatibility', () => {
     it('exports tool function', () => {
       expect(ai.tool).toBeDefined();
       expect(typeof ai.tool).toBe('function');
+    });
+
+    // require-max-steps accepts `stopWhen` as the v5+ replacement for `maxSteps`.
+    // If the SDK renames this again, that rule starts false-positiving on every
+    // correctly-bounded agent — exactly the v4→v5 break this test now guards.
+    it('exports stepCountIs — the canonical stopWhen condition', () => {
+      expect(ai.stepCountIs).toBeDefined();
+      expect(typeof ai.stepCountIs).toBe('function');
     });
   });
 
@@ -136,13 +144,13 @@ describe('Package Metadata', () => {
  * Messages:
  * - CoreMessage type (system, user, assistant, tool)
  *
- * Options our rules check:
+ * Options our rules check (v5+ name first, v4 name kept for back-compat):
  * - model: LanguageModel
  * - messages: CoreMessage[]
  * - instructions: string (system prompt; the canonical name since AI SDK v7)
  * - system: string (same thing, marked @deprecated in the SDK's own types)
  * - tools: Record<string, Tool>
- * - maxTokens: number
+ * - maxOutputTokens: number   (v4: maxTokens)
  * - temperature: number
- * - maxSteps: number (for agentic loops)
+ * - stopWhen: StopCondition   (v4: maxSteps — for agentic loops)
  */

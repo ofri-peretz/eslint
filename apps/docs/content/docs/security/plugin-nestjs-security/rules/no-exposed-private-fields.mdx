@@ -1,11 +1,11 @@
 ---
 title: no-exposed-private-fields
-description: This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
+description: "Detects sensitive fields not excluded from serialization"
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-200
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -16,6 +16,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Detect exposed sensitive fields in DTOs/entities
+
+This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
 
 ## Rule Details
 
@@ -69,6 +71,11 @@ class UsersController {
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Field-name terms treated as sensitive. Matched on token boundaries, so
+  // `hashedPassword` matches while `passwordChangedAt` and `shippingAddress`
+  // do not (default: password, secret, token, apiKey, privateKey, …)
+  sensitivePatterns?: string[];
 }
 ```
 
