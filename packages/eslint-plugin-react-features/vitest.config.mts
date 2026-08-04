@@ -17,7 +17,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       // NOTE: `enabled: true` is deliberately NOT set here (unlike sibling
