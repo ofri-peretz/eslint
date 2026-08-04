@@ -73,10 +73,14 @@ describe('partition — TOTALITY', () => {
         // ...and nothing duplicated (a dupe wastes a runner but also means the
         // balance math is lying).
         expect(new Set(flat).size).toBe(flat.length);
-        // No empty shards — an empty shard burns a runner and setup cost.
+        // Exactly as many shards as there is work for, never more. Stated as an
+        // equality rather than an upper bound so it cannot be satisfied by
+        // returning too few — and note `every()` on an empty array is vacuously
+        // true, so the size-0 case is pinned here rather than by the
+        // no-empty-shards assertion below.
+        expect(shards.length).toBe(Math.min(count, size));
+        // No empty shards — an empty shard burns a runner and its setup cost.
         expect(shards.every((s) => s.length > 0)).toBe(true);
-        // Never more shards than requested, or than there is work for.
-        expect(shards.length).toBeLessThanOrEqual(Math.min(count, Math.max(size, 0)) || 0);
       });
     }
   }

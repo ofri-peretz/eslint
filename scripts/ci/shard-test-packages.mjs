@@ -54,12 +54,13 @@ export function partition(packages, count) {
   // never to "nothing".
   const parsed = Math.floor(Number(count));
   const n = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-  const shards = [];
+  // Pre-sized and dense: slot = i % n only ever writes indices
+  // 0 … min(n, packages.length) - 1, so there are no sparse holes to guard for.
+  const shards = Array.from({ length: Math.min(n, packages.length) }, () => []);
   for (const [i, pkg] of packages.entries()) {
-    const slot = i % n;
-    (shards[slot] ??= []).push(pkg);
+    shards[i % n].push(pkg);
   }
-  return shards.filter((s) => s && s.length > 0);
+  return shards;
 }
 
 /**

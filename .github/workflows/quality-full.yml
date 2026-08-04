@@ -94,6 +94,7 @@ jobs:
         if: steps.decide.outputs.run == 'true'
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup
         if: steps.decide.outputs.run == 'true'
       - name: Compute test shards
@@ -124,9 +125,10 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.gate.outputs.shards) }}
     steps:
+      # Shallow: this job resolves explicit package names, never a git range.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
-          fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Run tests via Turbo
         env:
@@ -146,11 +148,13 @@ jobs:
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
   # tools/*, benchmarks), so turbo has no task for it and `turbo run test`
   # never reaches scripts/__tests__. Until now the only file under it that CI
-  # ever executed was oxlint-export-lock.test.ts, pinned by name in
-  # oxlint-parity.yml — gap-closure, sync-source-versions and the newer
-  # repo-config locks (turbo cache inputs, this workflow's shard partitioner)
-  # were all dead weight: committed, green locally, never run by the gate.
-  # 190 tests in that suite, and the gate was running a fraction of them.
+  # ever executed was oxlint-export-lock.test.ts (pinned by name in
+  # oxlint-parity.yml) and later runtime-deps.test.ts (pinned in the Build job
+  # by #354) — gap-closure, sync-source-versions and the repo-config locks
+  # (turbo cache inputs from #343, this workflow's shard partitioner) were all
+  # dead weight: committed, green locally, never run by the gate. 6 files and
+  # 209 tests, of which the gate was running two files' worth. Pinning suites
+  # by filename is what let that drift; this runs the directory.
   scripts-tests:
     name: Script & Repo-Config Locks
     needs: gate
@@ -158,9 +162,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Shallow: vitest only, no turbo and no git range.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
-          fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Run scripts/__tests__
         run: npm run --silent test:scripts
@@ -175,6 +180,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
@@ -204,6 +210,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
@@ -220,6 +227,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -231,10 +240,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     needs: [gate, test, scripts-tests, build, typecheck, portability]
-    if: always() && needs.gate.outputs.run == 'true'
+    # `needs.gate.outputs.run` alone is not enough. If `gate` itself fails, that
+    # output is empty, this job is skipped — and GitHub reports a skipped
+    # required check as passing, so a broken gate would wave a PR through with
+    # none of the heavy suites having run. That risk grew with this PR: `gate`
+    # used to be a metadata-only job that could barely fail, and now it does a
+    # checkout, an install and a fail-closed turbo dry-run. So stay eligible on
+    # gate failure/cancellation and report it below.
+    if: >-
+      always() && (needs.gate.outputs.run == 'true'
+      || needs.gate.result == 'failure' || needs.gate.result == 'cancelled')
     steps:
       - name: Render gate report
         env:
+          R_GATE: ${{ needs.gate.result }}
           R_TEST: ${{ needs.test.result }}
           R_SCRIPTS: ${{ needs['scripts-tests'].result }}
           R_BUILD: ${{ needs.build.result }}
@@ -253,7 +272,10 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_TEST" "$R_SCRIPTS" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
+          # R_GATE is included deliberately: if the gate job died, the shard
+          # matrix it computes is undefined and every downstream `result` is
+          # `skipped`, which would otherwise loop through as "nothing failed".
+          for r in "$R_GATE" "$R_TEST" "$R_SCRIPTS" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -267,6 +289,7 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
+            echo "| Gate                | $(icon "$R_GATE") $R_GATE               | affected-package resolution + shard matrix |"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\`, sharded (affected on PRs) |"
             echo "| Script/config locks | $(icon "$R_SCRIPTS") $R_SCRIPTS         | \`scripts/__tests__\` — outside every workspace |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
