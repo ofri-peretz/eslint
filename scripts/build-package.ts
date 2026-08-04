@@ -28,6 +28,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { overlayJs } from './lib/overlay-js';
 import process from 'node:process';
 
 const pkgDir = process.cwd();
@@ -102,6 +103,10 @@ const stripResult = spawnSync(
     '-p',
     tsconfig,
     '--removeComments',
+    // tsconfig.lib.json now sets emitDeclarationOnly (pass 1 wants declarations
+    // only). This pass is the ONLY producer of .js, so it must opt back in.
+    '--emitDeclarationOnly',
+    'false',
     // Also drops the `//# sourceMappingURL=` pragma, which `--removeComments`
     // leaves behind (tsc emits it separately). Without this the overlaid .js
     // would point at maps that step 3b deletes.
@@ -116,20 +121,7 @@ const stripResult = spawnSync(
 );
 
 if (stripResult.status === 0) {
-  let copied = 0;
-  const overlayJs = (fromDir: string, toDir: string): void => {
-    for (const entry of readdirSync(fromDir, { withFileTypes: true })) {
-      const from = join(fromDir, entry.name);
-      const to = join(toDir, entry.name);
-      if (entry.isDirectory()) {
-        if (existsSync(to)) overlayJs(from, to);
-      } else if (entry.name.endsWith('.js') && existsSync(to)) {
-        copyFileSync(from, to);
-        copied++;
-      }
-    }
-  };
-  overlayJs(noCommentsDir, join(distDir, 'src'));
+  const copied = overlayJs(noCommentsDir, join(distDir, 'src'));
   if (copied === 0) {
     // tsc reported success yet produced no .js to copy back. That is a broken
     // build pipeline, not a degraded optimisation — failing here is the only

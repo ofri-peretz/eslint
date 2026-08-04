@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-03",
+  "generatedAt": "2026-08-04",
   "totalPlugins": 26,
-  "totalRules": 433,
-  "oxlintCompatible": 433,
+  "totalRules": 436,
+  "oxlintCompatible": 436,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -390,10 +390,16 @@
       "short": "drizzle-security",
       "shim": "tools/oxlint-plugins/interlace-drizzle-security.cjs",
       "subpath": "eslint-plugin-drizzle-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unscoped-mutation",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1008,10 +1014,16 @@
       "short": "knex-security",
       "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
       "subpath": "eslint-plugin-knex-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unscoped-mutation",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1398,12 +1410,6 @@
       "ruleCount": 8,
       "rules": [
         {
-          "name": "no-exposed-debug-endpoints",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
           "name": "no-exposed-private-fields",
           "portability": "compatible",
           "blockers": [],
@@ -1422,7 +1428,13 @@
           "isTypeAware": false
         },
         {
-          "name": "require-class-validator",
+          "name": "no-res-bypass-serialization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-swagger",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1815,10 +1827,16 @@
       "short": "prisma-security",
       "shim": "tools/oxlint-plugins/interlace-prisma-security.cjs",
       "subpath": "eslint-plugin-prisma-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unscoped-mutation",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2906,7 +2924,8 @@
       "utm-taxonomy"
     ],
     "drizzle-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "no-unscoped-mutation"
     ],
     "express-security": [
       "no-client-controlled-authorization",
@@ -3012,7 +3031,8 @@
       "require-max-age"
     ],
     "knex-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "no-unscoped-mutation"
     ],
     "lambda-security": [
       "no-env-logging",
@@ -3092,11 +3112,11 @@
       "no-unsafe-query"
     ],
     "nestjs-security": [
-      "no-exposed-debug-endpoints",
       "no-exposed-private-fields",
       "no-missing-validation-pipe",
       "no-permissive-cors",
-      "require-class-validator",
+      "no-res-bypass-serialization",
+      "no-unguarded-swagger",
       "require-guards",
       "require-throttler",
       "require-validation-pipe-whitelist"
@@ -3170,7 +3190,8 @@
       "prevent-double-release"
     ],
     "prisma-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "no-unscoped-mutation"
     ],
     "react-a11y": [
       "alt-text",

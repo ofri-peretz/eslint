@@ -16,7 +16,7 @@ run-name: >-
 #   - oxlint (fast pass)        ~15s
 #   - Markdown Lint             ~20s
 #   - CHANGELOG Check           ~15s
-#   - Workflow Conventions      ~15s
+#   - Workflow + script locks   ~30s
 #   - Lockfile Sync             ~10s
 #
 # Total wall ~30s. Compared to the pre-split ~3m, ~80% GHA-minute reduction.
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -69,29 +69,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
       - run: npm run audit:changelogs
 
   workflows:
-    name: Workflow Conventions
+    name: Workflow + CI Script Locks
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
       - run: npm run lint:workflows
+      # scripts/__tests__/ held five lock files but only oxlint-export-lock ran
+      # in CI, via a `test:oxlint-exports` script that names a single file and
+      # a path filter in oxlint-parity.yml. gap-closure, sync-source-versions
+      # and turbo-cache-inputs-lock never ran anywhere — including the one
+      # guarding the Turbo cache config. `test:scripts` runs the whole
+      # directory (137 tests, ~13s) so a new lock is covered by existing.
+      - run: npm run test:scripts
 
   lockfile:
     name: Lockfile Sync
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version-file: .nvmrc
@@ -160,7 +167,7 @@ jobs:
             echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
-            echo "| Workflow conventions | $(icon "$R_WORKFLOWS") $R_WORKFLOWS    | \`scripts/lint-workflows.ts\` |"
+            echo "| Workflow + script locks | $(icon "$R_WORKFLOWS") $R_WORKFLOWS | \`lint-workflows.ts\` + \`scripts/__tests__\` |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"

@@ -35,6 +35,17 @@ function emittedJs(dir: string): string[] {
   return out;
 }
 
+// Written by scripts/ci-build.mts: the packages THIS runner built. Present
+// only in CI. Turning "dist is absent" from a silent skip into a hard failure
+// is the whole point — a sharded build means each runner legitimately holds a
+// subset, and without an expected list there is no way to tell a correct subset
+// apart from a build that silently produced nothing.
+const expectedPath = join(resolve(__dirname, '..'), '.ci-built-packages.json');
+type BuiltEntry = { name: string; dir: string; emitsDist: boolean };
+const expected: BuiltEntry[] | null = existsSync(expectedPath)
+  ? (JSON.parse(readFileSync(expectedPath, 'utf-8')) as BuiltEntry[])
+  : null;
+
 const violations: Violation[] = [];
 const checked: string[] = [];
 
@@ -57,6 +68,43 @@ for (const dir of readdirSync(PACKAGES).sort()) {
 }
 
 console.log(`Checked runtime requires across ${checked.length} built package(s).\n`);
+
+if (expected) {
+  // Only packages that actually emit a dist/ are checkable; apps and private
+  // workspaces do not publish one. Intersect against what the build produced
+  // rather than demanding all of them.
+  // `emitsDist` comes from the build script itself, so this no longer guesses a
+  // directory from the package name — that guess mapped
+  // @interlace/eslint-config to packages/eslint-config (the real dir is
+  // eslint-config-interlace) and demanded a dist from private, build-less
+  // packages like @interlace/eslint-formatter-sarif.
+  const missing = expected.filter((e) => e.emitsDist && !checked.includes(e.name)).map((e) => e.name);
+  if (missing.length > 0) {
+    console.error(
+      `::error::These packages were built by this shard but have no dist/package.json to verify:\n` +
+        missing.map((m) => `  - ${m}`).join('\n') +
+        `\nThe build did not emit what it claimed to. Refusing to report success.`,
+    );
+    process.exit(1);
+  }
+}
+
+// 0 checked is only a defect when something was supposed to be there. A build
+// shard whose bucket holds no affected package legitimately produces nothing —
+// it writes an empty expectation list to say so. Without that distinction this
+// guard failed correct, empty shards (observed on PR #368, Build 1/4).
+const expectedDistCount = expected?.filter((e) => e.emitsDist).length ?? null;
+if (checked.length === 0 && expectedDistCount !== 0) {
+  console.error(
+    expectedDistCount === null
+      ? '::error::Verified 0 packages and no build manifest was found. This gate cannot pass without inspecting at least one built artifact.'
+      : `::error::Verified 0 packages, but the build claimed ${expectedDistCount} publishable package(s). The build did not emit what it claimed to.`,
+  );
+  process.exit(1);
+}
+if (checked.length === 0) {
+  console.log('This shard built no publishable package — nothing to verify.');
+}
 
 if (violations.length > 0) {
   for (const v of violations) {

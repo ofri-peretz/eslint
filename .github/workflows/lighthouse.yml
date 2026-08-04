@@ -27,12 +27,19 @@ name: Lighthouse (Web Vitals Budget)
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    # See a11y.yml — `opened`/`reopened` are required for a PR created
+    # directly as non-draft to trigger this at all.
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - "apps/docs/**"
-      - "packages/eslint-devkit/**"
+      - "packages/ui/**"
       - ".github/workflows/lighthouse.yml"
       - "apps/docs/lighthouserc.json"
+      # `packages/eslint-devkit/**` used to be here and pulled this 9.9m job
+      # onto every PR that touched the devkit — but apps/docs does not depend
+      # on eslint-devkit at all (checked its manifest), so a devkit change
+      # cannot move a single web-vital. packages/ui replaces it: that one does
+      # ship into the docs bundle.
   workflow_dispatch:
   schedule:
     - cron: "5 4 * * 3" # Wed 04:05 UTC — weekly (staggered off the Sunday burst)
@@ -78,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "true"
@@ -99,9 +106,6 @@ jobs:
         env:
           PORT: "3000"
 
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.14.0
-
       - name: Run Lighthouse CI
         id: lhci
         working-directory: apps/docs
@@ -109,7 +113,10 @@ jobs:
         # hard gate on the weekly cron + manual dispatch. The step always
         # produces the .lighthouseci/ artifact for the upload step below.
         continue-on-error: ${{ github.event_name == 'pull_request' }}
-        run: lhci autorun --config=./lighthouserc.json
+        # `npx` over a global install: the version is still pinned, but it
+        # resolves from the npm cache the setup action already hydrated
+        # instead of a fresh ~30s registry fetch on every run.
+        run: npx --yes @lhci/cli@0.14.0 autorun --config=./lighthouserc.json
         env:
           LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

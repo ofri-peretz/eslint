@@ -9,11 +9,11 @@ describe('eslint-plugin-knex-security plugin interface', () => {
     expect(plugin.meta?.version).toBeDefined();
   });
 
-  it('should export all sequelize-security rules', () => {
+  it('should export all knex-security rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
-    expect(ruleKeys).toEqual(['no-unsafe-query']);
-    expect(ruleKeys.length).toBe(1);
+    expect(ruleKeys).toEqual(['no-unsafe-query', 'no-unscoped-mutation']);
+    expect(ruleKeys.length).toBe(2);
   });
 
   describe('configurations', () => {
@@ -44,6 +44,7 @@ describe('eslint-plugin-knex-security plugin interface', () => {
       });
 
       expect(strictRules['knex-security/no-unsafe-query']).toBe('error');
+      expect(strictRules['knex-security/no-unscoped-mutation']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
   });
