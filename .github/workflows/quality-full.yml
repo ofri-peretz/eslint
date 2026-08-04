@@ -197,6 +197,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           turbo-cache-scope: typecheck
+          tsbuildinfo-cache: "true"
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster

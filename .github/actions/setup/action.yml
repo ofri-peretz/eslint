@@ -49,6 +49,12 @@ inputs:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
     default: "false"
+  tsbuildinfo-cache:
+    description: >-
+      Restore + save the TypeScript project-references incremental state
+      (packages/*/.tsbuildinfo). Set to "true" for the whole-graph typecheck job.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -159,6 +165,30 @@ runs:
         key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           playwright-${{ runner.os }}-
+
+    # `npm run typecheck` is one `tsgo --build tsconfig.solution.json` over the
+    # whole plugin graph. That runs *outside* Turbo, and the `typecheck` task
+    # declared `outputs: []`, so nothing preserved its incremental state and
+    # every CI run retypechecked all 21 projects from scratch — a measured 81s
+    # on PR #356, identical whether or not anything changed.
+    #
+    # `tsgo --build` is incremental: each composite project writes
+    # `<pkg>/.tsbuildinfo` (see tsBuildInfoFile in each tsconfig.lib.json) and
+    # skips projects whose inputs are unchanged. Persisting those files is what
+    # makes the incrementality real across runs.
+    #
+    # Keyed on the sources tsgo actually reads, so a source change invalidates
+    # it; the restore-key fallback still gives a partial graph to build on.
+    - name: Restore TypeScript incremental state
+      if: inputs.tsbuildinfo-cache == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          packages/*/.tsbuildinfo
+          packages/*/dist
+        key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('packages/*/src/**/*.ts', 'packages/*/tsconfig*.json', 'tsconfig.solution.json', 'tsconfig.base.json') }}
+        restore-keys: |
+          tsbuildinfo-${{ runner.os }}-
 
     - name: Restore Next.js build cache
       if: inputs.next-cache == 'true'

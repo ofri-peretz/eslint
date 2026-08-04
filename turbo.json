@@ -15,9 +15,7 @@
         "tsconfig.lib.json",
         "package.json",
         "README.md",
-        "CHANGELOG.md",
         "LICENSE",
-        "AGENTS.md",
         ".npmignore"
       ],
       "outputs": [
@@ -44,7 +42,7 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "tsconfig.json", "tsconfig.lib.json", "package.json"],
-      "outputs": []
+      "outputs": [".tsbuildinfo"]
     },
     "//#oxlint": {
       "inputs": [".oxlintrc.json", "packages/**/src/**"],
