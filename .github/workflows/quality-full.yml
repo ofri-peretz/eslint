@@ -71,6 +71,7 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       shards: ${{ steps.matrix.outputs.shards }}
       any: ${{ steps.matrix.outputs.any }}
+      heavy: ${{ steps.matrix.outputs.heavy }}
     steps:
       - id: decide
         env:
@@ -167,7 +168,11 @@ jobs:
   build:
     name: Build (Turbo)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    # `heavy` is false when the diff touches no package source at all — a
+    # root README, a workflow comment, a .md doc. Nothing those can break is
+    # observable to build/typecheck/portability, and markdown still gets linted
+    # by quality.yml, which is a separate workflow and always runs.
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -204,7 +209,7 @@ jobs:
   typecheck:
     name: Typecheck (whole-graph tsgo)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -225,7 +230,7 @@ jobs:
   portability:
     name: Portability Audit
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

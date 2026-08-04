@@ -122,12 +122,22 @@ function bucket(pkgs: Pkg[], total: number): Pkg[][] {
 // keeps job count proportional to the size of the change.
 const MATRIX_MODE = process.argv[2] === '--matrix';
 
-/** Write the shard list to GITHUB_OUTPUT (and stdout when run locally). */
-function emitMatrix(shardNumbers: number[]): void {
+/**
+ * Write the shard list to GITHUB_OUTPUT (and stdout when run locally).
+ *
+ * `heavy` tells the workflow whether Build / Typecheck / Portability need to
+ * run at all. It is false only when the diff touches no package source —
+ * a root README, a .md doc, a workflow comment. Markdown is still linted:
+ * quality.yml is a separate workflow with no such condition.
+ */
+function emitMatrix(shardNumbers: number[], heavy = true): void {
   const json = JSON.stringify(shardNumbers);
-  console.log(`matrix=${json}`);
+  console.log(`matrix=${json} heavy=${heavy}`);
   if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(process.env.GITHUB_OUTPUT, `shards=${json}\nany=${shardNumbers.length > 0}\n`);
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `shards=${json}\nany=${shardNumbers.length > 0}\nheavy=${heavy}\n`,
+    );
   }
 }
 
@@ -218,7 +228,9 @@ if (!runAll) {
     if (MATRIX_MODE) {
       // Empty matrix -> GitHub spawns zero jobs, so a no-package PR costs no
       // runners at all instead of N that each start up only to no-op.
-      emitMatrix([]);
+      // heavy=false additionally skips Build / Typecheck / Portability: a
+      // docs-only change cannot affect any of them.
+      emitMatrix([], false);
       console.log(`Nothing to test: ${decision.why} vs ${BASE_REF}.`);
       process.exit(0);
     }
