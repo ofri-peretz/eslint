@@ -25,6 +25,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { changedFilesSince, warnUnresolvedBase } from './lib/ci-changed-files.mts';
 import { decideAffected, reverseDeps, bucket, manifestDeps, type AffectedPkg } from './lib/ci-shard-affected.mts';
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
@@ -82,14 +83,10 @@ function workspaces(): BuildPkg[] {
 }
 
 function changedFiles(): string[] | null {
-  try {
-    const base = execFileSync('git', ['merge-base', 'HEAD', BASE_REF], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-    return execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: REPO_ROOT, encoding: 'utf8' })
-      .split('\n')
-      .filter(Boolean);
-  } catch {
-    return null;
-  }
+  const r = changedFilesSince(BASE_REF, REPO_ROOT);
+  if (r.ok) return r.changed;
+  warnUnresolvedBase(r.why);
+  return null;
 }
 
 const all = workspaces();
