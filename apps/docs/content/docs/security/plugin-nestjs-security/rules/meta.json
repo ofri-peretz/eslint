@@ -2,11 +2,11 @@
   "title": "Rules",
   "defaultOpen": false,
   "pages": [
-    "no-exposed-debug-endpoints",
     "no-exposed-private-fields",
     "no-missing-validation-pipe",
     "no-permissive-cors",
-    "require-class-validator",
+    "no-res-bypass-serialization",
+    "no-unguarded-swagger",
     "require-guards",
     "require-throttler",
     "require-validation-pipe-whitelist"
