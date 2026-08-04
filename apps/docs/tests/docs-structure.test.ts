@@ -153,11 +153,11 @@ describe('Corpus Integrity', () => {
   // broken glob and a green, meaningless suite.
   it('should scan a non-empty corpus', () => {
     const c = corpus();
-    expect(c.mdxCount).toBeGreaterThan(400);
-    expect(c.ruleDocCount).toBeGreaterThan(300);
-    expect(c.metaCount).toBeGreaterThan(20);
-    expect(c.categoryDirs.length).toBeGreaterThan(4);
-    expect(c.pluginDirs.length).toBeGreaterThan(10);
+    expect(c.mdxCount).toBeGreaterThan(500); // 526 today
+    expect(c.ruleDocCount).toBeGreaterThan(400); // 421 today
+    expect(c.metaCount).toBeGreaterThan(40); // 48 today
+    expect(c.categoryDirs.length).toBeGreaterThan(5); // 6 today
+    expect(c.pluginDirs.length).toBeGreaterThan(17); // 19 today
   });
 });
 

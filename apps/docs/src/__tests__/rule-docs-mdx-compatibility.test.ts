@@ -210,7 +210,7 @@ describe('Rule Documentation - MDX Compatibility', () => {
   it('should find rule documentation files', () => {
     const { fileCount } = corpus();
     console.log(`Found ${fileCount} rule documentation files`);
-    expect(fileCount).toBeGreaterThan(300);
+    expect(fileCount).toBeGreaterThan(400); // 415 today
   });
 
   describe('Problematic MDX Patterns', () => {

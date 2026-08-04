@@ -183,7 +183,7 @@ describe('Social Embeds - Tweet Integrity', () => {
   // out early when nothing was found. This guard is the only thing standing
   // between a broken glob and a green, meaningless suite.
   it('should scan a non-empty corpus', () => {
-    expect(corpus().fileCount).toBeGreaterThan(400);
+    expect(corpus().fileCount).toBeGreaterThan(580); // 617 today
   });
 
   it('should find tweet embeds in source files', () => {

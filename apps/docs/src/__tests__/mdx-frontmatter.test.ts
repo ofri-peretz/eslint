@@ -244,7 +244,7 @@ describe('MDX Frontmatter - Required Fields', () => {
   // zero files satisfies perfectly. This guard is the only thing standing
   // between a broken glob and a green, meaningless suite.
   it('should find MDX files to test', () => {
-    expect(gettingStartedPages().length).toBeGreaterThan(3);
+    expect(gettingStartedPages().length).toBeGreaterThan(5); // 7 today
   });
 
   describe('Every MDX file should have a title', () => {
@@ -330,7 +330,7 @@ describe('MDX Frontmatter - Icon Validation', () => {
 describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
   // Anti-vacuous guard for every site-wide check below.
   it('should find MDX files across all content', () => {
-    expect(pages().length).toBeGreaterThan(400);
+    expect(pages().length).toBeGreaterThan(500); // 526 today
   });
 
   it('ALL MDX files should use valid Lucide icons', () => {
