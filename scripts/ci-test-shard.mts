@@ -74,7 +74,18 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
       // workspaces that have tests but no coverage task (docs,
       // cwe-analytics-engine) — dropping them would be a coverage regression
       // disguised as a sharding change.
-      const task = pkg.scripts?.['test:coverage'] ? 'test:coverage' : pkg.scripts?.test ? 'test' : null;
+      // Coverage is deliberately NOT collected on PRs. v8 instrumentation
+      // roughly doubles vitest's cost for a number nobody reads per-PR, and
+      // codecov.yml now collects it on a daily cron instead. Set
+      // CI_TEST_SHARD_COVERAGE=1 to opt back in (that daily job does).
+      const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
+      const task = wantCoverage && pkg.scripts?.['test:coverage']
+        ? 'test:coverage'
+        : pkg.scripts?.test
+          ? 'test'
+          : pkg.scripts?.['test:coverage']
+            ? 'test:coverage'
+            : null;
       if (task) testable.push({ name: pkg.name, dir, task, cost: countTestFiles(path.join(abs, entry)) });
       else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
     }
@@ -301,7 +312,21 @@ for (const task of ['test:coverage', 'test'] as const) {
   // version of this optimisation. Turbo dedupes across filters, and dependents
   // outside this shard's bucket are cheap replays from its warm cache.
   const spec = runAll ? (p: Pkg) => `--filter=${p.name}` : (p: Pkg) => `--filter=...${p.name}`;
-  const args = ['turbo', 'run', task, ...group.map(spec)];
+  // `--` forwards the rest to the package script, i.e. to `vitest run`.
+  // `dot` is the cheapest reporter: one character per file instead of a line
+  // per file across 742 files, with failures still printed in full. This is
+  // output volume only — no assertion is skipped.
+  // 25 of 26 vitest configs set `coverage.enabled: true`, so plain `vitest
+  // run` instruments anyway — the task name alone changes nothing. Disable it
+  // explicitly on PRs: v8 instrumentation costs ~15% (measured 3.25s -> 2.75s
+  // on eslint-plugin-jwt) and the report is not read per-PR.
+  //
+  // TRADEOFF, stated plainly: this also stops the 100% thresholds each config
+  // declares from being enforced on PRs. codecov.yml's daily run is the
+  // backstop — a coverage regression is caught within 24h instead of at the
+  // PR. Set CI_TEST_SHARD_COVERAGE=1 to enforce inline again.
+  const cov = process.env.CI_TEST_SHARD_COVERAGE === '1' ? [] : ['--coverage.enabled=false'];
+  const args = ['turbo', 'run', task, ...group.map(spec), '--', '--reporter=dot', ...cov];
   console.log(`\n$ npx ${args.join(' ')}\n`);
   try {
     execFileSync('npx', args, { cwd: REPO_ROOT, stdio: 'inherit' });

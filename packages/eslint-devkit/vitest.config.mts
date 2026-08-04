@@ -24,6 +24,13 @@ export default defineConfig({
   root: __dirname,
   plugins: [],
   test: {
+    // Packaging test, not a unit test: it reads this package's own dist/, so
+    // including it here would force `test` to dependOn `build` and make every
+    // unit run wait on a compile. The same invariant — emitted JS must not
+    // require an uninstalled optional peer — is enforced by
+    // `npm run verify:runtime-deps` in the Build job, which reads the real
+    // artifacts and covers more cases. Run it directly via `test:dist`.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/no-runtime-optional-peer.test.ts'],
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
     // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
     // an idle machine and mis-reports contention as failure. A hang still fails,

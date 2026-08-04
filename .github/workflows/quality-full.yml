@@ -232,6 +232,12 @@ jobs:
       # tarball and is ~2.5min — too slow for every push, kept for pre-release.
       - name: Runtime dependency check (published packages must be requirable)
         run: npm run verify:runtime-deps
+      # Packaging lock that reads devkit's own dist/. It lives here, not in the
+      # unit suite, so `test` does not have to dependOn `build` — a unit test
+      # should never wait on a compile. Same invariant as the step above,
+      # asserted at the source level.
+      - name: Devkit must not require an optional peer at runtime
+        run: npm run test:dist --workspace=@interlace/eslint-devkit
       # The detection logic itself is locked: a plausible tidy-up of either the
       # eager-require pattern or the optional-peer rule silently disarms the gate
       # above, so both mutations are asserted against.
