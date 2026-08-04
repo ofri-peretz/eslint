@@ -41,13 +41,11 @@ function readCredential(options: TSESTree.ObjectExpression): KeyVerdict {
   for (const prop of options.properties) {
     if (prop.type === 'SpreadElement') return { kind: 'unreadable' };
     if (prop.computed) continue;
-    const name =
-      prop.key.type === 'Identifier'
-        ? prop.key.name
-        : prop.key.type === 'Literal'
-          ? String(prop.key.value)
-          : null;
-    if (name === null || !KEY_PROPS.has(name)) continue;
+    // Computed keys already skipped above, so a key here is an Identifier
+    // (`apiKey:`) or a Literal (`'apiKey':`) — there is no third form to
+    // guard against, and a `: null` arm for one would be unreachable.
+    const name = prop.key.type === 'Identifier' ? prop.key.name : String(prop.key.value);
+    if (!KEY_PROPS.has(name)) continue;
     if (prop.value.type !== 'Literal') return { kind: 'safe' };
     // An empty string is a placeholder, not a credential.
     if (typeof prop.value.value === 'string' && prop.value.value.length > 0) {

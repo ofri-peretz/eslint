@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 /**
  * Vitest configuration for eslint-plugin-mcp-sdk-security
@@ -8,6 +9,10 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   root: __dirname,
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   plugins: [],
   test: {
     globals: true,
@@ -30,7 +35,7 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'mcp-sdk-security', color: 'magenta' },
     pool: 'vmThreads',

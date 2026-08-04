@@ -12,7 +12,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {
       enabled: true,

@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Deprecated — renamed to [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security).**
+> Same rules, same `jwt/` rule namespace, continued version lineage. Migration is a
+> one-line change: swap the dependency and the import; every existing rule reference
+> and `eslint-disable` comment keeps working. This package receives no further releases.
+
 <p align="center">
   <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
