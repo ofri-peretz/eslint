@@ -118,6 +118,11 @@ jobs:
       # tarball and is ~2.5min — too slow for every push, kept for pre-release.
       - name: Runtime dependency check (published packages must be requirable)
         run: npm run verify:runtime-deps
+      # The detection logic itself is locked: a plausible tidy-up of either the
+      # eager-require pattern or the optional-peer rule silently disarms the gate
+      # above, so both mutations are asserted against.
+      - name: Lock the runtime-dependency detection logic
+        run: npm run test:runtime-deps
 
   typecheck:
     name: Typecheck (whole-graph tsgo)
