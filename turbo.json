@@ -24,6 +24,42 @@
         "!.next/cache/**"
       ]
     },
+    "docs#test": {
+      "dependsOn": ["^build"]
+    },
+    "docs#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test:coverage": {
+      "dependsOn": ["^build"]
+    },
     "test": {
       "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$"],
