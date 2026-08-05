@@ -32,7 +32,8 @@ import {
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
 import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
-import ts from 'typescript';
+import type ts from 'typescript';
+import { loadTypeScript } from '../../utils/typescript-peer';
 
 type MessageIds = 'missingValidation' | 'addValidationPipe' | 'undecoratedDto';
 
@@ -152,6 +153,10 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       ? getParserServices(context)
       : null;
     const checker = services?.program?.getTypeChecker?.() ?? null;
+    // Only reachable once parser services exist, which means TypeScript ran,
+    // which means it is installed. Loaded lazily so the emitted output carries
+    // no top-level `require("typescript")` — this package does not depend on it.
+    const tsModule = services === null ? null : loadTypeScript();
 
     // The registration lives in another file, so this is the only way a
     // single-file rule can know it exists. Without it the rule reports every
@@ -276,7 +281,9 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     function dtoDeclaresValidators(
       param: TSESTree.Identifier,
     ): { dto: string; validated: boolean } | null {
-      if (services === null || checker === null) return null;
+      if (services === null || checker === null || tsModule === null) {
+        return null;
+      }
       const annotation = param.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return null;
 
@@ -294,7 +301,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       // take, because a resolved symbol always has declarations.
       const declaration = symbol.valueDeclaration;
       if (declaration === undefined) return null;
-      if (!ts.isClassDeclaration(declaration)) return null;
+      if (!tsModule.isClassDeclaration(declaration)) return null;
 
       // A base class may carry the decorators; this only reads one level.
       if (declaration.heritageClauses !== undefined) return null;
@@ -320,8 +327,8 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * invalid tests passed for the wrong reason.
      */
     function decoratorsOf(member: ts.ClassElement): readonly ts.Decorator[] {
-      return ts.canHaveDecorators(member)
-        ? (ts.getDecorators(member) ?? [])
+      return tsModule.canHaveDecorators(member)
+        ? (tsModule.getDecorators(member) ?? [])
         : [];
     }
 
@@ -334,14 +341,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      */
     function isValidatorDecorator(decorator: ts.Decorator): boolean {
       const expression = decorator.expression;
-      const callee = ts.isCallExpression(expression)
+      const callee = tsModule.isCallExpression(expression)
         ? expression.expression
         : expression;
       const symbol = checker?.getSymbolAtLocation(callee);
       // An imported binding points at the import statement; follow it to the
       // declaration so the *origin* decides, not the local name.
       const resolved =
-        symbol !== undefined && symbol.flags & ts.SymbolFlags.Alias
+        symbol !== undefined && symbol.flags & tsModule.SymbolFlags.Alias
           ? checker?.getAliasedSymbol(symbol)
           : symbol;
       const file = resolved?.declarations?.[0]?.getSourceFile().fileName;

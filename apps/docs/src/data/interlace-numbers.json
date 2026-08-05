@@ -8,8 +8,13 @@
     "react": 2
   },
   "rules": {
+<<<<<<< HEAD
     "total": 512,
     "security": 291,
+=======
+    "total": 502,
+    "security": 281,
+>>>>>>> 7b483637 (fix(nestjs-security): the plugin would have thrown on a clean install)
     "quality": 119,
     "react": 102
   },
