@@ -11,6 +11,19 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+    // nest-framework/packages/core/nest-application.ts:130 — NestJS's own
+    // implementation of the API this rule watches. An application holds the
+    // app in a binding; a `this` receiver means the class *is* the app.
+    `
+      class NestApplication {
+        enableCorsFromOptions() {
+          if (!passCustomOptions) {
+            return this.enableCors();
+          }
+          return this.enableCors(this.appOptions.cors);
+        }
+      }
+    `,
     // Development-scoped: named directly, or by negating production.
     `
       if (process.env.NODE_ENV !== 'production') {

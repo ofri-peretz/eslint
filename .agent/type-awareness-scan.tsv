@@ -212,8 +212,9 @@ nestjs-security	require-guards	unaware
 nestjs-security	require-throttler	unaware	
 nestjs-security	require-validation-pipe-whitelist	unaware	
 nestjs-security	no-permissive-cors	unaware	
-nestjs-security	no-missing-validation-pipe	unaware	
+nestjs-security	no-missing-validation-pipe	optional	undecoratedDto resolves the @Body() DTO and its decorators' origin when parserOptions.project is set; syntax-only behaviour is unchanged without it
 nestjs-security	no-exposed-private-fields	unaware
+nestjs-security	no-hybrid-app-config-loss	unaware	
 nestjs-security	no-res-bypass-serialization	unaware
 nestjs-security	no-unguarded-swagger	unaware			
 node-security	require-secure-credential-storage	unaware	

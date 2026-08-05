@@ -178,7 +178,7 @@
     },
     {
       "name": "eslint-plugin-nestjs-security",
-      "rules": 8,
+      "rules": 9,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
       "version": "2.0.2",
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 458,
+  "totalRules": 459,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"
