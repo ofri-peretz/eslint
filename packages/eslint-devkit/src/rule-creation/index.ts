@@ -18,6 +18,18 @@ export * from './require-tls-rule';
 export * from './mass-assignment-rule';
 // Shared CWE-798 detector — literal database credentials in connection config.
 export * from './hardcoded-credentials-rule';
+// Shared CWE-798 detector — a literal API key in an inference SDK's client
+// options. Distinct from the connection-config detector above: nothing in
+// secure-coding reports an SDK client key, measured.
+export * from './sdk-api-key-rule';
+// Shared CWE-522 detector — an inference SDK's browser escape hatch turned on.
+// Two instantiations, not three: neither Gemini SDK has the flag (verified
+// against the published tarballs).
+export * from './browser-escape-hatch-rule';
+// Shared CWE-1427 detector — untrusted content built into a raw SDK's system
+// prompt. Gated on member calls, so it can never collide with
+// vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form.
+export * from './system-prompt-injection-rule';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';

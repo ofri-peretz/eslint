@@ -45,6 +45,8 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
+import { isTestFile } from '../../utils/nest-ast';
+
 type MessageIds = 'missingWhitelist';
 
 export interface Options {
@@ -55,8 +57,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
 
 /**
  * Static name of a property, or null when it isn't statically known.
@@ -168,7 +168,7 @@ export const requireValidationPipeWhitelist = createRule<
   ) {
     const { allowInTests = true, requireForbidNonWhitelisted = false } =
       options;
-    if (allowInTests && TEST_FILE.test(context.filename)) return {};
+    if (allowInTests && isTestFile(context.filename)) return {};
 
     return {
       NewExpression(node: TSESTree.NewExpression) {

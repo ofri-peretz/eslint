@@ -38,7 +38,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { expressionName, objectProperties } from '../../utils/nest-ast';
+import {
+  expressionName,
+  isTestFile,
+  objectProperties,
+} from '../../utils/nest-ast';
 
 /**
  * Identifiers and members that mean "which environment are we in".
@@ -92,8 +96,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
 
 /** Resolve a `const x = { … }` declared in this same file, or null. */
 function resolveLocalObject(
@@ -156,7 +158,13 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-permissive-cors.md',
       description: 'Disallows CORS configured to accept any origin',
       cwe: 'CWE-942',
-      cvss: 7.5,
+      // 5.3, matching the wildcard findings this rule reports most of the time.
+      // A wildcard is not valid for a credentialed response, so the browser
+      // withholds the response from the calling script — real exposure, but
+      // not the 7.5 this claimed before the severities were re-graded. The
+      // reflected-origin case is the outlier and carries its own 8.1, because
+      // `origin: true` stays valid with credentials.
+      cvss: 5.3,
     },
     messages: {
       defaultOrigin: formatLLMMessage({
@@ -164,10 +172,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         issueName: 'Permissive CORS',
         cwe: 'CWE-942',
         owasp: 'A05:2021',
-        cvss: 7.5,
+        cvss: 5.3,
         description:
-          'enableCors() with no options defaults to Access-Control-Allow-Origin: * — every site can read this API',
-        severity: 'HIGH',
+          'enableCors() with no options defaults to Access-Control-Allow-Origin: * — every site can read this API. A wildcard is not valid for a credentialed response, so the browser withholds the *response* from the calling script rather than the credentials from the request: cross-origin reads of authenticated data are blocked, while the request itself still reaches the server and still has its side effects. Deliberate for a public API, a mistake for an internal one',
+        severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Pass the origins you actually serve: app.enableCors({ origin: ['https://app.example.com'] })",
         documentationLink: 'https://docs.nestjs.com/security/cors',
@@ -177,9 +185,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         issueName: 'Permissive CORS',
         cwe: 'CWE-942',
         owasp: 'A05:2021',
-        cvss: 7.5,
-        description: "origin: '*' lets every site read responses from this API",
-        severity: 'HIGH',
+        cvss: 5.3,
+        description:
+          "origin: '*' lets every site read responses from this API. A wildcard is not valid for a credentialed response, so an authenticated cross-origin read is blocked at the point the script tries to read it — unlike origin: true, which echoes the caller's origin and stays valid with credentials. The request still reaches the server either way, so this is not a CSRF control",
+        severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Replace the wildcard with an explicit allowlist: origin: ['https://app.example.com']",
         documentationLink: 'https://docs.nestjs.com/security/cors',
@@ -212,7 +221,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options;
-    if (allowInTests && TEST_FILE.test(context.filename)) return {};
+    if (allowInTests && isTestFile(context.filename)) return {};
 
     /**
      * Whether the call sits inside a branch that tests the environment.
@@ -283,6 +292,24 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
      * ignoring the other was an accident of which callee the visitor matched,
      * not a decision about risk.
      */
+    /**
+     * Whether the call is the framework implementing `enableCors`, not an
+     * application calling it.
+     *
+     * `nest-framework/packages/core/nest-application.ts:130` is literally
+     * `return this.enableCors();` inside NestJS's own implementation of the
+     * API this rule watches — reporting it accuses the framework of the flaw
+     * its own code is there to configure. An application always holds the app
+     * in a binding (`app.enableCors()`); a `this` receiver means the class
+     * *is* the application, which no consumer's bootstrap ever is.
+     */
+    function isSelfCall(callee: TSESTree.Node): boolean {
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.object.type === AST_NODE_TYPES.ThisExpression
+      );
+    }
+
     function checkNestFactoryOptions(node: TSESTree.CallExpression): void {
       const callee = node.callee;
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
@@ -329,6 +356,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           property.name !== 'enableCors'
         )
           return;
+        if (isSelfCall(node.callee)) return;
 
         const [arg] = node.arguments;
 

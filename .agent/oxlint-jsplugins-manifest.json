@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 481,
-  "oxlintCompatible": 481,
+  "totalRules": 491,
+  "oxlintCompatible": 491,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -12,10 +12,22 @@
       "short": "anthropic-security",
       "shim": "tools/oxlint-plugins/interlace-anthropic-security.cjs",
       "subpath": "eslint-plugin-anthropic-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 3,
       "rules": [
         {
+          "name": "no-browser-api-key-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -615,10 +627,22 @@
       "short": "gemini-security",
       "shim": "tools/oxlint-plugins/interlace-gemini-security.cjs",
       "subpath": "eslint-plugin-gemini-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-disabled-safety-settings",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1356,8 +1380,26 @@
       "short": "mcp-sdk-security",
       "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
       "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 4,
       "rules": [
+        {
+          "name": "no-command-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-tool-description-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unvalidated-tool-args",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "require-tool-input-schema",
           "portability": "compatible",
@@ -1581,7 +1623,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 8,
+      "ruleCount": 9,
       "rules": [
         {
           "name": "no-exposed-private-fields",
@@ -1590,10 +1632,16 @@
           "isTypeAware": false
         },
         {
-          "name": "no-missing-validation-pipe",
+          "name": "no-hybrid-app-config-loss",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "no-missing-validation-pipe",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
         },
         {
           "name": "no-permissive-cors",
@@ -1869,10 +1917,22 @@
       "short": "openai-security",
       "shim": "tools/oxlint-plugins/interlace-openai-security.cjs",
       "subpath": "eslint-plugin-openai-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-browser-api-key-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3184,7 +3244,9 @@
   ],
   "runtimeRuleNames": {
     "anthropic-security": [
-      "no-hardcoded-api-key"
+      "no-browser-api-key-exposure",
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "browser-security": [
       "detect-mixed-content",
@@ -3287,7 +3349,9 @@
       "require-strict-transport-security"
     ],
     "gemini-security": [
-      "no-disabled-safety-settings"
+      "no-disabled-safety-settings",
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "import-next": [
       "consistent-type-specifier-style",
@@ -3427,6 +3491,9 @@
       "no-unreadable-iife"
     ],
     "mcp-sdk-security": [
+      "no-command-injection-in-tool",
+      "no-tool-description-injection",
+      "no-unvalidated-tool-args",
       "require-tool-input-schema"
     ],
     "modernization": [
@@ -3468,6 +3535,7 @@
     ],
     "nestjs-security": [
       "no-exposed-private-fields",
+      "no-hybrid-app-config-loss",
       "no-missing-validation-pipe",
       "no-permissive-cors",
       "no-res-bypass-serialization",
@@ -3516,7 +3584,9 @@
       "require-storage-encryption"
     ],
     "openai-security": [
-      "no-browser-api-key-exposure"
+      "no-browser-api-key-exposure",
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "operability": [
       "no-console-log",

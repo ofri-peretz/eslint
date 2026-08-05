@@ -83,6 +83,27 @@ ruleTester.run('require-guards', requireGuards, {
         activateAccount(@Query() q) {}
       }
     `,
+    // ghostfolio/apps/api/src/app/endpoints/sitemap/sitemap.controller.ts:32 —
+    // a crawler fetches sitemap.xml unauthenticated by definition.
+    `
+      @Controller('sitemap.xml')
+      class SitemapController {
+        @Get()
+        getSitemapXml(@Res() response) {}
+      }
+    `,
+    // teable/apps/nestjs-backend/test/utils/init-app.ts — a test helper, which
+    // is not named .spec.ts and was being linted as production code.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get('all')
+          findAll() {}
+        }
+      `,
+      filename: 'test/utils/init-app.ts',
+    },
     // The `nest new` scaffold, kept and never guarded: `GET /` with no path on
     // either decorator and nothing to identify a resource.
     `

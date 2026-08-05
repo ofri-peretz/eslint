@@ -1,5 +1,34 @@
 # Changelog — eslint-plugin-gemini-security
 
+## 0.2.0
+
+### Minor Changes
+
+- [#402](https://github.com/ofri-peretz/eslint/pull/402) [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hardcoded-api-key` now covers all three raw inference SDKs.
+
+  The rule shipped on `eslint-plugin-anthropic-security` only. Its detection moved
+  into a shared `createSdkApiKeyRule` factory in `@interlace/eslint-devkit` and is
+  now instantiated for OpenAI and Gemini as well, at the same severity in every
+  preset — one rule with three module gates rather than three separate ones that
+  could drift.
+
+  Gemini adds a shape the other two do not have: the legacy
+  `new GoogleGenerativeAI(apiKey)` client takes the key as a **positional**
+  argument, with no options object to inspect. Both that and the current
+  `new GoogleGenAI({ apiKey })` form are checked.
+
+  Module matching is exact-or-subpath, not a prefix: `openai` opens the gate for
+  `openai` and `openai/resources`, and deliberately not for `openai-edge`, which
+  is a different package with a different client.
+
+  Anthropic's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+### Patch Changes
+
+- Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:
+  - @interlace/eslint-devkit@1.9.0
+
 ## 0.1.1
 
 ### Patch Changes

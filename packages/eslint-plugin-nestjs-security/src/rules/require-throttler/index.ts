@@ -177,10 +177,30 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalThrottler: { type: 'boolean', default: true, description: 'Look for a globally registered ThrottlerGuard before reporting' },
-          skipRoutes: { type: 'array', items: { type: 'string' }, default: [], description: 'Route paths exempt from the throttling requirement' },
-          assumeGlobalThrottler: { type: 'boolean', default: false, description: 'Assume a global ThrottlerGuard exists even if none is found' },
-          onlySensitiveRoutes: { type: 'boolean', default: true, description: 'Only require throttling on authentication and mutation routes' },
+          detectGlobalThrottler: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Look for a globally registered ThrottlerGuard before reporting',
+          },
+          skipRoutes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Route paths exempt from the throttling requirement',
+          },
+          assumeGlobalThrottler: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Assume a global ThrottlerGuard exists even if none is found',
+          },
+          onlySensitiveRoutes: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Only require throttling on authentication and mutation routes',
+          },
         },
         additionalProperties: false,
       },

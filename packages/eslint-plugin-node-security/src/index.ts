@@ -98,7 +98,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.7.3',
+    version: '4.8.0',
   },
   rules,
 };
@@ -106,7 +106,17 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
 const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/detect-child-process': 'error',
   'node-security/detect-eval-with-expression': 'error',
-  'node-security/detect-non-literal-fs-filename': 'error',
+  // Demoted 2026-08-05, in the same change that widened its detection. The
+  // rule used to gate on the receiver being literally `fs`, so a named import
+  // from `node:fs/promises`, a renamed default, a namespace import and
+  // `fs.promises.*` were all silently unchecked. Resolving the binding is the
+  // correct fix, but it multiplies findings: measured on this repo, 854 (555
+  // outside test files) where the old gate saw a fraction of that. The rule
+  // has no notion of a trust boundary, so a build script reading its own repo
+  // reports identically to a request handler reading user input. Shipping
+  // that at 'error' would break every adopter's CI on a minor.
+  // Promote back to 'error' once W6's corpus run measures the FP profile.
+  'node-security/detect-non-literal-fs-filename': 'warn',
   'node-security/no-unsafe-dynamic-require': 'error',
   // no-buffer-overread demoted 2026-05-09 — 95% of Wild hits on adversarial
   // Edge corpus + insufficient fixture coverage for the README §1 promotion

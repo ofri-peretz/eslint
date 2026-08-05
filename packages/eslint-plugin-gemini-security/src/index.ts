@@ -15,11 +15,19 @@
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 
+import { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
+import { noUntrustedContentInPrompt } from './rules/no-untrusted-content-in-prompt';
 import { noDisabledSafetySettings } from './rules/no-disabled-safety-settings';
 
+export { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
+export { noUntrustedContentInPrompt } from './rules/no-untrusted-content-in-prompt';
 export { noDisabledSafetySettings } from './rules/no-disabled-safety-settings';
 
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  // CWE-798: Use of Hard-coded Credentials
+  'no-hardcoded-api-key': noHardcodedApiKey,
+  // CWE-1427: Improper Neutralization of Input Used for LLM Prompting
+  'no-untrusted-content-in-prompt': noUntrustedContentInPrompt,
   // CWE-693
   'no-disabled-safety-settings': noDisabledSafetySettings,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
@@ -27,7 +35,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-gemini-security',
-    version: '0.1.1',
+    version: '0.2.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -37,14 +45,40 @@ const enabled: TSESLint.FlatConfig.Config = {
     'gemini-security': plugin,
   },
   rules: {
+    // Ships at the same severity as the identical rule in
+    // eslint-plugin-anthropic-security, which has been in `recommended` since
+    // 0.1.0. A non-empty string literal in a named client option, behind an
+    // SDK-import gate, has no realistic false-positive shape; splitting preset
+    // membership across three copies of one rule would be the worse outcome.
+    'gemini-security/no-hardcoded-api-key': 'error',
     'gemini-security/no-disabled-safety-settings': 'error',
+  },
+} satisfies TSESLint.FlatConfig.Config;
+
+/**
+ * Plan §1.6: a new rule joins `strict` and stays out of `minimal` /
+ * `recommended` until its false-positive profile is measured on the corpus.
+ *
+ * `no-untrusted-content-in-prompt` genuinely has a plausible FP shape — a
+ * system prompt interpolating something harmless like today's date is not an
+ * injection, and this rule cannot tell the difference. That is a real judgement
+ * call for `strict` to make, unlike the credential rules above, where a literal
+ * key in a named option has no innocent reading.
+ */
+const strict: TSESLint.FlatConfig.Config = {
+  plugins: {
+    'gemini-security': plugin,
+  },
+  rules: {
+    ...enabled.rules,
+    'gemini-security/no-untrusted-content-in-prompt': 'error',
   },
 } satisfies TSESLint.FlatConfig.Config;
 
 export const configs = {
   minimal: enabled,
   recommended: enabled,
-  strict: enabled,
+  strict,
 };
 
 export default {

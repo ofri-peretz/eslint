@@ -101,6 +101,11 @@ const FIXTURES: Record<string, string> = {
       SwaggerModule.setup('docs', app, document);
     }
   `,
+  // detectGlobalRegistrations is on by default and the synthetic filename finds
+  // no project, so the fixture must switch it off to reach the rule's own logic.
+  'no-hybrid-app-config-loss': `
+    app.connectMicroservice<MicroserviceOptions>(createNestjsKafkaConfig());
+  `,
   'no-res-bypass-serialization': `
     @Controller('users')
     class UsersController {

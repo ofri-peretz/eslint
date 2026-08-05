@@ -154,6 +154,15 @@ const DEFAULT_PUBLIC_ROUTES = [
   'activate',
   'activation',
   'activate-account',
+  // Standards-defined public URLs. A crawler fetches these unauthenticated by
+  // definition, so demanding a guard is demanding the endpoint stop working.
+  // They are here on the same footing as `health` and `ping`: well-known
+  // conventions rather than one application's naming.
+  'sitemap',
+  'sitemap.xml',
+  'robots',
+  'robots.txt',
+  '.well-known',
 ];
 
 /**
@@ -270,18 +279,33 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalGuards: { type: 'boolean', default: true, description: 'Look for globally registered guards before reporting' },
+          detectGlobalGuards: {
+            type: 'boolean',
+            default: true,
+            description: 'Look for globally registered guards before reporting',
+          },
           requiredGuards: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Guard names that must be present'
+            default: [],
+            description: 'Guard names that must be present',
           },
-          allowPublicDecorator: { type: 'boolean', default: true, description: 'Treat a `@Public()` decorator as intentionally unguarded' },
-          assumeGlobalGuards: { type: 'boolean', default: false, description: 'Assume global guards exist even if none are found' },
+          allowPublicDecorator: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Treat a `@Public()` decorator as intentionally unguarded',
+          },
+          assumeGlobalGuards: {
+            type: 'boolean',
+            default: false,
+            description: 'Assume global guards exist even if none are found',
+          },
           authDecorators: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Extra decorator names that count as authentication'
+            default: [],
+            description: 'Extra decorator names that count as authentication',
           },
           publicRoutes: {
             type: 'array',
