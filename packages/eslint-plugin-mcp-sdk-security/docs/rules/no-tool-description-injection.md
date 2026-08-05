@@ -86,16 +86,20 @@ server.registerTool('search', { description: 'Search the project docs' }, handle
 // ✅ a template with no interpolations is still a literal
 server.registerTool('search', { description: `Search the project docs` }, handler);
 
-// ✅ if it genuinely varies, register a tool per variant
-for (const source of SOURCES) {
-  server.registerTool(source.toolName, { description: source.staticDescription }, handler);
-}
+// ✅ if it genuinely varies, write one registration per variant
+server.registerTool('search_docs', { description: 'Search the project docs' }, handler);
+server.registerTool('search_code', { description: 'Search the source tree' }, handler);
 ```
 
 That last shape is the real remediation when descriptions differ per
-deployment: keep the text in code, one literal per variant, rather than
-splicing a value in. A `const` holding a literal is not currently resolved (see
-below), so put the literal at the call site.
+deployment: keep the text in code, one literal per registration, rather than
+splicing a value in.
+
+A loop over a table of variants looks tidier and does not work here —
+`{ description: source.staticDescription }` is a property lookup, so the rule
+reports it, and correctly: this file cannot see what that table holds. The
+literal has to be at the call site, which is the same reason a `const` holding
+a literal is not resolved either.
 
 ## What this rule deliberately does not report
 
