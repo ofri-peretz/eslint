@@ -376,4 +376,15 @@ describe('urlDisablesTls', () => {
     // Still not a match when the value is not a real disable.
     expect(urlDisablesTls('mysql://h/db?sslmode=require#frag', ['mysql'])).toBe(false);
   });
+
+  // The other half of the same boundary: text *inside* the fragment is not a
+  // connection option — no driver parses it — so it must not be a finding.
+  // Accepting `#` as a leading separator made this a false positive.
+  it('a parameter inside the fragment is not a finding', () => {
+    expect(urlDisablesTls('mysql://h/db#?sslmode=disable', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db#ssl=false', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db#notes?ssl=0', ['mysql'])).toBe(false);
+    // A real parameter before the fragment still reports.
+    expect(urlDisablesTls('mysql://h/db?ssl=false#?sslmode=require', ['mysql'])).toBe(true);
+  });
 });

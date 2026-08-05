@@ -28,6 +28,8 @@ export const requireTls = createRequireTlsRule({
         'Require TLS on Sequelize connections, so queries and credentials are not sent in cleartext and the server is authenticated.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-sequelize-security/docs/rules/require-tls.md',
       cwe: 'CWE-319',
+      cweJustification:
+        'CWE-319 (Cleartext Transmission) covers the tlsDisabled finding. The second finding, certificateValidationDisabled, is CWE-295 (Improper Certificate Validation): the channel is still encrypted, but the peer is no longer authenticated, so an attacker who answers in place of the database completes the handshake. One rule, two weaknesses — meta.docs.cwe carries a single identifier, so the secondary mapping is recorded here.',
       cvss: 7.4,
       confidence: 'high',
     },

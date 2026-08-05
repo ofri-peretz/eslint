@@ -8,7 +8,7 @@ cwe: CWE-319
 autofix: false
 ---
 
-> **Keywords:** cleartext transmission, TLS, SSL, CWE-319, OWASP A02:2021, TypeORM, typeorm, rejectUnauthorized, certificate validation, man in the middle
+> **Keywords:** cleartext transmission, TLS, SSL, CWE-319, CWE-295, OWASP A02:2021, TypeORM, typeorm, rejectUnauthorized, certificate validation, man in the middle
 
 <!-- @rule-summary -->
 Require TLS on TypeORM DataSource connections, so queries and credentials are not sent in cleartext and the server is authenticated.
@@ -105,7 +105,10 @@ configuration stays covered:
 // eslint.config.js
 export default [
   {
-    files: ['**/*.local.ts', 'docker/**'],
+    // Filename-scoped on purpose. A directory glob such as `docker/**` would
+    // also switch the rule off for production connection code that happens to
+    // live there, which is the configuration this rule exists to protect.
+    files: ['**/*.local.ts'],
     rules: { 'typeorm-security/require-tls': 'off' },
   },
 ];
@@ -114,5 +117,6 @@ export default [
 ## Further Reading
 
 - [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
+- [CWE-295: Improper Certificate Validation](https://cwe.mitre.org/data/definitions/295.html) — the weakness behind the `certificateValidationDisabled` finding
 - [OWASP A02:2021 – Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 - [TypeORM connection options](https://typeorm.io/data-source-options)

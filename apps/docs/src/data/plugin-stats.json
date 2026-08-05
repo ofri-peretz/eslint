@@ -83,7 +83,7 @@
     {
       "name": "eslint-plugin-knex-security",
       "rules": 3,
-      "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals",
+      "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
       "category": "security",
       "version": "0.2.1",
       "published": true
@@ -115,7 +115,7 @@
     {
       "name": "eslint-plugin-mysql-security",
       "rules": 2,
-      "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals",
+      "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
       "category": "security",
       "version": "0.1.2",
       "published": true
@@ -139,7 +139,7 @@
     {
       "name": "eslint-plugin-sequelize-security",
       "rules": 2,
-      "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals",
+      "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
       "category": "security",
       "version": "0.1.2",
       "published": true
@@ -147,7 +147,7 @@
     {
       "name": "eslint-plugin-typeorm-security",
       "rules": 2,
-      "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals",
+      "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
       "category": "security",
       "version": "0.1.2",
       "published": true

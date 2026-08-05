@@ -71,6 +71,13 @@ export interface RequireTlsRuleConfig {
       readonly description: string;
       readonly url: string;
       readonly cwe: string;
+      /**
+       * Secondary-mapping note. `cwe` holds one identifier, but this rule
+       * reports two weaknesses — `tlsDisabled` is CWE-319 and
+       * `certificateValidationDisabled` is CWE-295 — so the second one is
+       * recorded here, where `scripts/docs-cwe-coverage.ts` reads it.
+       */
+      readonly cweJustification?: string;
       readonly cvss: number;
       readonly confidence: 'high' | 'medium' | 'low';
     };
@@ -175,14 +182,18 @@ export function looksLikeConnectionConfig(
  * boundary so `sslmode=disabled-for-now` — not a real libpq value — does not
  * silently pass either.
  *
- * The terminator accepts `#` as well as `&`: a URL fragment ends the query
- * string just as a separator does, so `?sslmode=disable#frag` is the same
- * finding as `?sslmode=disable`. Terminating on `&` alone made it a silent
- * false negative.
+ * The fragment is cut off before the scan, because a URL fragment ends the
+ * query string. It has to be cut on both sides of the finding:
+ *
+ *   - `?sslmode=disable#frag` — the fragment ends a real parameter, so this is
+ *     a finding. Terminating on `&` alone made it a silent false negative.
+ *   - `#?sslmode=disable` — the text sits *inside* the fragment, which no
+ *     driver parses as a connection option, so this is not a finding.
  */
 export function urlDisablesTls(value: string, schemes: readonly string[]): boolean {
   if (!schemes.some((scheme) => value.startsWith(`${scheme}://`))) return false;
-  return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:[&#]|$)/i.test(value);
+  const query = value.split('#')[0]!;
+  return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(query);
 }
 
 /**
