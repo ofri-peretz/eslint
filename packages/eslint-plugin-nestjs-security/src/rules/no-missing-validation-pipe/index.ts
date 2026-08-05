@@ -80,6 +80,22 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     },
     hasSuggestions: true,
     messages: {
+      // `missingValidation` is declared first because it is the rule's primary
+      // finding, and security-cvss-docs-consistency reads the FIRST message
+      // carrying a CVSS token as the one meta.docs.cvss must match. The
+      // secondary undecoratedDto finding scores lower (7.5) on purpose; when it
+      // sat first, the lock compared the wrong message against docs.cvss=8.6.
+      missingValidation: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Missing Input Validation',
+        cwe: 'CWE-20',
+        cvss: 8.6,
+        description:
+          'Parameter {{param}} receives user input without ValidationPipe',
+        severity: 'HIGH',
+        fix: 'Add @UsePipes(ValidationPipe) or use global validation: app.useGlobalPipes(new ValidationPipe())',
+        documentationLink: 'https://docs.nestjs.com/techniques/validation',
+      }),
       undecoratedDto: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'DTO Carries No Validation Rules',
@@ -94,17 +110,6 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         // pipe to run them validate exactly as much as a pipe with no
         // decorators — nothing.
         fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
-        documentationLink: 'https://docs.nestjs.com/techniques/validation',
-      }),
-      missingValidation: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Missing Input Validation',
-        cwe: 'CWE-20',
-        cvss: 8.6,
-        description:
-          'Parameter {{param}} receives user input without ValidationPipe',
-        severity: 'HIGH',
-        fix: 'Add @UsePipes(ValidationPipe) or use global validation: app.useGlobalPipes(new ValidationPipe())',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
       addValidationPipe: formatLLMMessage({

@@ -158,7 +158,13 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-permissive-cors.md',
       description: 'Disallows CORS configured to accept any origin',
       cwe: 'CWE-942',
-      cvss: 7.5,
+      // 5.3, matching the wildcard findings this rule reports most of the time.
+      // A wildcard is not valid for a credentialed response, so the browser
+      // withholds the response from the calling script — real exposure, but
+      // not the 7.5 this claimed before the severities were re-graded. The
+      // reflected-origin case is the outlier and carries its own 8.1, because
+      // `origin: true` stays valid with credentials.
+      cvss: 5.3,
     },
     messages: {
       defaultOrigin: formatLLMMessage({
