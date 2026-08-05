@@ -284,7 +284,7 @@ What's *not* in T2 (cloud-only, intentional):
 
 ### T3 — CI on promote (workflow_dispatch + ready_for_review + label)
 
-The heavy workflows (CodeQL, Lighthouse, benchmark, check-links, ILB matrix,
+The heavy workflows (CodeQL, benchmark, check-links, ILB matrix,
 oxlint-parity, `quality-full.yml`)
 **do not run automatically on every WIP push.** They fire only when a PR is
 "promoted":
@@ -297,6 +297,13 @@ oxlint-parity, `quality-full.yml`)
   from this list: `quality-full` Sun 04:00, `oxlint-parity` Sun 10:00,
   `codeql` Mon 03:17, `benchmark` Tue 09:00, `lighthouse` Wed 04:05,
   `check-links` Fri 04:25, `eslint-version-matrix` Sat 09:30 (all UTC).
+
+`lighthouse` is the exception to the promote model: it has **no `pull_request`
+trigger at all**. Narrowing its paths still left a 9.9-minute advisory job on
+docs PRs whose verdict nobody could act on, so it is cron-only (plus
+`workflow_dispatch`), where it is a hard gate that writes a scores-and-breaches
+report to the job summary and files a `perf`-labelled tracking issue. To get
+numbers on a branch, dispatch it by hand.
 
 Each heavy workflow has a `gate` job that decides `run=true` / `run=false`.
 Downstream jobs `needs: gate` + `if: needs.gate.outputs.run == 'true'`. A
