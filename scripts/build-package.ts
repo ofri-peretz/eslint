@@ -18,6 +18,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { transformSync } from 'esbuild';
 import {
   existsSync,
   mkdirSync,
@@ -315,6 +316,65 @@ if (isPluginPackage) {
         `build-package(${pkg.name}): rule barrel not recognised; rules stay eager.`,
       );
     }
+  }
+}
+
+// 3e. Strip whitespace from the shipped JavaScript.
+//
+//     tsc emits 4-space-indented output, and indentation alone is ~32% of a
+//     compiled rule file. Step 2b already removed the comments; this removes
+//     the layout. Measured on eslint-plugin-secure-coding: 448 kB -> 263 kB of
+//     src, -41%, which is most of what a full minifier would get.
+//
+//     Deliberately NOT a minifier. `minifyWhitespace` only — identifiers keep
+//     their names, string contents are untouched, and the syntax tree is not
+//     rewritten. That matters concretely: rule `meta` (messages, schema, docs
+//     URLs) is read by the docs site and `--print-config`, and mangling would
+//     also make a stack trace from inside a rule unreadable for the sake of
+//     another ~11 points. Verified on the published 3.4.3 artifact: identical
+//     lint findings, and all 28 rules' meta/messages/fixable/configs
+//     byte-identical.
+//
+//     Runs AFTER 3d on purpose — the rule-barrel transform pattern-matches
+//     tsc's emitted shape and would not match once the layout is gone.
+const stripJsWhitespace = (dir: string): { before: number; after: number } => {
+  let before = 0;
+  let after = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const nested = stripJsWhitespace(p);
+      before += nested.before;
+      after += nested.after;
+    } else if (entry.name.endsWith('.js')) {
+      const original = readFileSync(p, 'utf8');
+      const { code } = transformSync(original, {
+        loader: 'js',
+        minifyWhitespace: true,
+      });
+      before += Buffer.byteLength(original);
+      after += Buffer.byteLength(code);
+      writeFileSync(p, code);
+    }
+  }
+  return { before, after };
+};
+
+if (existsSync(emittedSrcDir)) {
+  try {
+    const { before, after } = stripJsWhitespace(emittedSrcDir);
+    if (before > 0) {
+      const saved = (((before - after) / before) * 100).toFixed(0);
+      console.log(
+        `build-package(${pkg.name}): stripped JS whitespace — ${(before / 1024).toFixed(0)} kB -> ${(after / 1024).toFixed(0)} kB (-${saved}%).`,
+      );
+    }
+  } catch (error) {
+    // Same posture as the comment-strip pass: a degraded optimisation, not a
+    // broken build. Ship the readable JS rather than block every local build.
+    console.error(
+      `build-package(${pkg.name}): whitespace strip failed (${(error as Error).message}); shipping indented JS.`,
+    );
   }
 }
 

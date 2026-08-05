@@ -89,6 +89,37 @@ type Violation = {
 const STRIP_SENTINEL = 'Copyright (c) 2025 Ofri Peretz';
 
 /**
+ * Detects emitted JS that still carries tsc's layout.
+ *
+ * Indentation alone is ~32% of a compiled rule file, so build-package.ts step
+ * 3e re-emits every .js through esbuild's `minifyWhitespace`. Measured across
+ * the ecosystem that is 3233 kB -> 2023 kB. Nothing else would notice if that
+ * step were removed or silently failed — the build still succeeds and the
+ * package still works, just 37% fatter.
+ *
+ * The naive check ("any line starting with spaces") false-positives the same
+ * way the comment-counter did: a multi-line template literal inside a rule's
+ * message or fixture legitimately contains indented lines, and stripping
+ * whitespace never touches string contents. So this requires BOTH a high
+ * absolute count and a high proportion — tsc indents nearly every line of a
+ * real module, while a stripped file's only indented lines are inside string
+ * literals.
+ */
+const INDENT_MIN_LINES = 20;
+const INDENT_MIN_RATIO = 0.25;
+const INDENTED_LINE = {
+  test(source: string): boolean {
+    const lines = source.split('\n');
+    if (lines.length < INDENT_MIN_LINES) return false;
+    const indented = lines.filter((l) => /^ {2,}\S/.test(l)).length;
+    return (
+      indented >= INDENT_MIN_LINES &&
+      indented / lines.length >= INDENT_MIN_RATIO
+    );
+  },
+};
+
+/**
  * Fields that must never survive into a published manifest.
  *
  * `scripts` and `devDependencies` are build-time only — npm never runs one in a
@@ -153,6 +184,7 @@ const exportGaps: { pkg: string; subpath: string; missing: string }[] = [];
 
 const violations: Violation[] = [];
 const commentRegressions: { pkg: string; files: number }[] = [];
+const whitespaceRegressions: { pkg: string; files: number }[] = [];
 const metadataGaps: { pkg: string; fields: string[] }[] = [];
 const manifestLeaks: { pkg: string; fields: string[] }[] = [];
 const sizes: { name: string; kb: number }[] = [];
@@ -232,6 +264,15 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
     commentRegressions.push({ pkg: meta.name, files: commented.length });
   }
 
+  const indented = meta.files.filter(
+    (f) =>
+      f.path.endsWith('.js') &&
+      INDENTED_LINE.test(readFileSync(join(distDir, f.path), 'utf8')),
+  );
+  if (indented.length > 0) {
+    whitespaceRegressions.push({ pkg: meta.name, files: indented.length });
+  }
+
   for (const f of meta.files) {
     const hit = FORBIDDEN.find((r) => r.test(f.path));
     if (hit) {
@@ -255,6 +296,7 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
 const FAILURES = [
   violations.length,
   commentRegressions.length,
+  whitespaceRegressions.length,
   metadataGaps.length,
   exportGaps.length,
   manifestLeaks.length,
@@ -273,6 +315,7 @@ if (JSON_OUT) {
       {
         violations,
         commentRegressions,
+        whitespaceRegressions,
         metadataGaps,
         exportGaps,
         manifestLeaks,
@@ -299,6 +342,22 @@ if (commentRegressions.length > 0) {
     console.error(`    ${c.pkg}  ${c.files} .js file(s) still carry comments`);
   }
   console.error('');
+}
+
+if (whitespaceRegressions.length > 0) {
+  console.error(
+    `  ❌ ${whitespaceRegressions.length} package(s) ship indented JS — the` +
+      ' whitespace-strip pass in scripts/build-package.ts is not running:\n',
+  );
+  for (const w of whitespaceRegressions) {
+    console.error(
+      `    ${w.pkg}  ${w.files} .js file(s) still carry tsc layout`,
+    );
+  }
+  console.error(
+    '\n    Indentation is ~32% of a compiled rule file; the pass is worth\n' +
+      '    37% of the shipped JavaScript across the ecosystem.\n',
+  );
 }
 
 if (exportGaps.length > 0) {
@@ -342,7 +401,7 @@ const failed = FAILURES.some((n) => n > 0);
 
 if (!failed) {
   console.log(
-    '  ✅ No source maps, no AGENTS.md, no commented JS;' +
+    '  ✅ No source maps, no AGENTS.md, no commented or indented JS;' +
       ' every declared export resolves; no build-only manifest fields;' +
       ' metadata complete.\n',
   );
