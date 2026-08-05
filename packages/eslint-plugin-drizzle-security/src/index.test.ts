@@ -48,8 +48,13 @@ describe('eslint-plugin-drizzle-security plugin interface', () => {
         expect(ruleName).toMatch(/^drizzle-security\//);
       });
 
-      expect(strictRules['drizzle-security/no-unsafe-query']).toBe('error');
-      expect(strictRules['drizzle-security/no-unscoped-mutation']).toBe('error');
+      // Every rule by name, not just a matching count. A count alone passes if
+      // strict omits one rule and includes some other drizzle-security key —
+      // which is exactly how a new rule gets silently left out of the preset it
+      // is supposed to join.
+      for (const ruleName of Object.keys(rules)) {
+        expect(strictRules[`drizzle-security/${ruleName}`]).toBe('error');
+      }
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
   });
