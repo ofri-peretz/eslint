@@ -22,6 +22,10 @@ export * from './hardcoded-credentials-rule';
 // options. Distinct from the connection-config detector above: nothing in
 // secure-coding reports an SDK client key, measured.
 export * from './sdk-api-key-rule';
+// Shared CWE-522 detector — an inference SDK's browser escape hatch turned on.
+// Two instantiations, not three: neither Gemini SDK has the flag (verified
+// against the published tarballs).
+export * from './browser-escape-hatch-rule';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';

@@ -129,6 +129,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-anthropic-security",
+      "rules": 2,
+      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
+      "category": "security",
+      "version": "0.1.1",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-gemini-security",
       "rules": 2,
       "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, which disables harm filtering",
@@ -140,14 +148,6 @@
       "name": "eslint-plugin-openai-security",
       "rules": 2,
       "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-anthropic-security",
-      "rules": 1,
-      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
       "category": "security",
       "version": "0.1.1",
       "published": true
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 461,
+  "totalRules": 462,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"

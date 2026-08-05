@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 487,
-  "oxlintCompatible": 487,
+  "totalRules": 488,
+  "oxlintCompatible": 488,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -12,8 +12,14 @@
       "short": "anthropic-security",
       "shim": "tools/oxlint-plugins/interlace-anthropic-security.cjs",
       "subpath": "eslint-plugin-anthropic-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
+        {
+          "name": "no-browser-api-key-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-hardcoded-api-key",
           "portability": "compatible",
@@ -3220,6 +3226,7 @@
   ],
   "runtimeRuleNames": {
     "anthropic-security": [
+      "no-browser-api-key-exposure",
       "no-hardcoded-api-key"
     ],
     "browser-security": [

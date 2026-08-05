@@ -15,11 +15,15 @@
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 
+import { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 import { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
 
+export { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 export { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
 
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  // CWE-522: Insufficiently Protected Credentials
+  'no-browser-api-key-exposure': noBrowserApiKeyExposure,
   // CWE-798
   'no-hardcoded-api-key': noHardcodedApiKey,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
@@ -37,6 +41,10 @@ const enabled: TSESLint.FlatConfig.Config = {
     'anthropic-security': plugin,
   },
   rules: {
+    // Same severity as the identical rule in eslint-plugin-openai-security,
+    // which has shipped it in `recommended` since 0.1.0. The flag is an explicit
+    // opt-in with a literal `true`, so there is no false-positive shape.
+    'anthropic-security/no-browser-api-key-exposure': 'error',
     'anthropic-security/no-hardcoded-api-key': 'error',
   },
 } satisfies TSESLint.FlatConfig.Config;
