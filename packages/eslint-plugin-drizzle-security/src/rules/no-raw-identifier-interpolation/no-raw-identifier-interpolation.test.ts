@@ -86,6 +86,16 @@ describe('no-raw-identifier-interpolation', () => {
           code: 'await db.execute(sql`SELECT * FROM ${table}`);',
         },
         {
+          // Regression: the gate keyed on AST shape, so a `sql` reached through
+          // a member expression skipped it and reported under drizzle-security
+          // in a file with no Drizzle in it at all.
+          name: 'someone else\'s query builder that happens to expose .sql',
+          code:
+            "import { createQueryBuilder } from 'some-internal-lib';\n" +
+            'const q = createQueryBuilder();\n' +
+            'await q.sql`SELECT * FROM ${table}`;',
+        },
+        {
           name: 'a different tag entirely',
           code: DRIVER + 'const s = gql`query { user(id: ${id}) }`;',
         },

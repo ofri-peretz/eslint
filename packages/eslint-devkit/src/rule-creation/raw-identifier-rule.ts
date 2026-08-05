@@ -81,21 +81,35 @@ export interface RawIdentifierRuleConfig {
     };
   };
   /**
-   * Tag names of the parameterizing template APIs.
-   *
-   * Matched two ways, and the gate differs by shape for a reason:
-   *
-   *   - A bare tag (`` sql`…` ``) must also be imported from `modules`.
-   *     `sql` is far too common a local name to key on alone — a project's own
-   *     `sql` helper would be reported in a file that never touches the driver.
-   *   - A member tag (`` prisma.$queryRaw`…` ``) is matched on the property
-   *     name only. `$queryRaw` is Prisma-unique, and the client is very often
-   *     re-exported from a local module (`import { prisma } from '@/lib/db'`),
-   *     so requiring a driver-imported base would miss the common case.
+   * Tag names of the parameterizing template APIs, e.g. `['sql']` or
+   * `['$queryRaw', '$executeRaw']`. Matched against a bare tag (`` sql`…` ``)
+   * or the property of a member tag (`` prisma.$queryRaw`…` ``).
    */
   readonly tags: readonly string[];
-  /** Modules a bare tag must be imported from — the plugin-scope gate. */
+  /** Modules the tag must be imported from, when `requireImport` is set. */
   readonly modules: readonly string[];
+  /**
+   * Does a matched tag have to resolve to a `modules` import?
+   *
+   * This is a property of the *tag name*, not of the AST shape it appears in,
+   * and an earlier version got that wrong: it applied the gate only when the
+   * tag was a bare `Identifier`. A generic name reached through a member
+   * expression then skipped the gate entirely, so
+   *
+   *     import { createQueryBuilder } from 'some-internal-lib';
+   *     await q.sql`SELECT * FROM ${table}`;
+   *
+   * reported under `drizzle-security` in a file with no Drizzle anywhere —
+   * precisely the false positive the gate exists to prevent.
+   *
+   *   - `true` for a generic name like `sql`, which any project may define.
+   *     Only a bare tag bound to a driver import qualifies.
+   *   - `false` for a name specific enough to stand alone, like Prisma's
+   *     `$queryRaw`. The client is routinely re-exported from a local module
+   *     (`import { prisma } from '@/lib/db'`), so demanding an import here
+   *     would miss the shape most codebases actually have.
+   */
+  readonly requireImport: boolean;
   /**
    * Callee texts that safely escape an identifier, e.g. `['sql.identifier']`.
    *
@@ -262,9 +276,14 @@ export function createRawIdentifierRule(
         TaggedTemplateExpression(node: TSESTree.TaggedTemplateExpression) {
           const name = tagName(node.tag);
           if (name === undefined || !tags.has(name)) return;
-          // A bare tag needs the import gate; a member tag carries its own
-          // specificity. See RawIdentifierRuleConfig#tags.
-          if (node.tag.type === AST_NODE_TYPES.Identifier && !bindings.has(name)) return;
+          // The gate follows the tag name, not the AST shape it appears in —
+          // see RawIdentifierRuleConfig#requireImport for why that distinction
+          // is the whole point. A gated name must be a bare tag bound to a
+          // driver import; `q.sql` is somebody else's builder.
+          if (config.requireImport) {
+            if (node.tag.type !== AST_NODE_TYPES.Identifier) return;
+            if (!bindings.has(name)) return;
+          }
 
           const { quasis, expressions } = node.quasi;
           expressions.forEach((expr, index) => {

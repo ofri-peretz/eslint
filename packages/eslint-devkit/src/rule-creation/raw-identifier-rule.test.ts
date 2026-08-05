@@ -209,6 +209,7 @@ const bareTagRule = createRawIdentifierRule({
   },
   tags: ['sql'],
   modules: ['test-orm'],
+  requireImport: true,
   identifierHelpers: ['sql.identifier'],
   fix: 'allowlist it',
   sortDirectionFix: 'resolve to a literal',
@@ -227,6 +228,22 @@ describe('createRawIdentifierRule — the bare-tag import gate', () => {
       {
         name: 'driver imported but the hole is a value',
         code: "import { sql } from 'test-orm';\nconst q = sql`SELECT * FROM t WHERE a = ${a}`;",
+      },
+      {
+        // Regression: the gate used to apply only when the tag was a bare
+        // Identifier, so a generic name reached through a member expression
+        // skipped it entirely and reported in a file with no driver at all.
+        name: 'a member tag with a gated name is somebody else\'s builder',
+        code:
+          "import { createQueryBuilder } from 'some-internal-lib';\n" +
+          'const q = createQueryBuilder();\n' +
+          'const r = q.sql`SELECT * FROM ${table}`;',
+      },
+      {
+        name: 'a member tag is not rescued by an unrelated driver import',
+        code:
+          "import { sql } from 'test-orm';\n" +
+          'const r = q.sql`SELECT * FROM ${table}`;',
       },
       {
         name: 'a subpath import opens the gate too',
@@ -279,6 +296,7 @@ const memberTagRule = createRawIdentifierRule({
   },
   tags: ['$queryRaw'],
   modules: ['test-client'],
+  requireImport: false,
   identifierHelpers: [],
   fix: 'allowlist it',
   sortDirectionFix: 'resolve to a literal',

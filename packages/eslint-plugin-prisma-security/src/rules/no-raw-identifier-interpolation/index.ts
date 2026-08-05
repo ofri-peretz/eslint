@@ -39,7 +39,11 @@ export const noRawIdentifierInterpolation = createRawIdentifierRule({
     },
   },
   tags: ['$queryRaw', '$executeRaw'],
+  // Not consulted: `$queryRaw` is specific enough to stand alone, and the
+  // client is routinely re-exported from a local module, so demanding an
+  // @prisma/client import in the same file would miss most real codebases.
   modules: ['@prisma/client'],
+  requireImport: false,
   identifierHelpers: [],
   fix: 'Map the input through a fixed allowlist before it reaches the query — `const column = ALLOWED[input] ?? "id"`. Prisma has no identifier escaper, so an allowlist is the only safe construction.',
   sortDirectionFix: 'Resolve the direction to a literal: `const dir = input === "desc" ? "desc" : "asc"`, or move the sort into the type-safe `orderBy` argument.',

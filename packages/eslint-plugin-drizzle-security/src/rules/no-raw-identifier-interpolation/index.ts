@@ -37,6 +37,9 @@ export const noRawIdentifierInterpolation = createRawIdentifierRule({
   },
   tags: ['sql'],
   modules: ['drizzle-orm'],
+  // `sql` is a name any project may define, so it only counts when it is a
+  // bare tag bound to a drizzle-orm import.
+  requireImport: true,
   // Drizzle's composition surface, all of which produce SQL chunks rather than
   // spliced text. `sql.raw` is pointedly absent: it is the one member of this
   // family that does splice, so `${sql.raw(table)}` stays a finding.
