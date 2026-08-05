@@ -163,8 +163,8 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
   // output from a deleted package (e.g. eslint-plugin-crypto) — skip it.
   if (!existsSync(join(pkgDir, 'package.json'))) continue;
   // Skip private packages — they never reach npm, so their artifact is not a
-  // published artifact. (@interlace/eslint-config and @interlace/ui are both
-  // private; auditing them reported gaps that could never matter.)
+  // published artifact. (@interlace/ui is private; auditing it reported gaps
+  // that could never matter.)
   const srcManifest = JSON.parse(
     readFileSync(join(pkgDir, 'package.json'), 'utf8'),
   ) as { private?: boolean };

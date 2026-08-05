@@ -26,7 +26,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const PACKAGES_DIR = resolve(__dirname, '../..');
+const PACKAGES_DIR = resolve(__dirname, '../../packages');
 
 interface Manifest {
   name?: string;

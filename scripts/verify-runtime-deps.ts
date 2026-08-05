@@ -75,9 +75,9 @@ if (expected) {
   // rather than demanding all of them.
   // `emitsDist` comes from the build script itself, so this no longer guesses a
   // directory from the package name — that guess mapped
-  // @interlace/eslint-config to packages/eslint-config (the real dir is
-  // eslint-config-interlace) and demanded a dist from private, build-less
-  // packages like @interlace/eslint-formatter-sarif.
+  // a scoped name onto a same-named directory (a package's dir need not match
+  // its npm name) and demanded a dist from private, build-less packages like
+  // @interlace/eslint-formatter-sarif.
   const missing = expected.filter((e) => e.emitsDist && !checked.includes(e.name)).map((e) => e.name);
   if (missing.length > 0) {
     console.error(

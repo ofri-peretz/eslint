@@ -25,7 +25,7 @@ import { ESLint } from 'eslint';
 import type { Linter } from 'eslint';
 import type { TSESLint } from '@interlace/eslint-devkit';
 
-import presets, { recommended } from './index';
+import presets, { recommended } from './fixtures/ecosystem-presets';
 
 type FlatConfig = TSESLint.FlatConfig.Config;
 
