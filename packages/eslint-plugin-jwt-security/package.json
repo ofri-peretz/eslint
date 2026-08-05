@@ -85,7 +85,7 @@
     "@interlace/eslint-devkit": "^1.8.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "jsonwebtoken": "^8.0.0 || ^9.0.0",
     "@nestjs/jwt": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "express-jwt": "^7.0.0 || ^8.0.0",
