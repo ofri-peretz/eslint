@@ -50,7 +50,18 @@ export function stripBookkeeping(value: unknown): unknown {
   return value;
 }
 
-/** True when `data` differs from the JSON already at `filePath`, timestamps aside. */
+/**
+ * True when `data` differs from the JSON already at `filePath`, timestamps aside.
+ *
+ * The comparison is `JSON.stringify` over both sides, so it is sensitive to key
+ * *order*, not just key/value pairs. That is fine — and deliberately not worth
+ * a deep-equal — because each file is only ever written by one generator, which
+ * builds its object from a fixed literal, so the ordering is stable run to run.
+ * A generator that starts keying an object off a dynamic source (fetch order,
+ * `readdirSync` order, `Object.fromEntries` over an unsorted list) would break
+ * that assumption and reintroduce churn: sort the keys there rather than
+ * loosening the comparison here.
+ */
 export function hasContentChanged(filePath: string, data: unknown): boolean {
   try {
     // Read and catch, rather than `existsSync()` + `readFileSync()` — the file
@@ -82,6 +93,10 @@ export function writeJsonIfChanged(filePath: string, data: unknown, label?: stri
     console.log(`✅ ${label ?? filePath} unchanged, skipping write to prevent git churn.`);
     return false;
   }
+  // No trailing newline — every committed file under src/data/ was written this
+  // way, and adding one here would rewrite all of them once just to append a
+  // byte. The serialization is locked in generated-data-write-lock.test.ts, so
+  // if that ever stops being true the test says so rather than a build does.
   writeFileSync(filePath, JSON.stringify(data, null, 2));
   console.log(`✅ Generated ${label ?? filePath}`);
   return true;

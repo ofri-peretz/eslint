@@ -105,16 +105,54 @@ describe('writeJsonIfChanged', () => {
   it('covers every timestamp key the generators actually emit', () => {
     // Non-vacuity guard: if a generator starts stamping a new timestamp field,
     // this fails rather than silently letting the churn back in.
+    // Both shapes count: the object-literal form (`generatedAt: new Date()…`)
+    // and the assignment form (`cache._lastUpdated = new Date()…`), which
+    // sync-tweet-cache and sync-devto-cache use.
     const emitted = new Set<string>();
     for (const file of readdirSync(SCRIPTS_DIR).filter((f) => f.endsWith('.ts'))) {
       const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
-      for (const [, key] of source.matchAll(/^\s*(\w+):\s*new Date\(\)\.toISOString\(\)/gm)) {
+      for (const [, key] of source.matchAll(
+        /(?:^\s*|\.)(\w+)\s*[:=]\s*new Date\(\)\.toISOString\(\)/gm,
+      )) {
         emitted.add(key);
       }
     }
-    expect(emitted.size).toBeGreaterThan(0);
+    // Both shapes must actually be present, or the regex could rot into one
+    // that matches nothing and this assertion would pass on an empty set.
+    expect(emitted).toContain('generatedAt'); // object-literal form
+    expect(emitted).toContain('_lastUpdated'); // assignment form
     expect([...emitted].filter((key) => !BOOKKEEPING_KEYS.includes(key))).toEqual([]);
   });
+});
+
+describe('committed src/data files match what the helper writes', () => {
+  // The helper writes `JSON.stringify(data, null, 2)` with no trailing newline.
+  // If the committed bytes ever drift from that — a hand-edit, an editor adding
+  // a final newline, a formatter changing the indent — the very next generator
+  // run rewrites the file to reformat it, which is the churn this PR removes,
+  // just arriving one commit later. Locking the exact serialization is what
+  // makes "no trailing newline" a checked invariant instead of a comment.
+  // `schemas/` is excluded: those are hand-written JSON Schema, not generated.
+  const DATA_DIR = resolve(__dirname, '../data');
+  const walk = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === 'schemas' ? [] : walk(full);
+      return entry.name.endsWith('.json') ? [full] : [];
+    });
+  const files = walk(DATA_DIR);
+
+  it('found the committed data files', () => {
+    expect(files.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it.each(files.map((f) => [f.slice(DATA_DIR.length + 1), f]))(
+    '%s is exactly JSON.stringify(…, null, 2), no trailing newline',
+    (_name, full) => {
+      const raw = readFileSync(full, 'utf-8');
+      expect(raw).toBe(JSON.stringify(JSON.parse(raw), null, 2));
+    },
+  );
 });
 
 describe('src/data generators route every write through writeJsonIfChanged', () => {
