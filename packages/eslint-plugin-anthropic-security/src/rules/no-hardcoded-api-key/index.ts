@@ -9,123 +9,24 @@
  * @description A key written into source is committed, pushed, mirrored into
  * every clone and CI cache, and is billable by anyone who reads it. Rotating it
  * means a code change, so leaked keys tend to stay live.
+ *
+ * The detection logic moved to `createSdkApiKeyRule` when the same rule landed
+ * for OpenAI and Gemini; the three differ only in module name, option names and
+ * remediation copy. Behaviour here is unchanged.
+ *
  * @see https://docs.anthropic.com/en/api/getting-started
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createSdkApiKeyRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'hardcodedApiKey';
-
-/** Covers the base SDK and the agent SDK, which share the client options. */
-const ANTHROPIC_MODULE_PREFIX = '@anthropic-ai/';
-
-const KEY_PROPS = new Set(['apiKey', 'authToken']);
-
-/**
- * `literal` carries the property name that actually held the credential.
- * `KEY_PROPS` has two members, so a bare verdict left the caller guessing —
- * and it guessed `apiKey`, naming the wrong option whenever `authToken` was
- * the offender.
- */
-type KeyVerdict = { kind: 'literal'; prop: string } | { kind: 'safe' } | { kind: 'unreadable' };
-
-/**
- * Whether the client options literal carries an inline credential.
- *
- * `process.env.ANTHROPIC_API_KEY` and any other non-literal expression are
- * `safe` — reading a key from the environment is the correct pattern. A spread
- * is `unreadable`: the key may be in the spread source, and guessing there
- * would flag correct code.
- */
-function readCredential(options: TSESTree.ObjectExpression): KeyVerdict {
-  for (const prop of options.properties) {
-    if (prop.type === 'SpreadElement') return { kind: 'unreadable' };
-    if (prop.computed) continue;
-    // Computed keys already skipped above, so a key here is an Identifier
-    // (`apiKey:`) or a Literal (`'apiKey':`) — there is no third form to
-    // guard against, and a `: null` arm for one would be unreachable.
-    const name = prop.key.type === 'Identifier' ? prop.key.name : String(prop.key.value);
-    if (!KEY_PROPS.has(name)) continue;
-    if (prop.value.type !== 'Literal') return { kind: 'safe' };
-    // An empty string is a placeholder, not a credential.
-    if (typeof prop.value.value === 'string' && prop.value.value.length > 0) {
-      return { kind: 'literal', prop: name };
-    }
-    return { kind: 'safe' };
-  }
-  return { kind: 'safe' };
-}
-
-export const noHardcodedApiKey = createRule<[], MessageIds>({
-  name: 'no-hardcoded-api-key',
-  meta: {
-    type: 'problem',
-    docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-anthropic-security/docs/rules/no-hardcoded-api-key.md',
-      description: 'Forbid a literal API key in the Anthropic client options',
-      cwe: 'CWE-798',
-      cvss: 9.1,
-    },
-    messages: {
-      hardcodedApiKey: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Hardcoded Anthropic Credential',
-        cwe: 'CWE-798',
-        owasp: 'A07:2021',
-        cvss: 9.1,
-        description:
-          '{{prop}} is a string literal, so the credential is committed to source control and readable by anyone with repository access',
-        severity: 'CRITICAL',
-        compliance: ['SOC2', 'PCI-DSS'],
-        fix: 'Read it from the environment: new Anthropic({ {{prop}}: process.env.ANTHROPIC_API_KEY })',
-        documentationLink: 'https://docs.anthropic.com/en/api/getting-started',
-      }),
-    },
-    schema: [],
-  },
-  defaultOptions: [],
-  create(context) {
-    let importsAnthropic = false;
-    const candidates: Array<{ node: TSESTree.Node; prop: string }> = [];
-
-    function inspect(node: TSESTree.Node, args: TSESTree.CallExpressionArgument[]): void {
-      const options = args[0];
-      if (options?.type !== 'ObjectExpression') return;
-      const verdict = readCredential(options);
-      if (verdict.kind === 'literal') {
-        candidates.push({ node, prop: verdict.prop });
-      }
-    }
-
-    return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.source.value.startsWith(ANTHROPIC_MODULE_PREFIX)) importsAnthropic = true;
-      },
-
-      NewExpression(node: TSESTree.NewExpression) {
-        inspect(node, [...node.arguments]);
-      },
-
-      CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
-          node.arguments[0]?.type === 'Literal' &&
-          typeof node.arguments[0].value === 'string' &&
-          node.arguments[0].value.startsWith(ANTHROPIC_MODULE_PREFIX)
-        ) {
-          importsAnthropic = true;
-          return;
-        }
-        inspect(node, [...node.arguments]);
-      },
-
-      'Program:exit'() {
-        if (!importsAnthropic) return;
-        for (const { node, prop } of candidates) {
-          context.report({ node, messageId: 'hardcodedApiKey', data: { prop } });
-        }
-      },
-    };
-  },
+export const noHardcodedApiKey = createSdkApiKeyRule({
+  ruleName: 'no-hardcoded-api-key',
+  vendor: 'Anthropic',
+  /** Covers the base SDK and the agent SDK, which share the client options. */
+  modules: ['@anthropic-ai'],
+  keyProps: ['apiKey', 'authToken'],
+  fixTemplate: 'new Anthropic({ {{prop}}: process.env.ANTHROPIC_API_KEY })',
+  docsUrl:
+    'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-anthropic-security/docs/rules/no-hardcoded-api-key.md',
+  documentationLink: 'https://docs.anthropic.com/en/api/getting-started',
 });

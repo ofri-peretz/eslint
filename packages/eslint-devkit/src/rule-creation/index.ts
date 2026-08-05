@@ -18,6 +18,10 @@ export * from './require-tls-rule';
 export * from './mass-assignment-rule';
 // Shared CWE-798 detector — literal database credentials in connection config.
 export * from './hardcoded-credentials-rule';
+// Shared CWE-798 detector — a literal API key in an inference SDK's client
+// options. Distinct from the connection-config detector above: nothing in
+// secure-coding reports an SDK client key, measured.
+export * from './sdk-api-key-rule';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';
