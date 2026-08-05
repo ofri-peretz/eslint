@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 474,
-  "oxlintCompatible": 474,
+  "totalRules": 479,
+  "oxlintCompatible": 479,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -405,8 +405,14 @@
       "short": "drizzle-security",
       "shim": "tools/oxlint-plugins/interlace-drizzle-security.cjs",
       "subpath": "eslint-plugin-drizzle-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-mass-assignment",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -1131,10 +1137,16 @@
       "short": "knex-security",
       "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
       "subpath": "eslint-plugin-knex-security/oxlint",
-      "ruleCount": 4,
+      "ruleCount": 5,
       "rules": [
         {
           "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mass-assignment",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2085,8 +2097,14 @@
       "short": "prisma-security",
       "shim": "tools/oxlint-plugins/interlace-prisma-security.cjs",
       "subpath": "eslint-plugin-prisma-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-mass-assignment",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -2952,10 +2970,16 @@
       "short": "sequelize-security",
       "shim": "tools/oxlint-plugins/interlace-sequelize-security.cjs",
       "subpath": "eslint-plugin-sequelize-security/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
         {
           "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mass-assignment",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2994,10 +3018,16 @@
       "short": "typeorm-security",
       "shim": "tools/oxlint-plugins/interlace-typeorm-security.cjs",
       "subpath": "eslint-plugin-typeorm-security/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
         {
           "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mass-assignment",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3209,6 +3239,7 @@
       "utm-taxonomy"
     ],
     "drizzle-security": [
+      "no-mass-assignment",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],
@@ -3335,6 +3366,7 @@
     ],
     "knex-security": [
       "no-hardcoded-credentials",
+      "no-mass-assignment",
       "no-unsafe-query",
       "no-unscoped-mutation",
       "require-tls"
@@ -3518,6 +3550,7 @@
       "prevent-double-release"
     ],
     "prisma-security": [
+      "no-mass-assignment",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],
@@ -3736,6 +3769,7 @@
     ],
     "sequelize-security": [
       "no-hardcoded-credentials",
+      "no-mass-assignment",
       "no-unsafe-query",
       "require-tls"
     ],
@@ -3744,6 +3778,7 @@
     ],
     "typeorm-security": [
       "no-hardcoded-credentials",
+      "no-mass-assignment",
       "no-unsafe-query",
       "require-tls"
     ],

@@ -14,11 +14,12 @@ describe('eslint-plugin-knex-security plugin interface', () => {
     const ruleKeys = Object.keys(plugin.rules || {});
     expect(ruleKeys).toEqual([
       'no-hardcoded-credentials',
+      'no-mass-assignment',
       'no-unsafe-query',
       'no-unscoped-mutation',
       'require-tls',
     ]);
-    expect(ruleKeys.length).toBe(4);
+    expect(ruleKeys.length).toBe(5);
   });
 
   describe('configurations', () => {
