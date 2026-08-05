@@ -152,10 +152,10 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 
 ### Options
 
-| Option           | Type       | Default | Description                        |
-| ---------------- | ---------- | ------- | ---------------------------------- |
-| `allowInTests`   | `boolean`  | `false` | Allow insecure comparison in tests |
-| `ignorePatterns` | `string[]` | `[]`    | Additional patterns to ignore      |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow insecure comparison in test files |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
 
 ### Example Configuration
 

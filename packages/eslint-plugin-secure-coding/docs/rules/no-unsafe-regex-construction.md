@@ -189,3 +189,11 @@ obj[method](userInput);
 - [OWASP: Regular Expression Denial of Service](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 - [MDN: RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp)
 - [NPM: escape-string-regexp](https://www.npmjs.com/package/escape-string-regexp)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiterals` | `boolean` | `true` | Allow literal string patterns |
+| `trustedEscapingFunctions` | `string[]` | `["escapeRegex","escape","sanitize"]` | Trusted functions that escape input |
+| `maxPatternLength` | `number` | `100` | Maximum pattern length for dynamic regex |

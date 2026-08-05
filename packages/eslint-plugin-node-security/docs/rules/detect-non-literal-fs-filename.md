@@ -347,3 +347,11 @@ fileManager.read(userPath);
 - **[Node.js File System Security](https://nodejs.org/api/fs.html#file-system)** - Node.js fs module security
 - **[CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)** - Official CWE entry
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiterals` | `boolean` | `false` | Allow literal string paths |
+| `additionalMethods` | `string[]` | `[]` | Additional fs methods to check |
+| `allowedExtensions` | `string[]` | `[]` | Allowed file extensions (e.g., [".txt", ".json"]) |

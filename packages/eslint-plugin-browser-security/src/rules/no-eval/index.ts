@@ -86,7 +86,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
           },
           allowFunctionConstructor: {
             type: 'boolean',
-            default: false,
+            default: false, description: 'Allow `new Function(...)` while still reporting `eval()`'
           },
         },
         additionalProperties: false,

@@ -114,7 +114,7 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
           },
           allowInDevelopment: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Allow introspection when the code is guarded by a development check'
           },
         },
         additionalProperties: false,

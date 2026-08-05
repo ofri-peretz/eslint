@@ -183,3 +183,10 @@ crypto.createHash(algo);
 - **[NIST Hash Function Guidelines](https://csrc.nist.gov/projects/hash-functions)** - NIST recommendations
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
 - **[Node.js Crypto Documentation](https://nodejs.org/api/crypto.html)** - Node.js crypto module
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `additionalWeakAlgorithms` | `string[]` | `[]` | Additional weak algorithms to detect |
+| `allowInTests` | `boolean` | `false` | Allow weak hashes in test files |
