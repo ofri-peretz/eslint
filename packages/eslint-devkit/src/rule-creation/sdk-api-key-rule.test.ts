@@ -73,6 +73,26 @@ describe('readCredential', () => {
     });
   });
 
+  it('keeps looking after a safe credential prop', () => {
+    // Regression: a matching prop with a safe value returned `safe` outright,
+    // so a hardcoded second credential right after it was never inspected.
+    // Anthropic configures two key props, so this was a live CWE-798 miss.
+    expect(
+      readCredential(objOf("({ apiKey: process.env.ANTHROPIC_API_KEY, authToken: 'sk-ant-123' })"), keys),
+    ).toEqual({ kind: 'literal', prop: 'authToken' });
+    // Same when the first prop is an empty-string placeholder.
+    expect(readCredential(objOf("({ apiKey: '', authToken: 'sk-ant-123' })"), keys)).toEqual({
+      kind: 'literal',
+      prop: 'authToken',
+    });
+  });
+
+  it('is still safe when every credential prop is safe', () => {
+    expect(
+      readCredential(objOf("({ apiKey: process.env.K, authToken: '' })"), keys),
+    ).toEqual({ kind: 'safe' });
+  });
+
   it('reads a quoted key the same as a bare one', () => {
     expect(readCredential(objOf("({ 'apiKey': 'sk-live-1' })"), keys)).toEqual({
       kind: 'literal',

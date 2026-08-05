@@ -122,7 +122,8 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
           sensitivePatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Extra field-name patterns to treat as sensitive'
+            default: [],
+            description: 'Extra field-name patterns to treat as sensitive',
           },
         },
         additionalProperties: false,

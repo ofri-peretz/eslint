@@ -5,6 +5,51 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
   valid: [
+    // ghostfolio/apps/api/src/app/endpoints/sitemap/sitemap.controller.ts:34 —
+    // declares XML and sends an interpolated document. The body is a helper
+    // call so it is not provably a string, but the content type settles it:
+    // ClassSerializerInterceptor produces JSON, and this is not JSON.
+    `
+      @Controller('sitemap.xml')
+      class SitemapController {
+        @Get()
+        getSitemapXml(@Res() response: Response) {
+          response.setHeader('content-type', 'application/xml');
+          response.send(interpolate(this.sitemapXml, { currentDate }));
+        }
+      }
+    `,
+    `
+      @Controller()
+      class PageController {
+        @Get()
+        page(@Res() res: Response) {
+          res.type('text/html');
+          res.send(render(this.template, model));
+        }
+      }
+    `,
+    // nest-framework/sample/28-sse/src/app.controller.ts:11 — a static HTML
+    // page sent as a string. No DTO, so no @Exclude() the missing
+    // interceptor could have dropped.
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        index(@Res() response: Response) {
+          response.type('text/html').send(readFileSync(join(__dirname, 'index.html')).toString());
+        }
+      }
+    `,
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        raw(@Res() res: Response) {
+          res.send(String(value));
+        }
+      }
+    `,
     // The fix: interceptors still run, so @Exclude() still applies.
     `
       @Controller('users')
@@ -181,6 +226,36 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     },
   ],
   invalid: [
+    // A non-JSON content type on some *other* object says nothing about what
+    // this handler writes. Scanning the whole body let it silence the rule.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          find(@Res() res: Response) {
+            this.cacheService.setHeader('text/plain', 'x');
+            res.json(user);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A JSON content type is the case the rule exists for — declaring it
+    // changes nothing.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          find(@Res() res: Response) {
+            res.setHeader('content-type', 'application/json');
+            res.json(user);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
     // novu: res.json() with a domain object.
     {
       code: `

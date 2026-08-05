@@ -101,6 +101,12 @@ export type KeyVerdict =
  * — reading a key from the environment is the correct pattern. A spread is
  * `unreadable`: the key may be in the spread source, and guessing there would
  * flag correct code.
+ *
+ * A safe credential prop `continue`s rather than returning, because a config
+ * can carry more than one: Anthropic's `{ apiKey, authToken }` meant an
+ * environment-read `apiKey` returned early and a hardcoded `authToken` right
+ * after it was never inspected. `safe` is only the verdict once every property
+ * has been looked at.
  */
 export function readCredential(
   options: TSESTree.ObjectExpression,
@@ -114,12 +120,11 @@ export function readCredential(
     // guard for one would be unreachable.
     const name = prop.key.type === 'Identifier' ? prop.key.name : String(prop.key.value);
     if (!keyProps.has(name)) continue;
-    if (prop.value.type !== 'Literal') return { kind: 'safe' };
+    if (prop.value.type !== 'Literal') continue;
     // An empty string is a placeholder, not a credential.
     if (typeof prop.value.value === 'string' && prop.value.value.length > 0) {
       return { kind: 'literal', prop: name };
     }
-    return { kind: 'safe' };
   }
   return { kind: 'safe' };
 }
