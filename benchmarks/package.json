@@ -64,11 +64,11 @@
     "@angular-eslint/eslint-plugin": "^22.1.0",
     "@microsoft/eslint-plugin-sdl": "^1.1.0",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-jest": "^29.15.4",
-    "eslint-plugin-jsdoc": "^63.0.14",
+    "eslint-plugin-jest": "^29.16.0",
+    "eslint-plugin-jsdoc": "^63.3.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-n": "^18.2.2",
     "eslint-plugin-no-secrets": "^2.2.1",
@@ -81,8 +81,8 @@
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-testing-library": "^7.15.4",
     "eslint-plugin-unicorn": "^72.0.0",
-    "eslint-plugin-vue": "^10.9.2",
+    "eslint-plugin-vue": "^10.10.0",
     "tsx": "^4.23.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
