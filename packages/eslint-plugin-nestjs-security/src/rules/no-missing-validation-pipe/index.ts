@@ -117,9 +117,24 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalPipes: { type: 'boolean', default: true, description: 'Look for a globally registered ValidationPipe before reporting' },
-          assumeGlobalPipes: { type: 'boolean', default: false, description: 'Assume a global ValidationPipe exists even if none is found' },
-          requireExplicitPipe: { type: 'boolean', default: false, description: 'Require a per-handler pipe even when a global one is registered' },
+          detectGlobalPipes: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Look for a globally registered ValidationPipe before reporting',
+          },
+          assumeGlobalPipes: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Assume a global ValidationPipe exists even if none is found',
+          },
+          requireExplicitPipe: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Require a per-handler pipe even when a global one is registered',
+          },
         },
         additionalProperties: false,
       },
@@ -284,6 +299,9 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       if (services === null || checker === null || tsModule === null) {
         return null;
       }
+      // Bound after the guard so the nested helpers get a non-null module;
+      // TypeScript cannot narrow a closed-over `let` from their caller.
+      const tsm = tsModule;
       const annotation = param.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return null;
 
@@ -301,14 +319,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       // take, because a resolved symbol always has declarations.
       const declaration = symbol.valueDeclaration;
       if (declaration === undefined) return null;
-      if (!tsModule.isClassDeclaration(declaration)) return null;
+      if (!tsm.isClassDeclaration(declaration)) return null;
 
       // A base class may carry the decorators, and this reads one level only —
       // so abstain on `extends`. Not on `implements`: an interface has no
       // decorators to inherit, and `class Dto implements Serializable {}` is a
       // common shape that was silently escaping the check.
       const extendsBase = declaration.heritageClauses?.some(
-        (clause) => clause.token === tsModule.SyntaxKind.ExtendsKeyword,
+        (clause) => clause.token === tsm.SyntaxKind.ExtendsKeyword,
       );
       if (extendsBase === true) return null;
       // A DTO from a dependency is not ours to judge.
@@ -318,7 +336,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
       const dto = symbol.getName();
       const validated = declaration.members.some((member) =>
-        decoratorsOf(member).some(isValidatorDecorator),
+        decoratorsOf(member, tsm).some((d) => isValidatorDecorator(d, tsm)),
       );
       return { dto, validated };
     }
@@ -332,9 +350,12 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * decorators were ever found, so every DTO looked unvalidated and the two
      * invalid tests passed for the wrong reason.
      */
-    function decoratorsOf(member: ts.ClassElement): readonly ts.Decorator[] {
-      return tsModule.canHaveDecorators(member)
-        ? (tsModule.getDecorators(member) ?? [])
+    function decoratorsOf(
+      member: ts.ClassElement,
+      tsm: typeof ts,
+    ): readonly ts.Decorator[] {
+      return tsm.canHaveDecorators(member)
+        ? (tsm.getDecorators(member) ?? [])
         : [];
     }
 
@@ -345,16 +366,19 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
      * `@IsString()` counts and `@ApiProperty()` — which documents a shape
      * without enforcing it — does not, whatever either is named.
      */
-    function isValidatorDecorator(decorator: ts.Decorator): boolean {
+    function isValidatorDecorator(
+      decorator: ts.Decorator,
+      tsm: typeof ts,
+    ): boolean {
       const expression = decorator.expression;
-      const callee = tsModule.isCallExpression(expression)
+      const callee = tsm.isCallExpression(expression)
         ? expression.expression
         : expression;
       const symbol = checker?.getSymbolAtLocation(callee);
       // An imported binding points at the import statement; follow it to the
       // declaration so the *origin* decides, not the local name.
       const resolved =
-        symbol !== undefined && symbol.flags & tsModule.SymbolFlags.Alias
+        symbol !== undefined && symbol.flags & tsm.SymbolFlags.Alias
           ? checker?.getAliasedSymbol(symbol)
           : symbol;
       const file = resolved?.declarations?.[0]?.getSourceFile().fileName;

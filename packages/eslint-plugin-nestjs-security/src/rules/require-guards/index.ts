@@ -279,18 +279,33 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalGuards: { type: 'boolean', default: true, description: 'Look for globally registered guards before reporting' },
+          detectGlobalGuards: {
+            type: 'boolean',
+            default: true,
+            description: 'Look for globally registered guards before reporting',
+          },
           requiredGuards: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Guard names that must be present'
+            default: [],
+            description: 'Guard names that must be present',
           },
-          allowPublicDecorator: { type: 'boolean', default: true, description: 'Treat a `@Public()` decorator as intentionally unguarded' },
-          assumeGlobalGuards: { type: 'boolean', default: false, description: 'Assume global guards exist even if none are found' },
+          allowPublicDecorator: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Treat a `@Public()` decorator as intentionally unguarded',
+          },
+          assumeGlobalGuards: {
+            type: 'boolean',
+            default: false,
+            description: 'Assume global guards exist even if none are found',
+          },
           authDecorators: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Extra decorator names that count as authentication'
+            default: [],
+            description: 'Extra decorator names that count as authentication',
           },
           publicRoutes: {
             type: 'array',
