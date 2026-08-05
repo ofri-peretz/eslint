@@ -5,13 +5,6 @@ import localPlugin from './tools/eslint-rules/index.js';
 import reactA11y from 'eslint-plugin-react-a11y';
 import reactFeatures from 'eslint-plugin-react-features';
 
-// Dogfood the meta-package. `componentApi` is a flat-config array binding
-// the react-features componentApi preset (R5/R6/R8/R11/R12/R18/R19) under
-// the plugin's canonical `react-features/component-api/*` rule names —
-// we restrict it to the @interlace/ui primitives via a per-block `files`
-// override below, since the meta-package's preset binds globally.
-import { componentApi as componentApiPreset } from '@interlace/eslint-config';
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Root ESLint config (flat, ESLint v9+).
 //
@@ -42,7 +35,7 @@ export default [
     },
   },
   // TypeScript parser config — required for the @typescript-eslint/* rules
-  // below and for the meta-package's componentApi preset to actually fire
+  // below and for the componentApi rules to actually fire
   // on .tsx primitives (without a TS parser the file fails to parse and
   // the rules silently no-op — which is how the @eslint/react-features
   // naming-drift escaped detection for weeks before 139b6208).
@@ -181,28 +174,6 @@ export default [
       ...reactFeatures.configs.componentApi.rules,
     },
   },
-
-  // ── @interlace/ui — componentApi floor (R5/R6/R8/R11/R12/R18/R19) ─────
-  // Sourced from `@interlace/eslint-config`'s `componentApi` preset.
-  // Scoped to UI primitives via `files` (the preset binds globally by
-  // default; that's correct for consumer apps but too broad for an
-  // ecosystem repo where most code isn't shared components).
-  //
-  // IMPORTANT: strip the preset's `plugins` key. The preset carries its
-  // own `react-features` plugin object (resolved through the
-  // meta-package's built dist), which is a DIFFERENT module instance
-  // than the `eslint-plugin-react-features` imported directly above.
-  // Flat config only allows re-registering a plugin name when it's the
-  // identical object — two instances under one namespace for the same
-  // files throws `ConfigError: Cannot redefine plugin "react-features"`
-  // and crashes every lint run (component-api-lint CI, 2026-07-04).
-  // The rules still resolve fine: the `react-features` namespace is
-  // already registered for these files by the blocks above.
-  ...componentApiPreset.map((c) => {
-    const scoped = { ...c, files: ['packages/ui/src/primitives/**/*.tsx'] };
-    delete scoped.plugins;
-    return scoped;
-  }),
 
   // ── oxlint integration ──────────────────────────────────────────────────
   // Disable ESLint rules that oxlint handles natively in Rust (50-100× faster).

@@ -6,7 +6,7 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * `packages/eslint-config-interlace/src/ecosystem-integrity.test.ts` loads
+ * `scripts/__tests__/ecosystem-integrity.test.ts` loads
  * every published plugin's every config preset into a real ESLint and asserts
  * the rule→plugin references resolve. But under vitest that suite runs against
  * workspace SOURCE (the vitest config aliases every `eslint-plugin-*` to its

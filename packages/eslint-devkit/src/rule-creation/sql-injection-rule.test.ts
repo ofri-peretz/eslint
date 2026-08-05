@@ -77,6 +77,22 @@ describe('createSqlInjectionRule', () => {
       expect(ungated.meta.messages.noUnsafeQuery).toContain('$1, $2');
       expect(gated.meta.messages.unsafeTemplateLiteral).toContain('placeholders');
     });
+
+    // Both messageIds are primary findings — `create` picks between them on
+    // `kind === 'template'`, not on severity. unsafeTemplateLiteral once
+    // carried no cwe/owasp/compliance at all, so the template half of every
+    // SQL rule in the ecosystem reported without a CWE. The cross-plugin
+    // CVSS lock could not see it: that lock reads the *first* message
+    // carrying a CVSS token and stops, and noUnsafeQuery is always first.
+    it.each(['noUnsafeQuery', 'unsafeTemplateLiteral'] as const)(
+      'emits CWE-89 and CVSS:9.8 in %s, not just in the first message',
+      (messageId) => {
+        for (const rule of [ungated, gated]) {
+          expect(rule.meta.messages[messageId]).toContain('CWE-89');
+          expect(rule.meta.messages[messageId]).toContain('CVSS:9.8');
+        }
+      },
+    );
   });
 
   describe('ungated instance (single sink, no keyword gate)', () => {
