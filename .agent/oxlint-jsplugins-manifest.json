@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-04",
+  "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 466,
-  "oxlintCompatible": 466,
+  "totalRules": 470,
+  "oxlintCompatible": 470,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1131,7 +1131,7 @@
       "short": "knex-security",
       "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
       "subpath": "eslint-plugin-knex-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-unsafe-query",
@@ -1530,7 +1530,7 @@
       "short": "mysql-security",
       "shim": "tools/oxlint-plugins/interlace-mysql-security.cjs",
       "subpath": "eslint-plugin-mysql-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
@@ -2940,7 +2940,7 @@
       "short": "sequelize-security",
       "shim": "tools/oxlint-plugins/interlace-sequelize-security.cjs",
       "subpath": "eslint-plugin-sequelize-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
@@ -2976,7 +2976,7 @@
       "short": "typeorm-security",
       "shim": "tools/oxlint-plugins/interlace-typeorm-security.cjs",
       "subpath": "eslint-plugin-typeorm-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-unsafe-query",
@@ -3117,6 +3117,9 @@
     }
   ],
   "runtimeRuleNames": {
+    "anthropic-security": [
+      "no-hardcoded-api-key"
+    ],
     "browser-security": [
       "detect-mixed-content",
       "no-allow-arbitrary-loads",
@@ -3215,6 +3218,9 @@
       "require-route-authentication",
       "require-strict-transport-security"
     ],
+    "gemini-security": [
+      "no-disabled-safety-settings"
+    ],
     "import-next": [
       "consistent-type-specifier-style",
       "default",
@@ -3288,9 +3294,25 @@
       "require-issuer-validation",
       "require-max-age"
     ],
+    "jwt-security": [
+      "no-algorithm-confusion",
+      "no-algorithm-none",
+      "no-decode-without-verify",
+      "no-hardcoded-secret",
+      "no-sensitive-payload",
+      "no-timestamp-manipulation",
+      "no-weak-secret",
+      "require-algorithm-whitelist",
+      "require-audience-validation",
+      "require-expiration",
+      "require-issued-at",
+      "require-issuer-validation",
+      "require-max-age"
+    ],
     "knex-security": [
       "no-unsafe-query",
-      "no-unscoped-mutation"
+      "no-unscoped-mutation",
+      "require-tls"
     ],
     "lambda-security": [
       "no-env-logging",
@@ -3334,6 +3356,9 @@
       "no-unhandled-promise",
       "no-unreadable-iife"
     ],
+    "mcp-sdk-security": [
+      "require-tool-input-schema"
+    ],
     "modernization": [
       "no-instanceof-array",
       "prefer-at",
@@ -3367,7 +3392,8 @@
       "require-tls-connection"
     ],
     "mysql-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "require-tls"
     ],
     "nestjs-security": [
       "no-exposed-private-fields",
@@ -3418,6 +3444,9 @@
       "require-secure-deletion",
       "require-storage-encryption"
     ],
+    "openai-security": [
+      "no-browser-api-key-exposure"
+    ],
     "operability": [
       "no-console-log",
       "no-debug-code-in-production",
@@ -3433,6 +3462,21 @@
       "require-data-minimization"
     ],
     "pg": [
+      "check-query-params",
+      "no-batch-insert-loop",
+      "no-floating-query",
+      "no-hardcoded-credentials",
+      "no-insecure-ssl",
+      "no-missing-client-release",
+      "no-select-all",
+      "no-transaction-on-pool",
+      "no-unsafe-copy-from",
+      "no-unsafe-query",
+      "no-unsafe-search-path",
+      "prefer-pool-query",
+      "prevent-double-release"
+    ],
+    "postgresql-security": [
       "check-query-params",
       "no-batch-insert-loop",
       "no-floating-query",
@@ -3665,13 +3709,15 @@
       "require-secure-defaults"
     ],
     "sequelize-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "require-tls"
     ],
     "sqlite-security": [
       "no-unsafe-query"
     ],
     "typeorm-security": [
-      "no-unsafe-query"
+      "no-unsafe-query",
+      "require-tls"
     ],
     "vercel-ai-security": [
       "no-dynamic-system-prompt",
