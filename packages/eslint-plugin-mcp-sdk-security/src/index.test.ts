@@ -13,6 +13,7 @@ import plugin, {
   plugin as namedPlugin,
   noCommandInjectionInTool,
   noToolDescriptionInjection,
+  noUnvalidatedToolArgs,
   requireToolInputSchema,
 } from './index';
 
@@ -21,11 +22,13 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     expect(Object.keys(rules).sort()).toEqual([
       'no-command-injection-in-tool',
       'no-tool-description-injection',
+      'no-unvalidated-tool-args',
       'require-tool-input-schema',
     ]);
     // Reference equality, not just presence: a rule id can be wired to the
     // wrong module and every id-based assertion still passes.
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
+    expect(rules['no-unvalidated-tool-args']).toBe(noUnvalidatedToolArgs);
     expect(rules['no-tool-description-injection']).toBe(noToolDescriptionInjection);
     expect(rules['no-command-injection-in-tool']).toBe(noCommandInjectionInTool);
   });
@@ -63,6 +66,7 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     // rather than an oversight.
     for (const preset of ['minimal', 'recommended'] as const) {
       expect(configs[preset].rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
+      expect(configs[preset].rules?.['mcp-sdk-security/no-unvalidated-tool-args']).toBeUndefined();
     }
   });
 
