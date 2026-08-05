@@ -87,7 +87,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
           },
           maxBatchSize: {
             type: 'number',
-            default: 100,
+            default: 100, description: 'Batch size above which processing must be explicitly bounded'
           },
         },
         additionalProperties: false,

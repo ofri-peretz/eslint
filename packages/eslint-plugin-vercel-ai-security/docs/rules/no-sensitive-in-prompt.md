@@ -80,9 +80,9 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option              | Type       | Default                                                                                                                          | Description                                 |
-| ------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `sensitivePatterns` | `string[]` | `['password', 'secret', 'token', 'apiKey', 'api_key', 'credential', 'ssn', 'socialSecurity', 'creditCard', 'cvv', 'privateKey']` | Variable patterns suggesting sensitive data |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitivePatterns` | `string[]` | `["password","secret","apiKey","api_key","token","credential","ssn","socialSecurity","creditCard","cardNumber","cvv","privateKey","private_key","accessToken","access_token","refreshToken","refresh_token","authToken","bearer","connectionString","dbPassword","dbUser"]` | Variable patterns that suggest sensitive data |
 
 ## 🛡️ Why This Matters
 

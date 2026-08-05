@@ -78,6 +78,12 @@ const ws = new WebSocket('ws://127.0.0.1:8080');
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowLocalhost` | `boolean` | `true` | Allow ws:// for localhost/127.0.0.1 (for development) |
+
+
 ```json
 {
   "browser-security/require-websocket-wss": [

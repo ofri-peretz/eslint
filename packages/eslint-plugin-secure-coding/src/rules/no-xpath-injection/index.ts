@@ -159,17 +159,17 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           xpathFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'],
+            default: ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'], description: 'XPath evaluation methods treated as query sinks'
           },
           safeXpathConstructors: {
             type: 'array',
             items: { type: 'string' },
-            default: ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'],
+            default: ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'], description: 'Builders that produce a parameterized XPath expression'
           },
           xpathValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'],
+            default: ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'], description: 'Function names that escape or validate XPath input'
           },
           trustedSanitizers: {
             type: 'array',

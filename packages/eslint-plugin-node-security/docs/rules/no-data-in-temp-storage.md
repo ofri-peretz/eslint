@@ -115,3 +115,10 @@ sessionCache.set('token', token);
 
 - [CWE-312: Cleartext Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/312.html)
 - [OWASP Mobile Top 10 M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `tempPaths` | `string[]` | — | Custom list of temporary paths to flag |
+| `ignoreFiles` | `string[]` | — | List of files or patterns to ignore |

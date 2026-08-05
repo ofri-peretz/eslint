@@ -62,10 +62,10 @@ await index.add({
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                      | Description                         |
-| -------------------- | ---------- | -------------------------------------------- | ----------------------------------- |
-| `embeddingPatterns`  | `string[]` | `['embed', 'embedding', 'vector', 'encode']` | Patterns suggesting embedding calls |
-| `validatorFunctions` | `string[]` | `['validate', 'verify', 'normalize']`        | Functions that validate embeddings  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `embeddingPatterns` | `string[]` | `["embed","embedding","embeddings","vector","encode","createEmbedding","getEmbedding","generateEmbedding"]` | Patterns suggesting embedding operations |
+| `validatorFunctions` | `string[]` | `["validate","verify","check","sanitize","normalize","validateEmbedding","verifyVector"]` | Functions that validate embeddings |
 
 ## 🛡️ Why This Matters
 

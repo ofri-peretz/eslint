@@ -202,3 +202,10 @@ const url = new URL(path, 'https://' + req.headers.host);
 - **[CWE-640: Weak Password Recovery Mechanism](https://cwe.mitre.org/data/definitions/640.html)**
 - **[OWASP: Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)**
 - **[PortSwigger: Password reset poisoning](https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedHosts` | `string[]` | — | Trusted literal hosts — an if-guard comparing against one of these suppresses the report |
+| `checkMailCallees` | `string[]` | — | Callee names treated as mail-send sinks (default: ["sendMail", "send"]) |

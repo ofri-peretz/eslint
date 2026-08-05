@@ -185,12 +185,12 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
           safeTypeCheckFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'],
+            default: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'], description: 'Function names that count as a type check'
           },
           allowInstanceofSameRealm: {
             type: 'boolean',

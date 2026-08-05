@@ -93,9 +93,9 @@ export const handler = middy(baseHandler).use(
 
 ## Options
 
-| Option         | Type      | Default | Description                         |
-| -------------- | --------- | ------- | ----------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow permissive CORS in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```json
 {
