@@ -292,7 +292,11 @@ oxlint-parity, `quality-full.yml`)
 - The PR is marked **ready-for-review** (out of draft), OR
 - The PR is labelled **`run-full-ci`**, OR
 - A maintainer manually triggers via `gh workflow run <name>.yml`, OR
-- Weekly Sunday cron (04:05 → 04:35 UTC, staggered) for drift detection.
+- A weekly cron for drift detection. The heavy workflows are staggered across
+  the week, not bunched on one morning — read the day from the workflow, not
+  from this list: `quality-full` Sun 04:00, `oxlint-parity` Sun 10:00,
+  `codeql` Mon 03:17, `benchmark` Tue 09:00, `lighthouse` Wed 04:05,
+  `check-links` Fri 04:25, `eslint-version-matrix` Sat 09:30 (all UTC).
 
 Each heavy workflow has a `gate` job that decides `run=true` / `run=false`.
 Downstream jobs `needs: gate` + `if: needs.gate.outputs.run == 'true'`. A
