@@ -82,7 +82,17 @@ function cell(text: string): string {
  * The pipe is the sole character that still breaks a table row inside code.
  */
 function codeCell(value: string): string {
-  return `\`${value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')}\``;
+  const text = value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+  // A backtick inside the value would close the span early — `dangerousChars`
+  // lists one among the characters it wants sanitized, so its default ended
+  // mid-array and the rest of the row rendered as plain text. CommonMark's
+  // answer is a fence longer than any run of backticks in the content, with a
+  // space of padding so a leading or trailing backtick still belongs to the
+  // value rather than to the fence.
+  const longest = Math.max(0, ...[...text.matchAll(/`+/g)].map((m) => m[0].length));
+  if (longest === 0) return `\`${text}\``;
+  const fence = '`'.repeat(longest + 1);
+  return `${fence} ${text} ${fence}`;
 }
 
 /** Render a schema property's type as it appears in the Type column. */
