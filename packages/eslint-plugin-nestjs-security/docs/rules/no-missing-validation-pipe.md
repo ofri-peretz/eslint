@@ -82,6 +82,14 @@ app.useGlobalPipes(
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalPipes` | `boolean` | `true` | Look for a globally registered ValidationPipe before reporting |
+| `assumeGlobalPipes` | `boolean` | `false` | Assume a global ValidationPipe exists even if none is found |
+| `requireExplicitPipe` | `boolean` | `false` | Require a per-handler pipe even when a global one is registered |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)

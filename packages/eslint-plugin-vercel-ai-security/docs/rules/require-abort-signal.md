@@ -69,9 +69,9 @@ await streamObject({
 
 ## ⚙️ Options
 
-| Option            | Type       | Default                          | Description                            |
-| ----------------- | ---------- | -------------------------------- | -------------------------------------- |
-| `targetFunctions` | `string[]` | `['streamText', 'streamObject']` | Functions that should have an abort signal |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `targetFunctions` | `string[]` | `["streamText","streamObject"]` | Functions that should have abort signal |
 
 ## 🛡️ Why This Matters
 

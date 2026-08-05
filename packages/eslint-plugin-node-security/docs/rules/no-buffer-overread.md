@@ -97,11 +97,14 @@ if (index >= 0 && index < buffer.length) { const byte = buffer[index]; }
 
 ## Options
 
-| Option                 | Type       | Default                    | Description               |
-| ---------------------- | ---------- | -------------------------- | ------------------------- |
-| `bufferMethods`        | `string[]` | `['readUInt8', 'slice']`   | Buffer methods to check   |
-| `boundsCheckFunctions` | `string[]` | `['validateIndex']`        | Bounds checking functions |
-| `bufferTypes`          | `string[]` | `['Buffer', 'Uint8Array']` | Buffer types to monitor   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `bufferMethods` | `string[]` | `["readUInt8","readUInt16LE","readUInt32LE","readInt8","readInt16LE","readInt32LE","writeUInt8","writeUInt16LE","writeUInt32LE","slice","copy"]` | Buffer read/write methods checked for bounds |
+| `boundsCheckFunctions` | `string[]` | `["validateIndex","checkBounds","safeIndex","validateBufferIndex"]` | Function names that count as a bounds check |
+| `bufferTypes` | `string[]` | `["Buffer","Uint8Array","ArrayBuffer","DataView"]` | Constructor names treated as buffer types |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as buffer index validators |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

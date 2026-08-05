@@ -95,10 +95,10 @@ const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString,
 
 ## Options
 
-| Option                   | Type       | Default                          | Description                              |
-| ------------------------ | ---------- | -------------------------------- | ---------------------------------------- |
-| `safeParserOptions`      | `string[]` | `['noent', 'resolveExternals']`  | Options that indicate safe configuration |
-| `xmlValidationFunctions` | `string[]` | `['validateXml', 'sanitizeXml']` | Functions that validate XML input        |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `safeParserOptions` | `string[]` | `["noent","resolveExternals","expandEntityReferences","entityResolver"]` | Options that indicate safe configuration |
+| `xmlValidationFunctions` | `string[]` | `["validateXml","sanitizeXml","cleanXml","parseXmlSafe"]` | Functions that validate XML input |
 
 ## Error Message Format
 

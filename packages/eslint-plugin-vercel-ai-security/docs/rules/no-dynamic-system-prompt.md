@@ -88,9 +88,9 @@ await streamText({
 
 ## ⚙️ Options
 
-| Option                 | Type      | Default | Description                                 |
-| ---------------------- | --------- | ------- | ------------------------------------------- |
-| `allowStaticTemplates` | `boolean` | `true`  | Allow template literals without expressions |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowStaticTemplates` | `boolean` | `true` | Allow template literals without expressions |
 
 ## 🛡️ Why This Matters
 

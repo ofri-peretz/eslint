@@ -79,6 +79,11 @@ statically decidable is left alone:
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```ts
 'nestjs-security/no-permissive-cors': ['error', { allowInTests: true }]
 ```

@@ -90,10 +90,10 @@ The rule offers editor suggestions (no auto-fix):
 
 ## Options
 
-| Option       | Type       | Default                  | Description                                                            |
-| ------------ | ---------- | ------------------------ | ---------------------------------------------------------------------- |
-| `coercers`   | `string[]` | `['String']`             | Callee names whose result is a safe string coercion (replaces default) |
-| `validators` | `string[]` | `['parse', 'safeParse']` | Callee / method names treated as type-safe sources (replaces default)  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `coercers` | `string[]` | — | Callee names whose result is a safe string coercion |
+| `validators` | `string[]` | — | Callee / method names treated as type-safe sources |
 
 ```json
 {

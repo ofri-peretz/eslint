@@ -69,9 +69,9 @@ await streamText({
 
 ## ⚙️ Options
 
-| Option         | Type      | Default | Description        |
-| -------------- | --------- | ------- | ------------------ |
-| `allowInTests` | `boolean` | `true`  | Skip in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip in test files |
 
 ## 🛡️ Why This Matters
 

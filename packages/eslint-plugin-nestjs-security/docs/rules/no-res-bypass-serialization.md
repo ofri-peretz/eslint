@@ -74,6 +74,11 @@ export class UsersController {
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)

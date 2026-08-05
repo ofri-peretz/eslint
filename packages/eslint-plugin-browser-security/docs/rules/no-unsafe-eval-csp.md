@@ -73,10 +73,15 @@ const csp = "script-src 'self' 'wasm-unsafe-eval'";
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-unsafe-eval-csp": [
+    "browser-security/no-unsafe-eval-csp": [
       "error",
       {
         "allowInTests": true
