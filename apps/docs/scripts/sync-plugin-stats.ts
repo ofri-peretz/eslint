@@ -298,7 +298,7 @@ async function main() {
     totalRules, // Reflects only published rules for backward compatibility
     totalPlugins: stats.filter(p => p.published).length, // Reflects only published plugins
     allPluginsCount: stats.length,
-    // Date, not wall-clock. `writeIfChanged` below already suppresses no-op
+    // Date, not wall-clock. `writeJsonIfChanged` below already suppresses no-op
     // rewrites, but it cannot help when the data legitimately changes on two
     // branches at once: each writes its own millisecond timestamp, and the
     // merge then conflicts on a line carrying no information. Whoever wins
