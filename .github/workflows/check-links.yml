@@ -1,7 +1,7 @@
 name: Link Integrity Check
 
 # Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
-# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+# weekly Friday cron for drift. See AGENTS.md "Promotion gate".
 
 on:
   pull_request:
