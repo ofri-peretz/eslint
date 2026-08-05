@@ -111,6 +111,26 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | `allowLiterals`     | `boolean`  | `false` | Allow literal string paths     |
 | `additionalMethods` | `string[]` | `[]`    | Additional fs methods to check |
 
+## How the fs module is recognised
+
+The rule resolves the binding rather than matching one spelling of it, so all
+of these are checked — `fs`, `node:fs`, `fs/promises` and `node:fs/promises`:
+
+```typescript
+import fs from 'fs';                         // default import, any local name
+import * as fileSystem from 'node:fs';       // namespace import
+import { readFile } from 'fs/promises';      // named import, renamed or not
+const { readdir } = require('node:fs');      // destructured require
+fs.promises.readFile(p);                     // the promises sub-object
+```
+
+A bare `fs.readFile(...)` in a file that imports nothing is still reported, on
+the assumption that `fs` names the module.
+
+Bindings are resolved across the whole file before any call is judged, so a
+`require` placed below its call site still counts — statement order is not a
+security property.
+
 ## Examples
 
 ### ❌ Incorrect
