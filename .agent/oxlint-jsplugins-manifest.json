@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 481,
-  "oxlintCompatible": 481,
+  "totalRules": 485,
+  "oxlintCompatible": 485,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1356,8 +1356,26 @@
       "short": "mcp-sdk-security",
       "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
       "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 4,
       "rules": [
+        {
+          "name": "no-command-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-tool-description-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unvalidated-tool-args",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "require-tool-input-schema",
           "portability": "compatible",
@@ -1581,7 +1599,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 8,
+      "ruleCount": 9,
       "rules": [
         {
           "name": "no-exposed-private-fields",
@@ -1590,10 +1608,16 @@
           "isTypeAware": false
         },
         {
-          "name": "no-missing-validation-pipe",
+          "name": "no-hybrid-app-config-loss",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "no-missing-validation-pipe",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
         },
         {
           "name": "no-permissive-cors",
@@ -3427,6 +3451,9 @@
       "no-unreadable-iife"
     ],
     "mcp-sdk-security": [
+      "no-command-injection-in-tool",
+      "no-tool-description-injection",
+      "no-unvalidated-tool-args",
       "require-tool-input-schema"
     ],
     "modernization": [
