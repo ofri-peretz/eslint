@@ -5,33 +5,40 @@
  */
 
 /**
- * @interlace/eslint-config — REPO-INTERNAL, NOT PUBLISHED
+ * Ecosystem preset composition — TEST FIXTURE, NOT A PACKAGE.
  *
- * `private: true`. This is not a consumer-facing meta-config and must not be
- * recommended or published: ESLint config is composed per repository from the
- * individual `eslint-plugin-*` packages, so each repo takes only what it needs.
+ * There is no Interlace meta-config and there must not be one: ESLint config
+ * is composed per repository from the individual `eslint-plugin-*` packages,
+ * so each repo takes only what it needs. This file used to be
+ * `packages/eslint-config-interlace/src/index.ts` — a `private: true`
+ * workspace package that was never published, yet whose name was advertised
+ * on the docs site as an install command that 404s.
  *
- * It exists so this monorepo can lint its own component API (`componentApi`,
- * consumed by the root `eslint.config.mjs`) and so `src/index.test.ts` can pin
- * the flagship array against `.agent/flagship-rules.md`.
+ * The package is gone; what it was actually carrying lives on here, as the
+ * fixture the aggregate locks compose against:
  *
- * Presets (all are flat-config arrays — drop them into ESLint 9/10 with
- * spread, e.g. `export default [...flagship, ...myOverrides]`):
+ *   - `ecosystem-presets.test.ts` pins `flagship` to `.agent/flagship-rules.md`
+ *     and fails closed if a plugin drops its `recommended` / `flagship` export
+ *   - `selector-parse-lock.test.ts` boots real ESLint over every preset
+ *
+ * The one runtime consumer it had — the `componentApi` floor in the root
+ * `eslint.config.mjs` — never needed it: that config already registers
+ * `eslint-plugin-react-features` directly and spreads the same
+ * `configs.componentApi.rules` over the same `files` glob.
+ *
+ * Presets (all are flat-config arrays):
  *
  *   - `flagship`     — the 10 flagship rules from 9 plugins
  *   - `security`     — recommended preset of every security plugin (10)
  *   - `quality`      — recommended preset of every code-quality plugin (7)
  *   - `react`        — recommended preset of `react-features` + `react-a11y`
  *   - `recommended`  — security + quality + react (full default, 19 plugins)
- *
- * See README.md for usage.
  */
 
 import { configs as importNextConfigs } from 'eslint-plugin-import-next';
 // pg / jwt were renamed to the -security names and the old npm packages are
-// deprecated. The shipped config must not install a deprecated dependency, so
-// it points at the new names; the rule namespaces (`pg/`, `jwt/`) are unchanged,
-// which is why nothing downstream of these imports had to move.
+// deprecated, so this composes the new names; the rule namespaces (`pg/`,
+// `jwt/`) are unchanged, which is why nothing downstream had to move.
 import { configs as pgConfigs } from 'eslint-plugin-postgresql-security';
 import { configs as secureCodingConfigs } from 'eslint-plugin-secure-coding';
 import { configs as mongoConfigs } from 'eslint-plugin-mongodb-security';
@@ -122,10 +129,9 @@ export const react: readonly FlatConfig[] = [
  * Not included in `recommended` because the rules are too strict for
  * application code that hasn't been migrated yet.
  *
- *
- * This is the one preset with a live internal consumer: the root
- * `eslint.config.mjs` imports it, and `.github/workflows/component-api-lint.yml`
- * builds this package to run it.
+ * The root `eslint.config.mjs` binds these same rules directly from
+ * `eslint-plugin-react-features`; this entry exists so the locks cover the
+ * preset too.
  */
 export const componentApi: readonly FlatConfig[] = [
   (reactFeaturesConfigs as ConfigMap)['componentApi']!,

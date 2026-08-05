@@ -144,11 +144,22 @@ export function createSqlInjectionRule(
           fix: config.fix,
           documentationLink: config.documentationLink,
         }),
+        // Same finding as noUnsafeQuery, reached through an interpolated
+        // template instead of concatenation, so it carries the same standards
+        // metadata from the same source. It previously carried none: the
+        // template path — the idiomatic way to write this bug — emitted no
+        // CWE-89, no OWASP and no compliance tags, so anything grouping
+        // findings by CWE (SARIF, dashboards, our own corpus scoring) counted
+        // only the concat half of the rule.
         unsafeTemplateLiteral: formatLLMMessage({
           icon: MessageIcons.SECURITY,
           issueName: 'SQL Injection Risk',
           description: 'Unsafe SQL query construction detected (template literal).',
           severity: 'CRITICAL',
+          cwe: config.meta.docs.cwe,
+          owasp: 'A03:2021',
+          compliance: ['SOC2', 'PCI-DSS', 'NIST-CSF'],
+          effort: 'high',
           fix: config.fix,
           documentationLink: config.documentationLink,
         }),
