@@ -10,8 +10,8 @@ autofix: false
 
 > Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
 
-
 <!-- @rule-summary -->
+
 SQL injection is one of the most critical security vulnerabilities
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ SQL injection is one of the most critical security vulnerabilities
 | **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
 | **Severity**      | Critical (CVSS: 9.8)                                                     |
 | **Auto-Fix**      | ❌ No auto-fix available                                                 |
-| **Category**   | Security |
+| **Category**      | Security                                                                 |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration                                |
 | **Best For**      | Protecting database operations from SQL injection vulnerabilities        |
 
@@ -32,13 +32,13 @@ SQL injection is one of the most critical security vulnerabilities
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) — Improper Neutralization of Special Elements used in an SQL Command (CVSS 9.8 Critical) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| Dimension                    | Value                                                                                                                                                                                                                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) — Improper Neutralization of Special Elements used in an SQL Command (CVSS 9.8 Critical)                                                                                                                                  |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)                                                          |
 | **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — SQL injection is the most-cited OWASP A03 finding ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** fintech (regulatory + transaction data), healthtech (PHI), B2B SaaS (multi-tenant exposure), cybersecurity · **High:** marketplaces, infra/devtools · **Medium:** B2C |
-| **Investor-frame impact** | SQL injection → full database disclosure → mandatory disclosure cycle. The most-cited single attack class in security-incident reports for two decades. Lint-time enforcement of parameterized queries is the cheapest possible structural defense. |
+| **Niche relevance**          | **Critical:** fintech (regulatory + transaction data), healthtech (PHI), B2B SaaS (multi-tenant exposure), cybersecurity · **High:** marketplaces, infra/devtools · **Medium:** B2C                                                                                                |
+| **Investor-frame impact**    | SQL injection → full database disclosure → mandatory disclosure cycle. The most-cited single attack class in security-incident reports for two decades. Lint-time enforcement of parameterized queries is the cheapest possible structural defense.                                |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
@@ -72,6 +72,36 @@ const result = await client.query({
 });
 ```
 
+### Query helpers
+
+Almost nobody calls `client.query` directly everywhere; the driver call gets
+wrapped in a one-line helper. When that helper lives in the same file, the rule
+follows it: a parameter handed straight to `client.query` makes the helper a
+sink at that argument position, and calls to it are checked like the driver
+call they stand for.
+
+```typescript
+const q = (sql: string, params: unknown[]) => client.query(sql, params);
+
+q(`SELECT * FROM users WHERE id = ${userId}`, []); // ❌ reported
+q('SELECT * FROM users WHERE id = ' + userId, []); // ❌ reported
+q('SELECT * FROM users WHERE id = $1', [userId]); // ✅ fine — nothing interpolated
+```
+
+`function` declarations, class methods and object-literal methods are traced
+the same way. Because a helper is weaker evidence than a literal driver call,
+findings through one require the string to actually look like SQL:
+
+```typescript
+const q = (sql: string, params: unknown[]) => client.query(sql, params);
+
+q(`hello ${name}`, []); // ✅ no SQL keywords — not a SQL finding
+client.query(`hello ${name}`); // ❌ still reported at the driver call itself
+```
+
+For helpers imported from another module, see
+[the known false negative below](#query-helpers-defined-in-another-file).
+
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
@@ -83,13 +113,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                       |
-| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Risk Standards**        | Security benchmarks    | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `SQL Injection detected`                                                                                                                                                                                                      |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                      |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
+| **Issue Description**     | Specific vulnerability | `SQL Injection detected`                                                                                                                                                                                                                                    |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                                                    |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Known False Negatives
 
@@ -120,19 +150,25 @@ await client.query(unsafeQuery);
 
 **Mitigation**: Always use parameterized queries `($1, $2)` directly in literals.
 
-### Nested Function Calls
+### Query Helpers Defined in Another File
 
-**Why**: Queries passed through helper functions aren't traced.
+Helpers **declared in the same file** as the call site are traced (see
+[Query helpers](#query-helpers) above). Helpers imported from another module
+are not: the rule is not type-aware, so it cannot see that `q` forwards its
+first argument to `client.query`.
 
 ```typescript
-// ❌ NOT DETECTED
-function executeQuery(query: string) {
-  return client.query(query);
-}
-executeQuery(`SELECT * FROM users WHERE id = ${userId}`);
+// db.ts
+export const q = (sql: string, params: unknown[]) => client.query(sql, params);
+
+// user.ts
+import { q } from './db';
+q(`SELECT * FROM users WHERE id = ${userId}`, []); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Apply the rule to helper functions that execute queries.
+**Mitigation**: Keep the driver call and the interpolation in the same module,
+or interpolate nothing — build the string with `$1, $2` placeholders and pass
+values through the `params` array, which is safe at any distance.
 
 ### Format Functions with User Input
 

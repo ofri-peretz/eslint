@@ -75,6 +75,52 @@ const SQL_KEYWORDS =
 
 type UnsafeKind = 'concat' | 'template';
 
+const FUNCTION_TYPES = new Set<string>([
+  AST_NODE_TYPES.FunctionDeclaration,
+  AST_NODE_TYPES.FunctionExpression,
+  AST_NODE_TYPES.ArrowFunctionExpression,
+]);
+
+/** Nearest enclosing function of `node`, or `undefined` at module top level. */
+function enclosingFunction(
+  node: TSESTree.Node,
+): TSESTree.FunctionLike | undefined {
+  for (let n = node.parent; n; n = n.parent) {
+    if (FUNCTION_TYPES.has(n.type)) return n as TSESTree.FunctionLike;
+  }
+  return undefined;
+}
+
+/**
+ * The name a function is reached by at its call sites, or `undefined` when it
+ * has none we can match on (IIFE, default export, callback argument).
+ *
+ * Covers the four ways a query helper is normally written: `function q()`,
+ * `const q = (...) => …`, a class method, and an object-literal method.
+ */
+function callableName(fn: TSESTree.FunctionLike): string | undefined {
+  if (fn.type === AST_NODE_TYPES.FunctionDeclaration && fn.id)
+    return fn.id.name;
+  // Every function reachable here is nested inside a Program, so `parent` is
+  // always set — no guard, which would be an untestable branch.
+  const parent = fn.parent;
+  if (
+    parent.type === AST_NODE_TYPES.VariableDeclarator &&
+    parent.id.type === AST_NODE_TYPES.Identifier
+  ) {
+    return parent.id.name;
+  }
+  if (
+    (parent.type === AST_NODE_TYPES.MethodDefinition ||
+      parent.type === AST_NODE_TYPES.PropertyDefinition ||
+      parent.type === AST_NODE_TYPES.Property) &&
+    parent.key.type === AST_NODE_TYPES.Identifier
+  ) {
+    return parent.key.name;
+  }
+  return undefined;
+}
+
 /** Literal text of a string expression, ignoring interpolated/concatenated values. */
 function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
@@ -90,14 +136,20 @@ function staticText(node: TSESTree.Node): string {
 }
 
 /** Classify an expression as unsafe SQL construction, or `false` if it is not. */
-function classify(node: TSESTree.Node, requireSqlKeywords: boolean): UnsafeKind | false {
+function classify(
+  node: TSESTree.Node,
+  requireSqlKeywords: boolean,
+): UnsafeKind | false {
   let kind: UnsafeKind | false = false;
   // Concatenation: "SELECT ... " + value
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     kind = 'concat';
   }
   // Interpolation: `SELECT ... ${value}`
-  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length > 0) {
+  if (
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length > 0
+  ) {
     kind = 'template';
   }
   if (kind === false) return false;
@@ -113,9 +165,10 @@ function classify(node: TSESTree.Node, requireSqlKeywords: boolean): UnsafeKind 
 /**
  * Build a CWE-89 rule for the given sinks and remediation copy.
  *
- * Detects three shapes: direct concatenation into a sink, direct
- * interpolation into a sink, and a variable tainted by either (including via
- * `+=`) that is later passed to a sink.
+ * Detects four shapes: direct concatenation into a sink, direct
+ * interpolation into a sink, a variable tainted by either (including via
+ * `+=`) that is later passed to a sink, and either of those passed to a
+ * same-file helper that forwards the argument into a sink.
  */
 export function createSqlInjectionRule(
   config: SqlInjectionRuleConfig,
@@ -133,7 +186,8 @@ export function createSqlInjectionRule(
         noUnsafeQuery: formatLLMMessage({
           icon: MessageIcons.SECURITY,
           issueName: 'SQL Injection Risk',
-          description: 'Unsafe SQL query detected. Variable interpolation found.',
+          description:
+            'Unsafe SQL query detected. Variable interpolation found.',
           severity: 'CRITICAL',
           // Same source as meta.docs.cwe, so the emitted CVSS can never drift
           // from the documented one (security-cvss-docs-consistency.lock).
@@ -154,7 +208,8 @@ export function createSqlInjectionRule(
         unsafeTemplateLiteral: formatLLMMessage({
           icon: MessageIcons.SECURITY,
           issueName: 'SQL Injection Risk',
-          description: 'Unsafe SQL query construction detected (template literal).',
+          description:
+            'Unsafe SQL query construction detected (template literal).',
           severity: 'CRITICAL',
           cwe: config.meta.docs.cwe,
           owasp: 'A03:2021',
@@ -174,11 +229,25 @@ export function createSqlInjectionRule(
       // and the injection in the appended fragment (`sql += ` AND n =
       // ${n}``), which carries no keyword of its own.
       const sqlish = new Set<string>();
+      // Same-file query helpers: name -> index of the parameter this file was
+      // observed handing to a real sink. `pool.query(sql, params)` inside
+      // `const q = (sql, params) => …` makes `q` a sink at argument 0.
+      const wrappers = new Map<string, number>();
+      // Calls that would be findings *if* their callee turns out to be a
+      // wrapper. Deferred to Program:exit because a helper may be declared
+      // below its call site (hoisted `function`, or a class used top-down).
+      const pending: {
+        name: string;
+        index: number;
+        arg: TSESTree.Node;
+        kind: UnsafeKind | undefined;
+      }[] = [];
 
       const report = (node: TSESTree.Node, kind: UnsafeKind): void => {
         context.report({
           node,
-          messageId: kind === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
+          messageId:
+            kind === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
         });
       };
 
@@ -189,32 +258,82 @@ export function createSqlInjectionRule(
           if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
             const kind = classify(node.init, config.requireSqlKeywords);
             if (kind) tainted.set(node.id.name, kind);
-            if (SQL_KEYWORDS.test(staticText(node.init))) sqlish.add(node.id.name);
+            if (SQL_KEYWORDS.test(staticText(node.init)))
+              sqlish.add(node.id.name);
           }
         },
 
         // query += ` AND name = '${name}'`;
         AssignmentExpression(node: TSESTree.AssignmentExpression) {
-          if (node.operator === '+=' && node.left.type === AST_NODE_TYPES.Identifier) {
+          if (
+            node.operator === '+=' &&
+            node.left.type === AST_NODE_TYPES.Identifier
+          ) {
             // Skip the keyword gate when the target was already seeded with
             // SQL — the fragment alone rarely contains a keyword.
-            const gate = config.requireSqlKeywords && !sqlish.has(node.left.name);
+            const gate =
+              config.requireSqlKeywords && !sqlish.has(node.left.name);
             const kind = classify(node.right, gate);
             if (kind) tainted.set(node.left.name, kind);
           }
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          if (
-            node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-            node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-            !sinks.has(node.callee.property.name)
-          ) {
+          // The name this call is written with: `db.query(…)` -> `query`,
+          // `q(…)` -> `q`. Anything else (computed access, an immediately
+          // invoked expression) is out of reach, as it always was.
+          const isMember =
+            node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.callee.property.type === AST_NODE_TYPES.Identifier;
+          const calleeName = isMember
+            ? (
+                (node.callee as TSESTree.MemberExpression)
+                  .property as TSESTree.Identifier
+              ).name
+            : node.callee.type === AST_NODE_TYPES.Identifier
+              ? node.callee.name
+              : undefined;
+          if (calleeName === undefined) return;
+
+          // A driver sink is always a *method* call. A bare `query(…)` is some
+          // local function that happens to share the name, and stays a mere
+          // wrapper candidate — matching it as a sink would report every
+          // project with its own free-standing `query()` helper.
+          if (!isMember || !sinks.has(calleeName)) {
+            // Not a driver method. Bank it in case the callee turns out to be
+            // a local wrapper — the keyword gate is forced on here regardless
+            // of `requireSqlKeywords`, because "this identifier reaches a
+            // sink" is weaker evidence than a literal driver call, and an
+            // ungated instance would otherwise start reporting
+            // `log(`hello ${name}`)` the moment the file happened to define a
+            // `log` helper over `pool.query`.
+            for (const [index, arg] of node.arguments.entries()) {
+              if (arg.type === AST_NODE_TYPES.SpreadElement) continue;
+              const kind = classify(arg, true);
+              if (kind) pending.push({ name: calleeName, index, arg, kind });
+              else if (arg.type === AST_NODE_TYPES.Identifier)
+                pending.push({ name: calleeName, index, arg, kind: undefined });
+            }
             return;
           }
 
           const queryArg = node.arguments[0];
           if (!queryArg) return;
+
+          // A sink fed straight from a parameter is the wrapper shape:
+          // `(sql, params) => pool.query(sql, params)`. Record which argument
+          // position callers must treat as the query.
+          if (queryArg.type === AST_NODE_TYPES.Identifier) {
+            const fn = enclosingFunction(node);
+            const index =
+              fn?.params.findIndex(
+                (p) =>
+                  p.type === AST_NODE_TYPES.Identifier &&
+                  p.name === queryArg.name,
+              ) ?? -1;
+            const name = fn && index >= 0 ? callableName(fn) : undefined;
+            if (name !== undefined) wrappers.set(name, index);
+          }
 
           const direct = classify(queryArg, config.requireSqlKeywords);
           if (direct) {
@@ -225,6 +344,21 @@ export function createSqlInjectionRule(
           if (queryArg.type === AST_NODE_TYPES.Identifier) {
             const taint = tainted.get(queryArg.name);
             if (taint) report(queryArg, taint);
+          }
+        },
+
+        'Program:exit'() {
+          for (const { name, index, arg, kind } of pending) {
+            if (wrappers.get(name) !== index) continue;
+            if (kind) {
+              report(arg, kind);
+              continue;
+            }
+            // Tainted variable handed to the wrapper. `sqlish` keeps the
+            // forced keyword gate honest for the identifier path too.
+            const varName = (arg as TSESTree.Identifier).name;
+            const taint = tainted.get(varName);
+            if (taint && sqlish.has(varName)) report(arg, taint);
           }
         },
       };
