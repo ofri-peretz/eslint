@@ -11,6 +11,7 @@ import plugin, {
   rules,
   configs,
   plugin as namedPlugin,
+  noCommandInjectionInTool,
   noToolDescriptionInjection,
   noUnvalidatedToolArgs,
   requireToolInputSchema,
@@ -19,6 +20,7 @@ import plugin, {
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
     expect(Object.keys(rules).sort()).toEqual([
+      'no-command-injection-in-tool',
       'no-tool-description-injection',
       'no-unvalidated-tool-args',
       'require-tool-input-schema',
@@ -28,6 +30,7 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
     expect(rules['no-unvalidated-tool-args']).toBe(noUnvalidatedToolArgs);
     expect(rules['no-tool-description-injection']).toBe(noToolDescriptionInjection);
+    expect(rules['no-command-injection-in-tool']).toBe(noCommandInjectionInTool);
   });
 
   it('names itself for the oxlint loader', () => {
