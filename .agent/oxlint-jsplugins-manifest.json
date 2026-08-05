@@ -3420,6 +3420,7 @@
       "no-unreadable-iife"
     ],
     "mcp-sdk-security": [
+      "no-tool-description-injection",
       "require-tool-input-schema"
     ],
     "modernization": [
