@@ -149,8 +149,8 @@ SDKs and the MCP SDK. No rule may fire on both a Vercel-AI call and a raw-SDK ca
 
 | # | Rule | CWE | Sev | Note |
 |---|---|---|---|---|
-| A1 | `no-hardcoded-api-key` | CWE-798 | error | Ships on anthropic only; port to openai + gemini. |
-| A2 | `no-browser-api-key-exposure` | CWE-522 | error | Ships on openai (`dangerouslyAllowBrowser`); port the equivalent client-side construction to anthropic + gemini. |
+| A1 | `no-hardcoded-api-key` | CWE-798 | error | **Shipped all three** (#402) — factory `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. |
+| A2 | `no-browser-api-key-exposure` | CWE-522 | error | **Shipped openai + anthropic** — factory `createBrowserEscapeHatchRule`. **Gemini excluded**, see §5.4. |
 | A3 | `no-untrusted-content-in-prompt` | CWE-1427 | error | Untrusted input concatenated into a **system** prompt or instruction block. The CodeQL CWE-1427 query family; the headline rule of this plugin family. |
 | A4 | `no-unsafe-output-handling` | CWE-94 / CWE-78 | error | Model output flowing into `eval`/`exec`/`innerHTML`/a query sink. The core agentic risk: the model is an untrusted source. |
 | A5 | `no-sensitive-in-prompt` | CWE-200 | error | PII/secrets shipped to a third-party inference API. |
@@ -211,7 +211,7 @@ profile on the corpus.
 | W0 | **Done.** PR #335 merged: agentic peers fixed, AI SDK family landed, `eslint-plugin-pg` / `-jwt` superseded by the `-security` renames. ORM peers were verified correct already. Remaining: the two `npm deprecate` calls need an interactive `npm login` — `latest` on both old packages still carries no notice, so installs are silent today. |
 | W1 | **Done.** O2 `no-unscoped-mutation` for prisma / drizzle / knex — factory `createUnscopedMutationRule`, self-suppression lock verified by reverting the guard; **sequelize deliberately excluded**, see §5.1. O4 `require-tls` (#373) for knex / mysql / sequelize / typeorm — `createRequireTlsRule`, URL findings scoped to connection positions. O1 `no-raw-identifier-interpolation` (#385) for drizzle / prisma only — `createRawIdentifierRule`; §5.2 says why two and not seven. O5 `no-hardcoded-credentials` (#386) — `createHardcodedCredentialsRule`. O3 `no-mass-assignment` (#389) — `createMassAssignmentRule`. All at 100/100/100/100. |
 | W2 | **Done — 3 of 4 shipped, M4 dropped with cause.** M2 `no-tool-description-injection` (#396), M5 `no-command-injection-in-tool` (#397), M3 `no-unvalidated-tool-args` (#400). **M4 `no-path-traversal-in-resource` does not ship** — see §5.3. All rules held out of `minimal` / `recommended` pending W6, locked by a preset test. |
-| W3 | not started |
+| W3 | **A1 shipped** (#402): `no-hardcoded-api-key` across openai / anthropic / gemini via `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. **A2 shipped** for openai + anthropic via `createBrowserEscapeHatchRule` — gemini has no equivalent flag, see §5.4. A3–A5 not started. |
 | W4 | not started |
 | W5 | not started |
 | W6 | not started |
@@ -316,7 +316,30 @@ With that fixed there is nothing left for M4 to detect that would not be a
 second plugin reporting the same line. **W2 ships 3 of 4 rules; the fourth is
 the fix it exposed.**
 
-### 5.4 Installing in a fresh worktree
+### 5.4 A2 ships to 2 SDKs, not 3 — Gemini has no escape hatch
+
+`no-browser-api-key-exposure` detects `dangerouslyAllowBrowser: true`. Before
+porting it, the flag was looked up in each SDK's **published tarball** rather
+than assumed:
+
+| SDK | Flag |
+|---|---|
+| `openai@6` | `dangerouslyAllowBrowser` |
+| `@anthropic-ai/sdk@0.115` | `dangerouslyAllowBrowser` (`client.d.ts:140`) |
+| `@google/generative-ai@0.24` | none |
+| `@google/genai@2.15` | none |
+
+Anthropic ports exactly — same flag, same semantics, and the SDK's own JSDoc
+says client-side use "risks exposing your secret API credentials to attackers".
+
+Neither Gemini SDK has one, because neither refuses the browser in the first
+place. There is no flag to detect, and the real risk — using a Gemini key from
+client-side code at all — is not statically visible: a linter cannot tell
+whether a file ships to a browser. A rule invented to fill the row would report
+correct server code. **Gemini does not get this rule**, for the same reason O1
+covers 2 drivers and not 7 (§5.2).
+
+### 5.5 Installing in a fresh worktree
 
 A plain install, run outside the agent sandbox:
 

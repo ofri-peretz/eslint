@@ -1,5 +1,11 @@
 {
   "eslint-plugin-anthropic-security": {
+    "no-browser-api-key-exposure": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "The SDK's browser escape hatch turned on with a literal true. Gated on the SDK import. An explicit false, a spread, or a runtime-decided value all stay silent rather than guess. Two SDKs carry this flag, not three: neither Gemini client has an equivalent (verified against the published tarballs)."
+    },
     "no-hardcoded-api-key": {
       "environment": "universal",
       "detection": "structural-pattern",

@@ -4,12 +4,18 @@
 
 import { describe, it, expect } from 'vitest';
 
-import plugin, { rules, configs, plugin as namedPlugin, noHardcodedApiKey } from './index';
+import plugin, { rules, configs, plugin as namedPlugin, noHardcodedApiKey, noBrowserApiKeyExposure } from './index';
 
 describe('eslint-plugin-anthropic-security', () => {
   it('exposes every rule under its documented id', () => {
-    expect(Object.keys(rules).sort()).toEqual(['no-hardcoded-api-key']);
+    expect(Object.keys(rules).sort()).toEqual([
+      'no-browser-api-key-exposure',
+      'no-hardcoded-api-key',
+    ]);
     expect(rules['no-hardcoded-api-key']).toBe(noHardcodedApiKey);
+    // Reference equality, not just presence: a rule id can be wired to the
+    // wrong module and every id-based assertion still passes.
+    expect(rules['no-browser-api-key-exposure']).toBe(noBrowserApiKeyExposure);
   });
 
   it('names itself for the oxlint loader', () => {
@@ -22,6 +28,8 @@ describe('eslint-plugin-anthropic-security', () => {
     for (const config of Object.values(configs)) {
       expect(config.plugins).toHaveProperty('anthropic-security');
       expect(config.rules?.['anthropic-security/no-hardcoded-api-key']).toBe('error');
+      // Same severity as the identical rule in eslint-plugin-openai-security.
+      expect(config.rules?.['anthropic-security/no-browser-api-key-exposure']).toBe('error');
     }
   });
 
