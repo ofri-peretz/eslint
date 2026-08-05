@@ -13,7 +13,7 @@ name: Lighthouse (Web Vitals Budget)
 #     Rationale: single-pass Lighthouse on a shared GitHub runner has
 #     ~50–100ms of LCP jitter from cold CPU / network — too noisy to use
 #     as a PR-blocking gate. We were treating noise as failure.
-#   • Schedule (weekly Sunday)      → HARD GATE. Same job, same config,
+#   • Schedule (weekly Wednesday)   → HARD GATE. Same job, same config,
 #     but a budget breach exits non-zero and pages the perf owner. This
 #     is the canonical "did we regress?" check.
 #   • workflow_dispatch (manual)    → HARD GATE. Use for opt-in PR runs
@@ -21,7 +21,7 @@ name: Lighthouse (Web Vitals Budget)
 #
 # Config: apps/docs/lighthouserc.json
 # Triggers: ready_for_review / `run-full-ci` label / synchronize, plus the
-# weekly Sunday cron. See AGENTS.md "Promotion gate".
+# weekly Wednesday cron. See AGENTS.md "Promotion gate".
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -40,6 +40,19 @@ on:
       # on eslint-devkit at all (checked its manifest), so a devkit change
       # cannot move a single web-vital. packages/ui replaces it: that one does
       # ship into the docs bundle.
+      #
+      # Same reasoning, one level down. lighthouserc.json collects exactly four
+      # URLs — /, /articles, /articles?tag=jwt, /articles?page=2 — so:
+      #   • content/** is every docs + rule page, and not one of them is
+      #     collected. A new rule page cannot move a measured vital.
+      #   • src/data/** is generated rule-count JSON. It does render on /, but
+      #     a change there is the text "458" becoming "459".
+      # Both were pulling the full 9.9m job onto routine rule PRs. The
+      # negations sit last because GitHub takes the LAST matching pattern:
+      # lighthouserc.json and packages/ui never match them, so they stay
+      # included, while a content/ or src/data/ path ends on a negation.
+      - "!apps/docs/content/**"
+      - "!apps/docs/src/data/**"
   workflow_dispatch:
   schedule:
     - cron: "5 4 * * 3" # Wed 04:05 UTC — weekly (staggered off the Sunday burst)
@@ -123,7 +136,7 @@ jobs:
       - name: Annotate PR when budgets breach (advisory)
         if: github.event_name == 'pull_request' && steps.lhci.outcome == 'failure'
         run: |
-          echo "::warning title=Lighthouse budget breached (advisory)::Lighthouse assertions failed but did not block this PR. Download the lighthouse-report artifact for full diagnostics, or re-run with the \`run-full-ci\` label / manual dispatch to enforce. The weekly Sunday cron still enforces the budget on main."
+          echo "::warning title=Lighthouse budget breached (advisory)::Lighthouse assertions failed but did not block this PR. Download the lighthouse-report artifact for full diagnostics, or re-run with the \`run-full-ci\` label / manual dispatch to enforce. The weekly Wednesday cron still enforces the budget on main."
 
       - name: Upload Lighthouse artifacts
         if: always()
