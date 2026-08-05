@@ -59,9 +59,9 @@ Hello
 
 ## ⚙️ Options
 
-| Option             | Type       | Default                                                                                                                                                            | Description                              |
-| ------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| `aiOutputPatterns` | `string[]` | `['result.text', 'response.text', 'completion', 'generated', 'aiOutput', 'aiResponse', 'llmOutput', 'llmResponse', 'modelOutput', 'textContent', '.text']`          | Variable patterns that suggest AI output |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `aiOutputPatterns` | `string[]` | `["result.text","response.text","completion","generated","aiOutput","aiResponse","llmOutput","llmResponse","modelOutput","textContent",".text"]` | Variable patterns that suggest AI output |
 
 ## 🛡️ Why This Matters
 

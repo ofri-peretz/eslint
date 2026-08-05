@@ -78,11 +78,11 @@ app.get('/health', healthCheck);
 
 ## Options
 
-| Option           | Type       | Default                                                     | Description                                                       |
-| ---------------- | ---------- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
-| `criticalPaths`  | `string[]` | `['password', 'credential', 'account', 'payment', …]`        | Path fragments that mark a route as a critical function (replaces the default set) |
-| `publicPaths`    | `string[]` | `['login', 'signup', 'reset', 'webhook', 'health', …]`       | Path fragments that are public by design and never reported       |
-| `authMiddleware` | `string[]` | `[]`                                                         | Extra middleware names accepted as authentication                 |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `criticalPaths` | `string[]` | — | Path fragments that mark a route as critical |
+| `publicPaths` | `string[]` | — | Path fragments that are public by design |
+| `authMiddleware` | `string[]` | — | Extra middleware names accepted as authentication |
 
 ```json
 {

@@ -85,6 +85,11 @@ let token = response.jwt; // Not persisted
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "browser-security/no-jwt-in-storage": [

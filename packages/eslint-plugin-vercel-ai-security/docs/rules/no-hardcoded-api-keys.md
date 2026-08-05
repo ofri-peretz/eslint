@@ -78,9 +78,9 @@ const openai = createOpenAI();
 
 ## ⚙️ Options
 
-| Option            | Type       | Default                                                            | Description                          |
-| ----------------- | ---------- | ------------------------------------------------------------------ | ------------------------------------ |
-| `apiKeyPatterns`  | `string[]` | `['apiKey', 'api_key', 'token', 'secret', 'credentials']`          | Property names that contain API keys |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `apiKeyPatterns` | `string[]` | `["apiKey","api_key","token","secret","credentials"]` | Property names that contain API keys |
 
 ## 🛡️ Why This Matters
 

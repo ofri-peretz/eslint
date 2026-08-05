@@ -128,3 +128,9 @@ const users = await db.collection('users').find({}).toArray(); // Missing projec
 
 - [MongoDB Projections](https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/)
 - [CWE-200](https://cwe.mitre.org/data/definitions/200.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

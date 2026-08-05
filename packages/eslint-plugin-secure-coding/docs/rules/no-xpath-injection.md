@@ -91,11 +91,14 @@ const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"
 
 ## Options
 
-| Option                     | Type       | Default                            | Description                         |
-| -------------------------- | ---------- | ---------------------------------- | ----------------------------------- |
-| `xpathFunctions`           | `string[]` | `['evaluate', 'selectSingleNode']` | XPath functions to check            |
-| `xpathValidationFunctions` | `string[]` | `['validateXPath', 'escapeXPath']` | Functions that validate XPath input |
-| `safeXpathConstructors`    | `string[]` | `['buildXPath', 'createXPath']`    | Safe XPath builder functions        |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `xpathFunctions` | `string[]` | `["evaluate","selectSingleNode","selectNodes","xpath","select"]` | XPath evaluation methods treated as query sinks |
+| `safeXpathConstructors` | `string[]` | `["buildXPath","createXPath","safeXPath","xpathBuilder"]` | Builders that produce a parameterized XPath expression |
+| `xpathValidationFunctions` | `string[]` | `["validateXPath","escapeXPath","sanitizeXPath","cleanXPath"]` | Function names that escape or validate XPath input |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as XPath sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

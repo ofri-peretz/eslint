@@ -127,11 +127,14 @@ if (result.success) {
 
 ## Options
 
-| Option                     | Type       | Default                       | Description                             |
-| -------------------------- | ---------- | ----------------------------- | --------------------------------------- |
-| `userInputVariables`       | `string[]` | `['req', 'request', 'input']` | User input variable patterns            |
-| `safeTypeCheckFunctions`   | `string[]` | `['Array.isArray']`           | Safe type checking functions            |
-| `allowInstanceofSameRealm` | `boolean`  | `false`                       | Allow instanceof in same-realm contexts |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
+| `safeTypeCheckFunctions` | `string[]` | `["isArray","isString","isNumber","isObject","validateType","checkType"]` | Function names that count as a type check |
+| `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

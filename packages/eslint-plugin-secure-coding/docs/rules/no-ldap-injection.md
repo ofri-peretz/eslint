@@ -91,11 +91,14 @@ const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 
 ## Options
 
-| Option                    | Type       | Default                        | Description             |
-| ------------------------- | ---------- | ------------------------------ | ----------------------- |
-| `ldapFunctions`           | `string[]` | `['search', 'bind', 'modify']` | LDAP functions to check |
-| `ldapEscapeFunctions`     | `string[]` | `['escape.filterValue']`       | LDAP escape functions   |
-| `ldapValidationFunctions` | `string[]` | `['validateLdapInput']`        | Validation functions    |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ldapFunctions` | `string[]` | `["search","bind","modify","add","delete","compare","searchAsync"]` | LDAP client methods treated as query sinks |
+| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
+| `ldapValidationFunctions` | `string[]` | `["validateLdapInput","sanitizeLdapFilter","cleanLdapValue","checkLdapFilter"]` | Function names that count as LDAP input validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as LDAP sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 
