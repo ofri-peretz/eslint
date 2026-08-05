@@ -69,6 +69,14 @@ const { payload } = await jwtVerify(token, key);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowHeaderInspection` | `boolean` | `false` | Allow decode() for reading header before verification |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `["@decoded-header-only","@verified-separately"]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+
+
 ```javascript
 {
   "jwt/no-decode-without-verify": ["error", {

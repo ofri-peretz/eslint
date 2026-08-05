@@ -142,9 +142,9 @@ export const handler = async (event) => {
 
 ## Options
 
-| Option         | Type      | Default | Description                         |
-| -------------- | --------- | ------- | ----------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow permissive CORS in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow permissive CORS in test files |
 
 ```json
 {

@@ -73,9 +73,9 @@ const weatherTool = tool({
 
 ## ⚙️ Options
 
-| Option         | Type      | Default | Description                                       |
-| -------------- | --------- | ------- | ------------------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow tools without `inputSchema` in test files   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow tools without inputSchema in test files |
 
 ## 🛡️ Why This Matters
 

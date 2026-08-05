@@ -75,7 +75,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
           },
           allowWithComment: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Allow an empty catch block that carries an explanatory comment'
           },
         },
         additionalProperties: false,

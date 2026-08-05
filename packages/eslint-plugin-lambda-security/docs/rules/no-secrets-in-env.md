@@ -83,9 +83,10 @@ async function getSecret() {
 
 ## Options
 
-| Option         | Type      | Default | Description         |
-| -------------- | --------- | ------- | ------------------- |
-| `allowInTests` | `boolean` | `true`  | Allow in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalPatterns` | `string[]` | `[]` | Extra environment-variable name patterns to treat as secrets |
 
 ```json
 {

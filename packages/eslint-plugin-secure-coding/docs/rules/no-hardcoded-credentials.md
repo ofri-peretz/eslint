@@ -230,16 +230,18 @@ contains, so those still report.
 
 ## Options
 
-| Option                  | Type       | Default | Description                                                       |
-| ----------------------- | ---------- | ------- | ----------------------------------------------------------------- |
-| `ignorePatterns`        | `string[]` | `[]`    | Regex patterns to ignore (e.g., `['^test-']` for test keys)       |
-| `allowInTests`          | `boolean`  | `false` | Allow credentials in test files (`.test.ts`, `.spec.ts`)          |
-| `minLength`             | `number`   | `8`     | Minimum length for credential detection (except common passwords) |
-| `detectApiKeys`         | `boolean`  | `true`  | Detect API keys (Stripe, AWS, etc.)                               |
-| `detectPasswords`       | `boolean`  | `true`  | Detect common weak passwords                                      |
-| `detectTokens`          | `boolean`  | `true`  | Detect JWT and OAuth tokens                                       |
-| `detectDatabaseStrings` | `boolean`  | `true`  | Detect database connection strings with credentials               |
-| `allowPlaceholders`     | `boolean`  | `true`  | Skip self-evident placeholders (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore |
+| `allowInTests` | `boolean` | `false` | Allow credentials in test files |
+| `minLength` | `number` | `8` | Minimum length for credential detection |
+| `detectApiKeys` | `boolean` | `true` | Detect API keys |
+| `detectPasswords` | `boolean` | `true` | Detect passwords |
+| `detectTokens` | `boolean` | `true` | Detect tokens |
+| `detectDatabaseStrings` | `boolean` | `true` | Detect database connection strings |
+| `customPatterns` | `object[]` | `[]` | Custom credential patterns to detect |
+| `strategy` | `"env"` \| `"config"` \| `"vault"` \| `"auto"` | `"auto"` | Strategy for fixing hardcoded credentials (auto = smart detection) |
+| `allowPlaceholders` | `boolean` | `true` | Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
 
 ### Ignoring Test Credentials
 

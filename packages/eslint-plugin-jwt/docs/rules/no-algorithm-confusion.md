@@ -121,3 +121,12 @@ jwt.verify(token, config.key, { algorithms: ['HS256'] }); // Key type unknown
 
 - [PortSwigger - Algorithm Confusion](https://portswigger.net/web-security/jwt/algorithm-confusion)
 - [Auth0 - Critical JWT Vulnerabilities](https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `symmetricAlgorithms` | `string[]` | `["HS256","HS384","HS512"]` | Algorithms to flag when used with public keys |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |

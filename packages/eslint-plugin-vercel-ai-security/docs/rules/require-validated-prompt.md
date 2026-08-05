@@ -80,11 +80,11 @@ await streamText({
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                                                                         | Description                                  |
-| -------------------- | ---------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `validatorFunctions` | `string[]` | `['validate', 'sanitize', 'escape', 'filter', 'clean', 'verify', 'check']`                      | Function names considered as safe validators |
-| `userInputPatterns`  | `string[]` | `['userInput', 'input', 'query', 'question', 'message', 'prompt', 'request', 'body', 'params']` | Variable patterns suggesting user input      |
-| `allowInTests`       | `boolean`  | `true`                                                                                          | Skip validation in test files                |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `validatorFunctions` | `string[]` | `["validateInput","sanitizeInput","validatePrompt","sanitizePrompt","escapeInput","cleanInput"]` | Function names considered as input validators |
+| `userInputPatterns` | `string[]` | `["userInput","userPrompt","userMessage","userQuery","userContent","input","query","message","req.body","request.body"]` | Variable patterns that suggest user input (regex) |
+| `allowInTests` | `boolean` | `false` | Allow unsafe patterns in test files |
 
 ### Example Configuration
 

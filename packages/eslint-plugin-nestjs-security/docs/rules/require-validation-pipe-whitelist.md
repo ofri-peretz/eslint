@@ -93,6 +93,12 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `requireForbidNonWhitelisted` | `boolean` | `false` | Also require `forbidNonWhitelisted: true`, rejecting rather than stripping |
+
+
 ```ts
 'nestjs-security/require-validation-pipe-whitelist': ['error', {
   allowInTests: true,

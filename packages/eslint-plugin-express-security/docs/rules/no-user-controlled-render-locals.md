@@ -205,9 +205,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Options
 
-| Option            | Type       | Default | Description                                                                                                           |
-| ----------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| `allowSanitizers` | `string[]` | `[]`    | Callee names that make a wrapped locals expression safe (plain `pick(...)` and member `_.pick(...)` calls both match) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowSanitizers` | `string[]` | — | Callee names that sanitize locals (e.g. ["pick", "sanitizeLocals"]); calls to them are not flagged |
 
 ## Best Practices
 

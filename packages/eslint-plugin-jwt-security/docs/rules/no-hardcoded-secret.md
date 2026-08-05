@@ -148,3 +148,12 @@ jwt.sign(payload, actualKey); // Identifier treated as safe
 
 - [CWE-798: Hardcoded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [12 Factor App - Config](https://12factor.net/config)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `envPatterns` | `string[]` | `[]` | Patterns that indicate safe environment variable usage |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |

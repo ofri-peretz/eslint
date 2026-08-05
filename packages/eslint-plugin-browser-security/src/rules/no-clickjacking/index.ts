@@ -187,15 +187,15 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           trustedSources: {
             type: 'array',
             items: { type: 'string' },
-            default: ['self', 'same-origin'],
+            default: ['self', 'same-origin'], description: 'Frame-ancestor sources treated as safe'
           },
           requireFrameBusting: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Require frame-busting code in addition to headers'
           },
           detectTransparentOverlays: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Report transparent overlays positioned over clickable elements'
           },
           trustedSanitizers: {
             type: 'array',

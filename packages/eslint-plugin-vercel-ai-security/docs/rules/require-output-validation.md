@@ -58,10 +58,10 @@ respond({ message: sanitize(result.text) });
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                           | Description                            |
-| -------------------- | ---------- | ------------------------------------------------- | -------------------------------------- |
-| `displayPatterns`    | `string[]` | `['render', 'display', 'show', 'send']`           | Patterns suggesting display operations |
-| `validatorFunctions` | `string[]` | `['validate', 'verify', 'factCheck', 'sanitize']` | Functions that validate output         |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `displayPatterns` | `string[]` | `["render","display","show","print","send","respond","setContent","setText","setMessage","Response.json"]` | Patterns suggesting display operations |
+| `validatorFunctions` | `string[]` | `["validate","verify","check","sanitize","filter","validateOutput","factCheck","verifyFacts"]` | Functions that validate output |
 
 ## 🛡️ Why This Matters
 
