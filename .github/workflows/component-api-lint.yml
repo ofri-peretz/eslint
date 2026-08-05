@@ -46,13 +46,20 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
 
-      - name: Build eslint-plugin-react-features
-        # Root eslint.config.mjs imports the plugin directly and binds
-        # `configs.componentApi.rules` for packages/ui primitives, so the
-        # rule source must be built (package.json#main → dist/src/index.js)
-        # before eslint can resolve it. Local lefthook hits cached dist
-        # artifacts so the gap isn't visible there.
-        run: npx turbo run build --filter=eslint-plugin-react-features
+      - name: Build the workspace plugins the root config imports
+        # Root eslint.config.mjs imports BOTH of these directly, and each
+        # resolves through package.json#main → dist/src/index.js, so the lint
+        # step below cannot even load the config until they are built.
+        # react-features carries the componentApi rules this gate enforces;
+        # react-a11y is imported at the top of the same file, so omitting it
+        # fails the whole run with ERR_MODULE_NOT_FOUND before a single rule
+        # executes. Keep this filter in sync with the imports in
+        # eslint.config.mjs. Local lefthook hits cached dist artifacts, so a
+        # missing entry here is invisible until CI.
+        run: >-
+          npx turbo run build
+          --filter=eslint-plugin-react-features
+          --filter=eslint-plugin-react-a11y
 
       - name: Run vitest on component-api rules
         run: npx vitest run src/tests/component-api/
