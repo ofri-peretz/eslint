@@ -1009,6 +1009,12 @@
       "confidence": "enforcement",
       "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports — that split is what keeps one line from carrying findings from two plugins."
     },
+    "no-tool-description-injection": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Tool descriptions and titles reach the model as instruction text, so they must be static. Reports anything that is not a literal, an interpolation-free template, or a concatenation of those. A const holding a literal is a deliberate false negative."
+    },
     "require-tool-input-schema": {
       "environment": "mcp",
       "detection": "structural-pattern",
