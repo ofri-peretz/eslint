@@ -97,9 +97,9 @@ app.get('/invoices', (req, res) =>
 
 ## Options
 
-| Option          | Type       | Default                                          | Description                                              |
-| --------------- | ---------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `lookupMethods` | `string[]` | `['findById', 'findByPk', 'findOne', 'findUnique', …]` | Lookup methods treated as a fetch-by-key (replaces the default set) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `lookupMethods` | `string[]` | — | Lookup methods treated as a fetch-by-key |
 
 ```json
 {

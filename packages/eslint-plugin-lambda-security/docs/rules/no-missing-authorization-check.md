@@ -62,3 +62,10 @@ export const handler = async (event) => {
   }
 }
 ```
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow missing auth in test files |
+| `handlerPatterns` | `string[]` | `[]` | Handler file patterns to check |

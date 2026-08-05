@@ -150,11 +150,11 @@ app.use(
 
 ## Options
 
-| Option             | Type       | Default                                 | Description                             |
-| ------------------ | ---------- | --------------------------------------- | --------------------------------------- |
-| `allowInTests`     | `boolean`  | `false`                                 | Allow missing CORS checks in test files |
-| `trustedLibraries` | `string[]` | `['cors', '@koa/cors', 'express-cors']` | Trusted CORS libraries to recognize     |
-| `ignorePatterns`   | `string[]` | `[]`                                    | Additional safe patterns to ignore      |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CORS checks in test files |
+| `trustedLibraries` | `string[]` | `[]` | Custom CORS libraries to trust (wildcard origins in these libraries will not be reported) |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ## Rule Logic Flow
 

@@ -130,12 +130,12 @@ const url = "https://api.example.com";
 
 ### Options
 
-| Option               | Type       | Default                      | Description                    |
-| -------------------- | ---------- | ---------------------------- | ------------------------------ |
-| `allowInTests`       | `boolean`  | `false`                      | Allow unencrypted in tests     |
-| `insecureProtocols`  | `string[]` | `['http', 'ws', ...]`        | Insecure protocol patterns     |
-| `secureAlternatives` | `object`   | `{http: 'https', ws: 'wss'}` | Mapping to secure alternatives |
-| `ignorePatterns`     | `string[]` | `[]`                         | Additional patterns to ignore  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow unencrypted transmission in test files |
+| `insecureProtocols` | `string[]` | `[]` | Insecure protocol patterns to detect |
+| `secureAlternatives` | `object` | `{}` | Mapping of insecure protocols to their secure alternatives |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ### Example Configuration
 

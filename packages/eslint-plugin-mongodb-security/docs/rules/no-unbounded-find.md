@@ -118,3 +118,9 @@ User.find().limit(config.maxResults);
 
 - [MongoDB cursor.limit()](https://www.mongodb.com/docs/manual/reference/method/cursor.limit/)
 - [CWE-400](https://cwe.mitre.org/data/definitions/400.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

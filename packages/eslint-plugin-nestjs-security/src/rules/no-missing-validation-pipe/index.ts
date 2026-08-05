@@ -102,9 +102,9 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalPipes: { type: 'boolean', default: true },
-          assumeGlobalPipes: { type: 'boolean', default: false },
-          requireExplicitPipe: { type: 'boolean', default: false },
+          detectGlobalPipes: { type: 'boolean', default: true, description: 'Look for a globally registered ValidationPipe before reporting' },
+          assumeGlobalPipes: { type: 'boolean', default: false, description: 'Assume a global ValidationPipe exists even if none is found' },
+          requireExplicitPipe: { type: 'boolean', default: false, description: 'Require a per-handler pipe even when a global one is registered' },
         },
         additionalProperties: false,
       },

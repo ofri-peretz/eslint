@@ -63,9 +63,10 @@ const server = new ApolloServer({
 
 ## Options
 
-| Option         | Type      | Default | Description                       |
-| -------------- | --------- | ------- | --------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow introspection in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowInDevelopment` | `boolean` | `true` | Allow introspection when the code is guarded by a development check |
 
 ```json
 {

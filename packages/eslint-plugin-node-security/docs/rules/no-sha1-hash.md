@@ -184,3 +184,9 @@ sha1(data);
 - **[NIST Transition from SHA-1](https://csrc.nist.gov/projects/hash-functions)** - NIST guidance on hash function transition
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
 - **[crypto-hash Package](https://www.npmjs.com/package/crypto-hash)** - Package documentation with SHA-1 warning
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow SHA1 in test files |

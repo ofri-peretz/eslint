@@ -1,5 +1,171 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.8.0
+
+### Minor Changes
+
+- [#373](https://github.com/ofri-peretz/eslint/pull/373) [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `require-tls` (CWE-319) to the Knex, mysql2, Sequelize and TypeORM security plugins.
+
+  Reports two distinct failures, because they do not share a remediation:
+
+  - **`tlsDisabled`** — the connection is plaintext (`ssl: false`, `?sslmode=disable`).
+    Every query, every row and the credentials that open the session cross the
+    network in the clear.
+  - **`certificateValidationDisabled`** — `rejectUnauthorized: false` (or
+    `trustServerCertificate: true` on mssql, which inverts the polarity). The
+    traffic is encrypted but the server is never authenticated, so the client
+    completes a handshake just as willingly with whoever answered in the
+    database's place. The fix is to supply the CA, never to switch the check off.
+
+  The detection gate is a _database connection config_ — driver import plus a
+  connection-shaped sibling key — which is what keeps the rule out of
+  `eslint-plugin-node-security`, where a bare `rejectUnauthorized: false` would
+  also match every https agent and fetch option in the repo, and double-report
+  this line from two plugins.
+
+  A value the rule cannot read statically (`ssl: useTls`) is never reported. That
+  is a deliberate false negative in exchange for findings that are always real.
+
+  Not shipped for `prisma-security` (connection config lives in `schema.prisma`,
+  not JavaScript), `drizzle-security` (delegates connection setup to the
+  underlying driver, which its own plugin covers) or `sqlite-security` (a local
+  file, no network to protect).
+
+- [#391](https://github.com/ofri-peretz/eslint/pull/391) [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now follows same-file query helpers
+
+  The rule only ever treated a literal driver method call as a sink. Real
+  codebases do not call `client.query` at every call site — they wrap it once:
+
+  ```ts
+  const q = (sql: string, params: unknown[]) => pool.query(sql, params);
+
+  q(`SELECT * FROM users WHERE id = ${userInput}`, []); // was silent
+  q('SELECT * FROM users WHERE id = ' + userInput, []); // was silent
+  ```
+
+  Both of those are textbook CWE-89 and both went unreported — not because the
+  helper was hard to reach, but because the callee was named `q` instead of
+  `query`. The helper being in the _same file_, three lines above, made no
+  difference. Any project that wraps its driver once, which is most of them, was
+  getting no SQL injection coverage at all from this rule.
+
+  A function whose parameter is handed straight to a driver sink is now itself a
+  sink at that argument position, and calls to it are checked like the driver call
+  they stand for. `function` declarations, arrow functions in a `const`, class
+  methods and object-literal methods are all traced, including when the helper is
+  declared below its call site. Concatenation, interpolation, and a
+  previously-tainted variable passed to the helper all report.
+
+  Findings through a helper require the string to contain SQL keywords, even for
+  instances configured with `requireSqlKeywords: false` (`eslint-plugin-pg`).
+  "This identifier eventually reaches a sink" is weaker evidence than a literal
+  driver call, and without the gate a file that defined any helper over
+  `pool.query` would start reporting unrelated calls like ``log(`hello ${name}`)``.
+  A bare `query(...)` with no member access is likewise never treated as a driver
+  sink — only as a possible helper.
+
+  Parameterized calls through a helper stay silent, which is what
+  [#261](https://github.com/ofri-peretz/eslint/issues/261) asked for:
+  ``q(`SELECT * FROM users WHERE id = $1`, [id])`` interpolates nothing and is
+  safe at any distance.
+
+  Helpers imported from another module are still not traced — that needs type
+  information the rule does not request. This is documented as a known false
+  negative rather than silently missing.
+
+  Affects `no-unsafe-query` in all eight SQL plugins: `pg`, `mysql-security`,
+  `prisma-security`, `drizzle-security`, `knex-security`, `sqlite-security`,
+  `typeorm-security` and `sequelize-security`.
+
+### Patch Changes
+
+- [#377](https://github.com/ofri-peretz/eslint/pull/377) [`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Complete the logo row across every published package.
+
+  The six AI SDK family plugins landed after the logo row shipped, so they had no
+  marks; @interlace/eslint-devkit never had a header row at all. All of them now
+  carry Interlace -> ecosystem -> oxlint -> ESLint (devkit has no ecosystem mark).
+
+  The four AI SDK READMEs are also brought to the canonical structure they were
+  missing: Philosophy, Getting Started, Configuration Presets, Compatibility,
+  Related Plugins, and the 11-column rule table with the type-awareness column.
+
+  README-only change; no rule behaviour is affected. The patch bump is what
+  carries the new README onto npm, which only refreshes a package README on
+  publish.
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Declare what we support, load only what we use
+
+  **`tslib` is gone from every package.** It was a NON-optional peer of
+  `@interlace/eslint-devkit`, so all 26 plugins declared it as a dependency to
+  satisfy that peer — 124 kB every consumer installed so twelve
+  `require("tslib")` calls could resolve. The shipped JavaScript now inlines
+  the TypeScript helpers instead (`--importHelpers false` on the emit pass that
+  already re-writes it), costing ~9.5 kB in devkit. Zero `tslib` requires remain
+  anywhere; verified by installing every plugin with no `tslib` in the tree and
+  loading all 26 with every rule intact.
+
+  **`eslint-plugin-import-next` had a phantom dependency.** Its rules
+  `require("typescript")` at module load, but it was declared in neither
+  `dependencies` nor `peerDependencies` — it worked only because something else
+  in the tree happened to install it. A clean install crashed the whole plugin,
+  not just the type-aware rules. `typescript` is now a required peer, which is
+  what the code actually needs.
+
+  **23 "technologies we support" declarations did nothing.** Seven plugins
+  listed their target libraries in `peerDependenciesMeta` with no matching
+  `peerDependencies` entry, and npm ignores meta for a package that is not
+  declared a peer — verified by installing `eslint-plugin-express-security` and
+  watching nothing install and nothing warn. `eslint-plugin-jwt` appeared to
+  support six JWT libraries and formally supported none. All 23 are now real
+  optional peers, matching the convention `pg`, `mongodb`, `prisma` and the
+  other nine already followed:
+
+  | plugin                                                          | technologies now actually declared                                                                    |
+  | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `eslint-plugin-jwt`                                             | jsonwebtoken, @nestjs/jwt, express-jwt, jose, jwks-rsa, jwt-decode                                    |
+  | `eslint-plugin-lambda-security`                                 | @aws-sdk/client-lambda, @middy/core, @middy/http-cors, @middy/http-security-headers, @middy/validator |
+  | `eslint-plugin-express-security`                                | express, helmet, cors, csurf, express-rate-limit                                                      |
+  | `eslint-plugin-nestjs-security`                                 | @nestjs/common, @nestjs/throttler, class-validator, class-transformer                                 |
+  | `eslint-plugin-vercel-ai-security`                              | ai                                                                                                    |
+  | `eslint-plugin-maintainability`, `eslint-plugin-react-features` | typescript                                                                                            |
+
+  All optional, so nothing is installed on the consumer’s behalf — the
+  declaration is the supported-technology signal, which is exactly what it was
+  meant to be.
+
+  **A new gate compares declared dependencies against what the emitted
+  JavaScript actually loads**, in both directions: a `require` with no
+  declaration (works until someone installs cleanly) and a declaration nothing
+  requires (weight every consumer pays). It understands that a dependency may
+  exist to satisfy an optional peer of another dependency, which is why
+  `eslint-plugin-import-next` legitimately declares `oxc-resolver` that devkit
+  lazily loads.
+
+- [#379](https://github.com/ofri-peretz/eslint/pull/379) [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now reports CWE-89 on the template-literal path, not just the concatenation path
+
+  `createSqlInjectionRule` builds two findings for the same vulnerability and picks
+  between them on shape: `noUnsafeQuery` for concatenation, `unsafeTemplateLiteral`
+  for an interpolated template. Only the first carried standards metadata, so a
+  finding like this
+
+  ```js
+  db.query(`SELECT * FROM users WHERE id = ${userInput}`);
+  ```
+
+  was emitted with no CWE, no OWASP category and no compliance tags — while the
+  equivalent `'...' + userInput` reported `CWE-89 OWASP:A03 CVSS:9.8`. Anything
+  grouping findings by CWE (SARIF consumers, security dashboards, our own corpus
+  scoring) therefore counted only half of every SQL injection rule, and the half it
+  missed is the idiomatic modern way to write the bug.
+
+  Both messages now take their CWE from the same `meta.docs.cwe` the rule
+  documents. This affects the `no-unsafe-query` rule in all eight SQL plugins:
+  `pg`, `mysql-security`, `prisma-security`, `drizzle-security`, `knex-security`,
+  `sqlite-security`, `typeorm-security` and `sequelize-security`.
+
+  Detection behaviour is unchanged — the same code reports in the same places, with
+  the same severity. Only the emitted message text gains the standards tokens.
+
 ## 1.7.0
 
 ### Minor Changes

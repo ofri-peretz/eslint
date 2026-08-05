@@ -40,7 +40,7 @@
 ```
  Flagship Scorecard
  Per-rule numbers for the 10 flagship rules · ILB-Flagship bench
- ⭐ Star on GitHub      npm i -D eslint-config-interlace   Get started ▸   ← quiet CTA row
+ ⭐ Star on GitHub                                                        ← quiet CTA row
  ──────────────────────────────────────────────────────────────
  Provenance   Generated <date> · ESLint · oxlint · Node · source.json ↗
  ──────────────────────────────────────────────────────────────
@@ -51,15 +51,17 @@
  └────────────┴──────┴───┴──────┴──────┴───────┴──────────┘
  ──────────────────────────────────────────────────────────────
  Cache effectiveness (median)   ·   How to read this
- ┌ Convinced? Add the flagship config →  npm i -D eslint-config-interlace · Get started ┐
- └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Per-rule "Try"** derives the package + rule-docs link from the rule id
   (`<plugin-slug>/<rule>` → `eslint-plugin-<slug>` + the GitHub rule markdown) —
   no pillar lookup. Install copies `npm i eslint-plugin-<slug>`.
-- The natural conversion is adopting the **whole flagship config**, so the
-  header + closing CTA both offer `eslint-config-interlace`.
+- ~~The natural conversion is adopting the **whole flagship config**, so the
+  header + closing CTA both offer `eslint-config-interlace`.~~ Dropped: that
+  package was never published (`private: true`, and the advertised name 404s
+  on npm), so both CTAs handed out a command that installs nothing. It has
+  since been removed from the workspace entirely. The per-rule install stays —
+  it names a real published plugin.
 - The benchmark numbers *are* the proof; the star button shows no count here
   (the page is static and doesn't fetch repo stars).
 

@@ -57,6 +57,13 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Options Object from Variable
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+
+
 **Why**: Variable contents are not analyzed.
 
 ```typescript

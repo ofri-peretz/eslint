@@ -114,9 +114,10 @@ const result = parser.evaluate(expression);
 
 ## Options
 
-| Option         | Type      | Default | Description              |
-| -------------- | --------- | ------- | ------------------------ |
-| `allowInTests` | `boolean` | `false` | Allow eval in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowFunctionConstructor` | `boolean` | `false` | Allow `new Function(...)` while still reporting `eval()` |
 
 ```json
 {

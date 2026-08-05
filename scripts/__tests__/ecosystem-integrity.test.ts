@@ -75,18 +75,18 @@ const PLUGIN_NAMES = [
 
 interface Loaded {
   readonly name: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   readonly mod: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   readonly plugin: any;
   readonly configs: Record<string, unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   readonly rules: Record<string, any>;
 }
 
 const loaded: readonly Loaded[] = await Promise.all(
   PLUGIN_NAMES.map(async (name): Promise<Loaded> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const mod: any = await import(name);
     const plugin = mod.default ?? mod.plugin;
     return {
@@ -130,7 +130,7 @@ describe('barrel exports', () => {
     // whose `private` !== true — and fail if PLUGIN_NAMES falls behind. This
     // stops a newly-added plugin from shipping configs/rules that no test ever
     // loads into a real ESLint.
-    const packagesDir = new URL('../../', import.meta.url);
+    const packagesDir = new URL('../../packages/', import.meta.url);
     const entries = await readdir(packagesDir, { withFileTypes: true });
     const pluginDirs = entries
       .filter((e) => e.isDirectory() && e.name.startsWith('eslint-plugin-'))
@@ -139,7 +139,7 @@ describe('barrel exports', () => {
     const published: string[] = [];
     const noManifest: string[] = [];
     for (const dir of pluginDirs) {
-      const pkgUrl = new URL(`../../${dir}/package.json`, import.meta.url);
+      const pkgUrl = new URL(`../../packages/${dir}/package.json`, import.meta.url);
       let manifest: { private?: boolean } | null = null;
       try {
         manifest = JSON.parse(await readFile(pkgUrl, 'utf8')) as {
@@ -204,7 +204,7 @@ describe('barrel exports', () => {
       // Consumers wiring oxlint import `<plugin>/oxlint`; that subpath must be in
       // the published `exports` map. (Workspace subpath imports don't resolve
       // under vitest, so assert the manifest the published package ships.)
-      const pkgUrl = new URL(`../../${name}/package.json`, import.meta.url);
+      const pkgUrl = new URL(`../../packages/${name}/package.json`, import.meta.url);
       const pkg = JSON.parse(await readFile(pkgUrl, 'utf8')) as {
         exports?: Record<string, unknown>;
       };

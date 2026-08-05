@@ -90,4 +90,22 @@ describe('documented rule options', () => {
 
     expect(ghosts).toEqual([]);
   });
+
+  // The reverse direction, closed once the tables were written (#360). An
+  // option that works but is documented nowhere is not a break, so this could
+  // not land until the docs existed — 282 options across 123 rules were
+  // missing, and 60% of them were four names the devkit defines for every
+  // security rule. Regenerate with `tsx scripts/document-rule-options.ts`.
+  it('every option in a rule schema appears in its Options table', { timeout: 60_000 }, async () => {
+    const rules = await allRules();
+
+    const undocumented = rules.flatMap(({ id, rule, doc }) => {
+      const documented = documentedOptions(doc);
+      return schemaOptions(rule)
+        .filter((option) => !documented.includes(option))
+        .map((option) => `${id}: schema accepts "${option}" — Options table lists [${documented.join(', ')}]`);
+    });
+
+    expect(undocumented).toEqual([]);
+  });
 });
