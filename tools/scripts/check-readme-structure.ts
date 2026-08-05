@@ -21,6 +21,12 @@ const logosDir = path.join(process.cwd(), 'apps', 'docs', 'public', 'logos');
 // plugins and carry Interlace + oxlint + ESLint only. Keep in sync with the
 // row documented in .agent/rules/readme-structure.md.
 const ECOSYSTEM_LOGO: Record<string, string> = {
+  'eslint-plugin-anthropic-security': 'claude',
+  'eslint-plugin-openai-security': 'openai',
+  'eslint-plugin-gemini-security': 'gemini',
+  'eslint-plugin-mcp-sdk-security': 'mcp',
+  'eslint-plugin-jwt-security': 'jwt',
+  'eslint-plugin-postgresql-security': 'postgresql',
   'eslint-plugin-browser-security': 'chromium',
   'eslint-plugin-drizzle-security': 'drizzle',
   'eslint-plugin-express-security': 'express',
@@ -89,6 +95,19 @@ function checkPlugin(pkg: string): Violation | null {
       break;
     }
     cursor = idx + header.length;
+  }
+
+  // 1b. …and each appears exactly once. The order walk above is `indexOf` from
+  // a moving cursor, so it stops at the FIRST match of every header and a
+  // second copy further down is invisible to it — eslint-plugin-mcp-sdk-security
+  // shipped two `## Philosophy` blocks through a green gate that way (#377).
+  // Count line-anchored headings so a mention inside prose or a code fence
+  // (e.g. this file's own rule docs) doesn't register as a section.
+  for (const header of REQUIRED_ORDER) {
+    const occurrences = content.split('\n').filter((l) => l === header).length;
+    if (occurrences > 1) {
+      reasons.push(`duplicate section: \`${header}\` appears ${occurrences}×`);
+    }
   }
 
   // 2. Prelude: the logo row. Every plugin carries Interlace + oxlint + ESLint;
@@ -235,11 +254,41 @@ function checkPlugin(pkg: string): Violation | null {
   return reasons.length > 0 ? { pkg, reasons } : null;
 }
 
+
+// Published non-plugin packages carry the universal row too (no ecosystem mark
+// and none of the plugin body sections). @interlace/eslint-devkit shipped
+// without any logo at all until this was locked.
+const PUBLISHED_NON_PLUGINS = ['eslint-devkit'];
+
+function checkNonPlugin(pkg: string): Violation | null {
+  const readmePath = path.join(packagesDir, pkg, 'README.md');
+  if (!fs.existsSync(readmePath)) return { pkg, reasons: ['README.md missing'] };
+  const content = fs.readFileSync(readmePath, 'utf8');
+  const reasons: string[] = [];
+  const marks = ['interlace', 'oxlint', 'eslint'];
+  for (const m of marks) {
+    if (!content.includes(`/logos/${m}.svg`)) {
+      reasons.push(`missing \`/logos/${m}.svg\` in logo row`);
+    }
+  }
+  const pos = marks.map((m) => content.indexOf(`/logos/${m}.svg`));
+  if (pos.every((i) => i !== -1) && !pos.every((v, i) => i === 0 || pos[i - 1] < v)) {
+    reasons.push('logo row is out of canonical order (expected: Interlace → oxlint → ESLint)');
+  }
+  for (const m of content.matchAll(/\/logos\/([a-z0-9-]+)\.svg/g)) {
+    if (!fs.existsSync(path.join(logosDir, `${m[1]}.svg`))) {
+      reasons.push(`logo \`${m[1]}.svg\` referenced but absent from apps/docs/public/logos/`);
+    }
+  }
+  return reasons.length > 0 ? { pkg, reasons } : null;
+}
+
 console.log('🔍 Verifying README structure for all plugins...');
 
-const violations = packages
-  .map(checkPlugin)
-  .filter((v): v is Violation => v !== null);
+const violations = [
+  ...packages.map(checkPlugin),
+  ...PUBLISHED_NON_PLUGINS.map(checkNonPlugin),
+].filter((v): v is Violation => v !== null);
 
 if (violations.length > 0) {
   for (const v of violations) {
@@ -251,5 +300,7 @@ if (violations.length > 0) {
   console.error(`\n💥 README structure verification failed (${violations.length} plugin(s)).`);
   process.exit(1);
 } else {
-  console.log(`\n✅ All ${packages.length} READMEs follow the canonical structure.`);
+  console.log(
+    `\n✅ All ${packages.length + PUBLISHED_NON_PLUGINS.length} READMEs follow the canonical structure.`,
+  );
 }
