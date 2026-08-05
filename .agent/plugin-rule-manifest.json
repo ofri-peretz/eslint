@@ -2353,6 +2353,12 @@
     }
   },
   "eslint-plugin-sequelize-security": {
+    "no-mass-assignment": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "sequelize",
       "detection": "structural-pattern",
@@ -2377,7 +2383,7 @@
       "environment": "mysql",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 configures TLS through `ssl`, and its URL form takes ?ssl=false."
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 accepts the verification flag at the top level as well as under `ssl`."
     }
   },
   "eslint-plugin-prisma-security": {
@@ -2386,6 +2392,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template ($queryRaw / $executeRaw), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
+    },
+    "no-mass-assignment": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
     },
     "no-unsafe-query": {
       "environment": "prisma",
@@ -2407,6 +2419,12 @@
       "confidence": "enforcement",
       "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template (sql``), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
     },
+    "no-mass-assignment": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "drizzle",
       "detection": "structural-pattern",
@@ -2421,6 +2439,12 @@
     }
   },
   "eslint-plugin-knex-security": {
+    "no-mass-assignment": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "knex",
       "detection": "structural-pattern",
@@ -2449,6 +2473,12 @@
     }
   },
   "eslint-plugin-typeorm-security": {
+    "no-mass-assignment": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "typeorm",
       "detection": "structural-pattern",

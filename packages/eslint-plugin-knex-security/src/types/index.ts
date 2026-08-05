@@ -4,6 +4,14 @@
  * MIT license that can be found in the LICENSE file.
  */
 
+/**
+ * Options for `no-mass-assignment`.
+ *
+ * The rule takes none. An allowlist option would let a project re-approve the
+ * dangerous shape wholesale, one config file further from the call site.
+ */
+export type NoMassAssignmentOptions = [];
+
 export type NoUnsafeQueryOptions = [];
 
 /**
@@ -23,6 +31,7 @@ export type NoUnscopedMutationOptions = [];
 export type RequireTlsOptions = [];
 
 export interface AllKnexRulesOptions {
+  'knex-security/no-mass-assignment': NoMassAssignmentOptions;
   'knex-security/no-unsafe-query': NoUnsafeQueryOptions;
   'knex-security/no-unscoped-mutation': NoUnscopedMutationOptions;
   'knex-security/require-tls': RequireTlsOptions;

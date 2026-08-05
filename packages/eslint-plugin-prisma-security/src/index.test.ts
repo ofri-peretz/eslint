@@ -13,11 +13,12 @@ describe('eslint-plugin-prisma-security plugin interface', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
     expect(ruleKeys).toEqual([
+      'no-mass-assignment',
       'no-raw-identifier-interpolation',
       'no-unsafe-query',
       'no-unscoped-mutation',
     ]);
-    expect(ruleKeys.length).toBe(3);
+    expect(ruleKeys.length).toBe(4);
   });
 
   describe('configurations', () => {

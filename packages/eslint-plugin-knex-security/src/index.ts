@@ -14,6 +14,7 @@
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
+import { noMassAssignment } from './rules/no-mass-assignment';
 import { noUnsafeQuery } from './rules/no-unsafe-query';
 import { noUnscopedMutation } from './rules/no-unscoped-mutation';
 import { requireTls } from './rules/require-tls';
@@ -22,6 +23,7 @@ import { requireTls } from './rules/require-tls';
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  'no-mass-assignment': noMassAssignment,
   'no-unsafe-query': noUnsafeQuery,
   'no-unscoped-mutation': noUnscopedMutation,
   'require-tls': requireTls,
@@ -79,4 +81,4 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
  */
 export default plugin;
 
-export type { AllKnexRulesOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';
+export type { AllKnexRulesOptions, NoMassAssignmentOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';

@@ -14,6 +14,8 @@ export * from './sql-injection-rule';
 export * from './unscoped-mutation-rule';
 // Shared CWE-319 detector — cleartext / unverified database connections.
 export * from './require-tls-rule';
+// Shared CWE-915 detector — the request object written straight to a row.
+export * from './mass-assignment-rule';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';
