@@ -67,7 +67,6 @@
     }
   },
   "dependencies": {
-    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.7.0"
   },
   "devDependencies": {
