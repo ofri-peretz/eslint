@@ -21,6 +21,7 @@ import type { TSESLint } from '@interlace/eslint-devkit';
 import { noToolDescriptionInjection } from './rules/no-tool-description-injection';
 import { requireToolInputSchema } from './rules/require-tool-input-schema';
 
+export { noToolDescriptionInjection } from './rules/no-tool-description-injection';
 export { requireToolInputSchema } from './rules/require-tool-input-schema';
 
 /**

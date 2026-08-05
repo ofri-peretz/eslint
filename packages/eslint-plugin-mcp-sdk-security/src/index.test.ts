@@ -7,7 +7,13 @@
 
 import { describe, it, expect } from 'vitest';
 
-import plugin, { rules, configs, plugin as namedPlugin, requireToolInputSchema } from './index';
+import plugin, {
+  rules,
+  configs,
+  plugin as namedPlugin,
+  noToolDescriptionInjection,
+  requireToolInputSchema,
+} from './index';
 
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
@@ -15,7 +21,10 @@ describe('eslint-plugin-mcp-sdk-security', () => {
       'no-tool-description-injection',
       'require-tool-input-schema',
     ]);
+    // Reference equality, not just presence: a rule id can be wired to the
+    // wrong module and every id-based assertion still passes.
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
+    expect(rules['no-tool-description-injection']).toBe(noToolDescriptionInjection);
   });
 
   it('names itself for the oxlint loader', () => {
@@ -31,6 +40,26 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     for (const config of Object.values(configs)) {
       expect(config.plugins).toHaveProperty('mcp-sdk-security');
       expect(config.rules?.['mcp-sdk-security/require-tool-input-schema']).toBe('error');
+    }
+  });
+
+  it('turns every rule on in strict, by name', () => {
+    // Derived from `rules`, so this fails the moment a rule is added to the
+    // plugin and not to the preset. A count comparison would not: it passes if
+    // strict drops one rule and picks up any other mcp-sdk-security key.
+    const strictRules = configs.strict.rules ?? {};
+    for (const ruleName of Object.keys(rules)) {
+      expect(strictRules[`mcp-sdk-security/${ruleName}`]).toBe('error');
+    }
+    expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
+  });
+
+  it('keeps the new rule out of minimal and recommended until its FP profile is measured', () => {
+    // Plan §1.6: promotion is a deliberate act, not a side effect of adding a
+    // rule. This lock is what makes "not yet promoted" a decision on the record
+    // rather than an oversight.
+    for (const preset of ['minimal', 'recommended'] as const) {
+      expect(configs[preset].rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
     }
   });
 

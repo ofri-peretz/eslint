@@ -9,7 +9,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
-import { noToolDescriptionInjection, isStaticText, modelFacingProperty } from './index';
+import { noToolDescriptionInjection, isStaticText, modelFacingProperties } from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 RuleTester.afterAll = afterAll;
@@ -143,6 +143,17 @@ describe('no-tool-description-injection', () => {
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
+          // Regression: the scan returned on its first match, so a tool with
+          // both a dynamic title and a dynamic description reported only one.
+          // The second stayed hidden until the first was fixed — the developer
+          // corrects a line, re-runs, and gets an error nobody mentioned.
+          name: 'a dynamic title AND description report separately',
+          code:
+            SDK +
+            'server.registerTool("s", { title: `T ${x}`, description: `D ${y}` }, handler);',
+          errors: [{ messageId: 'dynamicDescription' }, { messageId: 'dynamicDescription' }],
+        },
+        {
           name: 'a quoted key is still a description',
           code: SDK + 'server.registerTool("search", { "description": `Search ${x}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
@@ -211,40 +222,45 @@ describe('isStaticText', () => {
   });
 });
 
-describe('modelFacingProperty', () => {
+describe('modelFacingProperties', () => {
   const objOf = (code: string): TSESTree.ObjectExpression =>
     (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
       .expression as TSESTree.ObjectExpression;
 
   it('finds a dynamic description', () => {
-    expect(modelFacingProperty(objOf('({ description: `a ${b}` })'))?.key).toBe('description');
+    expect(modelFacingProperties(objOf('({ description: `a ${b}` })'))[0]?.key).toBe('description');
   });
 
   it('finds a dynamic title', () => {
-    expect(modelFacingProperty(objOf('({ title: blurb })'))?.key).toBe('title');
+    expect(modelFacingProperties(objOf('({ title: blurb })'))[0]?.key).toBe('title');
   });
 
   it('returns undefined when every model-facing key is static', () => {
-    expect(modelFacingProperty(objOf("({ title: 'S', description: 'D' })"))).toBeUndefined();
+    expect(modelFacingProperties(objOf("({ title: 'S', description: 'D' })"))).toEqual([]);
   });
 
   it('ignores keys the model never sees', () => {
-    expect(modelFacingProperty(objOf('({ inputSchema: buildSchema() })'))).toBeUndefined();
-    expect(modelFacingProperty(objOf('({ handler: fn })'))).toBeUndefined();
+    expect(modelFacingProperties(objOf('({ inputSchema: buildSchema() })'))).toEqual([]);
+    expect(modelFacingProperties(objOf('({ handler: fn })'))).toEqual([]);
   });
 
   it('walks past a spread rather than stopping at it', () => {
     // A spread is not a Property; the scan must continue to the keys after it.
-    expect(modelFacingProperty(objOf('({ ...base, description: blurb })'))?.key).toBe(
+    expect(modelFacingProperties(objOf('({ ...base, description: blurb })'))[0]?.key).toBe(
       'description',
     );
   });
 
   it('ignores a computed key', () => {
-    expect(modelFacingProperty(objOf('({ [k]: blurb })'))).toBeUndefined();
+    expect(modelFacingProperties(objOf('({ [k]: blurb })'))).toEqual([]);
+  });
+
+  it('returns both when title and description are each dynamic', () => {
+    const found = modelFacingProperties(objOf('({ title: a, description: b })'));
+    expect(found.map((f) => f.key)).toEqual(['title', 'description']);
   });
 
   it('ignores a numeric key', () => {
-    expect(modelFacingProperty(objOf('({ 0: blurb })'))).toBeUndefined();
+    expect(modelFacingProperties(objOf('({ 0: blurb })'))).toEqual([]);
   });
 });

@@ -71,10 +71,18 @@ export function isStaticText(node: TSESTree.Node): boolean {
   return false;
 }
 
-/** The model-facing property of a config object, if it has one this rule reads. */
-export function modelFacingProperty(
+/**
+ * Every model-facing property of a config object whose value is not static.
+ *
+ * Returns *all* of them, not the first. A tool can declare both a dynamic
+ * `title` and a dynamic `description`, and reporting only one hides the second
+ * until the first is fixed — the developer corrects a line, re-runs, and gets a
+ * new error they were never told about.
+ */
+export function modelFacingProperties(
   config: TSESTree.ObjectExpression,
-): { key: string; value: TSESTree.Node } | undefined {
+): Array<{ key: string; value: TSESTree.Node }> {
+  const found: Array<{ key: string; value: TSESTree.Node }> = [];
   for (const prop of config.properties) {
     if (prop.type !== 'Property' || prop.computed) continue;
     const key =
@@ -86,9 +94,9 @@ export function modelFacingProperty(
     if (key === undefined) continue;
     if (!MODEL_FACING_KEYS.includes(key as (typeof MODEL_FACING_KEYS)[number])) continue;
     if (isStaticText(prop.value)) continue;
-    return { key, value: prop.value };
+    found.push({ key, value: prop.value });
   }
-  return undefined;
+  return found;
 }
 
 export const noToolDescriptionInjection = createRule<[], MessageIds>({
@@ -160,9 +168,9 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
         const config = node.arguments[1];
         if (config?.type !== 'ObjectExpression') return;
 
-        const finding = modelFacingProperty(config);
-        if (finding === undefined) return;
-        candidates.push({ node: finding.value, tool: toolNameOf(node), key: finding.key });
+        for (const finding of modelFacingProperties(config)) {
+          candidates.push({ node: finding.value, tool: toolNameOf(node), key: finding.key });
+        }
       },
 
       'Program:exit'() {
