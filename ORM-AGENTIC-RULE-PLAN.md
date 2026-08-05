@@ -90,7 +90,8 @@ a slogan.
 `apps/docs/src/lib/plugins.ts` · docs `meta.json` nav + `rules/<rule>.mdx` shell ·
 `.agent/type-awareness-scan.tsv` · `.agent/plugin-rule-manifest.json` ·
 `PLUGIN_ALLOWED_ENVIRONMENTS` · `fix-readmes.ts` `DESCRIPTIONS` ·
-`eslint-config-interlace` `PLUGIN_NAMES` + dependency · `tsconfig.solution.json` ·
+`scripts/__tests__/ecosystem-integrity.test.ts` `PLUGIN_NAMES` +
+`scripts/__tests__/fixtures/ecosystem-presets.ts` · `tsconfig.solution.json` ·
 docs plugin-count assertions. Then regenerate: `sync-readmes`, `oxlint:shims`,
 `oxlint:shims:verify -- --update`, `ilb:scope-audit`, full `npm run build`.
 
