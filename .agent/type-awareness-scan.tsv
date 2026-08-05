@@ -426,9 +426,11 @@ mysql-security	no-hardcoded-credentials	unaware
 mysql-security	no-unsafe-query	unaware	
 mysql-security	require-tls	unaware	
 prisma-security	no-mass-assignment	unaware	
+prisma-security	no-raw-identifier-interpolation	unaware	
 prisma-security	no-unsafe-query	unaware	
 prisma-security	no-unscoped-mutation	unaware	
 drizzle-security	no-mass-assignment	unaware	
+drizzle-security	no-raw-identifier-interpolation	unaware	
 drizzle-security	no-unsafe-query	unaware	
 drizzle-security	no-unscoped-mutation	unaware	
 knex-security	no-mass-assignment	unaware	
