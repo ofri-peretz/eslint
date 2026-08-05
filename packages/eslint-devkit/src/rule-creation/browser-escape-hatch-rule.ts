@@ -60,26 +60,53 @@ type MessageIds = 'browserKeyExposure';
 
 export type FlagVerdict = 'enabled' | 'absent' | 'unreadable';
 
+/** Is this the escape-hatch key, written bare or quoted? */
+function isFlagProperty(prop: TSESTree.ObjectLiteralElement): boolean {
+  return (
+    prop.type !== 'SpreadElement' &&
+    !prop.computed &&
+    ((prop.key.type === 'Identifier' && prop.key.name === BROWSER_ESCAPE_FLAG) ||
+      (prop.key.type === 'Literal' && prop.key.value === BROWSER_ESCAPE_FLAG))
+  );
+}
+
 /**
  * Whether the client options literal turns the browser escape hatch on.
  *
- * A spread or a non-literal value is `unreadable`: the flag may be set
- * elsewhere, and reporting on a guess would flag correct code. An explicit
- * `false` is `absent` — the author already made the safe choice.
+ * A non-literal value is `unreadable` — `{ dangerouslyAllowBrowser: isBrowser }`
+ * could be either at runtime, and reporting on a guess would flag correct code.
+ * An explicit `false` is `absent`: the author already made the safe choice.
+ *
+ * Spreads are positional, not fatal. Only a spread that can *override* the flag
+ * hides it:
+ *
+ *   { ...base }                                    → unreadable, base may set it
+ *   { dangerouslyAllowBrowser: true, ...base }     → unreadable, base may unset it
+ *   { ...base, dangerouslyAllowBrowser: true }     → ENABLED — the explicit key
+ *                                                    wins, whatever base held
+ *
+ * Bailing on the first spread seen made that last shape silent, which is a
+ * false negative on a definite finding rather than caution about an
+ * ambiguous one.
  */
 export function readFlag(options: TSESTree.ObjectExpression): FlagVerdict {
-  for (const prop of options.properties) {
-    if (prop.type === 'SpreadElement') return 'unreadable';
-    if (prop.computed) continue;
-    const isFlag =
-      (prop.key.type === 'Identifier' && prop.key.name === BROWSER_ESCAPE_FLAG) ||
-      (prop.key.type === 'Literal' && prop.key.value === BROWSER_ESCAPE_FLAG);
-    if (!isFlag) continue;
-    if (prop.value.type === 'Literal' && prop.value.value === true) return 'enabled';
-    if (prop.value.type === 'Literal') return 'absent';
-    return 'unreadable';
+  const props = options.properties;
+  const index = props.findIndex(isFlagProperty);
+
+  if (index === -1) {
+    // No explicit flag, but a spread anywhere could carry one.
+    return props.some((prop) => prop.type === 'SpreadElement') ? 'unreadable' : 'absent';
   }
-  return 'absent';
+
+  // A spread after the flag can replace it wholesale.
+  for (let i = index + 1; i < props.length; i++) {
+    if (props[i]!.type === 'SpreadElement') return 'unreadable';
+  }
+
+  const value = (props[index] as TSESTree.Property).value;
+  if (value.type === 'Literal' && value.value === true) return 'enabled';
+  if (value.type === 'Literal') return 'absent';
+  return 'unreadable';
 }
 
 export function createBrowserEscapeHatchRule(config: BrowserEscapeHatchRuleConfig) {

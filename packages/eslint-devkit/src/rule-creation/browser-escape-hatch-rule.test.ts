@@ -59,6 +59,23 @@ describe('readFlag', () => {
     expect(readFlag(objOf('({ ...base })'))).toBe('unreadable');
   });
 
+  it('gives up when a spread follows the flag and can unset it', () => {
+    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true, ...base })'))).toBe('unreadable');
+  });
+
+  it('reads past an ordinary property that follows the flag', () => {
+    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true, timeout: 1 })'))).toBe('enabled');
+  });
+
+  it('reports the flag when it comes AFTER the spread', () => {
+    // The explicit key wins at runtime whatever `base` held, so this is a
+    // definite finding — not a guess. Bailing on the first spread seen made
+    // it silent, which is a false negative rather than caution.
+    expect(readFlag(objOf('({ ...base, dangerouslyAllowBrowser: true })'))).toBe('enabled');
+    // Same positional logic for the safe choice.
+    expect(readFlag(objOf('({ ...base, dangerouslyAllowBrowser: false })'))).toBe('absent');
+  });
+
   it('skips a computed key it cannot name', () => {
     expect(readFlag(objOf('({ [k]: true })'))).toBe('absent');
   });
@@ -96,6 +113,14 @@ describe('createBrowserEscapeHatchRule', () => {
       { name: 'a non-object argument', code: SDK + 'new Client(cfg);' },
       { name: 'a spread is unreadable', code: SDK + 'new Client({ ...base });' },
       {
+        name: 'a spread after the flag can unset it',
+        code: SDK + 'new Client({ dangerouslyAllowBrowser: true, ...base });',
+      },
+      {
+        name: 'an explicit false after a spread is the safe choice',
+        code: SDK + 'new Client({ ...base, dangerouslyAllowBrowser: false });',
+      },
+      {
         name: 'a runtime-decided value is unreadable',
         code: SDK + 'new Client({ dangerouslyAllowBrowser: isBrowser });',
       },
@@ -109,6 +134,12 @@ describe('createBrowserEscapeHatchRule', () => {
       {
         name: 'the flag turned on',
         code: SDK + 'new Client({ dangerouslyAllowBrowser: true });',
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        // The explicit key wins whatever `base` held, so this is definite.
+        name: 'the flag turned on after a spread',
+        code: SDK + 'new Client({ ...base, dangerouslyAllowBrowser: true });',
         errors: [{ messageId: 'browserKeyExposure' }],
       },
       {
