@@ -1,5 +1,64 @@
 # eslint-plugin-knex-security
 
+## 0.4.0
+
+### Minor Changes
+
+- [#386](https://github.com/ofri-peretz/eslint/pull/386) [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-hardcoded-credentials` (CWE-798) to the knex, mysql, Sequelize and
+  TypeORM plugins, via a new shared `createHardcodedCredentialsRule` factory.
+
+  A password in source is a password in git history, in every fork, and in every
+  layer of the built image. Deleting the line later changes nothing — a real fix
+  means rotating the credential _and_ rewriting history, so the only cheap moment
+  is before it lands.
+
+  The detection generalizes what `eslint-plugin-postgresql-security` has shipped
+  for pg, and tightens two false positives in the process:
+
+  - A connection URL is a finding only when it embeds a password. The pg version
+    reports any `postgres://…` literal, including `postgres://localhost:5432/app`,
+    which is safe to commit.
+  - A credential key is a finding only when its value is a non-empty string
+    literal, so `password: ''` (the local trust-auth sentinel) stays silent.
+
+  It also refuses to treat the credential as its own evidence: an object must name
+  somewhere to connect _to_ — `host`, `port`, `database`, `connectionString` —
+  before its `password` counts. Without that, `{ user, password }` makes the login
+  form of every app with a database a finding.
+
+- [#389](https://github.com/ofri-peretz/eslint/pull/389) [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-mass-assignment` (CWE-915) to the five ORM plugins with object writes,
+  via a new shared `createMassAssignmentRule` factory.
+
+  ```ts
+  await prisma.user.update({ where: { id }, data: req.body });
+  await User.create(req.body);
+  await db.insert(users).values({ ...req.body });
+  ```
+
+  Each of those updates the fields the endpoint is about — and every other column
+  on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`, `credits`. None of
+  them appear in the diff, which is why the shape survives review.
+
+  It also gets worse without anyone touching it: adding a sensitive column to a
+  model later silently widens every existing mass-assignment site. No line
+  changes, and the exposure is new.
+
+  Silent by design: a payload that names its fields (`{ name: req.body.name }`) is
+  the fix; an object that merely has a `body` key (`form.body`) is not a request;
+  `ctx.data` is ordinary application state in several frameworks; and a value the
+  rule cannot see through is not guessed at.
+
+  No options, deliberately. An allowlist would let a project re-approve the
+  dangerous shape wholesale, one config file further from the call site.
+
+  mysql2 and better-sqlite3 do not carry this rule — their writes are raw SQL
+  strings, already covered by `no-unsafe-query`.
+
+### Patch Changes
+
+- Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:
+  - @interlace/eslint-devkit@1.9.0
+
 ## 0.3.0
 
 ### Minor Changes

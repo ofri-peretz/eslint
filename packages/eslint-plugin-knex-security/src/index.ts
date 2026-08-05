@@ -37,7 +37,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-knex-security',
-    version: '0.3.0',
+    version: '0.4.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
