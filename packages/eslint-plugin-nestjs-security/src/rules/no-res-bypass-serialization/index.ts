@@ -158,6 +158,96 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         );
       };
 
+      /**
+       * Whether the expression is provably a string.
+       *
+       * Only the spellings that *say* string in the AST count — a call ending
+       * in `.toString()` or `String(x)`. Anything less certain stays in scope:
+       * the rule's premise is that an object went out unserialized, so proving
+       * the body is not an object is the only safe way to clear it.
+       */
+      function isStringExpression(node: TSESTree.Node): boolean {
+        if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+        const callee = node.callee;
+        if (
+          callee.type === AST_NODE_TYPES.Identifier &&
+          callee.name === 'String'
+        ) {
+          return true;
+        }
+        return (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          expressionName(callee) === 'toString'
+        );
+      }
+
+      /**
+       * Whether the handler declares a response type that is not JSON.
+       *
+       * `ClassSerializerInterceptor` serializes class instances into JSON. A
+       * handler that sets `content-type: application/xml` or `text/html` is
+       * writing a document, not a DTO — there is no `@Exclude()` for the
+       * missing interceptor to have dropped.
+       *
+       * Found by ghostfolio's sitemap controller, which sets the header and
+       * then sends interpolated XML. The body is a helper call, so the
+       * "provably a string" check could not clear it; the declared content
+       * type can.
+       *
+       * Restricted to calls on the `@Res()` binding. Scanning the whole body
+       * meant any unrelated `this.cache.setHeader('text/plain', …)` silenced
+       * the rule for a handler that then wrote a DTO through `res.json()`.
+       */
+      function declaresNonJsonContentType(fn: TSESTree.Node): boolean {
+        let found = false;
+        const look = (node: TSESTree.Node): void => {
+          if (found) return;
+          if (node.type === AST_NODE_TYPES.CallExpression) {
+            const name = expressionName(node.callee);
+            // Must be called on the @Res() binding. Scanning the whole body
+            // meant an unrelated `this.cache.setHeader('text/plain', …)`
+            // silenced the rule for a handler that then wrote a DTO.
+            const receiver = callReceiver(node.callee);
+            if (
+              receiver?.name === binding &&
+              (name === 'type' ||
+                name === 'setHeader' ||
+                name === 'contentType')
+            ) {
+              for (const arg of node.arguments) {
+                if (
+                  arg.type === AST_NODE_TYPES.Literal &&
+                  typeof arg.value === 'string' &&
+                  /^(text\/|application\/(xml|xhtml|rss|atom|pdf|octet-stream)|image\/)/i.test(
+                    arg.value,
+                  )
+                ) {
+                  found = true;
+                  return;
+                }
+              }
+            }
+          }
+          for (const key of Object.keys(node) as (keyof TSESTree.Node)[]) {
+            if (key === 'parent') continue;
+            const value = node[key] as unknown;
+            if (Array.isArray(value)) {
+              for (const child of value) {
+                if (child && typeof child === 'object' && 'type' in child) {
+                  look(child as TSESTree.Node);
+                }
+              }
+            } else if (value && typeof value === 'object' && 'type' in value) {
+              look(value as TSESTree.Node);
+            }
+          }
+        };
+        look(fn);
+        return found;
+      }
+
+      if (declaresNonJsonContentType(body)) return null;
+
       const visit = (node: TSESTree.Node): void => {
         if (found) return;
         if (shadowsBinding(node)) return;
@@ -177,7 +267,13 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
               // 3 of 3 findings on a second corpus, i.e. the rule's entire
               // precision on repos it had not been tuned against.
               (arg.type === AST_NODE_TYPES.ObjectExpression &&
-                arg.properties.length === 0);
+                arg.properties.length === 0) ||
+              // A value that is provably a string is not a serialized object.
+              // `nest-framework/sample/28-sse` sends
+              // `readFileSync(index.html).toString()` — a static page, with no
+              // DTO and therefore no @Exclude() for the missing interceptor to
+              // have dropped. `.toString()`/`String(x)` say so in the AST.
+              isStringExpression(arg);
             if (receiver?.name === binding && !literalBody) {
               found = writer;
               return;

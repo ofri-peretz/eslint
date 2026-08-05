@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 484,
-  "oxlintCompatible": 484,
+  "totalRules": 485,
+  "oxlintCompatible": 485,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1599,7 +1599,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 8,
+      "ruleCount": 9,
       "rules": [
         {
           "name": "no-exposed-private-fields",
@@ -1608,10 +1608,16 @@
           "isTypeAware": false
         },
         {
-          "name": "no-missing-validation-pipe",
+          "name": "no-hybrid-app-config-loss",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
+        },
+        {
+          "name": "no-missing-validation-pipe",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
         },
         {
           "name": "no-permissive-cors",
@@ -3489,6 +3495,7 @@
     ],
     "nestjs-security": [
       "no-exposed-private-fields",
+      "no-hybrid-app-config-loss",
       "no-missing-validation-pipe",
       "no-permissive-cors",
       "no-res-bypass-serialization",

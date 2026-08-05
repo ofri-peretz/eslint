@@ -201,6 +201,22 @@ const PROBES: Probe[] = [
       }
     `,
   },
+  {
+    rule: 'no-hybrid-app-config-loss',
+    what: 'a microservice transport that inherits none of the global pipes and guards (CWE-284)',
+    vulnerable: `
+      const app = await NestFactory.create(AppModule);
+      app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+      app.connectMicroservice<MicroserviceOptions>(createNestjsKafkaConfig());
+    `,
+    safe: `
+      const app = await NestFactory.create(AppModule);
+      app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+      app.connectMicroservice<MicroserviceOptions>(createNestjsKafkaConfig(), {
+        inheritAppConfig: true,
+      });
+    `,
+  },
 ];
 
 describe('detection contract: every rule still catches what it exists for', () => {

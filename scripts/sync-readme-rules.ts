@@ -170,9 +170,24 @@ export function extractRecommendedMap(pluginPath: string): Map<string, 'warn' | 
   // Find `recommended: { ... rules: { <entries> } ... }`. The outer-config
   // object may have multiple fields, so we grab the nested rules object.
   const recMatch = content.match(/recommended\s*:\s*\{[\s\S]*?rules\s*:\s*\{([\s\S]*?)\n\s*\}/);
-  if (!recMatch) return recommended;
 
-  const block = recMatch[1];
+  // …or `rules: recommendedRules`, a reference to a const declared above.
+  // Without this the lazy `[\s\S]*?` walks past the reference and captures
+  // whichever *later* config happens to inline its rules, so the README marks
+  // the wrong rules as recommended — nestjs-security showed 1 of 9, and the
+  // eight it dropped include four that ship at `error`.
+  const referenced = content.match(
+    /recommended\s*:\s*\{[\s\S]*?rules\s*:\s*([A-Za-z_$][\w$]*)\s*[,\n}]/,
+  );
+  const declared =
+    referenced === null
+      ? null
+      : content.match(
+          new RegExp(`const\\s+${referenced[1]}\\b[^=]*=\\s*\\{([\\s\\S]*?)\\n\\};`),
+        );
+
+  const block = declared?.[1] ?? recMatch?.[1];
+  if (block === undefined) return recommended;
   const entryPattern = /['"][^'"/]+\/([a-z0-9-]+)['"]\s*:\s*['"](warn|error)['"]/g;
   for (const m of block.matchAll(entryPattern)) {
     recommended.set(m[1], m[2] as 'warn' | 'error');

@@ -28,7 +28,16 @@ export default defineConfig({
       thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts', '**/*.spec.ts'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        // Sample DTOs the type-aware suite type-checks against. They are
+        // fixtures, not shipped logic — counting them would mean writing tests
+        // for test data to keep the gate at 100%.
+        'src/type-aware-fixtures/**',
+      ],
       reporter: ['text', 'text-summary', 'html', 'lcov'],
     },
     reporters: ['default', 'junit'],
