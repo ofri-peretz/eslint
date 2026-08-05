@@ -89,7 +89,11 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         description:
           '{{param}} is typed as {{dto}}, and {{dto}} declares no class-validator decorators — a ValidationPipe has nothing to enforce, so every property of the request body passes through unchecked',
         severity: 'HIGH',
-        fix: 'Decorate the DTO properties: @IsString() name: string;',
+        // Both halves, because this branch reports before the global-pipe
+        // check and so fires whether or not a pipe exists. Decorators with no
+        // pipe to run them validate exactly as much as a pipe with no
+        // decorators — nothing.
+        fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
       missingValidation: formatLLMMessage({
