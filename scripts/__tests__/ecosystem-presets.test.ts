@@ -1,19 +1,27 @@
 /**
- * Lock tests for @interlace/eslint-config.
+ * Lock tests for the ecosystem preset composition
+ * (`./fixtures/ecosystem-presets`).
  *
- * The CLAUDE.md regression contract — "a fix isn't done until a test would
- * have caught the bug" — applies hard here: this package is the public
- * shareable surface for the whole ecosystem, and silent drift (a plugin
- * dropping its `flagship` preset, a new flagship rule not getting wired up,
- * a plugin renamed) would break thousands of downstream `extends` calls
- * without a visible compile error.
+ * These assert a property of the PLUGINS, not of any shipped meta-config:
+ * every plugin still exports the `flagship` / `recommended` preset the
+ * ecosystem claims it does, and the flagship array still matches the 10-rule
+ * list in `.agent/flagship-rules.md` that `/scorecard` publishes numbers for.
+ * Composing them into one array is just the cheapest way to check all 19 at
+ * once — the array itself is a fixture and ships nowhere.
  *
- * Every preset has a structural lock that fails closed.
+ * Silent drift is the risk: a plugin dropping its `flagship` preset, a new
+ * flagship rule never getting wired up, or a rename landing on one side only
+ * produces no compile error anywhere. Every preset has a structural lock that
+ * fails closed.
+ *
+ * (The header this replaces called the old `@interlace/eslint-config` package
+ * "the public shareable surface … thousands of downstream `extends` calls".
+ * That was never true — the package was `private: true` and unpublished.)
  */
 
 import { describe, it, expect } from 'vitest';
 
-import presets, { flagship, security, quality, react, componentApi, recommended } from './index';
+import presets, { flagship, security, quality, react, componentApi, recommended } from './fixtures/ecosystem-presets';
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 
