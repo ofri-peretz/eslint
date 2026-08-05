@@ -32,6 +32,7 @@ export const noMassAssignment = createMassAssignmentRule({
   },
   methods: ['create', 'update', 'upsert', 'createMany', 'updateMany'],
   payloadKeys: ['data', 'create', 'update'],
+  receiverPattern: /^(prisma|db|database|client|tx|trx)$|[Pp]risma$|[Cc]lient$/,
   modules: ['@prisma/client'],
   fix: 'Name the columns you accept — `data: { name: req.body.name }` — or validate into a typed object first (`const input = UserUpdate.parse(req.body)`). Prisma will happily write any column in the model.',
   documentationLink: 'https://www.prisma.io/docs/orm/prisma-client/queries/crud',

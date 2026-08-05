@@ -122,6 +122,7 @@ const rule = createMassAssignmentRule({
     },
   },
   methods: ['create', 'update', 'save'],
+  receiverPattern: /^(repo|db|database)$/,
   payloadKeys: ['data', 'values'],
   modules: ['test-orm'],
   fix: 'name the fields',
@@ -152,6 +153,26 @@ describe('createMassAssignmentRule', () => {
       {
         name: 'a spread of something that is not a request',
         code: DRIVER + 'await repo.create({ ...defaults, name });',
+      },
+      {
+        // Regression: `bindings.size === 0` only proves *some* driver import
+        // exists in the file. Without a receiver check, one `req.body` reaching
+        // any `Map.set` / `Headers.set` / `cache.create` in a file that also
+        // imports the ORM reported. These method names are among the most
+        // generic in JavaScript.
+        name: 'an unrelated object using a matching method name',
+        code: DRIVER + 'await cache.create(req.body);',
+      },
+      {
+        name: 'a Map in a file that imports the driver',
+        code: DRIVER + 'seen.set(req.body);',
+      },
+      {
+        // `receiverBaseName` gives up when the chain does not bottom out in an
+        // identifier, and an unnameable receiver cannot be proven to be a
+        // driver handle.
+        name: 'a receiver with no static name',
+        code: DRIVER + 'await (a || b).create(req.body);',
       },
       {
         name: 'a method this driver does not write with',
@@ -198,6 +219,16 @@ describe('createMassAssignmentRule', () => {
         name: 'spread nested under a payload key',
         code: DRIVER + 'await repo.update({ where: { id }, data: { ...req.body } });',
         errors: [{ messageId: 'untrustedSpread' }],
+      },
+      {
+        name: 'a receiver bound to the driver import qualifies',
+        code: "import { orm } from 'test-orm';\nawait orm.create(req.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        name: 'this.db reads through to the property name',
+        code: DRIVER + 'class S { m(req) { return this.db.create(req.body); } }',
+        errors: [{ messageId: 'untrustedPayload' }],
       },
       {
         name: 'the koa-style chain',
@@ -265,6 +296,7 @@ const bareRule = createMassAssignmentRule({
     },
   },
   methods: ['create'],
+  receiverPattern: /^(repo|db|database)$/,
   modules: ['test-orm'],
   fix: 'name the fields',
   documentationLink: 'https://example.test/docs',

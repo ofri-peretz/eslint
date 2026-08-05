@@ -37,7 +37,11 @@
 import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { driverBindings, propertyKeyName } from './unscoped-mutation-rule';
+import {
+  driverBindings,
+  propertyKeyName,
+  receiverBaseName,
+} from './unscoped-mutation-rule';
 
 /**
  * Two ids because the shapes read differently at the call site, and a reader
@@ -77,6 +81,19 @@ export interface MassAssignmentRuleConfig {
   readonly payloadKeys?: readonly string[];
   /** Driver modules — the plugin-scope gate. */
   readonly modules: readonly string[];
+  /**
+   * Names a receiver may have for its call to count as a driver write.
+   *
+   * Carried over from `createUnscopedMutationRule`, and for the same reason:
+   * importing the driver does not make every matching method call in the file
+   * a database write. Without it, `bindings.size === 0` only proves that *some*
+   * driver import exists somewhere in the file, and the method names here are
+   * among the most generic in JavaScript — `Map.prototype.set`, `Headers.set`,
+   * `URLSearchParams.set`, `FormData.set`, and any `cache.create`. One
+   * `req.body` reaching any of those in a file that also imports the ORM would
+   * report.
+   */
+  readonly receiverPattern: RegExp;
   readonly fix: string;
   readonly documentationLink: string;
 }
@@ -206,6 +223,13 @@ export function createMassAssignmentRule(
           ) {
             return;
           }
+
+          // The receiver has to read as a driver handle. See
+          // MassAssignmentRuleConfig#receiverPattern — a file that imports the
+          // ORM is still full of Maps, Headers and caches.
+          const base = receiverBaseName(node.callee);
+          if (base === undefined) return;
+          if (!bindings.has(base) && !config.receiverPattern.test(base)) return;
 
           for (const arg of node.arguments) {
             if (arg.type === AST_NODE_TYPES.SpreadElement) continue;

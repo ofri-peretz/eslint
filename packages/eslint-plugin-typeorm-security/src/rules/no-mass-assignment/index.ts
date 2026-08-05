@@ -33,6 +33,7 @@ export const noMassAssignment = createMassAssignmentRule({
   },
   methods: ['save', 'insert', 'update', 'create', 'merge', 'preload'],
   payloadKeys: [],
+  receiverPattern: /^(repo|repository|manager|em|ds|dataSource|db|database|tx|trx)$|[Rr]epository$|[Mm]anager$/,
   modules: ['typeorm'],
   fix: 'Name the columns you accept, or build the entity explicitly and assign only the fields this endpoint owns. `save()` writes every property present on the object.',
   documentationLink: 'https://typeorm.io/repository-api',

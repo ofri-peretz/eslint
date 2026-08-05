@@ -32,6 +32,7 @@ export const noMassAssignment = createMassAssignmentRule({
   },
   methods: ['insert', 'update'],
   payloadKeys: [],
+  receiverPattern: /^(knex|db|database|qb|builder|tx|trx)$|[Kk]nex$|[Dd]b$/,
   modules: ['knex'],
   fix: 'Name the columns you accept — `.insert({ name: req.body.name })` — or pick them explicitly before the call. knex inserts every key on the object.',
   documentationLink: 'https://knexjs.org/guide/query-builder.html#insert',
