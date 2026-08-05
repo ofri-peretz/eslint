@@ -1,5 +1,67 @@
 # eslint-plugin-drizzle-security
 
+## 0.3.0
+
+### Minor Changes
+
+- [#389](https://github.com/ofri-peretz/eslint/pull/389) [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-mass-assignment` (CWE-915) to the five ORM plugins with object writes,
+  via a new shared `createMassAssignmentRule` factory.
+
+  ```ts
+  await prisma.user.update({ where: { id }, data: req.body });
+  await User.create(req.body);
+  await db.insert(users).values({ ...req.body });
+  ```
+
+  Each of those updates the fields the endpoint is about — and every other column
+  on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`, `credits`. None of
+  them appear in the diff, which is why the shape survives review.
+
+  It also gets worse without anyone touching it: adding a sensitive column to a
+  model later silently widens every existing mass-assignment site. No line
+  changes, and the exposure is new.
+
+  Silent by design: a payload that names its fields (`{ name: req.body.name }`) is
+  the fix; an object that merely has a `body` key (`form.body`) is not a request;
+  `ctx.data` is ordinary application state in several frameworks; and a value the
+  rule cannot see through is not guessed at.
+
+  No options, deliberately. An allowlist would let a project re-approve the
+  dangerous shape wholesale, one config file further from the call site.
+
+  mysql2 and better-sqlite3 do not carry this rule — their writes are raw SQL
+  strings, already covered by `no-unsafe-query`.
+
+- [#385](https://github.com/ofri-peretz/eslint/pull/385) [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-raw-identifier-interpolation` (CWE-89) to the Drizzle and Prisma plugins.
+
+  Bind parameters can only ever substitute _values_. When a table name, a column
+  name, or a sort direction is interpolated into a tagged template, the driver has
+  nothing to bind and splices the string in verbatim — inside the API the docs
+  call safe:
+
+  ```ts
+  await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id}`; // parameterized
+  await prisma.$queryRaw`SELECT * FROM ${table}`; // injectable
+  await db.execute(sql`SELECT * FROM users ORDER BY ${column}`); // injectable
+  ```
+
+  This is the shape behind Drizzle's GHSA-gpj5-g38j-94v9, and it is invisible to
+  linters that decide by asking "is this a raw API" — this _is_ the safe API.
+
+  The rule reports only identifier positions, so it never overlaps
+  `no-unsafe-query`, whose sinks are the raw string entry points
+  (`$queryRawUnsafe`, `sql.raw()`). Value holes, string literals,
+  `sql.identifier()` and nested `sql` fragments are all silent. Only Drizzle and
+  Prisma ship a value-parameterizing tagged template, so the other five ORM
+  plugins do not carry this rule.
+
+  New shared factory `createRawIdentifierRule` in `@interlace/eslint-devkit`.
+
+### Patch Changes
+
+- Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:
+  - @interlace/eslint-devkit@1.9.0
+
 ## 0.2.2
 
 ### Patch Changes
