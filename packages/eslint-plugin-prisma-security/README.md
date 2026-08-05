@@ -117,6 +117,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-mass-assignment](https://eslint.interlace.tools/docs/security/plugin-prisma-security/rules/no-mass-assignment?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-prisma-security) | CWE-915 | A04:2021 |  | Disallow writing an inbound request object straight to the database through Prisma, which lets the caller s… | 🟢 |  |  |  |  |  |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-prisma-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-prisma-security) | CWE-89 | A03:2021 |  | Prevent SQL injection by disallowing string concatenation or interpolated template literals in Prisma raw q… | 🟢 | 💼 |  |  |  |  |
 | [no-unscoped-mutation](https://eslint.interlace.tools/docs/security/plugin-prisma-security/rules/no-unscoped-mutation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-prisma-security) | CWE-284 | A01:2021 |  | Require a `where` filter on Prisma bulk mutations, so deleteMany and updateMany cannot rewrite or delete ev… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->

@@ -14,3 +14,5 @@ export * from './sql-injection-rule';
 export * from './unscoped-mutation-rule';
 // Shared CWE-319 detector — cleartext / unverified database connections.
 export * from './require-tls-rule';
+// Shared CWE-915 detector — the request object written straight to a row.
+export * from './mass-assignment-rule';

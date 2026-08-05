@@ -2353,6 +2353,12 @@
     }
   },
   "eslint-plugin-sequelize-security": {
+    "no-mass-assignment": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "sequelize",
       "detection": "structural-pattern",
@@ -2381,6 +2387,12 @@
     }
   },
   "eslint-plugin-prisma-security": {
+    "no-mass-assignment": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "prisma",
       "detection": "structural-pattern",
@@ -2395,6 +2407,12 @@
     }
   },
   "eslint-plugin-drizzle-security": {
+    "no-mass-assignment": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "drizzle",
       "detection": "structural-pattern",
@@ -2409,6 +2427,12 @@
     }
   },
   "eslint-plugin-knex-security": {
+    "no-mass-assignment": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "knex",
       "detection": "structural-pattern",
@@ -2437,6 +2461,12 @@
     }
   },
   "eslint-plugin-typeorm-security": {
+    "no-mass-assignment": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
     "no-unsafe-query": {
       "environment": "typeorm",
       "detection": "structural-pattern",
