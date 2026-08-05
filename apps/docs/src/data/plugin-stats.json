@@ -89,6 +89,22 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-drizzle-security",
+      "rules": 4,
+      "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.2.2",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-prisma-security",
+      "rules": 4,
+      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.2.2",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-sequelize-security",
       "rules": 4,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
@@ -105,27 +121,11 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-drizzle-security",
-      "rules": 3,
-      "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.2.2",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-mysql-security",
       "rules": 3,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
       "version": "0.2.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-prisma-security",
-      "rules": 3,
-      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.2.2",
       "published": true
     },
     {
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 511,
+  "totalRules": 513,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"
