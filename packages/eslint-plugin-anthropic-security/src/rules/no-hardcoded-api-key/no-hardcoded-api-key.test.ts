@@ -53,6 +53,14 @@ ruleTester.run('no-hardcoded-api-key', noHardcodedApiKey, {
       code: `${IMPORT}\nconst c = new Anthropic({ authToken: 'tok-live-123' });`,
       errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'authToken' } }],
     },
+    {
+      // Regression: a safe `apiKey` used to end the scan, so a hardcoded
+      // `authToken` after it was never inspected. Anthropic is the only
+      // config with two credential props, so this miss only showed up here.
+      name: 'a safe apiKey does not hide a hardcoded authToken',
+      code: `${IMPORT}\nconst c = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, authToken: 'tok-live-123' });`,
+      errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'authToken' } }],
+    },
     // Quoted credential key — the prop name still comes from the source.
     {
       code: `${IMPORT}\nconst c = new Anthropic({ 'authToken': 'tok-live-123' });`,

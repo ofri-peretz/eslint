@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 485,
-  "oxlintCompatible": 485,
+  "totalRules": 487,
+  "oxlintCompatible": 487,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -615,10 +615,16 @@
       "short": "gemini-security",
       "shim": "tools/oxlint-plugins/interlace-gemini-security.cjs",
       "subpath": "eslint-plugin-gemini-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-disabled-safety-settings",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-api-key",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1893,10 +1899,16 @@
       "short": "openai-security",
       "shim": "tools/oxlint-plugins/interlace-openai-security.cjs",
       "subpath": "eslint-plugin-openai-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
         {
           "name": "no-browser-api-key-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-api-key",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3311,7 +3323,8 @@
       "require-strict-transport-security"
     ],
     "gemini-security": [
-      "no-disabled-safety-settings"
+      "no-disabled-safety-settings",
+      "no-hardcoded-api-key"
     ],
     "import-next": [
       "consistent-type-specifier-style",
@@ -3544,7 +3557,8 @@
       "require-storage-encryption"
     ],
     "openai-security": [
-      "no-browser-api-key-exposure"
+      "no-browser-api-key-exposure",
+      "no-hardcoded-api-key"
     ],
     "operability": [
       "no-console-log",
