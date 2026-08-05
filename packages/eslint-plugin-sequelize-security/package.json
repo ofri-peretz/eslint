@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-sequelize-security",
   "version": "0.1.2",
-  "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation.",
+  "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -78,7 +78,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.6.1",
+    "@interlace/eslint-devkit": "^1.7.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

@@ -121,6 +121,12 @@ const DEFAULT_CONNECTION_KEYS = [
  * Requires the `user:pass@` form specifically. `postgres://localhost:5432/app`
  * and `postgres://app@host/db` carry no secret and are safe to commit — the
  * whole point of this helper is that they do not report.
+ *
+ * The username may be empty, so `postgres://:pw@host/db` reports: that is a
+ * real password. The known over-match is `scheme://host:5432@other/db`, where
+ * a host:port lands in the userinfo slot and `5432` reads as the password.
+ * That URL is malformed for every driver here, so accepting the over-match is
+ * cheaper than a parser — but it is a deliberate choice, not an oversight.
  */
 export function urlEmbedsCredentials(value: string, schemes: readonly string[]): boolean {
   const match = /^([a-z][a-z0-9+.-]*):\/\/([^/@\s]*:[^/@\s]+)@/i.exec(value);
@@ -129,19 +135,40 @@ export function urlEmbedsCredentials(value: string, schemes: readonly string[]):
 }
 
 /**
- * A non-empty string literal — the only value shape that is a real secret.
+ * The static string value of a node, or `undefined` if it has none.
  *
- * `process.env.DB_PASSWORD` is the fix. A template literal with an
- * interpolation is a runtime value. An empty string is a driver-specific
+ * A template literal with no interpolations is a string constant that happens
+ * to use backticks — `password: \`hunter2\`` is exactly as committed, exactly
+ * as unrotatable, as the single-quoted spelling. Reading only `Literal` let
+ * both credential paths be bypassed by changing one character.
+ *
+ * An *interpolated* template stays `undefined`: its value is decided at
+ * runtime, so there is no secret in the file.
+ */
+export function staticStringValue(node: TSESTree.Node): string | undefined {
+  if (node.type === AST_NODE_TYPES.Literal) {
+    return typeof node.value === 'string' ? node.value : undefined;
+  }
+  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
+    // `quasis.length === expressions.length + 1`, so with no interpolations
+    // there is exactly one quasi. No fallback branch, because there is no
+    // input that reaches one.
+    return node.quasis[0]!.value.cooked;
+  }
+  return undefined;
+}
+
+/**
+ * A non-empty static string — the only value shape that is a real secret.
+ *
+ * `process.env.DB_PASSWORD` is the fix, and an interpolated template is a
+ * runtime value; neither is reported. An empty string is a driver-specific
  * "no password" sentinel, common in local trust-auth setups, and reporting it
  * teaches people the rule cries wolf.
  */
 export function isLiteralSecret(node: TSESTree.Node): boolean {
-  return (
-    node.type === AST_NODE_TYPES.Literal &&
-    typeof node.value === 'string' &&
-    node.value.length > 0
-  );
+  const value = staticStringValue(node);
+  return value !== undefined && value.length > 0;
 }
 
 /** Build a CWE-798 rule for one driver's connection surface. */
@@ -196,6 +223,15 @@ export function createHardcodedCredentialsRule(
        * one mistake.
        */
       let reported = new WeakSet<TSESTree.Node>();
+      /**
+       * Objects already walked.
+       *
+       * `reported` stops duplicate *diagnostics*; this stops duplicate *work*.
+       * A nested config is reached twice — once by the visitor, once by its
+       * parent's recursion — so without this a depth-N config costs O(N²)
+       * property scans.
+       */
+      let scanned = new WeakSet<TSESTree.ObjectExpression>();
 
       const report = (
         node: TSESTree.Node,
@@ -208,6 +244,8 @@ export function createHardcodedCredentialsRule(
 
       /** Scan one already-qualified object for credential keys. */
       const scanConfig = (obj: TSESTree.ObjectExpression): void => {
+        if (scanned.has(obj)) return;
+        scanned.add(obj);
         for (const prop of obj.properties) {
           if (prop.type !== AST_NODE_TYPES.Property) continue;
           const name = propertyKeyName(prop);
@@ -219,16 +257,22 @@ export function createHardcodedCredentialsRule(
           }
           // A URL sitting on a connection key carries its own check, because
           // the credential is inside the string rather than beside it.
-          if (
-            prop.value.type === AST_NODE_TYPES.Literal &&
-            typeof prop.value.value === 'string' &&
-            urlEmbedsCredentials(prop.value.value, config.urlSchemes)
-          ) {
+          const url = staticStringValue(prop.value);
+          if (url !== undefined && urlEmbedsCredentials(url, config.urlSchemes)) {
             report(prop.value, 'credentialsInUrl');
             continue;
           }
           // Nested driver config: `{ connection: { … } }`, `{ replication: { … } }`.
-          if (prop.value.type === AST_NODE_TYPES.ObjectExpression) {
+          //
+          // Only connection-named keys are followed. Recursing into *every*
+          // nested object made any credential-ish key anywhere under a config
+          // a finding — a TypeORM `extra: { webhook: { secret: '…' } }` is a
+          // third-party SDK secret, not a database credential, and reporting
+          // it here is both wrong and somebody else's plugin's job.
+          if (
+            prop.value.type === AST_NODE_TYPES.ObjectExpression &&
+            connectionKeys.includes(name)
+          ) {
             scanConfig(prop.value);
           }
         }
@@ -238,6 +282,7 @@ export function createHardcodedCredentialsRule(
         Program(program: TSESTree.Program) {
           bindings = driverBindings(program, config.modules);
           reported = new WeakSet<TSESTree.Node>();
+          scanned = new WeakSet<TSESTree.ObjectExpression>();
         },
 
         ObjectExpression(node: TSESTree.ObjectExpression) {
@@ -246,10 +291,11 @@ export function createHardcodedCredentialsRule(
           scanConfig(node);
         },
 
-        Literal(node: TSESTree.Literal) {
+        'Literal, TemplateLiteral'(node: TSESTree.Literal | TSESTree.TemplateLiteral) {
           if (bindings.size === 0) return;
-          if (typeof node.value !== 'string') return;
-          if (!urlEmbedsCredentials(node.value, config.urlSchemes)) return;
+          const value = staticStringValue(node);
+          if (value === undefined) return;
+          if (!urlEmbedsCredentials(value, config.urlSchemes)) return;
           // Same discipline as require-tls: a bare `const dsn = '…'` is
           // indistinguishable from a fixture or a doc example. The string has
           // to be somewhere a driver would read it.

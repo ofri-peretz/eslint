@@ -53,6 +53,10 @@ describe('urlEmbedsCredentials', () => {
     expect(urlEmbedsCredentials('postgres://u:p@h/d', [])).toBe(false);
   });
 
+  it('reports an empty username, which still carries a real password', () => {
+    expect(urlEmbedsCredentials('postgres://:s3cret@db/app', SCHEMES)).toBe(true);
+  });
+
   it('is not fooled by an @ that is not userinfo', () => {
     expect(urlEmbedsCredentials('not a url at all', SCHEMES)).toBe(false);
     expect(urlEmbedsCredentials('postgres://host/path:with@at', SCHEMES)).toBe(false);
@@ -80,10 +84,24 @@ describe('isLiteralSecret', () => {
     expect(isLiteralSecret(valueOf("({ password: '' })"))).toBe(false);
   });
 
-  it('is false for a runtime template and for non-strings', () => {
+  it('is false for an *interpolated* template — that value is decided at runtime', () => {
     expect(isLiteralSecret(valueOf('({ password: `${a}` })'))).toBe(false);
+    expect(isLiteralSecret(valueOf('({ password: `pre-${a}` })'))).toBe(false);
+  });
+
+  it('is false for non-strings', () => {
     expect(isLiteralSecret(valueOf('({ password: null })'))).toBe(false);
     expect(isLiteralSecret(valueOf('({ password: 123 })'))).toBe(false);
+  });
+
+  // Regression: reading only `Literal` meant one character — a backtick —
+  // bypassed both credential paths. A static template is exactly as committed.
+  it('is TRUE for a static template literal', () => {
+    expect(isLiteralSecret(valueOf('({ password: `hunter2` })'))).toBe(true);
+  });
+
+  it('is false for an empty static template', () => {
+    expect(isLiteralSecret(valueOf('({ password: `` })'))).toBe(false);
   });
 });
 
@@ -163,6 +181,18 @@ describe('createHardcodedCredentialsRule', () => {
         name: 'a bare DSN not in a connection position',
         code: DRIVER + "const example = 'postgres://u:p@h/d';",
       },
+      {
+        // A third-party secret nested under a driver config key is not a
+        // database credential. Recursing into every nested object made it one.
+        name: 'a third-party secret nested under a driver config key',
+        code:
+          DRIVER +
+          "knex({ host, database, connection: { webhook: { secret: 'wh-abc' } } });",
+      },
+      {
+        name: 'an interpolated template is a runtime value',
+        code: DRIVER + 'knex({ host, user, database, password: `${secret}` });',
+      },
     ],
     invalid: [
       {
@@ -189,6 +219,27 @@ describe('createHardcodedCredentialsRule', () => {
         name: 'the other credential spellings',
         code: DRIVER + "knex({ host, user, pwd: 'a', secret: 'b' });",
         errors: [{ messageId: 'hardcodedPassword' }, { messageId: 'hardcodedPassword' }],
+      },
+      {
+        // Regression: one character — a backtick — used to bypass the rule.
+        name: 'a static template literal password',
+        code: DRIVER + 'knex({ host, user, database, password: `hunter2` });',
+        errors: [{ messageId: 'hardcodedPassword' }],
+      },
+      {
+        name: 'a static template literal connection URL',
+        code: DRIVER + 'knex({ connection: `postgres://app:s3cret@db/app` });',
+        errors: [{ messageId: 'credentialsInUrl' }],
+      },
+      {
+        name: 'a static template URL passed straight to the driver',
+        code: DRIVER + 'knex(`postgres://app:s3cret@db/app`);',
+        errors: [{ messageId: 'credentialsInUrl' }],
+      },
+      {
+        name: 'a credential directly under a driver config key still reports',
+        code: DRIVER + "knex({ host, database, connection: { password: 'hunter2' } });",
+        errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
         name: 'a quoted key is still a credential',

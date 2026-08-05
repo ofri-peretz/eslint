@@ -61,9 +61,10 @@ mysql.createPool({ host, user, database, password: process.env.DB_PASSWORD });
 
 ## What this rule deliberately does not report
 
-- **A connection URL with no credentials in it.** `postgres://localhost:5432/app`
-  and `postgres://app@db.internal/app` are safe to commit. Only the
-  `user:pass@` userinfo form is a finding.
+- **A connection URL with no credentials in it.** `mysql://localhost:3306/app`
+  and `mysql://app@db.internal/app` are safe to commit. Only the
+  `user:pass@` userinfo form is a finding, and only for a `mysql://` URL —
+  this rule is scoped to the schemes mysql2 actually dials.
 - **An empty password.** `password: ''` is the "no password" sentinel for local
   trust-auth setups. Reporting it teaches people the rule cries wolf.
 - **Any runtime value** — `process.env.DB_PASSWORD` (the fix), a template
