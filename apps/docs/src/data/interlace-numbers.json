@@ -8,10 +8,10 @@
     "react": 2
   },
   "rules": {
-    "total": 512,
-    "security": 291,
-    "quality": 119,
-    "react": 102
+    "total": 456,
+    "security": 251,
+    "quality": 107,
+    "react": 98
   },
   "generatedAt": "2026-08-05"
 }

@@ -96,6 +96,11 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-nestjs-security':   ['nestjs'],
   'eslint-plugin-lambda-security':   ['lambda'],
   'eslint-plugin-vercel-ai-security':['vercel-ai'],
+  // The AI SDK family added in #335. Each gates on its own SDK import, so each
+  // gets its own environment rather than defaulting to 'universal' — which is
+  // what the table's fallback would otherwise claim about a plugin that cannot
+  // fire outside its SDK.
+  'eslint-plugin-mcp-sdk-security':  ['mcp'],
   // Quality plugins — all universal
   'eslint-plugin-conventions':       ['universal'],
   'eslint-plugin-maintainability':   ['universal'],
