@@ -176,3 +176,9 @@ console.log('Environment config:', safeEnvForLogging); // ✅ Safe
 - **[CWE-532: Sensitive Info in Logs](https://cwe.mitre.org/data/definitions/532.html)** - Official CWE entry
 - **[AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)** - Secure secret storage
 - **[Lambda Environment Variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)** - AWS documentation
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

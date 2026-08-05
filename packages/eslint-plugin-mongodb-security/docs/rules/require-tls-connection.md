@@ -110,3 +110,9 @@ mongoose.connect(uri, options); // TLS may or may not be enabled
 
 - [MongoDB TLS/SSL Configuration](https://www.mongodb.com/docs/manual/tutorial/configure-ssl/)
 - [CWE-295](https://cwe.mitre.org/data/definitions/295.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

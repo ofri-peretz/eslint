@@ -87,9 +87,9 @@ The rule offers one editor suggestion (no auto-fix): **remove the `<option>: fal
 
 ## Options
 
-| Option           | Type       | Default | Description                                                                      |
-| ---------------- | ---------- | ------- | -------------------------------------------------------------------------------- |
-| `allowDisabled`  | `string[]` | `[]`    | Helmet option names that may be disabled without a report (e.g. a CSP set at the CDN edge) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowDisabled` | `string[]` | — | Helmet option names that may be disabled without a report |
 
 ```json
 {

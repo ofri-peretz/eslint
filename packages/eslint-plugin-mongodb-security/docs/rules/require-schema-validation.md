@@ -109,3 +109,9 @@ const schema = new Schema(fields);
 
 - [Mongoose Validation](https://mongoosejs.com/docs/validation.html)
 - [CWE-20](https://cwe.mitre.org/data/definitions/20.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

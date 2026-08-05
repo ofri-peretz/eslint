@@ -207,9 +207,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Options
 
-| Option         | Type       | Default                                           | Description                                                                                                                              |
-| -------------- | ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowedRoots` | `string[]` | `['public', 'static', 'dist', 'build', 'assets']` | Directory names accepted as the first path segment of a static root (replaces the default set; the first entry seeds the fix suggestion) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedRoots` | `string[]` | — | Directory names accepted as the first path segment of a static root |
 
 ## Best Practices
 

@@ -222,11 +222,11 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Options
 
-| Option            | Type       | Default | Description                                      |
-| ----------------- | ---------- | ------- | ------------------------------------------------ |
-| `allowInTests`    | `boolean`  | `false` | Allow permissive CORS in test files              |
-| `allowOriginTrue` | `boolean`  | `false` | Allow `origin: true` for development             |
-| `allowedOrigins`  | `string[]` | `[]`    | Allowed origins that should not trigger warnings |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow permissive CORS in test files |
+| `allowOriginTrue` | `boolean` | `false` | Allow origin: true for development |
+| `allowedOrigins` | `string[]` | `[]` | Allowed origins that should not trigger warnings |
 
 ## Best Practices
 

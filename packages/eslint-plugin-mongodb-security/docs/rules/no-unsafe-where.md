@@ -115,3 +115,9 @@ User.find({ [operator]: '...' });
 - [CVE-2024-53900 - Mongoose Population Path Injection](https://nvd.nist.gov/vuln/detail/CVE-2024-53900)
 - [MongoDB $where Operator](https://www.mongodb.com/docs/manual/reference/operator/query/where/)
 - [CWE-943](https://cwe.mitre.org/data/definitions/943.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
