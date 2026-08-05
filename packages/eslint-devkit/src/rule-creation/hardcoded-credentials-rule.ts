@@ -129,7 +129,13 @@ const DEFAULT_CONNECTION_KEYS = [
  * cheaper than a parser — but it is a deliberate choice, not an oversight.
  */
 export function urlEmbedsCredentials(value: string, schemes: readonly string[]): boolean {
-  const match = /^([a-z][a-z0-9+.-]*):\/\/([^/@\s]*:[^/@\s]+)@/i.exec(value);
+  // `:` is excluded from the username class on purpose. With it in, the two
+  // quantifiers around the delimiter are ambiguous — `a://` followed by many
+  // colons gives the engine O(n) ways to split them, which CodeQL flags as
+  // js/polynomial-redos (measured: 32ms at n=8000, versus 0.01ms here).
+  // Userinfo cannot contain a raw colon anyway — the first one *is* the
+  // delimiter — so excluding it is both faster and more correct.
+  const match = /^([a-z][a-z0-9+.-]*):\/\/([^/@\s:]*:[^/@\s]+)@/i.exec(value);
   if (match === null) return false;
   return schemes.some((scheme) => scheme.toLowerCase() === match[1]!.toLowerCase());
 }

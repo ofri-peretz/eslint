@@ -57,6 +57,18 @@ describe('urlEmbedsCredentials', () => {
     expect(urlEmbedsCredentials('postgres://:s3cret@db/app', SCHEMES)).toBe(true);
   });
 
+  // Regression for CodeQL js/polynomial-redos. With `:` inside the username
+  // class the two quantifiers around the delimiter were ambiguous, so a run of
+  // colons backtracked. This rule reads whatever source it is pointed at, so a
+  // pathological string literal is genuinely attacker-supplied.
+  it('does not blow up on a long run of colons', () => {
+    const pathological = 'a://:' + ':'.repeat(20_000);
+    const started = process.hrtime.bigint();
+    expect(urlEmbedsCredentials(pathological, SCHEMES)).toBe(false);
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(ms).toBeLessThan(25);
+  });
+
   it('is not fooled by an @ that is not userinfo', () => {
     expect(urlEmbedsCredentials('not a url at all', SCHEMES)).toBe(false);
     expect(urlEmbedsCredentials('postgres://host/path:with@at', SCHEMES)).toBe(false);
