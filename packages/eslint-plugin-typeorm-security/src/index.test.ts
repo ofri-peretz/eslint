@@ -12,8 +12,12 @@ describe('eslint-plugin-typeorm-security plugin interface', () => {
   it('should export all sequelize-security rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
-    expect(ruleKeys).toEqual(['no-unsafe-query', 'require-tls']);
-    expect(ruleKeys.length).toBe(2);
+    expect(ruleKeys).toEqual([
+      'no-mass-assignment',
+      'no-unsafe-query',
+      'require-tls',
+    ]);
+    expect(ruleKeys.length).toBe(3);
   });
 
   describe('configurations', () => {
