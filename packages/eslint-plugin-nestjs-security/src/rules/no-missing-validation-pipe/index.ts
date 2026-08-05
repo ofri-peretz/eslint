@@ -31,8 +31,11 @@ import {
   isTestFile,
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
+import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
+import type ts from 'typescript';
+import { loadTypeScript } from '../../utils/typescript-peer';
 
-type MessageIds = 'missingValidation' | 'addValidationPipe';
+type MessageIds = 'missingValidation' | 'addValidationPipe' | 'undecoratedDto';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -77,6 +80,11 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     },
     hasSuggestions: true,
     messages: {
+      // `missingValidation` is declared first because it is the rule's primary
+      // finding, and security-cvss-docs-consistency reads the FIRST message
+      // carrying a CVSS token as the one meta.docs.cvss must match. The
+      // secondary undecoratedDto finding scores lower (7.5) on purpose; when it
+      // sat first, the lock compared the wrong message against docs.cvss=8.6.
       missingValidation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Input Validation',
@@ -86,6 +94,22 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           'Parameter {{param}} receives user input without ValidationPipe',
         severity: 'HIGH',
         fix: 'Add @UsePipes(ValidationPipe) or use global validation: app.useGlobalPipes(new ValidationPipe())',
+        documentationLink: 'https://docs.nestjs.com/techniques/validation',
+      }),
+      undecoratedDto: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'DTO Carries No Validation Rules',
+        cwe: 'CWE-20',
+        owasp: 'A03:2021',
+        cvss: 7.5,
+        description:
+          '{{param}} is typed as {{dto}}, and {{dto}} declares no class-validator decorators — a ValidationPipe has nothing to enforce, so every property of the request body passes through unchecked',
+        severity: 'HIGH',
+        // Both halves, because this branch reports before the global-pipe
+        // check and so fires whether or not a pipe exists. Decorators with no
+        // pipe to run them validate exactly as much as a pipe with no
+        // decorators — nothing.
+        fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
       addValidationPipe: formatLLMMessage({
@@ -102,9 +126,24 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          detectGlobalPipes: { type: 'boolean', default: true, description: 'Look for a globally registered ValidationPipe before reporting' },
-          assumeGlobalPipes: { type: 'boolean', default: false, description: 'Assume a global ValidationPipe exists even if none is found' },
-          requireExplicitPipe: { type: 'boolean', default: false, description: 'Require a per-handler pipe even when a global one is registered' },
+          detectGlobalPipes: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Look for a globally registered ValidationPipe before reporting',
+          },
+          assumeGlobalPipes: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Assume a global ValidationPipe exists even if none is found',
+          },
+          requireExplicitPipe: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Require a per-handler pipe even when a global one is registered',
+          },
         },
         additionalProperties: false,
       },
@@ -130,6 +169,18 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     if (allowInTests && isTestFile(context.filename)) {
       return {};
     }
+
+    // Type information is optional. Without `parserOptions.project` the rule
+    // keeps its syntax-only behaviour exactly; with it, one more question
+    // becomes answerable.
+    const services = hasParserServices(context)
+      ? getParserServices(context)
+      : null;
+    const checker = services?.program?.getTypeChecker?.() ?? null;
+    // Only reachable once parser services exist, which means TypeScript ran,
+    // which means it is installed. Loaded lazily so the emitted output carries
+    // no top-level `require("typescript")` — this package does not depend on it.
+    const tsModule = services === null ? null : loadTypeScript();
 
     // The registration lives in another file, so this is the only way a
     // single-file rule can know it exists. Without it the rule reports every
@@ -236,6 +287,113 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       return SCALAR_TYPES.has(annotation.type);
     }
 
+    /**
+     * Whether the DTO a parameter is typed as declares any class-validator
+     * rule.
+     *
+     * This is the question that could not be answered without type
+     * information, and the reason `require-class-validator` was deleted: the
+     * evidence lives in whichever file declares the DTO. With a checker the
+     * declaration is reachable, and the decorator's *origin* is reachable too —
+     * so a validator is identified by the module it came from rather than by a
+     * list of names, which is what the name-list version kept getting wrong.
+     *
+     * Returns null when the answer is not knowable: no type information, an
+     * unresolvable type, a declaration outside the project, or a class that
+     * extends something. Null means abstain.
+     */
+    function dtoDeclaresValidators(
+      param: TSESTree.Identifier,
+    ): { dto: string; validated: boolean } | null {
+      if (services === null || checker === null || tsModule === null) {
+        return null;
+      }
+      // Bound after the guard so the nested helpers get a non-null module;
+      // TypeScript cannot narrow a closed-over `let` from their caller.
+      const tsm = tsModule;
+      const annotation = param.typeAnnotation?.typeAnnotation;
+      if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return null;
+
+      const tsNode = services.esTreeNodeToTSNodeMap.get(annotation);
+      const type = checker.getTypeAtLocation(tsNode);
+      // A `TSTypeReference` always resolves to a symbol; an `?? aliasSymbol`
+      // fallback here was unreachable, and no fixture could be built that took
+      // it. The undefined guard stays — unions and unresolvable names hit it.
+      const symbol = type.getSymbol();
+      if (symbol === undefined) return null;
+      // `valueDeclaration`, not `declarations[0]`: it is the declaration that
+      // exists at runtime, which is exactly what a pipe needs a metatype from.
+      // It is also reachable both ways — a class has one, an interface or type
+      // alias does not — where `declarations?.[0]` had an arm no fixture could
+      // take, because a resolved symbol always has declarations.
+      const declaration = symbol.valueDeclaration;
+      if (declaration === undefined) return null;
+      if (!tsm.isClassDeclaration(declaration)) return null;
+
+      // A base class may carry the decorators, and this reads one level only —
+      // so abstain on `extends`. Not on `implements`: an interface has no
+      // decorators to inherit, and `class Dto implements Serializable {}` is a
+      // common shape that was silently escaping the check.
+      const extendsBase = declaration.heritageClauses?.some(
+        (clause) => clause.token === tsm.SyntaxKind.ExtendsKeyword,
+      );
+      if (extendsBase === true) return null;
+      // A DTO from a dependency is not ours to judge.
+      if (declaration.getSourceFile().fileName.includes('node_modules')) {
+        return null;
+      }
+
+      const dto = symbol.getName();
+      const validated = declaration.members.some((member) =>
+        decoratorsOf(member, tsm).some((d) => isValidatorDecorator(d, tsm)),
+      );
+      return { dto, validated };
+    }
+
+    /**
+     * Decorators on a class member.
+     *
+     * Through `ts.getDecorators`, not by filtering modifiers on a hardcoded
+     * `SyntaxKind`. An inlined constant was wrong by one here — `Decorator` is
+     * 171 in TypeScript 5.9, not 170 — and the failure mode was silent: no
+     * decorators were ever found, so every DTO looked unvalidated and the two
+     * invalid tests passed for the wrong reason.
+     */
+    function decoratorsOf(
+      member: ts.ClassElement,
+      tsm: typeof ts,
+    ): readonly ts.Decorator[] {
+      return tsm.canHaveDecorators(member)
+        ? (tsm.getDecorators(member) ?? [])
+        : [];
+    }
+
+    /**
+     * Whether a decorator came from `class-validator`.
+     *
+     * Resolved through the checker to the file that declares it, so
+     * `@IsString()` counts and `@ApiProperty()` — which documents a shape
+     * without enforcing it — does not, whatever either is named.
+     */
+    function isValidatorDecorator(
+      decorator: ts.Decorator,
+      tsm: typeof ts,
+    ): boolean {
+      const expression = decorator.expression;
+      const callee = tsm.isCallExpression(expression)
+        ? expression.expression
+        : expression;
+      const symbol = checker?.getSymbolAtLocation(callee);
+      // An imported binding points at the import statement; follow it to the
+      // declaration so the *origin* decides, not the local name.
+      const resolved =
+        symbol !== undefined && symbol.flags & tsm.SymbolFlags.Alias
+          ? checker?.getAliasedSymbol(symbol)
+          : symbol;
+      const file = resolved?.declarations?.[0]?.getSourceFile().fileName;
+      return file !== undefined && /[/\\]class-validator[/\\]/.test(file);
+    }
+
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
         const cls = enclosingClass(node);
@@ -271,6 +429,22 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
 
           // Scalars are coerced by the framework.
           if (isScalarTyped(param)) continue;
+
+          // With types available, a DTO that declares no rules is a pipe with
+          // nothing to enforce — the same exposure as having no pipe at all,
+          // and invisible without the checker.
+          const dto = dtoDeclaresValidators(param);
+          if (dto !== null && !dto.validated) {
+            context.report({
+              node: param,
+              messageId: 'undecoratedDto',
+              data: {
+                param: `@${decoratorName(inputDecorator)}() ${param.name}`,
+                dto: dto.dto,
+              },
+            });
+            continue;
+          }
 
           // A global pipe validates a typed DTO wherever it is declared — but
           // it has no metatype to validate an unvalidatable shape against.
