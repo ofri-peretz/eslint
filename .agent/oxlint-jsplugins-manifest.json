@@ -3468,6 +3468,7 @@
     ],
     "nestjs-security": [
       "no-exposed-private-fields",
+      "no-hybrid-app-config-loss",
       "no-missing-validation-pipe",
       "no-permissive-cors",
       "no-res-bypass-serialization",
