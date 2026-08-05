@@ -16,6 +16,7 @@ import { TSESLint } from '@interlace/eslint-devkit';
 
 import { noUnsafeQuery } from './rules/no-unsafe-query';
 import { noUnscopedMutation } from './rules/no-unscoped-mutation';
+import { requireTls } from './rules/require-tls';
 
 /**
  * Collection of all rules
@@ -23,6 +24,7 @@ import { noUnscopedMutation } from './rules/no-unscoped-mutation';
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   'no-unsafe-query': noUnsafeQuery,
   'no-unscoped-mutation': noUnscopedMutation,
+  'require-tls': requireTls,
 };
 
 /**
