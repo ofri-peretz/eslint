@@ -3209,7 +3209,6 @@
       "utm-taxonomy"
     ],
     "drizzle-security": [
-      "no-mass-assignment",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],
@@ -3335,7 +3334,7 @@
       "require-max-age"
     ],
     "knex-security": [
-      "no-mass-assignment",
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "no-unscoped-mutation",
       "require-tls"
@@ -3418,6 +3417,7 @@
       "require-tls-connection"
     ],
     "mysql-security": [
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],
@@ -3518,7 +3518,6 @@
       "prevent-double-release"
     ],
     "prisma-security": [
-      "no-mass-assignment",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],
@@ -3736,7 +3735,7 @@
       "require-secure-defaults"
     ],
     "sequelize-security": [
-      "no-mass-assignment",
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],
@@ -3744,7 +3743,7 @@
       "no-unsafe-query"
     ],
     "typeorm-security": [
-      "no-mass-assignment",
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],
