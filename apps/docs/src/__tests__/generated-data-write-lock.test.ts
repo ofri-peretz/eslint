@@ -52,6 +52,10 @@ describe('writeJsonIfChanged', () => {
     expect(JSON.parse(readFileSync(file, 'utf-8')).totalRules).toBe(502);
   });
 
+  // The mtime and content halves are separate tests on purpose: a `statSync`
+  // followed by a `readFileSync` on the same path is a check-then-use pattern,
+  // and CodeQL's js/file-system-race flags it (high severity) even in a test
+  // against a fresh tmpdir. Each test touches the file one way only.
   it('does not touch the file when only a top-level timestamp moved', () => {
     const file = tmpFile();
     writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-01' });
@@ -59,7 +63,13 @@ describe('writeJsonIfChanged', () => {
 
     expect(writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-04' })).toBe(false);
     expect(statSync(file).mtimeMs).toBe(before);
-    // The committed timestamp stays at its old value — that is the point.
+  });
+
+  it('leaves the old timestamp in the file when it skips the write', () => {
+    const file = tmpFile();
+    writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-01' });
+    writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-04' });
+
     expect(JSON.parse(readFileSync(file, 'utf-8')).generatedAt).toBe('2026-08-01');
   });
 
