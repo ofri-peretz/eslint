@@ -18,20 +18,94 @@ const OUTPUT_FILE = join(__dirname, '../src/data/plugin-stats.json');
 const NUMBERS_FILE = join(__dirname, '../src/data/interlace-numbers.json');
 
 /**
- * Count rules by parsing the rules export in index.ts
+ * The body of the `rules` object literal in a plugin's `index.ts`.
+ *
+ * Scoping the count to this block is the whole point. The previous version
+ * matched `/^\s+'[a-z-]+'\s*:/gm` against the *entire file*, which also matched
+ * the `plugins: { 'mcp-sdk-security': plugin }` line inside every preset — so
+ * each plugin was over-counted by roughly one per config it ships, plus any
+ * other quoted-kebab key anywhere in the file.
+ *
+ * That inflated 21 of 30 published plugins by 68 rules in total, and the
+ * numbers flow from here into `interlace-numbers.json`, the docs site, and
+ * every README badge. A public rule count that overstates by ~14% is worse
+ * than no count.
+ *
+ * Returns `undefined` when the block cannot be located, so the caller can fail
+ * loudly rather than silently report zero.
+ */
+export function rulesBlock(content: string): string | undefined {
+  const start = content.search(/export const rules[^=]*=\s*\{/);
+  if (start === -1) return undefined;
+  const open = content.indexOf('{', start);
+
+  // Brace-match rather than regex: a rule map contains nested objects in some
+  // plugins, and a lazy `[\s\S]*?\}` would stop at the first inner brace.
+  let depth = 0;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    else if (content[i] === '}') {
+      depth--;
+      if (depth === 0) return content.slice(open + 1, i);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Top-level keys of a `rules` object body.
+ *
+ * Both spellings are in use across the ecosystem and both are real rule ids:
+ * most plugins quote them (`'no-unsafe-query': …`) because the names contain
+ * hyphens, while `eslint-plugin-import-next` does not (`named: named,`,
+ * `default: defaultRule,`). Matching only the quoted form silently undercounted
+ * that plugin by 7.
+ *
+ * Depth-aware so a nested object inside a rule entry cannot contribute keys of
+ * its own.
+ */
+export function countRuleKeys(block: string): number {
+  let depth = 0;
+  // Keyed by the *implementation* each entry points at, not by the id.
+  //
+  // Several plugins expose a rule under a second name for backwards
+  // compatibility — `order: enforceImportOrder` alongside
+  // `'enforce-import-order': enforceImportOrder`. An alias is the same rule
+  // reachable by another id, not an additional rule, and the oxlint shim
+  // generator already counts it that way ("12 flat + 12 aliased"). Counting
+  // ids here would disagree with it and re-inflate the published total.
+  const implementations = new Set<string>();
+  for (const rawLine of block.split('\n')) {
+    const line = rawLine.trim();
+    if (depth === 0) {
+      const entry = /^(?:'[a-z0-9-]+'|[A-Za-z_$][\w$]*)\s*:\s*([A-Za-z_$][\w$]*)/.exec(line);
+      if (entry) implementations.add(entry[1]);
+    }
+    for (const ch of rawLine) {
+      if (ch === '{' || ch === '[' || ch === '(') depth++;
+      else if (ch === '}' || ch === ']' || ch === ')') depth--;
+    }
+  }
+  return implementations.size;
+}
+
+/**
+ * Count rules by parsing the `rules` export in index.ts.
+ *
+ * Only top-level keys of that object count.
  */
 export function countRulesInPackage(packagePath: string) {
   const indexPath = join(packagePath, 'src/index.ts');
-  
+
   if (!existsSync(indexPath)) {
     return 0;
   }
 
   const content = readFileSync(indexPath, 'utf-8');
-  
-  // Match rule entries like "'rule-name': ruleName,"
-  const ruleMatches = content.match(/^\s+'[a-z-]+'\s*:/gm);
-  return ruleMatches ? ruleMatches.length : 0;
+  const block = rulesBlock(content);
+  if (block === undefined) return 0;
+
+  return countRuleKeys(block);
 }
 
 export function getPackageMetadata(packagePath: string) {
