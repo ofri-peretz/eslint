@@ -35,7 +35,10 @@ const NUMBERS_FILE = join(__dirname, '../src/data/interlace-numbers.json');
  * loudly rather than silently report zero.
  */
 export function rulesBlock(content: string): string | undefined {
-  const start = content.search(/export const rules[^=]*=\s*\{/);
+  // `\b` and an explicit optional type annotation: without them,
+  // `export const rulesHelper = {` appearing earlier in the file would capture
+  // the wrong block and return a confident wrong number.
+  const start = content.search(/\bexport\s+const\s+rules\b\s*(?::[^=]*)?=\s*\{/);
   if (start === -1) return undefined;
   const open = content.indexOf('{', start);
 
@@ -66,27 +69,42 @@ export function rulesBlock(content: string): string | undefined {
  */
 export function countRuleKeys(block: string): number {
   let depth = 0;
-  // Keyed by the *implementation* each entry points at, not by the id.
+  // An alias is the same rule object under a second id — `order:
+  // enforceImportOrder` alongside `'enforce-import-order': enforceImportOrder`.
+  // It is not an additional rule, and the oxlint shim generator already counts
+  // it that way ("12 flat + 12 aliased").
   //
-  // Several plugins expose a rule under a second name for backwards
-  // compatibility — `order: enforceImportOrder` alongside
-  // `'enforce-import-order': enforceImportOrder`. An alias is the same rule
-  // reachable by another id, not an additional rule, and the oxlint shim
-  // generator already counts it that way ("12 flat + 12 aliased"). Counting
-  // ids here would disagree with it and re-inflate the published total.
-  const implementations = new Set<string>();
+  // Only a *bare identifier* value can be an alias. A call is a distinct rule
+  // even when two entries use the same factory:
+  //
+  //     'rule-a': makeRule({ foo: 1 }),
+  //     'rule-b': makeRule({ bar: 2 }),
+  //
+  // Deduplicating on the callee name would collapse those to one, so
+  // call-valued entries are counted individually and never deduplicated.
+  const aliasable = new Set<string>();
+  let distinct = 0;
   for (const rawLine of block.split('\n')) {
     const line = rawLine.trim();
     if (depth === 0) {
-      const entry = /^(?:'[a-z0-9-]+'|[A-Za-z_$][\w$]*)\s*:\s*([A-Za-z_$][\w$]*)/.exec(line);
-      if (entry) implementations.add(entry[1]);
+      const entry = /^(?:'[a-z0-9-]+'|[A-Za-z_$][\w$]*)\s*:\s*(.*)$/.exec(line);
+      if (entry) {
+        // Strip a trailing line comment before classifying. The one real alias
+        // in the ecosystem carries one — `order: enforceImportOrder, // Alias
+        // for backwards compat` — and leaving it attached made the value look
+        // like an expression rather than a bare identifier.
+        const value = entry[1].replace(/\/\/.*$/, '').trim();
+        const bareIdentifier = /^([A-Za-z_$][\w$]*)\s*,?$/.exec(value);
+        if (bareIdentifier) aliasable.add(bareIdentifier[1]);
+        else distinct++;
+      }
     }
     for (const ch of rawLine) {
       if (ch === '{' || ch === '[' || ch === '(') depth++;
       else if (ch === '}' || ch === ']' || ch === ')') depth--;
     }
   }
-  return implementations.size;
+  return aliasable.size + distinct;
 }
 
 /**

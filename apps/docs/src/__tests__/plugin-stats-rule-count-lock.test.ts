@@ -104,6 +104,25 @@ describe('countRuleKeys', () => {
     expect(countRuleKeys(`\n  'a-rule': makeRule({\n    inner: 1,\n    other: 2,\n  }),\n`)).toBe(1);
   });
 
+  it('counts two rules built inline by the same factory as two', () => {
+    // Deduplicating on the callee name would collapse these to one. Only a
+    // *bare identifier* value can be an alias; a call is always its own rule.
+    expect(
+      countRuleKeys(`\n  'rule-a': makeRule({ foo: 1 }),\n  'rule-b': makeRule({ bar: 2 }),\n`),
+    ).toBe(2);
+  });
+
+  it('still collapses an alias that carries a trailing comment', () => {
+    // The one real alias in the ecosystem is written with one, and leaving the
+    // comment attached made the value read as an expression rather than a bare
+    // identifier — which silently turned the alias back into a second rule.
+    expect(
+      countRuleKeys(
+        `\n  'enforce-import-order': enforceImportOrder,\n  order: enforceImportOrder, // Alias for backwards compat\n`,
+      ),
+    ).toBe(1);
+  });
+
   it('counts nothing in an empty map', () => {
     expect(countRuleKeys('\n')).toBe(0);
   });
@@ -133,5 +152,25 @@ describe('rulesBlock', () => {
 
   it('returns undefined when there is no rules export', () => {
     expect(rulesBlock('export const configs = {};')).toBeUndefined();
+  });
+
+  it('is not fooled by a similarly-named export declared first', () => {
+    // Without a word boundary, `rulesHelper` matches and the real rule map is
+    // never read — a confident wrong number rather than a visible failure.
+    const source = [
+      'export const rulesHelper = {',
+      '  helper: 1,',
+      '  other: 2,',
+      '};',
+      'export const rules = {',
+      "  'a-rule': aRule,",
+      '};',
+    ].join('\n');
+    expect(countRuleKeys(rulesBlock(source)!)).toBe(1);
+  });
+
+  it('handles an explicit type annotation on the rules export', () => {
+    const source = "export const rules: Record<string, Rule> = {\n  'a-rule': aRule,\n};";
+    expect(countRuleKeys(rulesBlock(source)!)).toBe(1);
   });
 });
