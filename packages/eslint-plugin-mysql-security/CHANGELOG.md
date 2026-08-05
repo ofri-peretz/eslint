@@ -1,5 +1,118 @@
 # eslint-plugin-mysql-security
 
+## 0.2.0
+
+### Minor Changes
+
+- [#373](https://github.com/ofri-peretz/eslint/pull/373) [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `require-tls` (CWE-319) to the Knex, mysql2, Sequelize and TypeORM security plugins.
+
+  Reports two distinct failures, because they do not share a remediation:
+
+  - **`tlsDisabled`** — the connection is plaintext (`ssl: false`, `?sslmode=disable`).
+    Every query, every row and the credentials that open the session cross the
+    network in the clear.
+  - **`certificateValidationDisabled`** — `rejectUnauthorized: false` (or
+    `trustServerCertificate: true` on mssql, which inverts the polarity). The
+    traffic is encrypted but the server is never authenticated, so the client
+    completes a handshake just as willingly with whoever answered in the
+    database's place. The fix is to supply the CA, never to switch the check off.
+
+  The detection gate is a _database connection config_ — driver import plus a
+  connection-shaped sibling key — which is what keeps the rule out of
+  `eslint-plugin-node-security`, where a bare `rejectUnauthorized: false` would
+  also match every https agent and fetch option in the repo, and double-report
+  this line from two plugins.
+
+  A value the rule cannot read statically (`ssl: useTls`) is never reported. That
+  is a deliberate false negative in exchange for findings that are always real.
+
+  Not shipped for `prisma-security` (connection config lives in `schema.prisma`,
+  not JavaScript), `drizzle-security` (delegates connection setup to the
+  underlying driver, which its own plugin covers) or `sqlite-security` (a local
+  file, no network to protect).
+
+### Patch Changes
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Load rule modules on demand instead of at plugin load.
+
+  Every plugin barrel used to `require` all of its rules the moment ESLint loaded
+  the plugin, whether or not your config enabled them. `plugin.rules[id]` is only
+  ever read for rules a config turns on, so the rest was parse-and-compile cost
+  for code that never ran.
+
+  The published entry now exposes each rule behind a getter, so a rule module is
+  read the first time something asks for it. Measured on a 7-plugin config with 34
+  rules enabled: 163 rule modules loaded and 251 ms of plugin load, against 34
+  modules and 8.5 ms — total ESLint wall time 251 ms → 109 ms. On a preset that
+  enables most of a plugin (`node-security/recommended`, 25 of 37) it is a wash,
+  72 ms → 65 ms. It is never slower; the win scales with how many plugins you
+  stack and how few of their rules you use.
+
+  Nothing about the plugin API changes. `Object.keys(plugin.rules)` still lists
+  every rule without loading any of them, repeated reads return the same object,
+  and the `./oxlint` sub-export is the same plugin object it always was.
+
+  `eslint-plugin-jwt` and `eslint-plugin-vercel-ai-security` also re-export their
+  rule objects as named top-level exports, which cannot be deferred — those two
+  keep loading eagerly.
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Declare what we support, load only what we use
+
+  **`tslib` is gone from every package.** It was a NON-optional peer of
+  `@interlace/eslint-devkit`, so all 26 plugins declared it as a dependency to
+  satisfy that peer — 124 kB every consumer installed so twelve
+  `require("tslib")` calls could resolve. The shipped JavaScript now inlines
+  the TypeScript helpers instead (`--importHelpers false` on the emit pass that
+  already re-writes it), costing ~9.5 kB in devkit. Zero `tslib` requires remain
+  anywhere; verified by installing every plugin with no `tslib` in the tree and
+  loading all 26 with every rule intact.
+
+  **`eslint-plugin-import-next` had a phantom dependency.** Its rules
+  `require("typescript")` at module load, but it was declared in neither
+  `dependencies` nor `peerDependencies` — it worked only because something else
+  in the tree happened to install it. A clean install crashed the whole plugin,
+  not just the type-aware rules. `typescript` is now a required peer, which is
+  what the code actually needs.
+
+  **23 "technologies we support" declarations did nothing.** Seven plugins
+  listed their target libraries in `peerDependenciesMeta` with no matching
+  `peerDependencies` entry, and npm ignores meta for a package that is not
+  declared a peer — verified by installing `eslint-plugin-express-security` and
+  watching nothing install and nothing warn. `eslint-plugin-jwt` appeared to
+  support six JWT libraries and formally supported none. All 23 are now real
+  optional peers, matching the convention `pg`, `mongodb`, `prisma` and the
+  other nine already followed:
+
+  | plugin                                                          | technologies now actually declared                                                                    |
+  | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `eslint-plugin-jwt`                                             | jsonwebtoken, @nestjs/jwt, express-jwt, jose, jwks-rsa, jwt-decode                                    |
+  | `eslint-plugin-lambda-security`                                 | @aws-sdk/client-lambda, @middy/core, @middy/http-cors, @middy/http-security-headers, @middy/validator |
+  | `eslint-plugin-express-security`                                | express, helmet, cors, csurf, express-rate-limit                                                      |
+  | `eslint-plugin-nestjs-security`                                 | @nestjs/common, @nestjs/throttler, class-validator, class-transformer                                 |
+  | `eslint-plugin-vercel-ai-security`                              | ai                                                                                                    |
+  | `eslint-plugin-maintainability`, `eslint-plugin-react-features` | typescript                                                                                            |
+
+  All optional, so nothing is installed on the consumer’s behalf — the
+  declaration is the supported-technology signal, which is exactly what it was
+  meant to be.
+
+  **A new gate compares declared dependencies against what the emitted
+  JavaScript actually loads**, in both directions: a `require` with no
+  declaration (works until someone installs cleanly) and a declaration nothing
+  requires (weight every consumer pays). It understands that a dependency may
+  exist to satisfy an optional peer of another dependency, which is why
+  `eslint-plugin-import-next` legitimately declares `oxc-resolver` that devkit
+  lazily loads.
+
+- [#335](https://github.com/ofri-peretz/eslint/pull/335) [`47cde07`](https://github.com/ofri-peretz/eslint/commit/47cde07f13fb128e973a46f2a66a68c3419cdef3) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix the `./oxlint` subpath export, which pointed at `src/oxlint.js` — a file no build produces. `require('<package>/oxlint')` threw MODULE_NOT_FOUND on every published package, while every README documented that exact wiring for oxlint's `jsPlugins`. The export now points at the build output, `dist/src/oxlint.js`.
+
+  The path was hardcoded in `scripts/generate-oxlint-shims.ts`, so the generator rewrote any manual correction back to the broken value on the next drift check — fixed there rather than per package.
+
+  This release also carries npm provenance: the affected packages were last published from a workstation, which has no OIDC token to attest with, so the published tarballs had no attestation. Publishing through the release workflow signs them.
+
+- Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:
+  - @interlace/eslint-devkit@1.8.0
+
 ## 0.1.2
 
 ### Patch Changes

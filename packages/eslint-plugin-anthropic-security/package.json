@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-anthropic-security",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -77,7 +77,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.4.4"
+    "@interlace/eslint-devkit": "^1.8.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
