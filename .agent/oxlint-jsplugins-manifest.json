@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 470,
-  "oxlintCompatible": 470,
+  "totalRules": 474,
+  "oxlintCompatible": 474,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1131,8 +1131,14 @@
       "short": "knex-security",
       "shim": "tools/oxlint-plugins/interlace-knex-security.cjs",
       "subpath": "eslint-plugin-knex-security/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -1530,8 +1536,14 @@
       "short": "mysql-security",
       "shim": "tools/oxlint-plugins/interlace-mysql-security.cjs",
       "subpath": "eslint-plugin-mysql-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -2940,8 +2952,14 @@
       "short": "sequelize-security",
       "shim": "tools/oxlint-plugins/interlace-sequelize-security.cjs",
       "subpath": "eslint-plugin-sequelize-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -2976,8 +2994,14 @@
       "short": "typeorm-security",
       "shim": "tools/oxlint-plugins/interlace-typeorm-security.cjs",
       "subpath": "eslint-plugin-typeorm-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -3310,6 +3334,7 @@
       "require-max-age"
     ],
     "knex-security": [
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "no-unscoped-mutation",
       "require-tls"
@@ -3392,6 +3417,7 @@
       "require-tls-connection"
     ],
     "mysql-security": [
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],
@@ -3709,6 +3735,7 @@
       "require-secure-defaults"
     ],
     "sequelize-security": [
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],
@@ -3716,6 +3743,7 @@
       "no-unsafe-query"
     ],
     "typeorm-security": [
+      "no-hardcoded-credentials",
       "no-unsafe-query",
       "require-tls"
     ],

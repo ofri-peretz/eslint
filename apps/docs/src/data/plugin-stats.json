@@ -73,6 +73,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-knex-security",
+      "rules": 4,
+      "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
+      "category": "security",
+      "version": "0.2.1",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-mcp-sdk-security",
       "rules": 4,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, so handlers never run on unvalidated client-supplied arguments",
@@ -81,11 +89,27 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-knex-security",
+      "name": "eslint-plugin-mysql-security",
       "rules": 3,
-      "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
+      "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
       "category": "security",
-      "version": "0.2.1",
+      "version": "0.1.2",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-sequelize-security",
+      "rules": 3,
+      "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
+      "category": "security",
+      "version": "0.1.2",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-typeorm-security",
+      "rules": 3,
+      "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
+      "category": "security",
+      "version": "0.1.2",
       "published": true
     },
     {
@@ -113,14 +137,6 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-mysql-security",
-      "rules": 2,
-      "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
-      "category": "security",
-      "version": "0.1.2",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-openai-security",
       "rules": 2,
       "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
@@ -134,22 +150,6 @@
       "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.2.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-sequelize-security",
-      "rules": 2,
-      "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
-      "category": "security",
-      "version": "0.1.2",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-typeorm-security",
-      "rules": 2,
-      "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
-      "category": "security",
-      "version": "0.1.2",
       "published": true
     },
     {
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 501,
+  "totalRules": 505,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"

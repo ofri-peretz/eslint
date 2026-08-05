@@ -4,6 +4,13 @@
  * MIT license that can be found in the LICENSE file.
  */
 
+/**
+ * Options for `no-hardcoded-credentials`.
+ *
+ * The rule takes none: a literal password is a literal password.
+ */
+export type NoHardcodedCredentialsOptions = [];
+
 export type NoUnsafeQueryOptions = [];
 
 /**
@@ -15,6 +22,7 @@ export type NoUnsafeQueryOptions = [];
 export type RequireTlsOptions = [];
 
 export interface AllTypeORMRulesOptions {
+  'typeorm-security/no-hardcoded-credentials': NoHardcodedCredentialsOptions;
   'typeorm-security/no-unsafe-query': NoUnsafeQueryOptions;
   'typeorm-security/require-tls': RequireTlsOptions;
 }

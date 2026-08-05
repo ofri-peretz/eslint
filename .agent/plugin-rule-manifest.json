@@ -2353,6 +2353,12 @@
     }
   },
   "eslint-plugin-sequelize-security": {
+    "no-hardcoded-credentials": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
     "no-unsafe-query": {
       "environment": "sequelize",
       "detection": "structural-pattern",
@@ -2367,6 +2373,12 @@
     }
   },
   "eslint-plugin-mysql-security": {
+    "no-hardcoded-credentials": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
     "no-unsafe-query": {
       "environment": "mysql",
       "detection": "structural-pattern",
@@ -2409,6 +2421,12 @@
     }
   },
   "eslint-plugin-knex-security": {
+    "no-hardcoded-credentials": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
     "no-unsafe-query": {
       "environment": "knex",
       "detection": "structural-pattern",
@@ -2437,6 +2455,12 @@
     }
   },
   "eslint-plugin-typeorm-security": {
+    "no-hardcoded-credentials": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
     "no-unsafe-query": {
       "environment": "typeorm",
       "detection": "structural-pattern",
