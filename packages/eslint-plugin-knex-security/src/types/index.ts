@@ -14,7 +14,16 @@ export type NoUnsafeQueryOptions = [];
  */
 export type NoUnscopedMutationOptions = [];
 
+/**
+ * Options for `require-tls`.
+ *
+ * The rule takes none: which key disables TLS is fixed by the driver's own
+ * config schema, not by project preference.
+ */
+export type RequireTlsOptions = [];
+
 export interface AllKnexRulesOptions {
   'knex-security/no-unsafe-query': NoUnsafeQueryOptions;
   'knex-security/no-unscoped-mutation': NoUnscopedMutationOptions;
+  'knex-security/require-tls': RequireTlsOptions;
 }
