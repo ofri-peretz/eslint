@@ -478,6 +478,12 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
     }
   },
   "eslint-plugin-import-next": {
@@ -1400,6 +1406,12 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
     }
   },
   "eslint-plugin-operability": {
