@@ -13,7 +13,7 @@
       "rules": 37,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "4.7.3",
+      "version": "4.8.0",
       "published": true
     },
     {
@@ -77,7 +77,7 @@
       "rules": 5,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "published": true
     },
     {
@@ -85,7 +85,7 @@
       "rules": 4,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 4,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell",
       "category": "security",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 4,
       "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "published": true
     },
     {
@@ -109,13 +109,29 @@
       "rules": 4,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "published": true
     },
     {
       "name": "eslint-plugin-typeorm-security",
       "rules": 4,
       "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
+      "category": "security",
+      "version": "0.3.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-anthropic-security",
+      "rules": 3,
+      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input",
+      "category": "security",
+      "version": "0.2.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-gemini-security",
+      "rules": 3,
+      "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input",
       "category": "security",
       "version": "0.2.0",
       "published": true
@@ -125,31 +141,15 @@
       "rules": 3,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.2.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-anthropic-security",
-      "rules": 2,
-      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-gemini-security",
-      "rules": 2,
-      "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, which disables harm filtering",
-      "category": "security",
-      "version": "0.1.1",
+      "version": "0.3.0",
       "published": true
     },
     {
       "name": "eslint-plugin-openai-security",
-      "rules": 2,
-      "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
+      "rules": 3,
+      "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input",
       "category": "security",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 9,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "2.0.2",
+      "version": "2.1.0",
       "published": true
     },
     {
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 462,
+  "totalRules": 465,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"

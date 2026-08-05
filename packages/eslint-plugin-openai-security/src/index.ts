@@ -16,14 +16,18 @@
 import type { TSESLint } from '@interlace/eslint-devkit';
 
 import { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
+import { noUntrustedContentInPrompt } from './rules/no-untrusted-content-in-prompt';
 import { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 
 export { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
+export { noUntrustedContentInPrompt } from './rules/no-untrusted-content-in-prompt';
 export { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // CWE-798: Use of Hard-coded Credentials
   'no-hardcoded-api-key': noHardcodedApiKey,
+  // CWE-1427: Improper Neutralization of Input Used for LLM Prompting
+  'no-untrusted-content-in-prompt': noUntrustedContentInPrompt,
   // CWE-522
   'no-browser-api-key-exposure': noBrowserApiKeyExposure,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
@@ -51,10 +55,30 @@ const enabled: TSESLint.FlatConfig.Config = {
   },
 } satisfies TSESLint.FlatConfig.Config;
 
+/**
+ * Plan §1.6: a new rule joins `strict` and stays out of `minimal` /
+ * `recommended` until its false-positive profile is measured on the corpus.
+ *
+ * `no-untrusted-content-in-prompt` genuinely has a plausible FP shape — a
+ * system prompt interpolating something harmless like today's date is not an
+ * injection, and this rule cannot tell the difference. That is a real judgement
+ * call for `strict` to make, unlike the credential rules above, where a literal
+ * key in a named option has no innocent reading.
+ */
+const strict: TSESLint.FlatConfig.Config = {
+  plugins: {
+    'openai-security': plugin,
+  },
+  rules: {
+    ...enabled.rules,
+    'openai-security/no-untrusted-content-in-prompt': 'error',
+  },
+} satisfies TSESLint.FlatConfig.Config;
+
 export const configs = {
   minimal: enabled,
   recommended: enabled,
-  strict: enabled,
+  strict,
 };
 
 export default {

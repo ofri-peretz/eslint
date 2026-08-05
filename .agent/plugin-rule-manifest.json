@@ -10,6 +10,12 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-browser-security": {
@@ -490,6 +496,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-import-next": {
@@ -1215,6 +1227,11 @@
       "environment": "nestjs",
       "detection": "structural-api",
       "confidence": "enforcement"
+    },
+    "no-hybrid-app-config-loss": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-node-security": {
@@ -1418,6 +1435,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-operability": {

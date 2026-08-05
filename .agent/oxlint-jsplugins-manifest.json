@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 488,
-  "oxlintCompatible": 488,
+  "totalRules": 491,
+  "oxlintCompatible": 491,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -12,7 +12,7 @@
       "short": "anthropic-security",
       "shim": "tools/oxlint-plugins/interlace-anthropic-security.cjs",
       "subpath": "eslint-plugin-anthropic-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-browser-api-key-exposure",
@@ -22,6 +22,12 @@
         },
         {
           "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -621,7 +627,7 @@
       "short": "gemini-security",
       "shim": "tools/oxlint-plugins/interlace-gemini-security.cjs",
       "subpath": "eslint-plugin-gemini-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-disabled-safety-settings",
@@ -631,6 +637,12 @@
         },
         {
           "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1905,7 +1917,7 @@
       "short": "openai-security",
       "shim": "tools/oxlint-plugins/interlace-openai-security.cjs",
       "subpath": "eslint-plugin-openai-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
         {
           "name": "no-browser-api-key-exposure",
@@ -1915,6 +1927,12 @@
         },
         {
           "name": "no-hardcoded-api-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-content-in-prompt",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3227,7 +3245,8 @@
   "runtimeRuleNames": {
     "anthropic-security": [
       "no-browser-api-key-exposure",
-      "no-hardcoded-api-key"
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "browser-security": [
       "detect-mixed-content",
@@ -3331,7 +3350,8 @@
     ],
     "gemini-security": [
       "no-disabled-safety-settings",
-      "no-hardcoded-api-key"
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "import-next": [
       "consistent-type-specifier-style",
@@ -3565,7 +3585,8 @@
     ],
     "openai-security": [
       "no-browser-api-key-exposure",
-      "no-hardcoded-api-key"
+      "no-hardcoded-api-key",
+      "no-untrusted-content-in-prompt"
     ],
     "operability": [
       "no-console-log",
