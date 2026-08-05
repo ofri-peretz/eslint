@@ -64,23 +64,30 @@ export function propertyKey(prop: TSESTree.ObjectLiteralElement): string | undef
 export function declaredSchemaKeys(
   config: TSESTree.ObjectExpression,
 ): Set<string> | undefined {
-  for (const prop of config.properties) {
-    if (propertyKey(prop) !== 'inputSchema') continue;
-    const value = (prop as TSESTree.Property).value;
-    if (value.type !== 'ObjectExpression') return undefined;
+  const index = config.properties.findIndex((prop) => propertyKey(prop) === 'inputSchema');
+  if (index === -1) return undefined;
 
-    const keys = new Set<string>();
-    for (const entry of value.properties) {
-      // A spread could contribute any key, so the whole schema becomes
-      // unreadable rather than partially known.
-      if (entry.type === 'SpreadElement') return undefined;
-      const key = propertyKey(entry);
-      if (key === undefined) return undefined;
-      keys.add(key);
-    }
-    return keys;
+  // A spread *after* `inputSchema` replaces it wholesale at runtime —
+  // `{ inputSchema: { path: z.string() }, ...options }` declares whatever
+  // `options.inputSchema` holds, which this file cannot see. A spread before it
+  // is harmless: the explicit key wins, so it is not a reason to go silent.
+  for (let i = index + 1; i < config.properties.length; i++) {
+    if (config.properties[i]!.type === 'SpreadElement') return undefined;
   }
-  return undefined;
+
+  const value = (config.properties[index] as TSESTree.Property).value;
+  if (value.type !== 'ObjectExpression') return undefined;
+
+  const keys = new Set<string>();
+  for (const entry of value.properties) {
+    // A spread could contribute any key, so the whole schema becomes
+    // unreadable rather than partially known.
+    if (entry.type === 'SpreadElement') return undefined;
+    const key = propertyKey(entry);
+    if (key === undefined) return undefined;
+    keys.add(key);
+  }
+  return keys;
 }
 
 /**

@@ -55,6 +55,15 @@ describe('no-unvalidated-tool-args', () => {
             'server.registerTool("ping", { inputSchema: { path: z.string() } }, async () => "pong");',
         },
         {
+          // `options` can carry its own inputSchema, so the visible keys are
+          // not necessarily the declared ones. Reporting `extra` here would be
+          // judging the handler against a shape the file cannot see.
+          name: 'a spread after inputSchema can replace it',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: { path: z.string() }, ...options }, async ({ path, extra }) => read(path, extra));',
+        },
+        {
           // Not this rule's question — require-tool-input-schema owns it.
           name: 'no inputSchema declared',
           code: SDK + 'server.registerTool("read", { title: "Read" }, async ({ path }) => read(path));',
@@ -266,6 +275,23 @@ describe('declaredSchemaKeys', () => {
 
   it('returns undefined when there is no inputSchema at all', () => {
     expect(declaredSchemaKeys(objOf('({ title: "t" })'))).toBeUndefined();
+  });
+
+  it('gives up when a spread follows inputSchema and can replace it', () => {
+    // `options.inputSchema` wins at runtime, so the visible keys are not the
+    // declared ones — judging a handler against them would report correct code.
+    expect(declaredSchemaKeys(objOf('({ inputSchema: { a: 1 }, ...options })'))).toBeUndefined();
+  });
+
+  it('reads past an ordinary property that follows inputSchema', () => {
+    const keys = declaredSchemaKeys(objOf('({ inputSchema: { a: 1 }, title: "t" })'));
+    expect([...keys!]).toEqual(['a']);
+  });
+
+  it('still reads a schema when the spread comes first', () => {
+    // The explicit key wins over an earlier spread, so this one is readable.
+    const keys = declaredSchemaKeys(objOf('({ ...options, inputSchema: { a: 1 } })'));
+    expect([...keys!]).toEqual(['a']);
   });
 });
 
