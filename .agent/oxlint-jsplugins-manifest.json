@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 487,
-  "oxlintCompatible": 487,
+  "totalRules": 488,
+  "oxlintCompatible": 488,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
