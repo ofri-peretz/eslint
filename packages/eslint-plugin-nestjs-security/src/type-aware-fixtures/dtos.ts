@@ -51,3 +51,8 @@ export type AliasedShape = { name: string };
 
 /** A union of two DTOs: no single class to resolve, so the rule abstains. */
 export type EitherDto = ValidatedDto | BareDto;
+
+/** An enum has a runtime declaration, but it is not a class. */
+export enum Channel {
+  Email = 'email',
+}

@@ -110,6 +110,22 @@ ruleTester.run(
         }
       `,
       },
+      // An enum does have a runtime declaration, so it gets past the
+      // `valueDeclaration` guard — but it is not a class, so there are no
+      // members to inspect for rules.
+      {
+        name: 'a parameter typed as an enum',
+        filename: 'src/case.controller.ts',
+        code: `
+        import { Channel } from './type-aware-fixtures/dtos';
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: Channel) {}
+        }
+      `,
+      },
       // A union has no single class to resolve — neither `getSymbol` nor
       // `aliasSymbol` yields one, so there is nothing to inspect.
       {

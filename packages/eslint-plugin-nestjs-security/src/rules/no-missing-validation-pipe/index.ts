@@ -287,7 +287,12 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       // it. The undefined guard stays — unions and unresolvable names hit it.
       const symbol = type.getSymbol();
       if (symbol === undefined) return null;
-      const declaration = symbol.declarations?.[0];
+      // `valueDeclaration`, not `declarations[0]`: it is the declaration that
+      // exists at runtime, which is exactly what a pipe needs a metatype from.
+      // It is also reachable both ways — a class has one, an interface or type
+      // alias does not — where `declarations?.[0]` had an arm no fixture could
+      // take, because a resolved symbol always has declarations.
+      const declaration = symbol.valueDeclaration;
       if (declaration === undefined) return null;
       if (!ts.isClassDeclaration(declaration)) return null;
 
