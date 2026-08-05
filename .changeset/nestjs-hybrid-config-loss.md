@@ -45,3 +45,27 @@ request Origin and *does* stay valid with credentials, which is the case that
 actually leaks authenticated responses.
 
 663 tests, 100% statements / branches / functions / lines.
+
+### `no-missing-validation-pipe` is now optionally type-aware
+
+With `parserOptions.project` configured, the rule answers a question it could
+not before: **does the DTO this `@Body()` is typed as actually declare any
+validation?** A DTO with no `class-validator` decorators means the pipe runs and
+enforces nothing, so every property of the request body passes through.
+
+This is the exposure `require-class-validator` existed for. That rule was
+deleted because the question — "is this class inbound, and is it validated?" —
+lives in whichever file declares the DTO, so a syntax-only rule had to guess
+from the class name. The checker reaches the declaration, and reaches each
+decorator's *origin*: `@IsString()` from `class-validator` counts, and
+`@ApiProperty()` — which documents a shape without enforcing it — does not,
+whatever either is named.
+
+Type information stays optional. Without it the rule behaves exactly as before.
+
+### `no-res-bypass-serialization` respects a declared content type
+
+A handler that sets `content-type: application/xml` or `text/html` is writing a
+document, not a DTO — `ClassSerializerInterceptor` produces JSON, so there is no
+`@Exclude()` for it to have dropped. Found on a fourth corpus: ghostfolio's
+sitemap controller declares XML and sends an interpolated document.

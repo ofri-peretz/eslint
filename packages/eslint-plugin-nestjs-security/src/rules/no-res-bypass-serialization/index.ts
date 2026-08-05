@@ -181,6 +181,64 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         );
       }
 
+      /**
+       * Whether the handler declares a response type that is not JSON.
+       *
+       * `ClassSerializerInterceptor` serializes class instances into JSON. A
+       * handler that sets `content-type: application/xml` or `text/html` is
+       * writing a document, not a DTO — there is no `@Exclude()` for the
+       * missing interceptor to have dropped.
+       *
+       * Found by ghostfolio's sitemap controller, which sets the header and
+       * then sends interpolated XML. The body is a helper call, so the
+       * "provably a string" check could not clear it; the declared content
+       * type can.
+       */
+      function declaresNonJsonContentType(fn: TSESTree.Node): boolean {
+        let found = false;
+        const look = (node: TSESTree.Node): void => {
+          if (found) return;
+          if (node.type === AST_NODE_TYPES.CallExpression) {
+            const name = expressionName(node.callee);
+            if (
+              name === 'type' ||
+              name === 'setHeader' ||
+              name === 'contentType'
+            ) {
+              for (const arg of node.arguments) {
+                if (
+                  arg.type === AST_NODE_TYPES.Literal &&
+                  typeof arg.value === 'string' &&
+                  /^(text\/|application\/(xml|xhtml|rss|atom|pdf|octet-stream)|image\/)/i.test(
+                    arg.value,
+                  )
+                ) {
+                  found = true;
+                  return;
+                }
+              }
+            }
+          }
+          for (const key of Object.keys(node) as (keyof TSESTree.Node)[]) {
+            if (key === 'parent') continue;
+            const value = node[key] as unknown;
+            if (Array.isArray(value)) {
+              for (const child of value) {
+                if (child && typeof child === 'object' && 'type' in child) {
+                  look(child as TSESTree.Node);
+                }
+              }
+            } else if (value && typeof value === 'object' && 'type' in value) {
+              look(value as TSESTree.Node);
+            }
+          }
+        };
+        look(fn);
+        return found;
+      }
+
+      if (declaresNonJsonContentType(body)) return null;
+
       const visit = (node: TSESTree.Node): void => {
         if (found) return;
         if (shadowsBinding(node)) return;
