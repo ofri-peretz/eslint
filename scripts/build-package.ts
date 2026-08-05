@@ -329,8 +329,21 @@ const lazifyRuleBarrel = (
 
 if (isPluginPackage) {
   const entry = join(emittedSrcDir, 'index.js');
-  if (existsSync(entry)) {
-    const result = lazifyRuleBarrel(readFileSync(entry, 'utf8'));
+
+  // Read first and let the read report absence, rather than `existsSync` then
+  // `readFileSync` — that pair is a check-then-use race (CodeQL
+  // js/file-system-race), and it is the same defect this ecosystem ships
+  // `node-security/no-toctou-vulnerability` to catch. ENOENT here just means a
+  // package with no compiled entry, which is not an error.
+  let source: string | undefined;
+  try {
+    source = readFileSync(entry, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+
+  if (source !== undefined) {
+    const result = lazifyRuleBarrel(source);
     if (result) {
       writeFileSync(entry, result.code);
       console.log(
