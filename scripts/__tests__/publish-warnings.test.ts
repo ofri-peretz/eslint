@@ -51,6 +51,33 @@ describe('filterWarnings', () => {
     expect(filterWarnings(output)).toHaveLength(1);
   });
 
+  it('ignores the not-logged-in notice every unauthenticated dry-run emits', () => {
+    // CI holds no npm token by design, so this appeared once per package and
+    // reported all 31 as defective on every run — a gate that always fails is
+    // read as a broken gate, not as 31 findings.
+    const output =
+      'npm warn publish This command requires you to be logged in to https://registry.npmjs.org/ (dry-run)';
+    expect(filterWarnings(output)).toEqual([]);
+  });
+
+  it('still reports a real warning that arrives alongside the auth notice', () => {
+    // The allowlist must skip the one line, not the whole dry-run's output.
+    const output = [
+      'npm warn publish This command requires you to be logged in to https://registry.npmjs.org/ (dry-run)',
+      'npm warn publish "repository.url" was normalized to "git+https://github.com/ofri-peretz/eslint.git"',
+    ].join('\n');
+    expect(filterWarnings(output)).toEqual([
+      'npm warn publish "repository.url" was normalized to "git+https://github.com/ofri-peretz/eslint.git"',
+    ]);
+  });
+
+  it('matches the auth notice exactly, not by keyword', () => {
+    // Same opening words, different claim — a genuine auth *failure* during a
+    // real publish must not be swallowed by the dry-run allowance.
+    const output = 'npm warn publish This command requires you to be logged in to a private registry';
+    expect(filterWarnings(output)).toHaveLength(1);
+  });
+
   it('returns nothing for clean output', () => {
     expect(filterWarnings('npm notice Publishing to https://registry.npmjs.org/')).toEqual([]);
   });

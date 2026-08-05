@@ -46,6 +46,13 @@ const PACKAGES_DIR = path.join(REPO_ROOT, 'packages');
 const BENIGN = [
   /^npm warn publish Skipping workspace .+, marked as private$/,
   /^npm warn publish$/,
+  // Emitted by every `--dry-run` in an unauthenticated shell, which is what CI
+  // is: the job holds no npm token, by design, because nothing here publishes.
+  // It is a statement about the session, not about the package — and without
+  // it here the gate reports all 31 packages as defective on every run, which
+  // is indistinguishable from the gate being broken. Not a hole in the check:
+  // an auth warning cannot describe a package's metadata.
+  /^npm warn publish This command requires you to be logged in to .+ \(dry-run\)$/,
 ];
 
 export interface PackageWarnings {
