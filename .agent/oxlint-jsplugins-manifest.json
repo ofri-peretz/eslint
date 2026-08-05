@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 483,
-  "oxlintCompatible": 483,
+  "totalRules": 484,
+  "oxlintCompatible": 484,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1356,7 +1356,7 @@
       "short": "mcp-sdk-security",
       "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
       "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
-      "ruleCount": 3,
+      "ruleCount": 4,
       "rules": [
         {
           "name": "no-command-injection-in-tool",
