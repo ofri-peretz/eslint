@@ -1,3 +1,32 @@
+## 4.8.0
+
+### Minor Changes
+
+- [#401](https://github.com/ofri-peretz/eslint/pull/401) [`94d8448`](https://github.com/ofri-peretz/eslint/commit/94d84480f3c2633258402ba7627c627a5a1823fc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-non-literal-fs-filename` now resolves the fs binding instead of matching
+  one spelling of it.
+
+  The gate required the receiver be literally the identifier `fs`, so a named
+  import from `node:fs/promises`, a renamed default import, a namespace import,
+  `fs.promises.*` and a destructured `require` were all silently unchecked — the
+  rule's own documentation used `const { readFile } = require('fs')` as its first
+  incorrect example, a shape it never reported. All of those are now checked, and
+  bindings are resolved across the whole file before any call is judged, so a
+  `require` below its call site counts too.
+
+  Detection is strictly wider, so expect more findings. Because of that,
+  `detect-non-literal-fs-filename` drops from `error` to `warn` in the
+  `recommended` preset: measured on the ecosystem repo the widened rule reports
+  854 findings (555 outside test files), and it has no notion of a trust
+  boundary — a build script reading its own repo reports identically to a request
+  handler reading user input. Set it back to `error` explicitly if you want the
+  old severity; it will be reconsidered once the corpus run measures its
+  false-positive profile.
+
+### Patch Changes
+
+- Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:
+  - @interlace/eslint-devkit@1.9.0
+
 ## 4.7.3
 
 ### Patch Changes

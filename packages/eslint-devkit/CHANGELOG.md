@@ -1,5 +1,126 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.9.0
+
+### Minor Changes
+
+- [#403](https://github.com/ofri-peretz/eslint/pull/403) [`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-browser-api-key-exposure` now covers the Anthropic SDK too.
+
+  The rule shipped on `eslint-plugin-openai-security` only. Its detection moved
+  into a shared `createBrowserEscapeHatchRule` factory in
+  `@interlace/eslint-devkit`, and `eslint-plugin-anthropic-security` gains the
+  rule at `error` in every preset.
+
+  Both SDKs refuse to run in a browser by default and both unlock it with the
+  same `dangerouslyAllowBrowser` flag; the Anthropic SDK's own JSDoc says
+  client-side use "risks exposing your secret API credentials to attackers".
+
+  **Two instantiations, not three.** Verified against the published tarballs
+  rather than assumed: neither `@google/generative-ai@0.24` nor
+  `@google/genai@2.15` has a browser escape hatch, because neither refuses the
+  browser in the first place. There is no flag to detect and no structural signal
+  a linter can read without knowing whether a file ships to a client, so
+  `eslint-plugin-gemini-security` does not get this rule. Inventing a fuzzy third
+  detection would report correct code.
+
+  OpenAI's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#402](https://github.com/ofri-peretz/eslint/pull/402) [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hardcoded-api-key` now covers all three raw inference SDKs.
+
+  The rule shipped on `eslint-plugin-anthropic-security` only. Its detection moved
+  into a shared `createSdkApiKeyRule` factory in `@interlace/eslint-devkit` and is
+  now instantiated for OpenAI and Gemini as well, at the same severity in every
+  preset — one rule with three module gates rather than three separate ones that
+  could drift.
+
+  Gemini adds a shape the other two do not have: the legacy
+  `new GoogleGenerativeAI(apiKey)` client takes the key as a **positional**
+  argument, with no options object to inspect. Both that and the current
+  `new GoogleGenAI({ apiKey })` form are checked.
+
+  Module matching is exact-or-subpath, not a prefix: `openai` opens the gate for
+  `openai` and `openai/resources`, and deliberately not for `openai-edge`, which
+  is a different package with a different client.
+
+  Anthropic's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#386](https://github.com/ofri-peretz/eslint/pull/386) [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-hardcoded-credentials` (CWE-798) to the knex, mysql, Sequelize and
+  TypeORM plugins, via a new shared `createHardcodedCredentialsRule` factory.
+
+  A password in source is a password in git history, in every fork, and in every
+  layer of the built image. Deleting the line later changes nothing — a real fix
+  means rotating the credential _and_ rewriting history, so the only cheap moment
+  is before it lands.
+
+  The detection generalizes what `eslint-plugin-postgresql-security` has shipped
+  for pg, and tightens two false positives in the process:
+
+  - A connection URL is a finding only when it embeds a password. The pg version
+    reports any `postgres://…` literal, including `postgres://localhost:5432/app`,
+    which is safe to commit.
+  - A credential key is a finding only when its value is a non-empty string
+    literal, so `password: ''` (the local trust-auth sentinel) stays silent.
+
+  It also refuses to treat the credential as its own evidence: an object must name
+  somewhere to connect _to_ — `host`, `port`, `database`, `connectionString` —
+  before its `password` counts. Without that, `{ user, password }` makes the login
+  form of every app with a database a finding.
+
+- [#389](https://github.com/ofri-peretz/eslint/pull/389) [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-mass-assignment` (CWE-915) to the five ORM plugins with object writes,
+  via a new shared `createMassAssignmentRule` factory.
+
+  ```ts
+  await prisma.user.update({ where: { id }, data: req.body });
+  await User.create(req.body);
+  await db.insert(users).values({ ...req.body });
+  ```
+
+  Each of those updates the fields the endpoint is about — and every other column
+  on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`, `credits`. None of
+  them appear in the diff, which is why the shape survives review.
+
+  It also gets worse without anyone touching it: adding a sensitive column to a
+  model later silently widens every existing mass-assignment site. No line
+  changes, and the exposure is new.
+
+  Silent by design: a payload that names its fields (`{ name: req.body.name }`) is
+  the fix; an object that merely has a `body` key (`form.body`) is not a request;
+  `ctx.data` is ordinary application state in several frameworks; and a value the
+  rule cannot see through is not guessed at.
+
+  No options, deliberately. An allowlist would let a project re-approve the
+  dangerous shape wholesale, one config file further from the call site.
+
+  mysql2 and better-sqlite3 do not carry this rule — their writes are raw SQL
+  strings, already covered by `no-unsafe-query`.
+
+- [#385](https://github.com/ofri-peretz/eslint/pull/385) [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-raw-identifier-interpolation` (CWE-89) to the Drizzle and Prisma plugins.
+
+  Bind parameters can only ever substitute _values_. When a table name, a column
+  name, or a sort direction is interpolated into a tagged template, the driver has
+  nothing to bind and splices the string in verbatim — inside the API the docs
+  call safe:
+
+  ```ts
+  await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id}`; // parameterized
+  await prisma.$queryRaw`SELECT * FROM ${table}`; // injectable
+  await db.execute(sql`SELECT * FROM users ORDER BY ${column}`); // injectable
+  ```
+
+  This is the shape behind Drizzle's GHSA-gpj5-g38j-94v9, and it is invisible to
+  linters that decide by asking "is this a raw API" — this _is_ the safe API.
+
+  The rule reports only identifier positions, so it never overlaps
+  `no-unsafe-query`, whose sinks are the raw string entry points
+  (`$queryRawUnsafe`, `sql.raw()`). Value holes, string literals,
+  `sql.identifier()` and nested `sql` fragments are all silent. Only Drizzle and
+  Prisma ship a value-parameterizing tagged template, so the other five ORM
+  plugins do not carry this rule.
+
+  New shared factory `createRawIdentifierRule` in `@interlace/eslint-devkit`.
+
 ## 1.8.0
 
 ### Minor Changes
