@@ -202,3 +202,9 @@ import forge from 'node-forge'; // For PEM parsing
 - **[Node.js Crypto Documentation](https://nodejs.org/api/crypto.html)** - Native crypto module
 - **[Web Crypto API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)** - Browser crypto
 - **[CWE-1104: Unmaintained Third Party Components](https://cwe.mitre.org/data/definitions/1104.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `severity` | `"error"` \| `"warn"` | `"warn"` | Severity level |

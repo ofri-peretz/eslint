@@ -51,6 +51,14 @@ jwt.sign({ userId: 'abc123', permissions: ['read'] }, secret);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `additionalSensitiveFields` | `string[]` | `[]` | Additional field names to flag as sensitive |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+
+
 ```javascript
 {
   "jwt/no-sensitive-payload": ["error", {

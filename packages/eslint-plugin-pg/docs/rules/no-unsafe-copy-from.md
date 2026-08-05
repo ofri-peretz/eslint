@@ -81,6 +81,12 @@ Readable.from(validatedCSV).pipe(stream);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowHardcodedPaths` | `boolean` | — | Allow hardcoded file paths (for admin/migration scripts) |
+| `allowedPaths` | `string[]` | — | List of allowed file path patterns (regex strings) |
+
+
 ### `allowHardcodedPaths`
 
 Type: `boolean`

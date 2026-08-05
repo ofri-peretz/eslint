@@ -61,9 +61,9 @@ app.get(/^\/api\/\w+$/, handler);
 
 ## Options
 
-| Option         | Type      | Default | Description                      |
-| -------------- | --------- | ------- | -------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow unsafe regex in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |
 
 ```json
 {

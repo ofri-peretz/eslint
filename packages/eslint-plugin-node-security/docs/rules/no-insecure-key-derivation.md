@@ -178,3 +178,9 @@ crypto.pbkdf2(password, salt, iterations, 32, 'sha256', cb);
 - **[OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)** - Current recommendations
 - **[CWE-916: Insufficient Computational Effort](https://cwe.mitre.org/data/definitions/916.html)** - Official CWE entry
 - **[Argon2 Paper](https://www.password-hashing.net/argon2-specs.pdf)** - Password Hashing Competition winner
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `minIterations` | `number` | `100000` | Minimum required PBKDF2 iterations |

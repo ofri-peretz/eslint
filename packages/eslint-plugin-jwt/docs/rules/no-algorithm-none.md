@@ -60,6 +60,14 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow "none" algorithm in test files |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+
+
 ```javascript
 {
   "jwt/no-algorithm-none": ["error", {

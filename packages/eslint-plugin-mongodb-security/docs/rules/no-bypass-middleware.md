@@ -127,3 +127,9 @@ Model[method]({ ... });
 
 - [Mongoose Middleware](https://mongoosejs.com/docs/middleware.html)
 - [CWE-284](https://cwe.mitre.org/data/definitions/284.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -361,3 +361,12 @@ execFile('cmd', [], { env: { PATH: userInput } });
 - **[CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)** - Official CWE entry
 - **[Execa Library](https://github.com/sindresorhus/execa)** - Safer child process execution
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiteralStrings` | `boolean` | `false` | Allow exec() with literal strings |
+| `allowLiteralSpawn` | `boolean` | `false` | Allow spawn() with literal arguments |
+| `additionalMethods` | `string[]` | `[]` | Additional child_process methods to check |
+| `strategy` | `"validate"` \| `"sanitize"` \| `"restrict"` \| `"auto"` | `"auto"` | Strategy for fixing command injection (auto = smart detection) |
