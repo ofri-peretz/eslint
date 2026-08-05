@@ -123,7 +123,7 @@ Take only the plugins you need — a repo with no Postgres has no reason to inst
 `eslint-plugin-pg`. There is deliberately no meta-config package to install: ESLint
 config is composed per repository from the individual plugins.
 
-Structural lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI). That package is repo-internal (`private: true`) and is not published or recommended to consumers.
+Structural lock: [`scripts/__tests__/ecosystem-presets.test.ts`](../scripts/__tests__/ecosystem-presets.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI). It composes the presets from a test fixture, not from a shipped package — there is no Interlace meta-config, and none is published or recommended to consumers.
 
 The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's own `recommended` preset.
 
