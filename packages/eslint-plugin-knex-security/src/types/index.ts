@@ -12,6 +12,13 @@
  */
 export type NoMassAssignmentOptions = [];
 
+/**
+ * Options for `no-hardcoded-credentials`.
+ *
+ * The rule takes none: a literal password is a literal password.
+ */
+export type NoHardcodedCredentialsOptions = [];
+
 export type NoUnsafeQueryOptions = [];
 
 /**
@@ -32,6 +39,7 @@ export type RequireTlsOptions = [];
 
 export interface AllKnexRulesOptions {
   'knex-security/no-mass-assignment': NoMassAssignmentOptions;
+  'knex-security/no-hardcoded-credentials': NoHardcodedCredentialsOptions;
   'knex-security/no-unsafe-query': NoUnsafeQueryOptions;
   'knex-security/no-unscoped-mutation': NoUnscopedMutationOptions;
   'knex-security/require-tls': RequireTlsOptions;

@@ -12,6 +12,13 @@
  */
 export type NoMassAssignmentOptions = [];
 
+/**
+ * Options for `no-hardcoded-credentials`.
+ *
+ * The rule takes none: a literal password is a literal password.
+ */
+export type NoHardcodedCredentialsOptions = [];
+
 export type NoUnsafeQueryOptions = [];
 
 /**
@@ -24,6 +31,7 @@ export type RequireTlsOptions = [];
 
 export interface AllSequelizeRulesOptions {
   'sequelize-security/no-mass-assignment': NoMassAssignmentOptions;
+  'sequelize-security/no-hardcoded-credentials': NoHardcodedCredentialsOptions;
   'sequelize-security/no-unsafe-query': NoUnsafeQueryOptions;
   'sequelize-security/require-tls': RequireTlsOptions;
 }

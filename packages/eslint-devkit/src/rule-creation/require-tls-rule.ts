@@ -216,7 +216,11 @@ export function urlDisablesTls(value: string, schemes: readonly string[]): boole
  * built in one statement and passed in another.
  */
 export function inConnectionPosition(
-  node: TSESTree.Literal,
+  // Widened from `Literal` because no-hardcoded-credentials also asks about
+  // static template literals. Kept to that exact union rather than `Node`:
+  // `parent.arguments.includes(node)` needs a CallExpressionArgument, which
+  // `Node` is not.
+  node: TSESTree.Literal | TSESTree.TemplateLiteral,
   connectionKeys: readonly string[],
   bindings: ReadonlySet<string>,
 ): boolean {

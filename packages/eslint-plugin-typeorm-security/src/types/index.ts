@@ -12,6 +12,13 @@
  */
 export type NoMassAssignmentOptions = [];
 
+/**
+ * Options for `no-hardcoded-credentials`.
+ *
+ * The rule takes none: a literal password is a literal password.
+ */
+export type NoHardcodedCredentialsOptions = [];
+
 export type NoUnsafeQueryOptions = [];
 
 /**
@@ -24,6 +31,7 @@ export type RequireTlsOptions = [];
 
 export interface AllTypeORMRulesOptions {
   'typeorm-security/no-mass-assignment': NoMassAssignmentOptions;
+  'typeorm-security/no-hardcoded-credentials': NoHardcodedCredentialsOptions;
   'typeorm-security/no-unsafe-query': NoUnsafeQueryOptions;
   'typeorm-security/require-tls': RequireTlsOptions;
 }
