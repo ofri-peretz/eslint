@@ -229,6 +229,28 @@ describe('createSqlInjectionRule', () => {
             'q(label, []);',
           ].join('\n'),
         },
+        // Matching is by bare name, so a name meaning two different things in
+        // one file is unusable. The adapter pattern — several repositories
+        // exposing an identically-named method — is where this bites, and
+        // reporting the non-wrapping one would be precisely the false
+        // positive #261 described.
+        {
+          name: 'same method name on a wrapping and a non-wrapping class',
+          code: [
+            'class PgRepo { run(sql) { return this.pool.query(sql); } }',
+            'class CacheRepo { run(sql) { return this.cache.get(sql); } }',
+            'new CacheRepo().run(`SELECT * FROM users WHERE id = ${id}`);',
+          ].join('\n'),
+        },
+        {
+          name: 'same free function name, only one of which wraps a sink',
+          code: [
+            'function send(sql) { return pool.query(sql); }',
+            'function send2(x) { return x; }',
+            'const send3 = (sql) => sql;',
+            'send3(`SELECT * FROM users WHERE id = ${id}`);',
+          ].join('\n'),
+        },
         {
           name: 'unrelated helper of the same name is not a sink',
           code: 'log(`SELECT ${x}`);',
@@ -317,6 +339,19 @@ describe('createSqlInjectionRule', () => {
           code: [
             'const q = (conn, sql) => conn.query(sql);',
             'q(pool, `SELECT * FROM users WHERE id = ${id}`);',
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // The variable acquires its SQL-ness at the `+=`, not at its
+        // declaration. `pool.query(sql)` always caught this; `q(sql)` used to
+        // drop it, because `sqlish` was only ever seeded from a declarator.
+        {
+          name: 'variable made SQL-ish by += then handed to a wrapper',
+          code: [
+            'const q = (sql) => pool.query(sql);',
+            "let sql = '';",
+            'sql += `SELECT * FROM users WHERE id = ${id}`;',
+            'q(sql);',
           ].join('\n'),
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },

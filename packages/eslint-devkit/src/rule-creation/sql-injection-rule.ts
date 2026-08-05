@@ -233,6 +233,17 @@ export function createSqlInjectionRule(
       // observed handing to a real sink. `pool.query(sql, params)` inside
       // `const q = (sql, params) => …` makes `q` a sink at argument 0.
       const wrappers = new Map<string, number>();
+      // Every named callable defined in this file, and the subset of those
+      // proven to forward a parameter into a sink. A name is only usable as a
+      // wrapper when *every* definition of it is one: matching is by bare
+      // name, so a file holding both `PgRepo.run` (wraps `pool.query`) and
+      // `CacheRepo.run` (does not) cannot tell the two apart, and reporting
+      // `new CacheRepo().run(...)` would be exactly the false positive this
+      // rule is being fixed for. Ambiguous name -> no wrapper finding.
+      const definitions = new Map<string, number>();
+      // Keyed by function node so a body calling the sink twice counts once;
+      // the value is the name, already resolved at detection.
+      const wrapperFns = new Map<TSESTree.FunctionLike, string>();
       // Calls that would be findings *if* their callee turns out to be a
       // wrapper. Deferred to Program:exit because a helper may be declared
       // below its call site (hoisted `function`, or a class used top-down).
@@ -252,6 +263,16 @@ export function createSqlInjectionRule(
       };
 
       return {
+        // Count every named callable so Program:exit can tell a name with one
+        // meaning from a name shared by a wrapper and a non-wrapper.
+        'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression'(
+          node: TSESTree.FunctionLike,
+        ) {
+          const name = callableName(node);
+          if (name !== undefined)
+            definitions.set(name, (definitions.get(name) ?? 0) + 1);
+        },
+
         // const query = "SELECT ..." + userId;
         // const query = `SELECT ...${email}`;
         VariableDeclarator(node: TSESTree.VariableDeclarator) {
@@ -275,6 +296,13 @@ export function createSqlInjectionRule(
               config.requireSqlKeywords && !sqlish.has(node.left.name);
             const kind = classify(node.right, gate);
             if (kind) tainted.set(node.left.name, kind);
+            // A variable can acquire its SQL-ness here rather than at its
+            // declaration (`let sql = ''; sql += 'SELECT …${id}'`). Without
+            // this, the wrapper path's `sqlish` guard dropped that variable
+            // while the direct-sink path still reported it — the same code
+            // flagged at `pool.query(sql)` and silent at `q(sql)`.
+            if (SQL_KEYWORDS.test(staticText(node.right)))
+              sqlish.add(node.left.name);
           }
         },
 
@@ -332,7 +360,10 @@ export function createSqlInjectionRule(
                   p.name === queryArg.name,
               ) ?? -1;
             const name = fn && index >= 0 ? callableName(fn) : undefined;
-            if (name !== undefined) wrappers.set(name, index);
+            if (name !== undefined && fn) {
+              wrappers.set(name, index);
+              wrapperFns.set(fn, name);
+            }
           }
 
           const direct = classify(queryArg, config.requireSqlKeywords);
@@ -348,8 +379,16 @@ export function createSqlInjectionRule(
         },
 
         'Program:exit'() {
+          // How many definitions of each name were proven to be wrappers.
+          const proven = new Map<string, number>();
+          for (const name of wrapperFns.values())
+            proven.set(name, (proven.get(name) ?? 0) + 1);
+
           for (const { name, index, arg, kind } of pending) {
             if (wrappers.get(name) !== index) continue;
+            // Every definition of this name must be a wrapper, or we cannot
+            // tell which one a call site meant.
+            if (definitions.get(name) !== proven.get(name)) continue;
             if (kind) {
               report(arg, kind);
               continue;
