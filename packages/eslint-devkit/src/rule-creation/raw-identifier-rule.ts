@@ -132,7 +132,33 @@ export interface RawIdentifierRuleConfig {
  * make it look deliberate and escaped when nothing has been escaped.
  */
 const IDENTIFIER_KEYWORDS =
-  /\b(?:from|join|into|update|table|order\s+by|group\s+by|select|distinct\s+on)\s*["'`[]?\s*$/i;
+  /\b(?:from|join|into|update|table|order\s+by|group\s+by|select|distinct\s+on)$/i;
+
+/** One character of the gap between a keyword and the hole after it. */
+const GAP_CHAR = /[\s"'`[]/;
+
+/**
+ * Drop trailing whitespace and opening quotes, by scanning — not by regex.
+ *
+ * This is a security property rather than a style choice. The keyword pattern
+ * used to end `\s*["'`[]?\s*$`: two quantifiers with an optional token between
+ * them, so a run of tabs gave the engine O(n) ways to split them, at O(n)
+ * start positions. CodeQL flagged it as `js/polynomial-redos`, correctly —
+ * this rule reads whatever source it is pointed at, so a template literal
+ * padded with whitespace is genuinely attacker-supplied.
+ *
+ * Splitting it into a separate *regex* does not help: `[\s"'`[]+$` backtracks
+ * the same way, because every position inside the run is a candidate start
+ * that only fails once it reaches the anchor. Measured on
+ * `` `SELECT * FROM` + '\t'.repeat(40_000) + 'x' ``, both spellings take
+ * ~800ms. A reverse scan touches each trailing character once and returns in
+ * microseconds, which is the only version of this that is actually linear.
+ */
+export function stripIdentifierGap(text: string): string {
+  let end = text.length;
+  while (end > 0 && GAP_CHAR.test(text[end - 1]!)) end--;
+  return text.slice(0, end);
+}
 
 /**
  * Clause keywords, used to answer "which clause does this interpolation sit
@@ -160,7 +186,9 @@ export function lastClause(text: string): string {
 export function identifierPosition(
   precedingText: string,
 ): 'identifier' | 'sortDirection' | false {
-  if (IDENTIFIER_KEYWORDS.test(precedingText)) return 'identifier';
+  // Scan the gap off first, then anchor the keyword at the end. Neither step
+  // has adjacent quantifiers, so neither can backtrack. See stripIdentifierGap.
+  if (IDENTIFIER_KEYWORDS.test(stripIdentifierGap(precedingText))) return 'identifier';
   // `ORDER BY created_at ${dir}` — not immediately after the keyword, but
   // still inside the clause, so still an identifier-grade splice. A later
   // clause keyword (`LIMIT`, `OFFSET`) means the hole has left ORDER BY.

@@ -22,6 +22,7 @@ import {
   identifierPosition,
   lastClause,
   calleeText,
+  stripIdentifierGap,
   tagName,
   isExemptExpression,
 } from './raw-identifier-rule';
@@ -74,6 +75,29 @@ describe('identifierPosition', () => {
     expect(identifierPosition("SELECT * FROM '")).toBe('identifier');
   });
 
+  // Regression for CodeQL js/polynomial-redos. The old spelling ended
+  // `\s*["'`[]?\s*$`, which backtracks polynomially on a whitespace run —
+  // and this rule reads whatever source it is pointed at, so that input is
+  // genuinely attacker-supplied. A pathological string must stay fast.
+  it('does not blow up on a long whitespace run', () => {
+    // The shape matters: the keyword must be followed by the run, and the run
+    // by a character that fails the anchor. That is what gave the old pattern
+    // O(n) split attempts at O(n) start positions — measured at ~800ms for
+    // n=40_000, versus microseconds now. A string that merely *contains*
+    // whitespace does not reproduce it, and a lock built on one would pass
+    // against the unfixed code.
+    const pathological = 'SELECT * FROM' + '\t'.repeat(40_000) + 'x';
+    const started = process.hrtime.bigint();
+    expect(identifierPosition(pathological)).toBe(false);
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(ms).toBeLessThan(50);
+  });
+
+  it('still sees the keyword through a long whitespace gap', () => {
+    expect(identifierPosition('SELECT * FROM' + ' '.repeat(2_000))).toBe('identifier');
+    expect(identifierPosition('SELECT * FROM' + '\t'.repeat(2_000) + '"')).toBe('identifier');
+  });
+
   it('classifies a hole still inside ORDER BY as a sort direction', () => {
     expect(identifierPosition('SELECT * FROM t ORDER BY name ')).toBe('sortDirection');
     expect(identifierPosition('SELECT * FROM t ORDER BY a, b ')).toBe('sortDirection');
@@ -94,6 +118,23 @@ describe('identifierPosition', () => {
     ]) {
       expect(identifierPosition(text), text).toBe(false);
     }
+  });
+});
+
+describe('stripIdentifierGap', () => {
+  it('drops trailing whitespace and opening quotes', () => {
+    expect(stripIdentifierGap('SELECT * FROM  ')).toBe('SELECT * FROM');
+    expect(stripIdentifierGap('SELECT * FROM "')).toBe('SELECT * FROM');
+    expect(stripIdentifierGap('SELECT * FROM \t[')).toBe('SELECT * FROM');
+  });
+
+  it('leaves text with no gap untouched', () => {
+    expect(stripIdentifierGap('SELECT * FROM')).toBe('SELECT * FROM');
+    expect(stripIdentifierGap('')).toBe('');
+  });
+
+  it('does not eat into the keyword itself', () => {
+    expect(stripIdentifierGap('WHERE id =')).toBe('WHERE id =');
   });
 });
 
