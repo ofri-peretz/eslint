@@ -1,6 +1,6 @@
 ---
 title: no-untrusted-content-in-prompt
-description: Disallow untrusted content built into a OpenAI system prompt
+description: Disallow untrusted content built into the OpenAI system prompt
 tags: ['security','openai']
 category: security
 severity: high
@@ -10,7 +10,7 @@ autofix: false
 
 # no-untrusted-content-in-prompt
 
-> Disallow untrusted content built into a OpenAI system prompt.
+> Disallow untrusted content built into the OpenAI system prompt.
 
 - **CWE:** [CWE-1427 — Improper Neutralization of Input Used for LLM Prompting](https://cwe.mitre.org/data/definitions/1427.html)
 - **OWASP:** A03:2021 — Injection · **LLM Top 10:** LLM01 Prompt Injection
@@ -30,6 +30,20 @@ A string literal, a template with no interpolations, or a concatenation of those
 
 - **The Vercel AI SDK.** `generateText({ system })` and `streamText({ system })` belong to [`vercel-ai-security/no-dynamic-system-prompt`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security). This rule gates on OpenAI's own request paths, so no line is ever reported by both.
 - **User turns.** `{ role: 'user', content: \`\${input}\` }` is the *remediation*, not the bug — a user message is where runtime values belong, because the model reads them as data.
+
+## Known limitations
+
+- The gate is file-level: once the OpenAI SDK is imported anywhere in the file,
+  any call whose member path matches a request path is inspected. An unrelated
+  object that happens to expose the same path — `client.responses.create` on
+  something that is not an OpenAI client — is a false positive. Resolving the
+  callee back to the import would need the cross-scope data-flow analysis these
+  rules deliberately avoid; the trade is a rule that stays fast and predictable,
+  and it is why this rule ships in `strict` only until the corpus run measures
+  the real rate.
+- A system prompt assembled before the call (`const p = base + role;` then
+  `instructions: p`) is a false negative, for the same reason a bare identifier counts
+  as static.
 
 ## Incorrect
 

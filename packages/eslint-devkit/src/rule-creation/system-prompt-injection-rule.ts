@@ -37,6 +37,18 @@ import { createRule } from './rule-creator';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { matchesModule } from './sdk-api-key-rule';
 
+/**
+ * Configuration for one vendor's instantiation of the CWE-1427 detector.
+ *
+ * The contract is: `modules` decides *whether* the rule is armed in a file,
+ * `requestPaths` decides *which calls* it looks at, and `systemPromptProps`
+ * decides *which option* inside those calls holds the instruction text. The
+ * `messages: [{ role: 'system' }]` array form is read for every vendor and is
+ * not configurable — every SDK in this family spells it the same way.
+ *
+ * `requestPaths` is what keeps two vendors' instantiations off the same line;
+ * see the note on that field before adding a path.
+ */
 export interface SystemPromptInjectionRuleConfig {
   ruleName: string;
   /** Vendor name for the message, e.g. `OpenAI`. */
@@ -158,7 +170,7 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
       type: 'problem',
       docs: {
         url: config.docsUrl,
-        description: `Disallow untrusted content built into a ${config.vendor} system prompt`,
+        description: `Disallow untrusted content built into the ${config.vendor} system prompt`,
         cwe: 'CWE-1427',
         cvss: 8.1,
       },

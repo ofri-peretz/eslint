@@ -52,6 +52,12 @@ describe('no-untrusted-content-in-prompt', () => {
         name: 'a method outside this SDK request path',
         code: SDK + 'client.threads.create({ instructions: `Act as ${role}.` });',
       },
+      {
+        name: 'a static system turn on Chat Completions',
+        code:
+          SDK +
+          "client.chat.completions.create({ messages: [{ role: 'system', content: 'You are helpful.' }] });",
+      },
     ],
     invalid: [
       {
@@ -67,6 +73,16 @@ describe('no-untrusted-content-in-prompt', () => {
       {
         name: 'a system prompt built by a call',
         code: SDK + 'client.responses.create({ instructions: buildPrompt(user) });',
+        errors: [{ messageId: 'untrustedSystemPrompt' }],
+      },
+      {
+        // Chat Completions is the most-used OpenAI shape, and it carries the
+        // system prompt as a message rather than as a named option. Locked
+        // here so a `requestPaths` edit cannot drop it silently.
+        name: 'an interpolated system turn on Chat Completions',
+        code:
+          SDK +
+          "client.chat.completions.create({ messages: [{ role: 'system', content: `Act as ${role}.` }] });",
         errors: [{ messageId: 'untrustedSystemPrompt' }],
       },
     ],

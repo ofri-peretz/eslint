@@ -69,6 +69,21 @@ describe('no-untrusted-content-in-prompt', () => {
         code: SDK + 'ai.models.generateContent({ systemInstruction: buildPrompt(user) });',
         errors: [{ messageId: 'untrustedSystemPrompt' }],
       },
+      {
+        // The second registered request path — same options, same risk.
+        name: 'generateContentStream carries the same injection',
+        code: SDK + 'ai.models.generateContentStream({ systemInstruction: `Act as ${role}.` });',
+        errors: [{ messageId: 'untrustedSystemPrompt' }],
+      },
+      {
+        // Gemini's nested instruction shape, locked per-plugin as well as in
+        // the devkit factory.
+        name: 'the nested parts shape',
+        code:
+          SDK +
+          'ai.models.generateContent({ systemInstruction: { parts: [{ text: `Act as ${role}.` }] } });',
+        errors: [{ messageId: 'untrustedSystemPrompt' }],
+      },
     ],
   });
 });

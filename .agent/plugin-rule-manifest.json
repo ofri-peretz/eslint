@@ -1227,6 +1227,11 @@
       "environment": "nestjs",
       "detection": "structural-api",
       "confidence": "enforcement"
+    },
+    "no-hybrid-app-config-loss": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-node-security": {

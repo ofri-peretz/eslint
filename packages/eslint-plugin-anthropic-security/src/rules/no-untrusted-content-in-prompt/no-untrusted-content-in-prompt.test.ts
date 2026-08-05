@@ -69,6 +69,13 @@ describe('no-untrusted-content-in-prompt', () => {
         code: SDK + 'client.messages.create({ system: buildPrompt(user) });',
         errors: [{ messageId: 'untrustedSystemPrompt' }],
       },
+      {
+        // The second registered request path. Streaming takes the same options
+        // and carries the same risk, so it is locked separately.
+        name: 'messages.stream carries the same injection',
+        code: SDK + 'client.messages.stream({ system: `Act as ${role}.` });',
+        errors: [{ messageId: 'untrustedSystemPrompt' }],
+      },
     ],
   });
 });
