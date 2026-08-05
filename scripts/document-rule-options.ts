@@ -62,15 +62,35 @@ interface Prop {
  * an unescaped one silently eats the rest of the row (MD056).
  */
 function cell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+  // Prose cell. Backslashes first, then pipes: escaping pipes alone would let
+  // a backslash already in the text pair up with the one we add, re-exposing
+  // the delimiter it was meant to neutralise.
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, ' ')
+    .trim();
+}
+
+/**
+ * A value rendered inside a backtick code span.
+ *
+ * Only `|` is escaped here, and deliberately so. A backslash inside a code
+ * span is already literal, so doubling it would make the doc *wrong* — it
+ * printed `"\\\\.(test|spec)"` for a default that is really `"\\.(test|spec)"`,
+ * turning a correct regex into one a reader would copy and be unable to use.
+ * The pipe is the sole character that still breaks a table row inside code.
+ */
+function codeCell(value: string): string {
+  return `\`${value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')}\``;
 }
 
 /** Render a schema property's type as it appears in the Type column. */
 function renderType(prop: Prop): string {
-  if (Array.isArray(prop.enum)) return prop.enum.map((v) => `\`${cell(JSON.stringify(v))}\``).join(' \\| ');
+  if (Array.isArray(prop.enum)) return prop.enum.map((v) => codeCell(JSON.stringify(v))).join(' \\| ');
   const base = Array.isArray(prop.type) ? prop.type[0] : prop.type;
-  if (base === 'array') return `\`${cell(prop.items?.type ?? 'unknown')}[]\``;
-  return `\`${cell(String(base ?? 'unknown'))}\``;
+  if (base === 'array') return codeCell(`${prop.items?.type ?? 'unknown'}[]`);
+  return codeCell(String(base ?? 'unknown'));
 }
 
 /** Default from the schema, falling back to the rule's own defaultOptions. */
@@ -78,7 +98,17 @@ function renderDefault(name: string, prop: Prop, rule: RuleLike): string {
   const fromRule = (rule.defaultOptions?.[0] as Record<string, unknown> | undefined)?.[name];
   const value = prop.default ?? fromRule;
   if (value === undefined) return '—';
-  return `\`${cell(JSON.stringify(value))}\``;
+  return codeCell(JSON.stringify(value));
+}
+
+/** The doc's contents, or undefined when there is no doc for this rule. */
+function readDoc(path: string): string | undefined {
+  try {
+    return readFileSync(path, 'utf-8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  }
 }
 
 function schemaProps(rule: RuleLike): Record<string, Prop> {
@@ -156,7 +186,7 @@ for (const pkg of readdirSync(PACKAGES).sort()) {
   for (const name of readdirSync(rulesDir).sort()) {
     const source = join(rulesDir, name, 'index.ts');
     const docPath = join(docsDir, `${name}.md`);
-    if (!existsSync(source) || !existsSync(docPath)) continue;
+    if (!existsSync(source)) continue;
 
     const module = (await import(pathToFileURL(source).href)) as Record<string, unknown>;
     const rule = Object.values(module).find(
@@ -167,7 +197,12 @@ for (const pkg of readdirSync(PACKAGES).sort()) {
     const props = schemaProps(rule);
     if (Object.keys(props).length === 0) continue;
 
-    const markdown = readFileSync(docPath, 'utf-8');
+    // Read and let a missing file be the answer, rather than asking whether it
+    // exists and then reading it. The two-step version is a race, and the
+    // failure it invites is silent: the doc is gone by the time we read it and
+    // the script reports having checked a rule it never opened.
+    const markdown = readDoc(docPath);
+    if (markdown === undefined) continue;
     const { table, undescribed } = buildTable(rule, props, existingDescriptions(markdown));
     if (undescribed.length > 0) {
       skipped.push(`${pkg}/${name}: ${undescribed.join(', ')}`);
