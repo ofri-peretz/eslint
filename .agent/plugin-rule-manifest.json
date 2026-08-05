@@ -1,4 +1,11 @@
 {
+  "eslint-plugin-anthropic-security": {
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
   "eslint-plugin-browser-security": {
     "no-innerhtml": {
       "environment": "browser",
@@ -466,6 +473,13 @@
       "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based — ships as warn per I3."
     }
   },
+  "eslint-plugin-gemini-security": {
+    "no-disabled-safety-settings": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
   "eslint-plugin-import-next": {
     "no-duplicates": {
       "environment": "universal",
@@ -787,6 +801,73 @@
       "confidence": "review-prompt"
     }
   },
+  "eslint-plugin-jwt-security": {
+    "no-algorithm-none": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-algorithm-confusion": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-algorithm-whitelist": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-decode-without-verify": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-weak-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-expiration": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-hardcoded-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issued-at": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issuer-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-audience-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-timestamp-manipulation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-max-age": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-payload": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
   "eslint-plugin-lambda-security": {
     "no-hardcoded-credentials-sdk": {
       "environment": "lambda",
@@ -919,6 +1000,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-mcp-sdk-security": {
+    "require-tool-input-schema": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-modernization": {
@@ -1083,19 +1171,19 @@
       "detection": "structural-api",
       "confidence": "enforcement"
     },
-    "require-class-validator": {
-      "environment": "nestjs",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
     "no-exposed-private-fields": {
       "environment": "nestjs",
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
     },
-    "no-exposed-debug-endpoints": {
+    "no-res-bypass-serialization": {
       "environment": "nestjs",
-      "detection": "structural-pattern",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-unguarded-swagger": {
+      "environment": "nestjs",
+      "detection": "structural-api",
       "confidence": "enforcement"
     }
   },
@@ -1289,6 +1377,13 @@
       "notes": "Shell binary + -c/-Command argv position with an assembled string, or a non-escaping command-runner (execaCommand/$.raw). Distinct from no-shell-injection (CWE-78 exec concat)."
     }
   },
+  "eslint-plugin-openai-security": {
+    "no-browser-api-key-exposure": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
   "eslint-plugin-operability": {
     "no-console-log": {
       "environment": "universal",
@@ -1322,6 +1417,73 @@
     }
   },
   "eslint-plugin-pg": {
+    "no-unsafe-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-ssl": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-credentials": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "check-query-params": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-missing-client-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-transaction-on-pool": {
+      "environment": "pg",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-floating-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-select-all": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-pool-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-batch-insert-loop": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-search-path": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-copy-from": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prevent-double-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-postgresql-security": {
     "no-unsafe-query": {
       "environment": "pg",
       "detection": "structural-pattern",

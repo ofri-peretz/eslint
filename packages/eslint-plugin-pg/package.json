@@ -11,8 +11,8 @@
       "default": "./dist/src/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -95,5 +95,8 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "docs": false
   }
 }
