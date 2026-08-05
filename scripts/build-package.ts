@@ -28,6 +28,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { lazifyRuleBarrel } from './lib/lazify-rule-barrel';
 import { overlayJs } from './lib/overlay-js';
 import process from 'node:process';
 
@@ -285,48 +286,6 @@ export default _default;
 //     require: `export { noAlgorithmNone } from './rules/...'` is public API
 //     (eslint-plugin-jwt, eslint-plugin-vercel-ai-security re-export every
 //     rule), and a re-export cannot be deferred. Those plugins are unchanged.
-const lazifyRuleBarrel = (
-  source: string,
-): { code: string; deferred: number } | null => {
-  const imports = [
-    ...source.matchAll(/^const (\w+) = require\("(\.\/rules\/[^"]+)"\);\n/gm),
-  ];
-  if (imports.length === 0) return null;
-  const byVar = new Map(imports.map((m) => [m[1], m[2]]));
-
-  const block = source.match(/^exports\.rules = \{$([\s\S]*?)^\};$/m);
-  if (!block) return null;
-
-  const deferred = new Map<string, { source: string; exported: string }>();
-  let getters = 0;
-  const body = block[1].replace(
-    /^(\s*)('[\w$/-]+'|"[\w$/-]+"|[\w$]+):\s*(\w+)\.(\w+),$/gm,
-    (whole, indent: string, key: string, variable: string, exported: string) => {
-      const from = byVar.get(variable);
-      if (from === undefined) return whole;
-      deferred.set(variable, { source: from, exported });
-      getters++;
-      return `${indent}get ${key}() { return require("${from}").${exported}; },`;
-    },
-  );
-  if (deferred.size === 0) return null;
-
-  let code = source.replace(block[0], `exports.rules = {${body}\n};`);
-
-  // Drop an eager require only once nothing else in the file mentions its
-  // binding — `namespace_1.namespace` in a re-export, a config that reaches a
-  // rule directly, anything.
-  const rest = code.replace(block[0], '').replace(/^const \w+ = require\("\.\/rules\/[^"]+"\);\n/gm, '');
-  for (const [variable] of deferred) {
-    if (new RegExp(`\\b${variable}\\b`).test(rest)) continue;
-    code = code.replace(
-      new RegExp(`^const ${variable} = require\\("\\./rules/[^"]+"\\);\\n`, 'm'),
-      '',
-    );
-  }
-  return { code, deferred: getters };
-};
-
 if (isPluginPackage) {
   const entry = join(emittedSrcDir, 'index.js');
 
