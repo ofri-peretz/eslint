@@ -154,6 +154,15 @@ const DEFAULT_PUBLIC_ROUTES = [
   'activate',
   'activation',
   'activate-account',
+  // Standards-defined public URLs. A crawler fetches these unauthenticated by
+  // definition, so demanding a guard is demanding the endpoint stop working.
+  // They are here on the same footing as `health` and `ping`: well-known
+  // conventions rather than one application's naming.
+  'sitemap',
+  'sitemap.xml',
+  'robots',
+  'robots.txt',
+  '.well-known',
 ];
 
 /**

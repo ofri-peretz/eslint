@@ -38,7 +38,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { expressionName, objectProperties } from '../../utils/nest-ast';
+import {
+  expressionName,
+  isTestFile,
+  objectProperties,
+} from '../../utils/nest-ast';
 
 /**
  * Identifiers and members that mean "which environment are we in".
@@ -92,8 +96,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
 
 /** Resolve a `const x = { … }` declared in this same file, or null. */
 function resolveLocalObject(
@@ -213,7 +215,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options;
-    if (allowInTests && TEST_FILE.test(context.filename)) return {};
+    if (allowInTests && isTestFile(context.filename)) return {};
 
     /**
      * Whether the call sits inside a branch that tests the environment.
