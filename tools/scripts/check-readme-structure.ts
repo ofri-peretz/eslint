@@ -97,6 +97,19 @@ function checkPlugin(pkg: string): Violation | null {
     cursor = idx + header.length;
   }
 
+  // 1b. …and each appears exactly once. The order walk above is `indexOf` from
+  // a moving cursor, so it stops at the FIRST match of every header and a
+  // second copy further down is invisible to it — eslint-plugin-mcp-sdk-security
+  // shipped two `## Philosophy` blocks through a green gate that way (#377).
+  // Count line-anchored headings so a mention inside prose or a code fence
+  // (e.g. this file's own rule docs) doesn't register as a section.
+  for (const header of REQUIRED_ORDER) {
+    const occurrences = content.split('\n').filter((l) => l === header).length;
+    if (occurrences > 1) {
+      reasons.push(`duplicate section: \`${header}\` appears ${occurrences}×`);
+    }
+  }
+
   // 2. Prelude: the logo row. Every plugin carries Interlace + oxlint + ESLint;
   // the 17 plugins that target a specific ecosystem additionally carry that
   // vendor's mark, between Interlace and oxlint. All marks are served from
