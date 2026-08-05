@@ -96,7 +96,7 @@
     "@typescript-eslint/types": "^8.46.2",
     "@typescript-eslint/utils": "^8.46.2",
     "oxc-resolver": "^11.24.2",
-    "typescript": "^5.0.0 || ^6.0.0"
+    "typescript": "^7.0.2"
   },
   "funding": {
     "type": "github",
