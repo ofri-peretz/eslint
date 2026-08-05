@@ -105,14 +105,23 @@ describe('Scorecard page: structure lock', () => {
   });
 
   describe('CTA locks (proof → action)', () => {
-    it('imports + renders the Star, per-rule Install, and Config CTAs', () => {
+    it('imports + renders the Star and per-rule Install CTAs', () => {
       expect(pageSource).toContain("from '@/components/stats/cta'");
-      for (const sym of ['StarButton', 'InstallCell', 'ConfigCta']) {
+      for (const sym of ['StarButton', 'InstallCell']) {
         expect(pageSource).toContain(sym);
       }
       expect(pageSource).toContain('<StarButton');
       expect(pageSource).toContain('<InstallCell');
-      expect(pageSource).toContain('<ConfigCta');
+    });
+
+    // The page used to close with a ConfigCta whose copy button handed out
+    // `npm i -D eslint-config-interlace` — a name that 404s on npm. The
+    // package behind it was `private: true` and never published under any
+    // name, so every visitor who took the CTA's advice got nothing. Removed
+    // with the package; this asserts it does not creep back.
+    it('advertises no install command for the unpublished meta-config', () => {
+      expect(pageSource).not.toContain('ConfigCta');
+      expect(pageSource).not.toContain('eslint-config-interlace');
     });
 
     it('adds a per-rule Try column derived from the rule id', () => {
@@ -120,8 +129,12 @@ describe('Scorecard page: structure lock', () => {
       expect(pageSource).toMatch(/<th[^>]*>Try<\/th>/);
     });
 
-    it('closes with the flagship-config adoption CTA', () => {
-      expect(pageSource).toMatch(/Add the flagship config/);
+    it('does not close with a flagship-config adoption CTA', () => {
+      // Removed with the package: the closing section pitched "Convinced? Add
+      // the flagship config." above an install command for a package that
+      // does not exist on npm. The per-rule Try column is the real
+      // conversion path — it names a published plugin.
+      expect(pageSource).not.toMatch(/Add the flagship config/);
     });
   });
 });

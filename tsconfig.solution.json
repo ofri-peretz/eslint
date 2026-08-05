@@ -13,7 +13,7 @@
   // @interlace/ui is intentionally excluded: it is a bundler-resolution React
   // package with no workspace deps and keeps its own `tsc --noEmit` typecheck.
   //
-  // Sync lock: packages/eslint-config-interlace/src/ts7-solution-graph-lock.test.ts
+  // Sync lock: scripts/__tests__/ts7-solution-graph-lock.test.ts
   // asserts this list matches every composite plugin-graph package — add new
   // packages here too.
   "files": [],
@@ -50,7 +50,6 @@
     { "path": "./packages/eslint-plugin-anthropic-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-gemini-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json" },
-    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" },
-    { "path": "./packages/eslint-config-interlace/tsconfig.lib.json" }
+    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" }
   ]
 }
