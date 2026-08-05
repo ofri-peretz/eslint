@@ -283,6 +283,24 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
      * ignoring the other was an accident of which callee the visitor matched,
      * not a decision about risk.
      */
+    /**
+     * Whether the call is the framework implementing `enableCors`, not an
+     * application calling it.
+     *
+     * `nest-framework/packages/core/nest-application.ts:130` is literally
+     * `return this.enableCors();` inside NestJS's own implementation of the
+     * API this rule watches — reporting it accuses the framework of the flaw
+     * its own code is there to configure. An application always holds the app
+     * in a binding (`app.enableCors()`); a `this` receiver means the class
+     * *is* the application, which no consumer's bootstrap ever is.
+     */
+    function isSelfCall(callee: TSESTree.Node): boolean {
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.object.type === AST_NODE_TYPES.ThisExpression
+      );
+    }
+
     function checkNestFactoryOptions(node: TSESTree.CallExpression): void {
       const callee = node.callee;
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
@@ -329,6 +347,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           property.name !== 'enableCors'
         )
           return;
+        if (isSelfCall(node.callee)) return;
 
         const [arg] = node.arguments;
 

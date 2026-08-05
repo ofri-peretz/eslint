@@ -5,6 +5,27 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
   valid: [
+    // nest-framework/sample/28-sse/src/app.controller.ts:11 — a static HTML
+    // page sent as a string. No DTO, so no @Exclude() the missing
+    // interceptor could have dropped.
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        index(@Res() response: Response) {
+          response.type('text/html').send(readFileSync(join(__dirname, 'index.html')).toString());
+        }
+      }
+    `,
+    `
+      @Controller()
+      class AppController {
+        @Get()
+        raw(@Res() res: Response) {
+          res.send(String(value));
+        }
+      }
+    `,
     // The fix: interceptors still run, so @Exclude() still applies.
     `
       @Controller('users')
