@@ -272,6 +272,88 @@ export default _default;
   }
 }
 
+// 3d. Defer every rule module behind a getter on the entry's `rules` object.
+//
+//     A plugin barrel `require`s all of its rules at load. ESLint only ever
+//     reads `plugin.rules[id]` for the rules a config ENABLES, so everything
+//     else is parse-and-compile cost for code that never runs. Measured on a
+//     7-plugin / 34-enabled-rule config: 184 rule modules loaded, 181 ms of
+//     plugin load, against 34 modules and 8.5 ms once deferred — total ESLint
+//     wall time 211 ms → 70 ms. On a preset that enables most of a plugin it is
+//     a wash (59 vs 64 ms), never a loss.
+//
+//     Done to the ARTIFACT, not the source. Getters in `index.ts` would have to
+//     call `require('./rules/x')`, and vitest runs the .ts directly — Node's
+//     require can't resolve an extensionless specifier to a .ts file, so every
+//     rule lookup throws under test while working perfectly once compiled.
+//     Transforming the emitted CJS keeps source, types, and tests untouched.
+//     `__tests__/lazy-rules-artifact.test.ts` locks the emitted shape.
+//
+//     Bindings referenced anywhere outside the `rules` object keep their eager
+//     require: `export { noAlgorithmNone } from './rules/...'` is public API
+//     (eslint-plugin-jwt, eslint-plugin-vercel-ai-security re-export every
+//     rule), and a re-export cannot be deferred. Those plugins are unchanged.
+const lazifyRuleBarrel = (
+  source: string,
+): { code: string; deferred: number } | null => {
+  const imports = [
+    ...source.matchAll(/^const (\w+) = require\("(\.\/rules\/[^"]+)"\);\n/gm),
+  ];
+  if (imports.length === 0) return null;
+  const byVar = new Map(imports.map((m) => [m[1], m[2]]));
+
+  const block = source.match(/^exports\.rules = \{$([\s\S]*?)^\};$/m);
+  if (!block) return null;
+
+  const deferred = new Map<string, { source: string; exported: string }>();
+  let getters = 0;
+  const body = block[1].replace(
+    /^(\s*)('[\w$/-]+'|"[\w$/-]+"|[\w$]+):\s*(\w+)\.(\w+),$/gm,
+    (whole, indent: string, key: string, variable: string, exported: string) => {
+      const from = byVar.get(variable);
+      if (from === undefined) return whole;
+      deferred.set(variable, { source: from, exported });
+      getters++;
+      return `${indent}get ${key}() { return require("${from}").${exported}; },`;
+    },
+  );
+  if (deferred.size === 0) return null;
+
+  let code = source.replace(block[0], `exports.rules = {${body}\n};`);
+
+  // Drop an eager require only once nothing else in the file mentions its
+  // binding — `namespace_1.namespace` in a re-export, a config that reaches a
+  // rule directly, anything.
+  const rest = code.replace(block[0], '').replace(/^const \w+ = require\("\.\/rules\/[^"]+"\);\n/gm, '');
+  for (const [variable] of deferred) {
+    if (new RegExp(`\\b${variable}\\b`).test(rest)) continue;
+    code = code.replace(
+      new RegExp(`^const ${variable} = require\\("\\./rules/[^"]+"\\);\\n`, 'm'),
+      '',
+    );
+  }
+  return { code, deferred: getters };
+};
+
+if (isPluginPackage) {
+  const entry = join(emittedSrcDir, 'index.js');
+  if (existsSync(entry)) {
+    const result = lazifyRuleBarrel(readFileSync(entry, 'utf8'));
+    if (result) {
+      writeFileSync(entry, result.code);
+      console.log(
+        `build-package(${pkg.name}): deferred ${result.deferred} rules behind getters.`,
+      );
+    } else {
+      // Not fatal — a plugin can legitimately have no matching barrel — but it
+      // means this plugin silently keeps paying full load cost, so say so.
+      console.warn(
+        `build-package(${pkg.name}): rule barrel not recognised; rules stay eager.`,
+      );
+    }
+  }
+}
+
 const stripDistPrefix = (value: unknown): unknown => {
   if (typeof value === 'string') return value.replace(/^\.\/dist\//, './');
   if (Array.isArray(value)) return value.map(stripDistPrefix);
