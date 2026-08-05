@@ -44,7 +44,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-conventions',
-    version: '4.2.4',
+    version: '4.2.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

@@ -1,3 +1,45 @@
+## 3.4.2
+
+### Patch Changes
+
+- [#365](https://github.com/ofri-peretz/eslint/pull/365) [`e9bc812`](https://github.com/ofri-peretz/eslint/commit/e9bc81237baf53ecf4bfa47ec8d2d701b1649ca7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Stop `no-insecure-comparison` mangling `== null` under `--fix`
+
+  The rule offered the `==` → `===` rewrite as an auto-applied `fix`, so
+  `eslint --fix` rewrote this:
+
+  ```js
+  if (body == null) return 0; // matches null AND undefined
+  ```
+
+  into this:
+
+  ```js
+  if (body === null) return 0; // no longer matches undefined
+  ```
+
+  `undefined == null` is `true`; `undefined === null` is `false`. The fix
+  changed runtime behaviour and introduced bugs in consumer code. It is now a
+  suggestion rather than an auto-applied fix — the rewrite is not guaranteed to
+  preserve behaviour when the operands differ in type, not only for null.
+
+  Separately, `x == null` / `x != null` is no longer reported at all. It is the
+  idiomatic nullish check, deliberately matching both null and undefined, which
+  is why core `eqeqeq` exempts it under `smart` / `allow-null`. Reporting it as
+  CWE-697 was a false positive — and one carrying CVSS and SOC2/PCI-DSS
+  metadata.
+
+  Measured over `express`, `axios` and `sequelize`: 73 of the rule's 161 reports
+  were this pattern. After the change the same corpus yields 8 reports, all
+  genuine type-mismatched loose equality.
+
+- [#364](https://github.com/ofri-peretz/eslint/pull/364) [`86baa02`](https://github.com/ofri-peretz/eslint/commit/86baa026485bf93d63f1523d6eb382e0a40cbb3f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the ecosystem and oxlint marks to the README logo row. Each plugin now
+  leads with Interlace -> its ecosystem (node, nestjs, express, react, mongodb,
+  postgresql, mysql, sqlite, prisma, drizzle, knex, typeorm, sequelize, lambda,
+  vercel, jwt) -> oxlint -> ESLint; the generic quality plugins carry the row
+  without an ecosystem mark. README-only change - no rule behaviour is affected.
+  The patch bump is what carries the new README onto npm, which only refreshes a
+  package README on publish.
+
 ## 3.4.1
 
 ### Patch Changes
