@@ -19,9 +19,11 @@
 import type { TSESLint } from '@interlace/eslint-devkit';
 
 import { noToolDescriptionInjection } from './rules/no-tool-description-injection';
+import { noUnvalidatedToolArgs } from './rules/no-unvalidated-tool-args';
 import { requireToolInputSchema } from './rules/require-tool-input-schema';
 
 export { noToolDescriptionInjection } from './rules/no-tool-description-injection';
+export { noUnvalidatedToolArgs } from './rules/no-unvalidated-tool-args';
 export { requireToolInputSchema } from './rules/require-tool-input-schema';
 
 /**
@@ -35,6 +37,8 @@ export { requireToolInputSchema } from './rules/require-tool-input-schema';
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // CWE-1427: Improper Neutralization of Input Used for LLM Prompting
   'no-tool-description-injection': noToolDescriptionInjection,
+  // CWE-20: Improper Input Validation — the handler side of the schema contract
+  'no-unvalidated-tool-args': noUnvalidatedToolArgs,
   // CWE-20: Improper Input Validation
   'require-tool-input-schema': requireToolInputSchema,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;

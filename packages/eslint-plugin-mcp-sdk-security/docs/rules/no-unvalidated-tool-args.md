@@ -1,0 +1,117 @@
+---
+title: no-unvalidated-tool-args
+description: Disallow a tool handler reading an argument its declared input schema does not include.
+tags: ['security', 'mcp']
+category: security
+severity: high
+cwe: CWE-20
+autofix: false
+---
+
+> **Keywords:** input validation, CWE-20, MCP, Model Context Protocol, inputSchema, tool handler, schema contract, unvalidated input, agent security
+
+<!-- @rule-summary -->
+Disallow a tool handler reading an argument its declared input schema does not include.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Detects a destructured handler argument that the tool's `inputSchema` does not declare. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `strict` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                          |
+| ----------------- | -------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) (Improper Input Validation) |
+| **Severity**      | High (CVSS 7.5)                                                                  |
+| **Auto-Fix**      | ❌ No auto-fix available                                                         |
+| **Category**      | Security                                                                         |
+
+## Why this matters
+
+[`require-tool-input-schema`](./require-tool-input-schema.md) makes sure a schema
+exists. This rule makes that schema *mean* something.
+
+A schema is a contract with two sides, and only one of them is enforced at
+runtime. The SDK validates what arrives against the declared shape. Nothing
+checks that the handler confines itself to the same shape — so when it does not,
+one of two things is true, and neither is fine:
+
+- The value was **stripped**, so the handler reads `undefined` and the tool is
+  quietly broken in a way no test with a well-formed call will catch.
+- The value was **not stripped** — a passthrough schema, a hand-rolled
+  validator, a server that skips validation — in which case the handler is
+  reading raw model-controlled input that passed no check at all, while every
+  reviewer assumes the schema covered it.
+
+The second is the security case, and it is invisible precisely because the
+schema *looks* like it covers the handler:
+
+```ts
+server.registerTool('read', { inputSchema: { path: z.string() } },
+  async ({ path, encoding }) => {          // `encoding` is not declared
+    return readFile(path, encoding);
+  });
+```
+
+Both sides are statically visible in the same expression, so this needs no
+inference — the declared keys and the read keys are right there.
+
+## ❌ Incorrect
+
+```ts
+// ❌ `encoding` is read but never declared
+server.registerTool('read', { inputSchema: { path: z.string() } },
+  async ({ path, encoding }) => readFile(path, encoding));
+
+// ❌ an empty schema declares nothing, so every read is undeclared
+server.registerTool('read', { inputSchema: {} },
+  async ({ path }) => readFile(path));
+
+// ❌ renaming does not change which key is read
+server.registerTool('read', { inputSchema: { path: z.string() } },
+  async ({ encoding: enc }) => enc);
+```
+
+## ✅ Correct
+
+```ts
+// ✅ every read key is declared, with the type it needs
+server.registerTool('read', { inputSchema: { path: z.string(), encoding: z.enum(['utf8', 'base64']) } },
+  async ({ path, encoding }) => readFile(path, encoding));
+
+// ✅ reading a subset is fine — the contract is an upper bound
+server.registerTool('read', { inputSchema: { path: z.string(), mode: z.string() } },
+  async ({ path }) => readFile(path));
+```
+
+## What this rule deliberately does not report
+
+- **A schema it cannot read.** `inputSchema: z.object({ … })`,
+  `inputSchema: SharedSchema`, or one built with a spread could declare
+  anything. Judging a handler against a shape this file does not contain would
+  report correct code, so the whole registration is skipped.
+- **A registration with no `inputSchema`.** That is
+  [`require-tool-input-schema`](./require-tool-input-schema.md)'s question.
+- **The whole-args form.** `async (args) => read(args.extra)` hands the object
+  around; following every `args.x` through a body is data-flow analysis this
+  rule is built to avoid. The destructured shape is where the mismatch is
+  visible in one place, and it is the shape the SDK documentation uses.
+- **A rest element.** `{ path, ...rest }` names no specific key.
+- **A file that never imports `@modelcontextprotocol/sdk`.**
+
+## When Not To Use It
+
+If your server validates with something the rule cannot read — a shared schema
+object, a factory — it stays silent by design, and there is nothing to switch
+off. Adopting it is a reason to inline the schema at the registration, which is
+also what makes the contract reviewable.
+
+## Further Reading
+
+- [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [OWASP A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [MCP: Tools](https://modelcontextprotocol.io/docs/concepts/tools)

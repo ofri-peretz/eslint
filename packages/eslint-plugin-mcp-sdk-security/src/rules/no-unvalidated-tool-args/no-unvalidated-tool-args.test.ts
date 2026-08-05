@@ -121,6 +121,20 @@ describe('no-unvalidated-tool-args', () => {
             'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
         },
         {
+          name: 'an unrelated import does not open the gate',
+          code:
+            "import { z } from 'zod';\n" +
+            'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
+        },
+        {
+          // A private method is the one non-computed property that is not an
+          // Identifier, so it is the only way to reach that guard.
+          name: 'a private method is not a registration',
+          code:
+            SDK +
+            'class S { #registerTool() {} m() { this.#registerTool("r", { inputSchema: {} }, ({ x }) => x); } }',
+        },
+        {
           name: 'a quoted schema key matches a plain read',
           code:
             SDK +

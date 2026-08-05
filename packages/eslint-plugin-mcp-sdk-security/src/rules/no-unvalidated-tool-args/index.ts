@@ -185,8 +185,10 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
         // require-tool-input-schema's question, not this rule's.
         if (declared === undefined) return;
 
-        const handler = node.arguments[node.arguments.length - 1];
-        if (handler === undefined) return;
+        // Reaching here means `arguments[1]` is an ObjectExpression, so the
+        // call has at least two arguments and a last one always exists. No
+        // undefined guard, because no input reaches it.
+        const handler = node.arguments[node.arguments.length - 1]!;
 
         for (const read of destructuredArgNames(handler)) {
           if (declared.has(read.name)) continue;
