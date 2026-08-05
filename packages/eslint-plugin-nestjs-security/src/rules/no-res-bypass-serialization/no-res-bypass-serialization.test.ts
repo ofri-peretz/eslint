@@ -226,6 +226,21 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     },
   ],
   invalid: [
+    // A non-JSON content type on some *other* object says nothing about what
+    // this handler writes. Scanning the whole body let it silence the rule.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          find(@Res() res: Response) {
+            this.cacheService.setHeader('text/plain', 'x');
+            res.json(user);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
     // A JSON content type is the case the rule exists for — declaring it
     // changes nothing.
     {

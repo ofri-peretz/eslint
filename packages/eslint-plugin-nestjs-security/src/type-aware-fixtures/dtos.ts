@@ -56,3 +56,12 @@ export type EitherDto = ValidatedDto | BareDto;
 export enum Channel {
   Email = 'email',
 }
+
+/**
+ * Implements an interface and declares no rules. `heritageClauses` is defined
+ * here, but an interface carries no decorators to inherit — so this must be
+ * reported, not abstained on.
+ */
+export class BareImplementsDto implements PlainShape {
+  name!: string;
+}

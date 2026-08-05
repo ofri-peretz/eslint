@@ -25,12 +25,22 @@ import type ts from 'typescript';
 
 let cached: typeof ts | null | undefined;
 
-/** The `typescript` module, or `null` when the consumer hasn't installed it. */
-export function loadTypeScript(): typeof ts | null {
+/**
+ * The `typescript` module, or `null` when the consumer hasn't installed it.
+ *
+ * `resolve` exists so the absent-module path can be tested. TypeScript is a
+ * devDependency of this repo, so the failure this helper exists to prevent
+ * cannot be reproduced here by removing it — and vitest transforms the module,
+ * so neither `vi.doMock` nor patching `Module._load` reaches a CommonJS
+ * `require` in the transpiled output. A seam is the only way the guarantee is
+ * verified rather than assumed.
+ */
+export function loadTypeScript(
+  resolve: (name: string) => typeof ts = (name) => require(name) as typeof ts,
+): typeof ts | null {
   if (cached === undefined) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load of an optional peer
-      cached = require('typescript') as typeof ts;
+      cached = resolve('typescript');
     } catch {
       cached = null;
     }

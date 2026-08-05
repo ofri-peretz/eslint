@@ -28,6 +28,10 @@ ruleTester.run('no-hybrid-app-config-loss', noHybridAppConfigLoss, {
     {
       code: `app.connectMicroservice(options, hybridOptions);`,
     },
+    // A truthy non-boolean literal still inherits.
+    {
+      code: `app.connectMicroservice(options, { inheritAppConfig: 1 });`,
+    },
     // A non-literal value could be true at runtime.
     {
       code: `app.connectMicroservice(options, { inheritAppConfig: config.inherit });`,
@@ -76,6 +80,20 @@ ruleTester.run('no-hybrid-app-config-loss', noHybridAppConfigLoss, {
     // inheritance is stated outright.
     {
       code: `app.connectMicroservice(options, { inheritAppConfig: false });`,
+      errors: [{ messageId: 'configNotInherited' }],
+    },
+    // Every statically falsy literal leaves the config behind, not just
+    // `false` — NestJS inherits on a truthy value.
+    {
+      code: `app.connectMicroservice(options, { inheritAppConfig: 0 });`,
+      errors: [{ messageId: 'configNotInherited' }],
+    },
+    {
+      code: `app.connectMicroservice(options, { inheritAppConfig: '' });`,
+      errors: [{ messageId: 'configNotInherited' }],
+    },
+    {
+      code: `app.connectMicroservice(options, { inheritAppConfig: null });`,
       errors: [{ messageId: 'configNotInherited' }],
     },
     // Hybrid options that say something else entirely.

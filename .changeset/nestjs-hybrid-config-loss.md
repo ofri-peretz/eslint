@@ -38,8 +38,11 @@ that is why `origin: ['*']` is treated as valid — and then rated every
 wildcard HIGH / CVSS 7.5 anyway. All 12 corpus findings are wildcards without
 credentials.
 
-Browsers refuse to send credentials to a wildcard, so those cases cannot expose
-authenticated data. `defaultOrigin` and `wildcardOrigin` are now MEDIUM / CVSS
+A wildcard is not a valid `Access-Control-Allow-Origin` for a credentialed
+response, so the browser blocks the *script* from reading an authenticated
+cross-origin response. The request itself still reaches the server and still has
+its side effects — a wildcard is not a CSRF control, and this severity change
+does not claim it is. `defaultOrigin` and `wildcardOrigin` are now MEDIUM / CVSS
 5.3 and say why. `reflectedOrigin` stays HIGH / 8.1: `origin: true` echoes the
 request Origin and *does* stay valid with credentials, which is the case that
 actually leaks authenticated responses.

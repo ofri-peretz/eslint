@@ -193,6 +193,10 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
        * then sends interpolated XML. The body is a helper call, so the
        * "provably a string" check could not clear it; the declared content
        * type can.
+       *
+       * Restricted to calls on the `@Res()` binding. Scanning the whole body
+       * meant any unrelated `this.cache.setHeader('text/plain', …)` silenced
+       * the rule for a handler that then wrote a DTO through `res.json()`.
        */
       function declaresNonJsonContentType(fn: TSESTree.Node): boolean {
         let found = false;
@@ -200,10 +204,15 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
           if (found) return;
           if (node.type === AST_NODE_TYPES.CallExpression) {
             const name = expressionName(node.callee);
+            // Must be called on the @Res() binding. Scanning the whole body
+            // meant an unrelated `this.cache.setHeader('text/plain', …)`
+            // silenced the rule for a handler that then wrote a DTO.
+            const receiver = callReceiver(node.callee);
             if (
-              name === 'type' ||
-              name === 'setHeader' ||
-              name === 'contentType'
+              receiver?.name === binding &&
+              (name === 'type' ||
+                name === 'setHeader' ||
+                name === 'contentType')
             ) {
               for (const arg of node.arguments) {
                 if (

@@ -237,6 +237,23 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'undecoratedDto' }],
       },
+      // `implements` is not `extends`: an interface has no decorators to
+      // inherit, so a DTO that only implements one is still unvalidated. The
+      // heritage guard used to abstain on both and swallow this.
+      {
+        name: 'a DTO that implements an interface and declares no rules',
+        filename: 'src/case.controller.ts',
+        code: `
+        import { BareImplementsDto } from './type-aware-fixtures/dtos';
+
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: BareImplementsDto) {}
+        }
+      `,
+        errors: [{ messageId: 'undecoratedDto' }],
+      },
       // A class whose only member is an index signature, which cannot carry a
       // decorator — so there are no rules and the pipe enforces nothing.
       {

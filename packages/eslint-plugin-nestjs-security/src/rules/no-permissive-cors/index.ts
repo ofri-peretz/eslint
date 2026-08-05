@@ -168,7 +168,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         owasp: 'A05:2021',
         cvss: 5.3,
         description:
-          'enableCors() with no options defaults to Access-Control-Allow-Origin: * — every site can read this API. Browsers refuse to send credentials to a wildcard, so this exposes unauthenticated responses only; it is a deliberate choice for a public API and a mistake for an internal one',
+          'enableCors() with no options defaults to Access-Control-Allow-Origin: * — every site can read this API. A wildcard is not valid for a credentialed response, so the browser withholds the *response* from the calling script rather than the credentials from the request: cross-origin reads of authenticated data are blocked, while the request itself still reaches the server and still has its side effects. Deliberate for a public API, a mistake for an internal one',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Pass the origins you actually serve: app.enableCors({ origin: ['https://app.example.com'] })",
@@ -181,7 +181,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         owasp: 'A05:2021',
         cvss: 5.3,
         description:
-          "origin: '*' lets every site read responses from this API. Browsers refuse to send credentials to a wildcard, so this exposes unauthenticated responses only — unlike origin: true, which stays valid with credentials",
+          "origin: '*' lets every site read responses from this API. A wildcard is not valid for a credentialed response, so an authenticated cross-origin read is blocked at the point the script tries to read it — unlike origin: true, which echoes the caller's origin and stays valid with credentials. The request still reaches the server either way, so this is not a CSRF control",
         severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: "Replace the wildcard with an explicit allowlist: origin: ['https://app.example.com']",

@@ -303,8 +303,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       if (declaration === undefined) return null;
       if (!tsModule.isClassDeclaration(declaration)) return null;
 
-      // A base class may carry the decorators; this only reads one level.
-      if (declaration.heritageClauses !== undefined) return null;
+      // A base class may carry the decorators, and this reads one level only —
+      // so abstain on `extends`. Not on `implements`: an interface has no
+      // decorators to inherit, and `class Dto implements Serializable {}` is a
+      // common shape that was silently escaping the check.
+      const extendsBase = declaration.heritageClauses?.some(
+        (clause) => clause.token === tsModule.SyntaxKind.ExtendsKeyword,
+      );
+      if (extendsBase === true) return null;
       // A DTO from a dependency is not ours to judge.
       if (declaration.getSourceFile().fileName.includes('node_modules')) {
         return null;

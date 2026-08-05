@@ -120,9 +120,11 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
       if (props === null) return true;
       const flag = props.get('inheritAppConfig');
       if (flag === undefined) return false;
-      // Only a literal `false` is provably not inheriting; anything else —
-      // a config lookup, a variable — could be true at runtime.
-      return !(flag.type === AST_NODE_TYPES.Literal && flag.value === false);
+      // NestJS inherits on a *truthy* value, so `0`, `''` and `null` leave the
+      // config behind exactly as `false` does. Only a literal is decidable;
+      // anything else — a config lookup, a variable — could be true at runtime.
+      if (flag.type === AST_NODE_TYPES.Literal) return Boolean(flag.value);
+      return true;
     }
 
     return {
