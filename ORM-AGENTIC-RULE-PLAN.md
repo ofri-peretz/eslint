@@ -282,7 +282,7 @@ a missing rule — tracked for W4 as a remediation split inside
 Net: 2 instantiations that each detect something nothing else in the ecosystem
 detects, rather than 7 of which 5 would be duplicates.
 
-### 5.2 Installing in a fresh worktree
+### 5.3 Installing in a fresh worktree
 
 A plain install, run outside the agent sandbox:
 

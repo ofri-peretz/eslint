@@ -1,6 +1,6 @@
 ---
 title: no-raw-identifier-interpolation
-description: Disallow interpolating table, column or sort identifiers into a Drizzle sql`` template, where bind parameters cannot reach them.
+description: Disallow interpolating table, column or sort identifiers into a Drizzle `sql` tagged template, where bind parameters cannot reach them.
 tags: ['security', 'drizzle']
 category: security
 severity: critical
@@ -11,7 +11,7 @@ autofix: false
 > **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Drizzle, drizzle-orm, sql template, identifier injection, ORDER BY injection, GHSA-gpj5-g38j-94v9, sql.identifier
 
 <!-- @rule-summary -->
-Disallow interpolating table, column or sort identifiers into a Drizzle sql`` template, where bind parameters cannot reach them.
+Disallow interpolating table, column or sort identifiers into a Drizzle `sql` tagged template, where bind parameters cannot reach them.
 <!-- @/rule-summary -->
 
 **CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
@@ -105,19 +105,30 @@ const dir = input === 'desc' ? 'desc' : 'asc';
   spliced text, and `sql.identifier()` in particular is the fix this rule
   recommends; reporting the remediation punishes the correction. `sql.raw()` is
   pointedly *not* in that list — it is the one member of the family that does
-  splice, so `` sql`SELECT * FROM ${sql.raw(table)}` `` is still a finding.
+  splice, so `` sql`SELECT * FROM ${sql.raw(table)}` `` is still a finding here.
 - **A literal.** `` sql`SELECT * FROM ${'users'}` `` is a constant you typed.
   There is no untrusted input in it.
 - **A nested `` sql`…` `` fragment.** Composition is Drizzle's intended
   primitive, and the nested template is checked on its own visit — so its holes
   are still covered, just not twice.
-- **`sql.raw()` and other raw entry points.** Those belong to
-  [`no-unsafe-query`](./no-unsafe-query.md), which reports every interpolation
-  reaching them. Reporting them here as well would put two findings from one
-  plugin on one line.
 - **A file that never imports `drizzle-orm`.** `sql` is far too common a local
   name to key on alone; the driver import is the gate that keeps this rule
   inside its own plugin.
+
+## How this splits with `no-unsafe-query`
+
+The two rules divide by *what* is wrong, not by which API you used:
+
+| | reports |
+|---|---|
+| [`no-unsafe-query`](./no-unsafe-query.md) | **string construction** — concatenation or interpolation used to *build* the SQL text passed to `sql.raw(...)` |
+| this rule | **position** — a hole where an identifier belongs, inside the tagged template |
+
+So `` sql`SELECT * FROM ${sql.raw(table)}` `` is a finding *here*: the hole is
+in an identifier position and `sql.raw()` splices rather than composing.
+`sql.raw('SELECT * FROM ' + table)` is a finding *there*: the string is built
+by concatenation. A line that does both is two different defects with two
+different fixes, not one finding reported twice.
 
 ## When Not To Use It
 

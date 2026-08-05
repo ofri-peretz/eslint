@@ -78,13 +78,25 @@ await prisma.$executeRaw`UPDATE ${table} SET active = ${flag}`;
 // ✅ values — exactly what the template is for
 await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id} LIMIT ${n}`;
 
-// ✅ an allowlist turns input into a value you wrote
-const column = { name: 'name', created: 'created_at' }[input] ?? 'id';
-await prisma.$queryRawUnsafe(`SELECT * FROM users ORDER BY ${column}`);
-
-// ✅ better still, let the query builder type it
+// ✅ let the query builder type it — no raw SQL, nothing to get wrong
+const column = ({ name: 'name', created: 'created_at' })[input] ?? 'id';
 await prisma.user.findMany({ orderBy: { [column]: dir === 'desc' ? 'desc' : 'asc' } });
 ```
+
+### If you must build the SQL yourself
+
+An allowlist makes the *query* safe, but it does not make the *line* lint-clean:
+
+```ts
+const column = ({ name: 'name', created: 'created_at' })[input] ?? 'id';
+// eslint-disable-next-line prisma-security/no-unsafe-query -- column comes from a closed allowlist
+await prisma.$queryRawUnsafe(`SELECT * FROM users ORDER BY ${column}`);
+```
+
+`no-unsafe-query` reports every interpolation reaching `$queryRawUnsafe`, and
+it is right to: it cannot see that `column` was allowlisted. The disable is the
+honest way to say so, and it puts the reason next to the code. Reaching for it
+without the allowlist above is the mistake.
 
 ## What this rule deliberately does not report
 

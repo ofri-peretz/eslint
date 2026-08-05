@@ -28,7 +28,7 @@ export const noRawIdentifierInterpolation = createRawIdentifierRule({
     type: 'problem',
     docs: {
       description:
-        'Disallow interpolating table, column or sort identifiers into a Drizzle sql`` template, where bind parameters cannot reach them.',
+        'Disallow interpolating table, column or sort identifiers into a Drizzle `sql` tagged template, where bind parameters cannot reach them.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-drizzle-security/docs/rules/no-raw-identifier-interpolation.md',
       cwe: 'CWE-89',
       cvss: 9.8,
