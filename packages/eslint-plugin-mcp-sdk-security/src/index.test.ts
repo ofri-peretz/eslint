@@ -11,6 +11,7 @@ import plugin, {
   rules,
   configs,
   plugin as namedPlugin,
+  noCommandInjectionInTool,
   noToolDescriptionInjection,
   requireToolInputSchema,
 } from './index';
@@ -18,6 +19,7 @@ import plugin, {
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
     expect(Object.keys(rules).sort()).toEqual([
+      'no-command-injection-in-tool',
       'no-tool-description-injection',
       'require-tool-input-schema',
     ]);
@@ -25,6 +27,7 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     // wrong module and every id-based assertion still passes.
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
     expect(rules['no-tool-description-injection']).toBe(noToolDescriptionInjection);
+    expect(rules['no-command-injection-in-tool']).toBe(noCommandInjectionInTool);
   });
 
   it('names itself for the oxlint loader', () => {
