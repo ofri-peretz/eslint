@@ -141,8 +141,12 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo,
               workflow_id: 'daily-impact-ingest.yml', per_page: 30,
             });
+            // The run posting this comment is still in progress and so has a
+            // null conclusion — it is excluded here and counted explicitly.
+            // Without the +1 the message lags reality by a day and calls the
+            // second consecutive failure the first.
             const finished = runs.workflow_runs.filter((r) => r.conclusion !== null);
-            let streak = 0;
+            let streak = 1;
             for (const run of finished) {
               if (run.conclusion !== 'failure') break;
               streak += 1;
@@ -155,7 +159,7 @@ jobs:
               ``,
               streak > 1
                 ? `⚠️ **${streak} consecutive failures.** Supabase impact data has not advanced since the first one — every consumer is serving stale numbers as if they were current.`
-                : `First failure in this run of the schedule.`,
+                : `First failure — the previous run succeeded.`,
               ``,
               `- Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               `- Trigger: ${context.eventName}`,
