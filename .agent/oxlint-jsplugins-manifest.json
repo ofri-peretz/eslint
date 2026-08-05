@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 470,
-  "oxlintCompatible": 470,
+  "totalRules": 472,
+  "oxlintCompatible": 472,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -405,8 +405,14 @@
       "short": "drizzle-security",
       "shim": "tools/oxlint-plugins/interlace-drizzle-security.cjs",
       "subpath": "eslint-plugin-drizzle-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-raw-identifier-interpolation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -2073,8 +2079,14 @@
       "short": "prisma-security",
       "shim": "tools/oxlint-plugins/interlace-prisma-security.cjs",
       "subpath": "eslint-plugin-prisma-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 3,
       "rules": [
+        {
+          "name": "no-raw-identifier-interpolation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "no-unsafe-query",
           "portability": "compatible",
@@ -3185,6 +3197,7 @@
       "utm-taxonomy"
     ],
     "drizzle-security": [
+      "no-raw-identifier-interpolation",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],
@@ -3492,6 +3505,7 @@
       "prevent-double-release"
     ],
     "prisma-security": [
+      "no-raw-identifier-interpolation",
       "no-unsafe-query",
       "no-unscoped-mutation"
     ],

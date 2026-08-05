@@ -2377,10 +2377,16 @@
       "environment": "mysql",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 accepts the verification flag at the top level as well as under `ssl`."
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 configures TLS through `ssl`, and its URL form takes ?ssl=false."
     }
   },
   "eslint-plugin-prisma-security": {
+    "no-raw-identifier-interpolation": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template ($queryRaw / $executeRaw), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
+    },
     "no-unsafe-query": {
       "environment": "prisma",
       "detection": "structural-pattern",
@@ -2395,6 +2401,12 @@
     }
   },
   "eslint-plugin-drizzle-security": {
+    "no-raw-identifier-interpolation": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template (sql``), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
+    },
     "no-unsafe-query": {
       "environment": "drizzle",
       "detection": "structural-pattern",

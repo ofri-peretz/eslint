@@ -207,8 +207,8 @@ profile on the corpus.
 
 | Wave | State |
 |---|---|
-| W0 | ORM peers **verified correct** (all 7 already have matching `peerDependencies` + `peerDependenciesMeta`). Agentic peers **confirmed broken** — all 4 declare `peerDependenciesMeta` for their SDK with no `peerDependencies` twin, so npm ignores it. Fix pending: PR #335's worktree was occupied by another agent's uncommitted work. |
-| W1 | **O2 `no-unscoped-mutation` shipped** for prisma / drizzle / knex — factory `createUnscopedMutationRule` at 100/100/100/100, self-suppression lock verified by reverting the guard. **Sequelize deliberately excluded**, see §5.1. O1, O3–O5 not started. |
+| W0 | **Done.** PR #335 merged: agentic peers fixed, AI SDK family landed, `eslint-plugin-pg` / `-jwt` superseded by the `-security` renames. ORM peers were verified correct already. Remaining: the two `npm deprecate` calls need an interactive `npm login` — `latest` on both old packages still carries no notice, so installs are silent today. |
+| W1 | **O2 `no-unscoped-mutation` shipped** for prisma / drizzle / knex — factory `createUnscopedMutationRule` at 100/100/100/100, self-suppression lock verified by reverting the guard. **Sequelize deliberately excluded**, see §5.1. **O4 `require-tls` shipped** (PR #373) for knex / mysql / sequelize / typeorm — factory `createRequireTlsRule`, URL findings scoped to connection positions. **O1 `no-raw-identifier-interpolation` shipped** for drizzle / prisma only — factory `createRawIdentifierRule`; see §5.2 for why two and not seven. O3, O5 not started. |
 | W2 | not started |
 | W3 | not started |
 | W4 | not started |
@@ -243,6 +243,43 @@ is literal-text analysis, not an API-shape check.
 
 Net: O2 covers 3 of 7 drivers today, and the remaining 4 have named, understood
 follow-ups rather than silent gaps.
+
+### 5.2 O1 covers 2 drivers, not 7 — and that is the whole rule
+
+The plan estimated "7×5 = 35 rule wirings", assuming each shared rule reaches
+every driver. O1 cannot, because its value depends on a precondition only two
+drivers meet.
+
+O1's finding is *an identifier interpolated into an API that parameterizes
+values*. The danger is the gap between what the API promises and what it can
+deliver: `` sql`… ${table}` `` looks bound and is not. That gap only exists
+where a value-parameterizing tagged template exists — Prisma's
+`$queryRaw`/`$executeRaw` and Drizzle's `sql` tag. Nowhere else in the family:
+
+| Driver | Raw entry point | Tagged template? |
+|---|---|---|
+| Prisma | `$queryRawUnsafe` | ✅ `$queryRaw`, `$executeRaw` |
+| Drizzle | `sql.raw()` | ✅ the `sql` tag |
+| Knex | `knex.raw(string)` | ❌ |
+| Sequelize | `sequelize.query(string)` | ❌ |
+| TypeORM | `.query(string)` | ❌ |
+| mysql2 | `query`, `execute` | ❌ |
+| better-sqlite3 | `prepare`, `exec`, … | ❌ |
+
+For the five without one, the raw entry point takes a plain string, and
+`no-unsafe-query` already reports **every** interpolation into it — identifier
+or value. Adding O1 there would put two findings from one plugin on one line,
+which the taxonomy contract forbids, and it would buy no new detection.
+
+There is a real residual gap: for those five, `no-unsafe-query` fires with the
+remediation "use a bind parameter", which is *impossible advice* in an
+identifier position. The developer follows it, it does not work, and they go
+back to concatenation. That is a message-quality defect in an existing rule, not
+a missing rule — tracked for W4 as a remediation split inside
+`createSqlInjectionRule`, not as five more O1 instantiations.
+
+Net: 2 instantiations that each detect something nothing else in the ecosystem
+detects, rather than 7 of which 5 would be duplicates.
 
 ### 5.2 Installing in a fresh worktree
 

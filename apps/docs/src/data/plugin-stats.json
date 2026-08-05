@@ -81,9 +81,25 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-drizzle-security",
+      "rules": 3,
+      "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
+      "category": "security",
+      "version": "0.2.1",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-knex-security",
       "rules": 3,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, and connection configuration that disables TLS or certificate validation",
+      "category": "security",
+      "version": "0.2.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-prisma-security",
+      "rules": 3,
+      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.2.1",
       "published": true
@@ -94,14 +110,6 @@
       "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
       "category": "security",
       "version": "0.1.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-drizzle-security",
-      "rules": 2,
-      "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.2.1",
       "published": true
     },
     {
@@ -126,14 +134,6 @@
       "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
       "category": "security",
       "version": "0.1.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-prisma-security",
-      "rules": 2,
-      "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
-      "category": "security",
-      "version": "0.2.1",
       "published": true
     },
     {
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 501,
+  "totalRules": 503,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"
