@@ -66,6 +66,11 @@ describe('fs binding resolution', () => {
         code: "const { readFile } = require('./local');\nreadFile(userPath);",
       },
       {
+        // A numeric key is not an fs method name; better silent than guessing.
+        name: 'a numeric destructuring key binds no method name',
+        code: "const { 0: readFile } = require('fs');\nreadFile(userPath);",
+      },
+      {
         name: 'a computed destructuring key binds no method name',
         code: "const { [k]: readFile } = require('fs');\nreadFile(userPath);",
       },
@@ -93,6 +98,12 @@ describe('fs binding resolution', () => {
       {
         name: 'a renamed named import still resolves to its fs method',
         code: "import { readFile as read } from 'fs/promises';\nread(userPath);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
+        // Parity with the import path, which already reads the string form.
+        name: 'a string-literal destructuring key resolves the same method',
+        code: "const { 'readFile': read } = require('fs');\nread(userPath);",
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       {

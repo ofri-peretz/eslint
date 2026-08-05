@@ -733,14 +733,20 @@ allowLiterals = false,
         }
         if (node.id.type !== AST_NODE_TYPES.ObjectPattern) return;
         for (const prop of node.id.properties) {
-          if (
-            prop.type === AST_NODE_TYPES.Property &&
-            !prop.computed &&
-            prop.key.type === AST_NODE_TYPES.Identifier &&
-            prop.value.type === AST_NODE_TYPES.Identifier
-          ) {
-            bindFsName(prop.value.name, prop.key.name);
-          }
+          if (prop.type !== AST_NODE_TYPES.Property || prop.computed) continue;
+          if (prop.value.type !== AST_NODE_TYPES.Identifier) continue;
+          // `const { 'readFile': read } = require('fs')` names the same method
+          // as the bare form. The import path already reads the string spelling
+          // (`import { 'readFile' as read }`), so gating it out here would be an
+          // asymmetry, not a narrower gate.
+          const key =
+            prop.key.type === AST_NODE_TYPES.Identifier
+              ? prop.key.name
+              : prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
+                ? prop.key.value
+                : undefined;
+          if (key === undefined) continue;
+          bindFsName(prop.value.name, key);
         }
       },
 
