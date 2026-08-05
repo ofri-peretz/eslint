@@ -64,10 +64,15 @@ useEffect(() => {
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/require-blob-url-revocation": [
+    "browser-security/require-blob-url-revocation": [
       "error",
       {
         "allowInTests": true

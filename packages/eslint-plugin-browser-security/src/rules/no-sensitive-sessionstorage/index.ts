@@ -104,7 +104,7 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          additionalPatterns: { type: 'array', items: { type: 'string' } },
+          additionalPatterns: { type: 'array', items: { type: 'string' }, description: 'Extra key-name patterns to treat as sensitive' },
         },
         additionalProperties: false,
       },

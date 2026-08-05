@@ -64,9 +64,9 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option             | Type       | Default                                         | Description                  |
-| ------------------ | ---------- | ----------------------------------------------- | ---------------------------- |
-| `trainingPatterns` | `string[]` | `['train', 'training', 'finetune', 'feedback']` | Patterns suggesting training |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trainingPatterns` | `string[]` | `["train","training","finetune","fine-tune","fine_tune","feedback","improve","learn"]` | Patterns suggesting training endpoints |
 
 ## 🛡️ Why This Matters
 

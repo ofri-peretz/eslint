@@ -348,3 +348,12 @@ const obj = JSON.parse(userJson); // May have __proto__
 - **[JavaScript Prototype Security](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)** - Prototype chain security
 - **[CWE-915: Object Prototype Modification](https://cwe.mitre.org/data/definitions/915.html)** - Official CWE entry
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiterals` | `boolean` | `false` | Allow bracket notation with literal strings |
+| `additionalMethods` | `string[]` | `[]` | Additional object methods to check for injection |
+| `dangerousProperties` | `string[]` | `["__proto__","prototype","constructor"]` | Properties to consider dangerous |
+| `strategy` | `"validate"` \| `"whitelist"` \| `"freeze"` \| `"auto"` | `"auto"` | Strategy for fixing object injection (auto = smart detection) |

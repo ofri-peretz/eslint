@@ -219,3 +219,10 @@ catch (error) {
 - **[Lambda Logging](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-logging.html)** - AWS documentation
 - **[CWE-390: Error Condition Without Action](https://cwe.mitre.org/data/definitions/390.html)** - Official CWE entry
 - **[AWS Lambda Powertools](https://docs.powertools.aws.dev/lambda/typescript/latest/core/logger/)** - Structured logging
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowWithComment` | `boolean` | `true` | Allow an empty catch block that carries an explanatory comment |

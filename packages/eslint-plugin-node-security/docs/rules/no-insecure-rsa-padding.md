@@ -200,3 +200,9 @@ crypto.privateDecrypt({ key, padding }, data);
 - **[CVE-2023-46809](https://nvd.nist.gov/vuln/detail/CVE-2023-46809)** - Node.js vulnerability
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
 - **[OAEP Explained](https://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding)** - Wikipedia
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |

@@ -136,22 +136,22 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           formatFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
+            default: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'], description: 'Functions whose first argument is a format string'
           },
           formatSpecifiers: {
             type: 'array',
             items: { type: 'string' },
-            default: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
+            default: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'], description: 'Format specifiers recognised in a format string'
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
           safeFormatLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['mustache', 'handlebars', 'ejs', 'pug'],
+            default: ['mustache', 'handlebars', 'ejs', 'pug'], description: 'Templating libraries that escape their own input'
           },
           trustedSanitizers: {
             type: 'array',

@@ -136,11 +136,11 @@ const tokenStore = (() => {
 
 ## Options
 
-| Option          | Type       | Default                                                                         | Description               |
-| --------------- | ---------- | ------------------------------------------------------------------------------- | ------------------------- |
-| `allowInTests`        | `boolean`  | `false`                                                                                                                                | Allow in test files                     |
-| `sensitivePatterns`   | `string[]` | `['token', 'jwt', 'access_token', 'accessToken', 'refresh_token', 'refreshToken', 'id_token', 'idToken', 'auth', 'password', 'passwd', 'secret', …]` | Key substrings considered sensitive     |
-| `checkSessionStorage` | `boolean`  | `true`                                                                                                                                 | Also flag `sessionStorage` writes       |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `["token","jwt","access_token","accessToken","refresh_token","refreshToken","id_token","idToken","auth","password","passwd","secret","api_key","apiKey","private_key","privateKey","session","sessionId","credential","bearer"]` | Key substrings considered sensitive |
+| `checkSessionStorage` | `boolean` | `true` | Also flag `sessionStorage` writes |
 
 ```json
 {

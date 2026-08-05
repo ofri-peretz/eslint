@@ -85,10 +85,10 @@ const tools = {
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                                       | Description                       |
-| -------------------- | ---------- | ------------------------------------------------------------- | --------------------------------- |
-| `dataSourcePatterns` | `string[]` | `['query', 'find', 'select', 'fetch', 'get', 'read', 'load']` | Patterns suggesting data sources  |
-| `filterFunctions`    | `string[]` | `['filter', 'sanitize', 'redact', 'mask', 'clean']`           | Functions considered safe filters |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `dataSourcePatterns` | `string[]` | `["query","find","select","fetch","get","read","load","database","db","sql","mongo","prisma","supabase"]` | Patterns suggesting data sources |
+| `filterFunctions` | `string[]` | `["filter","sanitize","redact","mask","clean","filterSensitive","removePII","scrub"]` | Functions considered safe filters |
 
 ## 🛡️ Why This Matters
 
