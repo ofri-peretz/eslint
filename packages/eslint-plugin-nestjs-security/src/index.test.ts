@@ -35,8 +35,9 @@ describe('eslint-plugin-nestjs-security plugin interface', () => {
       'no-exposed-private-fields',
       'no-res-bypass-serialization',
       'no-unguarded-swagger',
+      'no-hybrid-app-config-loss',
     ]);
-    expect(ruleKeys.length).toBe(8);
+    expect(ruleKeys.length).toBe(9);
   });
 
   describe('configurations', () => {

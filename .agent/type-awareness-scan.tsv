@@ -214,6 +214,7 @@ nestjs-security	require-validation-pipe-whitelist	unaware
 nestjs-security	no-permissive-cors	unaware	
 nestjs-security	no-missing-validation-pipe	unaware	
 nestjs-security	no-exposed-private-fields	unaware
+nestjs-security	no-hybrid-app-config-loss	unaware	
 nestjs-security	no-res-bypass-serialization	unaware
 nestjs-security	no-unguarded-swagger	unaware			
 node-security	require-secure-credential-storage	unaware	
