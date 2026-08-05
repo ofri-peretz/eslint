@@ -19,7 +19,7 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 
 Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to warn in `recommended`**
 
 ## Quick Summary
 

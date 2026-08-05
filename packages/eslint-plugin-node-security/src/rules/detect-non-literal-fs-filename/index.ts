@@ -629,6 +629,19 @@ allowLiterals = false,
     const pendingCalls: TSESTree.CallExpression[] = [];
 
     /**
+     * Record what a destructured / named binding refers to.
+     *
+     * `promises` is the one member of the fs module that is itself a module
+     * object, so `const { promises } = require('fs')` binds a *namespace*, not
+     * a method — filing it under methods left `promises.readFile(userPath)`
+     * unresolvable and therefore silently unchecked.
+     */
+    function bindFsName(local: string, imported: string): void {
+      if (imported === 'promises') fsNamespaces.add(local);
+      else fsNamedMethods.set(local, imported);
+    }
+
+    /**
      * Check fs method calls for path traversal vulnerabilities
      */
     const checkFsCall = (node: TSESTree.CallExpression) => {
@@ -700,12 +713,11 @@ allowLiterals = false,
             // method, the local name is what the call site writes. The string
             // form (`import { 'readFile' as read }`) names the same method, so
             // skipping it would be a false negative, not a narrower gate.
-            fsNamedMethods.set(
-              spec.local.name,
+            const imported =
               spec.imported.type === AST_NODE_TYPES.Identifier
                 ? spec.imported.name
-                : spec.imported.value,
-            );
+                : spec.imported.value;
+            bindFsName(spec.local.name, imported);
             continue;
           }
           // Default and namespace specifiers both bind the module object.
@@ -727,7 +739,7 @@ allowLiterals = false,
             prop.key.type === AST_NODE_TYPES.Identifier &&
             prop.value.type === AST_NODE_TYPES.Identifier
           ) {
-            fsNamedMethods.set(prop.value.name, prop.key.name);
+            bindFsName(prop.value.name, prop.key.name);
           }
         }
       },

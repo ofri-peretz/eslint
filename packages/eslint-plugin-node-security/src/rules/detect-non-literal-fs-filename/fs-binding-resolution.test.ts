@@ -131,6 +131,19 @@ describe('fs binding resolution', () => {
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       {
+        // `promises` is the one fs export that is itself a module object.
+        // Filed under methods it was unresolvable, so the whole promise API
+        // reached through this idiom was silently unchecked.
+        name: 'a destructured promises object binds a namespace, not a method',
+        code: "const { promises } = require('fs');\npromises.readFile(userPath);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
+        name: 'the same through a named import',
+        code: "import { promises as fsp } from 'node:fs';\nfsp.writeFile(userPath, data);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
         name: 'the bare fs identifier still reports with no import at all',
         code: 'fs.readFile(userPath);',
         errors: [{ messageId: 'fsPathTraversal' }],
