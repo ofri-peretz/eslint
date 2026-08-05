@@ -11,7 +11,10 @@ import plugin, { rules, configs, plugin as namedPlugin, requireToolInputSchema }
 
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
-    expect(Object.keys(rules).sort()).toEqual(['require-tool-input-schema']);
+    expect(Object.keys(rules).sort()).toEqual([
+      'no-tool-description-injection',
+      'require-tool-input-schema',
+    ]);
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
   });
 
