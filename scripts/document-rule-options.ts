@@ -84,7 +84,7 @@ function cell(text: string): string {
 function codeCell(value: string): string {
   const text = value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
   // A backtick inside the value would close the span early — `dangerousChars`
-  // lists one among the characters it wants sanitized, so its default ended
+  // lists one among the characters it expects a sanitizer to handle, so its default ended
   // mid-array and the rest of the row rendered as plain text. CommonMark's
   // answer is a fence longer than any run of backticks in the content, with a
   // space of padding so a leading or trailing backtick still belongs to the
