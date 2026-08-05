@@ -14,10 +14,11 @@ describe('eslint-plugin-prisma-security plugin interface', () => {
     const ruleKeys = Object.keys(plugin.rules || {});
     expect(ruleKeys).toEqual([
       'no-mass-assignment',
+      'no-raw-identifier-interpolation',
       'no-unsafe-query',
       'no-unscoped-mutation',
     ]);
-    expect(ruleKeys.length).toBe(3);
+    expect(ruleKeys.length).toBe(4);
   });
 
   describe('configurations', () => {
@@ -47,8 +48,10 @@ describe('eslint-plugin-prisma-security plugin interface', () => {
         expect(ruleName).toMatch(/^prisma-security\//);
       });
 
-      expect(strictRules['prisma-security/no-unsafe-query']).toBe('error');
-      expect(strictRules['prisma-security/no-unscoped-mutation']).toBe('error');
+      // Every rule by name, not just a matching count — see the drizzle suite.
+      for (const ruleName of Object.keys(rules)) {
+        expect(strictRules[`prisma-security/${ruleName}`]).toBe('error');
+      }
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
   });

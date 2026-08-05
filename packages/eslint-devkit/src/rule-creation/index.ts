@@ -18,3 +18,6 @@ export * from './require-tls-rule';
 export * from './mass-assignment-rule';
 // Shared CWE-798 detector — literal database credentials in connection config.
 export * from './hardcoded-credentials-rule';
+// Shared CWE-89 detector for the *other* half of SQL injection: identifiers
+// spliced into a query the tagged template only parameterizes values in.
+export * from './raw-identifier-rule';
