@@ -1003,8 +1003,14 @@
     }
   },
   "eslint-plugin-mcp-sdk-security": {
+    "no-command-injection-in-tool": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports — that split is what keeps one line from carrying findings from two plugins."
+    },
     "require-tool-input-schema": {
-      "environment": "universal",
+      "environment": "mcp",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     }

@@ -96,6 +96,9 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-nestjs-security':   ['nestjs'],
   'eslint-plugin-lambda-security':   ['lambda'],
   'eslint-plugin-vercel-ai-security':['vercel-ai'],
+  // Gates on the MCP SDK import, so it cannot fire outside it — without this
+  // the table's fallback would record its rules as 'universal'.
+  'eslint-plugin-mcp-sdk-security':  ['mcp'],
   // Quality plugins — all universal
   'eslint-plugin-conventions':       ['universal'],
   'eslint-plugin-maintainability':   ['universal'],

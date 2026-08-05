@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-05",
   "totalPlugins": 32,
-  "totalRules": 479,
-  "oxlintCompatible": 479,
+  "totalRules": 480,
+  "oxlintCompatible": 480,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1350,8 +1350,14 @@
       "short": "mcp-sdk-security",
       "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
       "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
-      "ruleCount": 1,
+      "ruleCount": 2,
       "rules": [
+        {
+          "name": "no-command-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "require-tool-input-schema",
           "portability": "compatible",
@@ -3414,6 +3420,7 @@
       "no-unreadable-iife"
     ],
     "mcp-sdk-security": [
+      "no-command-injection-in-tool",
       "require-tool-input-schema"
     ],
     "modernization": [
