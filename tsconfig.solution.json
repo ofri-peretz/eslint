@@ -45,6 +45,12 @@
     { "path": "./packages/eslint-plugin-sqlite-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-typeorm-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-mcp-sdk-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-openai-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-anthropic-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-gemini-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-config-interlace/tsconfig.lib.json" }
   ]
 }

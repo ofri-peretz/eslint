@@ -14,6 +14,32 @@ import fs from 'fs';
 import path from 'path';
 
 const packagesDir = path.join(process.cwd(), 'packages');
+const logosDir = path.join(process.cwd(), 'apps', 'docs', 'public', 'logos');
+
+// Plugins that target a specific ecosystem carry that vendor's mark in the
+// prelude logo row. Plugins absent from this map are the generic quality
+// plugins and carry Interlace + oxlint + ESLint only. Keep in sync with the
+// row documented in .agent/rules/readme-structure.md.
+const ECOSYSTEM_LOGO: Record<string, string> = {
+  'eslint-plugin-browser-security': 'chromium',
+  'eslint-plugin-drizzle-security': 'drizzle',
+  'eslint-plugin-express-security': 'express',
+  'eslint-plugin-jwt': 'jwt',
+  'eslint-plugin-knex-security': 'knex',
+  'eslint-plugin-lambda-security': 'lambda',
+  'eslint-plugin-mongodb-security': 'mongodb',
+  'eslint-plugin-mysql-security': 'mysql',
+  'eslint-plugin-nestjs-security': 'nestjs',
+  'eslint-plugin-node-security': 'node',
+  'eslint-plugin-pg': 'postgresql',
+  'eslint-plugin-prisma-security': 'prisma',
+  'eslint-plugin-react-a11y': 'react',
+  'eslint-plugin-react-features': 'react',
+  'eslint-plugin-sequelize-security': 'sequelize',
+  'eslint-plugin-sqlite-security': 'sqlite',
+  'eslint-plugin-typeorm-security': 'typeorm',
+  'eslint-plugin-vercel-ai-security': 'vercel',
+};
 
 const packages = fs
   .readdirSync(packagesDir, { withFileTypes: true })
@@ -65,23 +91,55 @@ function checkPlugin(pkg: string): Violation | null {
     cursor = idx + header.length;
   }
 
-  // 2. Prelude: dual logos (Interlace mark + ESLint mark, side by side) +
-  // standard badges (HTML form, not markdown linked image). Pre-2026-07-30
-  // READMEs carried a single co-branded lockup (`eslint-interlace-logo-light.svg`);
-  // that's accepted too so a not-yet-migrated README doesn't false-fail.
-  const hasDualLogo =
-    content.includes('icon-light.svg') && content.includes('eslint-logo.svg');
-  const hasLegacyLockup = content.includes('eslint-interlace-logo-light.svg');
-  if (!hasDualLogo && !hasLegacyLockup) {
-    reasons.push('missing Interlace + ESLint logos in prelude');
+  // 2. Prelude: the logo row. Every plugin carries Interlace + oxlint + ESLint;
+  // the 17 plugins that target a specific ecosystem additionally carry that
+  // vendor's mark, between Interlace and oxlint. All marks are served from
+  // /logos/*.svg — normalised to a shared 120x90 canvas so the row aligns on
+  // one baseline regardless of whether a mark is a square icon or a wordmark.
+  for (const file of ['interlace', 'oxlint', 'eslint']) {
+    if (!content.includes(`/logos/${file}.svg`)) {
+      reasons.push(`missing \`/logos/${file}.svg\` in prelude logo row`);
+    }
+  }
+  const eco = ECOSYSTEM_LOGO[pkg];
+  if (eco && !content.includes(`/logos/${eco}.svg`)) {
+    reasons.push(`missing ecosystem logo \`/logos/${eco}.svg\` in prelude logo row`);
   }
 
-  // 2b. Closing footer: the dual-logo header format additionally requires a
-  // standalone Interlace mark (icon-light.svg, height=70) as the very last
-  // element (item 15 in readme-structure.md) — distinct from the header's
-  // icon-light.svg (height=90). Legacy-lockup READMEs predate this footer
-  // and are exempt, same as the header check above.
-  if (hasDualLogo && !content.includes('icon-light.svg" alt="Interlace" height="70"')) {
+  // Presence alone would let a shuffled row through, so pin the canonical
+  // order too: Interlace -> ecosystem -> oxlint -> ESLint. Positions are read
+  // from the prelude only — a stray mention further down the README must not
+  // be able to satisfy the ordering.
+  const prelude = content.slice(0, content.indexOf('## Description') + 1 || content.length);
+  const at = (name: string) => prelude.indexOf(`/logos/${name}.svg`);
+  const iInterlace = at('interlace');
+  const iOxlint = at('oxlint');
+  const iEslint = at('eslint');
+  const iEco = eco ? at(eco) : -1;
+  const present = [iInterlace, iOxlint, iEslint, ...(eco ? [iEco] : [])].every((i) => i !== -1);
+  if (present) {
+    const sequence = eco
+      ? [iInterlace, iEco, iOxlint, iEslint]
+      : [iInterlace, iOxlint, iEslint];
+    const ordered = sequence.every((v, i) => i === 0 || sequence[i - 1] < v);
+    if (!ordered) {
+      reasons.push(
+        `logo row is out of canonical order (expected: Interlace → ${eco ? `${eco} → ` : ''}oxlint → ESLint)`,
+      );
+    }
+  }
+
+  // Every referenced mark must actually exist on the docs site, or npm renders
+  // a broken image that camo then caches as immutable.
+  for (const m of content.matchAll(/\/logos\/([a-z0-9-]+)\.svg/g)) {
+    if (!fs.existsSync(path.join(logosDir, `${m[1]}.svg`))) {
+      reasons.push(`logo \`${m[1]}.svg\` referenced but absent from apps/docs/public/logos/`);
+    }
+  }
+
+  // 2b. Closing footer: a standalone Interlace mark (icon-light.svg,
+  // height=70) as the very last element (item 15 in readme-structure.md).
+  if (!content.includes('icon-light.svg" alt="Interlace" height="70"')) {
     reasons.push('missing closing Interlace mark footer (item 15 in readme-structure.md)');
   }
   if (
@@ -103,8 +161,16 @@ function checkPlugin(pkg: string): Violation | null {
   const rulesHeaderIdx = content.indexOf('## Rules');
   const canonicalHeader =
     '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
-  const ruleTableRegex =
-    /\| Rule \| CWE \| OWASP \| CVSS \| Description \| 🧠 \| 💼 \| ⚠️ \| 🔧 \| 💡 \| 🚫 \|\n\|[\s:|\\-]+\|\n(?:\|[^\n]*\|\n?)+/g;
+  // Cells are matched with padding tolerance: a formatter that column-aligns
+  // the table (`| Rule    |   CWE   |`) must not make the gate silently stop
+  // covering that plugin. eslint-plugin-nestjs-security went unchecked this way
+  // from #336 until this fix.
+  const ruleTableRegex = new RegExp(
+    ['Rule', 'CWE', 'OWASP', 'CVSS', 'Description', '🧠', '💼', '⚠️', '🔧', '💡', '🚫']
+      .map((c) => `\\|\\s*${c}\\s*`)
+      .join('') + '\\|\\n\\|[\\s:|\\-]+\\|\\n(?:\\|[^\\n]*\\|\\n?)+',
+    'g',
+  );
   const ruleTableMatches = Array.from(content.matchAll(ruleTableRegex));
   if (ruleTableMatches.length === 0) {
     reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);

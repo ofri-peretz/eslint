@@ -1,5 +1,17 @@
 # eslint-plugin-sqlite-security
 
+## 0.1.2
+
+### Patch Changes
+
+- [#364](https://github.com/ofri-peretz/eslint/pull/364) [`86baa02`](https://github.com/ofri-peretz/eslint/commit/86baa026485bf93d63f1523d6eb382e0a40cbb3f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the ecosystem and oxlint marks to the README logo row. Each plugin now
+  leads with Interlace -> its ecosystem (node, nestjs, express, react, mongodb,
+  postgresql, mysql, sqlite, prisma, drizzle, knex, typeorm, sequelize, lambda,
+  vercel, jwt) -> oxlint -> ESLint; the generic quality plugins carry the row
+  without an ecosystem mark. README-only change - no rule behaviour is affected.
+  The patch bump is what carries the new README onto npm, which only refreshes a
+  package README on publish.
+
 ## 0.1.1
 
 ### Patch Changes

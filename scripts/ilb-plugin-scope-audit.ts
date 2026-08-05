@@ -59,6 +59,21 @@ const PRINT = process.argv.includes('--print');
 
 // ── Plugin environment contracts ────────────────────────────────────────────
 
+/**
+ * Rule namespace, where it differs from the package directory name.
+ *
+ * The renamed packages deliberately kept their original short namespace so a
+ * migration is a one-line package.json change — every `pg/no-unsafe-query`
+ * reference and eslint-disable comment keeps working. Without this map the
+ * audit derives the namespace from the directory, then (a) reads the
+ * `'pg': plugin` config line as a rule named `pg` and (b) resolves every
+ * severity to 'off' because it looks for a prefix the configs never use.
+ */
+const PLUGIN_NAMESPACE: Record<string, string> = {
+  'eslint-plugin-postgresql-security': 'pg',
+  'eslint-plugin-jwt-security': 'jwt',
+};
+
 const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-secure-coding':     ['universal'],
   'eslint-plugin-node-security':     ['universal', 'node'],
@@ -66,6 +81,10 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-express-security':  ['express'],
   'eslint-plugin-jwt':               ['jwt'],
   'eslint-plugin-pg':                ['pg'],
+  // Renamed packages keep their original rule set, namespace and therefore
+  // their environment tags. The old names stay until the deprecations age out.
+  'eslint-plugin-jwt-security':        ['jwt'],
+  'eslint-plugin-postgresql-security': ['pg'],
   'eslint-plugin-sequelize-security': ['sequelize'],
   'eslint-plugin-mysql-security':            ['mysql'],
   'eslint-plugin-prisma-security':           ['prisma'],
@@ -260,7 +279,7 @@ function getRulesFromIndex(pluginDir: string): string[] {
   const indexPath = path.join(PACKAGES_DIR, pluginDir, 'src', 'index.ts');
   if (!fs.existsSync(indexPath)) return [];
   const src = fs.readFileSync(indexPath, 'utf-8');
-  const pluginShortName = pluginDir.replace('eslint-plugin-', '');
+  const pluginShortName = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
 
   // Strategy: scan lines that look like `'rule-name': <non-string>` (rule registration)
   // Exclude lines that assign string literals — those are flagship config ('rule': 'error').
@@ -308,7 +327,7 @@ function getFlagshipSeverity(pluginDir: string, ruleName: string): 'error' | 'wa
   if (!fs.existsSync(indexPath)) return 'off';
   const src = fs.readFileSync(indexPath, 'utf-8');
   // Look for 'plugin-name/rule-name': 'error'|'warn'
-  const prefix = pluginDir.replace('eslint-plugin-', '');
+  const prefix = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
   const re = new RegExp(`['"]${prefix}/${ruleName}['"]\\s*:\\s*['"]([^'"]+)['"]`);
   const m = src.match(re);
   if (!m) return 'off';
@@ -529,6 +548,26 @@ function main() {
   manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
   const findings = validateManifest(manifest);
 
+  /**
+   * Is the on-disk report the same as this one, ignoring `generatedAt`?
+   *
+   * Read-and-catch rather than `existsSync` + `readFileSync`, to avoid the
+   * file-system race CodeQL flags on the check-then-read shape.
+   */
+  function isReportUnchanged(filePath: string, next: Record<string, unknown>): boolean {
+    try {
+      const existing = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const a = { ...existing };
+      const b = { ...next };
+      Reflect.deleteProperty(a, 'generatedAt');
+      Reflect.deleteProperty(b, 'generatedAt');
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }
+
+
   // Build report
   const report = {
     generatedAt: new Date().toISOString(),
@@ -545,7 +584,11 @@ function main() {
   // Write report
   const benchDir = path.join(ROOT, 'benchmark-results');
   if (!fs.existsSync(benchDir)) fs.mkdirSync(benchDir, { recursive: true });
-  fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n');
+  // Only write when the findings changed — an unconditional rewrite leaves the
+  // tree dirty after every pre-commit run and breaks lefthook's stash restore.
+  if (!isReportUnchanged(REPORT_PATH, report)) {
+    fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n');
+  }
 
   if (PRINT || findings.length > 0) {
     console.log('\n══════════════════════════════════════════════════════════════════════');

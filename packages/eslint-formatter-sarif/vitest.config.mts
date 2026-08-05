@@ -13,7 +13,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.mjs', 'src/**/*.spec.mjs'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {
       enabled: true,

@@ -1,5 +1,80 @@
 ## [3.0.3] - 2026-02-08
 
+## 3.0.12
+
+### Patch Changes
+
+- [#364](https://github.com/ofri-peretz/eslint/pull/364) [`86baa02`](https://github.com/ofri-peretz/eslint/commit/86baa026485bf93d63f1523d6eb382e0a40cbb3f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the ecosystem and oxlint marks to the README logo row. Each plugin now
+  leads with Interlace -> its ecosystem (node, nestjs, express, react, mongodb,
+  postgresql, mysql, sqlite, prisma, drizzle, knex, typeorm, sequelize, lambda,
+  vercel, jwt) -> oxlint -> ESLint; the generic quality plugins carry the row
+  without an ecosystem mark. README-only change - no rule behaviour is affected.
+  The patch bump is what carries the new README onto npm, which only refreshes a
+  package README on publish.
+
+## 3.0.11
+
+### Patch Changes
+
+- [#358](https://github.com/ofri-peretz/eslint/pull/358) [`1b8c0df`](https://github.com/ofri-peretz/eslint/commit/1b8c0df38d460dda7d18e886c891984208e62259) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix SDK peer declarations that npm silently ignored
+
+  Seven plugins listed their target SDKs under `peerDependenciesMeta` with
+  `{"optional": true}` but never declared them in `peerDependencies`. npm drops
+  any `peerDependenciesMeta` entry that has no matching `peerDependencies` key,
+  so the metadata was inert — these packages effectively declared **no SDK peer
+  at all**. Nothing warned: the failure mode of a dependency you never declared
+  is silence.
+
+  Each SDK now appears in both maps, matching the shape `eslint-plugin-pg` and
+  `eslint-plugin-mongodb-security` already use — a supported major range in
+  `peerDependencies`, `optional: true` in `peerDependenciesMeta`:
+
+  | Plugin               | SDK                            | Range                                        |
+  | :------------------- | :----------------------------- | :------------------------------------------- |
+  | `express-security`   | `express`                      | `^4.0.0 \|\| ^5.0.0`                         |
+  |                      | `helmet`                       | `^6.0.0 \|\| ^7.0.0 \|\| ^8.0.0`             |
+  |                      | `cors`                         | `^2.0.0`                                     |
+  |                      | `csurf`                        | `^1.0.0`                                     |
+  |                      | `express-rate-limit`           | `^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0 \|\| ^8.0.0` |
+  | `jwt`                | `jsonwebtoken`                 | `^8.0.0 \|\| ^9.0.0`                         |
+  |                      | `@nestjs/jwt`                  | `^9.0.0 \|\| ^10.0.0 \|\| ^11.0.0`           |
+  |                      | `express-jwt`                  | `^7.0.0 \|\| ^8.0.0`                         |
+  |                      | `jose`                         | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0`             |
+  |                      | `jwks-rsa`                     | `^3.0.0 \|\| ^4.0.0`                         |
+  |                      | `jwt-decode`                   | `^3.0.0 \|\| ^4.0.0`                         |
+  | `lambda-security`    | `@aws-sdk/client-lambda`       | `^3.0.0`                                     |
+  |                      | `@middy/core`                  | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/http-cors`             | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/http-security-headers` | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  |                      | `@middy/validator`             | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+  | `maintainability`    | `typescript`                   | `>=4.8.4`                                    |
+  | `nestjs-security`    | `@nestjs/common`               | `^9.0.0 \|\| ^10.0.0 \|\| ^11.0.0`           |
+  |                      | `@nestjs/throttler`            | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0`             |
+  |                      | `class-validator`              | `^0.14.0 \|\| ^0.15.0`                       |
+  |                      | `class-transformer`            | `^0.5.0`                                     |
+  | `react-features`     | `typescript`                   | `>=4.8.4`                                    |
+  | `vercel-ai-security` | `ai`                           | `^4.0.0 \|\| ^5.0.0 \|\| ^6.0.0 \|\| ^7.0.0` |
+
+  Ranges were taken from each SDK's real release history, bounded below by the
+  oldest major whose call shape the rules still match and above by the current
+  major. `cors`, `csurf`, `class-transformer` and `@aws-sdk/client-lambda` have
+  only ever shipped one usable major. The `ai` range spans v4 because
+  `require-max-steps` deliberately accepts both the v4 `maxSteps` option and the
+  v5+ `stopWhen` form. The two `typescript` entries reuse the `>=4.8.4` bound
+  `@interlace/eslint-devkit` already declares, since these are the same
+  type-aware-graceful rules behind the same optional TS program.
+
+  Every range admits the version this repo's `__compatibility__` specs are
+  actually tested against, so the declaration cannot drift from what CI proves.
+
+  **Nothing to migrate.** Every entry stays optional, so no install adds a
+  package or emits a warning when the SDK is absent. What changes is that a
+  consumer on an unsupported major now gets a peer warning instead of nothing —
+  which was the point of the metadata in the first place.
+
+- Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:
+  - @interlace/eslint-devkit@1.7.0
+
 ## 3.0.10
 
 ### Patch Changes

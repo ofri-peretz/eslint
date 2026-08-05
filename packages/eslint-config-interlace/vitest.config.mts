@@ -40,6 +40,28 @@ const INTERLACE_PLUGINS = [
   'eslint-plugin-operability',
   'eslint-plugin-modularity',
   'eslint-plugin-modernization',
+  // The 7 ORM-security plugins. These were missing while the meta-config
+  // already shipped them, so `await import(name)` in ecosystem-integrity.test
+  // fell through to node_modules -> dist/ and needed a build.
+  'eslint-plugin-drizzle-security',
+  'eslint-plugin-knex-security',
+  'eslint-plugin-mysql-security',
+  'eslint-plugin-prisma-security',
+  'eslint-plugin-sequelize-security',
+  'eslint-plugin-sqlite-security',
+  'eslint-plugin-typeorm-security',
+  // The AI SDK family, same reasoning as the ORM block above.
+  'eslint-plugin-mcp-sdk-security',
+  'eslint-plugin-openai-security',
+  'eslint-plugin-anthropic-security',
+  'eslint-plugin-gemini-security',
+  // The renamed pair. `src/index.ts` imports these names now, and
+  // ecosystem-integrity.test still loads the deprecated pg / jwt above, so
+  // both spellings need an alias — miss one and its suite resolves through
+  // node_modules to a `dist/` the test job never builds, which fails the whole
+  // file at collection rather than at an assertion.
+  'eslint-plugin-postgresql-security',
+  'eslint-plugin-jwt-security',
 ] as const;
 
 const PLUGIN_ALIASES = Object.fromEntries(INTERLACE_PLUGINS.map(pluginSource));
@@ -47,7 +69,13 @@ const PLUGIN_ALIASES = Object.fromEntries(INTERLACE_PLUGINS.map(pluginSource));
 export default defineConfig({
   root: __dirname,
   resolve: {
-    alias: PLUGIN_ALIASES,
+    alias: {
+      ...PLUGIN_ALIASES,
+      // Devkit alongside the plugins, for the same reason: vitest resolves to
+      // source so a run needs no pre-built dist, which is what lets the `test`
+      // turbo task declare `dependsOn: []`.
+      '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts'),
+    },
   },
   test: {
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
