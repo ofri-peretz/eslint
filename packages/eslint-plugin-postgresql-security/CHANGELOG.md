@@ -1,5 +1,32 @@
 ## [1.4.3] - 2026-02-08
 
+## 1.5.1
+
+### Patch Changes
+
+- [#377](https://github.com/ofri-peretz/eslint/pull/377) [`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Complete the logo row across every published package.
+
+  The six AI SDK family plugins landed after the logo row shipped, so they had no
+  marks; @interlace/eslint-devkit never had a header row at all. All of them now
+  carry Interlace -> ecosystem -> oxlint -> ESLint (devkit has no ecosystem mark).
+
+  The four AI SDK READMEs are also brought to the canonical structure they were
+  missing: Philosophy, Getting Started, Configuration Presets, Compatibility,
+  Related Plugins, and the 11-column rule table with the type-awareness column.
+
+  README-only change; no rule behaviour is affected. The patch bump is what
+  carries the new README onto npm, which only refreshes a package README on
+  publish.
+
+- [#335](https://github.com/ofri-peretz/eslint/pull/335) [`47cde07`](https://github.com/ofri-peretz/eslint/commit/47cde07f13fb128e973a46f2a66a68c3419cdef3) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix the `./oxlint` subpath export, which pointed at `src/oxlint.js` — a file no build produces. `require('<package>/oxlint')` threw MODULE_NOT_FOUND on every published package, while every README documented that exact wiring for oxlint's `jsPlugins`. The export now points at the build output, `dist/src/oxlint.js`.
+
+  The path was hardcoded in `scripts/generate-oxlint-shims.ts`, so the generator rewrote any manual correction back to the broken value on the next drift check — fixed there rather than per package.
+
+  This release also carries npm provenance: the affected packages were last published from a workstation, which has no OIDC token to attest with, so the published tarballs had no attestation. Publishing through the release workflow signs them.
+
+- Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:
+  - @interlace/eslint-devkit@1.8.0
+
 ## 1.4.9
 
 ### Patch Changes
