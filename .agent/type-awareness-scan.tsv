@@ -419,12 +419,16 @@ secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
 modernization	prefer-template-literal	unaware	
 modularity	no-mutable-exports	unaware	
 sequelize-security	no-unsafe-query	unaware	
+sequelize-security	require-tls	unaware	
 mysql-security	no-unsafe-query	unaware	
+mysql-security	require-tls	unaware	
 prisma-security	no-unsafe-query	unaware	
 prisma-security	no-unscoped-mutation	unaware	
 drizzle-security	no-unsafe-query	unaware	
 drizzle-security	no-unscoped-mutation	unaware	
 knex-security	no-unsafe-query	unaware	
 knex-security	no-unscoped-mutation	unaware	
+knex-security	require-tls	unaware	
 sqlite-security	no-unsafe-query	unaware	
 typeorm-security	no-unsafe-query	unaware	
+typeorm-security	require-tls	unaware	

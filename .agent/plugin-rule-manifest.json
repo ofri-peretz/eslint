@@ -2358,6 +2358,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Sequelize's raw-SQL sinks: sequelize.query() and Sequelize.literal()."
+    },
+    "require-tls": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). Sequelize passes TLS settings through `dialectOptions`."
     }
   },
   "eslint-plugin-mysql-security": {
@@ -2366,6 +2372,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with MySQL's raw-SQL sinks."
+    },
+    "require-tls": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 accepts the verification flag at the top level as well as under `ssl`."
     }
   },
   "eslint-plugin-prisma-security": {
@@ -2408,6 +2420,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit); Knex scope arrives as a chained .where*() clause."
+    },
+    "require-tls": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). Knex nests connection settings under `connection`."
     }
   },
   "eslint-plugin-sqlite-security": {
@@ -2424,6 +2442,12 @@
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with TypeORM's raw-SQL sinks."
+    },
+    "require-tls": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). TypeORM keeps DataSourceOptions flat; `extra` is the driver passthrough bag."
     }
   }
 }

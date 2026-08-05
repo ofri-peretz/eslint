@@ -15,12 +15,14 @@
 import { TSESLint } from '@interlace/eslint-devkit';
 
 import { noUnsafeQuery } from './rules/no-unsafe-query';
+import { requireTls } from './rules/require-tls';
 
 /**
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   'no-unsafe-query': noUnsafeQuery,
+  'require-tls': requireTls,
 };
 
 /**
