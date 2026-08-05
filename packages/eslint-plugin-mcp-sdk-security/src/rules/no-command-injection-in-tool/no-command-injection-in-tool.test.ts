@@ -71,6 +71,14 @@ describe('no-command-injection-in-tool', () => {
           code: SDK + 'execSync(cmd);',
         },
         {
+          // Positioned *before* the handler, so the range check has to reject
+          // on the start bound rather than the end bound.
+          name: 'a sink above the registration that declares the name',
+          code:
+            SDK +
+            'execSync(cmd);\nserver.registerTool("run", cfg, async ({ cmd }) => noop(cmd));',
+        },
+        {
           name: 'a file that never imports the MCP SDK',
           code: 'server.registerTool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
         },
@@ -189,6 +197,19 @@ describe('no-command-injection-in-tool', () => {
             SDK +
             'server.registerTool("run", cfg, async function ({ cmd }) { execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          // Regression: handlers are collected in traversal order, so the
+          // outer one is pushed first. Taking the first enclosing match meant
+          // the sink was judged against the *outer* handler's parameter names
+          // — and `inner` is not among them, so this was silently skipped.
+          name: 'a sink inside a nested registration uses the inner handler',
+          code:
+            SDK +
+            'server.registerTool("outer", cfg, async ({ outerArg }) => {\n' +
+            '  server.registerTool("inner", cfg, async ({ inner }) => { execSync(inner); });\n' +
+            '});',
+          errors: [{ messageId: 'toolArgToShell', data: { arg: 'inner', sink: 'execSync' } }],
         },
         {
           name: 'two sinks in one handler report separately',

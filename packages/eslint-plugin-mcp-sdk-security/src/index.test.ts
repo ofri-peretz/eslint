@@ -7,7 +7,13 @@
 
 import { describe, it, expect } from 'vitest';
 
-import plugin, { rules, configs, plugin as namedPlugin, requireToolInputSchema } from './index';
+import plugin, {
+  rules,
+  configs,
+  plugin as namedPlugin,
+  noCommandInjectionInTool,
+  requireToolInputSchema,
+} from './index';
 
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
@@ -15,7 +21,10 @@ describe('eslint-plugin-mcp-sdk-security', () => {
       'no-command-injection-in-tool',
       'require-tool-input-schema',
     ]);
+    // Reference equality, not just presence: a rule id can be wired to the
+    // wrong module and every id-based assertion still passes.
     expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
+    expect(rules['no-command-injection-in-tool']).toBe(noCommandInjectionInTool);
   });
 
   it('names itself for the oxlint loader', () => {

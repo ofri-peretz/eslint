@@ -186,11 +186,25 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     }> = [];
     const candidates: Array<{ node: TSESTree.Node; arg: string; sink: string }> = [];
 
-    /** The handler enclosing this node, if any. */
+    /**
+     * The *innermost* handler enclosing this node, if any.
+     *
+     * `handlers` is filled in traversal order, so an outer registration is
+     * pushed before an inner one. Taking the first match would pick the outer
+     * handler, whose parameter names are not the ones in scope at the sink —
+     * so an inner handler's argument reaching a sink would be silently
+     * skipped. Narrowest range wins.
+     */
     function enclosingHandler(node: TSESTree.Node) {
-      return handlers.find(
-        (h) => node.range[0] >= h.range[0] && node.range[1] <= h.range[1],
-      );
+      // ESLint visits CallExpression top-down, so `handlers` is ordered
+      // outermost-first. The *last* enclosing match is therefore the innermost
+      // one, and no size comparison is needed — a comparison here would carry
+      // an arm no traversal order can reach.
+      let innermost: (typeof handlers)[number] | undefined;
+      for (const h of handlers) {
+        if (node.range[0] >= h.range[0] && node.range[1] <= h.range[1]) innermost = h;
+      }
+      return innermost;
     }
 
     return {
