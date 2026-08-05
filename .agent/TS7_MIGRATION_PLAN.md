@@ -57,8 +57,9 @@ pattern replicates.
    plugin resolves `@interlace/eslint-devkit` to its built declaration file
    (capture the `exports.types`/declaration path and `--traceResolution`
    evidence), and a whole-graph build produces **zero TS2307 errors**.
-3. Add `references` to `packages/eslint-config-interlace/tsconfig.lib.json`
-   (currently `[]`; it imports all 20 packages) for correct build order.
+3. ~~Add `references` to the meta-config's `tsconfig.lib.json` for correct
+   build order.~~ Moot: the package was removed and its preset composition
+   now lives in a test fixture outside the composite graph.
    Add devkit reference to deprecated `eslint-plugin-crypto` if it's kept.
 4. Move typecheck to a whole-graph `tsc -b` (one invocation) rather than 23
    per-package turbo tasks — otherwise TS7's per-invocation startup makes it
@@ -77,7 +78,8 @@ pattern replicates.
 ## Cross-package dependency graph (for the references)
 - Every `eslint-plugin-*` imports only `@interlace/eslint-devkit` (and already
   references it — except deprecated `eslint-plugin-crypto`).
-- `eslint-config-interlace` imports ALL 20 packages + devkit — needs full references.
+- ~~`eslint-config-interlace` imports ALL 20 packages + devkit — needs full
+  references.~~ Package removed; nothing in the composite graph fans out that wide.
 
 ## Constraints / gotchas
 - typescript-eslint pinned TS6 (`@typescript/typescript6` or keep typescript@6

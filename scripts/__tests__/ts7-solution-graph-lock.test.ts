@@ -32,8 +32,8 @@ function stripJsonc(raw: string): string {
   return raw.replace(/^\s*\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
-const packagesDir = new URL('../../', import.meta.url);
-const solutionUrl = new URL('../../../tsconfig.solution.json', import.meta.url);
+const packagesDir = new URL('../../packages/', import.meta.url);
+const solutionUrl = new URL('../../tsconfig.solution.json', import.meta.url);
 
 const solution = JSON.parse(
   stripJsonc(await readFile(solutionUrl, 'utf8')),
@@ -51,7 +51,7 @@ const dirs = (await readdir(packagesDir, { withFileTypes: true }))
 
 const compositeOnDisk: string[] = [];
 for (const dir of dirs) {
-  const libUrl = new URL(`../../${dir}/tsconfig.lib.json`, import.meta.url);
+  const libUrl = new URL(`../../packages/${dir}/tsconfig.lib.json`, import.meta.url);
   let lib: { compilerOptions?: { composite?: boolean } };
   try {
     lib = JSON.parse(stripJsonc(await readFile(libUrl, 'utf8'))) as typeof lib;
@@ -72,7 +72,7 @@ describe('tsconfig.solution.json is the complete whole-graph typecheck entry', (
 
   it('has no dangling reference (every referenced lib config exists on disk)', async () => {
     for (const rel of referenced) {
-      const url = new URL(`../../../${rel}`, import.meta.url);
+      const url = new URL(`../../${rel}`, import.meta.url);
       await expect(
         readFile(url, 'utf8'),
         `dangling solution reference: ${rel}`,
