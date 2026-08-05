@@ -121,6 +121,22 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-anthropic-security",
+      "rules": 3,
+      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
+      "category": "security",
+      "version": "0.1.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-gemini-security",
+      "rules": 3,
+      "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, which disables harm filtering",
+      "category": "security",
+      "version": "0.1.1",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-mysql-security",
       "rules": 3,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
@@ -129,24 +145,8 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-anthropic-security",
-      "rules": 2,
-      "description": "ESLint plugin for Anthropic SDK security — catches hardcoded API keys in the Claude client options",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-gemini-security",
-      "rules": 2,
-      "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, which disables harm filtering",
-      "category": "security",
-      "version": "0.1.1",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-openai-security",
-      "rules": 2,
+      "rules": 3,
       "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, which ships your API key to every visitor",
       "category": "security",
       "version": "0.1.1",
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 462,
+  "totalRules": 465,
   "totalPlugins": 30,
   "allPluginsCount": 32,
   "generatedAt": "2026-08-05"
