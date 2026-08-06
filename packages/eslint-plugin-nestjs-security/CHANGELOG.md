@@ -1,3 +1,85 @@
+## 2.2.0
+
+### Minor Changes
+
+- [#419](https://github.com/ofri-peretz/eslint/pull/419) [`e3052b3`](https://github.com/ofri-peretz/eslint/commit/e3052b3d71ae34b1e26522642ceb99b6d52de6e4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-res-bypass-serialization` no longer reports without evidence of a serializer
+
+  The rule's message — "@Exclude() does not apply" — asserted a consequence it
+  never checked for. Run at `error` over four production NestJS codebases, 23 of
+  its 27 findings were in repos containing no `ClassSerializerInterceptor` and no
+  `@Exclude()` anywhere: a real pattern with no disclosure behind it.
+
+  It now reports only when a serializer is visible on the controller or the
+  handler. Set `assumeGlobalSerializer: true` if you register
+  `ClassSerializerInterceptor` globally in `main.ts` or via `APP_INTERCEPTOR`,
+  which a controller file cannot see.
+
+  Two body shapes are also no longer reported, because neither is an object:
+  `res.send(JSON.stringify(x))`, and `res.type('html')` and the other bare
+  extensions Express resolves through `mime.lookup`.
+
+### Patch Changes
+
+- [#419](https://github.com/ofri-peretz/eslint/pull/419) [`e3052b3`](https://github.com/ofri-peretz/eslint/commit/e3052b3d71ae34b1e26522642ceb99b6d52de6e4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hybrid-app-config-loss` reports an accurate CWE and severity
+
+  The rule mapped to CWE-284, which is a Pillar — MITRE marks it Discouraged for
+  real findings. It now maps to CWE-20 (Improper Input Validation), the
+  consequence that actually reproduces: on NestJS 9.4.3 a Kafka `@MessagePattern`
+  handler received a number through a DTO with `@IsString()` when
+  `inheritAppConfig` was absent, and rejected it once the flag was set.
+
+  Severity drops from 7.5/HIGH to 5.3/MEDIUM: reaching these handlers requires
+  access to the message broker, not merely the network.
+
+  Detection is unchanged, and the rule stays deliberately ungated.
+
+- [#410](https://github.com/ofri-peretz/eslint/pull/410) [`82ffb8a`](https://github.com/ofri-peretz/eslint/commit/82ffb8ae4e6bb351af829643af5eaeaf615a79ee) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `require-guards` reported the wrong CWE at the wrong severity on every finding.
+
+  It declared `CWE-284` at CVSS `9.8` (CRITICAL). Both were wrong.
+  [CWE-284](https://cwe.mitre.org/data/definitions/284.html) is a **Pillar**, and
+  MITRE marks it **Discouraged** for mapping real vulnerabilities — its own
+  guidance says the name "is often misused in low-information vulnerability
+  reports". And `9.8` requires `C:H/I:H/A:H` at once, which one missing guard does
+  not produce: an unguarded route that reads scores 7.5
+  (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N`) and one that mutates also scores 7.5
+  (`C:N/I:H/A:N`).
+
+  - `missingGuards`, `emptyGuards` — now `CWE-306` (Missing Authentication for
+    Critical Function; Base, mapping Allowed) at CVSS 7.5, HIGH.
+  - `missingRequiredGuard` — now `CWE-862` (Missing Authorization) at CVSS 6.5,
+    MEDIUM. It is a different weakness: the route _is_ guarded, so authentication
+    runs and only a required policy guard is absent, which also means the caller
+    needs privileges to reach it (`PR:L`, not `PR:N`).
+
+  No detection behaviour changes — same findings, honest labels. Reporting every
+  finding as CRITICAL left nothing to say when something genuinely is.
+
+- [#421](https://github.com/ofri-peretz/eslint/pull/421) [`08ffa79`](https://github.com/ofri-peretz/eslint/commit/08ffa7979c935f4dfa4b3a265fc9547ae2d1161d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `require-guards` recognises an in-handler check against a configured secret
+
+  The sibling of the existing `@Headers('…secret')` webhook exemption, one step
+  further in: some handlers take the credential as a query or route parameter and
+  compare it against the environment themselves.
+
+  ```ts
+  if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
+    return false;
+  }
+  ```
+
+  That is amplication's `user.controller.ts:19`, reported as an unguarded route
+  while it authenticates on its first statement.
+
+  Only equality against a secret _source_ clears a route, and the name has to
+  look like a credential: `process.env.CRON_SECRET`, `config.get('API_TOKEN')`.
+  `process.env.NODE_ENV !== 'production'` is a feature flag and still reports —
+  otherwise a handler could switch its own access control off by inspecting its
+  environment. The comparison must also be in the handler itself, not inside a
+  callback it passes along.
+
+  Comparing already-trusted data (`req.user.role !== 'admin'`) is authorization,
+  not authentication, and still reports; so does reading config without comparing
+  it.
+
 ## 2.1.1
 
 ### Patch Changes
