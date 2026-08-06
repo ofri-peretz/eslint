@@ -123,6 +123,34 @@ ruleTester.run('require-guards', requireGuards, {
         async updateStatus(@Headers('stigg-webhooks-secret') secret, @Body() dto) {}
       }
     `,
+    // amplication/.../user.controller.ts:19 — the same authentication, one step
+    // further in: the credential arrives as a route parameter and the handler
+    // checks it against config itself. Reported as unguarded while it
+    // authenticates on its first statement.
+    `
+      @Controller('user')
+      class UserController {
+        @Post(':token/announcement')
+        async announce(@Param('token') token: string) {
+          if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
+            this.logger.error('InvalidToken, process aborted');
+            return false;
+          }
+          return this.userService.announce();
+        }
+      }
+    `,
+    // The same shape read straight from the environment.
+    `
+      @Controller('cron')
+      class CronController {
+        @Post('run')
+        async run(@Query('key') key: string) {
+          if (key !== process.env.CRON_SECRET) throw new UnauthorizedException();
+          return this.jobs.run();
+        }
+      }
+    `,
     `
       @Controller('hooks')
       class HooksController {
@@ -415,6 +443,58 @@ ruleTester.run('require-guards', requireGuards, {
     },
   ],
   invalid: [
+    // The configured-secret exemption is bounded on both sides. Comparing
+    // already-trusted data is authorization, not authentication — it says
+    // nothing about whether the caller proved who they are.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list(@Req() req) {
+            if (req.user.role !== 'admin') throw new ForbiddenException();
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // Only a *secret source* clears a route. Comparing against an ordinary
+    // call, a bare function named `get`, or a `.get()` whose receiver is not a
+    // config object leaves all three of these reported.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('a')
+          a(@Query('x') x) { if (this.compute(x) !== 'y') throw new Error(); return 1; }
+          @Get('b')
+          b(@Query('x') x) { if (get(x) !== 'y') throw new Error(); return 1; }
+          @Get('c')
+          c(@Query('x') x) { if (this.get('K') !== x) throw new Error(); return 1; }
+        }
+      `,
+      errors: [
+        { messageId: 'missingGuards' },
+        { messageId: 'missingGuards' },
+        { messageId: 'missingGuards' },
+      ],
+    },
+    // Reading config without comparing it is not an authentication check —
+    // otherwise any handler that logs process.env.NODE_ENV would go quiet.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            this.logger.debug(process.env.NODE_ENV);
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
     // Each narrowing above is bounded. A public term in the middle of a name
     // is a resource listing, not an entry point.
     {
