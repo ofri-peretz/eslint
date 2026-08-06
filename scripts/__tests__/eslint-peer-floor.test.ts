@@ -154,4 +154,33 @@ describe('declared ESLint peer floor', () => {
 
     expect(drift).toEqual([]);
   });
+
+  /**
+   * The two repo-level surfaces that state the range in prose rather than in a
+   * per-package table, so neither the manifest check nor the README check sees
+   * them.
+   *
+   * Both survived the manifest fix in #407 still saying `^8.0.0`, and the
+   * compatibility page is the one published on eslint.interlace.tools — the
+   * storefront advertising support for 8.0–8.39, where every rule throws on
+   * load. #423 corrected the text; this is what stops it drifting back.
+   */
+  it('states the same floor on the repo-level surfaces', () => {
+    const surfaces = [
+      'CLAIMS.md',
+      'apps/docs/content/docs/getting-started/concepts/compatibility.mdx',
+    ];
+
+    const stale = surfaces.filter((file) => {
+      const text = readFileSync(join(__dirname, '../..', file), 'utf8');
+      // Markdown tables escape the union as `\|\|`, so accept either spelling —
+      // the escaped form is why a plain grep missed these for so long.
+      return (
+        !text.includes(`^${MIN_ESLINT} || ^9.0.0 || ^10.0.0`) &&
+        !text.includes(`^${MIN_ESLINT} \\|\\| ^9.0.0 \\|\\| ^10.0.0`)
+      );
+    });
+
+    expect(stale).toEqual([]);
+  });
 });
