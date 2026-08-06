@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -192,6 +193,11 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the filereader source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check if entering FileReader handler
@@ -209,7 +215,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (referencesFileReaderResult(node.right, eventParamName)) {
+          if (referencesFileReaderResult(node.right, eventParamName) && payloadSource(node.right) === 'filereader') {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
@@ -252,7 +258,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (referencesFileReaderResult(arg, eventParamName)) {
+            if (referencesFileReaderResult(arg, eventParamName) && payloadSource(arg) === 'filereader') {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',

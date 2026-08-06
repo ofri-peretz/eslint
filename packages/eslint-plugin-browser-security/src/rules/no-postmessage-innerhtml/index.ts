@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -155,6 +156,11 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the postmessage source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check if entering message handler
@@ -174,7 +180,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         ) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName)) {
+            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'postmessage') {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
@@ -212,7 +218,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
           // Check if right side references event.data
-          if (referencesEventData(node.right, eventParamName)) {
+          if (referencesEventData(node.right, eventParamName) && payloadSource(node.right) === 'postmessage') {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',

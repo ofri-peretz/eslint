@@ -22,6 +22,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Safe: JSON.parse usage
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
           handleData(data);
@@ -31,6 +32,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Safe: textContent
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.textContent = event.data;
         };
@@ -53,6 +55,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Test files allowed by default
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           eval(event.data);
         };
@@ -62,6 +65,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // eval with non-event.data argument
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           eval(someOtherCode);
         };
@@ -72,6 +76,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // eval with event.data
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           eval(event.data);
         };
@@ -81,6 +86,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // new Function with event.data
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           const fn = new Function(event.data);
           fn();
@@ -91,6 +97,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Function() constructor (without new)
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           const fn = Function(event.data);
           fn();
@@ -101,6 +108,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // addEventListener pattern
     {
       code: `
+        const socket = new WebSocket('wss://example.test');
         socket.addEventListener('message', (event) => {
           eval(event.data);
         });
@@ -110,6 +118,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Nested property
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           eval(event.data.code);
         };
@@ -119,6 +128,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Function expression
     {
       code: `
+        const websocket = new WebSocket('wss://example.test');
         websocket.onmessage = function(msg) {
           eval(msg.data);
         };
@@ -128,6 +138,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
     // Test file with allowInTests: false
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           eval(event.data);
         };

@@ -19,6 +19,13 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-eval', noEval, {
   valid: [
+    // Owned by no-websocket-eval — see the note in no-innerhtml's tests.
+    {
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.onmessage = (event) => { eval(event.data); };
+      `,
+    },
     // Safe JSON.parse
     {
       code: `const data = JSON.parse(jsonString);`,

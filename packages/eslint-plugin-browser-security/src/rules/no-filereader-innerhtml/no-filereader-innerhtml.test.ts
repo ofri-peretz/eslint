@@ -22,6 +22,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Safe: using textContent
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           element.textContent = e.target.result;
         };
@@ -30,6 +31,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Safe: with sanitization
     {
       code: `
+        const fileReader = new FileReader();
         fileReader.onload = (e) => {
           const sanitized = DOMPurify.sanitize(e.target.result);
           element.innerHTML = sanitized;
@@ -39,6 +41,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Not a FileReader handler
     {
       code: `
+        const button = new FileReader();
         button.onload = (e) => {
           element.innerHTML = e.target.result;
         };
@@ -53,6 +56,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Test files allowed by default
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           element.innerHTML = e.target.result;
         };
@@ -62,6 +66,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Using intermediate variable
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           const clean = DOMPurify.sanitize(e.target.result);
           element.innerHTML = clean;
@@ -73,6 +78,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Direct innerHTML with e.target.result
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           element.innerHTML = e.target.result;
         };
@@ -82,6 +88,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // fileReader variable name
     {
       code: `
+        const fileReader = new FileReader();
         fileReader.onload = (event) => {
           container.innerHTML = event.target.result;
         };
@@ -91,6 +98,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // outerHTML
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           widget.outerHTML = e.target.result;
         };
@@ -100,6 +108,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // onloadend event
     {
       code: `
+        const reader = new FileReader();
         reader.onloadend = (e) => {
           element.innerHTML = e.target.result;
         };
@@ -109,6 +118,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // insertAdjacentHTML
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           list.insertAdjacentHTML('beforeend', e.target.result);
         };
@@ -118,6 +128,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // fr variable name (common abbreviation)
     {
       code: `
+        const fr = new FileReader();
         fr.onload = (e) => {
           preview.innerHTML = e.target.result;
         };
@@ -127,6 +138,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Function expression
     {
       code: `
+        const reader = new FileReader();
         reader.onload = function(e) {
           panel.innerHTML = e.target.result;
         };
@@ -136,6 +148,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // Test file with allowInTests: false
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           element.innerHTML = e.target.result;
         };
@@ -147,6 +160,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // addEventListener('load') pattern
     {
       code: `
+        const reader = new FileReader();
         reader.addEventListener('load', (e) => {
           element.innerHTML = e.target.result;
         });
@@ -156,6 +170,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // addEventListener('loadend') pattern
     {
       code: `
+        const fileReader = new FileReader();
         fileReader.addEventListener('loadend', (event) => {
           container.innerHTML = event.target.result;
         });
@@ -165,6 +180,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // document.write with FileReader data
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           document.write(e.target.result);
         };
@@ -174,6 +190,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     // document.writeln with FileReader data
     {
       code: `
+        const reader = new FileReader();
         reader.onload = (e) => {
           document.writeln(e.target.result);
         };

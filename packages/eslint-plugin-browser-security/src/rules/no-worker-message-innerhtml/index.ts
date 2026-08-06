@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -192,6 +193,11 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the worker source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check if entering Worker handler
@@ -209,7 +215,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (referencesEventData(node.right, eventParamName)) {
+          if (referencesEventData(node.right, eventParamName) && payloadSource(node.right) === 'worker') {
             context.report({
               node,
               messageId: 'workerInnerhtml',
@@ -245,7 +251,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName)) {
+            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'worker') {
               context.report({
                 node,
                 messageId: 'workerInnerhtml',

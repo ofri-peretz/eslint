@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -114,9 +115,16 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+
+        // A source-specific rule owns this call if any argument is a payload it
+        // can attribute (see no-websocket-eval). Complementary by construction:
+        // whatever it claims, we skip; whatever it cannot, we report.
+        if (node.arguments.some((arg) => payloadSource(arg) !== undefined)) return;
 
         // Check for eval(), execScript()
         if (callee.type === 'Identifier') {

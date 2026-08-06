@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -195,6 +196,11 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the websocket source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         const { isHandler, eventParam } = isWsOnmessageAssignment(node);
@@ -227,7 +233,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
         if (evalFn) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName)) {
+            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'websocket') {
               context.report({
                 node,
                 messageId: 'evalWithWsData',
@@ -264,7 +270,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
           node.callee.name === 'Function'
         ) {
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName)) {
+            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'websocket') {
               context.report({
                 node,
                 messageId: 'evalWithWsData',

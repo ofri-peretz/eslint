@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-community/attacks/xss/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -164,6 +165,11 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       sinkName: string,
       taintedNode: TSESTree.Node,
     ) {
+      // Owned by a source-specific rule? Then this is not ours. The two tests
+      // are complements — a source rule reports only what it can attribute, we
+      // report only what it cannot — so exactly one rule reports any value.
+      // Before this, both did, at the identical range, in `recommended`.
+      if (payloadSource(taintedNode) !== undefined) return;
       // Allow literal strings if configured.
       if (allowLiteralStrings && isLiteralString(taintedNode)) return;
       // Allow if sanitized via a trusted sanitiser call.
@@ -184,6 +190,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         suggest: [{ messageId: 'useSanitizer', fix: () => null }],
       });
     }
+
+    const payloadSource = createPayloadResolver(context.sourceCode.ast);
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {

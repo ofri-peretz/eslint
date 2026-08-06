@@ -22,6 +22,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Safe: textContent
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (event) => {
           element.textContent = event.data;
         };
@@ -30,6 +31,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Safe: with sanitization
     {
       code: `
+        const myWorker = new Worker('worker.js');
         myWorker.onmessage = (e) => {
           const sanitized = DOMPurify.sanitize(e.data);
           element.innerHTML = sanitized;
@@ -39,6 +41,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Not a Worker handler
     {
       code: `
+        const button = new Worker('worker.js');
         button.onmessage = (e) => {
           element.innerHTML = e.data;
         };
@@ -47,6 +50,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Test files allowed
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (e) => {
           element.innerHTML = e.data;
         };
@@ -58,6 +62,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // innerHTML with event.data
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (event) => {
           element.innerHTML = event.data;
         };
@@ -67,6 +72,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // myWorker variable name
     {
       code: `
+        const myWorker = new Worker('worker.js');
         myWorker.onmessage = (e) => {
           container.innerHTML = e.data;
         };
@@ -76,6 +82,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // outerHTML
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (e) => {
           widget.outerHTML = e.data;
         };
@@ -85,6 +92,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // insertAdjacentHTML
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (e) => {
           list.insertAdjacentHTML('beforeend', e.data);
         };
@@ -94,6 +102,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // addEventListener pattern
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.addEventListener('message', (e) => {
           element.innerHTML = e.data;
         });
@@ -103,6 +112,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Function expression
     {
       code: `
+        const sharedWorker = new Worker('worker.js');
         sharedWorker.onmessage = function(msg) {
           panel.innerHTML = msg.data;
         };
@@ -112,6 +122,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     // Test file with allowInTests: false
     {
       code: `
+        const worker = new Worker('worker.js');
         worker.onmessage = (e) => {
           element.innerHTML = e.data;
         };
