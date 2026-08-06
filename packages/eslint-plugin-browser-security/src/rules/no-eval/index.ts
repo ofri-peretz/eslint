@@ -117,7 +117,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+    const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

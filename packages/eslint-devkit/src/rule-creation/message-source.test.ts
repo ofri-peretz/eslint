@@ -1,47 +1,78 @@
 /**
  * Tests for the message-source resolver.
  *
- * The load-bearing assertions are the negative ones: an unidentifiable receiver
- * must resolve to `undefined` rather than to a guess. That is what stops a
- * source rule claiming a provenance it cannot prove, and what hands the finding
- * to the generic rule instead of reporting it twice.
+ * Resolution is lexical, so these drive it through a real `Linter` run — the
+ * scope manager is what decides which binding a name refers to, and a bare
+ * parser AST has no scopes. The load-bearing assertions are the negative ones:
+ * an unidentifiable or shadowed receiver must resolve to `undefined` rather
+ * than to a guess, because that is what hands the finding to the generic rule
+ * instead of reporting it twice — or, worse, not at all.
  */
 import { describe, it, expect } from 'vitest';
+import { Linter } from 'eslint';
 import * as parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@typescript-eslint/utils';
 import { AST_NODE_TYPES } from '../ast-node-types';
 import {
-  collectSourceBindings,
   constructedSource,
   createPayloadResolver,
-  receiverSource,
+  createReceiverResolver,
   handlerSource,
   readsEventPayload,
+  receiverSource,
+  SHADOWED,
 } from './message-source';
 
-const programOf = (code: string): TSESTree.Program =>
-  parser.parse(code, { range: true });
+/**
+ * Run `code` through a Linter and hand the callback the live SourceCode.
+ *
+ * A throwaway rule is the only way to get a scope-aware SourceCode, which is
+ * exactly what the resolver needs.
+ */
+function withSourceCode<T>(code: string, use: (sourceCode: any) => T): T {
+  let result!: T;
+  const linter = new Linter();
+  linter.verify(code, {
+    plugins: {
+      probe: {
+        rules: {
+          collect: {
+            create(context: any) {
+              return {
+                'Program:exit'() {
+                  result = use(context.sourceCode);
+                },
+              };
+            },
+          },
+        },
+      },
+    },
+    languageOptions: {
+      parser,
+      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    },
+    rules: { 'probe/collect': 'error' },
+  });
+  return result;
+}
 
 const exprOf = (code: string): TSESTree.Node =>
-  (programOf(code).body[0] as TSESTree.ExpressionStatement).expression;
+  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
+    .expression;
 
-/**
- * Parse a file and resolve its first expression statement as a handler.
- *
- * First rather than last: one case deliberately puts the construction *after*
- * the attachment, to prove statement order does not change the answer.
- */
-const resolve = (code: string) => {
-  const program = programOf(code);
-  const bindings = collectSourceBindings(program);
-  const statement = program.body.find(
-    (node): node is TSESTree.ExpressionStatement =>
-      node.type === 'ExpressionStatement',
-  );
-  return statement === undefined
-    ? undefined
-    : handlerSource(statement.expression, bindings);
-};
+/** Resolve the first expression statement of `code` as a handler attachment. */
+const resolve = (code: string) =>
+  withSourceCode(code, (sourceCode) => {
+    const resolver = createReceiverResolver(sourceCode);
+    const statement = (sourceCode.ast.body as TSESTree.Node[]).find(
+      (node): node is TSESTree.ExpressionStatement =>
+        node.type === AST_NODE_TYPES.ExpressionStatement,
+    );
+    return statement === undefined
+      ? undefined
+      : handlerSource(statement.expression, resolver);
+  });
 
 describe('constructedSource', () => {
   it('names the source a constructor produces', () => {
@@ -65,89 +96,153 @@ describe('constructedSource', () => {
   });
 });
 
-describe('collectSourceBindings', () => {
-  it('binds a name to the source it was constructed from', () => {
-    const bindings = collectSourceBindings(
-      programOf(
-        'const ws = new WebSocket("wss://x");\nconst r = new FileReader();',
-      ),
-    );
-    expect(bindings.get('ws')).toBe('websocket');
-    expect(bindings.get('r')).toBe('filereader');
-  });
-
-  it('finds constructions nested inside functions', () => {
-    const bindings = collectSourceBindings(
-      programOf(
-        'function connect() { const inner = new WebSocket("wss://x"); return inner; }',
-      ),
-    );
-    expect(bindings.get('inner')).toBe('websocket');
-  });
-
-  it('does not bind a destructured, uninitialised or unrelated declarator', () => {
-    const bindings = collectSourceBindings(
-      programOf(
-        'const { a } = new WebSocket("wss://x");\nconst plain = getSocket();\nlet later;',
-      ),
-    );
-    expect(bindings.has('a')).toBe(false);
-    expect(bindings.has('plain')).toBe(false);
-    expect(bindings.has('later')).toBe(false);
-  });
-
-  it('terminates on an AST whose nodes carry parent pointers', () => {
-    // ESLint sets `parent` on every node before a rule runs, so the walk must
-    // skip it. Without the guard this recurses until the stack dies — the test
-    // is the guard's only proof, because a bare parser AST has no parents.
-    const program = programOf('const ws = new WebSocket("wss://x");');
-    const link = (node: Record<string, unknown>, parent: unknown): void => {
-      node.parent = parent;
-      for (const [key, value] of Object.entries(node)) {
-        if (key === 'parent') continue;
-        const children = Array.isArray(value) ? value : [value];
-        for (const child of children) {
-          if (
-            child &&
-            typeof child === 'object' &&
-            typeof (child as { type?: unknown }).type === 'string'
-          ) {
-            link(child as Record<string, unknown>, node);
+describe('receiverSource', () => {
+  /** Resolve the receiver of `X.onmessage = …` in the last statement. */
+  const receiverOf = (code: string) =>
+    withSourceCode(code, (sourceCode) => {
+      const resolver = createReceiverResolver(sourceCode);
+      let found: TSESTree.Node | undefined;
+      const walk = (node: TSESTree.Node): void => {
+        if (
+          node.type === AST_NODE_TYPES.AssignmentExpression &&
+          node.left.type === AST_NODE_TYPES.MemberExpression
+        ) {
+          found = node.left.object;
+        }
+        for (const [key, value] of Object.entries(node)) {
+          if (key === 'parent') continue;
+          for (const child of Array.isArray(value) ? value : [value]) {
+            if (
+              child &&
+              typeof child === 'object' &&
+              typeof child.type === 'string'
+            )
+              walk(child);
           }
         }
-      }
-    };
-    link(program as unknown as Record<string, unknown>, undefined);
+      };
+      walk(sourceCode.ast);
+      return found === undefined ? undefined : receiverSource(found, resolver);
+    });
 
-    expect(collectSourceBindings(program).get('ws')).toBe('websocket');
-  });
-});
-
-describe('receiverSource', () => {
-  const bindings = collectSourceBindings(
-    programOf('const ws = new WebSocket("wss://x");'),
-  );
-
-  it('resolves an identifier through the file bindings', () => {
-    expect(receiverSource(exprOf('ws'), bindings)).toBe('websocket');
+  it('resolves an identifier through the scope chain', () => {
+    expect(
+      receiverOf('const ws = new WebSocket("x");\nws.onmessage = f;'),
+    ).toBe('websocket');
   });
 
   it('treats the global receivers as the postMessage source', () => {
     for (const name of ['window', 'self', 'globalThis', 'parent', 'top']) {
-      expect(receiverSource(exprOf(name), bindings)).toBe('postmessage');
+      expect(receiverOf(`${name}.onmessage = f;`)).toBe('postmessage');
     }
   });
 
+  it('does NOT treat a shadowed global as the postMessage source', () => {
+    // A parameter named `window` is not the window. Before lexical
+    // resolution this was attributed to postMessage anyway.
+    expect(
+      receiverOf('function f(window) { window.onmessage = g; }'),
+    ).toBeUndefined();
+  });
+
+  it('prefers the binding actually in scope', () => {
+    // The inner `ws` is a plain value; the outer one is a WebSocket. A
+    // file-wide name map answered "websocket" here, which reported an
+    // arbitrary payload as WebSocket data.
+    expect(
+      receiverOf(
+        'const ws = new WebSocket("x");\nfunction r(p) { const ws = p; ws.onmessage = f; }',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('refuses to answer for a reassigned binding', () => {
+    // A re-assignment is not a *definition*, so `defs` alone misses it.
+    expect(
+      receiverOf(
+        'let ws = new WebSocket("x");\nws = other;\nws.onmessage = f;',
+      ),
+    ).toBeUndefined();
+  });
+
   it('resolves an inline construction', () => {
-    expect(receiverSource(exprOf('new Worker("w.js")'), bindings)).toBe(
-      'worker',
-    );
+    expect(receiverOf('new Worker("w.js").onmessage = f;')).toBe('worker');
   });
 
   it('is undefined for a receiver it cannot identify', () => {
-    // The whole point: unknown is not "probably a WebSocket".
-    expect(receiverSource(exprOf('socket'), bindings)).toBeUndefined();
-    expect(receiverSource(exprOf('this.ws'), bindings)).toBeUndefined();
+    expect(receiverOf('socket.onmessage = f;')).toBeUndefined();
+    expect(receiverOf('this.ws.onmessage = f;')).toBeUndefined();
+  });
+});
+
+describe('createReceiverResolver', () => {
+  it('marks a bound-but-unknown name SHADOWED, and an unbound name undefined', () => {
+    // The distinction is what lets `window` mean the global only when nothing
+    // shadows it.
+    const [bound, unbound] = withSourceCode(
+      'const thing = makeIt();\nthing.onmessage = f;',
+      (sc) => {
+        const resolver = createReceiverResolver(sc);
+        const ids: TSESTree.Identifier[] = [];
+        const walk = (n: any): void => {
+          if (n.type === AST_NODE_TYPES.Identifier) ids.push(n);
+          for (const [k, v] of Object.entries(n)) {
+            if (k === 'parent') continue;
+            for (const c of Array.isArray(v) ? v : [v]) {
+              if (
+                c &&
+                typeof c === 'object' &&
+                typeof (c as any).type === 'string'
+              )
+                walk(c);
+            }
+          }
+        };
+        walk(sc.ast);
+        const thing = ids.find((i) => i.name === 'thing')!;
+        const missing = ids.find((i) => i.name === 'makeIt')!;
+        return [resolver(thing), resolver(missing)] as const;
+      },
+    );
+    expect(bound).toBe(SHADOWED);
+    expect(unbound).toBeUndefined();
+  });
+});
+
+describe('createReceiverResolver — refusals', () => {
+  const receiverOf = (code: string) =>
+    withSourceCode(code, (sourceCode) => {
+      const resolver = createReceiverResolver(sourceCode);
+      let found: TSESTree.Node | undefined;
+      const walk = (node: any): void => {
+        if (
+          node.type === AST_NODE_TYPES.AssignmentExpression &&
+          node.left.type === AST_NODE_TYPES.MemberExpression
+        ) {
+          found = node.left.object;
+        }
+        for (const [k, v] of Object.entries(node)) {
+          if (k === 'parent') continue;
+          for (const c of Array.isArray(v) ? v : [v]) {
+            if (c && typeof c === 'object' && typeof (c as any).type === 'string') walk(c);
+          }
+        }
+      };
+      walk(sourceCode.ast);
+      return found === undefined ? undefined : receiverSource(found, resolver);
+    });
+
+  it('refuses a name declared more than once', () => {
+    // Two `var` declarations produce two defs; which one is live at the point
+    // of use is not something a single-pass resolver can claim to know.
+    expect(receiverOf('var ws = new WebSocket("x");\nvar ws = other;\nws.onmessage = f;'))
+      .toBeUndefined();
+  });
+
+  it('refuses a receiver that arrives as a parameter', () => {
+    // A parameter has a definition, but not a `VariableDeclarator` with an
+    // initialiser — nothing in this file says what it is.
+    expect(receiverOf('function connect(ws) { ws.onmessage = f; }')).toBeUndefined();
   });
 });
 
@@ -320,35 +415,36 @@ describe('handlerSource', () => {
 
 describe('createPayloadResolver', () => {
   /** Resolve the source of the first `innerHTML = …` value in the file. */
-  const sinkSource = (code: string) => {
-    const program = programOf(code);
-    const resolve = createPayloadResolver(program);
-    let value: TSESTree.Node | undefined;
-    const find = (node: TSESTree.Node): void => {
-      if (
-        node.type === AST_NODE_TYPES.AssignmentExpression &&
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.property.name === 'innerHTML' &&
-        value === undefined
-      ) {
-        value = node.right;
-      }
-      for (const [key, raw] of Object.entries(node)) {
-        if (key === 'parent') continue;
-        for (const child of Array.isArray(raw) ? raw : [raw]) {
-          if (
-            child &&
-            typeof child === 'object' &&
-            typeof child.type === 'string'
-          )
-            find(child);
+  const sinkSource = (code: string) =>
+    withSourceCode(code, (sourceCode) => {
+      const resolve = createPayloadResolver(sourceCode);
+      let value: TSESTree.Node | undefined;
+      const walk = (node: any): void => {
+        if (
+          value === undefined &&
+          node.type === AST_NODE_TYPES.AssignmentExpression &&
+          node.left.type === AST_NODE_TYPES.MemberExpression &&
+          node.left.property.type === AST_NODE_TYPES.Identifier &&
+          node.left.property.name === 'innerHTML'
+        ) {
+          value = node.right;
         }
-      }
-    };
-    find(program);
-    return value === undefined ? 'NO SINK' : resolve(value);
-  };
+        for (const [key, raw] of Object.entries(node)) {
+          if (key === 'parent') continue;
+          for (const child of Array.isArray(raw) ? raw : [raw]) {
+            if (
+              child &&
+              typeof child === 'object' &&
+              typeof (child as any).type === 'string'
+            ) {
+              walk(child);
+            }
+          }
+        }
+      };
+      walk(sourceCode.ast);
+      return value === undefined ? 'NO SINK' : resolve(value);
+    });
 
   it('attributes a sink to the source whose handler encloses it', () => {
     expect(
@@ -374,7 +470,6 @@ describe('createPayloadResolver', () => {
   });
 
   it('is undefined for a sink that reads something other than the payload', () => {
-    // Inside a handler, but not fed by it — the generic rule owns this.
     expect(
       sinkSource(
         'const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = other; };',
@@ -389,8 +484,6 @@ describe('createPayloadResolver', () => {
   });
 
   it('is undefined when the receiver cannot be identified', () => {
-    // The mis-attribution case, end to end: this is exactly the shape that used
-    // to be reported as WebSocket message data.
     expect(
       sinkSource('socket.onmessage = (e) => { el.innerHTML = e.data; };'),
     ).toBeUndefined();

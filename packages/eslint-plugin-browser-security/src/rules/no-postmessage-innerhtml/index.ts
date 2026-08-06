@@ -159,7 +159,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
     // Ownership gate: this rule reports only what the resolver attributes
     // to the postmessage source. Everything it cannot identify belongs to the
     // generic sink rule, so no value is ever reported by both.
-    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+    const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

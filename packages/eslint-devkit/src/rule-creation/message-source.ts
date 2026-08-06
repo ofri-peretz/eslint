@@ -36,7 +36,7 @@
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 
 /** A source whose messages are attacker-influenced, and which owns its own rule. */
 export type MessageSource =
@@ -60,32 +60,90 @@ const POSTMESSAGE_RECEIVERS = new Set([
 ]);
 
 /**
- * Map every `const x = new WebSocket()` style binding in the file to its source.
+ * Resolve a receiver identifier to the source it was constructed from.
  *
- * Built once per file. Hoisting is not modelled: a handler attached above the
- * construction still resolves, because the map is complete before any handler
- * is judged.
+ * Lexical, not name-keyed. A file-wide name map cannot see shadowing: with
+ * `const ws = new WebSocket()` at module scope, an inner `const ws = payload`
+ * was still resolved as a WebSocket — so an attacker-controlled `payload`
+ * got reported as "WebSocket message data" while the generic rule, believing
+ * the line was owned, said nothing. Measured before this change.
+ *
+ * Resolution walks the scope chain from the reference itself, so the binding
+ * that is actually in scope is the one that decides.
  */
-export function collectSourceBindings(
-  program: TSESTree.Program,
-): Map<string, MessageSource> {
-  const bindings = new Map<string, MessageSource>();
+/**
+ * `SHADOWED` — the name resolves to a binding that is not a known source.
+ *
+ * Distinct from `undefined`, which means no binding at all, i.e. a genuine
+ * global. The difference matters for `window` / `self` / `parent`: those are
+ * the postMessage receivers only when nothing shadows them, and
+ * `function f(window) { window.addEventListener('message', …) }` is a
+ * parameter, not the global.
+ */
+export const SHADOWED = Symbol('shadowed');
 
-  walk(program, (node) => {
-    if (node.type !== AST_NODE_TYPES.VariableDeclarator) return;
-    if (node.id.type !== AST_NODE_TYPES.Identifier) return;
-    const source = constructedSource(node.init ?? undefined);
-    if (source !== undefined) bindings.set(node.id.name, source);
-  });
+export type ReceiverResolver = (
+  node: TSESTree.Identifier,
+) => MessageSource | typeof SHADOWED | undefined;
 
-  return bindings;
+/** Find the variable a name refers to, from `scope` outwards. */
+function findVariable(
+  scope: TSESLint.Scope.Scope | null,
+  name: string,
+): TSESLint.Scope.Variable | undefined {
+  for (let current = scope; current !== null; current = current.upper) {
+    const found = current.variables.find((variable) => variable.name === name);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+/**
+ * Build the resolver for a file from its scope manager.
+ *
+ * A variable with more than one definition is not resolved: `let ws` reassigned
+ * later could be anything at the point of use, and guessing is what this module
+ * exists to stop.
+ */
+export function createReceiverResolver(
+  sourceCode: TSESLint.SourceCode,
+): ReceiverResolver {
+  return (node) => {
+    const scope = sourceCode.getScope(node);
+    const variable = findVariable(scope, node.name);
+    // No binding, or a built-in global (ESLint models `globalThis` and friends
+    // as variables with zero definitions): either way nothing in this file
+    // shadows the name, so it can still mean the real global.
+    if (variable === undefined || variable.defs.length === 0) return undefined;
+    // Reassignable or re-declared: it could be anything here, so refuse to say.
+    if (variable.defs.length !== 1) return SHADOWED;
+    // A re-assignment is not a *definition*, so `defs` alone misses
+    // `let ws = new WebSocket(); ws = somethingElse;`. More than the
+    // initialiser write means the value at the point of use is not knowable.
+    if (
+      variable.references.filter((reference) => reference.isWrite()).length > 1
+    ) {
+      return SHADOWED;
+    }
+    // `find` rather than `defs[0]`, so there is no defensive optional chain
+    // that can never be undefined — the length check above already guarantees
+    // one entry, and dead branches are how coverage stops meaning anything.
+    const declarator = variable.defs.find(
+      (definition): definition is typeof definition & { node: TSESTree.VariableDeclarator } =>
+        definition.node.type === AST_NODE_TYPES.VariableDeclarator,
+    );
+    if (declarator === undefined) return SHADOWED;
+    return constructedSource(declarator.node.init) ?? SHADOWED;
+  };
 }
 
 /** The source a `new X()` expression constructs, if X is one we own a rule for. */
 export function constructedSource(
-  node: TSESTree.Node | undefined,
+  node: TSESTree.Node | null | undefined,
 ): MessageSource | undefined {
-  if (node === undefined || node.type !== AST_NODE_TYPES.NewExpression)
+  // Accepts null so callers can pass a declarator's `init` directly — a
+  // `?? undefined` at each call site is a branch no test can reach.
+  if (node == null || node.type !== AST_NODE_TYPES.NewExpression)
     return undefined;
   if (node.callee.type !== AST_NODE_TYPES.Identifier) return undefined;
   return CONSTRUCTORS.get(node.callee.name);
@@ -94,16 +152,23 @@ export function constructedSource(
 /**
  * The source of a receiver expression — `ws` in `ws.onmessage = …`.
  *
- * Resolves an identifier through the file's bindings, and an inline
+ * Resolves an identifier through the scope chain, and an inline
  * `new WebSocket().onmessage = …` directly. Anything else is unknown.
  */
 export function receiverSource(
   receiver: TSESTree.Node,
-  bindings: ReadonlyMap<string, MessageSource>,
+  resolve: ReceiverResolver,
 ): MessageSource | undefined {
   if (receiver.type === AST_NODE_TYPES.Identifier) {
-    if (POSTMESSAGE_RECEIVERS.has(receiver.name)) return 'postmessage';
-    return bindings.get(receiver.name);
+    const resolved = resolve(receiver);
+    // `window` / `self` / … are the postMessage receivers only when nothing
+    // shadows them — an unbound name is the global, a bound one is not.
+    if (resolved === undefined) {
+      return POSTMESSAGE_RECEIVERS.has(receiver.name)
+        ? 'postmessage'
+        : undefined;
+    }
+    return resolved === SHADOWED ? undefined : resolved;
   }
   return constructedSource(receiver);
 }
@@ -123,14 +188,14 @@ export function receiverSource(
  */
 export function handlerSource(
   node: TSESTree.Node,
-  bindings: ReadonlyMap<string, MessageSource>,
+  resolve: ReceiverResolver,
 ):
   | { source: MessageSource; eventParam: string; handler: TSESTree.Node }
   | undefined {
   if (node.type === AST_NODE_TYPES.AssignmentExpression) {
     if (node.left.type !== AST_NODE_TYPES.MemberExpression) return undefined;
     if (node.left.property.type !== AST_NODE_TYPES.Identifier) return undefined;
-    const source = receiverSource(node.left.object, bindings);
+    const source = receiverSource(node.left.object, resolve);
     if (source === undefined) return undefined;
     if (!HANDLER_PROPS[source].has(node.left.property.name)) return undefined;
     return withHandler(source, node.right);
@@ -144,7 +209,7 @@ export function handlerSource(
     const [eventType, handler] = node.arguments;
     if (eventType?.type !== AST_NODE_TYPES.Literal) return undefined;
     if (typeof eventType.value !== 'string') return undefined;
-    const source = receiverSource(node.callee.object, bindings);
+    const source = receiverSource(node.callee.object, resolve);
     if (source === undefined) return undefined;
     if (!HANDLER_EVENTS[source].has(eventType.value)) return undefined;
     return withHandler(source, handler);
@@ -235,9 +300,10 @@ export function readsEventPayload(
  * value. That is the whole fix.
  */
 export function createPayloadResolver(
-  program: TSESTree.Program,
+  sourceCode: TSESLint.SourceCode,
 ): (node: TSESTree.Node) => MessageSource | undefined {
-  const bindings = collectSourceBindings(program);
+  const resolve = createReceiverResolver(sourceCode);
+  const program = sourceCode.ast;
   const scopes: Array<{
     source: MessageSource;
     eventParam: string;
@@ -245,7 +311,7 @@ export function createPayloadResolver(
   }> = [];
 
   walk(program, (node) => {
-    const handler = handlerSource(node, bindings);
+    const handler = handlerSource(node, resolve);
     if (handler === undefined) return;
     scopes.push({
       source: handler.source,

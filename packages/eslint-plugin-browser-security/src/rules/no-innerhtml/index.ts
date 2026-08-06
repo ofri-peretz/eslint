@@ -191,7 +191,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       });
     }
 
-    const payloadSource = createPayloadResolver(context.sourceCode.ast);
+    const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
