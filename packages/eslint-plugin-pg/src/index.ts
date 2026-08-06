@@ -53,7 +53,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-pg',
-    version: '1.4.13',
+    version: '1.4.14',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
