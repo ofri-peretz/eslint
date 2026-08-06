@@ -123,10 +123,11 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // A source-specific rule owns this call if any argument is a payload it
-        // can attribute (see no-websocket-eval). Complementary by construction:
-        // whatever it claims, we skip; whatever it cannot, we report.
-        if (node.arguments.some((arg) => payloadSource(arg) !== undefined))
+        // WebSocket only. `no-websocket-eval` is the ONLY eval rule with a
+        // source of its own, so skipping every resolved source would drop
+        // Worker, SharedWorker and FileReader payloads entirely — nobody would
+        // report them. The complement is per-SINK, not per-resolver.
+        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
           return;
 
         // Check for eval(), execScript()
@@ -213,7 +214,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         // no-websocket-eval and here — the exact double-report this rule pair
         // exists to prevent, and the complement only holds if every reporting
         // path asks the question.
-        if (node.arguments.some((arg) => payloadSource(arg) !== undefined))
+        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
           return;
 
         if (allowFunctionConstructor) {

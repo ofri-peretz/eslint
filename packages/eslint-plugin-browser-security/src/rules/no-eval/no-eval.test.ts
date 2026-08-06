@@ -65,6 +65,25 @@ ruleTester.run('no-eval', noEval, {
     },
   ],
   invalid: [
+    {
+      // Worker payload into eval. `no-websocket-eval` does NOT own this, so if
+      // the generic rule skips every resolved source the finding is reported by
+      // nobody — the complement is per-sink, not per-resolver.
+      code: `
+        const w = new Worker('worker.js');
+        w.onmessage = (event) => { eval(event.data); };
+      `,
+      errors: 1,
+    },
+    {
+      // Same for FileReader, through the NewExpression path.
+      code: `
+        const reader = new FileReader();
+        reader.onload = (event) => { const f = new Function(event.target.result); f(); };
+      `,
+      errors: 1,
+    },
+
     // Direct eval
     {
       code: `eval(userInput);`,
