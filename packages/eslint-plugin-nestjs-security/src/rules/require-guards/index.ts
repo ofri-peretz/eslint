@@ -201,7 +201,8 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Header names that carry a credential.
+ * Names that denote a credential — a header, an environment variable, or a
+ * config key.
  *
  * A webhook receiver authenticates by comparing a shared secret or an HMAC
  * signature inside the handler — the mechanism Stripe, GitHub and Stigg all
@@ -209,9 +210,15 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
  * establish, and demanding one is wrong. Real instance:
  * `amplication/.../subscription.controller.ts:20` reads
  * `@Headers("stigg-webhooks-secret")` and throws on a mismatch.
+ *
+ * The name is what carries the intent, and it is the only thing separating a
+ * credential check from an environment check. `process.env.CRON_SECRET !== key`
+ * authenticates; `process.env.NODE_ENV !== 'production'` is a feature flag, and
+ * treating the two alike would let any handler switch this rule off by
+ * inspecting its environment.
  */
-const CREDENTIAL_HEADER =
-  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature/i;
+const CREDENTIAL_NAME =
+  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature|password|credential/i;
 
 /** A route handler awaiting resolution once every class in the file is known. */
 interface Pending {
@@ -674,10 +681,112 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
             (arg) =>
               arg.type === AST_NODE_TYPES.Literal &&
               typeof arg.value === 'string' &&
-              CREDENTIAL_HEADER.test(arg.value),
+              CREDENTIAL_NAME.test(arg.value),
           );
         }),
       );
+    }
+
+    /**
+     * Whether the handler compares something against a configured secret.
+     *
+     * The sibling of `verifiesCredentialHeader`, one step further in: instead of
+     * declaring the credential as a `@Headers()` parameter, these handlers take
+     * it as a query or route parameter and check it against the environment
+     * themselves.
+     *
+     *     if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
+     *       this.logger.error('InvalidToken, process aborted');
+     *       return false;
+     *     }
+     *
+     * That is amplication's `user.controller.ts:19`, reported as an unguarded
+     * route while it authenticates on its first statement. A secret read from
+     * `process.env` or a config service, on either side of an equality
+     * comparison, is not a value an unauthenticated caller can supply.
+     *
+     * Narrow on purpose. Only equality against a *secret source* counts —
+     * `if (user.role === 'admin')` is authorization on already-trusted data and
+     * says nothing about whether the caller was authenticated. Requiring the
+     * comparison, rather than a bare `process.env` read, keeps a handler that
+     * merely logs `process.env.NODE_ENV` from silencing the rule.
+     */
+    function comparesAgainstConfiguredSecret(
+      node: TSESTree.MethodDefinition,
+    ): boolean {
+      // Non-null here for the same reason as elsewhere in this file: TypeScript
+      // forbids decorators on an overload or abstract signature, so a body-less
+      // method is never a route handler.
+      const body = node.value.body as TSESTree.BlockStatement;
+
+      /**
+       * `process.env.SOME_SECRET`, or `config.get('SOME_SECRET')`.
+       *
+       * The *name* has to look like a credential, exactly as
+       * `verifiesCredentialHeader` requires of the header it reads. Without
+       * that, `process.env.NODE_ENV !== 'production'` would silence this rule
+       * as effectively as a token check, and any handler could switch its own
+       * access control off by looking at its environment.
+       */
+      const isSecretSource = (expr: TSESTree.Node): boolean => {
+        if (expr.type === AST_NODE_TYPES.MemberExpression) {
+          return (
+            expressionName(expr.object) === 'env' &&
+            CREDENTIAL_NAME.test(expressionName(expr))
+          );
+        }
+        if (expr.type !== AST_NODE_TYPES.CallExpression) return false;
+        if (expressionName(expr.callee) !== 'get') return false;
+        if (expr.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+        // The receiver is usually `this.configService`, a member expression
+        // rather than a bare identifier, so match on its property name.
+        if (!/config/i.test(expressionName(expr.callee.object))) return false;
+        return expr.arguments.some(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            typeof arg.value === 'string' &&
+            CREDENTIAL_NAME.test(arg.value),
+        );
+      };
+
+      let found = false;
+      const visit = (current: TSESTree.Node): void => {
+        if (found) return;
+        // Authentication is something the handler does, not something a
+        // callback it passes along happens to contain. A comparison inside
+        // `.filter(item => item.secret !== process.env.FILTER_TOKEN)` is data
+        // processing, and letting it count would hand every handler an easy
+        // way to look authenticated.
+        if (
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return;
+        }
+        if (
+          current.type === AST_NODE_TYPES.BinaryExpression &&
+          ['===', '!==', '==', '!='].includes(current.operator) &&
+          (isSecretSource(current.left) || isSecretSource(current.right))
+        ) {
+          found = true;
+          return;
+        }
+        for (const key of Object.keys(current) as (keyof TSESTree.Node)[]) {
+          if (key === 'parent') continue;
+          const value = current[key] as unknown;
+          if (Array.isArray(value)) {
+            for (const child of value) {
+              if (child && typeof child === 'object' && 'type' in child) {
+                visit(child as TSESTree.Node);
+              }
+            }
+          } else if (value && typeof value === 'object' && 'type' in value) {
+            visit(value as TSESTree.Node);
+          }
+        }
+      };
+      visit(body);
+      return found;
     }
 
     function registerClass(node: ClassNode): void {
@@ -698,6 +807,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         if (hasPublicDecorator(cls.decorators)) return;
         if (middlewareProtected(node, cls)) return;
         if (verifiesCredentialHeader(node)) return;
+        if (comparesAgainstConfiguredSecret(node)) return;
 
         pending.push({ node, cls, name: memberName(node) ?? '<anonymous>' });
       },

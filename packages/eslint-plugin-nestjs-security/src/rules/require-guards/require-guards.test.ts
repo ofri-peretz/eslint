@@ -123,6 +123,34 @@ ruleTester.run('require-guards', requireGuards, {
         async updateStatus(@Headers('stigg-webhooks-secret') secret, @Body() dto) {}
       }
     `,
+    // amplication/.../user.controller.ts:19 — the same authentication, one step
+    // further in: the credential arrives as a route parameter and the handler
+    // checks it against config itself. Reported as unguarded while it
+    // authenticates on its first statement.
+    `
+      @Controller('user')
+      class UserController {
+        @Post(':token/announcement')
+        async announce(@Param('token') token: string) {
+          if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
+            this.logger.error('InvalidToken, process aborted');
+            return false;
+          }
+          return this.userService.announce();
+        }
+      }
+    `,
+    // The same shape read straight from the environment.
+    `
+      @Controller('cron')
+      class CronController {
+        @Post('run')
+        async run(@Query('key') key: string) {
+          if (key !== process.env.CRON_SECRET) throw new UnauthorizedException();
+          return this.jobs.run();
+        }
+      }
+    `,
     `
       @Controller('hooks')
       class HooksController {
@@ -415,6 +443,103 @@ ruleTester.run('require-guards', requireGuards, {
     },
   ],
   invalid: [
+    // The configured-secret exemption is bounded on both sides. Comparing
+    // already-trusted data is authorization, not authentication — it says
+    // nothing about whether the caller proved who they are.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list(@Req() req) {
+            if (req.user.role !== 'admin') throw new ForbiddenException();
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // Only a *secret source* clears a route. Comparing against an ordinary
+    // call, a bare function named `get`, or a `.get()` whose receiver is not a
+    // config object leaves all three of these reported.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('a')
+          a(@Query('x') x) { if (this.compute(x) !== 'y') throw new Error(); return 1; }
+          @Get('b')
+          b(@Query('x') x) { if (get(x) !== 'y') throw new Error(); return 1; }
+          @Get('c')
+          c(@Query('x') x) { if (this.get('K') !== x) throw new Error(); return 1; }
+        }
+      `,
+      errors: [
+        { messageId: 'missingGuards' },
+        { messageId: 'missingGuards' },
+        { messageId: 'missingGuards' },
+      ],
+    },
+    // An environment check is not an authentication check. The name is the
+    // only thing separating the two, so without it any handler could switch
+    // this rule off by inspecting NODE_ENV.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            if (process.env.NODE_ENV !== 'production') return this.users.findDebug();
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // Same for a config key that names no credential.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            if (this.configService.get('FEATURE_FLAG') === 'on') return this.users.findAll();
+            return [];
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A comparison inside a callback is data processing, not authentication.
+    // The walker has to stop at function boundaries or `.filter()` clears the
+    // handler.
+    {
+      code: `
+        @Controller('items')
+        class ItemsController {
+          @Post('list')
+          async list(@Query('key') key: string) {
+            return this.db.findAll().filter((item) => item.secret !== process.env.FILTER_TOKEN);
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // Reading config without comparing it is not an authentication check —
+    // otherwise any handler that logs process.env.NODE_ENV would go quiet.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            this.logger.debug(process.env.NODE_ENV);
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
     // Each narrowing above is bounded. A public term in the middle of a name
     // is a resource listing, not an entry point.
     {
