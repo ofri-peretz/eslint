@@ -33,11 +33,11 @@ describe('no-unencrypted-transmission', () => {
         // rule flagged the security check itself — measured on the Interlace
         // repo, the finding landed inside an `if` that skips insecure URLs.
         `if (url.startsWith('http://')) return;`,
-      // An XML namespace is an identifier, never fetched — and every inline
-      // SVG in every React codebase carries one. Changing it to https breaks
-      // the document.
-      `const svg = <svg xmlns="http://www.w3.org/2000/svg" />;`,
-      `el.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', v);`,
+        // An XML namespace is an identifier, never fetched — and every inline
+        // SVG in every React codebase carries one. Changing it to https breaks
+        // the document.
+        `const svg = <svg xmlns="http://www.w3.org/2000/svg" />;`,
+        `el.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', v);`,
         `if (url.includes('ws://')) reject();`,
         `const isPlain = protocol === 'http://';`,
         `const clean = raw.replace('http://', 'https://');`,
@@ -66,7 +66,21 @@ describe('no-unencrypted-transmission', () => {
           options: [{ allowInTests: true }],
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          // The literal is the RECEIVER, not an argument — an http:// URL written
+          // into source, which is the thing this rule is for.
+          code: `const ok = 'http://legacy.example.com'.startsWith(prefix);`,
+          errors: 1,
+        },
+
+        {
+          // The replacement argument is content being written, not a search
+          // operand — an insecure destination that must still report.
+          code: `const fixed = url.replace(/^https:/, 'http://legacy.example.com');`,
+          errors: 1,
+        },
+      ],
     });
   });
 
@@ -153,147 +167,171 @@ describe('no-unencrypted-transmission', () => {
   });
 
   describe('Invalid Code - Database Connections', () => {
-    ruleTester.run('invalid - unencrypted database', noUnencryptedTransmission, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const db = "mongodb://user:pass@localhost:27017";',
-          errors: [
-            {
-              messageId: 'unencryptedTransmission',
-              data: {
-                issue: 'using insecure protocol mongodb://',
-                safeAlternative: 'Use mongodb+srv:// instead of mongodb://',
-              },
-              suggestions: [
-                {
-                  messageId: 'useHttps',
-                  data: {
-                    protocol: 'mongodb://',
-                    secureProtocol: 'mongodb+srv://',
-                  },
-                  output: 'const db = "mongodb+srv://user:pass@localhost:27017";',
+    ruleTester.run(
+      'invalid - unencrypted database',
+      noUnencryptedTransmission,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const db = "mongodb://user:pass@localhost:27017";',
+            errors: [
+              {
+                messageId: 'unencryptedTransmission',
+                data: {
+                  issue: 'using insecure protocol mongodb://',
+                  safeAlternative: 'Use mongodb+srv:// instead of mongodb://',
                 },
-              ],
-            },
-          ],
-        },
-        {
-          code: 'const redis = "redis://localhost:6379";',
-          errors: [
-            {
-              messageId: 'unencryptedTransmission',
-              data: {
-                issue: 'using insecure protocol redis://',
-                safeAlternative: 'Use rediss:// instead of redis://',
-              },
-              suggestions: [
-                {
-                  messageId: 'useHttps',
-                  data: {
-                    protocol: 'redis://',
-                    secureProtocol: 'rediss://',
+                suggestions: [
+                  {
+                    messageId: 'useHttps',
+                    data: {
+                      protocol: 'mongodb://',
+                      secureProtocol: 'mongodb+srv://',
+                    },
+                    output:
+                      'const db = "mongodb+srv://user:pass@localhost:27017";',
                   },
-                  output: 'const redis = "rediss://localhost:6379";',
+                ],
+              },
+            ],
+          },
+          {
+            code: 'const redis = "redis://localhost:6379";',
+            errors: [
+              {
+                messageId: 'unencryptedTransmission',
+                data: {
+                  issue: 'using insecure protocol redis://',
+                  safeAlternative: 'Use rediss:// instead of redis://',
                 },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+                suggestions: [
+                  {
+                    messageId: 'useHttps',
+                    data: {
+                      protocol: 'redis://',
+                      secureProtocol: 'rediss://',
+                    },
+                    output: 'const redis = "rediss://localhost:6379";',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Template Literals', () => {
-    ruleTester.run('invalid - insecure protocol in template', noUnencryptedTransmission, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const url = `http://${host}/api`;',
-          errors: [
-            {
-              messageId: 'unencryptedTransmission',
-              data: {
-                issue: 'using insecure protocol http:// in template literal',
-                safeAlternative: 'Use https:// instead of http://',
+    ruleTester.run(
+      'invalid - insecure protocol in template',
+      noUnencryptedTransmission,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const url = `http://${host}/api`;',
+            errors: [
+              {
+                messageId: 'unencryptedTransmission',
+                data: {
+                  issue: 'using insecure protocol http:// in template literal',
+                  safeAlternative: 'Use https:// instead of http://',
+                },
+                suggestions: undefined,
               },
-              suggestions: undefined,
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Options Coverage', () => {
-    ruleTester.run('options - allowInTests still blocks non-localhost', noUnencryptedTransmission, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const url = "http://staging.example.com";',
-          filename: 'example.spec.ts',
-          options: [{ allowInTests: true }],
-          errors: [
-            {
-              messageId: 'unencryptedTransmission',
-              suggestions: [
-                {
-                  messageId: 'useHttps',
-                  output: 'const url = "https://staging.example.com";',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - allowInTests still blocks non-localhost',
+      noUnencryptedTransmission,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const url = "http://staging.example.com";',
+            filename: 'example.spec.ts',
+            options: [{ allowInTests: true }],
+            errors: [
+              {
+                messageId: 'unencryptedTransmission',
+                suggestions: [
+                  {
+                    messageId: 'useHttps',
+                    output: 'const url = "https://staging.example.com";',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('options - ignorePatterns skip insecure literal', noUnencryptedTransmission, {
-      valid: [
-        {
-          code: 'const url = "http://internal.example.com";',
-          options: [{ ignorePatterns: ['internal'] }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'options - ignorePatterns skip insecure literal',
+      noUnencryptedTransmission,
+      {
+        valid: [
+          {
+            code: 'const url = "http://internal.example.com";',
+            options: [{ ignorePatterns: ['internal'] }],
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('options - custom insecure protocols', noUnencryptedTransmission, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const smtp = "smtp://mail.example.com";',
-          options: [
-            {
-              insecureProtocols: ['smtp://'],
-              secureAlternatives: { 'smtp://': 'smtps://' },
-            },
-          ],
-          errors: [
-            {
-              messageId: 'unencryptedTransmission',
-              suggestions: [
-                {
-                  messageId: 'useHttps',
-                  output: 'const smtp = "smtps://mail.example.com";',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - custom insecure protocols',
+      noUnencryptedTransmission,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const smtp = "smtp://mail.example.com";',
+            options: [
+              {
+                insecureProtocols: ['smtp://'],
+                secureAlternatives: { 'smtp://': 'smtps://' },
+              },
+            ],
+            errors: [
+              {
+                messageId: 'unencryptedTransmission',
+                suggestions: [
+                  {
+                    messageId: 'useHttps',
+                    output: 'const smtp = "smtps://mail.example.com";',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('options - template literal in test file skipped', noUnencryptedTransmission, {
-      valid: [
-        {
-          code: 'const url = `http://${host}/api`;',
-          filename: 'transport.test.ts',
-          options: [{ allowInTests: true }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'options - template literal in test file skipped',
+      noUnencryptedTransmission,
+      {
+        valid: [
+          {
+            code: 'const url = `http://${host}/api`;',
+            filename: 'transport.test.ts',
+            options: [{ allowInTests: true }],
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 });
-
