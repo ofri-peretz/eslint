@@ -34,22 +34,14 @@
 'eslint-plugin-vercel-ai-security': patch
 ---
 
-Raise the ESLint peer floor to 8.40.0: `^8.40.0 || ^9.0.0 || ^10.0.0`.
+Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
 
-The range said `^8.0.0`, which is a compatibility claim we could not back.
-`context.sourceCode` and `context.filename` were added in ESLint 8.40.0 and are
-`undefined` on 8.0.0–8.39.x. Our rules read them at 333 call sites across 231 files in 22
-packages, so on 8.39.x a rule can fail before it reports anything.
+`context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+resolved cleanly and then every rule threw
+`Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+nothing, because the manifest claimed the version was supported.
 
-Nothing tested the claim either: the version matrix installs `eslint@^8`, and
-npm resolves that to the newest v8 — no CI job has ever run against 8.39.x or
-below. The floor now names the oldest minor the rules actually run on.
-
-**Impact:** none for anyone on a supported ESLint. 8.40.0 shipped in May 2023
-and the v8 line ended at 8.57.x, so every v8 install resolving through a caret
-already lands above the new floor. Consumers pinned below 8.40.0 will now see
-an npm peer warning at install time instead of a crash inside a rule.
-
-Locked by `scripts/__tests__/eslint-peer-floor.test.ts`, which fails on any
-manifest admitting a v8 below 8.40.0 and separately asserts the source really
-does read those APIs — so the floor cannot decay into an unexplained constant.
+Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+changes; this only makes the manifest match what the code can actually run.

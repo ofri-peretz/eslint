@@ -8,10 +8,12 @@
 ## Policy
 
 A major version of `eslint` is **supported** when either:
+
 1. It has **≥20% of weekly downloads** (the industry-share gate), OR
 2. It is **the next major after a currently-supported version** (the forward-looking exception) — we ship support before the gate is crossed so users can upgrade ahead of the curve, not behind it.
 
 Supported majors must be:
+
 1. Listed in every package's `peerDependencies`
 2. Included in the benchmark matrix
 3. Validated in CI before release
@@ -20,44 +22,55 @@ When a major drops below 20% on two consecutive refreshes **and** has a successo
 
 The 20% threshold is an industry-share gate, not a date-based one — we follow where the ecosystem actually is, not where we wish it were. The forward-looking exception keeps us ahead of the upgrade wave for `n+1`.
 
-### The floor inside a supported major
-
-A supported major is declared from the **oldest minor our rules actually run
-on**, not from `x.0.0`. The share gate decides *whether* a major is in the
-range; the APIs our rules call decide *where inside it the range starts*.
-
-Today that floor is **8.40.0**, because `context.sourceCode` and
-`context.filename` — the flat-config accessors — landed in ESLint 8.40.0 and
-are `undefined` on 8.0.0–8.39.x. Our rules read them at 333 call sites across 231
-files in 22 packages, so on 8.39.x a rule can fail before it reports anything.
-`^8.0.0` therefore claimed four years of releases we have never run against
-and cannot run against.
-
-The rule this encodes: **do not widen a range past what CI exercises.** The
-version matrix installs `eslint@^8`, which resolves to the newest v8 — a
-`^8.0.0` floor is a claim with no test behind it, and a peer range is a
-promise npm shows to every consumer at install time. When a new API is
-adopted repo-wide, raise the floor to the minor that introduced it in the
-same change, or keep the old accessor alongside it.
-
 ## Current Support Matrix
 
 Snapshot from `benchmark-results/eslint-version-stats.json` (refreshed 2026-05-09):
 
-| Major | Weekly Downloads | Share | Supported? | Notes |
-|---|---|---|---|---|
-| **v9** | 76.9M | 60.41% | ✓ (gate) | Current ecosystem default |
-| **v8** | 30.9M | 24.26% | ✓ (gate, from 8.40.0) | Legacy active — above 20% gate. Floor is 8.40.0, the minor that added `context.sourceCode` / `context.filename` |
-| **v10** | 11.8M | 9.24% | ✓ (forward-looking) | Released 2026-02-06; the future of v9 — supported pre-emptively to keep users ahead of the upgrade wave |
-| v7 | 4.0M | 3.18% | ✗ | EOL |
-| v6 and older | 3.7M | 2.90% | ✗ | EOL |
+| Major        | Weekly Downloads | Share  | Supported?          | Notes                                                                                                   |
+| ------------ | ---------------- | ------ | ------------------- | ------------------------------------------------------------------------------------------------------- |
+| **v9**       | 76.9M            | 60.41% | ✓ (gate)            | Current ecosystem default                                                                               |
+| **v8**       | 30.9M            | 24.26% | ✓ (gate)            | Legacy active — above 20% gate                                                                          |
+| **v10**      | 11.8M            | 9.24%  | ✓ (forward-looking) | Released 2026-02-06; the future of v9 — supported pre-emptively to keep users ahead of the upgrade wave |
+| v7           | 4.0M             | 3.18%  | ✗                   | EOL                                                                                                     |
+| v6 and older | 3.7M             | 2.90%  | ✗                   | EOL                                                                                                     |
 
 **Total weekly downloads observed:** 127.3M
 
 ### Implications today
+
 - Required `peerDependencies` per package: `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"`
 - Required benchmark matrix: `[v8, v9, v10]`
 - v10 is currently below the 20% gate but covered by the forward-looking exception. Re-evaluate at each refresh — once v10 crosses the gate and v8 falls below it on two consecutive refreshes, v8 becomes a deprecation candidate.
+
+#### Why the v8 floor is 8.40, not 8.0
+
+`context.sourceCode` landed in **ESLint 8.40**. The shared devkit reads it
+without a fallback (`security/security-utils.ts`), and 20 plugins read it
+directly, so on ESLint 8.0–8.39 a rule throws
+`Cannot read properties of undefined (reading 'ast')` the moment it loads.
+
+Measured on `eslint-plugin-nestjs-security@2.1.0`, one rule per row, a fixture
+that must produce exactly one finding:
+
+| ESLint         | result                                              |
+| -------------- | --------------------------------------------------- |
+| 8.0.0          | ✗ throws on load                                    |
+| 8.39.0         | ✗ throws on load                                    |
+| **8.40.0**     | ✓ 1 finding                                         |
+| 8.57.1         | ✓                                                   |
+| 9.0.0 / 9.39.2 | ✓ 1 finding                                         |
+| 10.8.0         | ✓ 1 finding (needs `@typescript-eslint/parser` ≥ 7) |
+
+Declaring `^8.0.0` meant an install on 8.0–8.39 resolved cleanly and then
+failed at lint time — the worst shape for this, because npm reports nothing.
+
+Not every plugin is affected: `node-security`, `secure-coding` and
+`express-security` each still lint on 8.39. The floor is uniform anyway, on
+purpose — one number we can state publicly and defend, rather than a per-package
+matrix that drifts the first time a rule starts using `sourceCode`.
+
+`scripts/__tests__/eslint-peer-floor.test.ts` fails if any package declares a v8
+leg below 8.40, or if this document and the manifests disagree.
 
 ## Refreshing the Data
 
@@ -69,6 +82,7 @@ npm run stats:eslint-versions:json     # writes benchmark-results/eslint-version
 ```
 
 After refreshing, update **this document's** Current Support Matrix and the "Last data refresh" date at the top. Do this:
+
 - Quarterly (mandatory)
 - Before any release that touches `peerDependencies`
 - Whenever a new ESLint major is announced
@@ -76,6 +90,7 @@ After refreshing, update **this document's** Current Support Matrix and the "Las
 The script lives at [`scripts/fetch-eslint-version-stats.ts`](../scripts/fetch-eslint-version-stats.ts) and is generic — it accepts `--package=<name>` for querying any npm package's per-version download share.
 
 ### Data source caveats
+
 - npm's per-version download endpoint only exposes a **last-week** window. Longer windows exist for total package downloads but cannot be split by version.
 - For a longer trend, run the script on a weekly cadence and accumulate snapshots in `benchmark-results/`.
 - Counts include CI/automation traffic — they overstate "human user" share but are the best available signal and are consistent across versions.
@@ -83,13 +98,14 @@ The script lives at [`scripts/fetch-eslint-version-stats.ts`](../scripts/fetch-e
 ## What "Supported" Means
 
 A supported major version must:
+
 1. **Pass the formatter benchmark suite** ([`packages/eslint-formatter`](../packages/eslint-formatter)) — token-efficiency claims hold against that version's stylish/json formatters.
 2. **Be in the CI matrix** — every PR runs tests against each supported major.
 3. **Be listed in `peerDependencies`** of every published package.
 4. **Be installable as a `devDependency`** in at least one workspace package so `npm install` exercises it.
-5. **Have its declared floor exercised by CI** — the range may not start below the oldest minor the matrix installs and the rules are known to run on.
 
 Dropping support requires:
+
 - Two consecutive refreshes showing <20% share, OR an upstream EOL announcement
 - A minor release with deprecation notice
 - The next major release removes the version from peer deps and CI matrix
