@@ -557,7 +557,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           allowPlaceholders: {
             type: 'boolean',
             default: true,
-            description: 'Skip self-evident placeholder values (<your-secret-here>, changeme, xxxxxxxx)',
+            description:
+              'Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`)',
           },
         },
         additionalProperties: false,

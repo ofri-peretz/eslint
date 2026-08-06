@@ -18,20 +18,112 @@ const OUTPUT_FILE = join(__dirname, '../src/data/plugin-stats.json');
 const NUMBERS_FILE = join(__dirname, '../src/data/interlace-numbers.json');
 
 /**
- * Count rules by parsing the rules export in index.ts
+ * The body of the `rules` object literal in a plugin's `index.ts`.
+ *
+ * Scoping the count to this block is the whole point. The previous version
+ * matched `/^\s+'[a-z-]+'\s*:/gm` against the *entire file*, which also matched
+ * the `plugins: { 'mcp-sdk-security': plugin }` line inside every preset — so
+ * each plugin was over-counted by roughly one per config it ships, plus any
+ * other quoted-kebab key anywhere in the file.
+ *
+ * That inflated 21 of 30 published plugins by 68 rules in total, and the
+ * numbers flow from here into `interlace-numbers.json`, the docs site, and
+ * every README badge. A public rule count that overstates by ~14% is worse
+ * than no count.
+ *
+ * Returns `undefined` when the block cannot be located, so the caller can fail
+ * loudly rather than silently report zero.
+ */
+export function rulesBlock(content: string): string | undefined {
+  // `\b` and an explicit optional type annotation: without them,
+  // `export const rulesHelper = {` appearing earlier in the file would capture
+  // the wrong block and return a confident wrong number.
+  const start = content.search(/\bexport\s+const\s+rules\b\s*(?::[^=]*)?=\s*\{/);
+  if (start === -1) return undefined;
+  const open = content.indexOf('{', start);
+
+  // Brace-match rather than regex: a rule map contains nested objects in some
+  // plugins, and a lazy `[\s\S]*?\}` would stop at the first inner brace.
+  let depth = 0;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === '{') depth++;
+    else if (content[i] === '}') {
+      depth--;
+      if (depth === 0) return content.slice(open + 1, i);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Top-level keys of a `rules` object body.
+ *
+ * Both spellings are in use across the ecosystem and both are real rule ids:
+ * most plugins quote them (`'no-unsafe-query': …`) because the names contain
+ * hyphens, while `eslint-plugin-import-next` does not (`named: named,`,
+ * `default: defaultRule,`). Matching only the quoted form silently undercounted
+ * that plugin by 7.
+ *
+ * Depth-aware so a nested object inside a rule entry cannot contribute keys of
+ * its own.
+ */
+export function countRuleKeys(block: string): number {
+  let depth = 0;
+  // An alias is the same rule object under a second id — `order:
+  // enforceImportOrder` alongside `'enforce-import-order': enforceImportOrder`.
+  // It is not an additional rule, and the oxlint shim generator already counts
+  // it that way ("12 flat + 12 aliased").
+  //
+  // Only a *bare identifier* value can be an alias. A call is a distinct rule
+  // even when two entries use the same factory:
+  //
+  //     'rule-a': makeRule({ foo: 1 }),
+  //     'rule-b': makeRule({ bar: 2 }),
+  //
+  // Deduplicating on the callee name would collapse those to one, so
+  // call-valued entries are counted individually and never deduplicated.
+  const aliasable = new Set<string>();
+  let distinct = 0;
+  for (const rawLine of block.split('\n')) {
+    const line = rawLine.trim();
+    if (depth === 0) {
+      const entry = /^(?:'[a-z0-9-]+'|[A-Za-z_$][\w$]*)\s*:\s*(.*)$/.exec(line);
+      if (entry) {
+        // Strip a trailing line comment before classifying. The one real alias
+        // in the ecosystem carries one — `order: enforceImportOrder, // Alias
+        // for backwards compat` — and leaving it attached made the value look
+        // like an expression rather than a bare identifier.
+        const value = entry[1].replace(/\/\/.*$/, '').trim();
+        const bareIdentifier = /^([A-Za-z_$][\w$]*)\s*,?$/.exec(value);
+        if (bareIdentifier) aliasable.add(bareIdentifier[1]);
+        else distinct++;
+      }
+    }
+    for (const ch of rawLine) {
+      if (ch === '{' || ch === '[' || ch === '(') depth++;
+      else if (ch === '}' || ch === ']' || ch === ')') depth--;
+    }
+  }
+  return aliasable.size + distinct;
+}
+
+/**
+ * Count rules by parsing the `rules` export in index.ts.
+ *
+ * Only top-level keys of that object count.
  */
 export function countRulesInPackage(packagePath: string) {
   const indexPath = join(packagePath, 'src/index.ts');
-  
+
   if (!existsSync(indexPath)) {
     return 0;
   }
 
   const content = readFileSync(indexPath, 'utf-8');
-  
-  // Match rule entries like "'rule-name': ruleName,"
-  const ruleMatches = content.match(/^\s+'[a-z-]+'\s*:/gm);
-  return ruleMatches ? ruleMatches.length : 0;
+  const block = rulesBlock(content);
+  if (block === undefined) return 0;
+
+  return countRuleKeys(block);
 }
 
 export function getPackageMetadata(packagePath: string) {
@@ -229,7 +321,15 @@ async function main() {
     totalRules, // Reflects only published rules for backward compatibility
     totalPlugins: stats.filter(p => p.published).length, // Reflects only published plugins
     allPluginsCount: stats.length,
-    generatedAt: new Date().toISOString(),
+    // Date, not wall-clock. `writeIfChanged` below already suppresses no-op
+    // rewrites, but it cannot help when the data legitimately changes on two
+    // branches at once: each writes its own millisecond timestamp, and the
+    // merge then conflicts on a line carrying no information. Whoever wins
+    // that conflict with `--theirs` silently takes the other branch's rule
+    // counts too, which is how a 487-rule manifest quietly became 484.
+    // Day granularity makes same-day regenerations byte-identical, so the
+    // file only conflicts when the actual data disagrees.
+    generatedAt: new Date().toISOString().slice(0, 10),
   };
 
   const numbers = buildNumbersManifest(stats, output.generatedAt);

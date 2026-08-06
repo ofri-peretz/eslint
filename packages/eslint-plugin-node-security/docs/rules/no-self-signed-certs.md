@@ -221,3 +221,9 @@ axios.interceptors.request.use((config) => {
 - **[OWASP TLS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)** - TLS best practices
 - **[CWE-295: Improper Certificate Validation](https://cwe.mitre.org/data/definitions/295.html)** - Official CWE entry
 - **[mkcert](https://github.com/FiloSottile/mkcert)** - Local trusted development certificates
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |

@@ -219,3 +219,10 @@ res.send(failure.stack);
 - **[CWE-209: Generation of Error Message Containing Sensitive Information](https://cwe.mitre.org/data/definitions/209.html)**
 - **[OWASP: Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)**
 - **[Express: Error handling best practices](https://expressjs.com/en/guide/error-handling.html)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowMessage` | `boolean` | `true` | Allow err.message in responses |
+| `allowInDev` | `boolean` | `false` | Allow error details inside an if-guard checking NODE_ENV |

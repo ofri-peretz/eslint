@@ -24,6 +24,25 @@ export default defineConfig({
   root: __dirname,
   plugins: [],
   test: {
+    // Packaging test, not a unit test: it reads this package's own dist/, so
+    // including it here would force `test` to dependOn `build` and make every
+    // unit run wait on a compile. The same invariant — emitted JS must not
+    // require an uninstalled optional peer — is enforced by
+    // `npm run verify:runtime-deps` in the Build job, which reads the real
+    // artifacts and covers more cases. Run it directly via `test:dist`.
+    // The packaging test reads this package's own dist/, so the default `test`
+    // task must skip it — that is what lets `test` declare `dependsOn: []` and
+    // run in parallel with Build instead of behind it. `test:dist` sets
+    // VITEST_DIST=1 to opt it back in after the build.
+    //
+    // It has to be conditional rather than a flat exclude: a CLI positional
+    // filter does NOT override the config's exclude, so naming the file on the
+    // command line matched nothing and vitest exited "No test files found".
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      ...(process.env.VITEST_DIST ? [] : ['**/no-runtime-optional-peer.test.ts']),
+    ],
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
     // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
     // an idle machine and mis-reports contention as failure. A hang still fails,
@@ -38,7 +57,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     // Global setup runs once before all tests to ensure coverage directories exist
     globalSetup: ['../../vitest.global-setup.ts'],
     env: {

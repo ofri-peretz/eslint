@@ -227,7 +227,9 @@ describe('Package Metadata', () => {
   it('@nestjs/common has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('@nestjs/common/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 @nestjs/common version: ${pkg.version}`);
     } catch {
@@ -238,7 +240,9 @@ describe('Package Metadata', () => {
   it('class-validator has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('class-validator/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 class-validator version: ${pkg.version}`);
     } catch {
@@ -249,7 +253,9 @@ describe('Package Metadata', () => {
   it('class-transformer has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('class-transformer/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 class-transformer version: ${pkg.version}`);
     } catch {

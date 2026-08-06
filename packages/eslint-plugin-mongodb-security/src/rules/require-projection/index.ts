@@ -12,6 +12,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isTestFile } from '../../utils/paths';
+import { analyzeMongoScope } from '../../utils/receiver';
 
 type MessageIds = 'requireProjection';
 export interface Options { allowInTests?: boolean; }
@@ -81,6 +82,12 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    // `find` is also Array.prototype.find. Without this the rule reported
+    // every `.find()` in every codebase — measured at 115 findings on this
+    // repo alone, which contains no MongoDB. The receiver has to look like
+    // a Mongo handle before a method name means anything.
+    const mongo = analyzeMongoScope(context.sourceCode.ast);
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
@@ -92,6 +99,12 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
           : null;
 
         if (!methodName || !QUERY_METHODS.has(methodName)) {
+          return;
+        }
+
+        // Cheap syntax checks first; the receiver analysis is the expensive
+        // one and the only one that can tell a Mongo query from Array.find.
+        if (!mongo.isModelReceiver(node)) {
           return;
         }
 

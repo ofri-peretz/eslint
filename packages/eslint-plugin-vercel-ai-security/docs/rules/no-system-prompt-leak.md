@@ -91,9 +91,9 @@ return res.json({ output: await generateWithPrompt(systemPrompt) });
 
 ## ⚙️ Options
 
-| Option                 | Type       | Default                                                                                              | Description                                 |
-| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `systemPromptPatterns` | `string[]` | `['systemPrompt', 'system_prompt', 'SYSTEM_PROMPT', 'systemMessage', 'instructions', 'agentPrompt']` | Variable patterns suggesting system prompts |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `systemPromptPatterns` | `string[]` | `["systemPrompt","system_prompt","SYSTEM_PROMPT","systemMessage","system_message","SYSTEM_MESSAGE","instructions","INSTRUCTIONS","aiInstructions","agentPrompt","basePrompt","contextPrompt"]` | Variable patterns that suggest system prompts |
 
 ## 🛡️ Why This Matters
 

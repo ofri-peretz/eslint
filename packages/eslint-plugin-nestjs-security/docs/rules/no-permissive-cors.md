@@ -5,13 +5,14 @@ tags: ['security', 'nestjs']
 category: security
 severity: high
 cwe: CWE-942
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 ---
 
 > Disallows CORS configured to accept any origin
 
 <!-- @rule-summary -->
+
 Flags CORS configured to accept any origin — a bare `enableCors()`, `origin: '*'`, or the reflecting `origin: true`.
 <!-- @/rule-summary -->
 
@@ -20,8 +21,8 @@ Flags CORS configured to accept any origin — a bare `enableCors()`, `origin: '
 Three shapes all accept every origin, and only one of them looks obviously wrong:
 
 ```ts
-app.enableCors();                 // no options → origin defaults to '*'
-app.enableCors({ origin: '*' });  // explicit wildcard
+app.enableCors(); // no options → origin defaults to '*'
+app.enableCors({ origin: '*' }); // explicit wildcard
 app.enableCors({ origin: true }); // reflects whatever Origin was sent
 ```
 
@@ -78,13 +79,18 @@ statically decidable is left alone:
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```ts
 'nestjs-security/no-permissive-cors': ['error', { allowInTests: true }]
 ```
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `allowInTests` | `boolean` | `true` | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
+| Option         | Type      | Default | Description                                      |
+| -------------- | --------- | ------- | ------------------------------------------------ |
+| `allowInTests` | `boolean` | `true`  | Skip `*.spec.ts` / `*.test.ts` / `*.e2e-spec.ts` |
 
 ## When Not To Use It
 

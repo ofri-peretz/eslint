@@ -25,11 +25,14 @@ export const BUILTINS: ReadonlySet<string> = new Set([
 export function packageOf(specifier: string): string | null {
   if (specifier.startsWith('.') || specifier.startsWith('/')) return null;
   const parts = specifier.split('/');
-  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : (parts[0] ?? null);
+  return specifier.startsWith('@')
+    ? parts.slice(0, 2).join('/')
+    : (parts[0] ?? null);
 }
 
 export interface Manifest {
   name?: string;
+  private?: boolean;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
@@ -74,7 +77,8 @@ export function guaranteed(manifest: Manifest): Set<string> {
  * hypothetical: it let the `import ts from 'typescript'` break pass unnoticed.
  */
 export function eagerRequires(source: string): string[] {
-  const pattern = /^(?:(?:const|var|let)\s+(?:[\w$]+|\{[^}]*\}|\[[^\]]*\])\s*=\s*.*?)?require\(\s*['"]([^'"]+)['"]\s*\)/gm;
+  const pattern =
+    /^(?:(?:const|var|let)\s+(?:[\w$]+|\{[^}]*\}|\[[^\]]*\])\s*=\s*.*?)?require\(\s*['"]([^'"]+)['"]\s*\)/gm;
   return [...source.matchAll(pattern)].map((m) => m[1]!);
 }
 
@@ -87,7 +91,11 @@ export interface Violation {
 }
 
 /** Violations in one emitted file, given its owning manifest. */
-export function violationsIn(source: string, manifest: Manifest, file: string): Violation[] {
+export function violationsIn(
+  source: string,
+  manifest: Manifest,
+  file: string,
+): Violation[] {
   const allowed = guaranteed(manifest);
   const peers = manifest.peerDependencies ?? {};
   const out: Violation[] = [];
@@ -102,6 +110,73 @@ export function violationsIn(source: string, manifest: Manifest, file: string): 
         pkg in peers
           ? 'declared only as an OPTIONAL peer — npm will not install it'
           : 'not declared as a dependency or required peer',
+    });
+  }
+  return out;
+}
+
+/**
+ * Every specifier `require`d anywhere in a file — module scope OR inside a
+ * function.
+ *
+ * The mirror of `eagerRequires`. That one answers "will this throw on a clean
+ * install?", which only module-scope requires can. This one answers "is this
+ * dependency used at all?", for which a lazy require absolutely counts:
+ * `eslint-devkit` loads `oxc-resolver` from inside a function and would look
+ * unused to the stricter matcher.
+ */
+export function allRequires(source: string): string[] {
+  const pattern = /require\(\s*['"]([^'"]+)['"]\s*\)/g;
+  return [...source.matchAll(pattern)].map((m) => m[1]!);
+}
+
+/** A declared dependency that no emitted file ever loads. */
+export interface UnusedDependency {
+  pkg: string;
+  dependency: string;
+  reason: string;
+}
+
+/**
+ * `dependencies` the emitted JavaScript never loads.
+ *
+ * Weight every consumer installs for nothing. `tslib` was declared by all 26
+ * plugins and required by none of them — it existed only to satisfy a
+ * non-optional peer of the devkit, which is a real reason, so a dependency that
+ * satisfies a peer of another dependency is NOT reported. Pass those peer sets
+ * via `peersOfDependencies`, keyed by dependency name.
+ *
+ * peerDependencies are never reported: an optional peer is a supported-technology
+ * signal that the code is expected not to load.
+ *
+ * Private packages are skipped entirely. The cost this measures is "weight every
+ * consumer installs", and a package that never reaches npm has no consumers —
+ * @interlace/eslint-config aggregates plugins it does not import, which is fine
+ * for a workspace-only config and would be noise here.
+ */
+export function unusedDependencies(
+  manifest: Manifest,
+  requiredAnywhere: Iterable<string>,
+  peersOfDependencies: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+): UnusedDependency[] {
+  const loaded = new Set<string>();
+  for (const spec of requiredAnywhere) {
+    const pkg = packageOf(spec);
+    if (pkg !== null) loaded.add(pkg);
+  }
+  if (manifest.private === true) return [];
+  const out: UnusedDependency[] = [];
+  for (const dep of Object.keys(manifest.dependencies ?? {})) {
+    if (loaded.has(dep)) continue;
+    const satisfiesPeer = [...peersOfDependencies.values()].some((peers) =>
+      peers.has(dep),
+    );
+    if (satisfiesPeer) continue;
+    out.push({
+      pkg: manifest.name ?? '(unnamed)',
+      dependency: dep,
+      reason:
+        'declared in dependencies but never required, and satisfies no peer of another dependency',
     });
   }
   return out;

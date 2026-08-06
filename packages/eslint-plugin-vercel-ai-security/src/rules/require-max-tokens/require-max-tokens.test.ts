@@ -154,3 +154,69 @@ ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SDK version compatibility.
+// v4 spelled the option `maxTokens`; v5+ renamed it to `maxOutputTokens`
+// (CallSettings.maxOutputTokens — `maxTokens` no longer exists in ai@6).
+// Both must satisfy the rule, or every v5+ codebase gets a false positive.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTokens, {
+  valid: [
+    // v5+: generateText with maxOutputTokens
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          maxOutputTokens: 4096,
+        });
+      `,
+    },
+    // v5+: streamText with maxOutputTokens
+    {
+      code: `
+        await streamText({
+          model: anthropic('claude-3'),
+          prompt: 'Hello',
+          maxOutputTokens: 2048,
+        });
+      `,
+    },
+    // v5+: generateObject with maxOutputTokens
+    {
+      code: `
+        await generateObject({
+          model: openai('gpt-4'),
+          prompt: 'Generate user',
+          maxOutputTokens: 1000,
+          schema: z.object({ name: z.string() }),
+        });
+      `,
+    },
+    // v5+: snake_case variant (OpenAI-shaped proxies)
+    { code: `generateText({ max_output_tokens: 100, prompt: 'x' });` },
+    // v5+: string-literal key
+    { code: `generateText({ 'maxOutputTokens': 100, prompt: 'x' });` },
+    // v4 spelling still accepted
+    { code: `generateText({ maxTokens: 100, prompt: 'x' });` },
+  ],
+  invalid: [
+    // v5+ call with no token limit at all is still reported
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          temperature: 0.7,
+        });
+      `,
+      errors: [{ messageId: 'missingMaxTokens' }],
+    },
+    // near-miss key must not be mistaken for the real option
+    {
+      code: `generateText({ maxOutputTokenCount: 100, prompt: 'x' });`,
+      errors: [{ messageId: 'missingMaxTokens' }],
+    },
+  ],
+});

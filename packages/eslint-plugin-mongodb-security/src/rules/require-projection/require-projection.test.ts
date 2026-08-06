@@ -28,6 +28,18 @@ describe('require-projection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe patterns', requireProjection, {
       valid: [
+        // Array.prototype.find — the receiver is not a Mongo handle. Ungated,
+        // this rule reported every `.find()` in every codebase: 115 findings on
+        // the Interlace repo alone, which contains no MongoDB. It ships in
+        // `recommended`, so that reached every consumer.
+        {
+          name: 'a plain array find is not a Mongo query',
+          code: 'const users = [1, 2, 3];\nconst u = users.find((x) => x === 2);',
+        },
+        {
+          name: 'a find with a predicate on an unknown receiver stays silent',
+          code: 'const entry = list.find((p) => p.name === key);',
+        },
         // Unrelated code should not trigger
         {
           code: `const x = 1;`,

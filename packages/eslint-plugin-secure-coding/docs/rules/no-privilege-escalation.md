@@ -122,13 +122,13 @@ if (hasRole(user, "admin")) { user.role = req.body.role; }
 
 ### Options
 
-| Option              | Type       | Default                                   | Description                         |
-| ------------------- | ---------- | ----------------------------------------- | ----------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                                   | Allow privilege escalation in tests |
-| `testFilePattern`   | `string`   | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex             |
-| `roleCheckPatterns` | `string[]` | `['hasRole', 'checkRole', ...]`           | Role check patterns to recognize    |
-| `userInputPatterns` | `string[]` | `[]`                                      | Additional user input patterns      |
-| `ignorePatterns`    | `string[]` | `[]`                                      | Additional patterns to ignore       |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow privilege escalation patterns in test files |
+| `testFilePattern` | `string` | `"\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$"` | Test file pattern regex string |
+| `roleCheckPatterns` | `string[]` | `["hasRole","checkRole","isAdmin","isAuthorized","hasPermission","checkPermission","verifyRole","requireRole"]` | Role check patterns to recognize |
+| `userInputPatterns` | `string[]` | `[]` | Additional user input patterns to check (regex strings) |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
 
 ### Example Configuration
 

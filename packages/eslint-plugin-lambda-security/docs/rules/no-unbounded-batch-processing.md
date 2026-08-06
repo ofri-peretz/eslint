@@ -204,3 +204,10 @@ export const handler = async (event) => {
 - **[Lambda SQS Event Source](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html)** - AWS documentation
 - **[CWE-770: Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)** - Official CWE entry
 - **[Partial Batch Responses](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#services-sqs-batchfailurereporting)** - SQS failure reporting
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `maxBatchSize` | `number` | `100` | Batch size above which processing must be explicitly bounded |

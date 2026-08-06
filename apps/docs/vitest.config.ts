@@ -63,7 +63,10 @@ export default defineConfig({
     // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
     // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
     hookTimeout: 30_000,
-    passWithNoTests: true,
+    // False, like every other workspace: docs has 74 test files, so a run that
+    // matches none is a broken filter, not an empty package. See the
+    // passWithNoTests lock in scripts/__tests__/ci-shard-affected.test.ts.
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',
     pool: 'forks',

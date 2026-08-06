@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   root: __dirname,
     test: {
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
@@ -17,7 +22,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {
       enabled: true,

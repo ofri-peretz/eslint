@@ -26,7 +26,7 @@ property of the _published artifact_, not the source.
 
 ## Why source-only tests didn't catch it
 
-`packages/eslint-config-interlace/src/ecosystem-integrity.test.ts` is the lock:
+`scripts/__tests__/ecosystem-integrity.test.ts` is the lock:
 it loads every published plugin's every config preset into a real ESLint and
 asserts the rule→plugin references resolve. But under vitest it runs against
 **workspace SOURCE** — its `vitest.config.mts` aliases every `eslint-plugin-*`

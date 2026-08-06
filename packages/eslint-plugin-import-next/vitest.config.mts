@@ -22,7 +22,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     testTimeout: 30000, // Increase timeout for tests that require file system resolution
     // Same rationale as testTimeout above, for setup/teardown: hookTimeout
     // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
