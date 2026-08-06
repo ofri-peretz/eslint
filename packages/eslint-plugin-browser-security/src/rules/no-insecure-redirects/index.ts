@@ -227,7 +227,7 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
           allowedDomains: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            default: [], description: 'Redirect target domains treated as safe'
           },
         },
         additionalProperties: false,

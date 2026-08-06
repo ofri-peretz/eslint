@@ -1,7 +1,11 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://sequelize.org" target="_blank"><img src="https://eslint.interlace.tools/logos/sequelize.svg" alt="Sequelize" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -92,7 +96,7 @@ routes/search.ts
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
@@ -115,7 +119,10 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/no-hardcoded-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-798 | A07:2021 |  | Disallow literal database passwords in Sequelize connection configuration, including credentials embedded i… | 🟢 |  |  |  |  |  |
+| [no-mass-assignment](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/no-mass-assignment?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-915 | A04:2021 |  | Disallow writing an inbound request object straight to the database through Sequelize, which lets the calle… | 🟢 |  |  |  |  |  |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-89 | A03:2021 |  | Detects SQL injection in raw Sequelize queries built with string concatenation or template literals | 🟢 | 💼 |  |  |  |  |
+| [require-tls](https://eslint.interlace.tools/docs/security/plugin-sequelize-security/rules/require-tls?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-sequelize-security) | CWE-319 | A02:2021 |  | Require TLS on Sequelize connections, so queries and credentials are not sent in cleartext and the server i… | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

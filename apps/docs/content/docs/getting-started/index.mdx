@@ -67,7 +67,7 @@ Pick the plugins for your use case:
 npm install --save-dev \
   eslint-plugin-browser-security \
   eslint-plugin-secure-coding \
-  eslint-plugin-jwt
+  eslint-plugin-jwt-security
 
 # Quality plugins
 npm install --save-dev \
@@ -82,7 +82,7 @@ Create `eslint.config.js` in your project root:
 ```js title="eslint.config.js"
 import browserSecurity from 'eslint-plugin-browser-security';
 import secureCoding from 'eslint-plugin-secure-coding';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 import conventions from 'eslint-plugin-conventions';
 
 export default [
@@ -145,11 +145,11 @@ Protect your application from common vulnerabilities:
 | Plugin                 | Focus Area                                      | Rules                                    |
 | ---------------------- | ----------------------------------------------- | ---------------------------------------- |
 | **browser-security**   | XSS prevention, DOM security                    | <Stat plugin="browser-security" />       |
-| **jwt**                | Token security, algorithm confusion             | <Stat plugin="jwt" />                    |
+| **jwt**                | Token security, algorithm confusion             | <Stat plugin="jwt-security" />                    |
 | **express-security**   | Express.js hardening                            | <Stat plugin="express-security" />       |
 | **node-security**      | Server-side security patterns (includes crypto) | <Stat plugin="node-security" />          |
 | **mongodb-security**   | NoSQL injection prevention                      | <Stat plugin="mongodb-security" />       |
-| **pg**                 | PostgreSQL security                             | <Stat plugin="pg" />                     |
+| **pg**                 | PostgreSQL security                             | <Stat plugin="postgresql-security" />                     |
 | **secure-coding**      | General injection prevention                    | <Stat plugin="secure-coding" />          |
 | **vercel-ai-security** | AI SDK safety                                   | <Stat plugin="vercel-ai-security" />     |
 | **lambda-security**    | AWS Lambda security                             | <Stat plugin="lambda-security" />        |

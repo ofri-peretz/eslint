@@ -79,7 +79,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          additionalPatterns: { type: 'array', items: { type: 'string' }, default: [] },
+          additionalPatterns: { type: 'array', items: { type: 'string' }, default: [], description: 'Extra environment-variable name patterns to treat as secrets' },
         },
         additionalProperties: false,
       },

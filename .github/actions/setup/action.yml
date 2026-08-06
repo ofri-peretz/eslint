@@ -34,6 +34,13 @@ inputs:
     description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
     required: false
     default: "true"
+  turbo-cache-scope:
+    description: >-
+      Optional cache-lineage name. Jobs sharing a scope share one cache entry;
+      different scopes get independent lineages. Set this for matrix jobs (e.g.
+      "test-shard-3") so parallel shards stop racing for a single key.
+    required: false
+    default: "shared"
   playwright-cache:
     description: Restore + save the Playwright browser cache (~/.cache/ms-playwright). Set to "true" for jobs that run Playwright.
     required: false
@@ -42,23 +49,45 @@ inputs:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
     default: "false"
+  tsbuildinfo-cache:
+    description: >-
+      Restore + save the TypeScript project-references incremental state
+      (packages/*/.tsbuildinfo). Set to "true" for the whole-graph typecheck job.
+    required: false
+    default: "false"
 
 runs:
   using: composite
   steps:
+    # No `cache: npm` here. ~/.npm is read by `npm ci` and nothing else, and
+    # `npm ci` is skipped whenever the node_modules cache hits — which is the
+    # common case, since its key is the lockfile hash. Every job was therefore
+    # paying a cache lookup + download + post-job save check for an archive it
+    # never opened. Proven in the logs: the "Install dependencies" step starts
+    # and ends in the same millisecond on a hit.
+    #
+    # The miss path stays fast: the ~/.npm restore below is conditional on the
+    # node_modules cache having missed, so a lockfile change still gets a warm
+    # registry cache instead of a cold network install.
     - name: Setup Node (from .nvmrc)
       if: inputs.node-version == ''
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version-file: .nvmrc
-        cache: npm
+        # Explicit false. Omitting `cache` does NOT disable this: setup-node
+        # v6 defaults `package-manager-cache: true` and auto-detects npm from
+        # package.json#packageManager, so ~/.npm was still being restored on
+        # every job — verified in the run logs ("Auto caching...", "Cache hit
+        # for: node-cache-Linux-x64-npm-..."). The restore below replaces it,
+        # gated on actually needing it.
+        package-manager-cache: false
 
     - name: Setup Node (override)
       if: inputs.node-version != ''
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
-        cache: npm
+        package-manager-cache: false
 
     - name: Restore node_modules cache
       if: inputs.install == 'true'
@@ -71,7 +100,29 @@ runs:
           apps/*/node_modules
           tools/*/node_modules
           benchmarks/node_modules
+          # Recursive, and after the positive paths: workspace node_modules are
+          # cached too, so root-relative exclusions missed theirs.
+          !**/node_modules/.vite
+          !**/node_modules/.vite-temp
         key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    # Only on a node_modules miss — see the setup-node note above.
+    # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
+    # non-Linux runner can move it.
+    - name: Resolve npm cache directory
+      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      id: npm-cache-dir
+      shell: bash
+      run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore npm registry cache (only when npm ci will run)
+      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ${{ steps.npm-cache-dir.outputs.dir }}
+        key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          npm-${{ runner.os }}-
 
     - name: Install dependencies
       if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
@@ -87,25 +138,50 @@ runs:
     # GitHub was LRU-evicting the 431 MB node_modules entries and every job
     # paid a cold `npm ci`.
     #
-    # Now: one `turbo-<os>-<sha>` lineage every job restores from, and only
-    # pushes to main write it back. PRs read main's cache and save nothing.
+    # Lineage is per `turbo-cache-scope`, and that matters more than it looks.
+    # With a single shared key, every job on main raced to save it: GitHub's
+    # cache reserves a key atomically, so the first writer won and the rest were
+    # discarded. Only one job's outputs were ever banked per commit, which is
+    # why a restored cache still produced `Cached: 0 cached, 8 total` — the
+    # entry held the Build job's artifacts, not the test shards'.
+    #
+    # Scoped keys give each shard its own lineage. Because bucketing is
+    # deterministic, shard N always handles the same packages, so its cache is
+    # exactly the set it needs. The lineages are disjoint, not duplicated: total
+    # size stays ~one full cache split N ways, so this does not eat the 10 GB
+    # quota. PRs restore read-only and save nothing, so extra shards cost zero
+    # quota there.
+    #
+    # The `-build-` fallback is load-bearing. `test`/`test:coverage` dependsOn
+    # `build`, so a shard has to materialize its packages' whole dependency
+    # chain. Its own lineage only holds its own outputs, so without a fallback
+    # into the Build job's lineage every shard cold-builds the graph
+    # independently — ten shards, ten copies of eslint-devkit and friends,
+    # which looks exactly like "the sharding does nothing". Build's lineage
+    # holds dist for every package, so falling back to it lets a shard replay
+    # dependencies instead of rebuilding them. Order matters: own scope first
+    # (most specific), then build, then the legacy `shared` name.
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: .turbo/cache
-        key: turbo-${{ runner.os }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
+          turbo-${{ runner.os }}-shared-
 
     - name: Turbo cache (main — restore + save)
       if: inputs.turbo-cache == 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: .turbo/cache
-        key: turbo-${{ runner.os }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
+          turbo-${{ runner.os }}-shared-
 
     # Turborepo never evicts its own local cache — it is append-only, so a
     # restored dir grows monotonically across runs (observed locally: 39 GB /
@@ -139,6 +215,30 @@ runs:
         key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           playwright-${{ runner.os }}-
+
+    # `npm run typecheck` is one `tsgo --build tsconfig.solution.json` over the
+    # whole plugin graph. That runs *outside* Turbo, and the `typecheck` task
+    # declared `outputs: []`, so nothing preserved its incremental state and
+    # every CI run retypechecked all 21 projects from scratch — a measured 81s
+    # on PR #356, identical whether or not anything changed.
+    #
+    # `tsgo --build` is incremental: each composite project writes
+    # `<pkg>/.tsbuildinfo` (see tsBuildInfoFile in each tsconfig.lib.json) and
+    # skips projects whose inputs are unchanged. Persisting those files is what
+    # makes the incrementality real across runs.
+    #
+    # Keyed on the sources tsgo actually reads, so a source change invalidates
+    # it; the restore-key fallback still gives a partial graph to build on.
+    - name: Restore TypeScript incremental state
+      if: inputs.tsbuildinfo-cache == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          packages/*/.tsbuildinfo
+          packages/*/dist
+        key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('packages/*/src/**/*.ts', 'packages/*/tsconfig*.json', 'tsconfig.solution.json', 'tsconfig.base.json') }}
+        restore-keys: |
+          tsbuildinfo-${{ runner.os }}-
 
     - name: Restore Next.js build cache
       if: inputs.next-cache == 'true'

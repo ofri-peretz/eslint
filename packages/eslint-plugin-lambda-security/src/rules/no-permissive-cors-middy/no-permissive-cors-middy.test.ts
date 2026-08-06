@@ -1,7 +1,22 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe, expect, it } from 'vitest';
 import { noPermissiveCorsMidly } from './index';
 
 const ruleTester = new RuleTester();
+
+// ========== REGRESSION LOCK: no dead options ==========
+// Sibling of no-permissive-cors-response, which shipped a declared-but-never-read
+// `allowedOrigins`. This rule is clean — keep it that way: an option added here
+// must actually be honoured by create().
+describe('no-permissive-cors-middy schema', () => {
+  it('declares only the options the rule reads', () => {
+    const [schema] = noPermissiveCorsMidly.meta.schema as {
+      properties: Record<string, unknown>;
+    }[];
+
+    expect(Object.keys(schema.properties)).toEqual(['allowInTests']);
+  });
+});
 
 ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
   valid: [

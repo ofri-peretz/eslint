@@ -17,7 +17,7 @@ import url from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'ci-test-shard.mts');
-const SHARD_TOTAL = 4;
+const SHARD_TOTAL = 10;
 
 /** Run the splitter in list-only mode by reading its plan off stdout. */
 function planFor(shard: number, total = SHARD_TOTAL): string[] {
@@ -25,12 +25,27 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
   // turbo. `CI_TEST_SHARD_PLAN_ONLY=1` makes it exit right after printing that
   // plan — that env var, not the shard arithmetic, is what keeps this lock from
   // invoking the real suite.
-  const out = execFileSync('npx', ['tsx', SCRIPT, String(shard), String(total)], {
+  // `node`, not `npx tsx`: the workflow runs `node scripts/ci-test-shard.mts`,
+  // and tsx is not a dependency of this repo — `npx tsx` would hit the registry
+  // at test time and exercise esbuild's transform instead of Node's native
+  // .mts type stripping, i.e. lock a code path production does not use.
+  const out = execFileSync('node', [SCRIPT, String(shard), String(total)], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1' },
+    // CI_TEST_SHARD_ALL=1 is required, not incidental. Without it the script
+    // applies affected filtering against origin/main, so on a branch touching
+    // a few packages the plan is the FILTERED subset — and the assertions
+    // below ("covers every package exactly once", "no shard empty") would then
+    // be checking the diff rather than the partition, passing vacuously on a
+    // branch that changed nothing.
+    env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1', CI_TEST_SHARD_ALL: '1' },
   });
-  return [...out.matchAll(/^ {2}(\S+)\s{2}\((test|test:coverage)\)$/gm)].map((m) => m[1]);
+  const names = [...out.matchAll(/^ {2}(\S+) {2}\((?:test|test:coverage), \d+ test files\)$/gm)].map((m) => m[1]);
+  // Fail loudly rather than returning [] if the plan format changes — an empty
+  // parse would make "no duplicates" and "covers everything" trivially pass or
+  // fail for the wrong reason.
+  if (names.length === 0) throw new Error(`shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`);
+  return names;
 }
 
 describe('shard partitioning', () => {

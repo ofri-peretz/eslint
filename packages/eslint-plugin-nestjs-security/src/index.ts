@@ -32,6 +32,7 @@ import { noPermissiveCors } from './rules/no-permissive-cors';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
 import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
 import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
+import { noHybridAppConfigLoss } from './rules/no-hybrid-app-config-loss';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -51,6 +52,7 @@ export const rules: Record<
   'no-exposed-private-fields': noExposedPrivateFields,
   'no-res-bypass-serialization': noResBypassSerialization,
   'no-unguarded-swagger': noUnguardedSwagger,
+  'no-hybrid-app-config-loss': noHybridAppConfigLoss,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -59,7 +61,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-nestjs-security',
-    version: '1.4.0',
+    version: '2.2.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -81,6 +83,10 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/no-exposed-private-fields': 'warn',
   'nestjs-security/no-res-bypass-serialization': 'warn',
   'nestjs-security/no-unguarded-swagger': 'warn',
+  // Enters at 'error': the absence is statically visible, it has no benign
+  // reading once the project registers globals, and every hybrid app measured
+  // was in the failing state.
+  'nestjs-security/no-hybrid-app-config-loss': 'error',
 };
 
 /**
@@ -162,6 +168,7 @@ export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-c
 export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
 export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
 export type { Options as NoUnguardedSwaggerOptions } from './rules/no-unguarded-swagger';
+export type { Options as NoHybridAppConfigLossOptions } from './rules/no-hybrid-app-config-loss';
 
 /**
  * Combined options type for all rules
@@ -175,4 +182,5 @@ export interface AllNestjsSecurityRulesOptions {
   'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
   'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
   'no-unguarded-swagger'?: import('./rules/no-unguarded-swagger').Options;
+  'no-hybrid-app-config-loss'?: import('./rules/no-hybrid-app-config-loss').Options;
 }

@@ -268,7 +268,13 @@ export function superClassName(cls: ClassNode | null): string | null {
 
 /** Whether a filename looks like a test/spec file. */
 export function isTestFile(filename: string): boolean {
-  return /\.(test|spec|e2e-spec)\.(ts|tsx|js|jsx|mts|cts)$/.test(filename);
+  if (/\.(test|spec|e2e-spec)\.(ts|tsx|js|jsx|mts|cts)$/.test(filename)) {
+    return true;
+  }
+  // A file's directory is as good an answer as its suffix. Test *helpers* are
+  // not named `.spec.ts` — `teable/apps/nestjs-backend/test/utils/init-app.ts`
+  // builds an app for the e2e suite and was being linted as production code.
+  return /(^|[/\\])(__tests__|__mocks__|test|tests|e2e)[/\\]/.test(filename);
 }
 
 // ---------------------------------------------------------------------------

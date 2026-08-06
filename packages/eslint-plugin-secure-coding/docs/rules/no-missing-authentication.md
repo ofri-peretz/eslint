@@ -169,3 +169,13 @@ app.get('/data', (req, res) => {
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [Express Guide - Using Middleware](https://expressjs.com/en/guide/using-middleware.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing authentication in test files |
+| `authMiddlewarePatterns` | `string[]` | `["authenticate","auth","requireAuth","isAuthenticated","verifyToken","checkAuth","ensureAuthenticated","passport.authenticate","jwt","session"]` | Authentication middleware patterns to recognize |
+| `routeHandlerPatterns` | `string[]` | `["get","post","put","delete","patch","all","use"]` | Route handler patterns to check |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
+| `testFilePattern` | `string` | `"\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$"` | Test file pattern regex string |

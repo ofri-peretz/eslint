@@ -5,9 +5,59 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
   valid: [
+    // ghostfolio/apps/api/src/app/endpoints/sitemap/sitemap.controller.ts:34 —
+    // declares XML and sends an interpolated document. The body is a helper
+    // call so it is not provably a string, but the content type settles it:
+    // ClassSerializerInterceptor produces JSON, and this is not JSON.
+    `
+      @Controller('sitemap.xml')
+      @UseInterceptors(ClassSerializerInterceptor)
+      class SitemapController {
+        @Get()
+        getSitemapXml(@Res() response: Response) {
+          response.setHeader('content-type', 'application/xml');
+          response.send(interpolate(this.sitemapXml, { currentDate }));
+        }
+      }
+    `,
+    `
+      @Controller()
+      @UseInterceptors(ClassSerializerInterceptor)
+      class PageController {
+        @Get()
+        page(@Res() res: Response) {
+          res.type('text/html');
+          res.send(render(this.template, model));
+        }
+      }
+    `,
+    // nest-framework/sample/28-sse/src/app.controller.ts:11 — a static HTML
+    // page sent as a string. No DTO, so no @Exclude() the missing
+    // interceptor could have dropped.
+    `
+      @Controller()
+      @UseInterceptors(ClassSerializerInterceptor)
+      class AppController {
+        @Get()
+        index(@Res() response: Response) {
+          response.type('text/html').send(readFileSync(join(__dirname, 'index.html')).toString());
+        }
+      }
+    `,
+    `
+      @Controller()
+      @UseInterceptors(ClassSerializerInterceptor)
+      class AppController {
+        @Get()
+        raw(@Res() res: Response) {
+          res.send(String(value));
+        }
+      }
+    `,
     // The fix: interceptors still run, so @Exclude() still applies.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res({ passthrough: true }) res: Response) {
@@ -19,6 +69,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // No @Res() at all — the normal Nest handler.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll() { return this.users.findAll(); }
@@ -27,6 +78,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // immich/brocoders: streams a file. Nothing to serialize.
     `
       @Controller('files')
+      @UseInterceptors(ClassSerializerInterceptor)
       class FilesController {
         @Get(':path')
         download(@Res() res: Response) {
@@ -37,6 +89,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // immich: redirects. Nothing to serialize.
     `
       @Controller('assets')
+      @UseInterceptors(ClassSerializerInterceptor)
       class AssetController {
         @Get(':id/thumbnail')
         thumbnail(@Res() res: Response) {
@@ -48,6 +101,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // interceptor bypass could have leaked.
     `
       @Controller('auth')
+      @UseInterceptors(ClassSerializerInterceptor)
       class AuthController {
         @Post('login')
         async login(@Res() response: Response) {
@@ -59,6 +113,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // amplication health checks: sends a string literal.
     `
       @Controller('health')
+      @UseInterceptors(ClassSerializerInterceptor)
       class HealthController {
         @Get()
         check(@Res() res: Response) {
@@ -68,6 +123,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     `,
     `
       @Controller('health')
+      @UseInterceptors(ClassSerializerInterceptor)
       class HealthController {
         @Get()
         check(@Res() res: Response) {
@@ -79,6 +135,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // happens to it, so the rule says nothing.
     `
       @Controller('auth')
+      @UseInterceptors(ClassSerializerInterceptor)
       class AuthController {
         @Get('callback')
         callback(@Res() res: Response) {
@@ -89,6 +146,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // A spread could set passthrough.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res({ ...opts }) res: Response) { res.json(this.users); }
@@ -97,6 +155,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // A field, not the injected parameter — different object entirely.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) { this.res.json(this.users); }
@@ -105,6 +164,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // Writing to something that is not the injected response.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) { other.json(this.users); }
@@ -120,6 +180,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // Not a route handler.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         helper(@Res() res: Response) { res.json(this.users); }
       }
@@ -127,6 +188,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // Destructured response gives us no binding to follow.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() { json }: Response) { json(this.users); }
@@ -137,6 +199,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // scope.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) {
@@ -150,6 +213,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // Same for a function expression and a declaration.
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) {
@@ -160,6 +224,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     `,
     `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) {
@@ -172,6 +237,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res() res: Response) { res.json(this.users); }
@@ -179,12 +245,107 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
       `,
       filename: 'users.controller.spec.ts',
     },
+
+    // ---- No serializer in sight ----------------------------------------
+    // The harm this rule names needs a serializer to have been running. Across
+    // twenty, ghostfolio and amplication — 23 findings — there was no
+    // ClassSerializerInterceptor and no @Exclude() anywhere in the repo, so
+    // every one of them described a leak that could not happen.
+    `
+      @Controller('users')
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) { res.json(this.users); }
+      }
+    `,
+    // An interceptor that is not the serializer is not evidence of one.
+    // Treating any @UseInterceptors() as proof would put the accusation back.
+    `
+      @Controller('users')
+      @UseInterceptors(LoggingInterceptor)
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) { res.json(this.users); }
+      }
+    `,
+    // A bare decorator reference names no interceptor at all.
+    `
+      @Controller('users')
+      @UseInterceptors
+      class UsersController {
+        @Get()
+        findAll(@Res() res: Response) { res.json(this.users); }
+      }
+    `,
+
+    // ---- A serializer IS mounted, but the body is not an object ----------
+    // novu/apps/api/src/app/integrations/integrations.controller.ts:542 —
+    // the controller does carry @UseInterceptors(ClassSerializerInterceptor),
+    // so the gate above does not clear it. The body settles it: JSON.stringify
+    // returns a string, and a string has no @Exclude()d field to lose.
+    `
+      @Controller('integrations')
+      @UseInterceptors(ClassSerializerInterceptor)
+      class IntegrationsController {
+        @Get(':id/template')
+        template(@Res() res: Response) {
+          res.setHeader('Content-Type', 'application/json');
+          res.send(JSON.stringify(template, null, 2));
+        }
+      }
+    `,
+    // Same controller, :639 — Express `res.type()` takes a bare extension and
+    // runs it through mime.lookup, so 'html' is text/html. Matching only full
+    // MIME types read this as a JSON response.
+    `
+      @Controller('integrations')
+      @UseInterceptors(ClassSerializerInterceptor)
+      class IntegrationsController {
+        @Get('callback')
+        callback(@Res() res: Response) {
+          res.status(400).type('html').send(buildPopupHtml(model));
+        }
+      }
+    `,
   ],
   invalid: [
+    // A non-JSON content type on some *other* object says nothing about what
+    // this handler writes. Scanning the whole body let it silence the rule.
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Get()
+          find(@Res() res: Response) {
+            this.cacheService.setHeader('text/plain', 'x');
+            res.json(user);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A JSON content type is the case the rule exists for — declaring it
+    // changes nothing.
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Get()
+          find(@Res() res: Response) {
+            res.setHeader('content-type', 'application/json');
+            res.json(user);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
     // novu: res.json() with a domain object.
     {
       code: `
         @Controller('chat')
+        @UseInterceptors(ClassSerializerInterceptor)
         class WebChatController {
           @Post()
           send(@Res() res: Response) {
@@ -200,6 +361,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('marketplace')
+        @UseInterceptors(ClassSerializerInterceptor)
         class AwsMarketplaceController {
           @Post()
           async register(@Res() res: Response) {
@@ -214,6 +376,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get(':id')
           findOne(id: string, @Res() res: Response) {
@@ -229,6 +392,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Response() res) { res.json(this.users); }
@@ -240,6 +404,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res({ passthrough: false }) res: Response) { res.json(user); }
@@ -252,6 +417,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('integrations')
+        @UseInterceptors(ClassSerializerInterceptor)
         class IntegrationsController {
           @Get('oauth')
           oauth(@Res() res: Response) {
@@ -268,6 +434,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res() res: Response) {
@@ -281,6 +448,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res() res: Response) { res.json({ user: this.user }); }
@@ -292,6 +460,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res() res: Response) { res.jsonp(this.users); }
@@ -302,6 +471,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     {
       code: `
         @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
         class UsersController {
           @Get()
           findAll(@Res() res: Response) { res.json(this.users); }
@@ -309,6 +479,93 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
       `,
       filename: 'users.controller.spec.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A serializer registered globally in main.ts cannot be seen from a
+    // controller file. brocoders/nestjs-boilerplate does exactly this
+    // (`app.useGlobalInterceptors(new ClassSerializerInterceptor(...))`), so
+    // without this option its @Res() handlers would be a false negative.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) { res.json(this.users); }
+        }
+      `,
+      options: [{ assumeGlobalSerializer: true }],
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // @SerializeOptions() is inert without the interceptor, so its presence
+    // means one is mounted above — evidence on its own.
+    {
+      code: `
+        @Controller('users')
+        @SerializeOptions({ strategy: 'excludeAll' })
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) { res.json(this.users); }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // Mounted on the handler rather than the class.
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          @UseInterceptors(new ClassSerializerInterceptor(reflector))
+          findAll(@Res() res: Response) { res.json(this.users); }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A nested function that rebinds the name declares a content type on a
+    // *different* response. The content-type scan has to honour scope the same
+    // way the write scan does — otherwise this inner `res.type('html')` clears
+    // the outer `res.json(user)` and the finding disappears.
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) {
+            this.pages.render((res) => res.type('html').send(page));
+            res.json(this.users);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // Another decorated parameter sits alongside the response — the scan has to
+    // walk past @Body() to reach @Res().
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Post()
+          create(@Body() dto: CreateUserDto, @Res() res: Response) {
+            res.json(this.users.create(dto));
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
+    // A serializer is mounted and the body is a real object: res.type('json')
+    // names exactly the case this rule exists for, so the shorthand list must
+    // not include it.
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) { res.type('json').send(this.users); }
+        }
+      `,
       errors: [{ messageId: 'bypassesSerialization' }],
     },
   ],

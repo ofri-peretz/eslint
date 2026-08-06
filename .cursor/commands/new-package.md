@@ -33,7 +33,7 @@ Apply [`ARCHITECTURE.md` § "Plugin organization"](../../ARCHITECTURE.md#plugin-
   "files": ["src/", "dist/", "README.md", "LICENSE", "CHANGELOG.md"],
   "engines": { "node": ">=18.0.0" },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"        // REQUIRED — see ESLINT_VERSION_SUPPORT.md
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"        // REQUIRED — see ESLINT_VERSION_SUPPORT.md
   },
   "repository": {
     "type": "git",
@@ -83,7 +83,7 @@ The release workflow detects which path applies based on the package name and pu
 
 ## ⚠️ Common Mistakes
 
-- ❌ Missing `peerDependencies.eslint: "^8.0.0 || ^9.0.0 || ^10.0.0"` — the policy gate ([`docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md))
+- ❌ Missing `peerDependencies.eslint: "^8.40.0 || ^9.0.0 || ^10.0.0"` — the policy gate ([`docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md))
 - ❌ Wrong scope or name — pick @interlace/* for shared infra, unscoped for plugins, then verify it matches the npm registry expectation
 - ❌ Skipping the [`ARCHITECTURE.md` plugin-organization rule](../../ARCHITECTURE.md#plugin-organization-the-rule-that-decides-where-new-code-goes) and creating a new plugin when an existing one already owns the concern
 - ❌ Forgetting to add the new package to the root README's package table — viewers can't find it

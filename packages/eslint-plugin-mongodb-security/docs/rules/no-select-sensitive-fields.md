@@ -94,6 +94,13 @@ the files that query them.
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitiveFields` | `string[]` | `["password","refreshToken","apiKey","secret"]` | Document field names treated as sensitive |
+| `requireVisibleSensitiveField` | `boolean` | `true` | Only report when a sensitive field is visibly selected |
+
+
 ```json
 {
   "rules": {

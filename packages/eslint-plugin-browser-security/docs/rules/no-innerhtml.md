@@ -110,11 +110,11 @@ container.appendChild(div);
 
 ## Options
 
-| Option                | Type       | Default                                                               | Description                          |
-| --------------------- | ---------- | --------------------------------------------------------------------- | ------------------------------------ |
-| `allowInTests`        | `boolean`  | `false`                                                               | Allow innerHTML in test files        |
-| `trustedSanitizers`   | `string[]` | `['DOMPurify.sanitize', 'sanitize', 'sanitizeHtml', 'xss', 'purify']` | Trusted sanitizer function names     |
-| `allowLiteralStrings` | `boolean`  | `true`                                                                | Allow innerHTML with literal strings |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `trustedSanitizers` | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify"]` | Extra function names to treat as sanitizers |
+| `allowLiteralStrings` | `boolean` | `true` | Allow innerHTML with literal strings |
 
 ```json
 {

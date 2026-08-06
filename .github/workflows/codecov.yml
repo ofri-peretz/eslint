@@ -12,10 +12,17 @@ name: Upload Coverage to Codecov
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  push:
-    branches: [main]
+  # Coverage is collected HERE and nowhere else. PR test shards run with
+  # `--coverage.enabled=false`: v8 instrumentation costs ~15% on every shard
+  # for a number nobody reads per-PR, and it competes for the 20 concurrent
+  # job slots. This daily run is the backstop — a coverage regression surfaces
+  # within 24h rather than at the PR.
+  #
+  # Daily 08:45 UTC = 4:45am EDT / 3:45am EST — inside the 3-7am ET window at
+  # both offsets, since GitHub cron is UTC and ignores DST. Staggered off the
+  # other drift crons (08:15, 09:00, 09:30, 10:00).
   schedule:
-    - cron: "0 6 * * 1" # every Monday 06:00 UTC
+    - cron: "45 8 * * *"
   workflow_dispatch:
     inputs:
       filter:
@@ -41,7 +48,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -51,6 +58,9 @@ jobs:
       - name: Run tests with coverage
         env:
           FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
+          # This is the one place coverage is collected and thresholds are
+          # enforced. PR shards pass --coverage.enabled=false.
+          CI_TEST_SHARD_COVERAGE: "1"
         # No `|| npx turbo run test` fallback. Every package declares
         # `thresholds: { lines: 100, statements: 100, functions: 100,
         # branches: 100 }`, and a breach makes `test:coverage` exit non-zero —

@@ -120,7 +120,8 @@ describe('regression: shipped configs lint without an esquery selector crash', (
   // Typed flat-config array so config-shape regressions at the call sites are
   // caught at compile time. The single boundary cast bridges typescript-eslint's
   // FlatConfig types to ESLint's own Linter.Config — the same bridge
-  // `@interlace/eslint-config` uses when it re-exports these configs.
+  // `scripts/__tests__/fixtures/ecosystem-presets.ts` uses when it composes
+  // these configs.
   const lint = (overrideConfig: TSESLint.FlatConfig.Config[]) =>
     new ESLint({
       overrideConfigFile: true,

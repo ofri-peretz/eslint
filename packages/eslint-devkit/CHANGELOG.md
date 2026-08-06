@@ -1,5 +1,391 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.10.0
+
+### Minor Changes
+
+- [#406](https://github.com/ofri-peretz/eslint/pull/406) [`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - New rule `no-untrusted-content-in-prompt` (CWE-1427) on all three raw inference
+  SDKs, from a shared `createSystemPromptInjectionRule` factory.
+
+  A system prompt is instruction text: whatever is spliced into it is read by the
+  model as instructions rather than as data, so anyone who controls that value
+  controls the agent. The rule reports a system prompt that is not static, in both
+  shapes the raw SDKs use — the named option (`system`, `instructions`,
+  `systemInstruction`) and the `messages: [{ role: 'system', content }]` array.
+
+  A bare identifier counts as static. `system: SYSTEM_PROMPT` is the correct
+  pattern and by far the most common one; following it is the data-flow analysis
+  these rules avoid.
+
+  **`strict` only.** Unlike the credential rules, this one has a genuine
+  false-positive shape — a system prompt interpolating today's date is not an
+  injection and the rule cannot tell the difference. Promotion to `recommended`
+  waits on the corpus measurement.
+
+  Gating is by qualified member path (`messages.create`, `completions.create`,
+  `generateContent`), not by leaf method name. `create` alone is shared across
+  these SDKs, and matching on it made a file importing two of them report one line
+  twice. `vercel-ai-security/no-dynamic-system-prompt` keeps the bare-function
+  `generateText(...)` form, which has no member path at all — verified by linting
+  a file that imports all four SDKs and uses every shape: no line is reported
+  twice.
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+## 1.9.0
+
+### Minor Changes
+
+- [#403](https://github.com/ofri-peretz/eslint/pull/403) [`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-browser-api-key-exposure` now covers the Anthropic SDK too.
+
+  The rule shipped on `eslint-plugin-openai-security` only. Its detection moved
+  into a shared `createBrowserEscapeHatchRule` factory in
+  `@interlace/eslint-devkit`, and `eslint-plugin-anthropic-security` gains the
+  rule at `error` in every preset.
+
+  Both SDKs refuse to run in a browser by default and both unlock it with the
+  same `dangerouslyAllowBrowser` flag; the Anthropic SDK's own JSDoc says
+  client-side use "risks exposing your secret API credentials to attackers".
+
+  **Two instantiations, not three.** Verified against the published tarballs
+  rather than assumed: neither `@google/generative-ai@0.24` nor
+  `@google/genai@2.15` has a browser escape hatch, because neither refuses the
+  browser in the first place. There is no flag to detect and no structural signal
+  a linter can read without knowing whether a file ships to a client, so
+  `eslint-plugin-gemini-security` does not get this rule. Inventing a fuzzy third
+  detection would report correct code.
+
+  OpenAI's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#402](https://github.com/ofri-peretz/eslint/pull/402) [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hardcoded-api-key` now covers all three raw inference SDKs.
+
+  The rule shipped on `eslint-plugin-anthropic-security` only. Its detection moved
+  into a shared `createSdkApiKeyRule` factory in `@interlace/eslint-devkit` and is
+  now instantiated for OpenAI and Gemini as well, at the same severity in every
+  preset — one rule with three module gates rather than three separate ones that
+  could drift.
+
+  Gemini adds a shape the other two do not have: the legacy
+  `new GoogleGenerativeAI(apiKey)` client takes the key as a **positional**
+  argument, with no options object to inspect. Both that and the current
+  `new GoogleGenAI({ apiKey })` form are checked.
+
+  Module matching is exact-or-subpath, not a prefix: `openai` opens the gate for
+  `openai` and `openai/resources`, and deliberately not for `openai-edge`, which
+  is a different package with a different client.
+
+  Anthropic's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#386](https://github.com/ofri-peretz/eslint/pull/386) [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-hardcoded-credentials` (CWE-798) to the knex, mysql, Sequelize and
+  TypeORM plugins, via a new shared `createHardcodedCredentialsRule` factory.
+
+  A password in source is a password in git history, in every fork, and in every
+  layer of the built image. Deleting the line later changes nothing — a real fix
+  means rotating the credential _and_ rewriting history, so the only cheap moment
+  is before it lands.
+
+  The detection generalizes what `eslint-plugin-postgresql-security` has shipped
+  for pg, and tightens two false positives in the process:
+
+  - A connection URL is a finding only when it embeds a password. The pg version
+    reports any `postgres://…` literal, including `postgres://localhost:5432/app`,
+    which is safe to commit.
+  - A credential key is a finding only when its value is a non-empty string
+    literal, so `password: ''` (the local trust-auth sentinel) stays silent.
+
+  It also refuses to treat the credential as its own evidence: an object must name
+  somewhere to connect _to_ — `host`, `port`, `database`, `connectionString` —
+  before its `password` counts. Without that, `{ user, password }` makes the login
+  form of every app with a database a finding.
+
+- [#389](https://github.com/ofri-peretz/eslint/pull/389) [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-mass-assignment` (CWE-915) to the five ORM plugins with object writes,
+  via a new shared `createMassAssignmentRule` factory.
+
+  ```ts
+  await prisma.user.update({ where: { id }, data: req.body });
+  await User.create(req.body);
+  await db.insert(users).values({ ...req.body });
+  ```
+
+  Each of those updates the fields the endpoint is about — and every other column
+  on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`, `credits`. None of
+  them appear in the diff, which is why the shape survives review.
+
+  It also gets worse without anyone touching it: adding a sensitive column to a
+  model later silently widens every existing mass-assignment site. No line
+  changes, and the exposure is new.
+
+  Silent by design: a payload that names its fields (`{ name: req.body.name }`) is
+  the fix; an object that merely has a `body` key (`form.body`) is not a request;
+  `ctx.data` is ordinary application state in several frameworks; and a value the
+  rule cannot see through is not guessed at.
+
+  No options, deliberately. An allowlist would let a project re-approve the
+  dangerous shape wholesale, one config file further from the call site.
+
+  mysql2 and better-sqlite3 do not carry this rule — their writes are raw SQL
+  strings, already covered by `no-unsafe-query`.
+
+- [#385](https://github.com/ofri-peretz/eslint/pull/385) [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-raw-identifier-interpolation` (CWE-89) to the Drizzle and Prisma plugins.
+
+  Bind parameters can only ever substitute _values_. When a table name, a column
+  name, or a sort direction is interpolated into a tagged template, the driver has
+  nothing to bind and splices the string in verbatim — inside the API the docs
+  call safe:
+
+  ```ts
+  await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id}`; // parameterized
+  await prisma.$queryRaw`SELECT * FROM ${table}`; // injectable
+  await db.execute(sql`SELECT * FROM users ORDER BY ${column}`); // injectable
+  ```
+
+  This is the shape behind Drizzle's GHSA-gpj5-g38j-94v9, and it is invisible to
+  linters that decide by asking "is this a raw API" — this _is_ the safe API.
+
+  The rule reports only identifier positions, so it never overlaps
+  `no-unsafe-query`, whose sinks are the raw string entry points
+  (`$queryRawUnsafe`, `sql.raw()`). Value holes, string literals,
+  `sql.identifier()` and nested `sql` fragments are all silent. Only Drizzle and
+  Prisma ship a value-parameterizing tagged template, so the other five ORM
+  plugins do not carry this rule.
+
+  New shared factory `createRawIdentifierRule` in `@interlace/eslint-devkit`.
+
+## 1.8.0
+
+### Minor Changes
+
+- [#373](https://github.com/ofri-peretz/eslint/pull/373) [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `require-tls` (CWE-319) to the Knex, mysql2, Sequelize and TypeORM security plugins.
+
+  Reports two distinct failures, because they do not share a remediation:
+
+  - **`tlsDisabled`** — the connection is plaintext (`ssl: false`, `?sslmode=disable`).
+    Every query, every row and the credentials that open the session cross the
+    network in the clear.
+  - **`certificateValidationDisabled`** — `rejectUnauthorized: false` (or
+    `trustServerCertificate: true` on mssql, which inverts the polarity). The
+    traffic is encrypted but the server is never authenticated, so the client
+    completes a handshake just as willingly with whoever answered in the
+    database's place. The fix is to supply the CA, never to switch the check off.
+
+  The detection gate is a _database connection config_ — driver import plus a
+  connection-shaped sibling key — which is what keeps the rule out of
+  `eslint-plugin-node-security`, where a bare `rejectUnauthorized: false` would
+  also match every https agent and fetch option in the repo, and double-report
+  this line from two plugins.
+
+  A value the rule cannot read statically (`ssl: useTls`) is never reported. That
+  is a deliberate false negative in exchange for findings that are always real.
+
+  Not shipped for `prisma-security` (connection config lives in `schema.prisma`,
+  not JavaScript), `drizzle-security` (delegates connection setup to the
+  underlying driver, which its own plugin covers) or `sqlite-security` (a local
+  file, no network to protect).
+
+- [#391](https://github.com/ofri-peretz/eslint/pull/391) [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now follows same-file query helpers
+
+  The rule only ever treated a literal driver method call as a sink. Real
+  codebases do not call `client.query` at every call site — they wrap it once:
+
+  ```ts
+  const q = (sql: string, params: unknown[]) => pool.query(sql, params);
+
+  q(`SELECT * FROM users WHERE id = ${userInput}`, []); // was silent
+  q('SELECT * FROM users WHERE id = ' + userInput, []); // was silent
+  ```
+
+  Both of those are textbook CWE-89 and both went unreported — not because the
+  helper was hard to reach, but because the callee was named `q` instead of
+  `query`. The helper being in the _same file_, three lines above, made no
+  difference. Any project that wraps its driver once, which is most of them, was
+  getting no SQL injection coverage at all from this rule.
+
+  A function whose parameter is handed straight to a driver sink is now itself a
+  sink at that argument position, and calls to it are checked like the driver call
+  they stand for. `function` declarations, arrow functions in a `const`, class
+  methods and object-literal methods are all traced, including when the helper is
+  declared below its call site. Concatenation, interpolation, and a
+  previously-tainted variable passed to the helper all report.
+
+  Findings through a helper require the string to contain SQL keywords, even for
+  instances configured with `requireSqlKeywords: false` (`eslint-plugin-pg`).
+  "This identifier eventually reaches a sink" is weaker evidence than a literal
+  driver call, and without the gate a file that defined any helper over
+  `pool.query` would start reporting unrelated calls like ``log(`hello ${name}`)``.
+  A bare `query(...)` with no member access is likewise never treated as a driver
+  sink — only as a possible helper.
+
+  Parameterized calls through a helper stay silent, which is what
+  [#261](https://github.com/ofri-peretz/eslint/issues/261) asked for:
+  ``q(`SELECT * FROM users WHERE id = $1`, [id])`` interpolates nothing and is
+  safe at any distance.
+
+  Helpers imported from another module are still not traced — that needs type
+  information the rule does not request. This is documented as a known false
+  negative rather than silently missing.
+
+  Affects `no-unsafe-query` in all eight SQL plugins: `pg`, `mysql-security`,
+  `prisma-security`, `drizzle-security`, `knex-security`, `sqlite-security`,
+  `typeorm-security` and `sequelize-security`.
+
+### Patch Changes
+
+- [#377](https://github.com/ofri-peretz/eslint/pull/377) [`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Complete the logo row across every published package.
+
+  The six AI SDK family plugins landed after the logo row shipped, so they had no
+  marks; @interlace/eslint-devkit never had a header row at all. All of them now
+  carry Interlace -> ecosystem -> oxlint -> ESLint (devkit has no ecosystem mark).
+
+  The four AI SDK READMEs are also brought to the canonical structure they were
+  missing: Philosophy, Getting Started, Configuration Presets, Compatibility,
+  Related Plugins, and the 11-column rule table with the type-awareness column.
+
+  README-only change; no rule behaviour is affected. The patch bump is what
+  carries the new README onto npm, which only refreshes a package README on
+  publish.
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Declare what we support, load only what we use
+
+  **`tslib` is gone from every package.** It was a NON-optional peer of
+  `@interlace/eslint-devkit`, so all 26 plugins declared it as a dependency to
+  satisfy that peer — 124 kB every consumer installed so twelve
+  `require("tslib")` calls could resolve. The shipped JavaScript now inlines
+  the TypeScript helpers instead (`--importHelpers false` on the emit pass that
+  already re-writes it), costing ~9.5 kB in devkit. Zero `tslib` requires remain
+  anywhere; verified by installing every plugin with no `tslib` in the tree and
+  loading all 26 with every rule intact.
+
+  **`eslint-plugin-import-next` had a phantom dependency.** Its rules
+  `require("typescript")` at module load, but it was declared in neither
+  `dependencies` nor `peerDependencies` — it worked only because something else
+  in the tree happened to install it. A clean install crashed the whole plugin,
+  not just the type-aware rules. `typescript` is now a required peer, which is
+  what the code actually needs.
+
+  **23 "technologies we support" declarations did nothing.** Seven plugins
+  listed their target libraries in `peerDependenciesMeta` with no matching
+  `peerDependencies` entry, and npm ignores meta for a package that is not
+  declared a peer — verified by installing `eslint-plugin-express-security` and
+  watching nothing install and nothing warn. `eslint-plugin-jwt` appeared to
+  support six JWT libraries and formally supported none. All 23 are now real
+  optional peers, matching the convention `pg`, `mongodb`, `prisma` and the
+  other nine already followed:
+
+  | plugin                                                          | technologies now actually declared                                                                    |
+  | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `eslint-plugin-jwt`                                             | jsonwebtoken, @nestjs/jwt, express-jwt, jose, jwks-rsa, jwt-decode                                    |
+  | `eslint-plugin-lambda-security`                                 | @aws-sdk/client-lambda, @middy/core, @middy/http-cors, @middy/http-security-headers, @middy/validator |
+  | `eslint-plugin-express-security`                                | express, helmet, cors, csurf, express-rate-limit                                                      |
+  | `eslint-plugin-nestjs-security`                                 | @nestjs/common, @nestjs/throttler, class-validator, class-transformer                                 |
+  | `eslint-plugin-vercel-ai-security`                              | ai                                                                                                    |
+  | `eslint-plugin-maintainability`, `eslint-plugin-react-features` | typescript                                                                                            |
+
+  All optional, so nothing is installed on the consumer’s behalf — the
+  declaration is the supported-technology signal, which is exactly what it was
+  meant to be.
+
+  **A new gate compares declared dependencies against what the emitted
+  JavaScript actually loads**, in both directions: a `require` with no
+  declaration (works until someone installs cleanly) and a declaration nothing
+  requires (weight every consumer pays). It understands that a dependency may
+  exist to satisfy an optional peer of another dependency, which is why
+  `eslint-plugin-import-next` legitimately declares `oxc-resolver` that devkit
+  lazily loads.
+
+- [#379](https://github.com/ofri-peretz/eslint/pull/379) [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now reports CWE-89 on the template-literal path, not just the concatenation path
+
+  `createSqlInjectionRule` builds two findings for the same vulnerability and picks
+  between them on shape: `noUnsafeQuery` for concatenation, `unsafeTemplateLiteral`
+  for an interpolated template. Only the first carried standards metadata, so a
+  finding like this
+
+  ```js
+  db.query(`SELECT * FROM users WHERE id = ${userInput}`);
+  ```
+
+  was emitted with no CWE, no OWASP category and no compliance tags — while the
+  equivalent `'...' + userInput` reported `CWE-89 OWASP:A03 CVSS:9.8`. Anything
+  grouping findings by CWE (SARIF consumers, security dashboards, our own corpus
+  scoring) therefore counted only half of every SQL injection rule, and the half it
+  missed is the idiomatic modern way to write the bug.
+
+  Both messages now take their CWE from the same `meta.docs.cwe` the rule
+  documents. This affects the `no-unsafe-query` rule in all eight SQL plugins:
+  `pg`, `mysql-security`, `prisma-security`, `drizzle-security`, `knex-security`,
+  `sqlite-security`, `typeorm-security` and `sequelize-security`.
+
+  Detection behaviour is unchanged — the same code reports in the same places, with
+  the same severity. Only the emitted message text gains the standards tokens.
+
+## 1.7.0
+
+### Minor Changes
+
+- [#353](https://github.com/ofri-peretz/eslint/pull/353) [`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-unscoped-mutation` (CWE-284) to the Prisma, Drizzle and Knex plugins
+
+  Every ORM ships a bulk mutation whose _unscoped_ form rewrites or deletes the
+  whole table. `prisma.user.deleteMany()`, `db.delete(users)`, `knex('users').del()`
+  — each one type-checks, passes review, and only shows up once it has run against
+  production data. `eslint-plugin-drizzle`'s entire published surface is this single
+  check for a single ORM; this generalizes it.
+
+  The detection lives in one place, `createUnscopedMutationRule` in
+  `@interlace/eslint-devkit`, and each plugin instantiates it with its own sinks and
+  remediation copy — the same shape `createSqlInjectionRule` already uses. Each
+  plugin declares where its scope lives: an options-object filter for Prisma, a
+  chained `.where*()` for Drizzle and Knex.
+
+  Every instantiation is gated on the driver: the rule is silent in files that
+  never import it, and silent on receivers that do not read as a driver handle.
+  Without that gate, `delete` and `update` would match `map.delete(key)` and
+  `store.update(patch)` — method names alone are not discriminators.
+
+  | Plugin             | Sinks                      | Where scope comes from             |
+  | :----------------- | :------------------------- | :--------------------------------- |
+  | `prisma-security`  | `deleteMany`, `updateMany` | `{ where }` in the options object  |
+  | `drizzle-security` | `delete`, `update`         | a chained `.where()`               |
+  | `knex-security`    | `del`, `delete`, `update`  | any of the chained `where*` family |
+
+  `argumentRole` is the one thing that cannot be inferred from the AST. A lone
+  identifier argument is the _filter_ for Prisma (`deleteMany(opts)`) and the _table_
+  for Drizzle (`db.delete(users)`); reading it wrong either suppresses the headline
+  Drizzle finding or invents a false positive on every dynamically built filter.
+
+  **Not shipped for Sequelize or TypeORM.** Sequelize gives its instance and static
+  forms the same names and both accept an options object, so
+  `user.destroy({ transaction: t })` (one row) and `User.destroy({})` (the whole
+  table) are the same AST. Two false positives surfaced in its test suite, and the
+  rule was withdrawn from that package rather than shipped with them — a rule that
+  fires on correct code is the one users disable. The genuinely detectable case,
+  `destroy({ truncate: true })`, becomes its own rule. TypeORM's bare-criteria shape
+  (`repo.delete({ id })`, with no `where` key) is a third detection shape and is
+  deferred for the same reason.
+
+  Scope that cannot be read statically is treated as present, so the rule stays
+  silent rather than guessing. Ships in `strict` only — promotion to `recommended`
+  and `flagship` waits on a measured false-positive profile against the benchmark
+  corpus.
+
 ## 1.6.2
 
 ### Patch Changes

@@ -129,3 +129,10 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowContexts` | `string[]` | `[]` | Allow dynamic requires in specific contexts. |
+| `allowPatterns` | `string[]` | `[]` | Regex patterns for allowed dynamic require paths. |

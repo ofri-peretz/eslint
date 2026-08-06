@@ -98,11 +98,14 @@ const csp = "default-src 'self'"; // No frame protection!
 
 ## Options
 
-| Option                      | Type       | Default    | Description                 |
-| --------------------------- | ---------- | ---------- | --------------------------- |
-| `trustedSources`            | `string[]` | `['self']` | Trusted iframe sources      |
-| `requireFrameBusting`       | `boolean`  | `true`     | Require frame-busting code  |
-| `detectTransparentOverlays` | `boolean`  | `true`     | Detect transparent overlays |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trustedSources` | `string[]` | `["self","same-origin"]` | Frame-ancestor sources treated as safe |
+| `requireFrameBusting` | `boolean` | `true` | Require frame-busting code in addition to headers |
+| `detectTransparentOverlays` | `boolean` | `true` | Report transparent overlays positioned over clickable elements |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as frame protectors |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

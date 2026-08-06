@@ -48,13 +48,42 @@ jobs:
     # 7 min, parallelize the npm loop before bumping this cap.
     timeout-minutes: 10
     steps:
+      # The PAT expired on ~2026-07-30 and the ingest failed silently for six
+      # days: `actions/checkout` reported only "Bad credentials" after three
+      # retries, buried in a log nobody opens, while the failure issue said
+      # just "Workflow failed". Downstream consumers kept serving the last
+      # good Supabase numbers as if they were current, which is the dangerous
+      # part — stale data looks exactly like fresh data.
+      #
+      # Check the token first and say precisely what is wrong and how to fix
+      # it, so the cause is in the job's top-line error and in the issue.
+      - name: Preflight — control-room PAT is valid
+        env:
+          AGENTS_REPO_PAT: ${{ secrets.AGENTS_REPO_PAT }}
+        run: |
+          if [ -z "${AGENTS_REPO_PAT}" ]; then
+            echo "::error title=AGENTS_REPO_PAT is not set::Add a PAT with read access to ofri-peretz/agents at Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          status=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${AGENTS_REPO_PAT}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/ofri-peretz/agents)
+          case "${status}" in
+            200) echo "control-room PAT OK" ;;
+            401) echo "::error title=AGENTS_REPO_PAT is expired or revoked::GitHub returned 401 Bad credentials. Mint a new fine-grained PAT with Contents:read on ofri-peretz/agents and update the AGENTS_REPO_PAT secret."; exit 1 ;;
+            403) echo "::error title=AGENTS_REPO_PAT lacks access::GitHub returned 403. The token is valid but cannot read ofri-peretz/agents — grant it Contents:read on that repository."; exit 1 ;;
+            404) echo "::error title=AGENTS_REPO_PAT cannot see ofri-peretz/agents::GitHub returned 404, which is what it returns for a private repo the token has no access to. Grant Contents:read on that repository."; exit 1 ;;
+            *)   echo "::error title=Could not verify AGENTS_REPO_PAT::GitHub returned HTTP ${status}."; exit 1 ;;
+          esac
+
       - name: Checkout control-room repo (private)
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ofri-peretz/agents
           token: ${{ secrets.AGENTS_REPO_PAT }}
           fetch-depth: 1
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
       # `npm install` instead of `npm ci`: the lockfile is generated on
@@ -90,12 +119,47 @@ jobs:
       # the email notification + a persistent visible record.
       - name: Notify on failure
         if: failure()
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const title = `[CI failure] ${context.workflow} — ${context.ref}`;
+            // Name the step that actually failed and how long this has been
+            // broken. The previous body was "Workflow failed" plus a run link,
+            // which is why sixteen identical comments accumulated over six days
+            // without anyone noticing the ingest had stopped: every comment
+            // looked like the one before it, and none of them said why.
+            const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: context.runId,
+            });
+            const failedSteps = jobs.jobs.flatMap((job) =>
+              (job.steps ?? [])
+                .filter((step) => step.conclusion === 'failure')
+                .map((step) => `${job.name} → ${step.name}`),
+            );
+
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: 'daily-impact-ingest.yml', per_page: 30,
+            });
+            // The run posting this comment is still in progress and so has a
+            // null conclusion — it is excluded here and counted explicitly.
+            // Without the +1 the message lags reality by a day and calls the
+            // second consecutive failure the first.
+            const finished = runs.workflow_runs.filter((r) => r.conclusion !== null);
+            let streak = 1;
+            for (const run of finished) {
+              if (run.conclusion !== 'failure') break;
+              streak += 1;
+            }
+
             const body = [
-              `Workflow **${context.workflow}** failed.`,
+              failedSteps.length > 0
+                ? `Workflow **${context.workflow}** failed at: **${failedSteps.join(', ')}**`
+                : `Workflow **${context.workflow}** failed.`,
+              ``,
+              streak > 1
+                ? `⚠️ **${streak} consecutive failures.** Supabase impact data has not advanced since the first one — every consumer is serving stale numbers as if they were current.`
+                : `First failure — the previous run succeeded.`,
               ``,
               `- Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               `- Trigger: ${context.eventName}`,

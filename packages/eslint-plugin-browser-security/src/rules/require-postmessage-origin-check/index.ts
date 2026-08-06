@@ -103,7 +103,7 @@ export const requirePostmessageOriginCheck = createRule<
           trustedOrigins: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            default: [], description: 'Origins accepted without an explicit check'
           },
         },
         additionalProperties: false,

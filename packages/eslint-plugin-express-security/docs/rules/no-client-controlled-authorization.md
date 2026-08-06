@@ -98,9 +98,9 @@ If a proxy really is the only writer of an identity header, terminate it: strip 
 
 ## Options
 
-| Option            | Type       | Default | Description                                               |
-| ----------------- | ---------- | ------- | --------------------------------------------------------- |
-| `extraProperties` | `string[]` | `[]`    | Extra property names treated as authorization attributes   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `extraProperties` | `string[]` | — | Extra property names treated as authorization attributes |
 
 ```json
 {
