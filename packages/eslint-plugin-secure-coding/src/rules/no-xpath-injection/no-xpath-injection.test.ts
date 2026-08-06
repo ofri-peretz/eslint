@@ -34,6 +34,14 @@ describe('no-xpath-injection', () => {
         `function rel(fullPath, baseDir) { return fullPath.replace(baseDir + '/', ''); }`,
         `function u(base, id) { return base + '/api/' + id; }`,
         `function k(arr, i) { return 'items[' + i + ']'; }`,
+        // Detection reads the AST, not printed source. An identifier that merely
+        // spells an XPath function, and a comment inside the expression, are not
+        // string content — both matched while the gate regexed
+        // `sourceCode.getText(node)`.
+        `function f(req) { const s = render.text() + req.query.q; use(s); }`,
+        `function f(req) { const s = base /* //user[@id] */ + req.query.q; use(s); }`,
+        // A non-string literal contributes no text.
+        `function f(req) { const s = '/total: ' + 42 + req.query.n; use(s); }`,
         // Safe XPath literals
         {
           code: 'const result = document.evaluate("/users/user[@id=\'123\']", document);',
@@ -55,40 +63,50 @@ describe('no-xpath-injection', () => {
           code: 'const xpath = `/users/user[@name="${escapeXPath(userName)}"]`;',
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          // Template quasis are string content too — same expression, backticks.
+          code: "function q(req) { const x = `//user[name='` + req.query.n + `']`; doc.evaluate(x); }",
+          errors: 2,
+        },
+      ],
     });
   });
 
   describe('Invalid Code - XPath Injection', () => {
-    ruleTester.run('invalid - XPath injection vulnerabilities', noXpathInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const xpath = "/users/user[name=\'" + userInput + "\']";',
-          errors: [
-            {
-              messageId: 'xpathInjection',
-            },
-          ],
-        },
-        {
-          code: 'const query = `/users/user[@id="${userId}"]`;',
-          errors: [
-            {
-              messageId: 'unsafeXpathConcatenation',
-            },
-          ],
-        },
-        {
-          code: 'document.evaluate(userQuery, document);',
-          errors: [
-            {
-              messageId: 'unvalidatedXpathInput',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - XPath injection vulnerabilities',
+      noXpathInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const xpath = "/users/user[name=\'" + userInput + "\']";',
+            errors: [
+              {
+                messageId: 'xpathInjection',
+              },
+            ],
+          },
+          {
+            code: 'const query = `/users/user[@id="${userId}"]`;',
+            errors: [
+              {
+                messageId: 'unsafeXpathConcatenation',
+              },
+            ],
+          },
+          {
+            code: 'document.evaluate(userQuery, document);',
+            errors: [
+              {
+                messageId: 'unvalidatedXpathInput',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Dangerous XPath Patterns', () => {
@@ -148,35 +166,39 @@ describe('no-xpath-injection', () => {
   });
 
   describe('Invalid Code - XPath Variable Assignment', () => {
-    ruleTester.run('invalid - dangerous XPath variable assignments', noXpathInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const userXPath = "//users/user/..";',
-          errors: [
-            {
-              messageId: 'dangerousXpathExpression',
-            },
-          ],
-        },
-        {
-          code: 'const xpathQuery = req.params.query;',
-          errors: [
-            {
-              messageId: 'xpathInjection',
-            },
-          ],
-        },
-        {
-          code: 'let searchPath = userInput;',
-          errors: [
-            {
-              messageId: 'xpathInjection',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - dangerous XPath variable assignments',
+      noXpathInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const userXPath = "//users/user/..";',
+            errors: [
+              {
+                messageId: 'dangerousXpathExpression',
+              },
+            ],
+          },
+          {
+            code: 'const xpathQuery = req.params.query;',
+            errors: [
+              {
+                messageId: 'xpathInjection',
+              },
+            ],
+          },
+          {
+            code: 'let searchPath = userInput;',
+            errors: [
+              {
+                messageId: 'xpathInjection',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Valid Code - False Positives Reduced', () => {
@@ -327,48 +349,52 @@ describe('no-xpath-injection', () => {
   });
 
   describe('Advanced XPath Coverage', () => {
-    ruleTester.run('coverage - function parameters and direct calls', noXpathInjection, {
-      valid: [
-        // Helper function with safe annotation
-        {
-          code: `
+    ruleTester.run(
+      'coverage - function parameters and direct calls',
+      noXpathInjection,
+      {
+        valid: [
+          // Helper function with safe annotation
+          {
+            code: `
             /** @xpath-safe */
             function safeQuery() {
               const xpath = "//user"; 
               // Rule checks statement level too for some visitors, but usually annotation is on the statement using it
             }
           `,
-        },
-      ],
-      invalid: [
-        // Direct function call (not method) - Invalid because // is dangerous pattern
-        {
-          code: 'select("//user")',
-          options: [{ xpathFunctions: ['select'] }],
-          errors: [{ messageId: 'dangerousXpathExpression' }],
-        },
-        // Function parameter as input
-        {
-          code: `
+          },
+        ],
+        invalid: [
+          // Direct function call (not method) - Invalid because // is dangerous pattern
+          {
+            code: 'select("//user")',
+            options: [{ xpathFunctions: ['select'] }],
+            errors: [{ messageId: 'dangerousXpathExpression' }],
+          },
+          // Function parameter as input
+          {
+            code: `
             function find(userInput) {
               document.evaluate("//user[@name='" + userInput + "']", document);
             }
           `,
-          errors: [{ messageId: 'xpathInjection' }],
-        },
-        // req object usage directly
-        {
-          code: 'document.evaluate("//user[@id=" + req.id + "]", document);',
-          errors: [{ messageId: 'xpathInjection' }],
-        },
-        // Direct function call with dangerous input
-        {
-          code: 'selectNodes("//user[@name=" + userInput + "]")',
-          options: [{ xpathFunctions: ['selectNodes'] }],
-          errors: [{ messageId: 'xpathInjection' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'xpathInjection' }],
+          },
+          // req object usage directly
+          {
+            code: 'document.evaluate("//user[@id=" + req.id + "]", document);',
+            errors: [{ messageId: 'xpathInjection' }],
+          },
+          // Direct function call with dangerous input
+          {
+            code: 'selectNodes("//user[@name=" + userInput + "]")',
+            options: [{ xpathFunctions: ['selectNodes'] }],
+            errors: [{ messageId: 'xpathInjection' }],
+          },
+        ],
+      },
+    );
 
     ruleTester.run('coverage - validation and construction', noXpathInjection, {
       valid: [
@@ -417,7 +443,9 @@ describe('no-xpath-injection', () => {
         // id 15: non-req MemberExpression init → isUntrustedXpathInput second-inner-if false arm
         { code: 'const xpathQuery = foo.bar;' },
         // id 21: destructured param → param.type !== Identifier → false arm
-        { code: 'function f({id}) { document.evaluate("//user[@name=" + id + "]", document); }' },
+        {
+          code: 'function f({id}) { document.evaluate("//user[@name=" + id + "]", document); }',
+        },
         // id 22: isXpathInputValidated true arm — validation function wraps the template
         { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
         // id 31: XPath call with zero args → early return
@@ -498,7 +526,9 @@ const xpath = \`//users/..\``,
       callExpression({
         type: 'CallExpression',
         callee: { type: 'Identifier', name: 'evaluate' },
-        arguments: [{ type: 'Identifier', name: 'userInput', parent: undefined }],
+        arguments: [
+          { type: 'Identifier', name: 'userInput', parent: undefined },
+        ],
       });
 
       expect(reports).toHaveLength(1);
@@ -514,7 +544,9 @@ const xpath = \`//users/..\``,
       templateLiteral({
         type: 'TemplateLiteral',
         parent: undefined,
-        expressions: [{ type: 'Identifier', name: 'userInput', parent: undefined }],
+        expressions: [
+          { type: 'Identifier', name: 'userInput', parent: undefined },
+        ],
         quasis: [],
       });
 
@@ -543,7 +575,9 @@ const xpath = \`//users/..\``,
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: 'userInput + "//users/.."',
       });
-      const binaryExpression = listeners.BinaryExpression as (n: unknown) => void;
+      const binaryExpression = listeners.BinaryExpression as (
+        n: unknown,
+      ) => void;
 
       binaryExpression({
         type: 'BinaryExpression',
@@ -558,7 +592,9 @@ const xpath = \`//users/..\``,
 
     it('VariableDeclarator dangerousXpathExpression falls back to line 0 when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection);
-      const variableDeclarator = listeners.VariableDeclarator as (n: unknown) => void;
+      const variableDeclarator = listeners.VariableDeclarator as (
+        n: unknown,
+      ) => void;
 
       variableDeclarator({
         type: 'VariableDeclarator',
@@ -572,7 +608,9 @@ const xpath = \`//users/..\``,
 
     it('VariableDeclarator xpathInjection falls back to line 0 when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection);
-      const variableDeclarator = listeners.VariableDeclarator as (n: unknown) => void;
+      const variableDeclarator = listeners.VariableDeclarator as (
+        n: unknown,
+      ) => void;
 
       variableDeclarator({
         type: 'VariableDeclarator',
