@@ -165,3 +165,9 @@ crypto.createCipheriv(`aes-256-${mode}`, key, iv);
 - **[ECB Mode Visualization](https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/)** - Cloudflare article on ECB weaknesses
 - **[Block Cipher Modes](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation)** - Wikipedia comparison of modes
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow ECB mode in test files |

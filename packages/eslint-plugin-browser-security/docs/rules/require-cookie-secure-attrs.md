@@ -62,10 +62,15 @@ res.cookie('name', 'value', {
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/require-cookie-secure-attrs": [
+    "browser-security/require-cookie-secure-attrs": [
       "error",
       {
         "allowInTests": true

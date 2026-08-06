@@ -38,7 +38,14 @@
  * @see https://docs.nestjs.com/techniques/validation#stripping-properties
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+
+import { isTestFile } from '../../utils/nest-ast';
 
 type MessageIds = 'missingWhitelist';
 
@@ -51,8 +58,6 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
-
 /**
  * Static name of a property, or null when it isn't statically known.
  *
@@ -64,7 +69,10 @@ const TEST_FILE = /\.(?:spec|test|e2e-spec)\.[cm]?[jt]sx?$/;
 function propName(prop: TSESTree.Property): string | null {
   if (prop.computed) return null;
   if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
-  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
+  if (
+    prop.key.type === AST_NODE_TYPES.Literal &&
+    typeof prop.key.value === 'string'
+  ) {
     return prop.key.value;
   }
   return null;
@@ -83,7 +91,9 @@ function setsTrue(object: TSESTree.ObjectExpression, name: string): boolean {
 
 /** True when the object spreads anything — the missing key may come from there. */
 function hasSpread(object: TSESTree.ObjectExpression): boolean {
-  return object.properties.some((prop) => prop.type === AST_NODE_TYPES.SpreadElement);
+  return object.properties.some(
+    (prop) => prop.type === AST_NODE_TYPES.SpreadElement,
+  );
 }
 
 /** Resolve a `const x = { … }` declared in this same file, or null. */
@@ -98,7 +108,8 @@ function resolveLocalObject(
     // the value at the declaration. `let o = { origin: '*' }; o = safe;` would
     // otherwise report on a binding that is safe by the time it is used. Only
     // a binding written exactly once — its initialiser — is safe to read.
-    if (variable.references.filter((ref) => ref.isWrite()).length > 1) return null;
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+      return null;
     for (const def of variable.defs) {
       if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) continue;
       const init = def.node.init;
@@ -109,13 +120,17 @@ function resolveLocalObject(
   return null;
 }
 
-export const requireValidationPipeWhitelist = createRule<RuleOptions, MessageIds>({
+export const requireValidationPipeWhitelist = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'require-validation-pipe-whitelist',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-validation-pipe-whitelist.md',
-      description: 'Requires whitelist: true on ValidationPipe so unknown properties are stripped',
+      description:
+        'Requires whitelist: true on ValidationPipe so unknown properties are stripped',
       cwe: 'CWE-915',
       cvss: 7.5,
     },
@@ -131,7 +146,8 @@ export const requireValidationPipeWhitelist = createRule<RuleOptions, MessageIds
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'new ValidationPipe({ whitelist: true }) — add forbidNonWhitelisted: true to reject rather than strip',
-        documentationLink: 'https://docs.nestjs.com/techniques/validation#stripping-properties',
+        documentationLink:
+          'https://docs.nestjs.com/techniques/validation#stripping-properties',
       }),
     },
     schema: [
@@ -146,9 +162,13 @@ export const requireValidationPipeWhitelist = createRule<RuleOptions, MessageIds
     ],
   },
   defaultOptions: [{ allowInTests: true, requireForbidNonWhitelisted: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowInTests = true, requireForbidNonWhitelisted = false } = options;
-    if (allowInTests && TEST_FILE.test(context.filename)) return {};
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const { allowInTests = true, requireForbidNonWhitelisted = false } =
+      options;
+    if (allowInTests && isTestFile(context.filename)) return {};
 
     return {
       NewExpression(node: TSESTree.NewExpression) {
@@ -168,7 +188,10 @@ export const requireValidationPipeWhitelist = createRule<RuleOptions, MessageIds
           optionsObject = arg;
         } else if (arg.type === AST_NODE_TYPES.Identifier) {
           // Only when declared in this file; an imported config isn't knowable.
-          optionsObject = resolveLocalObject(context.sourceCode.getScope(node), arg.name);
+          optionsObject = resolveLocalObject(
+            context.sourceCode.getScope(node),
+            arg.name,
+          );
         }
         if (!optionsObject) return;
 
@@ -177,9 +200,13 @@ export const requireValidationPipeWhitelist = createRule<RuleOptions, MessageIds
 
         const ok =
           setsTrue(optionsObject, 'whitelist') &&
-          (!requireForbidNonWhitelisted || setsTrue(optionsObject, 'forbidNonWhitelisted'));
+          (!requireForbidNonWhitelisted ||
+            setsTrue(optionsObject, 'forbidNonWhitelisted'));
         if (!ok) {
-          context.report({ node: optionsObject, messageId: 'missingWhitelist' });
+          context.report({
+            node: optionsObject,
+            messageId: 'missingWhitelist',
+          });
         }
       },
     };

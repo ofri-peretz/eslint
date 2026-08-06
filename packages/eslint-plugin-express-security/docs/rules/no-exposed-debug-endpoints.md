@@ -250,3 +250,10 @@ swaggerUi.register('/api-docs', app);
 - **[CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)**
 - **[OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)**
 - **[Express Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `endpoints` | `string[]` | — | Custom list of debug/admin endpoints to flag |
+| `ignoreFiles` | `string[]` | — | List of files or patterns to ignore |

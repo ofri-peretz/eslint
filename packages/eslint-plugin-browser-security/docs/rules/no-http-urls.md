@@ -145,3 +145,10 @@ const url = protocol + '://' + domain;
 
 - [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
 - [OWASP Transport Layer Protection Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedHosts` | `string[]` | `["localhost","127.0.0.1"]` | List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1) |
+| `allowedPorts` | `number[]` | `[]` | List of ports allowed for HTTP (e.g., 3000, 8080 for development) |

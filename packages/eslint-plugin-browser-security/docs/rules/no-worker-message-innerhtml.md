@@ -93,10 +93,15 @@ worker.onmessage = (e) => {
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-worker-message-innerhtml": [
+    "browser-security/no-worker-message-innerhtml": [
       "error",
       {
         "allowInTests": true

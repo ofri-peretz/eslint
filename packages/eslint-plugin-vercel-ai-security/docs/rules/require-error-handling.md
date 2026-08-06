@@ -81,9 +81,9 @@ async function process() {
 
 ## ⚙️ Options
 
-| Option         | Type      | Default | Description             |
-| -------------- | --------- | ------- | ----------------------- |
-| `allowInTests` | `boolean` | `true`  | Skip rule in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow unhandled AI calls in test files |
 
 ## 🛡️ Why This Matters
 

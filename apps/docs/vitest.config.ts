@@ -59,7 +59,10 @@ export default defineConfig({
     // lefthook pre-push `tests` hook runs, which starves every task for I/O.
     // These tests are I/O-bound, not compute-bound; give them room.
     testTimeout: 30_000,
-    passWithNoTests: true,
+    // False, like every other workspace: docs has 74 test files, so a run that
+    // matches none is a broken filter, not an empty package. See the
+    // passWithNoTests lock in scripts/__tests__/ci-shard-affected.test.ts.
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',
     pool: 'forks',

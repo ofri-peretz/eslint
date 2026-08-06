@@ -140,11 +140,11 @@ const url = `https://example.com?${params}`; // ✅ Safe
 
 ## Options
 
-| Option             | Type       | Default                  | Description                                     |
-| ------------------ | ---------- | ------------------------ | ----------------------------------------------- |
-| `allowInTests`     | `boolean`  | `false`                  | Allow unescaped URL parameters in test files    |
-| `trustedLibraries` | `string[]` | `['url', 'querystring']` | Trusted URL construction libraries to recognize |
-| `ignorePatterns`   | `string[]` | `[]`                     | Additional safe patterns to ignore              |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow unescaped URL parameters in test files |
+| `trustedLibraries` | `string[]` | `["url","querystring"]` | Trusted URL construction libraries |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ## Rule Logic Flow
 

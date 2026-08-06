@@ -75,10 +75,10 @@ await generateObject({
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                                                            | Description                         |
-| -------------------- | ---------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
-| `ragPatterns`        | `string[]` | `['search', 'retrieve', 'query', 'vectorStore', 'embeddings', 'similaritySearch']` | Patterns suggesting RAG operations  |
-| `validatorFunctions` | `string[]` | `['validate', 'sanitize', 'filter', 'clean', 'verify']`                            | Functions that validate RAG content |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ragPatterns` | `string[]` | `["search","retrieve","query","vectorStore","embeddings","similaritySearch","findSimilar","getDocuments","fetchDocs","documents","chunks","passages","context"]` | Patterns suggesting RAG operations |
+| `validatorFunctions` | `string[]` | `["validate","sanitize","filter","clean","verify","validateRag","sanitizeContent","filterDocs"]` | Functions that validate RAG content |
 
 ## 🛡️ Why This Matters
 

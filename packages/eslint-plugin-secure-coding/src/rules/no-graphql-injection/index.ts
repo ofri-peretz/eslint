@@ -177,22 +177,22 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         properties: {
           allowIntrospection: {
             type: 'boolean',
-            default: false,
+            default: false, description: 'Allow introspection queries'
           },
           maxQueryDepth: {
             type: 'number',
             minimum: 1,
-            default: 10,
+            default: 10, description: 'Maximum query nesting depth before reporting a DoS risk'
           },
           trustedGraphqlLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
+            default: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'], description: 'GraphQL libraries recognised as query builders'
           },
           validationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validate', 'sanitize', 'isValid', 'assertValid'],
+            default: ['validate', 'sanitize', 'isValid', 'assertValid'], description: 'Function names that count as query validation'
           },
           safeTemplateLiteralCallers: {
             type: 'array',

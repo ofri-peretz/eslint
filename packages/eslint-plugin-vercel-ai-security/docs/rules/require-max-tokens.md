@@ -78,10 +78,10 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option             | Type       | Default     | Description                            |
-| ------------------ | ---------- | ----------- | -------------------------------------- |
-| `allowedFunctions` | `string[]` | `[]`        | Functions that don't require maxTokens |
-| `maxRecommended`   | `number`   | `undefined` | Warn if maxTokens exceeds this value   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `suggestedLimit` | `number` | `4096` | Default max tokens limit to suggest |
+| `targetFunctions` | `string[]` | `["generateText","streamText","generateObject","streamObject"]` | Function names that require max tokens |
 
 ## 🛡️ Why This Matters
 

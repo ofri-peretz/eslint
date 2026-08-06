@@ -20,8 +20,6 @@ type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Allowed origins (patterns). Default: [] */
-  allowedOrigins?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -65,23 +63,12 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Allow permissive CORS in test files',
           },
-          allowedOrigins: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Patterns for allowed origins',
-          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [
-    {
-      allowInTests: true,
-      allowedOrigins: [],
-    },
-  ],
+  defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
     const filename = context.filename;

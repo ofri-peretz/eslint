@@ -48,7 +48,7 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
         properties: {
           packageManager: {
             type: 'string',
-            enum: ['npm', 'yarn', 'pnpm'],
+            enum: ['npm', 'yarn', 'pnpm'], description: 'Package manager whose lock file is required'
           },
         },
         additionalProperties: false,

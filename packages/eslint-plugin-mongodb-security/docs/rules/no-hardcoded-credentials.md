@@ -110,3 +110,9 @@ mongoose.connect(uri, { pass: password });
 ## References
 
 - [CWE-798](https://cwe.mitre.org/data/definitions/798.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -1,5 +1,172 @@
 ## [1.4.3] - 2026-02-08
 
+## 1.4.14
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+- Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:
+  - @interlace/eslint-devkit@1.10.0
+
+## 1.4.13
+
+### Patch Changes
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Load rule modules on demand instead of at plugin load.
+
+  Every plugin barrel used to `require` all of its rules the moment ESLint loaded
+  the plugin, whether or not your config enabled them. `plugin.rules[id]` is only
+  ever read for rules a config turns on, so the rest was parse-and-compile cost
+  for code that never ran.
+
+  The published entry now exposes each rule behind a getter, so a rule module is
+  read the first time something asks for it. Measured on a 7-plugin config with 34
+  rules enabled: 163 rule modules loaded and 251 ms of plugin load, against 34
+  modules and 8.5 ms — total ESLint wall time 251 ms → 109 ms. On a preset that
+  enables most of a plugin (`node-security/recommended`, 25 of 37) it is a wash,
+  72 ms → 65 ms. It is never slower; the win scales with how many plugins you
+  stack and how few of their rules you use.
+
+  Nothing about the plugin API changes. `Object.keys(plugin.rules)` still lists
+  every rule without loading any of them, repeated reads return the same object,
+  and the `./oxlint` sub-export is the same plugin object it always was.
+
+  `eslint-plugin-jwt` and `eslint-plugin-vercel-ai-security` also re-export their
+  rule objects as named top-level exports, which cannot be deferred — those two
+  keep loading eagerly.
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Declare what we support, load only what we use
+
+  **`tslib` is gone from every package.** It was a NON-optional peer of
+  `@interlace/eslint-devkit`, so all 26 plugins declared it as a dependency to
+  satisfy that peer — 124 kB every consumer installed so twelve
+  `require("tslib")` calls could resolve. The shipped JavaScript now inlines
+  the TypeScript helpers instead (`--importHelpers false` on the emit pass that
+  already re-writes it), costing ~9.5 kB in devkit. Zero `tslib` requires remain
+  anywhere; verified by installing every plugin with no `tslib` in the tree and
+  loading all 26 with every rule intact.
+
+  **`eslint-plugin-import-next` had a phantom dependency.** Its rules
+  `require("typescript")` at module load, but it was declared in neither
+  `dependencies` nor `peerDependencies` — it worked only because something else
+  in the tree happened to install it. A clean install crashed the whole plugin,
+  not just the type-aware rules. `typescript` is now a required peer, which is
+  what the code actually needs.
+
+  **23 "technologies we support" declarations did nothing.** Seven plugins
+  listed their target libraries in `peerDependenciesMeta` with no matching
+  `peerDependencies` entry, and npm ignores meta for a package that is not
+  declared a peer — verified by installing `eslint-plugin-express-security` and
+  watching nothing install and nothing warn. `eslint-plugin-jwt` appeared to
+  support six JWT libraries and formally supported none. All 23 are now real
+  optional peers, matching the convention `pg`, `mongodb`, `prisma` and the
+  other nine already followed:
+
+  | plugin                                                          | technologies now actually declared                                                                    |
+  | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `eslint-plugin-jwt`                                             | jsonwebtoken, @nestjs/jwt, express-jwt, jose, jwks-rsa, jwt-decode                                    |
+  | `eslint-plugin-lambda-security`                                 | @aws-sdk/client-lambda, @middy/core, @middy/http-cors, @middy/http-security-headers, @middy/validator |
+  | `eslint-plugin-express-security`                                | express, helmet, cors, csurf, express-rate-limit                                                      |
+  | `eslint-plugin-nestjs-security`                                 | @nestjs/common, @nestjs/throttler, class-validator, class-transformer                                 |
+  | `eslint-plugin-vercel-ai-security`                              | ai                                                                                                    |
+  | `eslint-plugin-maintainability`, `eslint-plugin-react-features` | typescript                                                                                            |
+
+  All optional, so nothing is installed on the consumer’s behalf — the
+  declaration is the supported-technology signal, which is exactly what it was
+  meant to be.
+
+  **A new gate compares declared dependencies against what the emitted
+  JavaScript actually loads**, in both directions: a `require` with no
+  declaration (works until someone installs cleanly) and a declaration nothing
+  requires (weight every consumer pays). It understands that a dependency may
+  exist to satisfy an optional peer of another dependency, which is why
+  `eslint-plugin-import-next` legitimately declares `oxc-resolver` that devkit
+  lazily loads.
+
+- [#335](https://github.com/ofri-peretz/eslint/pull/335) [`47cde07`](https://github.com/ofri-peretz/eslint/commit/47cde07f13fb128e973a46f2a66a68c3419cdef3) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix the `./oxlint` subpath export, which pointed at `src/oxlint.js` — a file no build produces. `require('<package>/oxlint')` threw MODULE_NOT_FOUND on every published package, while every README documented that exact wiring for oxlint's `jsPlugins`. The export now points at the build output, `dist/src/oxlint.js`.
+
+  The path was hardcoded in `scripts/generate-oxlint-shims.ts`, so the generator rewrote any manual correction back to the broken value on the next drift check — fixed there rather than per package.
+
+  This release also carries npm provenance: the affected packages were last published from a workstation, which has no OIDC token to attest with, so the published tarballs had no attestation. Publishing through the release workflow signs them.
+
+- [#391](https://github.com/ofri-peretz/eslint/pull/391) [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now follows same-file query helpers
+
+  The rule only ever treated a literal driver method call as a sink. Real
+  codebases do not call `client.query` at every call site — they wrap it once:
+
+  ```ts
+  const q = (sql: string, params: unknown[]) => pool.query(sql, params);
+
+  q(`SELECT * FROM users WHERE id = ${userInput}`, []); // was silent
+  q('SELECT * FROM users WHERE id = ' + userInput, []); // was silent
+  ```
+
+  Both of those are textbook CWE-89 and both went unreported — not because the
+  helper was hard to reach, but because the callee was named `q` instead of
+  `query`. The helper being in the _same file_, three lines above, made no
+  difference. Any project that wraps its driver once, which is most of them, was
+  getting no SQL injection coverage at all from this rule.
+
+  A function whose parameter is handed straight to a driver sink is now itself a
+  sink at that argument position, and calls to it are checked like the driver call
+  they stand for. `function` declarations, arrow functions in a `const`, class
+  methods and object-literal methods are all traced, including when the helper is
+  declared below its call site. Concatenation, interpolation, and a
+  previously-tainted variable passed to the helper all report.
+
+  Findings through a helper require the string to contain SQL keywords, even for
+  instances configured with `requireSqlKeywords: false` (`eslint-plugin-pg`).
+  "This identifier eventually reaches a sink" is weaker evidence than a literal
+  driver call, and without the gate a file that defined any helper over
+  `pool.query` would start reporting unrelated calls like ``log(`hello ${name}`)``.
+  A bare `query(...)` with no member access is likewise never treated as a driver
+  sink — only as a possible helper.
+
+  Parameterized calls through a helper stay silent, which is what
+  [#261](https://github.com/ofri-peretz/eslint/issues/261) asked for:
+  ``q(`SELECT * FROM users WHERE id = $1`, [id])`` interpolates nothing and is
+  safe at any distance.
+
+  Helpers imported from another module are still not traced — that needs type
+  information the rule does not request. This is documented as a known false
+  negative rather than silently missing.
+
+  Affects `no-unsafe-query` in all eight SQL plugins: `pg`, `mysql-security`,
+  `prisma-security`, `drizzle-security`, `knex-security`, `sqlite-security`,
+  `typeorm-security` and `sequelize-security`.
+
+- Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:
+  - @interlace/eslint-devkit@1.8.0
+
+## 1.4.12
+
+### Patch Changes
+
+- [#364](https://github.com/ofri-peretz/eslint/pull/364) [`86baa02`](https://github.com/ofri-peretz/eslint/commit/86baa026485bf93d63f1523d6eb382e0a40cbb3f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the ecosystem and oxlint marks to the README logo row. Each plugin now
+  leads with Interlace -> its ecosystem (node, nestjs, express, react, mongodb,
+  postgresql, mysql, sqlite, prisma, drizzle, knex, typeorm, sequelize, lambda,
+  vercel, jwt) -> oxlint -> ESLint; the generic quality plugins carry the row
+  without an ecosystem mark. README-only change - no rule behaviour is affected.
+  The patch bump is what carries the new README onto npm, which only refreshes a
+  package README on publish.
+
 ## 1.4.11
 
 ### Patch Changes

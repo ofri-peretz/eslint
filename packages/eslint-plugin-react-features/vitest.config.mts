@@ -1,9 +1,14 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 
 /**
  * Vitest configuration for eslint-plugin-react-features package
  */
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   root: __dirname,
   plugins: [],
   test: {
@@ -17,7 +22,7 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       // NOTE: `enabled: true` is deliberately NOT set here (unlike sibling

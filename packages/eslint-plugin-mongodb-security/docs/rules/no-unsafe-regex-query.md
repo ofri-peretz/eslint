@@ -116,3 +116,9 @@ User.find({ name: { $regex: sanitized } });
 - [OWASP ReDoS Attack](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 - [CWE-400: Resource Exhaustion](https://cwe.mitre.org/data/definitions/400.html)
 - [MongoDB $regex Performance](https://www.mongodb.com/docs/manual/reference/operator/query/regex/#index-use)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

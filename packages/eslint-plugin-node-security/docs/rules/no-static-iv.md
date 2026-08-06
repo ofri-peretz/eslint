@@ -185,3 +185,9 @@ crypto.createCipheriv('aes-256-gcm', key, iv);
 - **[OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#initialization-vectors)** - IV best practices
 - **[CWE-329: Not Using Random IV](https://cwe.mitre.org/data/definitions/329.html)** - Official CWE entry
 - **[GCM Nonce Misuse](https://blog.cloudflare.com/tls-nonce-nse/)** - Why GCM nonce reuse is catastrophic
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow static IVs in test files |

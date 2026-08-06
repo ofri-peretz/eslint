@@ -128,7 +128,7 @@ ESLint is the backbone for keeping large codebases healthy. These packages targe
 | **v8**       | 60.3M            | 28.29% | ✅ Supported (legacy active)     |
 | v7 and older | 20.3M            | 9.51%  | ❌ Unsupported (EOL)             |
 
-All published packages declare `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency.
+All published packages declare `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` as a peer dependency.
 
 ### Node.js compatibility
 

@@ -164,3 +164,10 @@ const x = 42;
 - **[CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)** - Official CWE entry
 - **[OWASP Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)** - OWASP guidance
 - **[API Gateway Authorization](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html)** - AWS docs
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `endpoints` | `string[]` | — | Custom list of debug/admin endpoints to flag |
+| `ignoreFiles` | `string[]` | — | List of files or patterns to ignore |

@@ -108,3 +108,9 @@ Three shapes count as evidence:
 - URL fragments derived from a chain of variables (more than one assignment hop) are not always traced.
 - Constructed `URL` objects passed to `request.get(urlObject)` are detected when the constructor receives user input directly, not when input enters via setter methods.
 - Allowlists declared in environment variables (consumed at runtime) cannot be validated statically — the rule still fires; suppress with an `eslint-disable-next-line` comment that names the validating function.
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
