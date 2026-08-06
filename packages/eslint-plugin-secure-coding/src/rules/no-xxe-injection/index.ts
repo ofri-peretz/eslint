@@ -43,16 +43,47 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * Does this receiver name an XML parser?
+ *
+ * Allowlist rather than a denylist of non-XML `parse` receivers: a new
+ * `csv.parse` or `toml.parse` should be silent by default, and being wrong in
+ * that direction costs a false positive on every consumer's JSON handling.
+ */
+const XML_RECEIVER = /xml|dom|libxml|parser$|^parser$|^sax$/i;
+
+const isXmlReceiver = (node: TSESTree.Node): boolean => {
+  if (node.type === 'Identifier') return XML_RECEIVER.test(node.name);
+  if (node.type === 'MemberExpression' && node.property.type === 'Identifier') {
+    return XML_RECEIVER.test(node.property.name);
+  }
+  if (node.type === 'NewExpression' && node.callee.type === 'Identifier') {
+    return XML_RECEIVER.test(node.callee.name);
+  }
+  return false;
+};
+
+/**
  * Check if this is an XML parsing operation
  */
 const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
   const callee = node.callee;
 
   // Check for XML library method calls
-  if (callee.type === 'MemberExpression' &&
-      callee.property.type === 'Identifier' &&
-      ['parse', 'parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(callee.property.name)) {
-    return true;
+  if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    const method = callee.property.name;
+
+    // These names are XML-specific — the receiver adds nothing.
+    if (['parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(method)) {
+      return true;
+    }
+
+    // `parse` is not. `JSON.parse(fs.readFileSync(f, 'utf-8'))` matched this
+    // rule and reported CWE-611 on JSON — measured across this monorepo. So a
+    // bare `parse` has to be positively identified as XML by its receiver;
+    // `Date.parse`, `path.parse`, `url.parse` and `JSON.parse` all fall out.
+    if (method === 'parse') {
+      return isXmlReceiver(callee.object);
+    }
   }
 
   // Check for constructor calls

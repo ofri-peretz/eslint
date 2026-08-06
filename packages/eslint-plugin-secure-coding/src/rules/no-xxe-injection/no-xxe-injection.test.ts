@@ -27,6 +27,22 @@ describe('no-xxe-injection', () => {
   describe('Valid Code - Secure XML Parsing', () => {
     ruleTester.run('valid - secure XML parsing', noXxeInjection, {
       valid: [
+        // `parse` is not an XML-only method name. Ungated, this rule reported
+        // CWE-611 on JSON — measured across this monorepo, on lines like
+        // `JSON.parse(fs.readFileSync(file, 'utf-8'))`.
+        `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
+        `const cfg = JSON.parse(req.body);`,
+        `const when = Date.parse(input);`,
+        `const parts = path.parse(userPath);`,
+        `const q = url.parse(req.url);`,
+      // Receiver shapes that are NOT xml — the other two branches of
+      // isXmlReceiver seen from the silent side.
+      `const rows = lib.csv.parse(req.body);`,
+      `const v = new Semver().parse(req.body);`,
+      // A receiver the rule cannot name at all — a call result, and a
+      // constructor reached through a namespace. Unknown is not XML.
+      `const out = getParser().parse(req.body);`,
+      `const out2 = new lib.Parser().parse(req.body);`,
         // Secure libxmljs usage with noent: false
         'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
 
@@ -183,7 +199,13 @@ describe('no-xxe-injection', () => {
 
       callExpression({
         type: 'CallExpression',
-        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
+        callee: {
+          type: 'MemberExpression',
+          // The receiver has to name an XML parser for a bare `parse` to
+          // count — otherwise `JSON.parse` matches. See isXmlReceiver.
+          object: { type: 'Identifier', name: 'xmlParser' },
+          property: { type: 'Identifier', name: 'parse' },
+        },
         arguments: [{ type: 'Identifier', name: 'xmlInput', parent: undefined }],
       });
 
@@ -197,7 +219,13 @@ describe('no-xxe-injection', () => {
 
       callExpression({
         type: 'CallExpression',
-        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
+        callee: {
+          type: 'MemberExpression',
+          // The receiver has to name an XML parser for a bare `parse` to
+          // count — otherwise `JSON.parse` matches. See isXmlReceiver.
+          object: { type: 'Identifier', name: 'xmlParser' },
+          property: { type: 'Identifier', name: 'parse' },
+        },
         arguments: [
           { type: 'Identifier', name: 'cleanXml', parent: undefined },
           {

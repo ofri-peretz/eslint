@@ -27,7 +27,12 @@ type RuleOptions = [Options?];
 
 const DEFAULT_SECRET_PATTERNS = [
   // Common secret names (camelCase, snake_case, kebab-case)
-  'token', 'secret', 'key', 'password', 'hash', 'signature',
+  // `key` is deliberately absent. Substring-matched, it hits `key`, `firstKey`,
+  // `keys` and every AST walker's `key === 'text'` — 88 findings on this repo,
+  // none of them secrets. The names that DO mean a secret are listed in full
+  // below (`apiKey`, `privateKey`, `encryptionKey`, …), and a project that
+  // really does compare a bare `key` can add it via `secretPatterns`.
+  'token', 'secret', 'password', 'hash', 'signature',
   'mac', 'hmac', 'digest', 'apiKey', 'api_key', 'api-key',
   'auth', 'credential', 'bearer', 'jwt', 'csrf', 'nonce',
   // PII and sensitive data patterns
@@ -39,6 +44,21 @@ const DEFAULT_SECRET_PATTERNS = [
   'auth_token', 'auth-token', 'authToken',
   'encryption_key', 'encryption-key', 'encryptionKey',
 ];
+
+/**
+ * Is this operand a sentinel rather than a value an attacker could supply?
+ *
+ * `token !== undefined`, `hash === null`, `signature.length === 0` — all
+ * existence or arity checks. A timing attack needs the comparison to leak how
+ * much of a *secret* matched, which requires an attacker-controlled operand.
+ */
+function isExistenceCheck(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') return true;
+  if (node.type === AST_NODE_TYPES.Literal) {
+    return node.value === null || typeof node.value === 'number' || typeof node.value === 'boolean';
+  }
+  return false;
+}
 
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
   name: 'no-timing-unsafe-compare',
@@ -95,7 +115,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     [options = {}]
   ) {
     const { secretPatterns = DEFAULT_SECRET_PATTERNS } = options as Options;
-    const patterns = secretPatterns.map(p => new RegExp(p, 'i'));
+    // Substring-matched on purpose: `auth` has to match `authorization`, and
+    // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
+    // tried and dropped — it fixed `firstKey` but stopped matching
+    // `req.headers.authorization`, trading one false positive for a worse false
+    // negative. The existence-check guard below is what kills the `firstKey`
+    // case, precisely and without weakening detection.
+    const patterns = secretPatterns.map((p) => new RegExp(p, 'i'));
 
     function isSecretIdentifier(node: TSESTree.Node): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
@@ -114,6 +140,14 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       // Check for === or == comparisons
       if (node.operator !== '===' && node.operator !== '==' && 
           node.operator !== '!==' && node.operator !== '!=') {
+        return;
+      }
+
+      // Comparing a secret to `undefined` / `null` / a number / a boolean is an
+      // existence or arity check, not a secret comparison — there is no
+      // attacker-supplied value on the other side, so there is nothing to time.
+
+      if (isExistenceCheck(node.left) || isExistenceCheck(node.right)) {
         return;
       }
 
