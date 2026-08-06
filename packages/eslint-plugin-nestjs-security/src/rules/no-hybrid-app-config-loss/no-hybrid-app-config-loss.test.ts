@@ -110,3 +110,24 @@ ruleTester.run('no-hybrid-app-config-loss', noHybridAppConfigLoss, {
     },
   ],
 });
+
+/**
+ * The change these accompany was the labels themselves. Every RuleTester case
+ * asserts `{ messageId: 'configNotInherited' }`, which is a key lookup — it
+ * passes whether the message says CWE-20 or the CWE-284 pillar it replaced.
+ * Revert the metadata and the suite above stays green. These fail.
+ */
+describe('reported severity metadata', () => {
+  it('maps to CWE-20, not the discouraged CWE-284 pillar', () => {
+    const message = noHybridAppConfigLoss.meta.messages.configNotInherited;
+    expect(message).toContain('CWE-20');
+    expect(message).toContain('5.3');
+    expect(message).not.toContain('CWE-284');
+    expect(message).not.toContain('7.5');
+  });
+
+  it('agrees with the rule-level docs metadata', () => {
+    expect(noHybridAppConfigLoss.meta.docs.cwe).toBe('CWE-20');
+    expect(noHybridAppConfigLoss.meta.docs.cvss).toBe(5.3);
+  });
+});
