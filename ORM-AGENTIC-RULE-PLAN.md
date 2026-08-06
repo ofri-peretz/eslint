@@ -151,8 +151,8 @@ SDKs and the MCP SDK. No rule may fire on both a Vercel-AI call and a raw-SDK ca
 |---|---|---|---|---|
 | A1 | `no-hardcoded-api-key` | CWE-798 | error | **Shipped all three** (#402) — factory `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. |
 | A2 | `no-browser-api-key-exposure` | CWE-522 | error | **Shipped openai + anthropic** — factory `createBrowserEscapeHatchRule`. **Gemini excluded**, see §5.4. |
-| A3 | `no-untrusted-content-in-prompt` | CWE-1427 | error | Untrusted input concatenated into a **system** prompt or instruction block. The CodeQL CWE-1427 query family; the headline rule of this plugin family. |
-| A4 | `no-unsafe-output-handling` | CWE-94 / CWE-78 | error | Model output flowing into `eval`/`exec`/`innerHTML`/a query sink. The core agentic risk: the model is an untrusted source. |
+| A3 | `no-untrusted-content-in-prompt` | CWE-1427 | error | **Shipped all three** (#406) — factory `createSystemPromptInjectionRule`. Gated on the qualified member path (`messages.create`, `completions.create`, `generateContent`), not the leaf method: gating on `create` made one line report twice, measured. A bare `generateText(...)` has no member path, which is what keeps `vercel-ai-security` out. |
+| A4 | `no-unsafe-output-handling` | CWE-94 / CWE-78 | error | Model output flowing into `eval`/`exec`/`innerHTML`/a query sink. The core agentic risk: the model is an untrusted source. **Blocked on §5.6** — every sink it targets is already owned, and the existing source-specific sink rules double-reported. Ships only under the ownership rule #409 establishes. |
 | A5 | `no-sensitive-in-prompt` | CWE-200 | error | PII/secrets shipped to a third-party inference API. |
 | A6 | `require-max-tokens` | CWE-770 | warn | Unbounded generation — cost DoS. |
 | A7 | `require-request-timeout` | CWE-400 | warn | No timeout/abort signal on an inference call. |
@@ -211,7 +211,7 @@ profile on the corpus.
 | W0 | **Done.** PR #335 merged: agentic peers fixed, AI SDK family landed, `eslint-plugin-pg` / `-jwt` superseded by the `-security` renames. ORM peers were verified correct already. Remaining: the two `npm deprecate` calls need an interactive `npm login` — `latest` on both old packages still carries no notice, so installs are silent today. |
 | W1 | **Done.** O2 `no-unscoped-mutation` for prisma / drizzle / knex — factory `createUnscopedMutationRule`, self-suppression lock verified by reverting the guard; **sequelize deliberately excluded**, see §5.1. O4 `require-tls` (#373) for knex / mysql / sequelize / typeorm — `createRequireTlsRule`, URL findings scoped to connection positions. O1 `no-raw-identifier-interpolation` (#385) for drizzle / prisma only — `createRawIdentifierRule`; §5.2 says why two and not seven. O5 `no-hardcoded-credentials` (#386) — `createHardcodedCredentialsRule`. O3 `no-mass-assignment` (#389) — `createMassAssignmentRule`. All at 100/100/100/100. |
 | W2 | **Done — 3 of 4 shipped, M4 dropped with cause.** M2 `no-tool-description-injection` (#396), M5 `no-command-injection-in-tool` (#397), M3 `no-unvalidated-tool-args` (#400). **M4 `no-path-traversal-in-resource` does not ship** — see §5.3. All rules held out of `minimal` / `recommended` pending W6, locked by a preset test. |
-| W3 | **A1 shipped** (#402): `no-hardcoded-api-key` across openai / anthropic / gemini via `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. **A2 shipped** for openai + anthropic via `createBrowserEscapeHatchRule` — gemini has no equivalent flag, see §5.4. A3–A5 not started. |
+| W3 | **A1 shipped** (#402): `no-hardcoded-api-key` across openai / anthropic / gemini via `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. **A2 shipped** for openai + anthropic via `createBrowserEscapeHatchRule` — gemini has no equivalent flag, see §5.4. **A3 shipped all three** (#406) via `createSystemPromptInjectionRule`; a follow-up commit fixed two rule docs that named the wrong option and locked the three request paths that had shipped untested. **A4 blocked on §5.6**, A5 not started. |
 | W4 | not started |
 | W5 | not started |
 | W6 | not started |
@@ -376,3 +376,58 @@ this machine — `esbuild --version`, a `sharp` encode, and a `unrs-resolver`
 require all succeed without them. Approving install scripts is a supply-chain
 trust decision and belongs to Ofri, not to an agent.
 
+
+### 5.6 A4 is blocked, and finding out why exposed a shipped defect
+
+A4 says "model output flowing into `eval`/`exec`/`innerHTML`/a query sink". Every
+one of those sinks is already owned by another plugin — `browser-security`
+(`no-eval`, `no-innerhtml`), `node-security` (`detect-eval-with-expression`,
+`detect-child-process`, `no-shell-injection`). Under §1.1 a second rule reporting
+the same line is a taxonomy violation, so the question was how the ecosystem
+already handles a source-specific rule sitting on a shared sink.
+
+It handles it badly. `browser-security` ships four such rules
+(`no-websocket-innerhtml`, `no-postmessage-innerhtml`, `no-filereader-innerhtml`,
+`no-worker-message-innerhtml`) plus `no-websocket-eval`, and with
+`recommended` and nothing else enabled, **every source shape reported more than
+once at the identical range**:
+
+| code | rules that fired |
+|---|---|
+| WebSocket → `innerHTML` | `no-innerhtml` + `no-websocket-innerhtml` |
+| WebSocket → `eval` | `no-eval` + `no-websocket-eval` |
+| `postMessage` → `innerHTML` | `no-innerhtml` + `no-postmessage-innerhtml` + `no-websocket-innerhtml` |
+| FileReader → `innerHTML` | `no-innerhtml` + `no-filereader-innerhtml` |
+| Worker → `innerHTML` | `no-innerhtml` + `no-websocket-innerhtml` + `no-worker-message-innerhtml` |
+
+Measured against the built plugin, at identical `line:column-endLine:endColumn`,
+so it is not a one-line-snippet artifact.
+
+A second defect fell out of the same probe: `no-websocket-innerhtml` never
+checked for a WebSocket. It gated on `X.onmessage`, which `postMessage` and
+Worker handlers also are, so it reported them as "WebSocket message data" and
+cited the WebSocket MDN page for code containing no WebSocket. Its real gate was
+"is a message handler".
+
+**Fix (#409):** devkit gains `createPayloadResolver`, which resolves a handler's
+receiver back to its construction. The ownership rule:
+
+> A source rule reports only what it can **positively attribute**. The generic
+> rule reports everything else.
+
+The two tests are complements, so exactly one rule reports any value. An
+unresolvable receiver falls to the generic rule rather than being called a
+WebSocket — nothing goes unreported, the finding changes rules and stops
+claiming a provenance it cannot prove.
+
+**What this means for A4.** A4 ships under the same rule or not at all: the
+agentic plugins may report a sink *only* where they can prove the value came
+from an inference call, and everything else stays with the generic rules. That
+is a narrower rule than the plan implies, and it may turn out that the provable
+set is small enough that A4 is not worth a rule at all — the M4 outcome in §5.3.
+Decide that on the corpus in W6, not in advance.
+
+**Transferable lesson.** Both defects survived because every rule was tested
+alone. A per-rule suite cannot see a duplicate finding; only running two rules
+over one file can. Any plugin with a generic rule *and* a specific rule on the
+same sink is a candidate — check `secure-coding` and `node-security` next.
