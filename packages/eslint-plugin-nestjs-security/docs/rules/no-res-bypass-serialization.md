@@ -40,6 +40,7 @@ than in the code that writes the response.
 
 ```typescript
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Res() res: Response) {

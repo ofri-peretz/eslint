@@ -207,7 +207,7 @@ const PROBES: Probe[] = [
   },
   {
     rule: 'no-hybrid-app-config-loss',
-    what: 'a microservice transport that inherits none of the global pipes and guards (CWE-284)',
+    what: 'a microservice transport that inherits none of the global pipes and guards (CWE-20)',
     vulnerable: `
       const app = await NestFactory.create(AppModule);
       app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

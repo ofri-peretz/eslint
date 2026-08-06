@@ -521,6 +521,24 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
       `,
       errors: [{ messageId: 'bypassesSerialization' }],
     },
+    // A nested function that rebinds the name declares a content type on a
+    // *different* response. The content-type scan has to honour scope the same
+    // way the write scan does — otherwise this inner `res.type('html')` clears
+    // the outer `res.json(user)` and the finding disappears.
+    {
+      code: `
+        @Controller('users')
+        @UseInterceptors(ClassSerializerInterceptor)
+        class UsersController {
+          @Get()
+          findAll(@Res() res: Response) {
+            this.pages.render((res) => res.type('html').send(page));
+            res.json(this.users);
+          }
+        }
+      `,
+      errors: [{ messageId: 'bypassesSerialization' }],
+    },
     // Another decorated parameter sits alongside the response — the scan has to
     // walk past @Body() to reach @Res().
     {

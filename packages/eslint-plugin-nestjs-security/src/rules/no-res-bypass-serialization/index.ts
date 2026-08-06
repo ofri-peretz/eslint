@@ -278,6 +278,12 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         let found = false;
         const look = (node: TSESTree.Node): void => {
           if (found) return;
+          // Same scoping rule `visit` follows. A nested function that rebinds
+          // the name declares a content type on a *different* response, and
+          // letting it count silences the outer handler. Harmless while only
+          // full MIME strings matched; once `res.type('html')` counts, an inner
+          // `(res) => res.type('html')` would clear an outer `res.json(user)`.
+          if (shadowsBinding(node)) return;
           if (node.type === AST_NODE_TYPES.CallExpression) {
             const name = expressionName(node.callee);
             // Must be called on the @Res() binding. Scanning the whole body
