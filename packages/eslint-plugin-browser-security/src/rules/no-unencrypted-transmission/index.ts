@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Transport
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unencryptedTransmission' | 'useHttps';
@@ -104,6 +104,82 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
     }
   });
 }
+
+/**
+ * URIs that are *identifiers*, not network destinations.
+ *
+ * `xmlns="http://www.w3.org/2000/svg"` is the single most common `http://`
+ * string in any React codebase — every inline SVG carries one. It is never
+ * fetched: XML namespaces are opaque identifiers, and changing it to https
+ * breaks the document. Same for the XSD/XSL/DTD namespaces and the XML
+ * specification URIs.
+ */
+const NAMESPACE_URI_PREFIXES = [
+  'http://www.w3.org/',
+  'http://www.w3.org/XML/',
+  'http://schemas.xmlsoap.org/',
+  'http://purl.org/',
+  'http://xmlns.com/',
+  'http://ns.adobe.com/',
+  'http://sodipodi.sourceforge.net/',
+  'http://www.inkscape.org/',
+];
+
+/** Is this string an XML/RDF namespace identifier rather than an endpoint? */
+function isNamespaceUri(value: string): boolean {
+  return NAMESPACE_URI_PREFIXES.some((prefix) => value.startsWith(prefix));
+}
+
+/**
+ * String methods that *inspect* a value rather than transmit it.
+ *
+ * `url.startsWith('http://')` is a guard — the literal is the thing being
+ * looked for, not an endpoint being called. Reporting it flags the security
+ * check as the vulnerability, which is exactly backwards: measured on the
+ * Interlace repo, the rule's own finding landed inside an `if` that *skips*
+ * insecure URLs.
+ */
+const INSPECTION_METHODS = new Set([
+  'startsWith',
+  'endsWith',
+  'includes',
+  'indexOf',
+  'lastIndexOf',
+  'search',
+  'match',
+  'matchAll',
+  'test',
+  'split',
+  'replace',
+  'replaceAll',
+]);
+
+/**
+ * Is this literal being examined rather than used as a destination?
+ *
+ * Two shapes count: an argument to one of the inspection methods above, and an
+ * operand of an equality/comparison expression (`protocol === 'http://'`). Both
+ * mean the code is reasoning *about* the protocol string.
+ */
+function isProtocolInspection(node: TSESTree.Node, parent: TSESTree.Node): boolean {
+  if (
+    parent.type === AST_NODE_TYPES.CallExpression &&
+    parent.arguments.includes(node as TSESTree.CallExpressionArgument) &&
+    parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+    parent.callee.property.type === AST_NODE_TYPES.Identifier &&
+    INSPECTION_METHODS.has(parent.callee.property.name)
+  ) {
+    return true;
+  }
+
+  return (
+    parent.type === AST_NODE_TYPES.BinaryExpression &&
+    COMPARISON_OPERATORS.has(parent.operator)
+  );
+}
+
+/** Operators that make their operands a comparison, not a destination. */
+const COMPARISON_OPERATORS = new Set(['===', '!==', '==', '!=', '<', '>', '<=', '>=']);
 
 export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   name: 'no-unencrypted-transmission',
@@ -206,7 +282,17 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
 
       const value = node.value;
       const text = sourceCode.getText(node);
-      
+
+      // A protocol string being tested against is not a transmission.
+      if (isProtocolInspection(node, node.parent as TSESTree.Node)) {
+        return;
+      }
+
+      // Nor is an XML namespace identifier, which is never fetched.
+      if (isNamespaceUri(value)) {
+        return;
+      }
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(text, ignorePatterns)) {
         return;

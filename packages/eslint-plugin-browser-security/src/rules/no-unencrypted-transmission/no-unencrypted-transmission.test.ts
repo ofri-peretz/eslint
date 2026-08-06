@@ -29,6 +29,18 @@ describe('no-unencrypted-transmission', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - secure protocols', noUnencryptedTransmission, {
       valid: [
+        // A protocol string being TESTED is not a transmission. Ungated, this
+        // rule flagged the security check itself — measured on the Interlace
+        // repo, the finding landed inside an `if` that skips insecure URLs.
+        `if (url.startsWith('http://')) return;`,
+      // An XML namespace is an identifier, never fetched — and every inline
+      // SVG in every React codebase carries one. Changing it to https breaks
+      // the document.
+      `const svg = <svg xmlns="http://www.w3.org/2000/svg" />;`,
+      `el.setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xlink', v);`,
+        `if (url.includes('ws://')) reject();`,
+        `const isPlain = protocol === 'http://';`,
+        `const clean = raw.replace('http://', 'https://');`,
         // HTTPS
         {
           code: 'const url = "https://api.example.com";',
