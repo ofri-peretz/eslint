@@ -20,6 +20,26 @@ When a major drops below 20% on two consecutive refreshes **and** has a successo
 
 The 20% threshold is an industry-share gate, not a date-based one — we follow where the ecosystem actually is, not where we wish it were. The forward-looking exception keeps us ahead of the upgrade wave for `n+1`.
 
+### The floor inside a supported major
+
+A supported major is declared from the **oldest minor our rules actually run
+on**, not from `x.0.0`. The share gate decides *whether* a major is in the
+range; the APIs our rules call decide *where inside it the range starts*.
+
+Today that floor is **8.40.0**, because `context.sourceCode` and
+`context.filename` — the flat-config accessors — landed in ESLint 8.40.0 and
+are `undefined` on 8.0.0–8.39.x. Our rules read them at 333 call sites across 231
+files in 22 packages, so on 8.39.x a rule can fail before it reports anything.
+`^8.0.0` therefore claimed four years of releases we have never run against
+and cannot run against.
+
+The rule this encodes: **do not widen a range past what CI exercises.** The
+version matrix installs `eslint@^8`, which resolves to the newest v8 — a
+`^8.0.0` floor is a claim with no test behind it, and a peer range is a
+promise npm shows to every consumer at install time. When a new API is
+adopted repo-wide, raise the floor to the minor that introduced it in the
+same change, or keep the old accessor alongside it.
+
 ## Current Support Matrix
 
 Snapshot from `benchmark-results/eslint-version-stats.json` (refreshed 2026-05-09):
@@ -27,7 +47,7 @@ Snapshot from `benchmark-results/eslint-version-stats.json` (refreshed 2026-05-0
 | Major | Weekly Downloads | Share | Supported? | Notes |
 |---|---|---|---|---|
 | **v9** | 76.9M | 60.41% | ✓ (gate) | Current ecosystem default |
-| **v8** | 30.9M | 24.26% | ✓ (gate) | Legacy active — above 20% gate |
+| **v8** | 30.9M | 24.26% | ✓ (gate, from 8.40.0) | Legacy active — above 20% gate. Floor is 8.40.0, the minor that added `context.sourceCode` / `context.filename` |
 | **v10** | 11.8M | 9.24% | ✓ (forward-looking) | Released 2026-02-06; the future of v9 — supported pre-emptively to keep users ahead of the upgrade wave |
 | v7 | 4.0M | 3.18% | ✗ | EOL |
 | v6 and older | 3.7M | 2.90% | ✗ | EOL |
@@ -35,7 +55,7 @@ Snapshot from `benchmark-results/eslint-version-stats.json` (refreshed 2026-05-0
 **Total weekly downloads observed:** 127.3M
 
 ### Implications today
-- Required `peerDependencies` per package: `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"`
+- Required `peerDependencies` per package: `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"`
 - Required benchmark matrix: `[v8, v9, v10]`
 - v10 is currently below the 20% gate but covered by the forward-looking exception. Re-evaluate at each refresh — once v10 crosses the gate and v8 falls below it on two consecutive refreshes, v8 becomes a deprecation candidate.
 
@@ -67,6 +87,7 @@ A supported major version must:
 2. **Be in the CI matrix** — every PR runs tests against each supported major.
 3. **Be listed in `peerDependencies`** of every published package.
 4. **Be installable as a `devDependency`** in at least one workspace package so `npm install` exercises it.
+5. **Have its declared floor exercised by CI** — the range may not start below the oldest minor the matrix installs and the rules are known to run on.
 
 Dropping support requires:
 - Two consecutive refreshes showing <20% share, OR an upstream EOL announcement
