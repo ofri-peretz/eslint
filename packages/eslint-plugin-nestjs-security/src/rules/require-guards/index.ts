@@ -7,9 +7,10 @@
 /**
  * ESLint Rule: require-guards
  * Requires @UseGuards decorator on controllers or route handlers
- * CWE-284: Improper Access Control
+ * CWE-306: Missing Authentication for Critical Function
+ * CWE-862: Missing Authorization (when a required guard is absent but others run)
  *
- * @see https://cwe.mitre.org/data/definitions/284.html
+ * @see https://cwe.mitre.org/data/definitions/306.html
  * @see https://docs.nestjs.com/guards
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -227,41 +228,55 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-guards.md',
       description:
         'Requires @UseGuards decorator on controllers or route handlers',
-      cwe: 'CWE-284',
-      cvss: 9.8,
+      // CWE-306 (Base, mapping Allowed), not CWE-284. CWE-284 is a Pillar and
+      // MITRE marks it Discouraged for real findings — "often misused in
+      // low-information vulnerability reports", which is exactly how a
+      // security linter loses a reader's trust.
+      cwe: 'CWE-306',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
       missingGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Authorization Guards',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        cwe: 'CWE-306',
+        // AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N = 7.5, and an unguarded route
+        // that only *reads* scores the same 7.5 via C:H/I:N/A:N — so 7.5 holds
+        // whichever way the handler goes. 9.8 needs C:H **and** I:H **and**
+        // A:H at once, which one missing guard does not produce; claiming it
+        // on every finding leaves no room to say when something is worse.
+        cvss: 7.5,
         description:
           'Controller/route handler {{name}} lacks @UseGuards for access control',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Add @UseGuards(AuthGuard): @UseGuards(AuthGuard) before the handler',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
       emptyGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Empty Guard List',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        cwe: 'CWE-306',
+        cvss: 7.5,
         description:
           '@UseGuards() on {{name}} declares no guard, so it enforces nothing',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Pass a guard class: @UseGuards(AuthGuard)',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
       missingRequiredGuard: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Required Guard',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        // A different weakness from the two above: the route *is* guarded, so
+        // authentication is present and only a required policy guard is
+        // absent. That is missing authorization (CWE-862), and the attacker
+        // needs privileges to reach it — PR:L rather than PR:N.
+        cwe: 'CWE-862',
+        // AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N = 6.5
+        cvss: 6.5,
         description:
           'Route handler {{name}} is guarded, but none of the required guards ({{required}}) is applied',
-        severity: 'CRITICAL',
+        severity: 'MEDIUM',
         fix: 'Add one of the required guards: @UseGuards({{firstRequired}})',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
