@@ -187,7 +187,7 @@ jobs:
     timeout-minutes: 5
     steps:
       # Shallow: vitest only, no turbo and no git range.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
