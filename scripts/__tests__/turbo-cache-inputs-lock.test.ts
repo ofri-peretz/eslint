@@ -12,7 +12,9 @@ interface TurboTask {
   cache?: boolean;
 }
 
-const turbo = JSON.parse(readFileSync(resolve(ROOT, 'turbo.json'), 'utf-8')) as {
+const turbo = JSON.parse(
+  readFileSync(resolve(ROOT, 'turbo.json'), 'utf-8'),
+) as {
   tasks: Record<string, TurboTask>;
 };
 
@@ -58,10 +60,43 @@ describe('turbo.json cache inputs', () => {
         `turbo.json tasks.${name}.inputs is an allowlist: ${JSON.stringify(task.inputs)}.\n` +
           `Files outside it do not affect the cache key, so turbo replays a stale\n` +
           `PASS after they change — a green run that proves nothing. Use\n` +
-          `["$TURBO_DEFAULT$"] (or omit \`inputs\`) instead.`
+          `["$TURBO_DEFAULT$"] (or omit \`inputs\`) instead.`,
       ).toContain('$TURBO_DEFAULT$');
     });
   }
+
+  // The `build` task legitimately keeps an allowlist — hashing every file in a
+  // workspace would rebuild on test-only edits — but the allowlist is
+  // per-package, and the program that PRODUCES dist lives at the repo root. It
+  // therefore has to be a global dependency, or nothing about it reaches any
+  // cache key.
+  //
+  // Found 2026-08-05 while adding the whitespace-strip pass: six packages came
+  // back from cache with unstripped dist, because their entries were written
+  // before the pass existed and editing build-package.ts had not invalidated
+  // them. The same hole silently covers the comment-strip pass, the .d.ts
+  // prune, and the lazy rule-barrel transform — every artifact optimisation in
+  // that file can be skipped by a stale cache hit, in CI as well as locally.
+  const BUILD_PROGRAM_DEPS = ['scripts/build-package.ts', 'scripts/lib/**'];
+
+  it('build-package.ts and its helpers are global dependencies', () => {
+    const globals = (
+      JSON.parse(readFileSync(resolve(ROOT, 'turbo.json'), 'utf-8')) as {
+        globalDependencies?: string[];
+      }
+    ).globalDependencies;
+
+    for (const dep of BUILD_PROGRAM_DEPS) {
+      expect(
+        globals,
+        `turbo.json globalDependencies is missing "${dep}".\n` +
+          `build-package.ts writes every published artifact, but it is not in\n` +
+          `any task's inputs, so editing it does not change a single cache key.\n` +
+          `Turbo then restores dist built by the OLD script and the build log\n` +
+          `never mentions the package — the optimisation is silently skipped.`,
+      ).toContain(dep);
+    }
+  });
 
   it('the lock reads a real turbo.json with real tasks', () => {
     // Anti-vacuous guard: every assertion above early-returns on a missing
@@ -73,7 +108,7 @@ describe('turbo.json cache inputs', () => {
       expect(
         turbo.tasks[name],
         `turbo.json must still have a "${name}" task — if it was renamed, ` +
-          `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`
+          `update CORRECTNESS_TASKS so the input-allowlist lock keeps covering it.`,
       ).toBeDefined();
     }
     // The DEFAULT test task must not depend on any build: vitest configs alias
@@ -99,27 +134,33 @@ describe('turbo.json cache inputs', () => {
     // explicit. A new blanket `^build` on the default task would serialise the
     // whole gate again, which is what this PR removed.
     const EXPECTED_EXCEPTIONS = new Set([
-      'docs', 'eslint-plugin-conventions', 'eslint-plugin-modernization',
-      'eslint-plugin-modularity', 'eslint-plugin-operability', 'eslint-plugin-reliability',
+      'docs',
+      'eslint-plugin-conventions',
+      'eslint-plugin-modernization',
+      'eslint-plugin-modularity',
+      'eslint-plugin-operability',
+      'eslint-plugin-reliability',
     ]);
     for (const task of ['test', 'test:coverage'] as const) {
       expect(
         turbo.tasks[task].dependsOn ?? [],
         `turbo.json "${task}" (the DEFAULT) must not dependOn a build — that ` +
           `serialises every shard behind a compile. Per-package overrides are ` +
-          `the escape hatch; see EXPECTED_EXCEPTIONS.`
+          `the escape hatch; see EXPECTED_EXCEPTIONS.`,
       ).toEqual([]);
     }
     const overrides = Object.keys(turbo.tasks)
       .filter((k) => /#test(:coverage)?$/.test(k))
       .map((k) => k.split('#')[0]);
-    const unexpected = [...new Set(overrides)].filter((p) => !EXPECTED_EXCEPTIONS.has(p));
+    const unexpected = [...new Set(overrides)].filter(
+      (p) => !EXPECTED_EXCEPTIONS.has(p),
+    );
     expect(
       unexpected,
       `these workspaces gained a per-package test build dependency without ` +
         `being listed as a known exception: ${unexpected.join(', ')}. Either ` +
         `alias their workspace deps to source in a vitest config, or add them ` +
-        `here with the reason.`
+        `here with the reason.`,
     ).toEqual([]);
   });
 });

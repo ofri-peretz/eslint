@@ -18,6 +18,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { transformSync } from 'esbuild';
 import {
   existsSync,
   mkdirSync,
@@ -315,6 +316,75 @@ if (isPluginPackage) {
         `build-package(${pkg.name}): rule barrel not recognised; rules stay eager.`,
       );
     }
+  }
+}
+
+// 3e. Strip whitespace from the shipped JavaScript.
+//
+//     tsc emits 4-space-indented output, and indentation alone is ~32% of a
+//     compiled rule file. Step 2b already removed the comments; this removes
+//     the layout. Measured on eslint-plugin-secure-coding: 448 kB -> 263 kB of
+//     src, -41%, which is most of what a full minifier would get.
+//
+//     Deliberately NOT a minifier. `minifyWhitespace` only — identifiers keep
+//     their names, string contents are untouched, and the syntax tree is not
+//     rewritten. That matters concretely: rule `meta` (messages, schema, docs
+//     URLs) is read by the docs site and `--print-config`, and mangling would
+//     also make a stack trace from inside a rule unreadable for the sake of
+//     another ~11 points. Verified on the published 3.4.3 artifact: identical
+//     lint findings, and all 28 rules' meta/messages/fixable/configs
+//     byte-identical.
+//
+//     Runs AFTER 3d on purpose — the rule-barrel transform pattern-matches
+//     tsc's emitted shape and would not match once the layout is gone.
+const collectJsFiles = (dir: string, into: string[] = []): string[] => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) collectJsFiles(p, into);
+    else if (entry.name.endsWith('.js')) into.push(p);
+  }
+  return into;
+};
+
+if (existsSync(emittedSrcDir)) {
+  // Transform everything BEFORE writing anything. Transforming and writing in
+  // one pass looks equivalent and is not: a throw on file N leaves files 1..N-1
+  // already written in stripped form, so `dist` ends up half-stripped while the
+  // catch below reports "shipping indented JS". The artifact gate would then
+  // flag the unstripped remainder and contradict the build log. Buffering costs
+  // ~2 MB for the largest package and makes the pass all-or-nothing.
+  try {
+    const files = collectJsFiles(emittedSrcDir);
+    let before = 0;
+    let after = 0;
+    const pending: { path: string; code: string }[] = [];
+
+    for (const p of files) {
+      const original = readFileSync(p, 'utf8');
+      const { code } = transformSync(original, {
+        loader: 'js',
+        minifyWhitespace: true,
+      });
+      before += Buffer.byteLength(original);
+      after += Buffer.byteLength(code);
+      pending.push({ path: p, code });
+    }
+
+    for (const { path, code } of pending) writeFileSync(path, code);
+
+    if (before > 0) {
+      const saved = (((before - after) / before) * 100).toFixed(0);
+      console.log(
+        `build-package(${pkg.name}): stripped JS whitespace — ${(before / 1024).toFixed(0)} kB -> ${(after / 1024).toFixed(0)} kB (-${saved}%).`,
+      );
+    }
+  } catch (error) {
+    // Same posture as the comment-strip pass: a degraded optimisation, not a
+    // broken build. Nothing has been written at this point, so the claim below
+    // is accurate — every .js still carries tsc's layout.
+    console.error(
+      `build-package(${pkg.name}): whitespace strip failed (${(error as Error).message}); shipping indented JS.`,
+    );
   }
 }
 
