@@ -2,9 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": [
-    "tsconfig.base.json",
+    ".markdownlint.json",
     ".oxlintrc.json",
-    ".markdownlint.json"
+    "scripts/build-package.ts",
+    "scripts/lib/**",
+    "tsconfig.base.json"
   ],
   "tasks": {
     "build": {
@@ -18,11 +20,7 @@
         "LICENSE",
         ".npmignore"
       ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**"
-      ]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "docs#test": {
       "dependsOn": ["^build"]
@@ -72,12 +70,23 @@
     },
     "lint": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", ".oxlintrc.json", ".eslintrc.*", "eslint.config.*", "package.json"],
+      "inputs": [
+        "src/**",
+        ".oxlintrc.json",
+        ".eslintrc.*",
+        "eslint.config.*",
+        "package.json"
+      ],
       "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "tsconfig.json", "tsconfig.lib.json", "package.json"],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "package.json"
+      ],
       "outputs": [".tsbuildinfo"]
     },
     "//#oxlint": {
@@ -85,7 +94,12 @@
       "outputs": []
     },
     "//#lint:md": {
-      "inputs": [".markdownlint.json", "**/*.md", "!node_modules/**", "!**/dist/**"],
+      "inputs": [
+        ".markdownlint.json",
+        "**/*.md",
+        "!node_modules/**",
+        "!**/dist/**"
+      ],
       "outputs": []
     },
     "dev": {
