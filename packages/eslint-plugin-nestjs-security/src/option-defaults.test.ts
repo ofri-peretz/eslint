@@ -106,8 +106,11 @@ const FIXTURES: Record<string, string> = {
   'no-hybrid-app-config-loss': `
     app.connectMicroservice<MicroserviceOptions>(createNestjsKafkaConfig());
   `,
+  // Needs a visible serializer, or the rule abstains before reaching the
+  // options logic this fixture exists to exercise.
   'no-res-bypass-serialization': `
     @Controller('users')
+    @UseInterceptors(ClassSerializerInterceptor)
     class UsersController {
       @Get()
       findAll(@Res() res: Response) { res.json(this.users); }

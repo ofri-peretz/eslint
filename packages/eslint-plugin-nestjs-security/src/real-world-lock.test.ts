@@ -456,7 +456,11 @@ const FIXTURES: Fixture[] = [
   },
   {
     from: 'novu',
-    what: 'a guarded route writing a domain object through @Res()',
+    what: 'a @Res() route in a controller with no serializer mounted',
+    // This lock used to expect a finding here, which was the false positive
+    // itself: novu mounts ClassSerializerInterceptor per-controller, and
+    // web-chat.controller.ts is not one of them. With no serializer over this
+    // handler there is no @Exclude() for the bypass to have defeated.
     code: `
       import { Controller, Post, Res } from '@nestjs/common';
       import { RequireAuthentication } from '../auth/framework/auth.decorator';
@@ -467,6 +471,27 @@ const FIXTURES: Fixture[] = [
         @RequireAuthentication()
         async session(@Res() res: Response) {
           res.status(200).json(await this.service.createSession());
+        }
+      }
+    `,
+    expected: {},
+  },
+  {
+    from: 'novu',
+    what: 'a @Res() route in a controller that DOES mount the serializer',
+    // integrations.controller.ts carries the interceptor at class level, so the
+    // bypass costs something here. This is the half of the pair that must keep
+    // firing — without it, the evidence gate would be indistinguishable from
+    // switching the rule off.
+    code: `
+      import { ClassSerializerInterceptor, Controller, Get, Res, UseInterceptors } from '@nestjs/common';
+
+      @Controller('integrations')
+      @UseInterceptors(ClassSerializerInterceptor)
+      export class IntegrationsController {
+        @Get('oauth')
+        async oauth(@Res() res: Response) {
+          res.status(200).json(await this.service.credentials());
         }
       }
     `,

@@ -49,6 +49,14 @@ type MessageIds = 'bypassesSerialization';
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+  /**
+   * Report even when no serializer is visible in the file.
+   *
+   * Set this when `ClassSerializerInterceptor` is registered globally in
+   * `main.ts` (`app.useGlobalInterceptors(...)`) or via `APP_INTERCEPTOR`,
+   * which this rule cannot see from a controller file. Default: false
+   */
+  assumeGlobalSerializer?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -58,6 +66,61 @@ const RESPONSE_DECORATORS = new Set(['Res', 'Response']);
 
 /** Response methods that serialize their argument into the body. */
 const BODY_WRITERS = new Set(['json', 'jsonp', 'send']);
+
+/**
+ * Extensions Express's `res.type()` resolves to something that is not JSON.
+ *
+ * Deliberately excludes `json`: `res.type('json')` names exactly the case this
+ * rule is about.
+ */
+const NON_JSON_TYPE_SHORTHANDS = new Set([
+  'html',
+  'htm',
+  'txt',
+  'text',
+  'xml',
+  'csv',
+  'css',
+  'js',
+  'pdf',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'svg',
+  'zip',
+  'bin',
+]);
+
+/**
+ * Whether any of these decorators mounts a serializer over the handler.
+ *
+ * `@SerializeOptions()` counts on its own: it is inert without
+ * `ClassSerializerInterceptor`, so its presence means one is mounted above.
+ * `@UseInterceptors()` only counts when it actually names the serializer —
+ * treating every interceptor as evidence would make a `LoggingInterceptor`
+ * enough to accuse a handler of leaking `@Exclude()`d fields.
+ */
+function mountsSerializer(decorators: readonly TSESTree.Decorator[]): boolean {
+  for (const decorator of decorators) {
+    const name = decoratorName(decorator);
+    if (name === 'SerializeOptions') return true;
+    if (name !== 'UseInterceptors') continue;
+    for (const arg of decoratorCall(decorator)?.arguments ?? []) {
+      // Both `@UseInterceptors(ClassSerializerInterceptor)` and the
+      // `new ClassSerializerInterceptor(reflector)` spelling.
+      const named =
+        arg.type === AST_NODE_TYPES.NewExpression ? arg.callee : arg;
+      if (
+        named.type === AST_NODE_TYPES.Identifier &&
+        named.name === 'ClassSerializerInterceptor'
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
   name: 'no-res-bypass-serialization',
@@ -88,6 +151,7 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          assumeGlobalSerializer: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -95,7 +159,7 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context, [options = {}]) {
-    const { allowInTests = true } = options;
+    const { allowInTests = true, assumeGlobalSerializer = false } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 
     /**
@@ -175,6 +239,18 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
+        // `JSON.stringify(x)` returns a string. Handing a string to res.send()
+        // leaves nothing for ClassSerializerInterceptor to have stripped — the
+        // serialization already happened, in the handler, by hand. novu's
+        // `res.send(JSON.stringify(template, null, 2))` was reported as a
+        // disclosure of @Exclude()d fields on a value that is a string.
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          expressionName(callee) === 'stringify' &&
+          callReceiver(callee)?.name === 'JSON'
+        ) {
+          return true;
+        }
         return (
           callee.type === AST_NODE_TYPES.MemberExpression &&
           expressionName(callee) === 'toString'
@@ -218,9 +294,15 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
                 if (
                   arg.type === AST_NODE_TYPES.Literal &&
                   typeof arg.value === 'string' &&
-                  /^(text\/|application\/(xml|xhtml|rss|atom|pdf|octet-stream)|image\/)/i.test(
+                  (/^(text\/|application\/(xml|xhtml|rss|atom|pdf|octet-stream)|image\/)/i.test(
                     arg.value,
-                  )
+                  ) ||
+                    // Express `res.type()` also takes a bare extension and runs
+                    // it through mime.lookup — `res.type('html')` is
+                    // `text/html`. Matching only full MIME types meant novu's
+                    // `res.type('html').send(buildPopupHtml(...))` was read as
+                    // a JSON response leaking @Exclude()d fields.
+                    NON_JSON_TYPE_SHORTHANDS.has(arg.value.toLowerCase()))
                 ) {
                   found = true;
                   return;
@@ -303,7 +385,24 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (!isRouteHandler(node)) return;
         // A MethodDefinition is always a ClassBody child, so this is non-null.
-        if (!isControllerClass(enclosingClass(node))) return;
+        const controller = enclosingClass(node);
+        if (!isControllerClass(controller)) return;
+
+        // The harm this rule names — "@Exclude() stops applying" — needs a
+        // serializer to have been applying in the first place. Across eight
+        // production NestJS codebases, 23 of 27 findings were in repos with no
+        // `ClassSerializerInterceptor` and no `@Exclude()` anywhere: a real
+        // pattern with no disclosure behind it. A controller file can only see
+        // its own decorators, so a globally-registered serializer needs
+        // `assumeGlobalSerializer`.
+        if (
+          !assumeGlobalSerializer &&
+          // isControllerClass is false for null, so controller is non-null.
+          !mountsSerializer(controller!.decorators) &&
+          !mountsSerializer(node.decorators)
+        ) {
+          return;
+        }
 
         const found = bareResponseParam(node);
         if (!found) return;

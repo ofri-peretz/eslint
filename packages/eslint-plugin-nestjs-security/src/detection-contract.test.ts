@@ -186,8 +186,11 @@ const PROBES: Probe[] = [
   {
     rule: 'no-res-bypass-serialization',
     what: 'an object written past ClassSerializerInterceptor (CWE-200)',
+    // The serializer has to be mounted for the bypass to cost anything — the
+    // rule requires visible evidence of one before it will accuse a handler.
     vulnerable: `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res() res: Response) { res.json(this.users.findAll()); }
@@ -195,6 +198,7 @@ const PROBES: Probe[] = [
     `,
     safe: `
       @Controller('users')
+      @UseInterceptors(ClassSerializerInterceptor)
       class UsersController {
         @Get()
         findAll(@Res({ passthrough: true }) res: Response) { return this.users.findAll(); }
