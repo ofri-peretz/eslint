@@ -121,4 +121,37 @@ describe('declared ESLint peer floor', () => {
     expect(doc).toContain(`^${MIN_ESLINT} || ^9.0.0 || ^10.0.0`);
     expect(doc).not.toContain('"eslint": "^8.0.0');
   });
+
+  /**
+   * Each package README repeats the range in a Compatibility table, and npm
+   * renders that README on the package page — for most consumers it is the
+   * *only* place they read a version requirement.
+   *
+   * These are hand-written, not generated, and the check above cannot see
+   * them: inside a markdown table the union is escaped as `\|\|`, so a grep
+   * for the plain `^8.0.0 || ^9.0.0` shape misses every one. All 29 stayed
+   * stale through the manifest fix for exactly that reason.
+   */
+  it('every package README repeats its own manifest range', () => {
+    const drift = readdirSync(PACKAGES_DIR).flatMap((dir) => {
+      const manifestPath = join(PACKAGES_DIR, dir, 'package.json');
+      const readmePath = join(PACKAGES_DIR, dir, 'README.md');
+      if (!existsSync(manifestPath) || !existsSync(readmePath)) return [];
+
+      const peer = (JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest)
+        .peerDependencies?.eslint;
+      if (!peer) return [];
+
+      // `| ESLint | \`^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0\` |`, bold label or not.
+      const row = /\|\s*(?:\*\*)?ESLint(?:\*\*)?\s*\|\s*`([^`]+)`/.exec(
+        readFileSync(readmePath, 'utf8'),
+      );
+      if (!row) return [];
+
+      const stated = row[1].replace(/\\\|/g, '|');
+      return stated === peer ? [] : [`${dir}: README "${stated}" vs manifest "${peer}"`];
+    });
+
+    expect(drift).toEqual([]);
+  });
 });
