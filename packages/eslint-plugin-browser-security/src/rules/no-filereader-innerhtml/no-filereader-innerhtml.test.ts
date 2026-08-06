@@ -19,6 +19,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
   valid: [
+    {
+      // `result` on some other object is not FileReader content.
+      code: `
+        const reader = new FileReader();
+        reader.onload = (e) => { element.innerHTML = e.target.metadata.result; };
+      `,
+    },
+
     // Safe: using textContent
     {
       code: `
@@ -66,6 +74,15 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     },
   ],
   invalid: [
+    {
+      // `result` read straight off the event object, no `.target` hop.
+      code: `
+        const reader = new FileReader();
+        reader.onload = (e) => { element.innerHTML = e.result; };
+      `,
+      errors: 1,
+    },
+
     {
       // Was a `valid` case labelled "Not a FileReader handler" — but it IS a
       // FileReader, and its payload reaches innerHTML. It only passed because

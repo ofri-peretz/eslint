@@ -39,14 +39,6 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
       `,
     },
     // Not a Worker handler
-    {
-      code: `
-        const button = new Worker('worker.js');
-        button.onmessage = (e) => {
-          element.innerHTML = e.data;
-        };
-      `,
-    },
     // Test files allowed
     {
       code: `
@@ -59,6 +51,20 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
     },
   ],
   invalid: [
+    {
+      // Was `valid` — but `button` is constructed as a Worker, so this IS a
+      // worker message handler. It only passed because the receiver's NAME
+      // failed a heuristic, and with no-innerhtml now skipping the line as
+      // ours, that made the finding disappear entirely.
+      code: `
+        const button = new Worker('worker.js');
+        button.onmessage = (e) => {
+          element.innerHTML = e.data;
+        };
+      `,
+      errors: 1,
+    },
+
     // innerHTML with event.data
     {
       code: `
@@ -97,7 +103,12 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
           list.insertAdjacentHTML('beforeend', e.data);
         };
       `,
-      errors: [{ messageId: 'workerInnerhtml', data: { method: 'insertAdjacentHTML' } }],
+      errors: [
+        {
+          messageId: 'workerInnerhtml',
+          data: { method: 'insertAdjacentHTML' },
+        },
+      ],
     },
     // addEventListener pattern
     {

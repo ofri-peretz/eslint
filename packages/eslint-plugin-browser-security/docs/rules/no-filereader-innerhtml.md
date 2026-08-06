@@ -190,7 +190,7 @@ However, **always sanitize file content** before rendering as HTML.
 ## Rule ownership
 
 This rule fires **only when the receiver is positively identified** as a `new FileReader()` in
-the same file. `X.onmessage = …` on a receiver this file cannot resolve is not
+the same file. `X.onload = …` on a receiver this file cannot resolve is not
 evidence of FileReader — it is unknown, and unknown belongs to
 [`no-innerhtml`](./no-innerhtml.md) / [`no-eval`](./no-eval.md), which report it
 without claiming a provenance they cannot prove.

@@ -96,23 +96,21 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
     /**
      * Check if we're in a Worker onmessage assignment
      */
-    function isWorkerOnmessageAssignment(
-      node: TSESTree.AssignmentExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
+    function isWorkerOnmessageAssignment(node: TSESTree.AssignmentExpression): {
+      isHandler: boolean;
+      eventParam: string | null;
+    } {
       if (
         node.left.type === AST_NODE_TYPES.MemberExpression &&
         node.left.property.type === AST_NODE_TYPES.Identifier &&
         node.left.property.name === 'onmessage'
       ) {
-        // Check if object looks like a worker
-        const objName = node.left.object.type === AST_NODE_TYPES.Identifier
-          ? node.left.object.name.toLowerCase()
-          : '';
-        if (
-          objName.includes('worker') ||
-          objName === 'w' ||
-          objName === 'wk'
-        ) {
+        // No receiver-NAME gate. `const button = new Worker('w.js')` is a
+        // Worker whatever it is called; the name check made ownership depend
+        // on spelling, and combined with no-innerhtml's skip that meant the
+        // finding was reported by nobody. The resolver below identifies the
+        // binding by construction.
+        {
           const handler = node.right;
           if (
             handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
@@ -131,9 +129,10 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
     /**
      * Check if we're in a Worker addEventListener('message')
      */
-    function isWorkerAddEventListener(
-      node: TSESTree.CallExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
+    function isWorkerAddEventListener(node: TSESTree.CallExpression): {
+      isHandler: boolean;
+      eventParam: string | null;
+    } {
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -146,25 +145,15 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           eventType.type === AST_NODE_TYPES.Literal &&
           eventType.value === 'message'
         ) {
-          // Check if object looks like a worker
-          const obj = node.callee.object;
-          if (obj.type === AST_NODE_TYPES.Identifier) {
-            const objName = obj.name.toLowerCase();
-            if (
-              objName.includes('worker') ||
-              objName === 'w' ||
-              objName === 'wk'
-            ) {
-              const callback = node.arguments[1];
-              if (
-                callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-                callback.type === AST_NODE_TYPES.FunctionExpression
-              ) {
-                const firstParam = callback.params[0];
-                if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-                  return { isHandler: true, eventParam: firstParam.name };
-                }
-              }
+          // Identified by construction, not by spelling — see the note above.
+          const callback = node.arguments[1];
+          if (
+            callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            callback.type === AST_NODE_TYPES.FunctionExpression
+          ) {
+            const firstParam = callback.params[0];
+            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
+              return { isHandler: true, eventParam: firstParam.name };
             }
           }
         }
@@ -215,7 +204,10 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (referencesEventData(node.right, eventParamName) && payloadSource(node.right) === 'worker') {
+          if (
+            referencesEventData(node.right, eventParamName) &&
+            payloadSource(node.right) === 'worker'
+          ) {
             context.report({
               node,
               messageId: 'workerInnerhtml',
@@ -251,7 +243,10 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'worker') {
+            if (
+              referencesEventData(arg, eventParamName) &&
+              payloadSource(arg) === 'worker'
+            ) {
               context.report({
                 node,
                 messageId: 'workerInnerhtml',

@@ -43,15 +43,24 @@ const DANGEROUS_METHODS = new Set(['insertAdjacentHTML', 'write', 'writeln']);
  * the value belongs to a FileReader handler; this says WHICH part.
  */
 function readsFileReaderResult(node: TSESTree.Node): boolean {
-  // Anywhere in the chain, not just the tail: `e.target.result.data` reads a
-  // property OF the file content and is still the file content.
+  // `result` must be read DIRECTLY off the event or off `event.target`.
+  // `event.target.metadata.result` is some other object's `result`, not
+  // FileReader content. Properties read on top of it still count, so
+  // `e.target.result.data` reports.
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     if (
       current.property.type === AST_NODE_TYPES.Identifier &&
       current.property.name === 'result'
     ) {
-      return true;
+      const owner = current.object;
+      if (owner.type === AST_NODE_TYPES.Identifier) return true;
+      return (
+        owner.type === AST_NODE_TYPES.MemberExpression &&
+        owner.property.type === AST_NODE_TYPES.Identifier &&
+        owner.property.name === 'target' &&
+        owner.object.type === AST_NODE_TYPES.Identifier
+      );
     }
     current = current.object;
   }

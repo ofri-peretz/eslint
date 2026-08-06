@@ -39,7 +39,8 @@ import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 /** A source whose messages are attacker-influenced, and which owns its own rule. */
-export type MessageSource = 'websocket' | 'worker' | 'filereader' | 'postmessage';
+export type MessageSource =
+  'websocket' | 'worker' | 'filereader' | 'postmessage';
 
 /** Constructor name -> the source that owns handlers on it. */
 const CONSTRUCTORS: ReadonlyMap<string, MessageSource> = new Map([
@@ -50,7 +51,13 @@ const CONSTRUCTORS: ReadonlyMap<string, MessageSource> = new Map([
 ]);
 
 /** Receivers on which `addEventListener('message')` is a postMessage listener. */
-const POSTMESSAGE_RECEIVERS = new Set(['window', 'self', 'globalThis', 'parent', 'top']);
+const POSTMESSAGE_RECEIVERS = new Set([
+  'window',
+  'self',
+  'globalThis',
+  'parent',
+  'top',
+]);
 
 /**
  * Map every `const x = new WebSocket()` style binding in the file to its source.
@@ -59,7 +66,9 @@ const POSTMESSAGE_RECEIVERS = new Set(['window', 'self', 'globalThis', 'parent',
  * construction still resolves, because the map is complete before any handler
  * is judged.
  */
-export function collectSourceBindings(program: TSESTree.Program): Map<string, MessageSource> {
+export function collectSourceBindings(
+  program: TSESTree.Program,
+): Map<string, MessageSource> {
   const bindings = new Map<string, MessageSource>();
 
   walk(program, (node) => {
@@ -73,8 +82,11 @@ export function collectSourceBindings(program: TSESTree.Program): Map<string, Me
 }
 
 /** The source a `new X()` expression constructs, if X is one we own a rule for. */
-export function constructedSource(node: TSESTree.Node | undefined): MessageSource | undefined {
-  if (node === undefined || node.type !== AST_NODE_TYPES.NewExpression) return undefined;
+export function constructedSource(
+  node: TSESTree.Node | undefined,
+): MessageSource | undefined {
+  if (node === undefined || node.type !== AST_NODE_TYPES.NewExpression)
+    return undefined;
   if (node.callee.type !== AST_NODE_TYPES.Identifier) return undefined;
   return CONSTRUCTORS.get(node.callee.name);
 }
@@ -112,27 +124,29 @@ export function receiverSource(
 export function handlerSource(
   node: TSESTree.Node,
   bindings: ReadonlyMap<string, MessageSource>,
-): { source: MessageSource; eventParam: string; handler: TSESTree.Node } | undefined {
+):
+  | { source: MessageSource; eventParam: string; handler: TSESTree.Node }
+  | undefined {
   if (node.type === AST_NODE_TYPES.AssignmentExpression) {
     if (node.left.type !== AST_NODE_TYPES.MemberExpression) return undefined;
     if (node.left.property.type !== AST_NODE_TYPES.Identifier) return undefined;
-    if (!HANDLER_PROPS.has(node.left.property.name)) return undefined;
     const source = receiverSource(node.left.object, bindings);
     if (source === undefined) return undefined;
+    if (!HANDLER_PROPS[source].has(node.left.property.name)) return undefined;
     return withHandler(source, node.right);
   }
 
   if (node.type === AST_NODE_TYPES.CallExpression) {
     if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return undefined;
-    if (node.callee.property.type !== AST_NODE_TYPES.Identifier) return undefined;
+    if (node.callee.property.type !== AST_NODE_TYPES.Identifier)
+      return undefined;
     if (node.callee.property.name !== 'addEventListener') return undefined;
     const [eventType, handler] = node.arguments;
     if (eventType?.type !== AST_NODE_TYPES.Literal) return undefined;
-    if (typeof eventType.value !== 'string' || !HANDLER_EVENTS.has(eventType.value)) {
-      return undefined;
-    }
+    if (typeof eventType.value !== 'string') return undefined;
     const source = receiverSource(node.callee.object, bindings);
     if (source === undefined) return undefined;
+    if (!HANDLER_EVENTS[source].has(eventType.value)) return undefined;
     return withHandler(source, handler);
   }
 
@@ -149,7 +163,9 @@ export function handlerSource(
 function withHandler(
   source: MessageSource,
   handler: TSESTree.Node | undefined,
-): { source: MessageSource; eventParam: string; handler: TSESTree.Node } | undefined {
+):
+  | { source: MessageSource; eventParam: string; handler: TSESTree.Node }
+  | undefined {
   if (handler === undefined) return undefined;
   if (
     handler.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
@@ -162,11 +178,29 @@ function withHandler(
   return { source, eventParam: first.name, handler };
 }
 
-/** `onmessage` / `onload` — the property names that attach a handler. */
-const HANDLER_PROPS = new Set(['onmessage', 'onload', 'onloadend']);
+/**
+ * Handler attachment points, PER SOURCE.
+ *
+ * Not one shared set. `ws.onload = (e) => eval(e.data)` is not a WebSocket
+ * message handler, but a shared set resolved it as one — and then `no-eval`
+ * skipped the value while `no-websocket-eval` (which only knows `onmessage`)
+ * never claimed it, so nobody reported it. A source only owns the attachment
+ * points it actually has.
+ */
+const HANDLER_PROPS: Readonly<Record<MessageSource, ReadonlySet<string>>> = {
+  websocket: new Set(['onmessage']),
+  worker: new Set(['onmessage']),
+  filereader: new Set(['onload', 'onloadend']),
+  postmessage: new Set(['onmessage']),
+};
 
-/** The `addEventListener` event names that carry untrusted payloads. */
-const HANDLER_EVENTS = new Set(['message', 'load', 'loadend']);
+/** The `addEventListener` event names each source carries a payload on. */
+const HANDLER_EVENTS: Readonly<Record<MessageSource, ReadonlySet<string>>> = {
+  websocket: new Set(['message']),
+  worker: new Set(['message']),
+  filereader: new Set(['load', 'loadend']),
+  postmessage: new Set(['message']),
+};
 
 /**
  * Does this expression read the payload off `eventParam`?
@@ -175,12 +209,17 @@ const HANDLER_EVENTS = new Set(['message', 'load', 'loadend']);
  * `event.data.html`, so that a sink fed a *property of* the payload is still
  * attributed to the source rather than falling through to the generic rule.
  */
-export function readsEventPayload(node: TSESTree.Node, eventParam: string): boolean {
+export function readsEventPayload(
+  node: TSESTree.Node,
+  eventParam: string,
+): boolean {
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     current = current.object;
   }
-  return current.type === AST_NODE_TYPES.Identifier && current.name === eventParam;
+  return (
+    current.type === AST_NODE_TYPES.Identifier && current.name === eventParam
+  );
 }
 
 /**
@@ -199,7 +238,11 @@ export function createPayloadResolver(
   program: TSESTree.Program,
 ): (node: TSESTree.Node) => MessageSource | undefined {
   const bindings = collectSourceBindings(program);
-  const scopes: Array<{ source: MessageSource; eventParam: string; range: [number, number] }> = [];
+  const scopes: Array<{
+    source: MessageSource;
+    eventParam: string;
+    range: [number, number];
+  }> = [];
 
   walk(program, (node) => {
     const handler = handlerSource(node, bindings);
@@ -241,5 +284,9 @@ function walk(node: TSESTree.Node, visit: (node: TSESTree.Node) => void): void {
 }
 
 function isNode(value: unknown): value is TSESTree.Node {
-  return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { type?: unknown }).type === 'string'
+  );
 }

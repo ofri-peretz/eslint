@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES } from '../ast-node-types';
 import {
   collectSourceBindings,
   constructedSource,
@@ -18,7 +19,8 @@ import {
   readsEventPayload,
 } from './message-source';
 
-const programOf = (code: string): TSESTree.Program => parser.parse(code, { range: true });
+const programOf = (code: string): TSESTree.Program =>
+  parser.parse(code, { range: true });
 
 const exprOf = (code: string): TSESTree.Node =>
   (programOf(code).body[0] as TSESTree.ExpressionStatement).expression;
@@ -36,21 +38,29 @@ const resolve = (code: string) => {
     (node): node is TSESTree.ExpressionStatement =>
       node.type === 'ExpressionStatement',
   );
-  return statement === undefined ? undefined : handlerSource(statement.expression, bindings);
+  return statement === undefined
+    ? undefined
+    : handlerSource(statement.expression, bindings);
 };
 
 describe('constructedSource', () => {
   it('names the source a constructor produces', () => {
-    expect(constructedSource(exprOf('new WebSocket("wss://x")'))).toBe('websocket');
+    expect(constructedSource(exprOf('new WebSocket("wss://x")'))).toBe(
+      'websocket',
+    );
     expect(constructedSource(exprOf('new Worker("w.js")'))).toBe('worker');
-    expect(constructedSource(exprOf('new SharedWorker("w.js")'))).toBe('worker');
+    expect(constructedSource(exprOf('new SharedWorker("w.js")'))).toBe(
+      'worker',
+    );
     expect(constructedSource(exprOf('new FileReader()'))).toBe('filereader');
   });
 
   it('is undefined for anything else', () => {
     expect(constructedSource(exprOf('new EventSource("/x")'))).toBeUndefined();
     expect(constructedSource(exprOf('makeSocket()'))).toBeUndefined();
-    expect(constructedSource(exprOf('new factories.WebSocket()'))).toBeUndefined();
+    expect(
+      constructedSource(exprOf('new factories.WebSocket()')),
+    ).toBeUndefined();
     expect(constructedSource(undefined)).toBeUndefined();
   });
 });
@@ -58,7 +68,9 @@ describe('constructedSource', () => {
 describe('collectSourceBindings', () => {
   it('binds a name to the source it was constructed from', () => {
     const bindings = collectSourceBindings(
-      programOf('const ws = new WebSocket("wss://x");\nconst r = new FileReader();'),
+      programOf(
+        'const ws = new WebSocket("wss://x");\nconst r = new FileReader();',
+      ),
     );
     expect(bindings.get('ws')).toBe('websocket');
     expect(bindings.get('r')).toBe('filereader');
@@ -66,7 +78,9 @@ describe('collectSourceBindings', () => {
 
   it('finds constructions nested inside functions', () => {
     const bindings = collectSourceBindings(
-      programOf('function connect() { const inner = new WebSocket("wss://x"); return inner; }'),
+      programOf(
+        'function connect() { const inner = new WebSocket("wss://x"); return inner; }',
+      ),
     );
     expect(bindings.get('inner')).toBe('websocket');
   });
@@ -93,7 +107,11 @@ describe('collectSourceBindings', () => {
         if (key === 'parent') continue;
         const children = Array.isArray(value) ? value : [value];
         for (const child of children) {
-          if (child && typeof child === 'object' && typeof (child as { type?: unknown }).type === 'string') {
+          if (
+            child &&
+            typeof child === 'object' &&
+            typeof (child as { type?: unknown }).type === 'string'
+          ) {
             link(child as Record<string, unknown>, node);
           }
         }
@@ -106,7 +124,9 @@ describe('collectSourceBindings', () => {
 });
 
 describe('receiverSource', () => {
-  const bindings = collectSourceBindings(programOf('const ws = new WebSocket("wss://x");'));
+  const bindings = collectSourceBindings(
+    programOf('const ws = new WebSocket("wss://x");'),
+  );
 
   it('resolves an identifier through the file bindings', () => {
     expect(receiverSource(exprOf('ws'), bindings)).toBe('websocket');
@@ -119,7 +139,9 @@ describe('receiverSource', () => {
   });
 
   it('resolves an inline construction', () => {
-    expect(receiverSource(exprOf('new Worker("w.js")'), bindings)).toBe('worker');
+    expect(receiverSource(exprOf('new Worker("w.js")'), bindings)).toBe(
+      'worker',
+    );
   });
 
   it('is undefined for a receiver it cannot identify', () => {
@@ -131,39 +153,57 @@ describe('receiverSource', () => {
 
 describe('handlerSource', () => {
   it('identifies each source by its receiver, not by the handler shape', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.onmessage = (e) => {};')).toMatchObject({
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.onmessage = (e) => {};'),
+    ).toMatchObject({
       source: 'websocket',
       eventParam: 'e',
     });
-    expect(resolve('const w = new Worker("w.js");\nw.onmessage = (e) => {};')).toMatchObject({
+    expect(
+      resolve('const w = new Worker("w.js");\nw.onmessage = (e) => {};'),
+    ).toMatchObject({
       source: 'worker',
       eventParam: 'e',
     });
-    expect(resolve('const r = new FileReader();\nr.onload = (e) => {};')).toMatchObject({
+    expect(
+      resolve('const r = new FileReader();\nr.onload = (e) => {};'),
+    ).toMatchObject({
       source: 'filereader',
       eventParam: 'e',
     });
-    expect(resolve('window.addEventListener("message", (e) => {});')).toMatchObject({
+    expect(
+      resolve('window.addEventListener("message", (e) => {});'),
+    ).toMatchObject({
       source: 'postmessage',
       eventParam: 'e',
     });
   });
 
   it('accepts addEventListener on a constructed receiver', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.addEventListener("message", (e) => {});'))
-      .toMatchObject({ source: 'websocket', eventParam: 'e' });
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener("message", (e) => {});',
+      ),
+    ).toMatchObject({ source: 'websocket', eventParam: 'e' });
   });
 
   it('accepts onloadend and the load event for FileReader', () => {
-    expect(resolve('const r = new FileReader();\nr.onloadend = (e) => {};')?.source).toBe(
-      'filereader',
-    );
-    expect(resolve('const r = new FileReader();\nr.addEventListener("load", (e) => {});')?.source)
-      .toBe('filereader');
+    expect(
+      resolve('const r = new FileReader();\nr.onloadend = (e) => {};')?.source,
+    ).toBe('filereader');
+    expect(
+      resolve(
+        'const r = new FileReader();\nr.addEventListener("load", (e) => {});',
+      )?.source,
+    ).toBe('filereader');
   });
 
   it('takes a function expression as readily as an arrow', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.onmessage = function (evt) {};')).toMatchObject({
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.onmessage = function (evt) {};',
+      ),
+    ).toMatchObject({
       source: 'websocket',
       eventParam: 'evt',
     });
@@ -172,9 +212,10 @@ describe('handlerSource', () => {
   it('resolves a handler attached above its construction', () => {
     // Bindings are collected for the whole file before anything is judged, so
     // statement order cannot change the answer.
-    expect(resolve('ws.onmessage = (e) => {};\nvar ws = new WebSocket("x");')?.source).toBe(
-      'websocket',
-    );
+    expect(
+      resolve('ws.onmessage = (e) => {};\nvar ws = new WebSocket("x");')
+        ?.source,
+    ).toBe('websocket');
   });
 
   it('is undefined when the receiver cannot be identified', () => {
@@ -183,38 +224,95 @@ describe('handlerSource', () => {
     expect(resolve('this.ws.onmessage = (e) => {};')).toBeUndefined();
     // Same rule for the addEventListener shape — a 'message' listener on an
     // unknown receiver is not evidence of a WebSocket.
-    expect(resolve('socket.addEventListener("message", (e) => {});')).toBeUndefined();
+    expect(
+      resolve('socket.addEventListener("message", (e) => {});'),
+    ).toBeUndefined();
   });
 
   it('is undefined for handler shapes that carry no payload parameter', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.onmessage = () => {};')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.onmessage = handleIt;')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.onmessage = ({ data }) => {};'))
-      .toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.onmessage = () => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.onmessage = handleIt;'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.onmessage = ({ data }) => {};',
+      ),
+    ).toBeUndefined();
+  });
+
+  it("does not accept one source's attachment point on another", () => {
+    // `ws.onload = …` is not a WebSocket message handler. A shared prop set
+    // resolved it as one, and then no-eval skipped the value while
+    // no-websocket-eval (which only knows onmessage) never claimed it — the
+    // finding belonged to nobody.
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.onload = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve('const r = new FileReader();\nr.onmessage = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener("load", (e) => {});',
+      ),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const r = new FileReader();\nr.addEventListener("message", (e) => {});',
+      ),
+    ).toBeUndefined();
   });
 
   it('is undefined for a property or event that is not a handler', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.onerror = (e) => {};')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.addEventListener("close", (e) => {});'))
-      .toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.addEventListener(evt, (e) => {});'))
-      .toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.addEventListener(1, (e) => {});'))
-      .toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.onerror = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener("close", (e) => {});',
+      ),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener(evt, (e) => {});',
+      ),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener(1, (e) => {});',
+      ),
+    ).toBeUndefined();
   });
 
   it('is undefined when the attached property is not a plain name', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws["onmessage"] = (e) => {};')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws["addEventListener"]("message", (e) => {});'))
-      .toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws["onmessage"] = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws["addEventListener"]("message", (e) => {});',
+      ),
+    ).toBeUndefined();
   });
 
   it('is undefined for shapes that are not an attachment at all', () => {
-    expect(resolve('const ws = new WebSocket("x");\nws.send("hi");')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws[key] = (e) => {};')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nsend("hi");')).toBeUndefined();
-    expect(resolve('const ws = new WebSocket("x");\nws.addEventListener("message");'))
-      .toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws.send("hi");'),
+    ).toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nws[key] = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve('const ws = new WebSocket("x");\nsend("hi");'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws.addEventListener("message");',
+      ),
+    ).toBeUndefined();
     expect(resolve('const ws = new WebSocket("x");\nx = 1;')).toBeUndefined();
     expect(resolve('const ws = new WebSocket("x");\n1;')).toBeUndefined();
   });
@@ -228,9 +326,9 @@ describe('createPayloadResolver', () => {
     let value: TSESTree.Node | undefined;
     const find = (node: TSESTree.Node): void => {
       if (
-        node.type === 'AssignmentExpression' &&
-        node.left.type === 'MemberExpression' &&
-        node.left.property.type === 'Identifier' &&
+        node.type === AST_NODE_TYPES.AssignmentExpression &&
+        node.left.type === AST_NODE_TYPES.MemberExpression &&
+        node.left.property.type === AST_NODE_TYPES.Identifier &&
         node.left.property.name === 'innerHTML' &&
         value === undefined
       ) {
@@ -239,7 +337,12 @@ describe('createPayloadResolver', () => {
       for (const [key, raw] of Object.entries(node)) {
         if (key === 'parent') continue;
         for (const child of Array.isArray(raw) ? raw : [raw]) {
-          if (child && typeof child === 'object' && typeof child.type === 'string') find(child);
+          if (
+            child &&
+            typeof child === 'object' &&
+            typeof child.type === 'string'
+          )
+            find(child);
         }
       }
     };
@@ -249,34 +352,48 @@ describe('createPayloadResolver', () => {
 
   it('attributes a sink to the source whose handler encloses it', () => {
     expect(
-      sinkSource('const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = e.data; };'),
+      sinkSource(
+        'const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = e.data; };',
+      ),
     ).toBe('websocket');
     expect(
-      sinkSource('const w = new Worker("w.js");\nw.onmessage = (e) => { el.innerHTML = e.data; };'),
+      sinkSource(
+        'const w = new Worker("w.js");\nw.onmessage = (e) => { el.innerHTML = e.data; };',
+      ),
     ).toBe('worker');
     expect(
-      sinkSource('const r = new FileReader();\nr.onload = (e) => { el.innerHTML = e.target.result; };'),
+      sinkSource(
+        'const r = new FileReader();\nr.onload = (e) => { el.innerHTML = e.target.result; };',
+      ),
     ).toBe('filereader');
     expect(
-      sinkSource('window.addEventListener("message", (e) => { el.innerHTML = e.data; });'),
+      sinkSource(
+        'window.addEventListener("message", (e) => { el.innerHTML = e.data; });',
+      ),
     ).toBe('postmessage');
   });
 
   it('is undefined for a sink that reads something other than the payload', () => {
     // Inside a handler, but not fed by it — the generic rule owns this.
     expect(
-      sinkSource('const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = other; };'),
+      sinkSource(
+        'const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = other; };',
+      ),
     ).toBeUndefined();
   });
 
   it('is undefined for a sink outside any handler', () => {
-    expect(sinkSource('const ws = new WebSocket("x");\nel.innerHTML = userInput;')).toBeUndefined();
+    expect(
+      sinkSource('const ws = new WebSocket("x");\nel.innerHTML = userInput;'),
+    ).toBeUndefined();
   });
 
   it('is undefined when the receiver cannot be identified', () => {
     // The mis-attribution case, end to end: this is exactly the shape that used
     // to be reported as WebSocket message data.
-    expect(sinkSource('socket.onmessage = (e) => { el.innerHTML = e.data; };')).toBeUndefined();
+    expect(
+      sinkSource('socket.onmessage = (e) => { el.innerHTML = e.data; };'),
+    ).toBeUndefined();
   });
 
   it('attributes a nested handler to the innermost source', () => {
@@ -292,14 +409,18 @@ describe('createPayloadResolver', () => {
   });
 
   it('ignores an attachment whose handler is not an inline function', () => {
-    expect(sinkSource('const ws = new WebSocket("x");\nws.onmessage = handler;')).toBe('NO SINK');
+    expect(
+      sinkSource('const ws = new WebSocket("x");\nws.onmessage = handler;'),
+    ).toBe('NO SINK');
   });
 });
 
 describe('readsEventPayload', () => {
   it('matches a read off the handler parameter at any depth', () => {
     expect(readsEventPayload(exprOf('event.data'), 'event')).toBe(true);
-    expect(readsEventPayload(exprOf('event.target.result'), 'event')).toBe(true);
+    expect(readsEventPayload(exprOf('event.target.result'), 'event')).toBe(
+      true,
+    );
     expect(readsEventPayload(exprOf('event.data.html'), 'event')).toBe(true);
     expect(readsEventPayload(exprOf('event'), 'event')).toBe(true);
   });
