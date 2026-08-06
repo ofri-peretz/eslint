@@ -849,3 +849,35 @@ ruleTester.run('require-guards', requireGuards, {
     },
   ],
 });
+
+/**
+ * The point of the change these accompany was the labels themselves, and
+ * `{ messageId: 'missingGuards' }` asserts only a key lookup — it passes
+ * whether the message says CWE-306 or CWE-284, 7.5 or 9.8. Revert the metadata
+ * and every RuleTester case above still passes. These fail.
+ */
+describe('reported severity metadata', () => {
+  it('reports missing authentication as CWE-306, not the CWE-284 pillar', () => {
+    for (const id of ['missingGuards', 'emptyGuards'] as const) {
+      expect(requireGuards.meta.messages[id]).toContain('CWE-306');
+      expect(requireGuards.meta.messages[id]).toContain('7.5');
+      expect(requireGuards.meta.messages[id]).not.toContain('CWE-284');
+      expect(requireGuards.meta.messages[id]).not.toContain('9.8');
+    }
+  });
+
+  it('reports a missing *required* guard as CWE-862 at a lower score', () => {
+    // Other guards do run here, so the caller is authenticated and only the
+    // one specific authorization check is absent — a different weakness, and
+    // PR:L rather than PR:N.
+    expect(requireGuards.meta.messages.missingRequiredGuard).toContain(
+      'CWE-862',
+    );
+    expect(requireGuards.meta.messages.missingRequiredGuard).toContain('6.5');
+  });
+
+  it('agrees with the rule-level docs metadata', () => {
+    expect(requireGuards.meta.docs.cwe).toBe('CWE-306');
+    expect(requireGuards.meta.docs.cvss).toBe(7.5);
+  });
+});
