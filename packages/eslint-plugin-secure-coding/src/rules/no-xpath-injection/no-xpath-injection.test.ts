@@ -27,6 +27,13 @@ describe('no-xpath-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe XPath operations', noXpathInjection, {
       valid: [
+        // A slash is a path separator in every language. The old heuristic was
+        // `includes('/') || includes('[')`, which matched every path join, URL
+        // build and array index — this exact line reported CWE-643, measured on
+        // the Interlace repo.
+        `function rel(fullPath, baseDir) { return fullPath.replace(baseDir + '/', ''); }`,
+        `function u(base, id) { return base + '/api/' + id; }`,
+        `function k(arr, i) { return 'items[' + i + ']'; }`,
         // Safe XPath literals
         {
           code: 'const result = document.evaluate("/users/user[@id=\'123\']", document);',

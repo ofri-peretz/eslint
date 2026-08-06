@@ -56,6 +56,18 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
+/**
+ * Syntax that only appears in an XPath expression.
+ *
+ * A lone `/` is a path separator in every language; these are not. Covered:
+ * the descendant axis (`//`), an attribute predicate (`[@id=`), any explicit
+ * axis (`child::`), the XPath node tests and functions (`text()`, `node()`,
+ * `contains(`, `starts-with(`, `local-name(`, `position()`), and a location
+ * step carrying a predicate (`/user[`), which is the form that has no `//`.
+ */
+const XPATH_SYNTAX =
+  /\/\/|\[@|::|\btext\(\)|\bnode\(\)|\bcontains\(|\bstarts-with\(|\blocal-name\(|\bposition\(\)|\/[A-Za-z_*][\w.-]*\[/;
+
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xpath-injection',
   meta: {
@@ -515,8 +527,13 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
         const fullText = sourceCode.getText(node);
 
-        // Check if this looks like XPath construction
-        if (!fullText.includes('/') && !fullText.includes('[')) {
+        // Check if this looks like XPath construction.
+        //
+        // `includes('/') || includes('[')` was the old test, and it matched
+        // every path join, URL build and array index in existence —
+        // `fullPath.replace(baseDir + '/', '')` reported CWE-643, measured on
+        // this monorepo. XPath has syntax of its own; require some of it.
+        if (!XPATH_SYNTAX.test(fullText)) {
           return;
         }
 
@@ -559,6 +576,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
 
         const varNameLower = varName.toLowerCase();
+        // `path` is kept, reluctantly. It names a filesystem path far more
+        // often than an XPath expression, and it is why `let path = template;`
+        // still reports here. But dropping it also stopped
+        // `let searchPath = userInput;` firing — by name alone the two are
+        // indistinguishable, so removing it trades a false positive for a
+        // false negative. Separating them needs the declaration's *use* to
+        // reach an XPath sink, which is the data-flow analysis these rules
+        // avoid; the concatenation path above is where the real gate lives.
         if (!varNameLower.includes('xpath') && !varNameLower.includes('query') && !varNameLower.includes('path')) {
           return;
         }
