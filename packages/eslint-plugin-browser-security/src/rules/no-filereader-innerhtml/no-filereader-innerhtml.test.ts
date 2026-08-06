@@ -38,15 +38,6 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
         };
       `,
     },
-    // Not a FileReader handler
-    {
-      code: `
-        const button = new FileReader();
-        button.onload = (e) => {
-          element.innerHTML = e.target.result;
-        };
-      `,
-    },
     // innerHTML outside handler
     {
       code: `
@@ -75,6 +66,22 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
     },
   ],
   invalid: [
+    {
+      // Was a `valid` case labelled "Not a FileReader handler" — but it IS a
+      // FileReader, and its payload reaches innerHTML. It only passed because
+      // the receiver was named `button`, which failed the old name heuristic.
+      // That heuristic was narrower than the ownership resolver, so
+      // no-innerhtml skipped this line as ours while we stayed silent, and the
+      // finding disappeared entirely.
+      code: `
+        const button = new FileReader();
+        button.onload = (e) => {
+          element.innerHTML = e.target.result;
+        };
+      `,
+      errors: 1,
+    },
+
     // Direct innerHTML with e.target.result
     {
       code: `
@@ -123,7 +130,12 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
           list.insertAdjacentHTML('beforeend', e.target.result);
         };
       `,
-      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'insertAdjacentHTML' } }],
+      errors: [
+        {
+          messageId: 'unsafeInnerhtml',
+          data: { method: 'insertAdjacentHTML' },
+        },
+      ],
     },
     // fr variable name (common abbreviation)
     {

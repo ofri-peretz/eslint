@@ -87,7 +87,9 @@ export const noEval = createRule<RuleOptions, MessageIds>({
           },
           allowFunctionConstructor: {
             type: 'boolean',
-            default: false, description: 'Allow `new Function(...)` while still reporting `eval()`'
+            default: false,
+            description:
+              'Allow `new Function(...)` while still reporting `eval()`',
           },
         },
         additionalProperties: false,
@@ -124,7 +126,8 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         // A source-specific rule owns this call if any argument is a payload it
         // can attribute (see no-websocket-eval). Complementary by construction:
         // whatever it claims, we skip; whatever it cannot, we report.
-        if (node.arguments.some((arg) => payloadSource(arg) !== undefined)) return;
+        if (node.arguments.some((arg) => payloadSource(arg) !== undefined))
+          return;
 
         // Check for eval(), execScript()
         if (callee.type === 'Identifier') {
@@ -205,6 +208,14 @@ export const noEval = createRule<RuleOptions, MessageIds>({
 
       // Check for new Function()
       NewExpression(node: TSESTree.NewExpression) {
+        // Same ownership gate as CallExpression below. Without it
+        // `new Function(event.data)` in a WebSocket handler reports from BOTH
+        // no-websocket-eval and here — the exact double-report this rule pair
+        // exists to prevent, and the complement only holds if every reporting
+        // path asks the question.
+        if (node.arguments.some((arg) => payloadSource(arg) !== undefined))
+          return;
+
         if (allowFunctionConstructor) {
           return;
         }

@@ -111,24 +111,21 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         (node.left.property.name === 'onload' ||
           node.left.property.name === 'onloadend')
       ) {
-        // Check if object looks like a FileReader (reader, fileReader, fr, etc.)
-        const objName = node.left.object.type === AST_NODE_TYPES.Identifier
-          ? node.left.object.name.toLowerCase()
-          : '';
+        // No receiver-NAME heuristic here. It used to require the name to
+        // contain 'reader'/'fr'/'r', which is narrower than the resolver that
+        // now decides ownership: `const f = new FileReader()` failed the name
+        // check while the resolver still attributed the payload to filereader,
+        // so no-innerhtml skipped it and THIS rule never fired — the finding
+        // vanished. The gate below (payloadSource === 'filereader') resolves
+        // the binding by construction, which is the correct question.
+        const handler = node.right;
         if (
-          objName.includes('reader') ||
-          objName.includes('fr') ||
-          objName === 'r'
+          handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          handler.type === AST_NODE_TYPES.FunctionExpression
         ) {
-          const handler = node.right;
-          if (
-            handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            handler.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = handler.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
+          const firstParam = handler.params[0];
+          if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
+            return { isHandler: true, eventParam: firstParam.name };
           }
         }
       }
@@ -138,9 +135,10 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
     /**
      * Check if we're in a FileReader addEventListener('load')
      */
-    function isFileReaderAddEventListener(
-      node: TSESTree.CallExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
+    function isFileReaderAddEventListener(node: TSESTree.CallExpression): {
+      isHandler: boolean;
+      eventParam: string | null;
+    } {
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -215,7 +213,10 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (referencesFileReaderResult(node.right, eventParamName) && payloadSource(node.right) === 'filereader') {
+          if (
+            referencesFileReaderResult(node.right, eventParamName) &&
+            payloadSource(node.right) === 'filereader'
+          ) {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
@@ -258,7 +259,10 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (referencesFileReaderResult(arg, eventParamName) && payloadSource(arg) === 'filereader') {
+            if (
+              referencesFileReaderResult(arg, eventParamName) &&
+              payloadSource(arg) === 'filereader'
+            ) {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',

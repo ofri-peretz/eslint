@@ -19,6 +19,16 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-eval', noEval, {
   valid: [
+    // `new Function(...)` reports through the NewExpression visitor, which did
+    // not consult the ownership gate — so this line came back from BOTH
+    // no-websocket-eval and here. The complement only holds if every reporting
+    // path asks the question.
+    {
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.onmessage = (event) => { const f = new Function(event.data); f(); };
+      `,
+    },
     // Owned by no-websocket-eval — see the note in no-innerhtml's tests.
     {
       code: `
