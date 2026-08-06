@@ -504,7 +504,7 @@ const rule = createRule<[], 'messageId'>({
 
 | Package                   | Version                       |
 | ------------------------- | ----------------------------- |
-| ESLint                    | ^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0 |
+| ESLint                    | ^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0 |
 | TypeScript                | >=4.0.0                       |
 | @typescript-eslint/parser | >=6.0.0                       |
 | @typescript-eslint/utils  | ^8.0.0                        |

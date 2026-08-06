@@ -64,7 +64,7 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "@anthropic-ai/sdk": ">=0.1.0 <1.0.0",
     "@anthropic-ai/claude-agent-sdk": ">=0.1.0 <1.0.0"
   },
