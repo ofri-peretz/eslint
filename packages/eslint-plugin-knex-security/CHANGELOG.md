@@ -1,5 +1,30 @@
 # eslint-plugin-knex-security
 
+## 0.4.1
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+- Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:
+  - @interlace/eslint-devkit@1.10.0
+
 ## 0.4.0
 
 ### Minor Changes
