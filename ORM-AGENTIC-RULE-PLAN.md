@@ -153,7 +153,7 @@ SDKs and the MCP SDK. No rule may fire on both a Vercel-AI call and a raw-SDK ca
 | A2 | `no-browser-api-key-exposure` | CWE-522 | error | **Shipped openai + anthropic** — factory `createBrowserEscapeHatchRule`. **Gemini excluded**, see §5.4. |
 | A3 | `no-untrusted-content-in-prompt` | CWE-1427 | error | **Shipped all three** (#406) — factory `createSystemPromptInjectionRule`. Gated on the qualified member path (`messages.create`, `completions.create`, `generateContent`), not the leaf method: gating on `create` made one line report twice, measured. A bare `generateText(...)` has no member path, which is what keeps `vercel-ai-security` out. |
 | A4 | `no-unsafe-output-handling` | CWE-94 / CWE-78 | error | Model output flowing into `eval`/`exec`/`innerHTML`/a query sink. The core agentic risk: the model is an untrusted source. **Blocked on §5.6** — every sink it targets is already owned, and the existing source-specific sink rules double-reported. Ships only under the ownership rule #409 establishes. |
-| A5 | `no-sensitive-in-prompt` | CWE-200 | error | PII/secrets shipped to a third-party inference API. |
+| A5 | `no-sensitive-in-prompt` | CWE-200 | error | PII/secrets shipped to a third-party inference API. **Next rule to build** — the only W3 item not shipped or blocked. |
 | A6 | `require-max-tokens` | CWE-770 | warn | Unbounded generation — cost DoS. |
 | A7 | `require-request-timeout` | CWE-400 | warn | No timeout/abort signal on an inference call. |
 | A8 | `require-output-validation` | CWE-20 | warn | Structured output consumed without schema validation. |
@@ -214,7 +214,7 @@ profile on the corpus.
 | W3 | **A1 shipped** (#402): `no-hardcoded-api-key` across openai / anthropic / gemini via `createSdkApiKeyRule`; gemini also covers the legacy positional-key client. **A2 shipped** for openai + anthropic via `createBrowserEscapeHatchRule` — gemini has no equivalent flag, see §5.4. **A3 shipped all three** (#406) via `createSystemPromptInjectionRule`; a follow-up commit fixed two rule docs that named the wrong option and locked the three request paths that had shipped untested. **A4 blocked on §5.6**, A5 not started. |
 | W4 | not started |
 | W5 | not started |
-| W6 | not started |
+| W6 | **Method found early, see §5.7.** The FP half of W6 no longer needs the corpus: running every published rule at `error` over this monorepo measures false positives directly, and found six real ones in shipped rules on the first run. Two fixed (#415, #416), two confirmed and queued. The corpus is still required for the TP/recall half and for preset promotion. |
 
 ### 5.1 Findings that changed the plan
 
@@ -431,3 +431,54 @@ Decide that on the corpus in W6, not in advance.
 alone. A per-rule suite cannot see a duplicate finding; only running two rules
 over one file can. Any plugin with a generic rule *and* a specific rule on the
 same sink is a candidate — check `secure-coding` and `node-security` next.
+
+### 5.7 The dogfood sweep — W6's FP half, available now
+
+Ofri's method, 2026-08-06: **enable every published rule at `error`, run ESLint
+over this monorepo, triage what comes out.** Standing bar he set alongside it:
+*"we are not accepting false positives — if we have them, you have to mitigate
+them."*
+
+First run: 30 plugins, 376 rules, **30,531 findings across 1,706 files**, 3,563
+of them from security plugins. The config must live at the repo root (dependency
+resolution), compose each plugin's `strict` preset from
+`packages/*/dist/src/index.js`, force every rule to `error`, and ignore
+`benchmarks/**` and `**/fixtures/**` — that corpus is deliberately vulnerable and
+is what the detectors are graded against.
+
+**What it found, in one run, in rules that are shipped and in `recommended`:**
+
+| rule | fires on | state |
+|---|---|---|
+| `mongodb-security/require-projection` | `[1,2,3].find(x => x===2)` — any `Array.prototype.find` | fixed #415 |
+| `mongodb-security/require-lean-queries` | same | fixed #415 |
+| `browser-security/no-unencrypted-transmission` | `url.startsWith('http://')` — the security *check*; and `xmlns="http://www.w3.org/2000/svg"` on every inline SVG | fixed #416 |
+| `node-security/no-timing-unsafe-compare` | `if (firstKey !== undefined)` | queued |
+| `secure-coding/no-xxe-injection` | `JSON.parse(fs.readFileSync(…))` — JSON, not XML | queued |
+| `secure-coding/no-xpath-injection` | `fullPath.replace(baseDir + '/', '')` | queued |
+
+**Three things this changes.**
+
+1. **W6's FP measurement can start now.** It does not need the corpus, a
+   benchmark harness, or a scoring rubric — it needs one config file and a
+   triage pass. The corpus is still required for the *recall* half (a sweep
+   cannot see a false negative: a rule that reports nothing is
+   indistinguishable from a rule with nothing to find) and for preset promotion.
+2. **Fix pattern: look for the gate the plugin already has.** `mongodb-security`
+   shipped `utils/receiver.ts` precisely because "method names alone are hopeless
+   discriminators"; five rules used it, the two FP rules never adopted it. Place
+   such a gate *after* the cheap syntax checks — in front, it makes the earlier
+   `MemberExpression` check unreachable and coverage drops below 100.
+3. **Triage discipline — do not call everything an FP.** ~28% of security
+   findings sit in `*.test.ts` / `__tests__/`, and most are the rule correctly
+   matching its pattern where it does not matter
+   (`detect-non-literal-fs-filename`, 988, already demoted to `warn` in #401).
+   That is preset and `allowInTests` tiering. Likewise, a detector's own source
+   necessarily contains the strings it detects. Neither is a detection defect,
+   and counting them inflates the number in the direction that feels productive.
+
+**Why per-rule suites structurally cannot find these.** Every rule is tested
+alone, against code written for that rule. An FP only appears when a rule meets
+code that was never about it — which a whole-repo sweep supplies and a fixture
+never will. Same blindness as §5.6: two rules over one file is the only way to
+see a duplicate finding.
