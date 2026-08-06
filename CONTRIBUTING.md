@@ -125,7 +125,7 @@ Add any other context or screenshots about the feature request here.
 
 ### ESLint Version Support
 
-We support **ESLint v8, v9, and v10** — every package in `packages/*` declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency. New code, new rules, and new packages must keep this range valid.
+We support **ESLint v8, v9, and v10** — every package in `packages/*` declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` as a peer dependency. New code, new rules, and new packages must keep this range valid.
 
 The policy and current ecosystem-share data are in [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md). Refresh the data anytime with `npm run stats:eslint-versions`.
 
