@@ -61,9 +61,7 @@ const DESCRIPTIONS: Record<string, string> = {
     // jwt / pg are the deprecated pre-rename names. They keep their entries so
     // the generator can still regenerate their READMEs while the deprecation
     // ages out; the -security names below are the ones that ship.
-    'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
     'eslint-plugin-jwt-security': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
-    'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
     'eslint-plugin-postgresql-security': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
     'eslint-plugin-sequelize-security': 'Security rules for the Sequelize ORM (SQL injection prevention in raw queries).',
     'eslint-plugin-mysql-security': 'Security rules for mysql2 / mysql (SQL injection prevention in raw queries).',

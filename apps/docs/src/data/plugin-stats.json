@@ -41,28 +41,12 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-jwt",
-      "rules": 13,
-      "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
-      "category": "security",
-      "version": "2.2.13",
-      "published": false
-    },
-    {
       "name": "eslint-plugin-jwt-security",
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
       "version": "2.3.1",
       "published": true
-    },
-    {
-      "name": "eslint-plugin-pg",
-      "rules": 13,
-      "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
-      "category": "security",
-      "version": "1.4.13",
-      "published": false
     },
     {
       "name": "eslint-plugin-postgresql-security",
@@ -259,6 +243,6 @@
   ],
   "totalRules": 465,
   "totalPlugins": 30,
-  "allPluginsCount": 32,
-  "generatedAt": "2026-08-05"
+  "allPluginsCount": 30,
+  "generatedAt": "2026-08-06"
 }

@@ -30,7 +30,7 @@ const REPO_ROOT = join(__dirname, '..', '..');
 /** A plugin with no per-rule value re-exports, so every rule can be deferred. */
 const FULLY_LAZY = 'eslint-plugin-node-security';
 /** Re-exports all 13 rule objects as public API — those requires must survive. */
-const RE_EXPORTING = 'eslint-plugin-jwt';
+const RE_EXPORTING = 'eslint-plugin-jwt-security';
 
 const entryFor = (pkg: string): string =>
   join(REPO_ROOT, 'packages', pkg, 'dist', 'src', 'index.js');
