@@ -36,6 +36,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { transformSync } from 'esbuild';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,28 +94,44 @@ const STRIP_SENTINEL = 'Copyright (c) 2025 Ofri Peretz';
  *
  * Indentation alone is ~32% of a compiled rule file, so build-package.ts step
  * 3e re-emits every .js through esbuild's `minifyWhitespace`. Measured across
- * the ecosystem that is 3233 kB -> 2023 kB. Nothing else would notice if that
+ * the ecosystem that is 3233 kB -> 2063 kB. Nothing else would notice if that
  * step were removed or silently failed — the build still succeeds and the
  * package still works, just 37% fatter.
  *
- * The naive check ("any line starting with spaces") false-positives the same
- * way the comment-counter did: a multi-line template literal inside a rule's
- * message or fixture legitimately contains indented lines, and stripping
- * whitespace never touches string contents. So this requires BOTH a high
- * absolute count and a high proportion — tsc indents nearly every line of a
- * real module, while a stripped file's only indented lines are inside string
- * literals.
+ * Tested by IDEMPOTENCY rather than by looking at the text: re-run the exact
+ * transform the build applies, and see whether it still finds anything to
+ * remove. A stripped file is a fixed point; an unstripped one collapses.
+ *
+ * Every text heuristic considered here was fragile in the same way the
+ * comment-counter was. "Any indented line" false-positives on a rule whose
+ * message or fixture is a multi-line template literal, because stripping never
+ * touches string contents. Adding a proportion guard does not fix it either:
+ * stripping collapses the code onto very few lines, so a 25-line indented
+ * literal can dominate the *stripped* file's line count and trip a ratio test
+ * on a correctly-stripped file. Re-running the transform has no such edge —
+ * the literal is identical on both sides and cancels out.
+ *
+ * Threshold is a margin, not a guess: across 40 real rule files, re-stripping
+ * an already-stripped file changed it by 0%, while stripping an indented one
+ * removed 27-41%.
  */
-const INDENT_MIN_LINES = 20;
-const INDENT_MIN_RATIO = 0.25;
+const RESTRIP_SHRINK_LIMIT = 0.05;
 const INDENTED_LINE = {
   test(source: string): boolean {
-    const lines = source.split('\n');
-    if (lines.length < INDENT_MIN_LINES) return false;
-    const indented = lines.filter((l) => /^ {2,}\S/.test(l)).length;
+    if (source.length === 0) return false;
+    let restripped: string;
+    try {
+      restripped = transformSync(source, {
+        loader: 'js',
+        minifyWhitespace: true,
+      }).code;
+    } catch {
+      // Not parseable as plain JS — nothing this gate can conclude. The build
+      // would have failed long before shipping something unparseable.
+      return false;
+    }
     return (
-      indented >= INDENT_MIN_LINES &&
-      indented / lines.length >= INDENT_MIN_RATIO
+      (source.length - restripped.length) / source.length > RESTRIP_SHRINK_LIMIT
     );
   },
 };

@@ -337,16 +337,29 @@ if (isPluginPackage) {
 //
 //     Runs AFTER 3d on purpose — the rule-barrel transform pattern-matches
 //     tsc's emitted shape and would not match once the layout is gone.
-const stripJsWhitespace = (dir: string): { before: number; after: number } => {
-  let before = 0;
-  let after = 0;
+const collectJsFiles = (dir: string, into: string[] = []): string[] => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const nested = stripJsWhitespace(p);
-      before += nested.before;
-      after += nested.after;
-    } else if (entry.name.endsWith('.js')) {
+    if (entry.isDirectory()) collectJsFiles(p, into);
+    else if (entry.name.endsWith('.js')) into.push(p);
+  }
+  return into;
+};
+
+if (existsSync(emittedSrcDir)) {
+  // Transform everything BEFORE writing anything. Transforming and writing in
+  // one pass looks equivalent and is not: a throw on file N leaves files 1..N-1
+  // already written in stripped form, so `dist` ends up half-stripped while the
+  // catch below reports "shipping indented JS". The artifact gate would then
+  // flag the unstripped remainder and contradict the build log. Buffering costs
+  // ~2 MB for the largest package and makes the pass all-or-nothing.
+  try {
+    const files = collectJsFiles(emittedSrcDir);
+    let before = 0;
+    let after = 0;
+    const pending: { path: string; code: string }[] = [];
+
+    for (const p of files) {
       const original = readFileSync(p, 'utf8');
       const { code } = transformSync(original, {
         loader: 'js',
@@ -354,15 +367,11 @@ const stripJsWhitespace = (dir: string): { before: number; after: number } => {
       });
       before += Buffer.byteLength(original);
       after += Buffer.byteLength(code);
-      writeFileSync(p, code);
+      pending.push({ path: p, code });
     }
-  }
-  return { before, after };
-};
 
-if (existsSync(emittedSrcDir)) {
-  try {
-    const { before, after } = stripJsWhitespace(emittedSrcDir);
+    for (const { path, code } of pending) writeFileSync(path, code);
+
     if (before > 0) {
       const saved = (((before - after) / before) * 100).toFixed(0);
       console.log(
@@ -371,7 +380,8 @@ if (existsSync(emittedSrcDir)) {
     }
   } catch (error) {
     // Same posture as the comment-strip pass: a degraded optimisation, not a
-    // broken build. Ship the readable JS rather than block every local build.
+    // broken build. Nothing has been written at this point, so the claim below
+    // is accurate — every .js still carries tsc's layout.
     console.error(
       `build-package(${pkg.name}): whitespace strip failed (${(error as Error).message}); shipping indented JS.`,
     );
