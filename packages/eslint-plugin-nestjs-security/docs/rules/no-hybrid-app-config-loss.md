@@ -4,8 +4,8 @@ description: Detect connectMicroservice() without inheritAppConfig, which silent
 tags: ['security', 'nestjs']
 category: security
 severity: high
-cwe: CWE-284
-owasp: 'A01:2021'
+cwe: CWE-20
+owasp: 'A03:2021'
 autofix: false
 ---
 
@@ -39,9 +39,9 @@ anywhere are inside NestJS's own framework and its tests.
 
 ## OWASP Mapping
 
-- **OWASP Top 10 2021**: A01:2021 - Broken Access Control
-- **CWE**: CWE-284 - Improper Access Control
-- **CVSS**: 7.5 (High)
+- **OWASP Top 10 2021**: A03:2021 - Injection
+- **CWE**: CWE-20 - Improper Input Validation
+- **CVSS**: 5.3 (Medium)
 
 ## ❌ Incorrect
 
