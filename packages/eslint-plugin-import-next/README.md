@@ -111,7 +111,7 @@ Detection parity is checked per shape before any timing is trusted, and every nu
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.

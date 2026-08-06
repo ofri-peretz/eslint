@@ -37,8 +37,16 @@
       "rules": 16,
       "description": "ESLint plugin for MongoDB and Mongoose security — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "8.3.4",
+      "version": "8.3.5",
       "published": true
+    },
+    {
+      "name": "eslint-plugin-jwt",
+      "rules": 13,
+      "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
+      "category": "security",
+      "version": "2.2.14",
+      "published": false
     },
     {
       "name": "eslint-plugin-jwt-security",
@@ -47,6 +55,14 @@
       "category": "security",
       "version": "2.3.2",
       "published": true
+    },
+    {
+      "name": "eslint-plugin-pg",
+      "rules": 13,
+      "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
+      "category": "security",
+      "version": "1.4.14",
+      "published": false
     },
     {
       "name": "eslint-plugin-postgresql-security",
@@ -165,7 +181,7 @@
       "rules": 9,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "2.1.1",
+      "version": "2.2.0",
       "published": true
     },
     {
@@ -243,6 +259,6 @@
   ],
   "totalRules": 465,
   "totalPlugins": 30,
-  "allPluginsCount": 30,
+  "allPluginsCount": 32,
   "generatedAt": "2026-08-06"
 }

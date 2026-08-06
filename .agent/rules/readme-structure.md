@@ -237,7 +237,7 @@ Two patterns are valid:
 ```markdown
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 ```
 
