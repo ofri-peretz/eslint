@@ -36,11 +36,25 @@ function manifests(): { name: string; peer: string | undefined }[] {
     .map((m) => ({ name: m.name!, peer: m.peerDependencies?.eslint }));
 }
 
-/** The `8.40.0` out of `^8.40.0 || ^9.0.0`, or null when there is no v8 leg. */
-function v8Floor(range: string): string | null {
-  const leg = range.split('||').find((part) => /(\^|>=|~)?\s*8\./.test(part));
-  if (!leg) return null;
-  return leg.trim().replace(/^[^\d]*/, '');
+/**
+ * Every v8 leg of a union, as bare versions: `^8.40.0 || ^9.0.0` → `['8.40.0']`.
+ *
+ * All of them, not the first. `"^8.40.0 || ^8.0.0 || ^9.0.0"` satisfies a
+ * first-match check while still resolving on 8.0, which is the exact shape this
+ * file exists to reject.
+ */
+function v8Legs(range: string): string[] {
+  return range
+    .split('||')
+    .filter((part) => /(\^|>=|~)?\s*8\./.test(part))
+    .map((leg) => leg.trim().replace(/^[^\d]*/, ''));
+}
+
+/** Whether the union declares a leg for this major at all. */
+function hasMajor(range: string, major: number): boolean {
+  return range
+    .split('||')
+    .some((part) => new RegExp(`(\\^|>=|~)?\\s*${major}\\.`).test(part));
 }
 
 function gte(a: string, b: string): boolean {
@@ -59,14 +73,42 @@ describe('declared ESLint peer floor', () => {
     expect(manifests().filter((m) => m.peer).length).toBeGreaterThan(20);
   });
 
+  it('every published package declares an eslint peer range', () => {
+    // The assertions below all start by filtering to packages that declare the
+    // peer, so *deleting* the field is the one edit that passes every one of
+    // them. This is the assertion that notices.
+    const missing = manifests()
+      .filter((m) => !m.peer)
+      .map((m) => m.name);
+
+    expect(missing).toEqual([]);
+  });
+
   it(`never claims support below ESLint ${MIN_ESLINT}`, () => {
     const violations = manifests()
       .filter((m) => m.peer)
-      .map((m) => ({ ...m, floor: v8Floor(m.peer!) }))
-      .filter((m) => m.floor !== null && !gte(m.floor!, MIN_ESLINT))
-      .map((m) => `${m.name}: "${m.peer}" allows ${m.floor}`);
+      .flatMap((m) =>
+        v8Legs(m.peer!)
+          // Every leg, not the first: a union can widen itself further down.
+          .filter((leg) => !gte(leg, MIN_ESLINT))
+          .map((leg) => `${m.name}: "${m.peer}" allows ${leg}`),
+      );
 
     expect(violations).toEqual([]);
+  });
+
+  it('still supports the majors the policy commits to', () => {
+    // A range that drops v9 or v10 would pass the floor check by being narrower
+    // than required, which is the opposite failure and just as wrong.
+    const gaps = manifests()
+      .filter((m) => m.peer)
+      .flatMap((m) =>
+        [8, 9, 10]
+          .filter((major) => !hasMajor(m.peer!, major))
+          .map((major) => `${m.name}: "${m.peer}" has no v${major} leg`),
+      );
+
+    expect(gaps).toEqual([]);
   });
 
   it('states the same floor in the canonical doc', () => {
