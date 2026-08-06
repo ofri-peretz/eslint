@@ -201,7 +201,8 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Header names that carry a credential.
+ * Names that denote a credential — a header, an environment variable, or a
+ * config key.
  *
  * A webhook receiver authenticates by comparing a shared secret or an HMAC
  * signature inside the handler — the mechanism Stripe, GitHub and Stigg all
@@ -209,9 +210,15 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
  * establish, and demanding one is wrong. Real instance:
  * `amplication/.../subscription.controller.ts:20` reads
  * `@Headers("stigg-webhooks-secret")` and throws on a mismatch.
+ *
+ * The name is what carries the intent, and it is the only thing separating a
+ * credential check from an environment check. `process.env.CRON_SECRET !== key`
+ * authenticates; `process.env.NODE_ENV !== 'production'` is a feature flag, and
+ * treating the two alike would let any handler switch this rule off by
+ * inspecting its environment.
  */
-const CREDENTIAL_HEADER =
-  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature/i;
+const CREDENTIAL_NAME =
+  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature|password|credential/i;
 
 /** A route handler awaiting resolution once every class in the file is known. */
 interface Pending {
@@ -674,7 +681,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
             (arg) =>
               arg.type === AST_NODE_TYPES.Literal &&
               typeof arg.value === 'string' &&
-              CREDENTIAL_HEADER.test(arg.value),
+              CREDENTIAL_NAME.test(arg.value),
           );
         }),
       );
@@ -712,22 +719,50 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       // method is never a route handler.
       const body = node.value.body as TSESTree.BlockStatement;
 
-      /** `process.env.X` or a `.get(...)` call on a config-ish receiver. */
+      /**
+       * `process.env.SOME_SECRET`, or `config.get('SOME_SECRET')`.
+       *
+       * The *name* has to look like a credential, exactly as
+       * `verifiesCredentialHeader` requires of the header it reads. Without
+       * that, `process.env.NODE_ENV !== 'production'` would silence this rule
+       * as effectively as a token check, and any handler could switch its own
+       * access control off by looking at its environment.
+       */
       const isSecretSource = (expr: TSESTree.Node): boolean => {
         if (expr.type === AST_NODE_TYPES.MemberExpression) {
-          return expressionName(expr.object) === 'env';
+          return (
+            expressionName(expr.object) === 'env' &&
+            CREDENTIAL_NAME.test(expressionName(expr))
+          );
         }
         if (expr.type !== AST_NODE_TYPES.CallExpression) return false;
         if (expressionName(expr.callee) !== 'get') return false;
         if (expr.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
         // The receiver is usually `this.configService`, a member expression
         // rather than a bare identifier, so match on its property name.
-        return /config/i.test(expressionName(expr.callee.object));
+        if (!/config/i.test(expressionName(expr.callee.object))) return false;
+        return expr.arguments.some(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            typeof arg.value === 'string' &&
+            CREDENTIAL_NAME.test(arg.value),
+        );
       };
 
       let found = false;
       const visit = (current: TSESTree.Node): void => {
         if (found) return;
+        // Authentication is something the handler does, not something a
+        // callback it passes along happens to contain. A comparison inside
+        // `.filter(item => item.secret !== process.env.FILTER_TOKEN)` is data
+        // processing, and letting it count would hand every handler an easy
+        // way to look authenticated.
+        if (
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return;
+        }
         if (
           current.type === AST_NODE_TYPES.BinaryExpression &&
           ['===', '!==', '==', '!='].includes(current.operator) &&

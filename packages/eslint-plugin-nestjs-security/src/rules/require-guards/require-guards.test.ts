@@ -480,6 +480,51 @@ ruleTester.run('require-guards', requireGuards, {
         { messageId: 'missingGuards' },
       ],
     },
+    // An environment check is not an authentication check. The name is the
+    // only thing separating the two, so without it any handler could switch
+    // this rule off by inspecting NODE_ENV.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            if (process.env.NODE_ENV !== 'production') return this.users.findDebug();
+            return this.users.findAll();
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // Same for a config key that names no credential.
+    {
+      code: `
+        @Controller('admin')
+        class AdminController {
+          @Get('users')
+          list() {
+            if (this.configService.get('FEATURE_FLAG') === 'on') return this.users.findAll();
+            return [];
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    // A comparison inside a callback is data processing, not authentication.
+    // The walker has to stop at function boundaries or `.filter()` clears the
+    // handler.
+    {
+      code: `
+        @Controller('items')
+        class ItemsController {
+          @Post('list')
+          async list(@Query('key') key: string) {
+            return this.db.findAll().filter((item) => item.secret !== process.env.FILTER_TOKEN);
+          }
+        }
+      `,
+      errors: [{ messageId: 'missingGuards' }],
+    },
     // Reading config without comparing it is not an authentication check —
     // otherwise any handler that logs process.env.NODE_ENV would go quiet.
     {

@@ -17,7 +17,13 @@ if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
 That is amplication's `user.controller.ts:19`, reported as an unguarded route
 while it authenticates on its first statement.
 
-Only equality against a secret *source* — `process.env.X` or a `.get()` on a
-config object — clears a route. Comparing already-trusted data
-(`req.user.role !== 'admin'`) is authorization, not authentication, and still
-reports; so does reading config without comparing it.
+Only equality against a secret *source* clears a route, and the name has to
+look like a credential: `process.env.CRON_SECRET`, `config.get('API_TOKEN')`.
+`process.env.NODE_ENV !== 'production'` is a feature flag and still reports —
+otherwise a handler could switch its own access control off by inspecting its
+environment. The comparison must also be in the handler itself, not inside a
+callback it passes along.
+
+Comparing already-trusted data (`req.user.role !== 'admin'`) is authorization,
+not authentication, and still reports; so does reading config without comparing
+it.
