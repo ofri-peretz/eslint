@@ -154,8 +154,17 @@ export function levenshteinDistance(
       if (current[j] < rowMin) rowMin = current[j];
     }
 
-    // Every later row is >= this row's minimum, so the answer cannot come
-    // back under budget from here.
+    // The ROW MINIMUM is monotonically non-decreasing, so once it exceeds the
+    // budget the final cell can only be larger and the walk can stop.
+    //
+    // Stated carefully because the loose version ("every later row is >= this
+    // row's minimum") is false if read per-cell: a matching character copies
+    // the diagonal through unchanged, so an individual cell in a later row can
+    // equal the current minimum. It is the minimum, not the cell, that cannot
+    // fall. Given rowMin(i) = m: dp[i+1][0] = i+1 > m (since m <= i); on a
+    // match dp[i+1][j] = dp[i][j-1] >= m; on a mismatch it is
+    // min(...) + 1 >= m + 1. So rowMin(i+1) >= m — non-decreasing, and not
+    // strictly increasing, which is why the guard is `>` and not `>=`.
     if (rowMin > budget) return -1;
 
     const swap = previous;
