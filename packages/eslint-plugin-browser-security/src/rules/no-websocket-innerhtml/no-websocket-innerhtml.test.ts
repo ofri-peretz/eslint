@@ -82,6 +82,23 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     },
   ],
   invalid: [
+    {
+      // A NESTED handler used to clear the outer handler's mutable flag, so
+      // the WebSocket sink after it went unreported here while no-innerhtml
+      // skipped it as ours — the finding belonged to nobody. Only the
+      // WebSocket sink is this rule's; the Worker one belongs to
+      // no-worker-message-innerhtml.
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        const worker = new Worker('worker.js');
+        ws.onmessage = (event) => {
+          worker.onmessage = (we) => { element.innerHTML = we.data; };
+          element.innerHTML = event.data;
+        };
+      `,
+      errors: 1,
+    },
+
     // onmessage with innerHTML
     {
       code: `
@@ -130,7 +147,12 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
           list.insertAdjacentHTML('beforeend', event.data);
         };
       `,
-      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'insertAdjacentHTML' } }],
+      errors: [
+        {
+          messageId: 'unsafeInnerhtml',
+          data: { method: 'insertAdjacentHTML' },
+        },
+      ],
     },
     // document.write (though rarely used with WS)
     {

@@ -90,8 +90,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
     }
 
     // Track Worker message handlers
-    let inWorkerHandler = false;
-    let eventParamName: string | null = null;
 
     /**
      * Check if we're in a Worker onmessage assignment
@@ -161,27 +159,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       return { isHandler: false, eventParam: null };
     }
 
-    /**
-     * Check if expression references event.data
-     */
-    function referencesEventData(
-      node: TSESTree.Node,
-      eventName: string,
-    ): boolean {
-      if (node.type === AST_NODE_TYPES.MemberExpression) {
-        if (
-          node.object.type === AST_NODE_TYPES.Identifier &&
-          node.object.name === eventName &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'data'
-        ) {
-          return true;
-        }
-        return referencesEventData(node.object, eventName);
-      }
-      return false;
-    }
-
     // Ownership gate: this rule reports only what the resolver attributes
     // to the worker source. Everything it cannot identify belongs to the
     // generic sink rule, so no value is ever reported by both.
@@ -189,25 +166,19 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check if entering Worker handler
-        const { isHandler, eventParam } = isWorkerOnmessageAssignment(node);
-        if (isHandler) {
-          inWorkerHandler = true;
-          eventParamName = eventParam;
-        }
 
         // Check for innerHTML/outerHTML assignment within handler
-        if (!inWorkerHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (
-            referencesEventData(node.right, eventParamName) &&
-            payloadSource(node.right) === 'worker'
-          ) {
+          if (payloadSource(node.right) === 'worker') {
             context.report({
               node,
               messageId: 'workerInnerhtml',
@@ -221,21 +192,16 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
         const { isHandler } = isWorkerOnmessageAssignment(node);
         if (isHandler) {
-          inWorkerHandler = false;
-          eventParamName = null;
         }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if entering addEventListener handler
-        const { isHandler, eventParam } = isWorkerAddEventListener(node);
-        if (isHandler) {
-          inWorkerHandler = true;
-          eventParamName = eventParam;
-        }
 
         // Check for dangerous method calls within handler
-        if (!inWorkerHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -243,10 +209,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (
-              referencesEventData(arg, eventParamName) &&
-              payloadSource(arg) === 'worker'
-            ) {
+            if (payloadSource(arg) === 'worker') {
               context.report({
                 node,
                 messageId: 'workerInnerhtml',
@@ -262,8 +225,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         const { isHandler } = isWorkerAddEventListener(node);
         if (isHandler) {
-          inWorkerHandler = false;
-          eventParamName = null;
         }
       },
     };

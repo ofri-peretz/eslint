@@ -56,8 +56,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
           'Using {{method}} with WebSocket data enables remote code execution. A compromised server or MITM attacker can execute arbitrary JavaScript.',
         severity: 'CRITICAL',
         fix: 'Parse WebSocket data as JSON and validate the structure instead of executing it.',
-        documentationLink:
-          'https://cwe.mitre.org/data/definitions/95.html',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/95.html',
       }),
       parseDataSafely: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -95,41 +94,13 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track WebSocket handlers
-    let inWsHandler = false;
-    let eventParamName: string | null = null;
-
-    /**
-     * Check if we're in a WebSocket onmessage assignment
-     */
-    function isWsOnmessageAssignment(
-      node: TSESTree.AssignmentExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
-      if (
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.property.name === 'onmessage'
-      ) {
-        const handler = node.right;
-        if (
-          handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-          handler.type === AST_NODE_TYPES.FunctionExpression
-        ) {
-          const firstParam = handler.params[0];
-          if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-            return { isHandler: true, eventParam: firstParam.name };
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
     /**
      * Check if we're in a WebSocket addEventListener('message')
      */
-    function isWsAddEventListener(
-      node: TSESTree.CallExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
+    function isWsAddEventListener(node: TSESTree.CallExpression): {
+      isHandler: boolean;
+      eventParam: string | null;
+    } {
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -157,30 +128,6 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if expression references event.data
-     */
-    function referencesEventData(
-      node: TSESTree.Node,
-      eventName: string,
-    ): boolean {
-      if (node.type === AST_NODE_TYPES.MemberExpression) {
-        if (
-          node.object.type === AST_NODE_TYPES.Identifier &&
-          node.object.name === eventName &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'data'
-        ) {
-          return true;
-        }
-        return referencesEventData(node.object, eventName);
-      }
-      if (node.type === AST_NODE_TYPES.Identifier && node.name === eventName) {
-        return true;
-      }
-      return false;
-    }
-
-    /**
      * Check if this is an eval-like call
      */
     function isEvalCall(node: TSESTree.CallExpression): string | null {
@@ -202,38 +149,20 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
     const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
-      AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        const { isHandler, eventParam } = isWsOnmessageAssignment(node);
-        if (isHandler) {
-          inWsHandler = true;
-          eventParamName = eventParam;
-        }
-      },
-
-      'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
-        const { isHandler } = isWsOnmessageAssignment(node);
-        if (isHandler) {
-          inWsHandler = false;
-          eventParamName = null;
-        }
-      },
 
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if entering addEventListener handler
-        const { isHandler, eventParam } = isWsAddEventListener(node);
-        if (isHandler) {
-          inWsHandler = true;
-          eventParamName = eventParam;
-        }
 
         // Check for eval-like calls within handler
-        if (!inWsHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         const evalFn = isEvalCall(node);
         if (evalFn) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'websocket') {
+            if (payloadSource(arg) === 'websocket') {
               context.report({
                 node,
                 messageId: 'evalWithWsData',
@@ -256,21 +185,22 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         const { isHandler } = isWsAddEventListener(node);
         if (isHandler) {
-          inWsHandler = false;
-          eventParamName = null;
         }
       },
 
       // Also check new Function() constructor
       NewExpression(node: TSESTree.NewExpression) {
-        if (!inWsHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         if (
           node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === 'Function'
         ) {
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName) && payloadSource(arg) === 'websocket') {
+            if (payloadSource(arg) === 'websocket') {
               context.report({
                 node,
                 messageId: 'evalWithWsData',
