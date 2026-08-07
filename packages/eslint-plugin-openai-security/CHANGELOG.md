@@ -1,5 +1,24 @@
 # Changelog — eslint-plugin-openai-security
 
+## 0.3.1
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 0.3.0
 
 ### Minor Changes
