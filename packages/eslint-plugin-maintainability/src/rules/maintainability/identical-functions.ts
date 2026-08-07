@@ -67,6 +67,105 @@ export function buildGenericName(firstFunctionName: string): string {
   return `handle${baseName || 'Generic'}`;
 }
 
+/**
+ * Calculate similarity between two normalized strings
+ * Using Levenshtein distance ratio.
+ *
+ * PERFORMANCE — this is the hot path of the whole plugin. Measured with
+ * `TIMING` over 60 files (~14.6k lines) with four plugins enabled, this
+ * rule was 933 ms, 90.9% of ALL rule time; the next-slowest rule was
+ * 21.8 ms. Cost grew quadratically: 4.3x the source took 8.3x the time,
+ * because `findDuplicationGroups` compares every pair of functions and
+ * each comparison built a full |a|x|b| edit-distance matrix.
+ *
+ * Two prunes below. Both are EXACT, not heuristic — neither can change a
+ * reported finding or a reported percentage:
+ *
+ *   1. Length bound. Levenshtein distance is at least the length
+ *      difference, so similarity <= shorter.length / longer.length. When
+ *      that ceiling is already under the threshold the pair cannot match,
+ *      and no matrix is needed.
+ *
+ *   2. Distance budget. A match needs an edit distance no greater than
+ *      longer.length * (1 - threshold); once every cell in a DP row
+ *      exceeds that, the final distance can only be larger, so the walk
+ *      stops.
+ *
+ * Both return 0, which is only ever compared against the threshold. The
+ * displayed `{{similarity}}%` comes from `avgSimilarity`, computed over
+ * pairs ALREADY known to be at or above the threshold — so a prune can
+ * never fire on a value that reaches a message.
+ */
+export function calculateSimilarity(
+  str1: string,
+  str2: string,
+  similarityThreshold: number,
+): number {
+  if (str1 === str2) return 1.0;
+
+  // str1 !== str2 here, so the longer string is never empty.
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  // Prune 1 — ceiling on the achievable similarity.
+  if (shorter.length / longer.length < similarityThreshold) return 0;
+
+  // Prune 2 — the largest distance that could still clear the threshold.
+  const budget = Math.floor(longer.length * (1 - similarityThreshold));
+  const editDistance = levenshteinDistance(longer, shorter, budget);
+  if (editDistance < 0) return 0; // provably over budget
+
+  return (longer.length - editDistance) / longer.length;
+}
+
+/**
+ * Levenshtein distance, two rows instead of a full matrix.
+ *
+ * Returns -1 as soon as the distance provably exceeds `budget`, which lets
+ * `calculateSimilarity` abandon hopeless pairs part-way. Allocating two
+ * rows rather than |str2|+1 of them also keeps a long-function comparison
+ * from churning the heap.
+ */
+// `budget` is required, not defaulted: there is exactly one caller and it
+// always has a real budget, so a default would be an untestable branch
+// sitting in the hot path forever.
+export function levenshteinDistance(
+  str1: string,
+  str2: string,
+  budget: number,
+): number {
+  // Filled by ascending index below, which keeps both arrays packed —
+  // `new Array(n)` would preallocate but creates a holey array and trips
+  // unicorn/no-new-array for the ambiguity it invites.
+  let previous: number[] = [];
+  let current: number[] = [];
+
+  for (let j = 0; j <= str1.length; j++) previous[j] = j;
+
+  for (let i = 1; i <= str2.length; i++) {
+    current[0] = i;
+    let rowMin = current[0];
+
+    for (let j = 1; j <= str1.length; j++) {
+      current[j] =
+        str2.charAt(i - 1) === str1.charAt(j - 1)
+          ? previous[j - 1]
+          : Math.min(previous[j - 1] + 1, current[j - 1] + 1, previous[j] + 1);
+      if (current[j] < rowMin) rowMin = current[j];
+    }
+
+    // Every later row is >= this row's minimum, so the answer cannot come
+    // back under budget from here.
+    if (rowMin > budget) return -1;
+
+    const swap = previous;
+    previous = current;
+    current = swap;
+  }
+
+  return previous[str1.length];
+}
+
 export const identicalFunctions = createRule<RuleOptions, MessageIds>({
   name: 'identical-functions',
   meta: {
@@ -187,106 +286,6 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Calculate similarity between two normalized strings
-     * Using Levenshtein distance ratio.
-     *
-     * PERFORMANCE — this is the hot path of the whole plugin. Measured with
-     * `TIMING` over 60 files (~14.6k lines) with four plugins enabled, this
-     * rule was 933 ms, 90.9% of ALL rule time; the next-slowest rule was
-     * 21.8 ms. Cost grew quadratically: 4.3x the source took 8.3x the time,
-     * because `findDuplicationGroups` compares every pair of functions and
-     * each comparison built a full |a|x|b| edit-distance matrix.
-     *
-     * Two prunes below. Both are EXACT, not heuristic — neither can change a
-     * reported finding or a reported percentage:
-     *
-     *   1. Length bound. Levenshtein distance is at least the length
-     *      difference, so similarity <= shorter.length / longer.length. When
-     *      that ceiling is already under the threshold the pair cannot match,
-     *      and no matrix is needed.
-     *
-     *   2. Distance budget. A match needs an edit distance no greater than
-     *      longer.length * (1 - threshold); once every cell in a DP row
-     *      exceeds that, the final distance can only be larger, so the walk
-     *      stops.
-     *
-     * Both return 0, which is only ever compared against the threshold. The
-     * displayed `{{similarity}}%` comes from `avgSimilarity`, computed over
-     * pairs ALREADY known to be at or above the threshold — so a prune can
-     * never fire on a value that reaches a message.
-     */
-    function calculateSimilarity(str1: string, str2: string): number {
-      if (str1 === str2) return 1.0;
-
-      // str1 !== str2 here, so the longer string is never empty.
-      const longer = str1.length > str2.length ? str1 : str2;
-      const shorter = str1.length > str2.length ? str2 : str1;
-
-      // Prune 1 — ceiling on the achievable similarity.
-      if (shorter.length / longer.length < similarityThreshold) return 0;
-
-      // Prune 2 — the largest distance that could still clear the threshold.
-      const budget = Math.floor(longer.length * (1 - similarityThreshold));
-      const editDistance = levenshteinDistance(longer, shorter, budget);
-      if (editDistance < 0) return 0; // provably over budget
-
-      return (longer.length - editDistance) / longer.length;
-    }
-
-    /**
-     * Levenshtein distance, two rows instead of a full matrix.
-     *
-     * Returns -1 as soon as the distance provably exceeds `budget`, which lets
-     * `calculateSimilarity` abandon hopeless pairs part-way. Allocating two
-     * rows rather than |str2|+1 of them also keeps a long-function comparison
-     * from churning the heap.
-     */
-    // `budget` is required, not defaulted: there is exactly one caller and it
-    // always has a real budget, so a default would be an untestable branch
-    // sitting in the hot path forever.
-    // oxlint-disable-next-line consistent-function-scoping
-    function levenshteinDistance(
-      str1: string,
-      str2: string,
-      budget: number,
-    ): number {
-      // Filled by ascending index below, which keeps both arrays packed —
-      // `new Array(n)` would preallocate but creates a holey array and trips
-      // unicorn/no-new-array for the ambiguity it invites.
-      let previous: number[] = [];
-      let current: number[] = [];
-
-      for (let j = 0; j <= str1.length; j++) previous[j] = j;
-
-      for (let i = 1; i <= str2.length; i++) {
-        current[0] = i;
-        let rowMin = current[0];
-
-        for (let j = 1; j <= str1.length; j++) {
-          current[j] =
-            str2.charAt(i - 1) === str1.charAt(j - 1)
-              ? previous[j - 1]
-              : Math.min(
-                  previous[j - 1] + 1,
-                  current[j - 1] + 1,
-                  previous[j] + 1,
-                );
-          if (current[j] < rowMin) rowMin = current[j];
-        }
-
-        // Every later row is >= this row's minimum, so the answer cannot come
-        // back under budget from here.
-        if (rowMin > budget) return -1;
-
-        const swap = previous;
-        previous = current;
-        current = swap;
-      }
-
-      return previous[str1.length];
-    }
-
-    /**
      * Find groups of similar functions
      */
     function findDuplicationGroups(): DuplicationGroup[] {
@@ -305,6 +304,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
           const similarity = calculateSimilarity(
             functions[i].normalizedBody,
             functions[j].normalizedBody,
+            similarityThreshold,
           );
 
           if (similarity >= similarityThreshold) {
@@ -322,6 +322,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
                 calculateSimilarity(
                   group[0].normalizedBody,
                   func.normalizedBody,
+                  similarityThreshold,
                 )
               );
             }, 0) /
