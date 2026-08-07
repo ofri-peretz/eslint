@@ -29,10 +29,14 @@
  * unknown belongs to the generic rule, which reports it without claiming a
  * provenance it cannot prove.
  *
- * Resolution is name-based and single-scope, the same tactic the SQL taint
- * helpers use: a `new WebSocket(...)` initialiser binds the name for the file.
- * A receiver that arrives as a parameter or from another module stays
- * `undefined` — deliberately, per the rule above.
+ * Resolution is LEXICAL on both halves. Receivers resolve through the scope
+ * chain, and a payload is matched to the handler parameter's *binding* rather
+ * than its name — a nested function whose parameter shares the handler's
+ * parameter name reads a different value entirely. Name matching produced
+ * misattribution in both directions, measured each time.
+ *
+ * A receiver that arrives as a parameter, from another module, or from a
+ * reassigned binding stays `undefined` — deliberately, per the rule above.
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
@@ -129,8 +133,11 @@ export function createReceiverResolver(
     // that can never be undefined — the length check above already guarantees
     // one entry, and dead branches are how coverage stops meaning anything.
     const declarator = variable.defs.find(
-      (definition): definition is typeof definition & { node: TSESTree.VariableDeclarator } =>
-        definition.node.type === AST_NODE_TYPES.VariableDeclarator,
+      (
+        definition,
+      ): definition is typeof definition & {
+        node: TSESTree.VariableDeclarator;
+      } => definition.node.type === AST_NODE_TYPES.VariableDeclarator,
     );
     if (declarator === undefined) return SHADOWED;
     return constructedSource(declarator.node.init) ?? SHADOWED;
@@ -278,13 +285,25 @@ export function readsEventPayload(
   node: TSESTree.Node,
   eventParam: string,
 ): boolean {
+  const root = payloadRoot(node);
+  return root !== undefined && root.name === eventParam;
+}
+
+/**
+ * The identifier a member chain is rooted at — `event` in `event.target.result`.
+ *
+ * Exposed so callers can resolve that identifier to a *binding*. Matching on the
+ * name alone is not enough: a nested function whose parameter shares the
+ * handler's parameter name reads an entirely different value.
+ */
+export function payloadRoot(
+  node: TSESTree.Node,
+): TSESTree.Identifier | undefined {
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     current = current.object;
   }
-  return (
-    current.type === AST_NODE_TYPES.Identifier && current.name === eventParam
-  );
+  return current.type === AST_NODE_TYPES.Identifier ? current : undefined;
 }
 
 /**
@@ -306,7 +325,7 @@ export function createPayloadResolver(
   const program = sourceCode.ast;
   const scopes: Array<{
     source: MessageSource;
-    eventParam: string;
+    handler: TSESTree.Node;
     range: [number, number];
   }> = [];
 
@@ -315,7 +334,7 @@ export function createPayloadResolver(
     if (handler === undefined) return;
     scopes.push({
       source: handler.source,
-      eventParam: handler.eventParam,
+      handler: handler.handler,
       range: handler.handler.range,
     });
   });
@@ -329,8 +348,34 @@ export function createPayloadResolver(
       (scope) =>
         node.range[0] >= scope.range[0] &&
         node.range[1] <= scope.range[1] &&
-        readsEventPayload(node, scope.eventParam),
+        readsPayloadOf(node, scope.handler, sourceCode),
     )?.source;
+}
+
+/**
+ * Does this expression read the value bound to `parameter`?
+ *
+ * Compares the resolved binding, not the name. `ws.onmessage = (e) => {
+ * function render(e) { el.innerHTML = e.data; } }` reads a DIFFERENT `e`; on a
+ * name match the payload was attributed to the WebSocket, so the source rule
+ * reported an unrelated value and the generic rule skipped the line.
+ */
+function readsPayloadOf(
+  node: TSESTree.Node,
+  handler: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const root = payloadRoot(node);
+  if (root === undefined) return false;
+  const variable = findVariable(sourceCode.getScope(root), root.name);
+  if (variable === undefined) return false;
+  // The root must be a PARAMETER OF THIS HANDLER. A nested function whose
+  // parameter shares the name resolves to its own binding and fails here,
+  // which is the whole point of comparing definitions rather than names.
+  return variable.defs.some(
+    (definition) =>
+      definition.type === 'Parameter' && definition.node === handler,
+  );
 }
 
 /** Depth-first walk over every child node. */

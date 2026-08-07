@@ -224,7 +224,12 @@ describe('createReceiverResolver — refusals', () => {
         for (const [k, v] of Object.entries(node)) {
           if (k === 'parent') continue;
           for (const c of Array.isArray(v) ? v : [v]) {
-            if (c && typeof c === 'object' && typeof (c as any).type === 'string') walk(c);
+            if (
+              c &&
+              typeof c === 'object' &&
+              typeof (c as any).type === 'string'
+            )
+              walk(c);
           }
         }
       };
@@ -235,14 +240,19 @@ describe('createReceiverResolver — refusals', () => {
   it('refuses a name declared more than once', () => {
     // Two `var` declarations produce two defs; which one is live at the point
     // of use is not something a single-pass resolver can claim to know.
-    expect(receiverOf('var ws = new WebSocket("x");\nvar ws = other;\nws.onmessage = f;'))
-      .toBeUndefined();
+    expect(
+      receiverOf(
+        'var ws = new WebSocket("x");\nvar ws = other;\nws.onmessage = f;',
+      ),
+    ).toBeUndefined();
   });
 
   it('refuses a receiver that arrives as a parameter', () => {
     // A parameter has a definition, but not a `VariableDeclarator` with an
     // initialiser — nothing in this file says what it is.
-    expect(receiverOf('function connect(ws) { ws.onmessage = f; }')).toBeUndefined();
+    expect(
+      receiverOf('function connect(ws) { ws.onmessage = f; }'),
+    ).toBeUndefined();
   });
 });
 
@@ -477,6 +487,25 @@ describe('createPayloadResolver', () => {
     ).toBeUndefined();
   });
 
+  it('is undefined for a value not rooted at an identifier', () => {
+    // A concatenation has no root identifier to resolve, so it cannot be
+    // the handler's payload.
+    expect(
+      sinkSource(
+        'const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = "n: " + count; };',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('is undefined for a root that resolves to no binding', () => {
+    // A global has no binding in this file, so it cannot be the payload.
+    expect(
+      sinkSource(
+        'const ws = new WebSocket("x");\nws.onmessage = (e) => { el.innerHTML = location.href; };',
+      ),
+    ).toBeUndefined();
+  });
+
   it('is undefined for a sink outside any handler', () => {
     expect(
       sinkSource('const ws = new WebSocket("x");\nel.innerHTML = userInput;'),
@@ -486,6 +515,20 @@ describe('createPayloadResolver', () => {
   it('is undefined when the receiver cannot be identified', () => {
     expect(
       sinkSource('socket.onmessage = (e) => { el.innerHTML = e.data; };'),
+    ).toBeUndefined();
+  });
+
+  it('does not match a nested parameter that merely shares the name', () => {
+    // The inner `e` is a different binding. On a name match this resolved as
+    // WebSocket data, so the source rule reported an unrelated value and the
+    // generic rule skipped the line.
+    expect(
+      sinkSource(
+        'const ws = new WebSocket("x");\n' +
+          'ws.onmessage = (e) => {\n' +
+          '  function render(e) { el.innerHTML = e.data; }\n' +
+          '};',
+      ),
     ).toBeUndefined();
   });
 
