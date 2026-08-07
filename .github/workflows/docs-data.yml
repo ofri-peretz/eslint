@@ -40,7 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write   # commits regenerated JSON back to main
+      contents: write        # push the sync branch
+      pull-requests: write   # open the rollup PR
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -69,15 +70,43 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: npx tsx apps/docs/scripts/update-coverage-stats.ts
 
-      - name: Commit changes (single rollup commit)
+      # Open a PR rather than pushing to main.
+      #
+      # This step used to `git push` straight to main and failed on EVERY run
+      # with `GH006: Protected branch update failed`. The sync itself always
+      # succeeded ("9 succeeded, 0 errors") — only the push was rejected — so
+      # the workflow reported red while doing its job correctly, and the data
+      # it generated was thrown away.
+      #
+      # main requires up-to-date branches, resolved conversations and linear
+      # history by deliberate policy, so the fix is to route the change through
+      # review like any other. A bot token that bypasses protection would clear
+      # the red X by punching a hole in the rule instead.
+      #
+      # Reuses one branch, so repeated runs update a single open PR rather than
+      # opening one per push to main.
+      - name: Open sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automated/docs-data-sync
         run: |
           set -euo pipefail
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet apps/docs/src/data/; then
-            echo "No changes to commit."
+            echo "No changes to sync — nothing to open."
             exit 0
           fi
+
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
           git add apps/docs/src/data/
           git commit -m "chore(docs): sync data [automated]"
-          git push
+          git push --force-with-lease origin "$BRANCH"
+
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            echo "Existing PR updated with the new sync commit."
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(docs): sync generated data" \
+              --body "Regenerated apps/docs/src/data/ after a change under packages/**. Opened by the Docs Data Sync workflow; contents come entirely from the apps/docs/scripts/sync-* scripts, so review the diff rather than hand-editing."
+          fi
