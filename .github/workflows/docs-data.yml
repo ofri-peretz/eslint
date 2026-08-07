@@ -89,6 +89,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: automated/docs-data-sync
+          # Passed through env rather than interpolated into the script body —
+          # `${{ }}` inside `run:` is substituted before the shell sees it, so
+          # keeping workflow context out of the command text is the habit worth
+          # having even when the value (push | workflow_dispatch) is safe.
+          TRIGGER: ${{ github.event_name }}
         run: |
           set -euo pipefail
           if git diff --quiet apps/docs/src/data/; then
@@ -108,5 +113,5 @@ jobs:
           else
             gh pr create --base main --head "$BRANCH" \
               --title "chore(docs): sync generated data" \
-              --body "Regenerated apps/docs/src/data/ after a change under packages/**. Opened by the Docs Data Sync workflow; contents come entirely from the apps/docs/scripts/sync-* scripts, so review the diff rather than hand-editing."
+              --body "Regenerated apps/docs/src/data/ (trigger: $TRIGGER). Opened by the Docs Data Sync workflow; contents come entirely from the apps/docs/scripts/sync-* scripts, so review the diff rather than hand-editing."
           fi

@@ -52,6 +52,16 @@ FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526a
 RUN apk add --no-cache git
 
 # Install at the root so the tree is reachable from any mounted workspace.
+#
+# DO NOT change this to /app or /build. The install root must be an ANCESTOR of
+# the mounted workspace, or Node's upward node_modules walk never reaches it and
+# every user config fails with ERR_MODULE_NOT_FOUND — see HISTORY #2 above. The
+# image still builds green when this is wrong; only a real lint catches it,
+# which is what the selftest below is for.
+#
+# (Comment sits on its own line because Dockerfile has no trailing comments:
+# `WORKDIR /  # note` sets the directory to the literal string `/  # note`.
+# Verified — that is not a style preference.)
 WORKDIR /
 RUN printf '{"name":"interlace-image","private":true}' > /package.json
 RUN npm install --no-fund --no-audit --omit=dev \
