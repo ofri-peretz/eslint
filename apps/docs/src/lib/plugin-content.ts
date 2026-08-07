@@ -56,11 +56,11 @@ export const PLUGINS: PluginInfo[] = [
   },
   {
     name: 'jwt',
-    packageName: 'eslint-plugin-jwt',
+    packageName: 'eslint-plugin-jwt-security',
     displayName: 'JWT Security',
     category: 'security',
     description: 'JSON Web Token security rules',
-    docsPath: 'packages/eslint-plugin-jwt/docs/rules',
+    docsPath: 'packages/eslint-plugin-jwt-security/docs/rules',
   },
   {
     name: 'express-security',
@@ -88,11 +88,11 @@ export const PLUGINS: PluginInfo[] = [
   },
   {
     name: 'pg',
-    packageName: 'eslint-plugin-pg',
+    packageName: 'eslint-plugin-postgresql-security',
     displayName: 'PostgreSQL Security',
     category: 'security',
     description: 'Security rules for PostgreSQL operations',
-    docsPath: 'packages/eslint-plugin-pg/docs/rules',
+    docsPath: 'packages/eslint-plugin-postgresql-security/docs/rules',
   },
   {
     name: 'nestjs-security',

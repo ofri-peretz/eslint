@@ -19,11 +19,11 @@ const outputDir = path.resolve(__dirname, '../src/data/plugin-rules');
 export const PLUGIN_MAPPINGS = {
   'browser-security': 'eslint-plugin-browser-security',
   'express-security': 'eslint-plugin-express-security',
-  'jwt': 'eslint-plugin-jwt',
+  'jwt-security': 'eslint-plugin-jwt-security',
   'lambda-security': 'eslint-plugin-lambda-security',
   'mongodb-security': 'eslint-plugin-mongodb-security',
   'nestjs-security': 'eslint-plugin-nestjs-security',
-  'pg': 'eslint-plugin-pg',
+  'postgresql-security': 'eslint-plugin-postgresql-security',
   'secure-coding': 'eslint-plugin-secure-coding',
   'vercel-ai-security': 'eslint-plugin-vercel-ai-security',
 };

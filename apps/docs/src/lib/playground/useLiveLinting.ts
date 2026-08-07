@@ -37,9 +37,9 @@ interface LintApiResponse {
  * Used to build `ruleDocsPath` for live findings.
  */
 const RULE_DOCS_PREFIX: Record<string, string> = {
-  'jwt': '/docs/security/plugin-jwt/rules',
+  'jwt': '/docs/security/plugin-jwt-security/rules',
   'secure-coding': '/docs/security/plugin-secure-coding/rules',
-  'pg': '/docs/security/plugin-pg/rules',
+  'pg': '/docs/security/plugin-postgresql-security/rules',
   'mongodb-security': '/docs/security/plugin-mongodb-security/rules',
   'browser-security': '/docs/security/plugin-browser-security/rules',
   'react-a11y': '/docs/quality/plugin-react-a11y/rules',

@@ -42,7 +42,7 @@ export interface ImpactStats {
 }
 
 export interface PluginRow {
-  /** Package name, e.g. `eslint-plugin-pg`. */
+  /** Package name, e.g. `eslint-plugin-postgresql-security`. */
   name: string;
   category: PluginStat['category'];
   rules: number;

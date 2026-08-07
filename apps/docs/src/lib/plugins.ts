@@ -56,7 +56,7 @@ export const PLUGINS: PluginEntry[] = [
     description: 'Express middleware hardening',
   },
   {
-    slug: 'jwt',
+    slug: 'jwt-security',
     package: 'eslint-plugin-jwt-security',
     pillar: 'security',
     description: 'Token security',
@@ -86,7 +86,7 @@ export const PLUGINS: PluginEntry[] = [
     description: 'Server-side patterns',
   },
   {
-    slug: 'pg',
+    slug: 'postgresql-security',
     package: 'eslint-plugin-postgresql-security',
     pillar: 'security',
     description: 'PostgreSQL security',

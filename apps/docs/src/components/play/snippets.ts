@@ -62,7 +62,7 @@ export function verifyToken(token: string, secret: string) {
         line: 7,
         column: 17,
         message: "Algorithm 'none' allows unsigned JWTs to pass verification (CWE-327). Drop 'none' from the algorithms allow-list.",
-        ruleDocsPath: '/docs/security/plugin-jwt/rules/no-algorithm-none',
+        ruleDocsPath: '/docs/security/plugin-jwt-security/rules/no-algorithm-none',
       },
     ],
   },
@@ -134,7 +134,7 @@ export async function findUserSafe(userId: string) {
         line: 7,
         column: 22,
         message: 'SQL string built via concatenation reaches `pool.query(...)` (CWE-89). Use parameterized placeholders (`$1`) and pass values as a second-argument array.',
-        ruleDocsPath: '/docs/security/plugin-pg/rules/no-unsafe-query',
+        ruleDocsPath: '/docs/security/plugin-postgresql-security/rules/no-unsafe-query',
       },
     ],
   },
@@ -267,8 +267,8 @@ export function pluginsInSnippet(snippet: PlaygroundSnippet): string[] {
 /**
  * Map a plugin prefix to its npm package name, for the copy-config emitter.
  *
- * Our plugins publish **unscoped** — `eslint-plugin-jwt`, not
- * `@interlace/eslint-plugin-jwt`. This was a hand-maintained lookup table until
+ * Our plugins publish **unscoped** — `eslint-plugin-jwt-security`, not
+ * `@interlace/eslint-plugin-jwt-security`. This was a hand-maintained lookup table until
  * it drifted to a scoped prefix that was never published, which put install and
  * import lines for nonexistent packages on the public playground. Deriving the
  * name removes the class of bug; the lock test checks the derived package
@@ -284,7 +284,7 @@ export function pluginPrefixToPackage(prefix: string): string {
  * Both plugins were renamed to `-security` and the old npm packages are
  * deprecated, but the **rule namespace was deliberately kept** so nothing
  * downstream had to move. That is exactly what breaks the derivation: `jwt/…`
- * findings are served by `eslint-plugin-jwt-security`, not `eslint-plugin-jwt`.
+ * findings are served by `eslint-plugin-jwt-security`, not `eslint-plugin-jwt-security`.
  * Left underived, the copy-config button handed users an install line for a
  * deprecated package — the same class of bug the derivation was introduced to
  * kill, so it stays derived-by-default with these two as named exceptions.
