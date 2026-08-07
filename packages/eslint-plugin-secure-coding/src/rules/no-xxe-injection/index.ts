@@ -49,7 +49,22 @@ type RuleOptions = [Options?];
  * `csv.parse` or `toml.parse` should be silent by default, and being wrong in
  * that direction costs a false positive on every consumer's JSON handling.
  */
-const XML_RECEIVER = /xml|dom|libxml|parser$|^parser$|^sax$/i;
+/**
+ * Receivers that name an XML parser.
+ *
+ * Explicit XML tokens only. The previous shape was `/xml|dom|libxml|parser$/i`,
+ * which decided XXE from a name's spelling: the `parser$` SUFFIX matched
+ * `jsonParser`, `csvParser`, and `htmlParser`, and an unanchored `dom` matched
+ * `random`, `domain`, and `freedom`. A receiver's name is not evidence about
+ * the format it parses, so the suffix is gone and `dom` is anchored to the
+ * shapes that really are DOM parsers.
+ *
+ * A receiver named exactly `parser` stays: it is the conventional name for the
+ * XML parser in this rule's own sinks, and being anchored it cannot reach
+ * `jsonParser`. It is still a name rather than a resolved binding — narrowing
+ * it further wants construction-site resolution, not a tighter regex.
+ */
+const XML_RECEIVER = /xml|^dom$|domparser|jsdom|libxml|^sax$|^expat$|^parser$/i;
 
 const isXmlReceiver = (node: TSESTree.Node): boolean => {
   if (node.type === 'Identifier') return XML_RECEIVER.test(node.name);

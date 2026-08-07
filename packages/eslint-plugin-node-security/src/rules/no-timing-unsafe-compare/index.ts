@@ -19,7 +19,13 @@ type MessageIds =
   | 'useTimingSafeEqual';
 
 export interface Options {
-  /** Variable name patterns that indicate secrets. Default: ['token', 'secret', 'key', 'password', 'hash', 'signature', 'mac', 'hmac', 'digest', 'apiKey', 'api_key'] */
+  /**
+   * Variable name patterns that indicate secrets. Default: ['token', 'secret',
+   * 'password', 'hash', 'signature', 'mac', 'hmac', 'digest', 'apiKey',
+   * 'api_key', …] — see DEFAULT_SECRET_PATTERNS for the full list.
+   *
+   * Note `key` is NOT a default; see the note on DEFAULT_SECRET_PATTERNS.
+   */
   secretPatterns?: string[];
 }
 
@@ -51,6 +57,14 @@ const DEFAULT_SECRET_PATTERNS = [
  * `token !== undefined`, `hash === null`, `signature.length === 0` — all
  * existence or arity checks. A timing attack needs the comparison to leak how
  * much of a *secret* matched, which requires an attacker-controlled operand.
+ *
+ * String literals are deliberately NOT suppressed here. `authType === 'oauth'`
+ * is a type sentinel and reads as a false positive, but
+ * `password === 'default_password'` has the same shape and is a real finding —
+ * a hardcoded credential compared non-constant-time. Suppressing every string
+ * would silence the second to quieten the first, so the distinction is left to
+ * `secretPatterns`: it is the operand's NAME that decides, not its literal.
+ * Before reaching for `typeof node.value === 'string'`, know that is the trade.
  */
 function isExistenceCheck(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') return true;
@@ -119,8 +133,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     // `token` has to match `accessTokenValue`. Anchoring to word boundaries was
     // tried and dropped — it fixed `firstKey` but stopped matching
     // `req.headers.authorization`, trading one false positive for a worse false
-    // negative. The existence-check guard below is what kills the `firstKey`
-    // case, precisely and without weakening detection.
+    // negative.
+    //
+    // Under the DEFAULT patterns `firstKey` never reaches the guard at all,
+    // because `key` is not among them. The existence-check guard below is what
+    // handles the same shape when a project adds `key` back through
+    // `secretPatterns` — two separate mechanisms, not one.
     const patterns = secretPatterns.map((p) => new RegExp(p, 'i'));
 
     function isSecretIdentifier(node: TSESTree.Node): boolean {

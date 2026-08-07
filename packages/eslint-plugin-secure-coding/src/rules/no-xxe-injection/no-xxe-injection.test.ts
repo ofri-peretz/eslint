@@ -43,6 +43,18 @@ describe('no-xxe-injection', () => {
       // constructor reached through a namespace. Unknown is not XML.
       `const out = getParser().parse(req.body);`,
       `const out2 = new lib.Parser().parse(req.body);`,
+      // A name ending in `Parser` says nothing about the FORMAT parsed. The
+      // receiver pattern used to end in `parser$` and reported all of these.
+      `const j = jsonParser.parse(input);`,
+      `const c = csvParser.parse(input);`,
+      `const h = htmlParser.parse(input);`,
+      `const j2 = new JsonParser().parse(input);`,
+      `const r = new CsvParser(); r.parse(data);`,
+      // `dom` used to be an unanchored substring, so every one of these
+      // receivers read as a DOM parser.
+      `const x = random.parse(input);`,
+      `const y = domain.parse(input);`,
+      `const z = freedom.parse(input);`,
         // Secure libxmljs usage with noent: false
         'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
 
