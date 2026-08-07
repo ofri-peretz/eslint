@@ -79,8 +79,6 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   'eslint-plugin-node-security':     ['universal', 'node'],
   'eslint-plugin-browser-security':  ['universal', 'browser'],
   'eslint-plugin-express-security':  ['express'],
-  'eslint-plugin-jwt':               ['jwt'],
-  'eslint-plugin-pg':                ['pg'],
   // Renamed packages keep their original rule set, namespace and therefore
   // their environment tags. The old names stay until the deprecations age out.
   'eslint-plugin-jwt-security':        ['jwt'],

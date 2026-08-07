@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-05",
-  "totalPlugins": 32,
-  "totalRules": 491,
-  "oxlintCompatible": 491,
+  "generatedAt": "2026-08-06",
+  "totalPlugins": 30,
+  "totalRules": 465,
+  "oxlintCompatible": 465,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -989,93 +989,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-jwt",
-      "short": "jwt",
-      "shim": "tools/oxlint-plugins/interlace-jwt.cjs",
-      "subpath": "eslint-plugin-jwt/oxlint",
-      "ruleCount": 13,
-      "rules": [
-        {
-          "name": "no-algorithm-confusion",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-algorithm-none",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-decode-without-verify",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-hardcoded-secret",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-sensitive-payload",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-timestamp-manipulation",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-weak-secret",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-algorithm-whitelist",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-audience-validation",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-expiration",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-issued-at",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-issuer-validation",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "require-max-age",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "jwt-security",
       "shim": "tools/oxlint-plugins/interlace-jwt-security.cjs",
@@ -1978,93 +1891,6 @@
         },
         {
           "name": "operability/require-data-minimization",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-pg",
-      "short": "pg",
-      "shim": "tools/oxlint-plugins/interlace-pg.cjs",
-      "subpath": "eslint-plugin-pg/oxlint",
-      "ruleCount": 13,
-      "rules": [
-        {
-          "name": "check-query-params",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-batch-insert-loop",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-floating-query",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-hardcoded-credentials",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-insecure-ssl",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-missing-client-release",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-select-all",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-transaction-on-pool",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-unsafe-copy-from",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-unsafe-query",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-unsafe-search-path",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "prefer-pool-query",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "prevent-double-release",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3411,21 +3237,6 @@
       "require-import-approval",
       "unambiguous"
     ],
-    "jwt": [
-      "no-algorithm-confusion",
-      "no-algorithm-none",
-      "no-decode-without-verify",
-      "no-hardcoded-secret",
-      "no-sensitive-payload",
-      "no-timestamp-manipulation",
-      "no-weak-secret",
-      "require-algorithm-whitelist",
-      "require-audience-validation",
-      "require-expiration",
-      "require-issued-at",
-      "require-issuer-validation",
-      "require-max-age"
-    ],
     "jwt-security": [
       "no-algorithm-confusion",
       "no-algorithm-none",
@@ -3601,21 +3412,6 @@
       "operability/require-data-minimization",
       "require-code-minification",
       "require-data-minimization"
-    ],
-    "pg": [
-      "check-query-params",
-      "no-batch-insert-loop",
-      "no-floating-query",
-      "no-hardcoded-credentials",
-      "no-insecure-ssl",
-      "no-missing-client-release",
-      "no-select-all",
-      "no-transaction-on-pool",
-      "no-unsafe-copy-from",
-      "no-unsafe-query",
-      "no-unsafe-search-path",
-      "prefer-pool-query",
-      "prevent-double-release"
     ],
     "postgresql-security": [
       "check-query-params",
