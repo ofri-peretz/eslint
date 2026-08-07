@@ -166,8 +166,13 @@ describe('declared ESLint peer floor', () => {
    * load. #423 corrected the text; this is what stops it drifting back.
    */
   it('states the same floor on the repo-level surfaces', () => {
+    // README.md prints the peer range too (the "All published packages
+    // declare ..." line). Leaving it out meant a stale README passed this
+    // test — the exact drift the lock exists to catch, on the most-read
+    // surface of the three.
     const surfaces = [
       'CLAIMS.md',
+      'README.md',
       'apps/docs/content/docs/getting-started/concepts/compatibility.mdx',
     ];
 
