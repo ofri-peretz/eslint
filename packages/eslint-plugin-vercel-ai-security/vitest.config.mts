@@ -37,6 +37,10 @@ export default defineConfig({
     ],
     // Setting `exclude` replaces vitest's defaults — spread them back in and
     // add build-artifact dirs so stale outputs can never shadow real tests.
+    // SDK interface-compat suites (src/__compatibility__/) import third-party
+    // SDKs, not our code, and cost minutes on a cold module cache. They run via
+    // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
+    // run that backs `turbo run test` and the lefthook pre-commit hook.
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -47,6 +51,7 @@ export default defineConfig({
       '**/.turbo/**',
       '**/storybook-static/**',
       '**/coverage/**',
+      'src/__compatibility__/**',
     ],
     passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],

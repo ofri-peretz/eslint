@@ -13,6 +13,12 @@ let nestjsCommon: typeof import('@nestjs/common');
 let classValidator: typeof import('class-validator');
 let classTransformer: typeof import('class-transformer');
 
+// No per-hook timeout argument here on purpose. Cold SDK loads in this suite
+// have been measured at 82s (express) and 209s (@nestjs/common) on a fresh
+// worktree after `npm ci`; every fixed ceiling we tried (10s, 30s) blew and
+// reported the whole file as skipped. The ceiling now lives in
+// vitest.compat.config.mts, sized off those cold numbers — and this suite no
+// longer runs in the default test task, so it can't gate a commit.
 beforeAll(async () => {
   try {
     nestjsCommon = await import('@nestjs/common');
@@ -29,7 +35,7 @@ beforeAll(async () => {
   } catch {
     console.warn('class-transformer not installed');
   }
-}, 30_000); // native-addon packages can take >10s to load cold
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // @NESTJS/COMMON DECORATORS

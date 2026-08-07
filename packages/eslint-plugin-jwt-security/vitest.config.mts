@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -11,7 +11,23 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     watch: false,
+    // Repo-wide floor: pre-push runs many turbo tasks concurrently, so I/O-bound
+    // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
+    // an idle machine and mis-reports contention as failure. A hang still fails,
+    // just at 30s instead of 5s.
+    testTimeout: 30_000,
+    // hookTimeout does NOT inherit testTimeout — it stays at vitest's 10s
+    // default unless set, so an I/O-bound beforeAll/afterEach still dies with
+    // "Hook timed out in 10000ms" under the turbo fan-out while the test
+    // itself finishes comfortably. Paired deliberately; see the
+    // prepush-and-vitest-timeouts lock.
+    hookTimeout: 120_000,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+    // SDK interface-compat suites (src/__compatibility__/) import third-party
+    // SDKs, not our code, and cost minutes on a cold module cache. They run via
+    // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
+    // run that backs `turbo run test` and the lefthook pre-commit hook.
+    exclude: [...configDefaults.exclude, 'src/__compatibility__/**'],
     passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {

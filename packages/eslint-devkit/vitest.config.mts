@@ -48,10 +48,19 @@ export default defineConfig({
     // an idle machine and mis-reports contention as failure. A hang still fails,
     // just at 30s instead of 5s.
     testTimeout: 30_000,
-    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
-    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
-    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
-    hookTimeout: 30_000,
+    // `hookTimeout` does NOT inherit `testTimeout` — it stays at vitest's 10s
+    // default unless set, and that gap fails `git push` on its own: the
+    // deep-import-chain suite's `afterEach` deletes the 6,000 files the test
+    // wrote, so the file failed on teardown while the test itself finished well
+    // inside 30s.
+    //
+    // Sized off measurement, not guesswork. That delete is 4.1s on an idle
+    // machine; under the 61-way parallel `turbo run test` this battery runs it
+    // overran both 10s and 30s. 120s is ~30x the idle cost — headroom for the
+    // contention above (and for on-access AV scanning, which inflates
+    // first-touch file I/O by roughly 30x on managed macOS), while still
+    // failing a genuine hang rather than waiting forever.
+    hookTimeout: 120_000,
 
     globals: true,
     environment: 'node',

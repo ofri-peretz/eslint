@@ -229,6 +229,13 @@ jobs:
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
+      # Workspace-level locks: keep slow, unbounded work out of the lefthook
+      # pre-commit path — SDK compat suites excluded from the default run (and
+      # still wired into sdk-compatibility.yml), whole-repo scans carrying a
+      # cold-sized timeout.
+      - name: Pre-commit gate locks
+        run: npm run --silent test:precommit-locks
+
   # Sharded across runners. A single runner running `turbo run build` for 34
   # packages queues them behind its own 4-vCPU concurrency limit — measured
   # 230s. Build work has no outlier (no package over 25s), so splitting it is
