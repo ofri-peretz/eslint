@@ -19,6 +19,20 @@ describe('no-timing-unsafe-compare', () => {
   describe('Valid Code - Non-Secret Comparisons', () => {
     ruleTester.run('valid - false positive prevention', noTimingUnsafeCompare, {
       valid: [
+        // An existence check is not a secret comparison — there is no
+        // attacker-supplied operand, so there is nothing to time. Measured: the
+        // rule fired on `if (firstKey !== undefined)` in a plain object walk.
+        `if (firstKey !== undefined) { use(firstKey); }`,
+        `if (token === undefined) return;`,
+        `if (hash === null) throw new Error('missing');`,
+        `if (signature.length === 0) return false;`,
+        `if (apiKey !== null) init(apiKey);`,
+      // A bare `key` is not a secret name. Substring-matched it hit every AST
+      // walker in the repo — `key === 'text'`, `key === 'parts'` — 88 findings,
+      // none of them secrets. The specific names still fire (see invalid).
+      `if (key === 'messages') collect(value);`,
+      `if (prop.key === 'text') return;`,
+      `const first = keys.find((key) => key === wanted);`,
         // Regular non-secret comparisons
         { code: 'if (name === otherName) {}' },
         { code: 'if (count === 5) {}' },
