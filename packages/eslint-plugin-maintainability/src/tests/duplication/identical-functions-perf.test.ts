@@ -132,6 +132,51 @@ describe('identical-functions performance prunes', () => {
     });
   });
 
+  describe('the distance budget survives floating point', () => {
+    // The budget used to be `floor(L * (1 - t))`. That composed subtraction is
+    // lossy: `1 - 0.9 === 0.09999999999999998`, so every length that is a
+    // multiple of 10 came out one unit short and the walk abandoned pairs it
+    // should have kept. A too-SMALL budget is a false negative — the rule
+    // stops reporting a duplicate it used to report — which is why this gets
+    // its own group rather than riding along with the prune locks above.
+    //
+    // Pairs are built by substituting the last `d` characters, so the edit
+    // distance is exactly `d` and the similarity is exactly `(L - d) / L`.
+    const pairAtDistance = (
+      length: number,
+      distance: number,
+    ): [string, string] => {
+      const base = 'V'.repeat(length);
+      return [base, 'V'.repeat(length - distance) + 'X'.repeat(distance)];
+    };
+
+    it('keeps a pair sitting exactly ON the threshold (L=20, d=2)', () => {
+      const [a, b] = pairAtDistance(20, 2);
+      // (20 - 2) / 20 === 0.9 === the threshold, so this must be reported.
+      // Under the old budget it returned 0 and the duplicate vanished.
+      expect(calculateSimilarity(a, b, THRESHOLD)).toBe(0.9);
+    });
+
+    it('never under-budgets across lengths and thresholds', () => {
+      // A budget is only wrong when it is too small. Walk a spread of lengths
+      // and thresholds, put each pair exactly on its threshold, and require it
+      // to survive. The old formula fails this at every multiple of 10.
+      for (const threshold of [0.5, 0.75, 0.8, 0.9, 0.95]) {
+        for (let length = 10; length <= 200; length += 10) {
+          const distance = length - Math.ceil(length * threshold);
+          if (distance === 0) continue; // identical strings take the fast path
+          const [a, b] = pairAtDistance(length, distance);
+
+          const score = calculateSimilarity(a, b, threshold);
+          expect(
+            score,
+            `L=${length} t=${threshold} d=${distance} was pruned away`,
+          ).toBeGreaterThanOrEqual(threshold);
+        }
+      }
+    });
+  });
+
   describe('threshold is honoured, not hard-coded', () => {
     // Both prunes are derived from the configured threshold. A refactor that
     // baked in 0.9 would pass every test above and break custom configs.

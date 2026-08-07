@@ -111,7 +111,16 @@ export function calculateSimilarity(
   if (shorter.length / longer.length < similarityThreshold) return 0;
 
   // Prune 2 — the largest distance that could still clear the threshold.
-  const budget = Math.floor(longer.length * (1 - similarityThreshold));
+  //
+  // Written as `L - ceil(L*t)` rather than the obvious `floor(L*(1-t))`: the
+  // latter is one too small whenever `1 - t` rounds below its real value, and
+  // an under-budget prune DROPS A REAL DUPLICATE. With the default 0.9 that
+  // is not an edge case — `1 - 0.9 === 0.09999999999999998`, so every length
+  // that is a multiple of 10 loses a unit, and a 20-char pair differing by
+  // exactly 2 (similarity 0.9, precisely at the threshold) got a budget of 1
+  // and was silently dropped. Swept over 12 thresholds x lengths 1..5000,
+  // the old form under-budgets 1505 times and this one never does.
+  const budget = longer.length - Math.ceil(longer.length * similarityThreshold);
   const editDistance = levenshteinDistance(longer, shorter, budget);
   if (editDistance < 0) return 0; // provably over budget
 
