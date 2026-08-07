@@ -94,7 +94,11 @@ describe('packages whose tests read their own dist wait for their own build', ()
           // Rule tests embed strings like `express.static(path.join(__dirname,
           // 'dist'))` as *fixture code* — they never touch the filesystem. A
           // suite that genuinely reads its own dist has to import node:fs.
-          const readsFilesystem = /from\s+['"](node:)?fs['"]/.test(src);
+          // `fs/promises` counts too. The closing `['"]` used to sit straight
+          // after `fs`, so the subpath form did not match and a suite importing
+          // `node:fs/promises` would have slipped past this guard entirely —
+          // a lock that quietly stops covering the thing it was written for.
+          const readsFilesystem = /from\s+['"](node:)?fs(\/promises)?['"]/.test(src);
           if (buildsDistPath && readsFilesystem) hits.push(full);
         }
       }
