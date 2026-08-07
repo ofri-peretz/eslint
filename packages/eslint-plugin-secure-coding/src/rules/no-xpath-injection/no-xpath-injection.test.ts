@@ -330,17 +330,35 @@ describe('no-xpath-injection', () => {
           ],
         },
         {
+          // The asymmetry itself, pinned: a predicate step with no `//`.
+          // Caught by the concatenation handler all along; the template
+          // handler used to be blind to it.
+          code: 'const xpath = `/root/node[${req.query.id}]`; doc.evaluate(xpath);',
+          errors: [
+            {
+              messageId: 'unsafeXpathConcatenation',
+            },
+          ],
+        },
+        {
           code: `
             // Dangerous XPath allowing parent traversal
             const userPath = userInput; // Could be "../admin/password"
             const xpath = \`/app/users/user[\${userPath}]\`;
             const result = document.evaluate(xpath, document);
           `,
-          // Note: Only 1 error now - xpathInjection from VariableDeclarator
-          // Template literal FP reduction means /app/users/user[...] isn't flagged without //element syntax
+          // A location step carrying a predicate is XPath whether or not the
+          // expression also contains `//`. This fixture used to assert one
+          // error, which encoded the gap as expected behaviour: the template
+          // handler required `//` while the concatenation handler did not, so
+          // the same string was injection to one path and invisible to the
+          // other. Both now use XPATH_SYNTAX.
           errors: [
             {
               messageId: 'xpathInjection',
+            },
+            {
+              messageId: 'unsafeXpathConcatenation',
             },
           ],
         },
@@ -541,13 +559,18 @@ const xpath = \`//users/..\``,
       });
       const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
 
+      // The static text lives in the quasis, not in the printed source — the
+      // handler reads the AST, so the mock has to carry it there.
       templateLiteral({
         type: 'TemplateLiteral',
         parent: undefined,
         expressions: [
           { type: 'Identifier', name: 'userInput', parent: undefined },
         ],
-        quasis: [],
+        quasis: [
+          { type: 'TemplateElement', value: { raw: '/users/user[@id="' } },
+          { type: 'TemplateElement', value: { raw: '"]' } },
+        ],
       });
 
       expect(reports).toHaveLength(1);
@@ -564,7 +587,7 @@ const xpath = \`//users/..\``,
         type: 'TemplateLiteral',
         parent: undefined,
         expressions: [],
-        quasis: [],
+        quasis: [{ type: 'TemplateElement', value: { raw: '//users/..' } }],
       });
 
       expect(reports).toHaveLength(1);

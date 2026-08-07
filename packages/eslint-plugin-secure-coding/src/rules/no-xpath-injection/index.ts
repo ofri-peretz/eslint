@@ -351,18 +351,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if string contains XPath interpolation
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const containsXpathInterpolation = (text: string): boolean => {
-      return (
-        /\$\{[^}]+\}/.test(text) ||
-        /'[^']*\+[^+]*'/.test(text) ||
-        /"[^"]*\+[^+]*"/.test(text)
-      );
-    };
-
-    /**
      * Check if XPath input is from untrusted source
      */
     const isUntrustedXpathInput = (inputNode: TSESTree.Node): boolean => {
@@ -547,50 +535,49 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // Check template literals for XPath expressions
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const fullText = sourceCode.getText(node);
+        // The static text the template contributes, not its printed source.
+        // `sourceCode.getText(node)` includes the interpolated expressions, so
+        // a variable *named* `descendantOrSelf` — or a `//` inside an
+        // interpolation — decided an XPath verdict. Names are not content.
+        const staticText = literalTextOf(node);
 
         // Skip common non-XPath patterns
-        // URLs and API endpoints
-        if (/https?:\/\//.test(fullText) || /^[`'"]\s*\/api\//.test(fullText)) {
+        // URLs and API endpoints — `https://` carries the `//` that would
+        // otherwise read as the descendant axis.
+        if (/https?:\/\//.test(staticText) || /^\s*\/api\//.test(staticText)) {
           return;
         }
         // File paths (start with / or contain common path patterns)
         if (
-          /^[`'"]\s*\/home\//.test(fullText) ||
-          /^[`'"]\s*\/usr\//.test(fullText) ||
-          /^[`'"]\s*\/tmp\//.test(fullText)
+          /^\s*\/home\//.test(staticText) ||
+          /^\s*\/usr\//.test(staticText) ||
+          /^\s*\/tmp\//.test(staticText)
         ) {
           return;
         }
         // CSS selectors
         if (
-          /\[data-[\w-]+/.test(fullText) ||
-          /\[class=/.test(fullText) ||
-          /\[id=/.test(fullText)
+          /\[data-[\w-]+/.test(staticText) ||
+          /\[class=/.test(staticText) ||
+          /\[id=/.test(staticText)
         ) {
           return;
         }
         // Search/query strings
-        if (/\?.*=/.test(fullText) && !/\[@/.test(fullText)) {
+        if (/\?.*=/.test(staticText) && !/\[@/.test(staticText)) {
           return;
         }
 
-        // Check if this looks like an ACTUAL XPath expression
-        // Must have XPath-specific syntax, not just forward slashes
-        const hasXpathSyntax =
-          /\/\/\w+/.test(fullText) || // //element
-          /\[@\w+/.test(fullText) || // [@attr
-          /\[contains\(/.test(fullText) || // [contains(
-          /\[text\(\)/.test(fullText) || // [text()
-          /\/child::/.test(fullText) || // /child::
-          /\/descendant::/.test(fullText); // /descendant::
-
-        if (!hasXpathSyntax) {
+        // The same detector the concatenation path uses. The two used to
+        // disagree: this handler required `//`, so a location step carrying a
+        // predicate — `/root/node[${input}]` — was XPath injection to one path
+        // and invisible to the other.
+        if (!XPATH_SYNTAX.test(staticText)) {
           return;
         }
 
         // Check for interpolation in XPath-like expressions
-        if (containsXpathInterpolation(fullText)) {
+        if (node.expressions.length > 0) {
           // Check if any interpolated values are untrusted
           const hasUntrustedInterpolation = node.expressions.some(
             (expr: TSESTree.Expression) =>
@@ -625,7 +612,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for dangerous patterns in template literals
-        if (containsDangerousXpath(fullText)) {
+        if (containsDangerousXpath(staticText)) {
           // FALSE POSITIVE REDUCTION: Check for safe annotation
           if (hasSafeAnnotationOnStatement(node)) {
             return;
