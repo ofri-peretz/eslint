@@ -323,11 +323,14 @@ async function main() {
   }
 
   const date = new Date().toISOString().slice(0, 10);
+  const prereg = capturePreregistration({ allowDirty: true, entrypoint: import.meta.url });
   const envelope = {
     bench: 'ILB-Discover',
     benchVersion: evalSet.version ?? '1.0',
     timestamp: new Date().toISOString(),
-    methodologyCommit: capturePreregistration({ allowDirty: true }).methodologyCommit,
+    methodologyCommit: prereg.methodologyCommit,
+    methodologyHash: prereg.methodologyHash,
+    methodologyPaths: prereg.methodologyPaths,
     toolchain: getToolchain(),
     cost: {},
     effectiveness: {

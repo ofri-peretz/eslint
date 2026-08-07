@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -32,6 +33,39 @@ type RuleOptions = [Options?];
 // Dangerous DOM properties and methods
 const DANGEROUS_PROPERTIES = new Set(['innerHTML', 'outerHTML']);
 const DANGEROUS_METHODS = new Set(['insertAdjacentHTML', 'write', 'writeln']);
+
+/**
+ * Does this expression read a FileReader's *result*?
+ *
+ * `e.target.result` / `e.result` — the file content. `e.target.foo` is some
+ * other property of the reader and is not what this rule is about. Shape-based
+ * so it needs no handler-parameter name: the resolver already established that
+ * the value belongs to a FileReader handler; this says WHICH part.
+ */
+function readsFileReaderResult(node: TSESTree.Node): boolean {
+  // `result` must be read DIRECTLY off the event or off `event.target`.
+  // `event.target.metadata.result` is some other object's `result`, not
+  // FileReader content. Properties read on top of it still count, so
+  // `e.target.result.data` reports.
+  let current: TSESTree.Node = node;
+  while (current.type === AST_NODE_TYPES.MemberExpression) {
+    if (
+      current.property.type === AST_NODE_TYPES.Identifier &&
+      current.property.name === 'result'
+    ) {
+      const owner = current.object;
+      if (owner.type === AST_NODE_TYPES.Identifier) return true;
+      return (
+        owner.type === AST_NODE_TYPES.MemberExpression &&
+        owner.property.type === AST_NODE_TYPES.Identifier &&
+        owner.property.name === 'target' &&
+        owner.object.type === AST_NODE_TYPES.Identifier
+      );
+    }
+    current = current.object;
+  }
+  return false;
+}
 
 export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
   name: 'no-filereader-innerhtml',
@@ -95,8 +129,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
     }
 
     // Track FileReader onload handlers
-    let inFileReaderHandler = false;
-    let eventParamName: string | null = null;
 
     /**
      * Check if we're in a FileReader onload assignment
@@ -110,24 +142,21 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         (node.left.property.name === 'onload' ||
           node.left.property.name === 'onloadend')
       ) {
-        // Check if object looks like a FileReader (reader, fileReader, fr, etc.)
-        const objName = node.left.object.type === AST_NODE_TYPES.Identifier
-          ? node.left.object.name.toLowerCase()
-          : '';
+        // No receiver-NAME heuristic here. It used to require the name to
+        // contain 'reader'/'fr'/'r', which is narrower than the resolver that
+        // now decides ownership: `const f = new FileReader()` failed the name
+        // check while the resolver still attributed the payload to filereader,
+        // so no-innerhtml skipped it and THIS rule never fired — the finding
+        // vanished. The gate below (payloadSource === 'filereader') resolves
+        // the binding by construction, which is the correct question.
+        const handler = node.right;
         if (
-          objName.includes('reader') ||
-          objName.includes('fr') ||
-          objName === 'r'
+          handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          handler.type === AST_NODE_TYPES.FunctionExpression
         ) {
-          const handler = node.right;
-          if (
-            handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            handler.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = handler.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
+          const firstParam = handler.params[0];
+          if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
+            return { isHandler: true, eventParam: firstParam.name };
           }
         }
       }
@@ -137,9 +166,10 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
     /**
      * Check if we're in a FileReader addEventListener('load')
      */
-    function isFileReaderAddEventListener(
-      node: TSESTree.CallExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
+    function isFileReaderAddEventListener(node: TSESTree.CallExpression): {
+      isHandler: boolean;
+      eventParam: string | null;
+    } {
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -166,50 +196,28 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       return { isHandler: false, eventParam: null };
     }
 
-    /**
-     * Check if expression references e.target.result or event.target.result
-     */
-    function referencesFileReaderResult(
-      node: TSESTree.Node,
-      eventName: string,
-    ): boolean {
-      // Check for e.target.result pattern
-      if (node.type === AST_NODE_TYPES.MemberExpression) {
-        if (
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'result' &&
-          node.object.type === AST_NODE_TYPES.MemberExpression &&
-          node.object.property.type === AST_NODE_TYPES.Identifier &&
-          node.object.property.name === 'target' &&
-          node.object.object.type === AST_NODE_TYPES.Identifier &&
-          node.object.object.name === eventName
-        ) {
-          return true;
-        }
-        // Check nested
-        return referencesFileReaderResult(node.object, eventName);
-      }
-      return false;
-    }
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the filereader source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check if entering FileReader handler
-        const { isHandler, eventParam } = isFileReaderOnloadAssignment(node);
-        if (isHandler) {
-          inFileReaderHandler = true;
-          eventParamName = eventParam;
-        }
-
-        // Check for innerHTML/outerHTML assignment within handler
-        if (!inFileReaderHandler || !eventParamName) return;
+        // No `inFileReaderHandler` gate. A nested handler overwrote the single
+        // mutable `eventParamName`, and its exit cleared the OUTER handler's
+        // state — so sinks after a nested handler went unreported. The resolver
+        // already scopes per handler and picks the innermost, so it is the only
+        // condition needed.
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           node.left.property.type === AST_NODE_TYPES.Identifier &&
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
-          if (referencesFileReaderResult(node.right, eventParamName)) {
+          if (
+            payloadSource(node.right) === 'filereader' &&
+            readsFileReaderResult(node.right)
+          ) {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
@@ -230,21 +238,13 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
         const { isHandler } = isFileReaderOnloadAssignment(node);
         if (isHandler) {
-          inFileReaderHandler = false;
-          eventParamName = null;
         }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
         // Check if entering addEventListener handler
-        const { isHandler, eventParam } = isFileReaderAddEventListener(node);
-        if (isHandler) {
-          inFileReaderHandler = true;
-          eventParamName = eventParam;
-        }
 
-        // Check for dangerous method calls within handler
-        if (!inFileReaderHandler || !eventParamName) return;
+        // Same here — the resolver is the sink condition, not the mutable flag.
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -252,7 +252,10 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
-            if (referencesFileReaderResult(arg, eventParamName)) {
+            if (
+              payloadSource(arg) === 'filereader' &&
+              readsFileReaderResult(arg)
+            ) {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
@@ -275,8 +278,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         const { isHandler } = isFileReaderAddEventListener(node);
         if (isHandler) {
-          inFileReaderHandler = false;
-          eventParamName = null;
         }
       },
     };

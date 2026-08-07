@@ -42,6 +42,15 @@ const BENCHMARKS = {
     ],
     fixtureSizes: [1000, 5000, 10000],
   },
+  'ilb-perf-import-shapes': {
+    name: 'ILB-Perf — no-cycle across graph shapes',
+    baseDir: 'ilb-perf-import',
+    plugins: [
+      { name: 'eslint-plugin-import', config: 'import-no-cycle.config.js' },
+      { name: 'eslint-plugin-import-next', config: 'import-next-no-cycle.config.js' },
+    ],
+    fixtureSizes: ['chain-5000', 'wide-5000', 'flat-5000', 'dense-5000', 'single'],
+  },
   'ilb-cwe-corpus': {
     name: 'ILB-CWE-Corpus — Synthetic CWE Corpus',
     baseDir: 'ilb-cwe-corpus',

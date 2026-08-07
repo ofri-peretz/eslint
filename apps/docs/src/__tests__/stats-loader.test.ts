@@ -71,19 +71,10 @@ const mockPluginStats = {
       version: '1.0.0',
       published: true,
     },
-    {
-      name: 'eslint-plugin-crypto',
-      rules: 10,
-      description: '(Deprecated) Merged into node-security',
-      category: 'security',
-      version: '2.1.1',
-      published: false,
-      deprecated: true,
-    },
   ],
-  totalRules: 106,
+  totalRules: 96,
   totalPlugins: 5,
-  allPluginsCount: 6,
+  allPluginsCount: 5,
   generatedAt: '2026-02-01T12:00:00.000Z',
 };
 
@@ -153,8 +144,8 @@ describe('stats-loader unit tests', () => {
       const result = await loadPluginStats();
 
       expect(result).not.toBeNull();
-      expect(result?.plugins).toHaveLength(6);
-      expect(result?.totalRules).toBe(106);
+      expect(result?.plugins).toHaveLength(5);
+      expect(result?.totalRules).toBe(96);
       expect(result?.totalPlugins).toBe(5);
     });
 
@@ -214,25 +205,34 @@ describe('stats-loader unit tests', () => {
       const { getEcosystemStats } = await import('../lib/stats-loader');
       const result = await getEcosystemStats();
 
-      expect(result.plugins.total).toBe(6);
+      expect(result.plugins.total).toBe(5);
       expect(result.plugins.published).toBe(5);
-      expect(result.rules.total).toBe(106);
+      expect(result.rules.total).toBe(96);
       expect(result.coverage.average).toBe(85);
       expect(result.lastUpdated).toBe('2026-02-01T12:00:00.000Z');
     });
 
-    it('should use default values when plugin stats are missing', async () => {
+    it('falls back to the committed manifest when the runtime read fails', async () => {
       const mockedFs = vi.mocked(fs);
       mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
 
       const { getEcosystemStats } = await import('../lib/stats-loader');
+      const committed = (await import('../data/plugin-stats.json')).default;
       const result = await getEcosystemStats();
 
-      // Should return defaults
-      expect(result.plugins.total).toBe(18);
-      expect(result.plugins.security).toBe(11);
-      expect(result.plugins.quality).toBe(9);
-      expect(result.rules.total).toBe(330);
+      // Fallback is the committed plugin-stats.json, never hand-typed numbers
+      expect(result.plugins.total).toBe(committed.allPluginsCount);
+      expect(result.plugins.security).toBe(
+        committed.plugins.filter((p) =>
+          ['security', 'framework'].includes(p.category),
+        ).length,
+      );
+      expect(result.plugins.quality).toBe(
+        committed.plugins.filter((p) =>
+          ['quality', 'architecture'].includes(p.category),
+        ).length,
+      );
+      expect(result.rules.total).toBe(committed.totalRules);
       expect(result.coverage.average).toBe(85);
     });
 
@@ -245,9 +245,8 @@ describe('stats-loader unit tests', () => {
       const { getEcosystemStats } = await import('../lib/stats-loader');
       const result = await getEcosystemStats();
 
-      // Security: browser-security, jwt, crypto (3) + framework: express-security (1) = 4
-      // (crypto is marked as security category even though deprecated)
-      expect(result.plugins.security).toBe(4);
+      // Security: browser-security, jwt (2) + framework: express-security (1) = 3
+      expect(result.plugins.security).toBe(3);
       // Quality: conventions, maintainability (2)
       expect(result.plugins.quality).toBe(2);
       // Framework: express-security (1)
@@ -286,7 +285,6 @@ describe('stats-loader unit tests', () => {
       const { getDisplayStats } = await import('../lib/stats-loader');
       const result = await getDisplayStats();
 
-      // mockPluginStats has 5 published plugins (crypto is unpublished)
       expect(result.plugins).toBe(5);
     });
   });

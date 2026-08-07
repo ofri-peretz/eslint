@@ -5,6 +5,31 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('require-throttler', requireThrottler, {
   valid: [
+    // Substring matching reported these: 'authors'.includes('auth') and
+    // 'tokenize'.includes('token') are both true. An author listing is not a
+    // credential endpoint, and saying so costs the rule its credibility.
+    `
+      @Controller('authors')
+      class AuthorsController {
+        @Get()
+        getAuthors() {}
+      }
+    `,
+    `
+      @Controller('utils')
+      class UtilsController {
+        @Post('tokenize')
+        tokenize(@Body() dto) {}
+      }
+    `,
+    // Non-sensitive routes are covered by a global ThrottlerModule by default.
+    `
+      @Controller('articles')
+      class ArticlesController {
+        @Get()
+        findAll() {}
+      }
+    `,
     // ========== VALID: Controller with class-level @Throttle ==========
     {
       code: `
@@ -112,6 +137,19 @@ ruleTester.run('require-throttler', requireThrottler, {
     },
   ],
   invalid: [
+    // …while a sensitive token in any position still counts. The corpus names
+    // these handlers verb-first as often as noun-first, so suffix-only
+    // matching would drop most of them.
+    {
+      code: `
+        @Controller('account')
+        class AccountController {
+          @Post('verify')
+          verifyEmail(@Body() dto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
     // ========== INVALID: Controller without throttling ==========
     {
       code: `
@@ -121,6 +159,7 @@ ruleTester.run('require-throttler', requireThrottler, {
           findAll() {}
         }
       `,
+      options: [{ onlySensitiveRoutes: false }],
       errors: [{ messageId: 'missingThrottler' }],
     },
     // ========== INVALID: Multiple routes without throttling ==========
@@ -134,7 +173,11 @@ ruleTester.run('require-throttler', requireThrottler, {
           register() {}
         }
       `,
-      errors: [{ messageId: 'missingThrottler' }, { messageId: 'missingThrottler' }],
+      options: [{ onlySensitiveRoutes: false }],
+      errors: [
+        { messageId: 'missingThrottler' },
+        { messageId: 'missingThrottler' },
+      ],
     },
     // ========== INVALID: Test file with allowInTests: false ==========
     {
@@ -146,7 +189,148 @@ ruleTester.run('require-throttler', requireThrottler, {
         }
       `,
       filename: 'users.controller.spec.ts',
-      options: [{ allowInTests: false }],
+      options: [{ allowInTests: false, onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+  ],
+});
+
+// Lock for `skipRoutes`, which was declared in the schema but never read.
+ruleTester.run('require-throttler (skipRoutes)', requireThrottler, {
+  valid: [
+    // Matches the handler name (a route that would otherwise be reported).
+    {
+      code: `
+        @Controller('u')
+        class UsersController {
+          @Post()
+          login() {}
+        }
+      `,
+      options: [{ skipRoutes: ['login'] }],
+    },
+    // Matches a declared route path.
+    {
+      code: `
+        @Controller('u')
+        class UsersController {
+          @Get('/status')
+          check() {}
+        }
+      `,
+      options: [{ skipRoutes: ['status'], onlySensitiveRoutes: false }],
+    },
+  ],
+  invalid: [
+    // A bare (uninvoked) @Get declares no path, so only the name can match.
+    {
+      code: `
+        @Controller('u')
+        class UsersController {
+          @Get
+          check() {}
+        }
+      `,
+      options: [{ skipRoutes: ['status'], onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    // A non-matching entry does not suppress anything.
+    {
+      code: `
+        @Controller('u')
+        class UsersController {
+          @Get('/other')
+          check() {}
+        }
+      `,
+      options: [{ skipRoutes: ['status'], onlySensitiveRoutes: false }],
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+  ],
+});
+
+// The default now targets credential/abuse-prone routes only.
+ruleTester.run('require-throttler (sensitive routes)', requireThrottler, {
+  valid: [
+    // Behind authentication: not a brute-force target. This is the exact
+    // complement of require-guards, which exempts public auth entry points.
+    `
+      @Controller('search')
+      class SearchController {
+        @Post('smart')
+        @Authenticated({ permission: Permission.AssetRead })
+        searchSmart() {}
+      }
+    `,
+    `
+      @Controller('account')
+      @UseGuards(JwtAuthGuard)
+      class AccountController {
+        @Post('reset-password')
+        resetPassword() {}
+      }
+    `,
+    // 'search' and 'upload' are capacity concerns, not credential abuse.
+    `
+      @Controller('assets')
+      class AssetsController {
+        @Post('upload')
+        upload() {}
+        @Get('search')
+        search() {}
+      }
+    `,
+    // Ordinary CRUD is left to a global ThrottlerModule.
+    `
+      @Controller('articles')
+      class ArticlesController {
+        @Get('feed')
+        feed() {}
+      }
+    `,
+    // A project auth decorator does not itself imply throttling, but a
+    // @Throttle on the class does.
+    `
+      @Controller('auth')
+      @Throttle({ default: { limit: 5, ttl: 60000 } })
+      class AuthController {
+        @Post('login')
+        login() {}
+      }
+    `,
+  ],
+  invalid: [
+    // Brute-forceable: login by handler name.
+    {
+      code: `
+        @Controller('auth')
+        class AuthController {
+          @Post()
+          login() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    // Brute-forceable: password reset by route path.
+    {
+      code: `
+        @Controller('account')
+        class AccountController {
+          @Post('reset-password')
+          handle() {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
+    // OTP flooding.
+    {
+      code: `
+        @Controller('mfa')
+        class MfaController {
+          @Post('resend-otp')
+          resend() {}
+        }
+      `,
       errors: [{ messageId: 'missingThrottler' }],
     },
   ],

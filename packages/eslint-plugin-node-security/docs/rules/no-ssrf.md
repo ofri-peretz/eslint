@@ -74,6 +74,28 @@ function safeFetch(rawUrl) {
 }
 ```
 
+### ✅ Also correct — no evidence of user flow
+
+The rule reports on evidence, not on the mere presence of a dynamic argument.
+A Node options object whose fields are plain locals is internal plumbing, not
+a user-controlled URL:
+
+```js
+function fetchProfile(host, path, cb) {
+  // host/path are this helper's own parameters — not flagged
+  return https.request({ host, path, method: 'GET' }, cb);
+}
+
+const r = await fetch(`https://api.internal/items/${id}`);   // id is a local
+```
+
+Three shapes count as evidence:
+
+1. The whole argument is a user-input-named identifier — `fetch(userUrl)`.
+2. Any part of the expression reads off a request object (`req`, `request`,
+   `ctx`, `event`) — `https.request({ host: req.query.host })`.
+3. A template literal or concatenation interpolating either of the above.
+
 ## Error Message Format
 
 ```text
@@ -86,3 +108,9 @@ function safeFetch(rawUrl) {
 - URL fragments derived from a chain of variables (more than one assignment hop) are not always traced.
 - Constructed `URL` objects passed to `request.get(urlObject)` are detected when the constructor receives user input directly, not when input enters via setter methods.
 - Allowlists declared in environment variables (consumed at runtime) cannot be validated statically — the rule still fires; suppress with an `eslint-disable-next-line` comment that names the validating function.
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

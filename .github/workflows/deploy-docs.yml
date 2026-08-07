@@ -58,8 +58,21 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # ─── Pinned Vercel CLI ─────────────────────────────────────────────
+      # `npx vercel` (unpinned) broke this deploy on 2026-07-17+: newer CLIs
+      # (observed on 58.4.4) build functions with `experimentalAllowBundling:
+      # true` + a `filePathMap` whose entries point at repo-root
+      # `node_modules/**` — files that live OUTSIDE `.vercel/output`. With
+      # `--archive=tgz` only the output dir is uploaded, so Vercel's remote
+      # side fails with `ENOENT: lstat '/vercel/path0/node_modules/…'`
+      # during "Deploying outputs". Dropping `--archive=tgz` is not an
+      # option (the artifact is >15k files, over the per-deploy limit).
+      # 54.20.1 is the last empirically-green version (build sets
+      # experimentalAllowBundling: false; deploy succeeds). When bumping,
+      # verify a `target=preview` dispatch end-to-end first.
+      VERCEL_CLI_VERSION: 54.20.1
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.ref || github.ref }}
           fetch-depth: 1
@@ -70,7 +83,7 @@ jobs:
       - name: Pull Vercel environment metadata
         run: |
           set -euo pipefail
-          npx vercel pull \
+          npx "vercel@$VERCEL_CLI_VERSION" pull \
             --yes \
             --environment=${{ inputs.environment }} \
             --token="$VERCEL_TOKEN"
@@ -112,9 +125,9 @@ jobs:
           # Production gets `--prod`; preview omits it. Vercel CLI uses the
           # build settings from vercel.json (cd apps/docs && next build).
           if [ "${{ inputs.environment }}" = "production" ]; then
-            npx vercel build --prod --token="$VERCEL_TOKEN"
+            npx "vercel@$VERCEL_CLI_VERSION" build --prod --token="$VERCEL_TOKEN"
           else
-            npx vercel build --token="$VERCEL_TOKEN"
+            npx "vercel@$VERCEL_CLI_VERSION" build --token="$VERCEL_TOKEN"
           fi
 
       # ─── Analytics regression lock (built bundle) ──────────────────────
@@ -172,9 +185,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ inputs.environment }}" = "production" ]; then
-            url=$(npx vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN")
+            url=$(npx "vercel@$VERCEL_CLI_VERSION" deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN")
           else
-            url=$(npx vercel deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN")
+            url=$(npx "vercel@$VERCEL_CLI_VERSION" deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN")
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to: $url"

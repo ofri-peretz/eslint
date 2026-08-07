@@ -18,7 +18,7 @@ This folder is **org-agnostic**. The framework — formulas, scripts, narratives
 
 ### Operational artifacts
 
-4. [`analyzer-evaluation-framework.md`](analyzer-evaluation-framework.md) — **how to evaluate any static analyzer.** Vendor-neutral six-dimension scorecard a buyer applies to SonarQube / Snyk / CodeQL / Semgrep / `@interlace/eslint-plugin-*` / anything. Operationalises the "what 'high-end' means" subsection in `philosophy.md`. Structurally answers Attack 7 (vendor-conflict) by being reusable against the alternatives.
+4. [`analyzer-evaluation-framework.md`](analyzer-evaluation-framework.md) — **how to evaluate any static analyzer.** Vendor-neutral six-dimension scorecard a buyer applies to SonarQube / Snyk / CodeQL / Semgrep / Interlace eslint-plugins / anything. Operationalises the "what 'high-end' means" subsection in `philosophy.md`. Structurally answers Attack 7 (vendor-conflict) by being reusable against the alternatives.
 5. [`data/niche-presets.json`](data/niche-presets.json) — **per-niche calculator inputs.** Ten-niche presets the calculator can load directly; each entry has investor metrics, recommended budget %, calculator overrides, and static-analysis priority hints.
 
 ### Worked examples

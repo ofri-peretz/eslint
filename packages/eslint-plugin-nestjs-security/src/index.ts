@@ -25,11 +25,14 @@ import { TSESLint } from '@interlace/eslint-devkit';
 import { requireGuards } from './rules/require-guards';
 import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
 import { requireThrottler } from './rules/require-throttler';
+import { requireValidationPipeWhitelist } from './rules/require-validation-pipe-whitelist';
+import { noPermissiveCors } from './rules/no-permissive-cors';
 
 // P1 Rules
-import { requireClassValidator } from './rules/require-class-validator';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
-import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
+import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
+import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
+import { noHybridAppConfigLoss } from './rules/no-hybrid-app-config-loss';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -42,11 +45,14 @@ export const rules: Record<
   'require-guards': requireGuards,
   'no-missing-validation-pipe': noMissingValidationPipe,
   'require-throttler': requireThrottler,
+  'require-validation-pipe-whitelist': requireValidationPipeWhitelist,
+  'no-permissive-cors': noPermissiveCors,
 
   // P1 - Data Validation & Exposure
-  'require-class-validator': requireClassValidator,
   'no-exposed-private-fields': noExposedPrivateFields,
-  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
+  'no-res-bypass-serialization': noResBypassSerialization,
+  'no-unguarded-swagger': noUnguardedSwagger,
+  'no-hybrid-app-config-loss': noHybridAppConfigLoss,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -55,7 +61,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-nestjs-security',
-    version: '1.2.4',
+    version: '2.2.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -68,11 +74,19 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'nestjs-security/require-guards': 'error',
   'nestjs-security/no-missing-validation-pipe': 'warn',
   'nestjs-security/require-throttler': 'warn',
+  // Both enter at 'error': each is a narrow, statically-decidable misconfiguration
+  // with no legitimate use, and each was wrong in real apps we measured.
+  'nestjs-security/require-validation-pipe-whitelist': 'error',
+  'nestjs-security/no-permissive-cors': 'error',
 
   // P1 - Data Validation
-  'nestjs-security/require-class-validator': 'warn',
   'nestjs-security/no-exposed-private-fields': 'warn',
-  'nestjs-security/no-exposed-debug-endpoints': 'error',
+  'nestjs-security/no-res-bypass-serialization': 'warn',
+  'nestjs-security/no-unguarded-swagger': 'warn',
+  // Enters at 'error': the absence is statically visible, it has no benign
+  // reading once the project registers globals, and every hybrid app measured
+  // was in the failing state.
+  'nestjs-security/no-hybrid-app-config-loss': 'error',
 };
 
 /**
@@ -104,7 +118,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       Object.keys(rules).map((ruleName) => [
         `nestjs-security/${ruleName}`,
         'error',
-      ])
+      ]),
     ),
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -133,7 +147,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       'nestjs-security/no-missing-validation-pipe': 'error',
-      'nestjs-security/require-class-validator': 'error',
+      'nestjs-security/require-validation-pipe-whitelist': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 };
@@ -149,8 +163,12 @@ export default plugin;
 export type { Options as RequireGuardsOptions } from './rules/require-guards';
 export type { Options as NoMissingValidationPipeOptions } from './rules/no-missing-validation-pipe';
 export type { Options as RequireThrottlerOptions } from './rules/require-throttler';
-export type { Options as RequireClassValidatorOptions } from './rules/require-class-validator';
+export type { Options as RequireValidationPipeWhitelistOptions } from './rules/require-validation-pipe-whitelist';
+export type { Options as NoPermissiveCorsOptions } from './rules/no-permissive-cors';
 export type { Options as NoExposedPrivateFieldsOptions } from './rules/no-exposed-private-fields';
+export type { Options as NoResBypassSerializationOptions } from './rules/no-res-bypass-serialization';
+export type { Options as NoUnguardedSwaggerOptions } from './rules/no-unguarded-swagger';
+export type { Options as NoHybridAppConfigLossOptions } from './rules/no-hybrid-app-config-loss';
 
 /**
  * Combined options type for all rules
@@ -159,6 +177,10 @@ export interface AllNestjsSecurityRulesOptions {
   'require-guards'?: import('./rules/require-guards').Options;
   'no-missing-validation-pipe'?: import('./rules/no-missing-validation-pipe').Options;
   'require-throttler'?: import('./rules/require-throttler').Options;
-  'require-class-validator'?: import('./rules/require-class-validator').Options;
+  'require-validation-pipe-whitelist'?: import('./rules/require-validation-pipe-whitelist').Options;
+  'no-permissive-cors'?: import('./rules/no-permissive-cors').Options;
   'no-exposed-private-fields'?: import('./rules/no-exposed-private-fields').Options;
+  'no-res-bypass-serialization'?: import('./rules/no-res-bypass-serialization').Options;
+  'no-unguarded-swagger'?: import('./rules/no-unguarded-swagger').Options;
+  'no-hybrid-app-config-loss'?: import('./rules/no-hybrid-app-config-loss').Options;
 }

@@ -27,7 +27,7 @@
  *
  * Self-contained: every value is a literal here, so the file works even when a
  * consumer omits the brand layer. Brand-coupled tokens (e.g. --subtle, derived
- * from the violet primary) stay in interlace-theme.css.
+ * from the brand primary) stay in interlace-theme.css.
  *
  * Fonts: families only. Inter / JetBrains Mono are loaded by the app (next/font
  * or @font-face with font-display: swap, per TYPOGRAPHY_PHILOSOPHY "no FOIT").

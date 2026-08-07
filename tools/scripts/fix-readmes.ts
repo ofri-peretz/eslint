@@ -44,9 +44,7 @@ const TYPE_AWARENESS_MAP = loadTypeAwarenessMap();
 
 // Packages whose READMEs are hand-maintained (e.g. carry a deprecation banner).
 // The generator skips these entirely so it never rewrites or "fixes" them.
-const DEPRECATED_PACKAGES = new Set<string>([
-    'eslint-plugin-crypto', // Consolidated into eslint-plugin-node-security (2026-05-10)
-]);
+const DEPRECATED_PACKAGES = new Set<string>([]);
 
 // Get all directories in packages/
 const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
@@ -58,14 +56,20 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
 // Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
-    // Kept for description-lock validation even though crypto is in
-    // DEPRECATED_PACKAGES (the generator skips it; the description still
-    // pins what the package historically claims to do).
-    'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
-    'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
-    'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    // jwt / pg are the deprecated pre-rename names. They keep their entries so
+    // the generator can still regenerate their READMEs while the deprecation
+    // ages out; the -security names below are the ones that ship.
+    'eslint-plugin-jwt-security': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
+    'eslint-plugin-postgresql-security': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    'eslint-plugin-sequelize-security': 'Security rules for the Sequelize ORM (SQL injection prevention in raw queries).',
+    'eslint-plugin-mysql-security': 'Security rules for mysql2 / mysql (SQL injection prevention in raw queries).',
+    'eslint-plugin-prisma-security': 'Security rules for @prisma/client (SQL injection prevention in raw queries).',
+    'eslint-plugin-drizzle-security': 'Security rules for drizzle-orm (SQL injection prevention in raw queries).',
+    'eslint-plugin-knex-security': 'Security rules for knex (SQL injection prevention in raw queries).',
+    'eslint-plugin-sqlite-security': 'Security rules for better-sqlite3 / sqlite3 (SQL injection prevention in raw queries).',
+    'eslint-plugin-typeorm-security': 'Security rules for typeorm (SQL injection prevention in raw queries).',
     'eslint-plugin-browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
     'eslint-plugin-lambda-security': 'Security best practices for AWS Lambda functions (IAM, timeouts, environment).',
     'eslint-plugin-secure-coding': 'General secure coding practices and OWASP compliance for JavaScript/TypeScript.',
@@ -121,9 +125,9 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | Plugin | Downloads | Description |
 | :--- | :---: | :--- |
 | [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-postgresql-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | PostgreSQL security & best practices. |
 | [\`eslint-plugin-node-security\`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
-| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt-security) | JWT security & best practices. |
 | [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
 | [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
@@ -335,9 +339,14 @@ function processPackage(pkg: string): void {
     // --- 4. RECONSTRUCT CONTENT ---
     const output: string[] = [];
 
-    // Header & Logo
+    // Header & Logos — Interlace mark + ESLint mark side by side. The UTM
+    // stamp on the Interlace link is added by `scripts/stamp-utm-links.ts`
+    // on a later pass; the ESLint link points at eslint.org (not an owned
+    // property) so it stays un-stamped.
     output.push('<p align="center">');
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>`);
+    output.push('  &nbsp;&nbsp;');
+    output.push(`  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>`);
     output.push('</p>');
     output.push('');
     output.push('<p align="center">');
@@ -492,6 +501,16 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 `);
     output.push(`<p align="center">`);
     output.push(`  <a href="https://eslint.interlace.tools/docs/${docsSubPath}"><img src="https://eslint.interlace.tools/images/og-${pluginName}.png" alt="ESLint Interlace Plugin" width="100%" /></a>`);
+    output.push(`</p>`);
+    output.push('');
+
+    // Closing footer — Interlace mark only (no ESLint mark here; that pairing
+    // lives in the header). Same light-pair asset as the header, smaller
+    // (~70px). The link below is bare; `scripts/stamp-utm-links.ts` stamps
+    // the per-package UTM campaign onto it in a later pass (same as the
+    // header link above).
+    output.push(`<p align="center">`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>`);
     output.push(`</p>`);
 
     fs.writeFileSync(readmePath, output.join('\n'));

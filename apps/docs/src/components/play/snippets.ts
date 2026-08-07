@@ -265,25 +265,33 @@ export function pluginsInSnippet(snippet: PlaygroundSnippet): string[] {
 }
 
 /**
- * Map a plugin prefix to its `@interlace/...` package name. Used by the
- * copy-config emitter so the generated snippet imports are accurate.
+ * Map a plugin prefix to its npm package name, for the copy-config emitter.
  *
- * The keys here cover every flagship plugin that any snippet references.
- * If a new snippet introduces a new plugin, add the row here. (Lock test
- * will catch this drift in Phase 3.)
+ * Our plugins publish **unscoped** — `eslint-plugin-jwt`, not
+ * `@interlace/eslint-plugin-jwt`. This was a hand-maintained lookup table until
+ * it drifted to a scoped prefix that was never published, which put install and
+ * import lines for nonexistent packages on the public playground. Deriving the
+ * name removes the class of bug; the lock test checks the derived package
+ * actually exists in `packages/`.
  */
-export const PLUGIN_PREFIX_TO_PACKAGE: Record<string, string> = {
-  'jwt': '@interlace/eslint-plugin-jwt',
-  'secure-coding': '@interlace/eslint-plugin-secure-coding',
-  'pg': '@interlace/eslint-plugin-pg',
-  'mongodb-security': '@interlace/eslint-plugin-mongodb-security',
-  'browser-security': '@interlace/eslint-plugin-browser-security',
-  'react-a11y': '@interlace/eslint-plugin-react-a11y',
-  // Add additional flagship plugins here as snippets reference them.
-  'node-security': '@interlace/eslint-plugin-node-security',
-  'react-features': '@interlace/eslint-plugin-react-features',
-  'import-next': '@interlace/eslint-plugin-import-next',
-  'vercel-ai-security': '@interlace/eslint-plugin-vercel-ai-security',
+export function pluginPrefixToPackage(prefix: string): string {
+  return RENAMED_PREFIXES[prefix] ?? `eslint-plugin-${prefix}`;
+}
+
+/**
+ * Prefixes whose package name is no longer `eslint-plugin-<prefix>`.
+ *
+ * Both plugins were renamed to `-security` and the old npm packages are
+ * deprecated, but the **rule namespace was deliberately kept** so nothing
+ * downstream had to move. That is exactly what breaks the derivation: `jwt/…`
+ * findings are served by `eslint-plugin-jwt-security`, not `eslint-plugin-jwt`.
+ * Left underived, the copy-config button handed users an install line for a
+ * deprecated package — the same class of bug the derivation was introduced to
+ * kill, so it stays derived-by-default with these two as named exceptions.
+ */
+const RENAMED_PREFIXES: Readonly<Record<string, string>> = {
+  jwt: 'eslint-plugin-jwt-security',
+  pg: 'eslint-plugin-postgresql-security',
 };
 
 /**
@@ -312,7 +320,7 @@ export function buildConfigSnippet(enabledPrefixes: readonly string[]): string {
   const imports = enabledPrefixes
     .map((prefix) => {
       const id = pluginPrefixToIdentifier(prefix);
-      const pkg = PLUGIN_PREFIX_TO_PACKAGE[prefix] ?? `@interlace/eslint-plugin-${prefix}`;
+      const pkg = pluginPrefixToPackage(prefix);
       return `import ${id} from '${pkg}';`;
     })
     .join('\n');

@@ -136,10 +136,11 @@ const tokenStore = (() => {
 
 ## Options
 
-| Option          | Type       | Default                                                                         | Description               |
-| --------------- | ---------- | ------------------------------------------------------------------------------- | ------------------------- |
-| `allowInTests`  | `boolean`  | `false`                                                                         | Allow in test files       |
-| `sensitiveKeys` | `string[]` | `['token', 'password', 'secret', 'key', 'auth', 'credential', 'ssn', 'credit']` | Keys considered sensitive |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `["token","jwt","access_token","accessToken","refresh_token","refreshToken","id_token","idToken","auth","password","passwd","secret","api_key","apiKey","private_key","privateKey","session","sessionId","credential","bearer"]` | Key substrings considered sensitive |
+| `checkSessionStorage` | `boolean` | `true` | Also flag `sessionStorage` writes |
 
 ```json
 {
@@ -147,7 +148,7 @@ const tokenStore = (() => {
     "browser-security/no-sensitive-localstorage": [
       "error",
       {
-        "sensitiveKeys": ["token", "password", "apiKey", "secret"]
+        "sensitivePatterns": ["token", "password", "apiKey", "secret"]
       }
     ]
   }
@@ -216,7 +217,7 @@ const key = 'accessToken';
 localStorage.setItem(key, value);
 ```
 
-**Mitigation**: Use consistent naming. Configure sensitiveKeys pattern.
+**Mitigation**: Use consistent naming, or add the substring to `sensitivePatterns`.
 
 ### Nested Sensitive Data
 

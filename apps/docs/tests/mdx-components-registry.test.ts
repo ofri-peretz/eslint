@@ -54,6 +54,10 @@ describe('MDX Components Registry', () => {
     it('should have Mermaid component for diagrams', () => {
       expect(components.Mermaid).toBeDefined();
     });
+
+    it('should have Stat component for manifest-driven counts', () => {
+      expect(components.Stat).toBeDefined();
+    });
   });
 
   describe('Twoslash Components', () => {

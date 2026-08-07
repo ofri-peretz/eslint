@@ -206,3 +206,10 @@ obj[method](userInput);
 - [OWASP: Regular Expression Denial of Service](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 - [CWE-1333: Inefficient Regular Expression Complexity](https://cwe.mitre.org/data/definitions/1333.html)
 - [Runaway Regular Expressions: Catastrophic Backtracking](https://www.regular-expressions.info/catastrophic.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowCommonPatterns` | `boolean` | `false` | Allow certain common patterns |
+| `maxPatternLength` | `number` | `500` | Maximum pattern length to analyze |

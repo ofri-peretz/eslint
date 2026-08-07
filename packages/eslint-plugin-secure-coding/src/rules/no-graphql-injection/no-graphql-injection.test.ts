@@ -913,14 +913,15 @@ describe('no-graphql-injection', () => {
       });
 
       const binaryListener = listeners['BinaryExpression'] as (node: unknown) => void;
+      // The rule reads the concatenation's static string parts from the AST
+      // (not sourceCode.getText), so the synthetic node carries real Literals.
       const node = {
         type: 'BinaryExpression',
         operator: '+',
-        left: { type: 'Identifier', name: 'a', parent: undefined },
-        right: { type: 'Identifier', name: 'b', parent: undefined },
+        left: { type: 'Literal', value: 'query { user(id: "', parent: undefined },
+        right: { type: 'Literal', value: '") { name } }', parent: undefined },
         loc: undefined,
       };
-      // sourceCode.getText(node) is stubbed to always return sourceText regardless of node.
       void context;
 
       binaryListener(node);
@@ -928,6 +929,30 @@ describe('no-graphql-injection', () => {
       expect(reports).toHaveLength(1);
       expect(reports[0]?.messageId).toBe('graphqlInjection');
       expect(reports[0]?.data?.['line']).toBe('0');
+    });
+
+    it('BinaryExpression static-text reassembly falls back to a quasi raw value when cooked is absent', () => {
+      const { listeners, reports } = createWithMockContext(noGraphqlInjection, { options: [{}] });
+
+      const binaryListener = listeners['BinaryExpression'] as (node: unknown) => void;
+      // `cooked` is undefined for a template element containing an invalid
+      // escape sequence (only legal in tagged templates), so the raw text is
+      // the only source of the static string.
+      binaryListener({
+        type: 'BinaryExpression',
+        operator: '+',
+        left: {
+          type: 'TemplateLiteral',
+          quasis: [{ type: 'TemplateElement', value: { cooked: undefined, raw: 'query { user(id: "' } }],
+          expressions: [],
+          parent: undefined,
+        },
+        right: { type: 'Literal', value: '") { name } }', parent: undefined },
+        loc: undefined,
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0]?.messageId).toBe('graphqlInjection');
     });
 
     it('CallExpression missingInputValidation report uses fallback line "0" when node.loc is missing', () => {
@@ -1113,3 +1138,82 @@ describe('no-graphql-injection', () => {
 
 });
 
+
+/**
+ * Regression lock — a template literal is not a GraphQL query.
+ *
+ * On a 1,470-file corpus (webpack, lodash, eslint-plugin-import, two NestJS
+ * boilerplates) this rule produced 41 findings at CVSS 9.8. Every one was an
+ * ordinary message or code-generation string, matched by two over-broad
+ * heuristics:
+ *
+ *   1. a GraphQL keyword ANYWHERE in the text — `--type ${a} or ${b}` matched
+ *      the schema keyword `type`;
+ *   2. two nested braces ANYWHERE in the text — webpack error messages such as
+ *      `resolve.fallback: { "${request}": require.resolve("${alias}") }`.
+ *
+ * GraphQL declares operations and type definitions at the start of a line, and
+ * a bare selection set IS the whole document. Both are now required.
+ */
+describe('no-graphql-injection — corpus regression', () => {
+  ruleTester.run('graphql syntax must actually be graphql', noGraphqlInjection, {
+    valid: [
+      // Verbatim from ack-nestjs-boilerplate migration.seed.base.ts:24
+      'logger.warn(`Please specify --type ${a} or ${b}`);',
+      // Mid-sentence schema keywords in ESLint-style message strings
+      'const m = `Invalid type ${actual} for input ${name}`;',
+      'const m = `expected interface ${a} but got enum ${b}`;',
+      // Verbatim shape from webpack errors/ModuleNotFoundError.js:71
+      'const m = `add a fallback: resolve.fallback: { "${request}": require.resolve("${alias}") }`;',
+      // Generated-code templates: nested braces that are not a selection set
+      'const src = `function ${name}() { return { ok: 1 }; }`;',
+      'const s = "prefix { a { b } } suffix";',
+      // Starts and ends with a brace, but the braces never nest — two sibling
+      // blocks are not a selection set.
+      'const s = `{ a } and { b }`;',
+      // Every keyword class, present but mid-line, in both the template-literal
+      // scanner and the string/concatenation scanner.
+      'const s = `the query { x } here`;',
+      'const s = `the fragment Foo on Bar here`;',
+      'const s = `the type Foo { x } here`;',
+      'const s = "the query { x } here";',
+      'const s = "the fragment Foo on Bar here";',
+      'const s = "the type Foo { x } here";',
+      // Schema keyword at the start of a line but with nothing after it, and
+      // with a non-word character after it — neither is a type definition.
+      'const s = `{}\\ntype`;',
+      'const s = `{}\\ntype {`;',
+      'const s = "{}\\ntype";',
+      'const s = "{}\\ntype {";',
+    ],
+    invalid: [
+      // TRUE POSITIVE: operation keyword at the start of the document.
+      {
+        code: 'const q = `query { user(id: "${userId}") { name } }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // TRUE POSITIVE: indented multi-line query — keyword starts its line.
+      {
+        code: [
+          'const q = `',
+          '  mutation CreateUser {',
+          '    createUser(name: "${name}") { id }',
+          '  }',
+          '`;',
+        ].join('\\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // TRUE POSITIVE: bare selection set that IS the whole document.
+      {
+        code: 'const q = `{ users(name: "${name}") { posts { id } } }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // TRUE POSITIVE: a concatenation mixing a template literal and a string
+      // literal — the static text is reassembled from both operand kinds.
+      {
+        code: 'const q = `query { user(id: "` + userId + \'") { name } }\';',
+        errors: [{ messageId: 'graphqlInjection' }, { messageId: 'graphqlInjection' }],
+      },
+    ],
+  });
+});

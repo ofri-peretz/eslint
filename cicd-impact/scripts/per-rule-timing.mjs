@@ -54,7 +54,6 @@ const interlacePlugins = [
   ['pg', 'eslint-plugin-pg'],
   ['jwt', 'eslint-plugin-jwt'],
   ['browser-security', 'eslint-plugin-browser-security'],
-  ['crypto', 'eslint-plugin-crypto'],
   ['mongodb-security', 'eslint-plugin-mongodb-security'],
   ['express-security', 'eslint-plugin-express-security'],
   ['nestjs-security', 'eslint-plugin-nestjs-security'],

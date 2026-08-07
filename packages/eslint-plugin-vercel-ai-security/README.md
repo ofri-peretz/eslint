@@ -1,5 +1,11 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://vercel.com/docs/ai-sdk" target="_blank"><img src="https://eslint.interlace.tools/logos/vercel.svg" alt="Vercel AI SDK" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -10,7 +16,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/tree/main" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-vercel-ai-security" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-vercel-ai-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-vercel-ai-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -134,8 +140,8 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-778 |  |  | This rule identifies AI SDK calls that aren't preceded by logging statements | 🟢 |  |  |  |  |  |
 | [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-20 |  |  | This rule identifies code patterns where embeddings are stored in vector databases without validation. | 🟢 |  |  |  |  |  |
 | [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-755 |  |  | This rule identifies AI SDK calls that aren't wrapped in try-catch blocks | 🟢 |  |  |  |  |  |
-| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit | 🟢 |  |  |  |  |  |
-| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify a maxTokens limit | 🟢 |  |  |  |  |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-834 |  |  | This rule identifies AI SDK calls that use tools but don't specify a step limit (maxSteps or stopWhen) | 🟢 |  |  |  |  |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens) | 🟢 |  |  |  |  |  |
 | [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-200 |  |  | This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file s… | 🟢 |  |  |  |  |  |
 | [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-707 |  |  | This rule identifies code patterns where AI-generated output is displayed to users without validation or fa… | 🟢 |  |  |  |  |  |
 | [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security) | CWE-74 |  |  | This rule identifies code patterns where content retrieved from vector stores or document retrieval systems… | 🟢 |  |  |  |  |  |
@@ -177,4 +183,8 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
   <a href="https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-vercel-ai-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-vercel-ai-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
 </p>

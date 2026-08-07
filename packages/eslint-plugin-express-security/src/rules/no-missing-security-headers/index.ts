@@ -38,6 +38,40 @@ const DEFAULT_REQUIRED_HEADERS = [
   'X-Content-Type-Options',
 ];
 
+/** Methods that write a response header. */
+const HEADER_METHODS = new Set(['setHeader', 'header', 'set']);
+
+/**
+ * Receivers that actually are an HTTP response. `set` and `header` are far too
+ * common to match on the method name alone — `url.searchParams.set(…)` and
+ * `app.set('view engine', …)` are not header calls.
+ */
+const RESPONSE_RECEIVER = /^(res|resp|response|reply)$/i;
+
+/**
+ * Is this call a response header setter (res.setHeader / res.header / res.set,
+ * including `ctx.res.set(…)` and `this.response.header(…)`)?
+ */
+function isResponseHeaderCall(node: TSESTree.CallExpression): boolean {
+  const { callee } = node;
+  if (callee.type !== 'MemberExpression' ||
+      callee.property.type !== 'Identifier' ||
+      !HEADER_METHODS.has(callee.property.name)) {
+    return false;
+  }
+
+  const { object } = callee;
+  if (object.type === 'Identifier') {
+    return RESPONSE_RECEIVER.test(object.name);
+  }
+  if (object.type === 'MemberExpression' && object.property.type === 'Identifier') {
+    return RESPONSE_RECEIVER.test(object.property.name);
+  }
+  // ponytail: anything else (call results, computed access) is not tracked —
+  // a rule that guesses at aliases trades this false positive for a worse one.
+  return false;
+}
+
 /**
  * Extract header name from setHeader call
  */
@@ -79,10 +113,7 @@ function checkFunctionForSecurityHeaders(
 
   // Collect all setHeader calls in this scope
   function collectHeaders(astNode: TSESTree.Node): void {
-    if (astNode.type === 'CallExpression' &&
-        astNode.callee.type === 'MemberExpression' &&
-        astNode.callee.property.type === 'Identifier' &&
-        ['setHeader', 'header', 'set'].includes(astNode.callee.property.name)) {
+    if (astNode.type === 'CallExpression' && isResponseHeaderCall(astNode)) {
       const headerName = extractHeaderName(astNode);
       if (headerName) {
         setHeaders.add(headerName);
@@ -221,48 +252,44 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
       // Check for res.setHeader, res.header, res.set
-      if (node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier') {
-        const methodName = node.callee.property.name;
-        
-        if (['setHeader', 'header', 'set'].includes(methodName)) {
-          const scopeKey = getScopeKey(node);
+      if (!isResponseHeaderCall(node)) {
+        return;
+      }
 
-          // Only check once per scope
-          if (reportedScopes.has(scopeKey)) {
-            return;
-          }
+      const scopeKey = getScopeKey(node);
 
-          const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
-          
-          if (missing.length > 0) {
-            reportedScopes.add(scopeKey);
-            context.report({
-              node,
-              messageId: 'missingSecurityHeader',
-              data: {
-                headers: missing.join(', '),
-              },
-              suggest: [
-                {
-                  messageId: 'addSecurityHeaders',
-                  fix: () => null,
-                },
-                {
-                  messageId: 'useMiddleware',
-                  fix: () => null,
-                },
-                {
-                  messageId: 'setHeader',
-                  fix: () => null,
-                },
-              ],
-            });
-          } else {
-            // Mark as checked even if no error
-            reportedScopes.add(scopeKey);
-          }
-        }
+      // Only check once per scope
+      if (reportedScopes.has(scopeKey)) {
+        return;
+      }
+
+      const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
+
+      // Mark as checked either way
+      reportedScopes.add(scopeKey);
+
+      if (missing.length > 0) {
+        context.report({
+          node,
+          messageId: 'missingSecurityHeader',
+          data: {
+            headers: missing.join(', '),
+          },
+          suggest: [
+            {
+              messageId: 'addSecurityHeaders',
+              fix: () => null,
+            },
+            {
+              messageId: 'useMiddleware',
+              fix: () => null,
+            },
+            {
+              messageId: 'setHeader',
+              fix: () => null,
+            },
+          ],
+        });
       }
     }
 

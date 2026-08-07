@@ -32,7 +32,7 @@ Each phase is ~3 months. Effort = engineering-weeks (1 person, focused). Depende
 | 1.2 | **SARIF emission** across all plugins via shared `@interlace/eslint-formatter-sarif` | 2 wk | none | `npx eslint -f @interlace/sarif` produces valid SARIF v2.1.0 for any plugin; `npm run ilb:wild -- --format=sarif` emits per-repo SARIF | Stand up `packages/eslint-formatter-sarif/` skeleton; verify against [SARIF schema](https://docs.oasis-open.org/sarif/sarif/v2.1.0/) |
 | 1.3 | **Severity-weighted F1 as headline** — replace plain F1 in `RESULTS.md` and scorecard with CVSS-weighted F1 | 0.5 wk | per-rule CVSS metadata (already present) | `RESULTS.md` headline shows weighted F1; old F1 retained as secondary | Add weighting fn to `score.mjs`, regen scorecard against latest results |
 | 1.4 | **Bootstrap CI on F1** | 0.5 wk | none | Every accuracy result emits 95% bootstrap CI alongside Wilson Score CI | Add 1000-resample bootstrap to `lib/runner.js`; verify against R `boot::boot.ci` on a known fixture |
-| 1.5 | **Pre-registration discipline** — methodology + corpus hash committed *before* a run; tag of run pinned to that commit | 0.5 wk | none | Each result file in `results/` carries a `methodologyCommit` field; CI gate fails if missing | Document the workflow in `README.md` §2; add `methodologyCommit` to result schema |
+| 1.5 | **Pre-registration discipline** — methodology + corpus hash committed *before* a run; tag of run pinned to that commit | 0.5 wk | none | Each result file in `results/` carries `methodologyHash` + `methodologyPaths` (squash-proof, recomputable from a clone) alongside `methodologyCommit` (branch SHA, dropped by squash-merge — pointer only); `ilb:validate-results` enforces the shape | Done. `lib/methodology.ts` + `lib/preregister.ts`; verification recipe in `README.md` §10; emission locked by `__tests__/methodology-lock.test.ts` |
 | 1.6 | **ILB-Determinism** — same input × N runs × 3 plugin versions | 1 wk | 1.4 | Bench passes if max byte-level diff between runs ≤ ε on signal corpus; reported per-plugin | Scaffold `suites/ilb-determinism/`, run 5× on a sample fixture, hash & diff |
 | 1.7 | **ILB-Autofix** — % of rules with `fixable` metadata; agent-macro-pass rate when autofix is applied | 1 wk | none | Bench reports autofix-coverage % and post-fix pass rate per plugin | Aggregate `meta.fixable` from rule definitions across all plugins; report % |
 | 1.8 | **MITRE CWE Compatibility submission (paperwork)** | 2 wk + external review | 1.2 (SARIF) | Submission accepted by MITRE; "CWE-Compatible" seal granted | Read [CWE Compatibility Requirements](https://cwe.mitre.org/compatible/requirements.html); identify which of the 4 mandatory + 4 recommended criteria we already meet |
@@ -80,6 +80,16 @@ Each phase is ~3 months. Effort = engineering-weeks (1 person, focused). Depende
 
 ## 3. Live tracker
 
+> **⚠️ Correction (2026-08-02) — items 2.5 and 3.4 were marked Shipped in error.**
+> The 12 MCP packages were real, but they exist **only** at commit `b2638dc6`
+> (2026-05-09) and were deleted afterwards. Verified on 2026-08-02:
+> `git ls-tree -r --name-only origin/main | grep -ci mcp` returns **0**, and the npm
+> registry returns **404** for every one of them. Item 2.5's own definition of done
+> reads "`secure-coding-mcp` **published**" — so it never met its acceptance
+> criterion, and MCP is not a differentiator for us today: Semgrep (free CLI), Snyk
+> (`snyk mcp --experimental`), ESLint core (`@eslint/mcp`) and SonarQube all ship one.
+> Full verification: `eslint-security-leadership/research/e22-mcp-verification.md`.
+
 | # | Item | Phase | Status | Owner | Started | Shipped |
 |---|---|---|---|---|---|---|
 | 1.1 | Dual-audience philosophy doc | 1 | **Shipped** | maintainer | 2026-05-09 | 2026-05-09 |
@@ -107,12 +117,12 @@ Each phase is ~3 months. Effort = engineering-weeks (1 person, focused). Depende
 | 2.2 | ILB-Confidence | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 2.3 | ILB-Discover | 2 | **Shipped** (BM25 baseline; embedding upgrade noted) | agent | 2026-05-09 | 2026-05-09 |
 | 2.4 | ILB-Evade | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
-| 2.5 | MCP server proof-of-concept | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
+| 2.5 | MCP server proof-of-concept | 2 | **Reverted** — built 2026-05-09, deleted since; never published (see §2.5 note) | agent | 2026-05-09 | — |
 | 2.6 | ILB-Provenance (CVE links) | 2 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 3.1 | Public ILB leaderboard | 3 | **Shipped** (protocol + publisher + storage live; hosted UI deployment external) | agent | 2026-05-09 | 2026-05-09 |
 | 3.2 | Differential bench publication | 3 | **Shipped** (publisher live; full run pending external tool install) | agent | 2026-05-09 | 2026-05-09 |
 | 3.3 | OWASP Benchmark engagement | 3 | **Shipped** (pitch packet ready; outreach external) | agent | 2026-05-09 | 2026-05-09 |
-| 3.4 | MCP servers across all security plugins | 3 | **Shipped** (1 base + 11 plugin adapters) | agent | 2026-05-09 | 2026-05-09 |
+| 3.4 | MCP servers across all security plugins | 3 | **Reverted** — 1 base + 11 adapters built 2026-05-09, deleted since; never published (see §2.5 note) | agent | 2026-05-09 | — |
 | 4.1 | Mutation testing for fixtures (ILB-Mutate) | 4 | **Shipped** (smoke ✅ 100% survival) | agent | 2026-05-09 | 2026-05-09 |
 | 4.2 | ISO/IEC 25010 mapping for quality plugins | 4 | **Shipped** | agent | 2026-05-09 | 2026-05-09 |
 | 4.3 | External replication (kit ready) | 4 | **Shipped** (engagement external) | agent | 2026-05-09 | 2026-05-09 |

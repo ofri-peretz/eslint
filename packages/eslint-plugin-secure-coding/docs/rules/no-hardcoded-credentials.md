@@ -19,7 +19,7 @@ Detects hardcoded passwords, API keys, tokens, and other sensitive credentials i
 
 Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
-⚠️ This rule **_warns_** by default in the `recommended` config.
+💼 This rule **_errors_** by default in the `recommended` config.
 
 ## Quick Summary
 
@@ -86,14 +86,51 @@ Hardcoded credentials are one of the most common security vulnerabilities. This 
 
 ## Detection Patterns
 
-The rule detects:
+**The rule decides on the VALUE's shape, never on the key name alone.** A
+credential-shaped name (`password`, `apiKey`, `secret`) is necessary-but-not-
+sufficient: it can promote an ambiguous value, but it can never turn a message
+constant into a finding.
 
-- **API Keys**: Stripe keys (`sk_live_FAKE_KEY_FOR_TESTING`), GitHub tokens (`ghp_...`), AWS keys (`AKIA...`)
-- **JWT Tokens**: Base64-encoded tokens with three parts
-- **OAuth Tokens**: GitHub, GitLab, and similar OAuth tokens
-- **Passwords**: Common weak passwords (`password`, `admin`, `123456`)
-- **Database Strings**: Connection strings with embedded credentials
-- **Secret Keys**: Long base64 or hex strings (32+ characters)
+That distinction is the whole rule. Name-driven matching reported
+`errors: { password: 'incorrectPassword' }` — an i18n error key — at CVSS 9.8,
+and on a 1,470-file corpus (webpack, lodash, eslint-plugin-import, two NestJS
+boilerplates) that single pattern was 5 of 10 findings. The genuinely committed
+50-character API secret in the same corpus was found by *shape*.
+
+### Tier 1 — structural, reported on shape alone
+
+- **Prefixed API keys**: Stripe (`sk_live_…`, `pk_test_…`), GitHub OAuth
+  (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghr_`), AWS (`AKIA…`)
+- **JWTs**: `eyJ…` with three dot-separated base64 parts
+- **Database connection strings**: `protocol://user:pass@host`
+- **Random blobs**: 32+ contiguous alphanumeric characters, mixed case, with
+  digits, Shannon entropy ≥ 3.5 bits/char, and no ascending character run.
+  The charset is strict — punctuation rules a value out, because generated-code
+  strings (`installedChunkData[1](error);`), comma-separated keyword lists and
+  Postgres constraint names (`PK_b36bcfe02fc8de3c57a8b2391c2`) all carry
+  punctuation that no API key does. The ascending-run check excludes charset
+  constants such as `'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'`,
+  which are maximally high-entropy and the exact opposite of a secret.
+
+### Tier 2 — shape AND a credential-named slot
+
+- **Random blobs of 20–31 characters**, e.g. `{ key: 'fyFGb7ywyM37TqDY8nuhAmGW5' }`.
+  Shape alone is not enough at this length: `CreateUser1715028537217`, a TypeORM
+  migration class name, passes every shape test there is.
+- **Long base64 / hex strings** (32+), which also appear as hashes and IDs
+- **Common weak passwords** (`password`, `admin`, `123456`)
+- **Any secret-shaped value** in a credential-named slot: at least two character
+  classes (or a 20+ high-entropy single-charset blob), no whitespace, and not a
+  "natural word string". That last test is what rejects `incorrectPassword`,
+  `SessionCacheProvider` and `experimental_onToolExecutionStart` — strings made
+  only of pronounceable, dictionary-shaped tokens joined by camelCase or
+  `_`, `-` and `.` separators, with no digits and no symbols. `aaAA@123` has four
+  character classes and is reported; `Please enter your password` has whitespace
+  and is not.
+
+`key` / `keys` are treated as *weak* names — they label cache keys, map keys and
+i18n keys far more often than API keys — so they only count as credential
+context when the value is already a random blob by shape.
 
 ## Examples
 
@@ -136,6 +173,42 @@ const dbUrl = process.env.DATABASE_URL;
 const s3 = new AWS.S3(); // Uses IAM role
 ```
 
+### ✅ Also correct — message constants in credential-named slots
+
+These are the false positives the shape gate exists to prevent. The key is
+named `password`; the value is an i18n key, a label, or a sentence.
+
+```typescript
+throw new UnprocessableEntityException({
+  errors: { password: 'incorrectPassword' }, // ✅ i18n error key, not a secret
+});
+
+const errors = { token: 'notFoundToken', secret: 'missingSecret' }; // ✅
+const password = 'Please enter your password';                     // ✅ sentence
+export const SessionCacheProvider = 'SessionCacheProvider';        // ✅ DI token
+const secret = 'experimental_onToolExecutionStart';                // ✅ identifier
+```
+
+### ✅ Also correct — self-evident placeholders
+
+A value the developer is visibly expected to replace is not a leaked
+credential. Skipped by default; set `allowPlaceholders: false` to report them.
+
+```typescript
+const TEST_CREDENTIALS = {
+  apiKey: 'test-api-key',
+  token: 'xxxxxxxxxxxx',        // ✅ one character repeated
+  password: 'changeme',         // ✅ placeholder word
+  secret: '<your-secret-here>', // ✅ bracketed template slot
+};
+
+const key = '{{API_SECRET}}';   // ✅ also `${…}` and `[…]`
+```
+
+The allowlist applies only to non-structural findings. A JWT, an `sk_live_`
+key, or a `postgres://user:pass@host` string keeps its shape whatever words it
+contains, so those still report.
+
 ## Configuration
 
 ```javascript
@@ -148,7 +221,8 @@ const s3 = new AWS.S3(); // Uses IAM role
       detectApiKeys: true,                  // Detect API keys
       detectPasswords: true,                // Detect passwords
       detectTokens: true,                   // Detect tokens
-      detectDatabaseStrings: true          // Detect database strings
+      detectDatabaseStrings: true,         // Detect database strings
+      allowPlaceholders: true              // Skip <your-secret-here>, changeme, xxxxxxxx
     }]
   }
 }
@@ -156,15 +230,18 @@ const s3 = new AWS.S3(); // Uses IAM role
 
 ## Options
 
-| Option                  | Type       | Default | Description                                                       |
-| ----------------------- | ---------- | ------- | ----------------------------------------------------------------- |
-| `ignorePatterns`        | `string[]` | `[]`    | Regex patterns to ignore (e.g., `['^test-']` for test keys)       |
-| `allowInTests`          | `boolean`  | `false` | Allow credentials in test files (`.test.ts`, `.spec.ts`)          |
-| `minLength`             | `number`   | `8`     | Minimum length for credential detection (except common passwords) |
-| `detectApiKeys`         | `boolean`  | `true`  | Detect API keys (Stripe, AWS, etc.)                               |
-| `detectPasswords`       | `boolean`  | `true`  | Detect common weak passwords                                      |
-| `detectTokens`          | `boolean`  | `true`  | Detect JWT and OAuth tokens                                       |
-| `detectDatabaseStrings` | `boolean`  | `true`  | Detect database connection strings with credentials               |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore |
+| `allowInTests` | `boolean` | `false` | Allow credentials in test files |
+| `minLength` | `number` | `8` | Minimum length for credential detection |
+| `detectApiKeys` | `boolean` | `true` | Detect API keys |
+| `detectPasswords` | `boolean` | `true` | Detect passwords |
+| `detectTokens` | `boolean` | `true` | Detect tokens |
+| `detectDatabaseStrings` | `boolean` | `true` | Detect database connection strings |
+| `customPatterns` | `object[]` | `[]` | Custom credential patterns to detect |
+| `strategy` | `"env"` \| `"config"` \| `"vault"` \| `"auto"` | `"auto"` | Strategy for fixing hardcoded credentials (auto = smart detection) |
+| `allowPlaceholders` | `boolean` | `true` | Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
 
 ### Ignoring Test Credentials
 

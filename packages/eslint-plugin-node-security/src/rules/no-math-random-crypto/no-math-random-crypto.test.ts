@@ -2,7 +2,7 @@
  * Tests for no-math-random-crypto rule
  * CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator
  *
- * Migrated from eslint-plugin-crypto. Includes the fn-fp benchmark fixtures
+ * Includes the fn-fp benchmark fixtures
  * (vuln_random_token / vuln_random_session true positives + safe_random_shuffle
  * no-false-positive) so the 40/40, 0-FP benchmark result stays locked.
  */

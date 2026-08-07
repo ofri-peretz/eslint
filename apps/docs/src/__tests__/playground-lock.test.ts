@@ -26,7 +26,7 @@ import {
   pluginsInSnippet,
   buildConfigSnippet,
   pluginPrefixToIdentifier,
-  PLUGIN_PREFIX_TO_PACKAGE,
+  pluginPrefixToPackage,
   getSnippetBySlug,
 } from '../components/play/snippets';
 
@@ -94,8 +94,11 @@ describe('snippets: pure helpers', () => {
 
     it('emits an import + spread for each enabled plugin', () => {
       const out = buildConfigSnippet(['pg', 'secure-coding']);
-      expect(out).toContain("import pg from '@interlace/eslint-plugin-pg';");
-      expect(out).toContain("import secureCoding from '@interlace/eslint-plugin-secure-coding';");
+      // `pg/` findings are served by eslint-plugin-postgresql-security — the
+      // rename kept the namespace, so the derived name would be the deprecated
+      // package. This is the lock for that exception.
+      expect(out).toContain("import pg from 'eslint-plugin-postgresql-security';");
+      expect(out).toContain("import secureCoding from 'eslint-plugin-secure-coding';");
       expect(out).toContain('...pg.configs.flagship,');
       expect(out).toContain('...secureCoding.configs.flagship,');
     });
@@ -105,11 +108,16 @@ describe('snippets: pure helpers', () => {
       expect(out).toContain("@type {import('eslint').Linter.Config[]}");
     });
 
-    it('uses the canonical package name from PLUGIN_PREFIX_TO_PACKAGE', () => {
+    it('uses the canonical package name from pluginPrefixToPackage', () => {
       const out = buildConfigSnippet(['vercel-ai-security']);
       expect(out).toContain(
-        `import vercelAiSecurity from '${PLUGIN_PREFIX_TO_PACKAGE['vercel-ai-security']}';`,
+        `import vercelAiSecurity from '${pluginPrefixToPackage('vercel-ai-security')}';`,
       );
+    });
+
+    it('emits UNSCOPED package names — our plugins do not publish under @interlace/', () => {
+      const out = buildConfigSnippet(['jwt', 'pg', 'vercel-ai-security']);
+      expect(out).not.toContain('@interlace/eslint-plugin-');
     });
   });
 });
@@ -151,14 +159,20 @@ describe('PLAYGROUND_SNIPPETS: data integrity', () => {
     }
   });
 
-  it('every plugin prefix referenced by a finding has a PLUGIN_PREFIX_TO_PACKAGE entry', () => {
+  // The playground previously advertised `@interlace/eslint-plugin-*`, which was
+  // never published — the copy-config button handed users install and import
+  // lines for packages that do not exist. Resolving the derived name against
+  // `packages/` on disk is what would have caught that.
+  it('every plugin prefix referenced by a finding resolves to a real package in packages/', () => {
+    const packagesDir = resolve(__dirname, '../../../../packages');
     for (const s of PLAYGROUND_SNIPPETS) {
       for (const f of s.findings) {
         const prefix = getPluginPrefix(f.ruleId);
+        const pkg = pluginPrefixToPackage(prefix);
         expect(
-          PLUGIN_PREFIX_TO_PACKAGE[prefix],
-          `prefix "${prefix}" (from rule "${f.ruleId}") missing from PLUGIN_PREFIX_TO_PACKAGE map`,
-        ).toBeDefined();
+          existsSync(join(packagesDir, pkg)),
+          `rule "${f.ruleId}" implies package "${pkg}", which does not exist in packages/`,
+        ).toBe(true);
       }
     }
   });

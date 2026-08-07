@@ -59,10 +59,9 @@ Hello
 
 ## ⚙️ Options
 
-| Option                | Type       | Default                                                                          | Description                                |
-| --------------------- | ---------- | -------------------------------------------------------------------------------- | ------------------------------------------ |
-| `dangerousFunctions`  | `string[]` | `['eval', 'Function', 'setTimeout', 'setInterval', 'exec', 'execSync', 'spawn']` | Functions to flag when receiving AI output |
-| `dangerousProperties` | `string[]` | `['innerHTML', 'outerHTML']`                                                     | Properties to flag when assigned AI output |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `aiOutputPatterns` | `string[]` | `["result.text","response.text","completion","generated","aiOutput","aiResponse","llmOutput","llmResponse","modelOutput","textContent",".text"]` | Variable patterns that suggest AI output |
 
 ## 🛡️ Why This Matters
 
@@ -101,10 +100,13 @@ eval(aiOutput); // Not linked to AI output
 
 ```typescript
 // ❌ NOT DETECTED - Custom exec wrapper
-executeCode(result.text); // Custom function, not in dangerousFunctions
+executeCode(result.text); // Custom wrapper, not one of the recognised sinks
 ```
 
-**Mitigation**: Configure `dangerousFunctions` with custom names.
+**Mitigation**: none available — the recognised sinks (`eval`, `Function`,
+`exec`, `execSync`, `execFile`, `spawn`) are fixed and not configurable. Call
+the underlying function directly at the point the AI output is used, or wrap
+the call site in your own review.
 
 ### Dynamic Function Invocation
 

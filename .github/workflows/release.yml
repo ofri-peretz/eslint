@@ -89,7 +89,7 @@ jobs:
       matrix: ${{ steps.detect.outputs.matrix }}
       count: ${{ steps.detect.outputs.count }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -205,7 +205,7 @@ jobs:
         # lockfile is never touched (verified: hash-identical, git-clean).
         eslint: ['8', '9', '10']
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
@@ -229,6 +229,21 @@ jobs:
         # since STAGE 2 just built them. A missing dist/ is a hard release stop.
         run: npm run verify:dist-integrity:release
 
+      - name: Published-artifact gate
+        # Runs on the EXACT artifact STAGE 2 built and STAGE 3 will publish —
+        # the only place this can be checked with certainty. Locally, any
+        # `tsc --build` over the solution (e.g. `npm run typecheck`) re-emits
+        # into dist/ and undoes build-package.ts's post-processing; a rebuild
+        # restores it. Here nothing re-runs tsc, so what is checked is what
+        # ships.
+        run: npm run check-published-artifacts
+
+      - name: Artifact size report
+        # Advisory only — never blocks a release. Bundles legitimately grow;
+        # this exists so growth is a decision rather than a surprise.
+        continue-on-error: true
+        run: npm run check-artifact-size
+
   # ─────────────────────────────────────────────────────────────────────────
   # STAGE 3 — Publish each package in parallel (matrix fan-out).
   # ─────────────────────────────────────────────────────────────────────────
@@ -250,7 +265,7 @@ jobs:
       max-parallel: 8
       matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -297,7 +312,7 @@ jobs:
             echo "::error::Missing $PKG_DIR — build artifact incomplete."
             exit 1
           fi
-          # tag format: <unscoped-name>@<version>, e.g. "eslint-plugin-crypto@1.2.3"
+          # tag format: <unscoped-name>@<version>, e.g. "eslint-plugin-node-security@1.2.3"
           tag_name="${PKG_NAME##*/}@${PKG_VER}"
 
           echo "═════════════════════════════════════════════════════════"

@@ -177,22 +177,22 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         properties: {
           allowIntrospection: {
             type: 'boolean',
-            default: false,
+            default: false, description: 'Allow introspection queries'
           },
           maxQueryDepth: {
             type: 'number',
             minimum: 1,
-            default: 10,
+            default: 10, description: 'Maximum query nesting depth before reporting a DoS risk'
           },
           trustedGraphqlLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
+            default: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'], description: 'GraphQL libraries recognised as query builders'
           },
           validationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validate', 'sanitize', 'isValid', 'assertValid'],
+            default: ['validate', 'sanitize', 'isValid', 'assertValid'], description: 'Function names that count as query validation'
           },
           safeTemplateLiteralCallers: {
             type: 'array',
@@ -247,7 +247,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode;
     const filename = context.filename;
 
     // Create safety checker for false positive detection
@@ -364,6 +363,50 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     const GRAPHQL_SCHEMA_KEYWORDS = ['type', 'interface', 'enum', 'scalar', 'input'];
 
     /**
+     * A GraphQL document declares its operations and type definitions at the
+     * START of a line. An English sentence mentions them mid-clause.
+     *
+     * Without this, the keyword scan matched `type` (and `input`, `enum`, ...)
+     * anywhere in any string, which is how ordinary message templates became
+     * CVSS 9.8 GraphQL-injection findings on a 1,470-file corpus:
+     *   `Please specify --type ${a} or ${b}`   (ack-nestjs-boilerplate)
+     *   `Invalid type annotation`               (generic)
+     * 24 of 41 corpus findings came from this one relaxation.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isAtLineStart = (text: string, idx: number): boolean => {
+      for (let i = idx - 1; i >= 0; i--) {
+        const ch = text[i];
+        if (ch === '\n') return true;
+        if (!isWhitespace(ch)) return false;
+      }
+      return true;
+    };
+
+    /**
+     * A bare selection set (`{ users { name } }`) is only a GraphQL document
+     * when it IS the whole string. Nested braces appearing inside a larger
+     * message or a generated-code template are not selection sets — that is
+     * webpack's `resolve.fallback: { "${request}": ... }` and every other
+     * brace-bearing message string in the corpus (17 of 41 findings).
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isStandaloneSelectionSet = (text: string): boolean => {
+      const trimmed = text.trim();
+      if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return false;
+      let braceDepth = 0;
+      for (const ch of trimmed) {
+        if (ch === '{') {
+          braceDepth++;
+          if (braceDepth >= 2) return true;
+        } else if (ch === '}') {
+          braceDepth = Math.max(0, braceDepth - 1);
+        }
+      }
+      return false;
+    };
+
+    /**
      * Find keyword at word boundary in text. Returns index or -1.
      * Uses simple character checks instead of regex \b.
      */
@@ -409,6 +452,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           const idx = findKeywordAtBoundary(staticText, keyword, pos);
           if (idx === -1) break;
           pos = idx + 1;
+          if (!isAtLineStart(staticText, idx)) continue;
 
           // Scan past keyword, skip whitespace, skip optional name, skip whitespace, expect { or (
           let scan = idx + keyword.length;
@@ -428,6 +472,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           const idx = findKeywordAtBoundary(staticText, 'fragment', pos);
           if (idx === -1) break;
           pos = idx + 1;
+          if (!isAtLineStart(staticText, idx)) continue;
 
           let scan = idx + 8; // 'fragment'.length
           while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
@@ -442,12 +487,17 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // 2. Check for schema definition keywords (type User, interface Foo, etc.)
-      for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+      // A schema definition always has a body, so the text must contain a
+      // brace. Without this, `enum value with ',' delimiter. Available values:
+      // ${...}` (ack-nestjs-boilerplate's Swagger docs) reads as an `enum`
+      // definition named `value`.
+      if (staticText.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
         let pos = 0;
         while (pos < staticText.length) {
           const idx = findKeywordAtBoundary(staticText, keyword, pos);
           if (idx === -1) break;
           pos = idx + 1;
+          if (!isAtLineStart(staticText, idx)) continue;
 
           let scan = idx + keyword.length;
           // Must have whitespace then a word (type name)
@@ -460,17 +510,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // 3. Check for selection sets (nested braces): { users { name } }
-      let braceDepth = 0;
-      for (let i = 0; i < staticText.length; i++) {
-        if (staticText[i] === '{') {
-          braceDepth++;
-          if (braceDepth >= 2) return true;
-        } else if (staticText[i] === '}') {
-          braceDepth = Math.max(0, braceDepth - 1);
-        }
-      }
-
-      return false;
+      return isStandaloneSelectionSet(staticText);
     };
 
     /**
@@ -513,6 +553,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       for (const keyword of GRAPHQL_OP_KEYWORDS) {
         const idx = findKeywordAtBoundary(lower, keyword);
         if (idx === -1) continue;
+        if (!isAtLineStart(lower, idx)) continue;
         let scan = idx + keyword.length;
         while (scan < lower.length && isWhitespace(lower[scan])) scan++;
         while (scan < lower.length && isWordChar(lower[scan])) scan++;
@@ -522,7 +563,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
       // Check fragment
       const fragIdx = findKeywordAtBoundary(lower, 'fragment');
-      if (fragIdx !== -1) {
+      if (fragIdx !== -1 && isAtLineStart(lower, fragIdx)) {
         let scan = fragIdx + 8;
         while (scan < lower.length && isWhitespace(lower[scan])) scan++;
         const nameStart = scan;
@@ -533,24 +574,34 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Check schema keywords
-      for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+      // Check schema keywords — a schema definition always has a body.
+      if (lower.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
         const idx = findKeywordAtBoundary(lower, keyword);
         if (idx === -1) continue;
+        if (!isAtLineStart(lower, idx)) continue;
         let scan = idx + keyword.length;
         if (scan >= lower.length || !isWhitespace(lower[scan])) continue;
         while (scan < lower.length && isWhitespace(lower[scan])) scan++;
         if (scan < lower.length && isWordChar(lower[scan])) return true;
       }
 
-      // Check nested braces
-      let braceDepth = 0;
-      for (let i = 0; i < text.length; i++) {
-        if (text[i] === '{') { braceDepth++; if (braceDepth >= 2) return true; }
-        else if (text[i] === '}') { braceDepth = Math.max(0, braceDepth - 1); }
-      }
+      // Check nested braces — only as a standalone selection set.
+      return isStandaloneSelectionSet(text);
+    };
 
-      return false;
+    /**
+     * Flatten a `+` concatenation to the string it would produce, keeping only
+     * the statically known parts. Interpolated identifiers contribute nothing.
+     */
+    const concatenatedStaticText = (node: TSESTree.Node): string => {
+      if (node.type === 'BinaryExpression' && node.operator === '+') {
+        return concatenatedStaticText(node.left) + concatenatedStaticText(node.right);
+      }
+      if (node.type === 'Literal' && typeof node.value === 'string') return node.value;
+      if (node.type === 'TemplateLiteral') {
+        return node.quasis.map((q: TSESTree.TemplateElement) => q.value.cooked ?? q.value.raw).join('');
+      }
+      return '';
     };
 
     /**
@@ -703,7 +754,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const fullText = sourceCode.getText(node);
+        // Use the concatenation's STATIC STRING VALUE, not its source text.
+        // `sourceCode.getText()` includes the JS quoting and the `+ ident +`
+        // scaffolding, so a query starting at the very beginning of the string
+        // is preceded by a `"` — which defeats the start-of-line check that
+        // keeps ordinary message strings from being read as GraphQL.
+        const fullText = concatenatedStaticText(node);
 
         if (!containsGraphqlText(fullText)) {
           return;

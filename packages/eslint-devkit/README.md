@@ -1,3 +1,11 @@
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
+</p>
+
 # @interlace/eslint-devkit
 
 **Build ESLint plugins that write themselves** - TypeScript utilities for creating rules that AI assistants can understand and auto-fix.
@@ -496,7 +504,7 @@ const rule = createRule<[], 'messageId'>({
 
 | Package                   | Version                       |
 | ------------------------- | ----------------------------- |
-| ESLint                    | ^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0 |
+| ESLint                    | ^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0 |
 | TypeScript                | >=4.0.0                       |
 | @typescript-eslint/parser | >=6.0.0                       |
 | @typescript-eslint/utils  | ^8.0.0                        |
@@ -508,7 +516,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 
 ## Related Packages
 
-- **The `@interlace/eslint-plugin-*` family** — Ready-to-use LLM-optimized rules built with this package. See the [root README](https://github.com/ofri-peretz/eslint#-available-packages) for the full list.
+- **The Interlace eslint-plugins** — Ready-to-use LLM-optimized rules built with this package. See the [root README](https://github.com/ofri-peretz/eslint#-available-packages) for the full list.
 - **[@typescript-eslint/utils](https://www.npmjs.com/package/@typescript-eslint/utils)** - Official TypeScript ESLint utilities
 - **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation
 
@@ -538,3 +546,11 @@ If the devkit saved you time, **[star the repo](https://github.com/ofri-peretz/e
 ## Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md) for a list of changes and version history.
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit"><img src="https://eslint.interlace.tools/images/og-devkit.png" alt="ESLint Interlace" width="100%" /></a>
+</p>
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+</p>

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Performance Benchmarks for the @interlace/eslint-plugin-* family
+ * Performance Benchmarks for the Interlace eslint-plugins
  *
  * Run with: npx tsx scripts/benchmark-plugin.ts
  *

@@ -20,12 +20,10 @@ on:
     paths:
       - 'packages/ui/**/*.tsx'
       - 'packages/eslint-plugin-react-features/**'
-      # The lint step resolves plugins through the root flat config and
-      # the @interlace/eslint-config preset — a bad edit to either can
-      # crash every lint run (e.g. the duplicate react-features plugin
-      # registration, 2026-07-04), so config changes must run this gate.
+      # The lint step resolves plugins through the root flat config — a bad
+      # edit can crash every lint run (e.g. the duplicate react-features
+      # plugin registration, 2026-07-04), so config changes must run this gate.
       - 'eslint.config.mjs'
-      - 'packages/eslint-config-interlace/**'
       - '.github/workflows/component-api-lint.yml'
   push:
     branches: [main]
@@ -45,20 +43,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
 
-      - name: Build @interlace/eslint-config + its dep graph
-        # Root eslint.config.mjs imports the `componentApi` preset from
-        # @interlace/eslint-config (built via tsc → dist/src/index.js).
-        # That package re-exports every eslint-plugin-* package's configs,
-        # so tsc needs the full dependency graph built before its own
-        # build can resolve the imports. `turbo run build --filter` walks
-        # the graph and builds in topological order — react-features
-        # (the rule source) ships first, then eslint-config builds on top.
-        # Local lefthook hits cached dist artifacts so the gap isn't
-        # visible there.
-        run: npx turbo run build --filter=@interlace/eslint-config
+      - name: Build the workspace plugins the root config imports
+        # Root eslint.config.mjs imports BOTH of these directly, and each
+        # resolves through package.json#main → dist/src/index.js, so the lint
+        # step below cannot even load the config until they are built.
+        # react-features carries the componentApi rules this gate enforces;
+        # react-a11y is imported at the top of the same file, so omitting it
+        # fails the whole run with ERR_MODULE_NOT_FOUND before a single rule
+        # executes. Keep this filter in sync with the imports in
+        # eslint.config.mjs. Local lefthook hits cached dist artifacts, so a
+        # missing entry here is invisible until CI.
+        run: >-
+          npx turbo run build
+          --filter=eslint-plugin-react-features
+          --filter=eslint-plugin-react-a11y
 
       - name: Run vitest on component-api rules
         run: npx vitest run src/tests/component-api/
@@ -165,17 +166,7 @@ jobs:
         # behavior where the workflow promoted every rule to error.
         run: npx eslint --max-warnings 0 packages/ui/src/primitives/dialog.tsx
 
-  registry-drift:
-    name: registry drift check
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
-      - uses: ./.github/actions/setup
-
-      - name: Verify shadcn registry is in sync with packages/ui/src/primitives/
-        run: npm run build:check --workspace=registry
-        # Fails if any `apps/registry/public/r/<name>.json` is out of sync with
-        # the corresponding primitive source. Keeps `ds.interlace.tools` from
-        # serving stale JSON when a contributor adds a primitive but forgets to
-        # rebuild the registry.
+      # The shadcn registry drift check used to live here. The registry app
+      # moved to ofri-peretz/interlace, which runs the equivalent gate in its
+      # own CI — see interlace/docs/adr/0001-consolidate-duplicated-design-
+      # system.md (D2).

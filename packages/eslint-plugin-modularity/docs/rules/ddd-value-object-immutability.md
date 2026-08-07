@@ -89,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'architecture/ddd-value-object-immutability': 'error',
+      'modularity/ddd-value-object-immutability': 'error',
     },
   },
 ];

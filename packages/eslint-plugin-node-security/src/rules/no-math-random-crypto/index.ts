@@ -12,10 +12,6 @@
  * Math.random() is not cryptographically secure and should never be used
  * for tokens, keys, IVs, salts, or any security-sensitive random values.
  *
- * Migrated from the deprecated eslint-plugin-crypto (2026-05) so that
- * node-security genuinely covers every cryptography rule the crypto plugin
- * shipped, per its deprecation notice.
- *
  * @see https://cwe.mitre.org/data/definitions/338.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';

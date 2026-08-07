@@ -163,6 +163,36 @@ The public-facing surface for this whole system is
 
 ## Plugin Scope Rules
 
+**README logo row: Interlace + ESLint + oxlint + the SDK/protocol the plugin targets.**
+Every plugin that lints a specific platform, protocol or SDK opens its README with the same
+centred row, all marks at `height="90"`, `&nbsp;&nbsp;` between them. The SDK mark links to
+that SDK's npm page — it is what tells a reader (and a search engine) which package this
+plugin is for. Plugins with no external target (`secure-coding`, `maintainability`, …) keep
+the two-mark row.
+
+Marks are **self-hosted** in `apps/docs/public/` and referenced as
+`https://eslint.interlace.tools/<name>-logo.svg`. Never hotlink a third-party CDN: npm
+proxies README images through GitHub camo with long-lived caching, so an external URL that
+moves leaves a broken image that is painful to flush.
+
+> ⚠️ **Deploy the docs site before publishing a package whose README references a new mark.**
+> camo caches aggressively; if it fetches a 404 first, the broken image sticks around long
+> after the asset lands. Order: merge → docs deploy → verify the SVG is 2xx → release.
+
+Source marks from [simple-icons](https://simpleicons.org) (CC0) where available, recoloured
+`#8b949e` so they read on light and dark GitHub themes. If simple-icons does not carry a
+brand, treat that as a signal the mark is restricted rather than something to work around —
+**OpenAI is the live example: simple-icons 404s on it.** Ship the row without that mark
+rather than sourcing the logo elsewhere, unless the brand's guidelines have been read and
+clearly permit it.
+
+**Naming: every security plugin is `eslint-plugin-<ecosystem>-security`.** The suffix is
+what tells a consumer the package is protective rather than stylistic, and it keeps the
+family scannable on npm. No exceptions for new packages. `eslint-plugin-pg`,
+`eslint-plugin-jwt` and `eslint-plugin-secure-coding` predate the convention and are
+grandfathered — renaming a published package is a separate decision with its own cost
+(npm deprecate + republish, every config example, the live awesome-list entries).
+
 When creating or reviewing rules, ensure they're in the correct plugin:
 
 | If the rule...                                                  | It belongs in...                   |
@@ -183,7 +213,7 @@ Before approving any new ESLint rule:
 3. **Performance**: O(n) complexity, single AST pass
 4. **Documentation**: Rule docs with OWASP mapping
 5. **Messages**: Clear, actionable error messages
-6. **ESLint Peer Dep**: Package declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
+6. **ESLint Peer Dep**: Package declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
 
 See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the full checklist.
 
@@ -250,20 +280,23 @@ What's *not* in T2 (cloud-only, intentional):
 
 - CodeQL — runs on GitHub's infrastructure with security-events upload.
 - Lighthouse — needs a clean Chrome instance.
-- Storybook a11y full crawl — needs Playwright on a clean box.
 - ILB cross-version matrix — multi-node-version, multi-eslint-version axes.
 
 ### T3 — CI on promote (workflow_dispatch + ready_for_review + label)
 
-The heavy workflows (CodeQL, Lighthouse, Storybook test-runner, Storybook
-a11y, benchmark, check-links, ILB matrix, oxlint-parity, `quality-full.yml`)
+The heavy workflows (CodeQL, Lighthouse, benchmark, check-links, ILB matrix,
+oxlint-parity, `quality-full.yml`)
 **do not run automatically on every WIP push.** They fire only when a PR is
 "promoted":
 
 - The PR is marked **ready-for-review** (out of draft), OR
 - The PR is labelled **`run-full-ci`**, OR
 - A maintainer manually triggers via `gh workflow run <name>.yml`, OR
-- Weekly Sunday cron (04:05 → 04:35 UTC, staggered) for drift detection.
+- A weekly cron for drift detection. The heavy workflows are staggered across
+  the week, not bunched on one morning — read the day from the workflow, not
+  from this list: `quality-full` Sun 04:00, `oxlint-parity` Sun 10:00,
+  `codeql` Mon 03:17, `benchmark` Tue 09:00, `lighthouse` Wed 04:05,
+  `check-links` Fri 04:25, `eslint-version-matrix` Sat 09:30 (all UTC).
 
 Each heavy workflow has a `gate` job that decides `run=true` / `run=false`.
 Downstream jobs `needs: gate` + `if: needs.gate.outputs.run == 'true'`. A

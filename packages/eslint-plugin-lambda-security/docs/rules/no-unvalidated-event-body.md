@@ -148,3 +148,10 @@ console.log('Received event', event.body);
 - **[CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)** - Official CWE entry
 - **[Middy Validator](https://middy.js.org/docs/middlewares/validator)** - Lambda middleware
 - **[Zod Documentation](https://zod.dev/)** - TypeScript validation
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow unvalidated input in test files |
+| `additionalProperties` | `string[]` | `[]` | Additional event properties to check |

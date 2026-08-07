@@ -17,7 +17,7 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 💼 This rule is set to **error** by default in the `recommended` config.
 
@@ -141,12 +141,12 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Options
 
-| Option                   | Type       | Default                              | Description                   |
-| ------------------------ | ---------- | ------------------------------------ | ----------------------------- |
-| `allowInTests`           | `boolean`  | `false`                              | Allow missing CSRF in tests   |
-| `csrfMiddlewarePatterns` | `string[]` | `['csrf', 'csurf', ...]`             | CSRF middleware patterns      |
-| `protectedMethods`       | `string[]` | `['post', 'put', 'delete', 'patch']` | HTTP methods requiring CSRF   |
-| `ignorePatterns`         | `string[]` | `[]`                                 | Additional patterns to ignore |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CSRF protection in test files |
+| `csrfMiddlewarePatterns` | `string[]` | `[]` | CSRF middleware patterns to recognize |
+| `protectedMethods` | `string[]` | `[]` | HTTP methods that require CSRF protection |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ### Example Configuration
 

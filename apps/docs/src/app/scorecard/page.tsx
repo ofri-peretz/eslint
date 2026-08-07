@@ -12,7 +12,7 @@ import {
   loadLatestFlagshipSnapshot,
   orderResultsByFlagshipSpec,
 } from '@/lib/scorecard';
-import { ConfigCta, InstallCell, StarButton } from '@/components/stats/cta';
+import { InstallCell, StarButton } from '@/components/stats/cta';
 
 // The page reads a JSON snapshot committed to the repo — pre-render once at
 // build time. Without this, Next treats the readFileSync as a dynamic input
@@ -290,22 +290,13 @@ export default function ScorecardPage() {
           <li>
             <strong>The 10 rules are the flagship list</strong> at{' '}
             <code className="font-mono">.agent/flagship-rules.md</code>. Each is
-            type-unaware and locked by the meta-package test at{' '}
+            type-unaware and locked by the workspace test at{' '}
             <code className="font-mono">
-              packages/eslint-config-interlace/src/index.test.ts
+              scripts/__tests__/ecosystem-presets.test.ts
             </code>
             .
           </li>
         </ul>
-      </section>
-
-      <section className="mt-12 rounded-lg border border-fd-border bg-fd-card/50 px-5 py-4">
-        <p className="text-sm font-medium text-fd-foreground">
-          Convinced? Add the flagship config.
-        </p>
-        <div className="mt-3">
-          <ConfigCta docsHref="/docs" />
-        </div>
       </section>
 
       <p className="mt-12 text-xs text-fd-muted-foreground">
@@ -336,7 +327,6 @@ function Header() {
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <StarButton stars={0} surface="flagship" />
-        <ConfigCta docsHref="/docs" />
       </div>
     </div>
   );

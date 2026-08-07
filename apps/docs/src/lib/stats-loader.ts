@@ -14,6 +14,7 @@
 import { unstable_cache } from 'next/cache';
 import fs from 'fs/promises';
 import path from 'path';
+import committedPluginStats from '@/data/plugin-stats.json';
 
 // =============================================================================
 // Types
@@ -147,36 +148,21 @@ export const loadCoverageStats = unstable_cache(
  * This combines plugin and coverage data into a summary for display
  */
 export async function getEcosystemStats(): Promise<EcosystemStats> {
-  const [pluginStats, coverageStats] = await Promise.all([
+  const [loadedStats, coverageStats] = await Promise.all([
     loadPluginStats(),
     loadCoverageStats(),
   ]);
 
-  // Default fallback stats if loading fails
-  const defaultStats: EcosystemStats = {
-    plugins: {
-      total: 18,
-      published: 18,
-      security: 11,
-      quality: 9,
-      framework: 3,
-    },
-    rules: {
-      total: 330,
-      security: 200,
-      quality: 130,
-    },
-    coverage: {
-      average: 85,
-      securityAverage: 87,
-      qualityAverage: 80,
-    },
-    lastUpdated: new Date().toISOString(),
-  };
+  // Fall back to the committed manifest (bundled at build time) if the
+  // runtime read fails — never to hand-typed numbers, which drift.
+  const pluginStats = loadedStats ?? (committedPluginStats as PluginStatsData);
 
-  if (!pluginStats) {
-    return defaultStats;
-  }
+  // Coverage-only defaults (coverage data is not part of the manifest)
+  const defaultCoverage = {
+    average: 85,
+    securityAverage: 87,
+    qualityAverage: 80,
+  };
 
   // Calculate stats from actual data
   const securityPlugins = pluginStats.plugins.filter(
@@ -191,9 +177,9 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
   const qualityRules = qualityPlugins.reduce((sum, p) => sum + p.rules, 0);
 
   // Coverage calculations
-  let avgCoverage = defaultStats.coverage.average;
-  let securityCoverage = defaultStats.coverage.securityAverage;
-  let qualityCoverage = defaultStats.coverage.qualityAverage;
+  let avgCoverage = defaultCoverage.average;
+  let securityCoverage = defaultCoverage.securityAverage;
+  let qualityCoverage = defaultCoverage.qualityAverage;
 
   if (coverageStats) {
     avgCoverage = coverageStats.summary.totalCoverage;
@@ -265,36 +251,10 @@ export async function getPublishedPluginNames(): Promise<{
   quality: string[];
   framework: string[];
 }> {
-  const pluginStats = await loadPluginStats();
-  
-  if (!pluginStats) {
-    return {
-      security: [
-        'browser-security',
-        'jwt',
-        'express-security',
-        'node-security',
-        'mongodb-security',
-        'pg',
-        'secure-coding',
-        'vercel-ai-security',
-        'crypto',
-      ],
-      quality: [
-        'conventions',
-        'maintainability',
-        'modernization',
-        'modularity',
-        'operability',
-        'reliability',
-        'import-next',
-      ],
-      framework: [
-        'lambda-security',
-        'nestjs-security',
-      ],
-    };
-  }
+  // Same fallback discipline as getEcosystemStats: committed manifest,
+  // never a hand-typed list.
+  const pluginStats =
+    (await loadPluginStats()) ?? (committedPluginStats as PluginStatsData);
 
   const published = pluginStats.plugins.filter((p) => p.published);
   

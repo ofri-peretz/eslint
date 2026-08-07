@@ -14,9 +14,13 @@ name: Auto Deploy on Main
 #
 # Canonical Vercel project mapping (also lives in `.github/vercel-apps.json`):
 #
-#   - docs       → `eslint`                    → https://eslint.interlace.tools
-#   - storybook  → `storybook-interlace-tools` → https://storybook.interlace.tools
-#   - registry   → `ds-interlace-tools`        → https://ds.interlace.tools
+#   - docs → `eslint` → https://eslint.interlace.tools
+#
+# This repo deploys that one app. `storybook.interlace.tools` and
+# `ds.interlace.tools` are git-linked to ofri-peretz/interlace and deploy
+# from there; dispatching CLI deploys into them from here raced the git
+# integration and served a stale build on a public domain. See
+# interlace/docs/adr/0001-consolidate-duplicated-design-system.md (D2/D4).
 #
 # What is NOT in scope here:
 #
@@ -42,10 +46,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       docs: ${{ steps.compute.outputs.docs }}
-      storybook: ${{ steps.compute.outputs.storybook }}
-      registry: ${{ steps.compute.outputs.registry }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Need history reaching the previous main commit so turbo can
           # diff against it. `0` = full clone; for very large repos we'd
@@ -69,12 +71,8 @@ jobs:
           # rewriting history past our fetch depth).
           if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]] \
              || ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
-            echo "::notice::No usable diff base (BEFORE_SHA=$BEFORE_SHA) — deploying all three apps."
-            {
-              echo "docs=true"
-              echo "storybook=true"
-              echo "registry=true"
-            } >> "$GITHUB_OUTPUT"
+            echo "::notice::No usable diff base (BEFORE_SHA=$BEFORE_SHA) — deploying docs."
+            echo "docs=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -91,22 +89,16 @@ jobs:
 
           # Map workspace name → vercel-apps.json key.
           # Keep this table in lockstep with `.github/vercel-apps.json`.
-          docs=false; storybook=false; registry=false
+          docs=false
           while IFS= read -r ws; do
             case "$ws" in
-              docs)                 docs=true ;;
-              "@interlace/storybook") storybook=true ;;
-              registry)             registry=true ;;
+              docs) docs=true ;;
             esac
           done <<< "$AFFECTED"
 
-          {
-            echo "docs=$docs"
-            echo "storybook=$storybook"
-            echo "registry=$registry"
-          } >> "$GITHUB_OUTPUT"
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
 
-          echo "Dispatch decisions: docs=$docs storybook=$storybook registry=$registry"
+          echo "Dispatch decisions: docs=$docs"
 
   deploy-docs:
     name: Dispatch deploy-docs.yml
@@ -126,41 +118,3 @@ jobs:
             --ref main \
             -f environment=production \
             -f ref=${{ github.sha }}
-
-  deploy-storybook:
-    name: Dispatch deploy.yml for storybook
-    needs: affected
-    if: needs.affected.outputs.storybook == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      actions: write   # dispatch deploy*.yml via `gh workflow run`
-    steps:
-      - name: Fire deploy.yml (storybook → production)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run deploy.yml \
-            --repo ofri-peretz/eslint \
-            --ref main \
-            -f app=storybook \
-            -f target=production
-
-  deploy-registry:
-    name: Dispatch deploy.yml for registry
-    needs: affected
-    if: needs.affected.outputs.registry == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      actions: write   # dispatch deploy*.yml via `gh workflow run`
-    steps:
-      - name: Fire deploy.yml (registry → production)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run deploy.yml \
-            --repo ofri-peretz/eslint \
-            --ref main \
-            -f app=registry \
-            -f target=production

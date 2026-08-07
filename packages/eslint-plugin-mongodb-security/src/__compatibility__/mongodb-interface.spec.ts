@@ -19,8 +19,8 @@
  * 4. Update peerDependencies in package.json if needed
  *
  * @sdk mongodb, mongoose
- * @version-tested mongodb 6.x, mongoose 8.x
- * @last-updated 2026-01-02
+ * @version-tested mongodb 7.x, mongoose 9.x
+ * @last-updated 2026-07-31
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';

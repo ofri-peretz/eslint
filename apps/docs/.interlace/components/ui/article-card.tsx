@@ -280,7 +280,7 @@ function CoverImage({
     );
   }
   return (
-    <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-violet-900 via-slate-800 to-fuchsia-900 p-6">
+    <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary/25 via-neutral-900 to-chart-2/25 p-6">
       <span
         className={cn(
           'line-clamp-3 text-center leading-snug font-semibold text-white/80',

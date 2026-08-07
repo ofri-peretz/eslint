@@ -1,8 +1,10 @@
 import { isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import defaultMdxComponents from 'fumadocs-ui/mdx';
+import { cn } from '@interlace/ui/cn';
 import * as Twoslash from 'fumadocs-twoslash/ui';
 import { Mermaid } from '@/components/mdx/mermaid';
 import { InstallSnippet } from '@/components/mdx/install-snippet';
+import { Stat } from '@/components/mdx/stat';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
@@ -63,6 +65,77 @@ function Pre(props: ComponentProps<'pre'>) {
   );
 }
 
+const DefaultImg = defaultMdxComponents.img as
+  | ((props: ComponentProps<'img'>) => ReactNode)
+  | undefined;
+
+/**
+ * Hosts that only ever serve status badges — always 20 CSS pixels tall,
+ * variable width. Anything from these hosts can be laid out without knowing
+ * its intrinsic size.
+ */
+const BADGE_HOST =
+  /^https?:\/\/(img\.shields\.io|shields\.io|badgen\.net|codecov\.io)\//i;
+
+/**
+ * `next/image` (behind fumadocs' default image component) throws when a string
+ * `src` arrives without width/height. We deliberately no longer measure
+ * external images at build time — see `remarkImageOptions.external` in
+ * `src/lib/mdx-compiler.tsx` and `source.config.ts` — so unsized externals
+ * (~275 shields.io badges across the plugin READMEs) render as plain image
+ * elements here instead of crashing the page.
+ *
+ * Both branches keep explicit width/height so layout space is still reserved
+ * before decode (MOTION_PHILOSOPHY CLS budget, enforced by
+ * `philosophy-enforcement.test.ts`); the paired Tailwind classes let the real
+ * intrinsic size take over once the bytes land. Local images still carry real
+ * dimensions from disk and keep the optimized `next/image` path.
+ */
+function Img({ className, ...props }: ComponentProps<'img'>) {
+  const unsized =
+    typeof props.src === 'string' && props.width == null && props.height == null;
+
+  if (unsized) {
+    return BADGE_HOST.test(props.src as string) ? (
+      // eslint-disable-next-line @next/next/no-img-element -- badge, not a content image
+      <img
+        {...props}
+        alt={props.alt ?? ''}
+        width={100}
+        height={20}
+        loading="lazy"
+        decoding="async"
+        className={cn('inline-block h-5 w-auto', className)}
+      />
+    ) : (
+      // A nominal 16:9 box. The browser reserves `width / height` as the
+      // aspect ratio until the real bytes land, then `h-auto` hands layout
+      // back to the intrinsic size. The numbers only have to be non-zero and
+      // roughly content-shaped — zero would reserve nothing at all.
+      // eslint-disable-next-line @next/next/no-img-element -- intrinsic size unknown
+      <img
+        {...props}
+        alt={props.alt ?? ''}
+        width={1200}
+        height={675}
+        loading="lazy"
+        decoding="async"
+        className={cn('h-auto w-full rounded-lg', className)}
+      />
+    );
+  }
+
+  return DefaultImg ? (
+    (DefaultImg({ ...props, className }) as ReactElement)
+  ) : (
+    // Only reachable for a *sized* image, so `props` always overrides the
+    // placeholder dimensions below — they exist to keep the tag self-evidently
+    // CLS-safe on inspection.
+    // eslint-disable-next-line @next/next/no-img-element -- no default component available
+    <img width={1200} height={675} {...props} alt={props.alt ?? ''} className={className} />
+  );
+}
+
 /**
  * MDX components registry
  *
@@ -83,8 +156,10 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     ...defaultMdxComponents,
     ...Twoslash, // TypeScript code hints
     pre: Pre, // Catches ```mermaid before fumadocs renders it as a code block
+    img: Img, // Unsized external images (README badges) bypass next/image
     Mermaid, // Diagram rendering (also usable as a direct MDX component)
     InstallSnippet, // Package-install snippet w/ PM switcher
+    Stat, // Plugin/rule counts from the generated numbers manifest — never hand-type them
     Steps, // Multi-step guides
     Step,
     Tabs, // Tabbed content

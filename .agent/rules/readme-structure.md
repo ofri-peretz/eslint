@@ -25,7 +25,8 @@ BODY  (markdown, may contain shields.io badges in tables)
   11. ## Rules                            (legend + unified table with 🧠 column)
   12. ## 🔗 Related ESLint Plugins
   13. ## 📄 License
-  14. Footer image (centered <p>, HTML <a><img>)
+  14. Footer image (centered <p>, HTML <a><img> — OG banner)
+  15. Closing Interlace mark (centered <p>, HTML <a><img> — mark only, no ESLint mark here)
 ```
 
 Optional sections (`## 🙋 FAQ`, `## 💡 What You Get`, `## ⚡ Performance`, `## 🏢 Usage Example`, `## Why These Rules?`, `## 📊 Test Coverage`) live **between Configuration Presets (7) and Compatibility (10)**. Never below Rules. Never between Rules and Related Plugins.
@@ -48,13 +49,62 @@ Implications for authors:
 
 ### 1. Logo
 
+A row of marks, each linking to its own home, in this fixed order:
+
+**Interlace → ecosystem → oxlint → ESLint**
+
+Every plugin carries Interlace, oxlint and ESLint. The 17 plugins that target a
+specific ecosystem also carry that vendor's mark in slot 2; the generic quality
+plugins (conventions, import-next, maintainability, modernization, modularity,
+operability, reliability, secure-coding, browser-security) omit it and ship a
+three-mark row. The per-plugin mapping is the `ECOSYSTEM_LOGO` table in
+[`tools/scripts/check-readme-structure.ts`](../../tools/scripts/check-readme-structure.ts),
+which is also the gate.
+
 ```markdown
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://nodejs.org" target="_blank"><img src="https://eslint.interlace.tools/logos/node.svg" alt="Node.js" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 ```
 
-No `# Title` H1 — the logo is the visual anchor.
+**Why `/logos/*.svg` and not the vendor's own URL.** Every mark is vendored into
+`apps/docs/public/logos/` and normalised by `tools/scripts/normalize-logos.mjs`
+into a shared **120×90** canvas via a nested `<svg preserveAspectRatio>`; the
+source artwork is untouched, only its placement. Without that, a wordmark
+(express, oxlint) and a square icon (node, mongodb) at the same `height=90`
+render wildly different footprints and baseline-align badly. Hot-linking the
+vendor or a GitHub `camo` URL is forbidden: npm re-proxies README images through
+camo with `immutable`, so a single bad fetch is cached permanently.
+
+Raster-only marks (the GitHub-avatar sources) are downscaled to 180px and
+inlined into that same canvas as a `data:` URI — an SVG loaded via `<img>`
+cannot fetch external resources, so a sibling `.png` would silently render
+blank. Sources and per-mark notes live in
+[`tools/scripts/logo-sources.json`](../../tools/scripts/logo-sources.json).
+
+**Always look at a regenerated mark on white before shipping it.** Two failure
+modes are invisible to tooling: a truncated PNG still reports valid dimensions
+to `file` yet renders as a partial band, and a mark that colours itself with a
+root-level `fill` (simple-icons ships Claude as `fill="#D97757"`) renders solid
+black if that attribute is dropped when the root tag is rewritten. Both shipped
+briefly here and both were caught only by rendering the logo.
+
+Pick the variant that reads on **white** — npm's README background. Note the
+naming conventions collide: Interlace's `icon-light.svg` means *for light
+backgrounds* (dark ink), while oxc's `oxc-light.svg` means *light-coloured ink*
+(for dark backgrounds). The correct oxlint source is `oxc-dark.svg`, and the
+correct Express source is `logo-express-black.svg`, not `-white`.
+
+No `# Title` H1 — the logos are the visual anchor. The Interlace link gets a
+`utm_source=github&utm_medium=referral&utm_campaign=<package>` stamp from
+`scripts/stamp-utm-links.ts`; the ecosystem, oxlint and ESLint links point at
+properties we don't own and stay un-stamped.
 
 ### 2. Tagline
 
@@ -187,7 +237,7 @@ Two patterns are valid:
 ```markdown
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 ```
 
@@ -209,7 +259,17 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 ```
 
-Must be the very last element. No content below.
+### 15. Closing Interlace mark
+
+```markdown
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+</p>
+```
+
+Interlace mark only — the ESLint mark pairing lives in the header (1), not
+here. Same light-pair asset as the header, smaller (~70px). Must be the very
+last element. No content below.
 
 ---
 

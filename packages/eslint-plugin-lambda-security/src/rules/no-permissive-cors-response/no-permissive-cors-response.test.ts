@@ -1,7 +1,23 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe, expect, it } from 'vitest';
 import { noPermissiveCorsResponse } from './index';
 
 const ruleTester = new RuleTester();
+
+// ========== REGRESSION LOCK: no dead options ==========
+// The rule used to declare `allowedOrigins` in its schema without ever reading
+// it in create(). ESLint's config validation accepted it, so a user who set
+// `['error', { allowedOrigins: [...] }]` got silent no-op behaviour with nothing
+// to tip them off. Any option added here must actually be honoured by create().
+describe('no-permissive-cors-response schema', () => {
+  it('declares only the options the rule reads', () => {
+    const [schema] = noPermissiveCorsResponse.meta.schema as {
+      properties: Record<string, unknown>;
+    }[];
+
+    expect(Object.keys(schema.properties)).toEqual(['allowInTests']);
+  });
+});
 
 ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
   valid: [
@@ -61,6 +77,12 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
     {
       code: `
         return { data: '*', headers: { 'Access-Control-Allow-Origin': '*' } };
+      `,
+    },
+    // ========== VALID: Implicit-return arrow, non-Lambda shape ==========
+    {
+      code: `
+        const config = () => ({ headers: { 'Access-Control-Allow-Origin': '*' } });
       `,
     },
   ],
@@ -137,6 +159,47 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
       `,
       filename: 'handler.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // ========== INVALID: Explicit-return response factory ==========
+    // Locks the docs claim that response factories ARE detected.
+    {
+      code: `
+        function createResponse(body) {
+          return {
+            statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify(body)
+          };
+        }
+      `,
+      output: `
+        function createResponse(body) {
+          return {
+            statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': "https://your-domain.com" },
+            body: JSON.stringify(body)
+          };
+        }
+      `,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // ========== INVALID: Implicit-return arrow response helper ==========
+    {
+      code: `
+        const jsonResponse = (statusCode, data) => ({
+          statusCode,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify(data)
+        });
+      `,
+      output: `
+        const jsonResponse = (statusCode, data) => ({
+          statusCode,
+          headers: { 'Access-Control-Allow-Origin': "https://your-domain.com" },
+          body: JSON.stringify(data)
+        });
+      `,
       errors: [{ messageId: 'permissiveCors' }],
     },
   ],

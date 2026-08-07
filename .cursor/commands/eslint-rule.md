@@ -2,7 +2,7 @@
 
 > **Purpose:** Ensure all new ESLint rules are properly integrated, documented, and released following project standards.
 
-**⚠️ CRITICAL:** When adding a new ESLint rule to any `@interlace/eslint-plugin-*` package in this monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+**⚠️ CRITICAL:** When adding a new ESLint rule to any `eslint-plugin-*` package in this monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
 
 > **Plugin scope decision:** Pick the right target plugin per [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md) §1 (Conceptual Fit & Plugin Separation) and the table in [`ARCHITECTURE.md`](../../ARCHITECTURE.md#plugin-organization-the-rule-that-decides-where-new-code-goes). Throughout this checklist, `<plugin>` refers to the chosen target package — e.g. `eslint-plugin-secure-coding`, `eslint-plugin-pg`, `eslint-plugin-react-features`.
 

@@ -12,6 +12,11 @@ import type { ReactNode } from 'react';
  * Maps to Tailwind gradient classes.
  */
 const GRADIENT_COLORS: Record<string, string> = {
+  // `brand` is the default (see below). The rest are literal colour names and
+  // must keep resolving to the colour they are named after — `purple` pointing
+  // at the brand gradient would silently hand orange to every caller asking
+  // for purple.
+  brand: 'from-primary to-chart-2',
   purple: 'from-purple-600 to-purple-500',
   blue: 'from-blue-600 to-blue-500',
   emerald: 'from-emerald-600 to-emerald-500',
@@ -44,7 +49,7 @@ export interface PillarConfig {
  * import { Shield, Wrench, BookOpen } from 'lucide-react';
  *
  * const { icons, transform } = buildPillarIcons({
- *   plugins: { icon: Shield, color: 'purple' },
+ *   plugins: { icon: Shield, color: 'brand' },
  *   'serverless-devkit': { icon: Wrench, color: 'blue' },
  *   guides: { icon: BookOpen, color: 'emerald' },
  * });
@@ -56,7 +61,7 @@ export function buildPillarIcons(pillars: Record<string, PillarConfig>) {
 
   for (const [slug, config] of Object.entries(pillars)) {
     const Icon = config.icon;
-    const gradient = GRADIENT_COLORS[config.color] ?? GRADIENT_COLORS.purple;
+    const gradient = GRADIENT_COLORS[config.color] ?? GRADIENT_COLORS.brand;
 
     icons[slug] = (
       <div

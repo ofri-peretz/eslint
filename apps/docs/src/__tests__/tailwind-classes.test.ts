@@ -229,7 +229,7 @@ describe('Source File Configuration', () => {
       );
       
       expect(globalCSS).toContain('--color-fd-primary');
-      expect(globalCSS).toContain('hsl(263'); // Purple hue
+      expect(globalCSS).toContain('hsl(22'); // Burnt-orange hue
     });
 
     it('should define primary color for dark mode', () => {
@@ -239,7 +239,7 @@ describe('Source File Configuration', () => {
       );
       
       expect(globalCSS).toContain('.dark');
-      expect(globalCSS).toContain('hsl(270'); // Purple hue for dark mode
+      expect(globalCSS).toContain('hsl(19'); // Light burnt-orange hue for dark mode
     });
 
     it('should define foreground color', () => {

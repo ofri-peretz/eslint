@@ -89,24 +89,10 @@ Deliberate gaps: no flagship from `node-security`, `lambda-security`, `nestjs-se
 
 ## Using the flagship preset
 
-The canonical way to consume the 10 flagship rules is the meta-config package — one install, one import:
-
-```js
-// eslint.config.mjs
-import { flagship } from '@interlace/eslint-config';
-
-export default [
-  ...flagship,
-];
-```
-
-See [`packages/eslint-config-interlace/README.md`](../packages/eslint-config-interlace/README.md) for the full preset matrix (`flagship`, `security`, `quality`, `react`, `recommended`).
-
-Structural lock: [`packages/eslint-config-interlace/src/index.test.ts`](../packages/eslint-config-interlace/src/index.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI).
-
-### Manual compose (escape hatch)
-
-If you can't or don't want to take the meta-package dependency, every plugin that hosts a flagship rule still exports a `flagship` config that enables exactly that rule (or, for `secure-coding`, the two rules) at error level:
+The canonical way to consume the 10 flagship rules is to compose them per
+repository from the individual plugins. Every plugin that hosts a flagship rule
+exports a `flagship` config enabling exactly that rule (or, for `secure-coding`,
+the two rules) at error level:
 
 ```js
 // eslint.config.mjs
@@ -133,7 +119,13 @@ export default [
 ];
 ```
 
-The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's `recommended` preset (or use `@interlace/eslint-config`'s `recommended` preset which already does this).
+Take only the plugins you need — a repo with no Postgres has no reason to install
+`eslint-plugin-pg`. There is deliberately no meta-config package to install: ESLint
+config is composed per repository from the individual plugins.
+
+Structural lock: [`scripts/__tests__/ecosystem-presets.test.ts`](../scripts/__tests__/ecosystem-presets.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI). It composes the presets from a test fixture, not from a shipped package — there is no Interlace meta-config, and none is published or recommended to consumers.
+
+The flagship preset is intentionally minimal — only the rules in the list above. For broader coverage, layer it on top of each plugin's own `recommended` preset.
 
 ## Independent benchmarking
 

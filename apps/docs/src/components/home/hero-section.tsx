@@ -27,6 +27,32 @@ import { track } from '../../lib/analytics';
  *  - Secondary passes `shimmer={false} highlight={false}` — same pill
  *    geometry, no decoration.
  */
+/**
+ * Official ESLint hexagon mark — paths verbatim from
+ * `public/eslint-logo.svg`, colors untouched. The only change is theme
+ * keying: the source SVG swaps to its white/grey dark variant via
+ * `prefers-color-scheme`, but the site themes via the `.dark` class
+ * (fumadocs), so we inline the paths and read the same official fills
+ * from the `--eslint-mark-*` tokens in `global.css` (light:
+ * purple pair, dark: ESLint's white/grey dark variant) — no raw color
+ * literals in JSX attributes (R19). Rendered `aria-hidden` — the
+ * adjacent text names it.
+ */
+function EslintMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 294.825 258.982" aria-hidden className={className}>
+      <path
+        fill="var(--eslint-mark-inner)"
+        d="m97.021 99.016 48.432-27.962c1.212-.7 2.706-.7 3.918 0l48.433 27.962a3.92 3.92 0 0 1 1.959 3.393v55.924a3.924 3.924 0 0 1-1.959 3.394l-48.433 27.962c-1.212.7-2.706.7-3.918 0l-48.432-27.962a3.92 3.92 0 0 1-1.959-3.394v-55.924a3.922 3.922 0 0 1 1.959-3.393"
+      />
+      <path
+        fill="var(--eslint-mark-outer)"
+        d="M273.336 124.488 215.469 23.816c-2.102-3.64-5.985-6.325-10.188-6.325H89.545c-4.204 0-8.088 2.685-10.19 6.325l-57.867 100.45c-2.102 3.641-2.102 8.236 0 11.877l57.867 99.847c2.102 3.64 5.986 5.501 10.19 5.501H205.28c4.203 0 8.087-1.805 10.188-5.446l57.867-100.01c2.104-3.639 2.104-7.907.001-11.547m-47.917 48.41c0 1.48-.891 2.849-2.174 3.59l-73.71 42.527a4.194 4.194 0 0 1-4.17 0l-73.767-42.527c-1.282-.741-2.179-2.109-2.179-3.59V87.843c0-1.481.884-2.849 2.167-3.59l73.707-42.527a4.185 4.185 0 0 1 4.168 0l73.772 42.527c1.283.741 2.186 2.109 2.186 3.59v85.055z"
+      />
+    </svg>
+  );
+}
+
 function formatStars(n: number): string {
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
@@ -54,7 +80,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
         <>
           <span className="text-white drop-shadow-lg">Secure your code,</span>
           <br />
-          <span className="bg-linear-to-r from-purple-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent">
             your style.
           </span>
         </>
@@ -84,7 +110,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
         // contrast) holds against the *locked* dark cosmic gradient — the
         // hero is intentionally theme-agnostic (no `dark:` prefix in
         // hero-cosmic.tsx), but the global `--color-fd-ring` resolves to a
-        // light-theme purple that fails contrast on this surface.
+        // light-theme value that fails contrast on this surface.
         render: (
           <Link
             href="/docs/getting-started"
@@ -111,7 +137,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
             //    against the cosmic dark surface AND remains visible on a
             //    light flash during hydration;
             //  - bg at 12% opacity lifts perceptually above the
-            //    purple-950→black gradient AND reads as a light translucent
+            //    orange-950→black gradient AND reads as a light translucent
             //    pill if it briefly sits on a light page background.
             className="text-white! border-white/50 hover:border-white/70 [&_svg]:text-white!"
           >
@@ -145,6 +171,17 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
           />
         ),
       }}
+      // "Built for ESLint" trust badge — the ESLint hexagon's home now that
+      // the top nav carries the Interlace identity alone. Subordinate to the
+      // hero copy (small pill, below the CTAs), official ESLint colors via
+      // <EslintMark>. Pill chrome is theme-aware: translucent light pill on
+      // the daylight surface, translucent white on the cosmic surface.
+      footer={
+        <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/20 bg-white/40 px-3 py-1.5 text-xs font-medium text-slate-700 backdrop-blur-sm dark:border-white/20 dark:bg-white/5 dark:text-white/90">
+          <EslintMark className="size-4 shrink-0" />
+          Built for ESLint — 8, 9, and forward
+        </span>
+      }
     />
   );
 }

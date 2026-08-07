@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-express-security",
-  "version": "1.3.2",
-  "description": "Security-focused ESLint plugin for Express.js applications. Detects insecure cookies, missing security headers, CORS misconfigurations, CSRF vulnerabilities, GraphQL security issues, and more.",
+  "version": "1.5.5",
+  "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -15,8 +15,8 @@
       "default": "./src/types/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-express-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-express-security"
   },
   "bugs": {
@@ -43,35 +43,51 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
     "interlace-security",
     "express",
     "expressjs",
-    "security",
-    "cookies",
-    "helmet",
+    "node",
+    "nodejs",
+    "web-security",
+    "api-security",
     "cors",
     "csrf",
+    "cwe-352",
+    "cookies",
+    "helmet",
+    "security-headers",
     "graphql",
     "rate-limiting",
-    "headers",
-    "owasp",
-    "cwe",
+    "redos",
+    "open-redirect",
     "llm-optimized",
     "ai-assistant",
-    "typescript",
-    "static-analysis"
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.1"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
+    "express": "^4.0.0 || ^5.0.0",
+    "helmet": "^6.0.0 || ^7.0.0 || ^8.0.0",
+    "cors": "^2.0.0",
+    "csurf": "^1.0.0",
+    "express-rate-limit": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
     "express": {
@@ -102,6 +118,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }
