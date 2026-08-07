@@ -74,7 +74,27 @@ describe('require-lean-queries', () => {
         // Triggers useLean: read query without .lean()
         {
           code: `const docs = await Model.find({ active: true });`,
-          errors: [{ messageId: 'useLean' }],
+          errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `const docs = await Model.find({ active: true }).lean();` }],
+      }],
+        },
+      ],
+    });
+  });
+describe('Suggestions', () => {
+    ruleTester.run('suggestion - appends .lean()', requireLeanQueries, {
+      valid: [],
+      invalid: [
+        {
+          code: `const docs = await Model.find({ active: true });`,
+          errors: [{
+            messageId: 'useLean',
+            suggestions: [{
+              messageId: 'suggestionAddLean',
+              output: `const docs = await Model.find({ active: true }).lean();`,
+            }],
+          }],
         },
       ],
     });

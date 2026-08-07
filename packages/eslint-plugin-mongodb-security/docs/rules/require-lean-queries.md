@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-400
 owasp: "A04:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** CWE-400, lean, performance, Mongoose, memory
