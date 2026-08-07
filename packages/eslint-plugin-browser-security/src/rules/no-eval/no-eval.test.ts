@@ -19,6 +19,23 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-eval', noEval, {
   valid: [
+    // `new Function(...)` reports through the NewExpression visitor, which did
+    // not consult the ownership gate — so this line came back from BOTH
+    // no-websocket-eval and here. The complement only holds if every reporting
+    // path asks the question.
+    {
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.onmessage = (event) => { const f = new Function(event.data); f(); };
+      `,
+    },
+    // Owned by no-websocket-eval — see the note in no-innerhtml's tests.
+    {
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.onmessage = (event) => { eval(event.data); };
+      `,
+    },
     // Safe JSON.parse
     {
       code: `const data = JSON.parse(jsonString);`,
@@ -48,6 +65,25 @@ ruleTester.run('no-eval', noEval, {
     },
   ],
   invalid: [
+    {
+      // Worker payload into eval. `no-websocket-eval` does NOT own this, so if
+      // the generic rule skips every resolved source the finding is reported by
+      // nobody — the complement is per-sink, not per-resolver.
+      code: `
+        const w = new Worker('worker.js');
+        w.onmessage = (event) => { eval(event.data); };
+      `,
+      errors: 1,
+    },
+    {
+      // Same for FileReader, through the NewExpression path.
+      code: `
+        const reader = new FileReader();
+        reader.onload = (event) => { const f = new Function(event.target.result); f(); };
+      `,
+      errors: 1,
+    },
+
     // Direct eval
     {
       code: `eval(userInput);`,

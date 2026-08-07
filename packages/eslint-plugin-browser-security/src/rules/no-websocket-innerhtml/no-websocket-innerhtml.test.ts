@@ -22,6 +22,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Safe: using textContent
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.textContent = event.data;
         };
@@ -30,6 +31,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Safe: with sanitization
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.innerHTML = DOMPurify.sanitize(event.data);
         };
@@ -38,6 +40,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Safe: using variable (not direct event.data)
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           const sanitized = DOMPurify.sanitize(event.data);
           element.innerHTML = sanitized;
@@ -61,6 +64,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Test files allowed by default
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.innerHTML = event.data;
         };
@@ -70,6 +74,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // addEventListener for non-message events
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.addEventListener('open', (event) => {
           element.innerHTML = event.data;
         });
@@ -77,9 +82,27 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     },
   ],
   invalid: [
+    {
+      // A NESTED handler used to clear the outer handler's mutable flag, so
+      // the WebSocket sink after it went unreported here while no-innerhtml
+      // skipped it as ours — the finding belonged to nobody. Only the
+      // WebSocket sink is this rule's; the Worker one belongs to
+      // no-worker-message-innerhtml.
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        const worker = new Worker('worker.js');
+        ws.onmessage = (event) => {
+          worker.onmessage = (we) => { element.innerHTML = we.data; };
+          element.innerHTML = event.data;
+        };
+      `,
+      errors: 1,
+    },
+
     // onmessage with innerHTML
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.innerHTML = event.data;
         };
@@ -89,6 +112,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // onmessage with outerHTML
     {
       code: `
+        const socket = new WebSocket('wss://example.test');
         socket.onmessage = (e) => {
           container.outerHTML = e.data;
         };
@@ -98,6 +122,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // addEventListener with innerHTML
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.addEventListener('message', (event) => {
           chatBox.innerHTML = event.data;
         });
@@ -107,6 +132,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Nested data property
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.innerHTML = event.data.content;
         };
@@ -116,15 +142,22 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // insertAdjacentHTML
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           list.insertAdjacentHTML('beforeend', event.data);
         };
       `,
-      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'insertAdjacentHTML' } }],
+      errors: [
+        {
+          messageId: 'unsafeInnerhtml',
+          data: { method: 'insertAdjacentHTML' },
+        },
+      ],
     },
     // document.write (though rarely used with WS)
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           document.write(event.data);
         };
@@ -134,6 +167,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Function expression
     {
       code: `
+        const websocket = new WebSocket('wss://example.test');
         websocket.onmessage = function(msg) {
           panel.innerHTML = msg.data;
         };
@@ -143,6 +177,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
     // Test file with allowInTests: false
     {
       code: `
+        const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
           element.innerHTML = event.data;
         };
