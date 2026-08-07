@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
+  createPayloadResolver,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -65,8 +66,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         description: 'Use textContent or sanitize input with DOMPurify',
         severity: 'LOW',
         fix: 'element.textContent = event.data; // For plain text\nelement.innerHTML = DOMPurify.sanitize(event.data); // For HTML',
-        documentationLink:
-          'https://github.com/cure53/DOMPurify',
+        documentationLink: 'https://github.com/cure53/DOMPurify',
       }),
     },
     schema: [
@@ -95,77 +95,19 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track message event handlers
-    let inMessageHandler = false;
-    let eventParamName: string | null = null;
-
-    /**
-     * Check if we're entering a message event handler
-     */
-    function checkMessageHandler(
-      node: TSESTree.CallExpression,
-    ): { isMessageHandler: boolean; eventParam: string | null } {
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'addEventListener' &&
-        node.arguments.length >= 2
-      ) {
-        const eventTypeArg = node.arguments[0];
-        if (
-          eventTypeArg.type === AST_NODE_TYPES.Literal &&
-          eventTypeArg.value === 'message'
-        ) {
-          const callback = node.arguments[1];
-          if (
-            callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            callback.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = callback.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isMessageHandler: true, eventParam: firstParam.name };
-            }
-          }
-        }
-      }
-      return { isMessageHandler: false, eventParam: null };
-    }
-
-    /**
-     * Check if expression references event.data
-     */
-    function referencesEventData(
-      node: TSESTree.Node,
-      eventName: string,
-    ): boolean {
-      if (node.type === AST_NODE_TYPES.MemberExpression) {
-        if (
-          node.object.type === AST_NODE_TYPES.Identifier &&
-          node.object.name === eventName &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'data'
-        ) {
-          return true;
-        }
-        return referencesEventData(node.object, eventName);
-      }
-      if (node.type === AST_NODE_TYPES.Identifier && node.name === eventName) {
-        return true;
-      }
-      return false;
-    }
+    // Ownership gate: this rule reports only what the resolver attributes
+    // to the postmessage source. Everything it cannot identify belongs to the
+    // generic sink rule, so no value is ever reported by both.
+    const payloadSource = createPayloadResolver(context.sourceCode);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if entering message handler
-        const { isMessageHandler, eventParam } = checkMessageHandler(node);
-        if (isMessageHandler) {
-          inMessageHandler = true;
-          eventParamName = eventParam;
-        }
 
         // Check for dangerous methods: insertAdjacentHTML, document.write
-        if (!inMessageHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -174,7 +116,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         ) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
-            if (referencesEventData(arg, eventParamName)) {
+            if (payloadSource(arg) === 'postmessage') {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
@@ -194,16 +136,11 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'CallExpression:exit'(node: TSESTree.CallExpression) {
-        const { isMessageHandler } = checkMessageHandler(node);
-        if (isMessageHandler) {
-          inMessageHandler = false;
-          eventParamName = null;
-        }
-      },
-
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (!inMessageHandler || !eventParamName) return;
+        // The resolver is the sole sink condition. A mutable in-handler
+        // flag was cleared by any NESTED handler's exit, so sinks after
+        // one went unreported here while no-innerhtml skipped them as
+        // ours — the finding belonged to nobody.
 
         // Check for innerHTML/outerHTML assignment
         if (
@@ -212,7 +149,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
           DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
           // Check if right side references event.data
-          if (referencesEventData(node.right, eventParamName)) {
+          if (payloadSource(node.right) === 'postmessage') {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
