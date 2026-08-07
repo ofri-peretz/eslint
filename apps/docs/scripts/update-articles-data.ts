@@ -9,9 +9,10 @@
  *   DEV_TO_API_KEY - Optional API key for authenticated endpoint (includes page views)
  */
 
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -127,9 +128,10 @@ async function main() {
       mkdirSync(outputDir, { recursive: true });
     }
     
-    // Write to JSON file
-    writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2), 'utf-8');
-    
+    // Content-diffed, so a run that fetches the same articles leaves the tree
+    // clean instead of rewriting `lastUpdated` (see write-json-if-changed.ts).
+    writeJsonIfChanged(OUTPUT_PATH, data, 'articles.json');
+
     console.log(`✅ Successfully cached ${processedArticles.length} articles`);
     console.log(`📁 Output: ${OUTPUT_PATH}`);
     console.log(`🔑 Source: ${source} API`);
