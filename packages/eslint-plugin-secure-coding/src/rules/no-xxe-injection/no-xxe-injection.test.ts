@@ -5,7 +5,10 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { createWithMockContext } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createWithMockContext,
+} from '@interlace/eslint-devkit';
 import { noXxeInjection } from './index';
 
 // Configure RuleTester for Vitest
@@ -210,15 +213,15 @@ describe('no-xxe-injection', () => {
       const callExpression = listeners.CallExpression as (node: unknown) => void;
 
       callExpression({
-        type: 'CallExpression',
+        type: AST_NODE_TYPES.CallExpression,
         callee: {
-          type: 'MemberExpression',
+          type: AST_NODE_TYPES.MemberExpression,
           // The receiver has to name an XML parser for a bare `parse` to
           // count — otherwise `JSON.parse` matches. See isXmlReceiver.
-          object: { type: 'Identifier', name: 'xmlParser' },
-          property: { type: 'Identifier', name: 'parse' },
+          object: { type: AST_NODE_TYPES.Identifier, name: 'xmlParser' },
+          property: { type: AST_NODE_TYPES.Identifier, name: 'parse' },
         },
-        arguments: [{ type: 'Identifier', name: 'xmlInput', parent: undefined }],
+        arguments: [{ type: AST_NODE_TYPES.Identifier, name: 'xmlInput', parent: undefined }],
       });
 
       expect(reports).toHaveLength(1);
@@ -230,23 +233,23 @@ describe('no-xxe-injection', () => {
       const callExpression = listeners.CallExpression as (node: unknown) => void;
 
       callExpression({
-        type: 'CallExpression',
+        type: AST_NODE_TYPES.CallExpression,
         callee: {
-          type: 'MemberExpression',
+          type: AST_NODE_TYPES.MemberExpression,
           // The receiver has to name an XML parser for a bare `parse` to
           // count — otherwise `JSON.parse` matches. See isXmlReceiver.
-          object: { type: 'Identifier', name: 'xmlParser' },
-          property: { type: 'Identifier', name: 'parse' },
+          object: { type: AST_NODE_TYPES.Identifier, name: 'xmlParser' },
+          property: { type: AST_NODE_TYPES.Identifier, name: 'parse' },
         },
         arguments: [
-          { type: 'Identifier', name: 'cleanXml', parent: undefined },
+          { type: AST_NODE_TYPES.Identifier, name: 'cleanXml', parent: undefined },
           {
-            type: 'ObjectExpression',
+            type: AST_NODE_TYPES.ObjectExpression,
             properties: [
               {
-                type: 'Property',
-                key: { type: 'Identifier', name: 'resolveExternals' },
-                value: { type: 'Literal', value: true },
+                type: AST_NODE_TYPES.Property,
+                key: { type: AST_NODE_TYPES.Identifier, name: 'resolveExternals' },
+                value: { type: AST_NODE_TYPES.Literal, value: true },
               },
             ],
           },
@@ -262,8 +265,8 @@ describe('no-xxe-injection', () => {
       const newExpression = listeners.NewExpression as (node: unknown) => void;
 
       newExpression({
-        type: 'NewExpression',
-        callee: { type: 'Identifier', name: 'DOMParser' },
+        type: AST_NODE_TYPES.NewExpression,
+        callee: { type: AST_NODE_TYPES.Identifier, name: 'DOMParser' },
       });
 
       expect(reports).toHaveLength(1);
@@ -275,7 +278,7 @@ describe('no-xxe-injection', () => {
       const literal = listeners.Literal as (node: unknown) => void;
 
       literal({
-        type: 'Literal',
+        type: AST_NODE_TYPES.Literal,
         value: '<!ENTITY xxe SYSTEM "file:///etc/passwd">',
       });
 

@@ -25,6 +25,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'xxeInjection'
@@ -67,11 +68,18 @@ type RuleOptions = [Options?];
 const XML_RECEIVER = /xml|^dom$|domparser|jsdom|libxml|^sax$|^expat$|^parser$/i;
 
 const isXmlReceiver = (node: TSESTree.Node): boolean => {
-  if (node.type === 'Identifier') return XML_RECEIVER.test(node.name);
-  if (node.type === 'MemberExpression' && node.property.type === 'Identifier') {
+  if (node.type === AST_NODE_TYPES.Identifier)
+    return XML_RECEIVER.test(node.name);
+  if (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.property.type === AST_NODE_TYPES.Identifier
+  ) {
     return XML_RECEIVER.test(node.property.name);
   }
-  if (node.type === 'NewExpression' && node.callee.type === 'Identifier') {
+  if (
+    node.type === AST_NODE_TYPES.NewExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier
+  ) {
     return XML_RECEIVER.test(node.callee.name);
   }
   return false;
@@ -84,7 +92,10 @@ const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
   const callee = node.callee;
 
   // Check for XML library method calls
-  if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier
+  ) {
     const method = callee.property.name;
 
     // These names are XML-specific — the receiver adds nothing.
