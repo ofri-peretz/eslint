@@ -56,6 +56,35 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
+/**
+ * The string content a concatenation contributes, taken from the AST.
+ *
+ * Only `Literal` strings and the static quasis of a template literal — an
+ * identifier contributes nothing knowable, and its *name* is not content.
+ */
+function literalTextOf(node: TSESTree.Node): string {
+  if (node.type === 'Literal')
+    return typeof node.value === 'string' ? node.value : '';
+  if (node.type === 'TemplateLiteral')
+    return node.quasis.map((q) => q.value.raw).join(' ');
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    return `${literalTextOf(node.left)} ${literalTextOf(node.right)}`;
+  }
+  return '';
+}
+
+/**
+ * Syntax that only appears in an XPath expression.
+ *
+ * A lone `/` is a path separator in every language; these are not. Covered:
+ * the descendant axis (`//`), an attribute predicate (`[@id=`), any explicit
+ * axis (`child::`), the XPath node tests and functions (`text()`, `node()`,
+ * `contains(`, `starts-with(`, `local-name(`, `position()`), and a location
+ * step carrying a predicate (`/user[`), which is the form that has no `//`.
+ */
+const XPATH_SYNTAX =
+  /\/\/|\[@|::|\btext\(\)|\bnode\(\)|\bcontains\(|\bstarts-with\(|\blocal-name\(|\bposition\(\)|\/[A-Za-z_*][\w.-]*\[/;
+
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xpath-injection',
   meta: {
@@ -83,7 +112,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         description: 'Unsafe string concatenation in XPath expression',
         severity: 'HIGH',
         fix: 'Use parameterized XPath or escape user input',
-        documentationLink: 'https://owasp.org/www-community/attacks/XPATH_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/XPATH_Injection',
       }),
       unvalidatedXpathInput: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -92,7 +122,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         description: 'XPath query uses unvalidated user input',
         severity: 'MEDIUM',
         fix: 'Validate and sanitize XPath input before use',
-        documentationLink: 'https://owasp.org/www-community/attacks/XPATH_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/XPATH_Injection',
       }),
       dangerousXpathExpression: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -109,7 +140,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         description: 'Use parameterized XPath queries',
         severity: 'LOW',
         fix: 'Construct XPath with proper escaping and validation',
-        documentationLink: 'https://owasp.org/www-community/attacks/XPATH_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/XPATH_Injection',
       }),
       escapeXpathInput: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -125,7 +157,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         description: 'Validate XPath queries against allowed patterns',
         severity: 'LOW',
         fix: 'Whitelist allowed XPath operations and validate syntax',
-        documentationLink: 'https://owasp.org/www-community/attacks/XPATH_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/XPATH_Injection',
       }),
       strategyParameterizedQueries: formatLLMMessage({
         icon: MessageIcons.STRATEGY,
@@ -133,7 +166,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         description: 'Use parameterized XPath construction',
         severity: 'LOW',
         fix: 'Build XPath queries programmatically with escaped parameters',
-        documentationLink: 'https://owasp.org/www-community/attacks/XPATH_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/XPATH_Injection',
       }),
       strategyInputValidation: formatLLMMessage({
         icon: MessageIcons.STRATEGY,
@@ -150,7 +184,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Use libraries that provide safe XPath building',
         documentationLink: 'https://www.npmjs.com/package/xpath-builder',
-      })
+      }),
     },
     schema: [
       {
@@ -159,29 +193,46 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           xpathFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'], description: 'XPath evaluation methods treated as query sinks'
+            default: [
+              'evaluate',
+              'selectSingleNode',
+              'selectNodes',
+              'xpath',
+              'select',
+            ],
+            description: 'XPath evaluation methods treated as query sinks',
           },
           safeXpathConstructors: {
             type: 'array',
             items: { type: 'string' },
-            default: ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'], description: 'Builders that produce a parameterized XPath expression'
+            default: ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'],
+            description:
+              'Builders that produce a parameterized XPath expression',
           },
           xpathValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'], description: 'Function names that escape or validate XPath input'
+            default: [
+              'validateXPath',
+              'escapeXPath',
+              'sanitizeXPath',
+              'cleanXPath',
+            ],
+            description: 'Function names that escape or validate XPath input',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as XPath sanitizers',
+            description:
+              'Additional function names to consider as XPath sanitizers',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -195,9 +246,25 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      xpathFunctions: ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'],
-      safeXpathConstructors: ['buildXPath', 'createXPath', 'safeXPath', 'xpathBuilder'],
-      xpathValidationFunctions: ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'],
+      xpathFunctions: [
+        'evaluate',
+        'selectSingleNode',
+        'selectNodes',
+        'xpath',
+        'select',
+      ],
+      safeXpathConstructors: [
+        'buildXPath',
+        'createXPath',
+        'safeXPath',
+        'xpathBuilder',
+      ],
+      xpathValidationFunctions: [
+        'validateXPath',
+        'escapeXPath',
+        'sanitizeXPath',
+        'cleanXPath',
+      ],
       trustedSanitizers: [],
       trustedAnnotations: ['@xpath-safe'],
       strictMode: false,
@@ -206,8 +273,19 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      xpathFunctions = ['evaluate', 'selectSingleNode', 'selectNodes', 'xpath', 'select'],
-      xpathValidationFunctions = ['validateXPath', 'escapeXPath', 'sanitizeXPath', 'cleanXPath'],
+      xpathFunctions = [
+        'evaluate',
+        'selectSingleNode',
+        'selectNodes',
+        'xpath',
+        'select',
+      ],
+      xpathValidationFunctions = [
+        'validateXPath',
+        'escapeXPath',
+        'sanitizeXPath',
+        'cleanXPath',
+      ],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -234,14 +312,19 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for XPath method calls
-      if (callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          xpathFunctions.includes(callee.property.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        xpathFunctions.includes(callee.property.name)
+      ) {
         return true;
       }
 
       // Check for XPath library calls
-      if (callee.type === 'Identifier' && xpathFunctions.includes(callee.name)) {
+      if (
+        callee.type === 'Identifier' &&
+        xpathFunctions.includes(callee.name)
+      ) {
         return true;
       }
 
@@ -255,24 +338,16 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const containsDangerousXpath = (xpathText: string): boolean => {
       // Dangerous XPath patterns that allow traversal or injection
       const dangerousPatterns = [
-        /\.\./,  // Parent directory traversal
-        /\/\*/,  // All children selector
-        /\[.*\*\]/,  // Wildcard in predicates
-        /\/\//,  // Descendant-or-self axis (can be dangerous in some contexts)
-        /text\(\)/,  // Content extraction
-        /comment\(\)/,  // Comment extraction
-        /processing-instruction\(\)/,  // Processing instruction extraction
+        /\.\./, // Parent directory traversal
+        /\/\*/, // All children selector
+        /\[.*\*\]/, // Wildcard in predicates
+        /\/\//, // Descendant-or-self axis (can be dangerous in some contexts)
+        /text\(\)/, // Content extraction
+        /comment\(\)/, // Comment extraction
+        /processing-instruction\(\)/, // Processing instruction extraction
       ];
 
-      return dangerousPatterns.some(pattern => pattern.test(xpathText));
-    };
-
-    /**
-     * Check if string contains XPath interpolation
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const containsXpathInterpolation = (text: string): boolean => {
-      return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
+      return dangerousPatterns.some((pattern) => pattern.test(xpathText));
     };
 
     /**
@@ -281,16 +356,23 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const isUntrustedXpathInput = (inputNode: TSESTree.Node): boolean => {
       if (inputNode.type === 'MemberExpression') {
         // Check patterns like req.query.*, req.body.*, req.params.*
-        if (inputNode.object.type === 'MemberExpression' &&
-            inputNode.object.object.type === 'Identifier' &&
-            inputNode.object.object.name === 'req' &&
-            inputNode.object.property.type === 'Identifier' &&
-            ['query', 'body', 'params', 'param'].includes(inputNode.object.property.name)) {
+        if (
+          inputNode.object.type === 'MemberExpression' &&
+          inputNode.object.object.type === 'Identifier' &&
+          inputNode.object.object.name === 'req' &&
+          inputNode.object.property.type === 'Identifier' &&
+          ['query', 'body', 'params', 'param'].includes(
+            inputNode.object.property.name,
+          )
+        ) {
           return true;
         }
 
         // Check patterns like req.*
-        if (inputNode.object.type === 'Identifier' && inputNode.object.name === 'req') {
+        if (
+          inputNode.object.type === 'Identifier' &&
+          inputNode.object.name === 'req'
+        ) {
           return true;
         }
       }
@@ -300,19 +382,26 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       }
 
       const varName = inputNode.name.toLowerCase();
-      if (['req', 'request', 'query', 'params', 'input', 'user', 'search'].some(keyword =>
-        varName.includes(keyword)
-      )) {
+      if (
+        ['req', 'request', 'query', 'params', 'input', 'user', 'search'].some(
+          (keyword) => varName.includes(keyword),
+        )
+      ) {
         return true;
       }
 
       // Check if it comes from function parameters
       let current: TSESTree.Node | undefined = inputNode;
       while (current) {
-        if (current.type === 'FunctionDeclaration' || 
-            current.type === 'FunctionExpression' || 
-            current.type === 'ArrowFunctionExpression') {
-          const func = current as TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          const func = current as
+            | TSESTree.FunctionDeclaration
+            | TSESTree.FunctionExpression
+            | TSESTree.ArrowFunctionExpression;
           return func.params.some((param: TSESTree.Parameter): boolean => {
             if (param.type === 'Identifier') {
               return param.name === inputNode.name;
@@ -333,9 +422,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node | undefined = inputNode;
 
       while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            xpathValidationFunctions.includes(current.callee.name)) {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'Identifier' &&
+          xpathValidationFunctions.includes(current.callee.name)
+        ) {
           return true;
         }
         current = current.parent as TSESTree.Node;
@@ -352,13 +443,18 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // Walk up to find VariableDeclaration, ExpressionStatement, FunctionDeclaration, or containing statement
       while (current) {
-        if (current.type === 'VariableDeclaration' ||
-            current.type === 'ExpressionStatement' ||
-            current.type === 'FunctionDeclaration') {
+        if (
+          current.type === 'VariableDeclaration' ||
+          current.type === 'ExpressionStatement' ||
+          current.type === 'FunctionDeclaration'
+        ) {
           // Check for JSDoc comments before this statement
           const comments = sourceCode.getCommentsBefore(current);
           for (const comment of comments) {
-            if (comment.type === 'Block' && comment.value.includes('@xpath-safe')) {
+            if (
+              comment.type === 'Block' &&
+              comment.value.includes('@xpath-safe')
+            ) {
               return true;
             }
           }
@@ -390,7 +486,10 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           // Check for dangerous XPath patterns
           if (containsDangerousXpath(xpathText)) {
             // FALSE POSITIVE REDUCTION: Skip if annotated as safe
-            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations) || hasSafeAnnotationOnStatement(node)) {
+            if (
+              hasSafeAnnotation(xpathArg, context, trustedAnnotations) ||
+              hasSafeAnnotationOnStatement(node)
+            ) {
               return;
             }
 
@@ -405,10 +504,20 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           }
         } else if (xpathArg.type === 'Identifier') {
           // Check if XPath comes from untrusted input
-          if (isUntrustedXpathInput(xpathArg) && !isXpathInputValidated(xpathArg) && 
-              !(xpathArg.type === 'Identifier' && validatedVariables.has(xpathArg.name))) {
+          if (
+            isUntrustedXpathInput(xpathArg) &&
+            !isXpathInputValidated(xpathArg) &&
+            !(
+              xpathArg.type === 'Identifier' &&
+              validatedVariables.has(xpathArg.name)
+            )
+          ) {
             // FALSE POSITIVE REDUCTION
-            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations) || safetyChecker.isSafe(xpathArg, context) || hasSafeAnnotationOnStatement(node)) {
+            if (
+              hasSafeAnnotation(xpathArg, context, trustedAnnotations) ||
+              safetyChecker.isSafe(xpathArg, context) ||
+              hasSafeAnnotationOnStatement(node)
+            ) {
               return;
             }
 
@@ -426,44 +535,57 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // Check template literals for XPath expressions
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const fullText = sourceCode.getText(node);
+        // The static text the template contributes, not its printed source.
+        // `sourceCode.getText(node)` includes the interpolated expressions, so
+        // a variable *named* `descendantOrSelf` — or a `//` inside an
+        // interpolation — decided an XPath verdict. Names are not content.
+        const staticText = literalTextOf(node);
 
         // Skip common non-XPath patterns
-        // URLs and API endpoints
-        if (/https?:\/\//.test(fullText) || /^[`'"]\s*\/api\//.test(fullText)) {
+        // URLs and API endpoints — `https://` carries the `//` that would
+        // otherwise read as the descendant axis.
+        if (/https?:\/\//.test(staticText) || /^\s*\/api\//.test(staticText)) {
           return;
         }
         // File paths (start with / or contain common path patterns)
-        if (/^[`'"]\s*\/home\//.test(fullText) || /^[`'"]\s*\/usr\//.test(fullText) || /^[`'"]\s*\/tmp\//.test(fullText)) {
+        if (
+          /^\s*\/home\//.test(staticText) ||
+          /^\s*\/usr\//.test(staticText) ||
+          /^\s*\/tmp\//.test(staticText)
+        ) {
           return;
         }
-        // CSS selectors  
-        if (/\[data-[\w-]+/.test(fullText) || /\[class=/.test(fullText) || /\[id=/.test(fullText)) {
+        // CSS selectors
+        if (
+          /\[data-[\w-]+/.test(staticText) ||
+          /\[class=/.test(staticText) ||
+          /\[id=/.test(staticText)
+        ) {
           return;
         }
         // Search/query strings
-        if (/\?.*=/.test(fullText) && !/\[@/.test(fullText)) {
+        if (/\?.*=/.test(staticText) && !/\[@/.test(staticText)) {
           return;
         }
 
-        // Check if this looks like an ACTUAL XPath expression
-        // Must have XPath-specific syntax, not just forward slashes
-        const hasXpathSyntax = /\/\/\w+/.test(fullText) ||  // //element
-                              /\[@\w+/.test(fullText) ||   // [@attr
-                              /\[contains\(/.test(fullText) || // [contains(
-                              /\[text\(\)/.test(fullText) ||   // [text()
-                              /\/child::/.test(fullText) ||    // /child::
-                              /\/descendant::/.test(fullText); // /descendant::
-
-        if (!hasXpathSyntax) {
+        // The same detector the concatenation path uses. The two used to
+        // disagree: this handler required `//`, so a location step carrying a
+        // predicate — `/root/node[${input}]` — was XPath injection to one path
+        // and invisible to the other.
+        if (!XPATH_SYNTAX.test(staticText)) {
           return;
         }
 
         // Check for interpolation in XPath-like expressions
-        if (containsXpathInterpolation(fullText)) {
+        if (node.expressions.length > 0) {
           // Check if any interpolated values are untrusted
-          const hasUntrustedInterpolation = node.expressions.some((expr: TSESTree.Expression) =>
-            isUntrustedXpathInput(expr) && !isXpathInputValidated(expr) && !(expr.type === 'Identifier' && validatedVariables.has(expr.name))
+          const hasUntrustedInterpolation = node.expressions.some(
+            (expr: TSESTree.Expression) =>
+              isUntrustedXpathInput(expr) &&
+              !isXpathInputValidated(expr) &&
+              !(
+                expr.type === 'Identifier' && validatedVariables.has(expr.name)
+              ),
           );
 
           if (hasUntrustedInterpolation) {
@@ -482,7 +604,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'useParameterizedXpath',
-                  fix: () => null
+                  fix: () => null,
                 },
               ],
             });
@@ -490,7 +612,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for dangerous patterns in template literals
-        if (containsDangerousXpath(fullText)) {
+        if (containsDangerousXpath(staticText)) {
           // FALSE POSITIVE REDUCTION: Check for safe annotation
           if (hasSafeAnnotationOnStatement(node)) {
             return;
@@ -513,20 +635,41 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const fullText = sourceCode.getText(node);
-
-        // Check if this looks like XPath construction
-        if (!fullText.includes('/') && !fullText.includes('[')) {
+        // Check if this looks like XPath construction.
+        //
+        // Read from the AST, never from printed source. `includes('/')` was the
+        // old test and matched every path join — `fullPath.replace(baseDir +
+        // '/', '')` reported CWE-643. Regexing `sourceCode.getText(node)`
+        // instead is no better: printed text carries identifiers and comments,
+        // so `render.text() + input` and a `/* //user[@id] */` comment both
+        // matched. Only the string literals actually being concatenated say
+        // anything about the string being built.
+        if (!XPATH_SYNTAX.test(literalTextOf(node))) {
           return;
         }
 
         // Check if untrusted input is involved
-        const leftUntrusted = isUntrustedXpathInput(node.left) && !isXpathInputValidated(node.left) && !(node.left.type === 'Identifier' && validatedVariables.has(node.left.name));
-        const rightUntrusted = isUntrustedXpathInput(node.right) && !isXpathInputValidated(node.right) && !(node.right.type === 'Identifier' && validatedVariables.has(node.right.name));
+        const leftUntrusted =
+          isUntrustedXpathInput(node.left) &&
+          !isXpathInputValidated(node.left) &&
+          !(
+            node.left.type === 'Identifier' &&
+            validatedVariables.has(node.left.name)
+          );
+        const rightUntrusted =
+          isUntrustedXpathInput(node.right) &&
+          !isXpathInputValidated(node.right) &&
+          !(
+            node.right.type === 'Identifier' &&
+            validatedVariables.has(node.right.name)
+          );
 
         if (leftUntrusted || rightUntrusted) {
           // FALSE POSITIVE REDUCTION
-          if (safetyChecker.isSafe(node, context) || hasSafeAnnotationOnStatement(node)) {
+          if (
+            safetyChecker.isSafe(node, context) ||
+            hasSafeAnnotationOnStatement(node)
+          ) {
             return;
           }
 
@@ -537,7 +680,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               filePath: filename,
               line: String(node.loc?.start.line ?? 0),
               severity: 'HIGH',
-              safeAlternative: 'Use parameterized XPath construction with input validation',
+              safeAlternative:
+                'Use parameterized XPath construction with input validation',
             },
           });
         }
@@ -550,24 +694,45 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
 
         const varName = node.id.name;
-        
+
         // Track variables that are assigned the result of sanitization functions
-        if (node.init.type === 'CallExpression' &&
-            node.init.callee.type === 'Identifier' &&
-            (xpathValidationFunctions.includes(node.init.callee.name) || trustedSanitizers.includes(node.init.callee.name))) {
+        if (
+          node.init.type === 'CallExpression' &&
+          node.init.callee.type === 'Identifier' &&
+          (xpathValidationFunctions.includes(node.init.callee.name) ||
+            trustedSanitizers.includes(node.init.callee.name))
+        ) {
           validatedVariables.add(varName);
         }
 
         const varNameLower = varName.toLowerCase();
-        if (!varNameLower.includes('xpath') && !varNameLower.includes('query') && !varNameLower.includes('path')) {
+        // `path` is kept, reluctantly. It names a filesystem path far more
+        // often than an XPath expression, and it is why `let path = template;`
+        // still reports here. But dropping it also stopped
+        // `let searchPath = userInput;` firing — by name alone the two are
+        // indistinguishable, so removing it trades a false positive for a
+        // false negative. Separating them needs the declaration's *use* to
+        // reach an XPath sink, which is the data-flow analysis these rules
+        // avoid; the concatenation path above is where the real gate lives.
+        if (
+          !varNameLower.includes('xpath') &&
+          !varNameLower.includes('query') &&
+          !varNameLower.includes('path')
+        ) {
           return;
         }
 
         // Check if assigned value contains dangerous XPath
-        if (node.init.type === 'Literal' && typeof node.init.value === 'string') {
+        if (
+          node.init.type === 'Literal' &&
+          typeof node.init.value === 'string'
+        ) {
           if (containsDangerousXpath(node.init.value)) {
             // FALSE POSITIVE REDUCTION
-            if (safetyChecker.isSafe(node.init, context) || hasSafeAnnotationOnStatement(node)) {
+            if (
+              safetyChecker.isSafe(node.init, context) ||
+              hasSafeAnnotationOnStatement(node)
+            ) {
               return;
             }
 
@@ -592,7 +757,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             },
           });
         }
-      }
+      },
     };
   },
 });
