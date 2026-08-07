@@ -20,12 +20,12 @@
 import { describe, it, expect } from 'vitest';
 import { rules as browserSecurity } from '../../eslint-plugin-browser-security/src/index';
 import { rules as expressSecurity } from '../../eslint-plugin-express-security/src/index';
-import { rules as jwt } from '../../eslint-plugin-jwt/src/index';
+import { rules as jwt } from '../../eslint-plugin-jwt-security/src/index';
 import { rules as lambdaSecurity } from '../../eslint-plugin-lambda-security/src/index';
 import { rules as mongodbSecurity } from '../../eslint-plugin-mongodb-security/src/index';
 import { rules as nestjsSecurity } from '../../eslint-plugin-nestjs-security/src/index';
 import { rules as nodeSecurity } from '../../eslint-plugin-node-security/src/index';
-import { rules as pg } from '../../eslint-plugin-pg/src/index';
+import { rules as pg } from '../../eslint-plugin-postgresql-security/src/index';
 import { rules as secureCoding } from './index';
 import { rules as vercelAiSecurity } from '../../eslint-plugin-vercel-ai-security/src/index';
 

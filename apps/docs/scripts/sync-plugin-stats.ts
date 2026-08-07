@@ -8,9 +8,10 @@
  * Run: tsx scripts/sync-plugin-stats.ts
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGES_DIR = join(__dirname, '../../../packages');
@@ -239,30 +240,6 @@ export function buildNumbersManifest(
   };
 }
 
-/**
- * Write JSON only when the data (ignoring generatedAt) changed, to prevent
- * git churn. Read directly and catch missing/parse failures rather than
- * `existsSync` + `readFileSync` (CodeQL: file system race condition).
- */
-function writeIfChanged(filePath: string, label: string, data: Record<string, unknown>) {
-  try {
-    const existing = JSON.parse(readFileSync(filePath, 'utf-8'));
-    const existingData = { ...existing };
-    const newData = { ...data };
-    Reflect.deleteProperty(existingData, 'generatedAt');
-    Reflect.deleteProperty(newData, 'generatedAt');
-
-    if (JSON.stringify(existingData) === JSON.stringify(newData)) {
-      console.log(`\n✅ ${label} data unchanged, skipping write to prevent git churn.`);
-      return;
-    }
-  } catch {
-    // Missing or unparseable — fall through to write.
-  }
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
-  console.log(`\n✅ Generated ${label}`);
-}
-
 async function main() {
   console.log('🔍 Scanning ESLint plugin packages...\n');
   
@@ -321,7 +298,7 @@ async function main() {
     totalRules, // Reflects only published rules for backward compatibility
     totalPlugins: stats.filter(p => p.published).length, // Reflects only published plugins
     allPluginsCount: stats.length,
-    // Date, not wall-clock. `writeIfChanged` below already suppresses no-op
+    // Date, not wall-clock. `writeJsonIfChanged` below already suppresses no-op
     // rewrites, but it cannot help when the data legitimately changes on two
     // branches at once: each writes its own millisecond timestamp, and the
     // merge then conflicts on a line carrying no information. Whoever wins
@@ -341,8 +318,8 @@ async function main() {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  writeIfChanged(OUTPUT_FILE, 'plugin-stats.json', output);
-  writeIfChanged(NUMBERS_FILE, 'interlace-numbers.json', numbers);
+  writeJsonIfChanged(OUTPUT_FILE, output, 'plugin-stats.json');
+  writeJsonIfChanged(NUMBERS_FILE, numbers, 'interlace-numbers.json');
   console.log(`   Published: ${totalRules} rules across ${output.totalPlugins} plugins`);
   console.log(`   Total (incl. unpublished): ${stats.reduce((acc, p) => acc + p.rules, 0)} rules across ${stats.length} plugins`);
 }

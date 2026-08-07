@@ -339,40 +339,40 @@ ruleTester.run('no-eval (coverage)', noEval, {
 ruleTester.run('no-filereader-innerhtml (coverage)', noFilereaderInnerhtml, {
   valid: [
     // object of onload assignment is itself a member expression
-    `obj.reader.onload = (e) => { el.innerHTML = e.target.result; };`,
+    `const reader = new FileReader(); obj.reader.onload = (e) => { el.innerHTML = e.target.result; };`,
     // handler is an identifier reference
-    `reader.onload = handleLoad;`,
+    `const reader = new FileReader(); reader.onload = handleLoad;`,
     // handler without parameters
-    `reader.onload = () => { el.innerHTML = window.cached; };`,
+    `const reader = new FileReader(); reader.onload = () => { el.innerHTML = window.cached; };`,
     // destructured handler parameter
-    `reader.onload = ({ target }) => { use(target); };`,
+    `const reader = new FileReader(); reader.onload = ({ target }) => { use(target); };`,
     // addEventListener with non-load event
-    `reader.addEventListener('error', (e) => { report(e); });`,
+    `const reader = new FileReader(); reader.addEventListener('error', (e) => { report(e); });`,
     // addEventListener with dynamic event name
-    `reader.addEventListener(evtName, (e) => { report(e); });`,
+    `const reader = new FileReader(); reader.addEventListener(evtName, (e) => { report(e); });`,
     // addEventListener with identifier callback
-    `reader.addEventListener('load', handleLoad);`,
+    `const reader = new FileReader(); reader.addEventListener('load', handleLoad);`,
     // addEventListener callback without params
-    `reader.addEventListener('load', () => { done(); });`,
+    `const reader = new FileReader(); reader.addEventListener('load', () => { done(); });`,
     // addEventListener destructured param
-    `reader.addEventListener('load', ({ target }) => { use(target); });`,
+    `const reader = new FileReader(); reader.addEventListener('load', ({ target }) => { use(target); });`,
     // member access that never reaches reader result
-    `reader.onload = (e) => { el.innerHTML = e.target.foo; };`,
+    `const reader = new FileReader(); reader.onload = (e) => { el.innerHTML = e.target.foo; };`,
   ],
   invalid: [
     // loadend event arm
     {
-      code: `reader.addEventListener('loadend', (e) => { el.innerHTML = e.target.result; });`,
+      code: `const reader = new FileReader(); reader.addEventListener('loadend', (e) => { el.innerHTML = e.target.result; });`,
       errors: [{ messageId: 'unsafeInnerhtml' }],
     },
     // deeply nested member expression resolved recursively
     {
-      code: `reader.onload = (e) => { el.innerHTML = e.target.result.data; };`,
+      code: `const reader = new FileReader(); reader.onload = (e) => { el.innerHTML = e.target.result.data; };`,
       errors: [{ messageId: 'unsafeInnerhtml' }],
     },
     // dangerous method call sink inside handler
     {
-      code: `reader.onload = (e) => { el.insertAdjacentHTML('beforeend', e.target.result); };`,
+      code: `const reader = new FileReader(); reader.onload = (e) => { el.insertAdjacentHTML('beforeend', e.target.result); };`,
       errors: [{ messageId: 'unsafeInnerhtml' }],
     },
   ],
@@ -1084,44 +1084,44 @@ ruleTester.run('no-unsafe-inline-csp (coverage)', noUnsafeInlineCsp, {
 // ---------------------------------------------------------------------------
 ruleTester.run('no-websocket-eval (coverage)', noWebsocketEval, {
   valid: [
-    `ws.onmessage = handleMessage;`,
-    `ws.onmessage = () => { poll(); };`,
-    `ws.onmessage = ({ data }) => { parse(data); };`,
-    `ws.addEventListener('open', (e) => { ready(e); });`,
-    `ws.addEventListener(evtName, (e) => { ready(e); });`,
-    `ws.addEventListener('message', handleMessage);`,
-    `ws.addEventListener('message', () => { poll(); });`,
-    `ws.addEventListener('message', ({ data }) => { parse(data); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = handleMessage;`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = () => { poll(); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = ({ data }) => { parse(data); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('open', (e) => { ready(e); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener(evtName, (e) => { ready(e); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', handleMessage);`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', () => { poll(); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', ({ data }) => { parse(data); });`,
     // eval of something unrelated to the event parameter
-    `ws.onmessage = (e) => { eval(other); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { eval(other); };`,
     // member-expression eval-like callee is not an eval call
-    `ws.onmessage = (e) => { obj.eval(e.data); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { obj.eval(e.data); };`,
     // new Function outside any handler
     `const f = new Function('return 1');`,
     // new expression with non-Function callee inside handler
-    `ws.onmessage = (e) => { const p = new Foo(e.data); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { const p = new Foo(e.data); };`,
     // new Function with static arguments inside handler
-    `ws.onmessage = (e) => { const f = new Function('return 1'); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { const f = new Function('return 1'); };`,
   ],
   invalid: [
     // bare event identifier passed to eval
     {
-      code: `ws.onmessage = (e) => { eval(e); };`,
+      code: `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { eval(e); };`,
       errors: [{ messageId: 'evalWithWsData' }],
     },
     // Function() called as a plain function with event data
     {
-      code: `ws.onmessage = (e) => { Function(e.data); };`,
+      code: `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { Function(e.data); };`,
       errors: [{ messageId: 'evalWithWsData' }],
     },
     // new Function with event data
     {
-      code: `ws.onmessage = (e) => { const f = new Function(e.data); };`,
+      code: `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { const f = new Function(e.data); };`,
       errors: [{ messageId: 'evalWithWsData' }],
     },
     // nested event data member expression
     {
-      code: `ws.onmessage = (e) => { eval(e.data.payload); };`,
+      code: `const ws = new WebSocket('wss://example.test'); ws.onmessage = (e) => { eval(e.data.payload); };`,
       errors: [{ messageId: 'evalWithWsData' }],
     },
   ],
@@ -1132,18 +1132,18 @@ ruleTester.run('no-websocket-eval (coverage)', noWebsocketEval, {
 // ---------------------------------------------------------------------------
 ruleTester.run('no-websocket-innerhtml (coverage)', noWebsocketInnerhtml, {
   valid: [
-    `ws.onmessage = handleMessage;`,
-    `ws.onmessage = () => { poll(); };`,
-    `ws.onmessage = ({ data }) => { el.textContent = data; };`,
-    `ws.addEventListener('open', (e) => { ready(e); });`,
-    `ws.addEventListener(evtName, (e) => { ready(e); });`,
-    `ws.addEventListener('message', handleMessage);`,
-    `ws.addEventListener('message', () => { poll(); });`,
-    `ws.addEventListener('message', ({ data }) => { el.textContent = data; });`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = handleMessage;`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = () => { poll(); };`,
+    `const ws = new WebSocket('wss://example.test'); ws.onmessage = ({ data }) => { el.textContent = data; };`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('open', (e) => { ready(e); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener(evtName, (e) => { ready(e); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', handleMessage);`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', () => { poll(); });`,
+    `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', ({ data }) => { el.textContent = data; });`,
   ],
   invalid: [
     {
-      code: `ws.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
+      code: `const ws = new WebSocket('wss://example.test'); ws.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
       errors: [{ messageId: 'unsafeInnerhtml' }],
     },
   ],
@@ -1161,37 +1161,37 @@ ruleTester.run(
       `a.b.onmessage = (e) => { el.innerHTML = e.data; };`,
       // object name does not look like a worker
       `thing.onmessage = (e) => { el.innerHTML = e.data; };`,
-      `worker.onmessage = handleMessage;`,
-      `worker.onmessage = () => { poll(); };`,
-      `worker.onmessage = ({ data }) => { el.textContent = data; };`,
-      `worker.addEventListener('error', (e) => { log(e); });`,
-      `worker.addEventListener(evtName, (e) => { log(e); });`,
+      `const worker = new Worker('worker.js'); worker.onmessage = handleMessage;`,
+      `const worker = new Worker('worker.js'); worker.onmessage = () => { poll(); };`,
+      `const worker = new Worker('worker.js'); worker.onmessage = ({ data }) => { el.textContent = data; };`,
+      `const worker = new Worker('worker.js'); worker.addEventListener('error', (e) => { log(e); });`,
+      `const worker = new Worker('worker.js'); worker.addEventListener(evtName, (e) => { log(e); });`,
       // addEventListener object that is not worker-like
       `thing.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
       `w.addEventListener('message', handleMessage);`,
       `wk.addEventListener('message', () => { poll(); });`,
-      `worker.addEventListener('message', ({ data }) => { el.textContent = data; });`,
+      `const worker = new Worker('worker.js'); worker.addEventListener('message', ({ data }) => { el.textContent = data; });`,
       // member expression that never references event data
-      `worker.onmessage = (e) => { el.innerHTML = x.data; };`,
+      `const worker = new Worker('worker.js'); worker.onmessage = (e) => { el.innerHTML = x.data; };`,
     ],
     invalid: [
       // nested member expression resolved recursively
       {
-        code: `worker.onmessage = (e) => { el.innerHTML = e.data.html; };`,
+        code: `const worker = new Worker('worker.js'); worker.onmessage = (e) => { el.innerHTML = e.data.html; };`,
         errors: [{ messageId: 'workerInnerhtml' }],
       },
       // dangerous method call sink inside handler
       {
-        code: `worker.onmessage = (e) => { el.insertAdjacentHTML('beforeend', e.data); };`,
+        code: `const worker = new Worker('worker.js'); worker.onmessage = (e) => { el.insertAdjacentHTML('beforeend', e.data); };`,
         errors: [{ messageId: 'workerInnerhtml' }],
       },
       // short worker aliases via addEventListener
       {
-        code: `w.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
+        code: `const w = new Worker('worker.js'); w.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
         errors: [{ messageId: 'workerInnerhtml' }],
       },
       {
-        code: `wk.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
+        code: `const wk = new Worker('worker.js'); wk.addEventListener('message', (e) => { el.innerHTML = e.data; });`,
         errors: [{ messageId: 'workerInnerhtml' }],
       },
     ],
