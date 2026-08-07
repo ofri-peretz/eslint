@@ -1232,6 +1232,11 @@
       "environment": "nestjs",
       "detection": "structural-api",
       "confidence": "enforcement"
+    },
+    "no-unsafe-multer-filename": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-node-security": {

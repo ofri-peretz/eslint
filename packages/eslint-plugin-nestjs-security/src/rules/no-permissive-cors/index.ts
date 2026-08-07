@@ -39,6 +39,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
+  collectImportOrigins,
   expressionName,
   isTestFile,
   objectProperties,
@@ -150,6 +151,46 @@ function hasSpread(object: TSESTree.ObjectExpression): boolean {
   );
 }
 
+/**
+ * Modules that export a `CorsOptions` type. `@nestjs/common` re-exports the
+ * `cors` package's interface, and the deep path is the spelling the compiler
+ * emits on auto-import, so real code uses all three.
+ */
+const CORS_OPTIONS_MODULE = /^(@nestjs\/(common|platform-\w+)\b|cors$)/;
+
+/**
+ * Whether `const x: CorsOptions = { … }` annotates the CORS options interface.
+ *
+ * The annotation is the whole point: it is what makes an object literal in a
+ * file with no `enableCors` call *provably* a CORS configuration rather than
+ * an object that happens to have an `origin` key. Per the repo's standing rule
+ * — classify by AST fact, not by spelling — the name `CorsOptions` alone is not
+ * evidence; the import it resolves to is. A locally-declared type of the same
+ * name resolves to nothing and is left alone.
+ */
+function isCorsOptionsAnnotation(
+  declarator: TSESTree.VariableDeclarator,
+  origins: ReadonlyMap<string, string>,
+): boolean {
+  const annotation = declarator.id.typeAnnotation?.typeAnnotation;
+  if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return false;
+  // `typeName` is an EntityName — a bare `CorsOptions`, a qualified
+  // `ns.CorsOptions` from a namespace import, or something neither of those
+  // (a deeper qualification, a `this`-rooted type name). Only the first two
+  // forms can name an imported binding, so anything else resolves to nothing.
+  const name = annotation.typeName;
+  const [root, leaf] =
+    name.type === AST_NODE_TYPES.Identifier
+      ? [name.name, name.name]
+      : name.type === AST_NODE_TYPES.TSQualifiedName &&
+          name.left.type === AST_NODE_TYPES.Identifier
+        ? [name.left.name, name.right.name]
+        : [null, null];
+  if (root === null || leaf !== 'CorsOptions') return false;
+  const source = origins.get(root);
+  return source !== undefined && CORS_OPTIONS_MODULE.test(source);
+}
+
 export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors',
   meta: {
@@ -223,6 +264,14 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     const { allowInTests = true } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 
+    let origins: ReadonlyMap<string, string> = new Map();
+    /**
+     * Objects already reported, so a config that is both declared and used in
+     * this file is reported once — at its declaration, which is where the fix
+     * goes. Traversal is in document order, so the declaration wins.
+     */
+    const reported = new Set<TSESTree.ObjectExpression>();
+
     /**
      * Whether the call sits inside a branch that tests the environment.
      *
@@ -252,6 +301,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       optionsNode: TSESTree.ObjectExpression,
       reportOn: TSESTree.Node,
     ): void {
+      if (reported.has(optionsNode)) return;
+      reported.add(optionsNode);
       const originProp = findOriginProperty(optionsNode);
       if (!originProp) {
         // A spread could carry `origin` in from elsewhere — don't guess.
@@ -344,6 +395,35 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     }
 
     return {
+      Program(node: TSESTree.Program) {
+        origins = collectImportOrigins(node);
+      },
+
+      /**
+       * `export const corsOptions: CorsOptions = { origin: true, credentials: true }`
+       *
+       * The call that uses this lives in another file, so the `enableCors`
+       * visitor below never sees it: `resolveLocalObject` resolves same-file
+       * bindings only, and an imported binding resolves to nothing. Measured on
+       * juicycleff/ultimate-backend, where a reflected-origin credentialed
+       * config in `libs/common/.../cors-config.util.ts` is consumed by
+       * `apps/api-admin/src/main.ts` — the whole rule went silent on a
+       * genuine CVSS 8.1.
+       *
+       * Reporting the declaration is not a cross-file inference. The annotation
+       * proves what the object is without leaving this file, and the fix
+       * belongs here regardless of how many callers there are. Nothing is
+       * *silenced* on missing cross-file evidence — an unannotated object is
+       * exactly as visible as it was before — so this cannot become
+       * self-suppression.
+       */
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (node.init?.type !== AST_NODE_TYPES.ObjectExpression) return;
+        if (!isCorsOptionsAnnotation(node, origins)) return;
+        if (insideEnvironmentBranch(node)) return;
+        checkOptionsObject(node.init, node.init);
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
         // A permissive origin fenced behind a development check cannot reach
         // production. Applies to both entry points below.

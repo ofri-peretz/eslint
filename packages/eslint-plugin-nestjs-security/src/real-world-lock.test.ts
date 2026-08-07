@@ -396,12 +396,19 @@ const FIXTURES: Fixture[] = [
         optionsSuccessStatus: 200,
       };
     `,
-    // NOT reported today, and this is the genuinely exploitable one: any origin
-    // is reflected *and* credentials are allowed, so every site the victim
-    // visits can read this API with their session. The rule matches
-    // `enableCors()` call sites, and ultimate-backend declares the options as a
-    // standalone `const corsOptions: CorsOptions = {…}` consumed elsewhere.
-    expected: {},
+    // The genuinely exploitable one: any origin is reflected *and* credentials
+    // are allowed, so every site the victim visits can read this API with their
+    // session. `apps/api-admin/src/main.ts` imports this object and passes it
+    // to `app.enableCors`, and `auth.setup.ts` mounts `cookieParser` — CVSS 8.1
+    // with every precondition met.
+    //
+    // This row read `expected: {}` for one release. The comment beside it
+    // described the false negative accurately and the assertion pinned it in
+    // place, which is the failure mode worth naming: a lock is only a lock on
+    // the behaviour you assert, and asserting the buggy number makes the bug
+    // permanent. Fixed by reporting the annotated declaration — see
+    // no-permissive-cors' VariableDeclarator visitor.
+    expected: { 'no-permissive-cors': 1 },
   },
   {
     from: 'awesome-nest-bp',
@@ -555,6 +562,89 @@ const FIXTURES: Fixture[] = [
 
         @Field(() => String, { nullable: true })
         name?: string;
+      }
+    `,
+    expected: {},
+  },
+  {
+    from: 'nestjs-course-code',
+    what: 'multer storage prefixing a timestamp onto the client-supplied name',
+    // The identical file ships in three of the course projects
+    // (nest-multer-upload, book-management-system-backend,
+    // meeting_room_booking_system_backend). Course repos are where this shape
+    // is copied from, which is why 5 of the corpus's 8 diskStorage callbacks
+    // look like this.
+    code: `
+      import { diskStorage } from 'multer';
+
+      const storage = diskStorage({
+        destination: './uploads',
+        filename: function (req, file, cb) {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9) + '-' + file.originalname;
+          cb(null, file.fieldname + '-' + uniqueSuffix);
+        }
+      });
+    `,
+    expected: { 'no-unsafe-multer-filename': 1 },
+  },
+  {
+    from: 'truthy',
+    what: 'multer storage taking only the extension from the client',
+    // src/common/helper/multer-options.helper.ts — the fix the rule asks for,
+    // already shipped. Pinned as the control: `extname` cannot return a path
+    // separator, and if the rule ever starts reporting through calls this row
+    // goes to 1.
+    code: `
+      import { diskStorage } from 'multer';
+      import { extname } from 'path';
+
+      const storage = diskStorage({
+        destination: './uploads',
+        filename: (req: any, file: any, cb: any) => {
+          cb(null, \`\${uuid()}\${extname(file.originalname)}\`);
+        }
+      });
+    `,
+    expected: {},
+  },
+  {
+    from: 'ultimate-backend',
+    what: 'the allow-list declaration sitting beside the defect in the same file',
+    // The control for the row above. `cors-config.util.ts` declares both, seven
+    // lines apart — the fix for the defect is to use this one. It must stay
+    // quiet: if the annotation check ever degrades into "an object with an
+    // `origin` key", this row goes to 1 and says so.
+    code: `
+      import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+
+      const whitelist = ['https://example.com', 'http://localhost:3000'];
+
+      export const corsApollOptions: CorsOptions = {
+        origin: whitelist,
+        credentials: true,
+        methods: ['GET', 'POST'],
+      };
+    `,
+    expected: {},
+  },
+  {
+    from: 'truthy',
+    what: 'permissive CORS fenced behind a development-only branch',
+    // src/main.ts:24. Reads identically to the ultimate-backend shape at grep
+    // level — `origin: true, credentials: true` — and is not a defect: it
+    // cannot reach production. Pinned because the two shapes must stay on
+    // opposite sides of this rule; a change that catches more declarations
+    // must not start catching this one.
+    code: `
+      async function bootstrap() {
+        const app = await NestFactory.create(AppModule);
+        if (process.env.NODE_ENV === 'development') {
+          app.enableCors({
+            origin: true,
+            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+            credentials: true
+          });
+        }
       }
     `,
     expected: {},
