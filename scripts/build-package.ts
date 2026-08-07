@@ -18,6 +18,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { transformSync } from 'esbuild';
 import {
   existsSync,
   mkdirSync,
@@ -28,6 +29,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { lazifyRuleBarrel } from './lib/lazify-rule-barrel';
 import { overlayJs } from './lib/overlay-js';
 import process from 'node:process';
 
@@ -111,6 +113,15 @@ const stripResult = spawnSync(
     // leaves behind (tsc emits it separately). Without this the overlaid .js
     // would point at maps that step 3b deletes.
     '--sourceMap',
+    'false',
+    // Inline the TypeScript helpers instead of requiring them from `tslib`.
+    // tslib was a NON-OPTIONAL peer of eslint-devkit, which every plugin then
+    // had to declare as a dependency to satisfy — 27 manifests carrying a
+    // 124 kB package so that 12 `require("tslib")` calls could resolve.
+    // Inlining costs ~9.5 kB of emitted JS in devkit and lets tslib disappear
+    // from every manifest. Only the SHIPPED javascript is re-emitted this way;
+    // the workspace build that typecheck reads is untouched.
+    '--importHelpers',
     'false',
     '--outDir',
     noCommentsDir,
@@ -252,6 +263,128 @@ export default _default;
   // `./oxlint` re-exports the same plugin object.
   if (existsSync(join(emittedSrcDir, 'oxlint.js'))) {
     writeFileSync(join(emittedSrcDir, 'oxlint.d.ts'), MINIMAL_ENTRY_DTS);
+  }
+}
+
+// 3d. Defer every rule module behind a getter on the entry's `rules` object.
+//
+//     A plugin barrel `require`s all of its rules at load. ESLint only ever
+//     reads `plugin.rules[id]` for the rules a config ENABLES, so everything
+//     else is parse-and-compile cost for code that never runs. Measured on a
+//     7-plugin / 34-enabled-rule config: 184 rule modules loaded, 181 ms of
+//     plugin load, against 34 modules and 8.5 ms once deferred — total ESLint
+//     wall time 211 ms → 70 ms. On a preset that enables most of a plugin it is
+//     a wash (59 vs 64 ms), never a loss.
+//
+//     Done to the ARTIFACT, not the source. Getters in `index.ts` would have to
+//     call `require('./rules/x')`, and vitest runs the .ts directly — Node's
+//     require can't resolve an extensionless specifier to a .ts file, so every
+//     rule lookup throws under test while working perfectly once compiled.
+//     Transforming the emitted CJS keeps source, types, and tests untouched.
+//     `__tests__/lazy-rules-artifact.test.ts` locks the emitted shape.
+//
+//     Bindings referenced anywhere outside the `rules` object keep their eager
+//     require: `export { noAlgorithmNone } from './rules/...'` is public API
+//     (eslint-plugin-jwt, eslint-plugin-vercel-ai-security re-export every
+//     rule), and a re-export cannot be deferred. Those plugins are unchanged.
+if (isPluginPackage) {
+  const entry = join(emittedSrcDir, 'index.js');
+
+  // Read first and let the read report absence, rather than `existsSync` then
+  // `readFileSync` — that pair is a check-then-use race (CodeQL
+  // js/file-system-race), and it is the same defect this ecosystem ships
+  // `node-security/no-toctou-vulnerability` to catch. ENOENT here just means a
+  // package with no compiled entry, which is not an error.
+  let source: string | undefined;
+  try {
+    source = readFileSync(entry, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+
+  if (source !== undefined) {
+    const result = lazifyRuleBarrel(source);
+    if (result) {
+      writeFileSync(entry, result.code);
+      console.log(
+        `build-package(${pkg.name}): deferred ${result.deferred} rules behind getters.`,
+      );
+    } else {
+      // Not fatal — a plugin can legitimately have no matching barrel — but it
+      // means this plugin silently keeps paying full load cost, so say so.
+      console.warn(
+        `build-package(${pkg.name}): rule barrel not recognised; rules stay eager.`,
+      );
+    }
+  }
+}
+
+// 3e. Strip whitespace from the shipped JavaScript.
+//
+//     tsc emits 4-space-indented output, and indentation alone is ~32% of a
+//     compiled rule file. Step 2b already removed the comments; this removes
+//     the layout. Measured on eslint-plugin-secure-coding: 448 kB -> 263 kB of
+//     src, -41%, which is most of what a full minifier would get.
+//
+//     Deliberately NOT a minifier. `minifyWhitespace` only — identifiers keep
+//     their names, string contents are untouched, and the syntax tree is not
+//     rewritten. That matters concretely: rule `meta` (messages, schema, docs
+//     URLs) is read by the docs site and `--print-config`, and mangling would
+//     also make a stack trace from inside a rule unreadable for the sake of
+//     another ~11 points. Verified on the published 3.4.3 artifact: identical
+//     lint findings, and all 28 rules' meta/messages/fixable/configs
+//     byte-identical.
+//
+//     Runs AFTER 3d on purpose — the rule-barrel transform pattern-matches
+//     tsc's emitted shape and would not match once the layout is gone.
+const collectJsFiles = (dir: string, into: string[] = []): string[] => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) collectJsFiles(p, into);
+    else if (entry.name.endsWith('.js')) into.push(p);
+  }
+  return into;
+};
+
+if (existsSync(emittedSrcDir)) {
+  // Transform everything BEFORE writing anything. Transforming and writing in
+  // one pass looks equivalent and is not: a throw on file N leaves files 1..N-1
+  // already written in stripped form, so `dist` ends up half-stripped while the
+  // catch below reports "shipping indented JS". The artifact gate would then
+  // flag the unstripped remainder and contradict the build log. Buffering costs
+  // ~2 MB for the largest package and makes the pass all-or-nothing.
+  try {
+    const files = collectJsFiles(emittedSrcDir);
+    let before = 0;
+    let after = 0;
+    const pending: { path: string; code: string }[] = [];
+
+    for (const p of files) {
+      const original = readFileSync(p, 'utf8');
+      const { code } = transformSync(original, {
+        loader: 'js',
+        minifyWhitespace: true,
+      });
+      before += Buffer.byteLength(original);
+      after += Buffer.byteLength(code);
+      pending.push({ path: p, code });
+    }
+
+    for (const { path, code } of pending) writeFileSync(path, code);
+
+    if (before > 0) {
+      const saved = (((before - after) / before) * 100).toFixed(0);
+      console.log(
+        `build-package(${pkg.name}): stripped JS whitespace — ${(before / 1024).toFixed(0)} kB -> ${(after / 1024).toFixed(0)} kB (-${saved}%).`,
+      );
+    }
+  } catch (error) {
+    // Same posture as the comment-strip pass: a degraded optimisation, not a
+    // broken build. Nothing has been written at this point, so the claim below
+    // is accurate — every .js still carries tsc's layout.
+    console.error(
+      `build-package(${pkg.name}): whitespace strip failed (${(error as Error).message}); shipping indented JS.`,
+    );
   }
 }
 

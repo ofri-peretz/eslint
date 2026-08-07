@@ -37,6 +37,16 @@ import { PLUGINS } from '../src/lib/plugins.ts';
  * Only add entries here for packages that are actually published to npm.
  */
 const EXTRAS = [
+  // Published 2026-08-02/03, not yet integrated into the docs sidebar — that
+  // needs MDX pages, TSV type-awareness rows and a DESCRIPTIONS entry each.
+  // They still need an OG banner because readme-og-banner-lock requires one
+  // for every published package.
+  { slug: 'mcp-sdk-security', package: 'eslint-plugin-mcp-sdk-security', pillar: 'security', description: 'Model Context Protocol SDK' },
+  { slug: 'openai-security', package: 'eslint-plugin-openai-security', pillar: 'security', description: 'OpenAI SDK & Agents SDK' },
+  { slug: 'anthropic-security', package: 'eslint-plugin-anthropic-security', pillar: 'security', description: 'Anthropic SDK & Claude Agent SDK' },
+  { slug: 'gemini-security', package: 'eslint-plugin-gemini-security', pillar: 'security', description: 'Google Gemini SDK safety settings' },
+  { slug: 'postgresql-security', package: 'eslint-plugin-postgresql-security', pillar: 'security', description: 'PostgreSQL queries & connections' },
+  { slug: 'jwt-security', package: 'eslint-plugin-jwt-security', pillar: 'security', description: 'JWT signing & verification' },
   {
     slug: 'devkit',
     package: '@interlace/eslint-devkit',

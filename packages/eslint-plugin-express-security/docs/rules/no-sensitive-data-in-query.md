@@ -209,3 +209,11 @@ const password = incoming.query.password;
 - **[CWE-598: Use of GET Request Method With Sensitive Query Strings](https://cwe.mitre.org/data/definitions/598.html)**
 - **[OWASP: Information exposure through query strings in URL](https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url)**
 - **[OWASP: Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitiveParams` | `string[]` | — | Additional sensitive parameter names (extends the defaults) |
+| `extraPatterns` | `string[]` | — | Additional regex patterns (case-insensitive) matched against the raw parameter name |
+| `allowedParams` | `string[]` | — | Parameter names explicitly allowed in the query string (exact, case-insensitive) |

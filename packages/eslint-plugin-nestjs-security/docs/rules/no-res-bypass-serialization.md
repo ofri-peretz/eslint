@@ -40,6 +40,7 @@ than in the code that writes the response.
 
 ```typescript
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Res() res: Response) {
@@ -74,12 +75,56 @@ export class UsersController {
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `assumeGlobalSerializer` | `boolean` | `false` | Report even when no serializer is visible in the file |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+  // Report even without a visible serializer (default: false)
+  assumeGlobalSerializer?: boolean;
 }
 ```
+
+### When to set `assumeGlobalSerializer`
+
+By default this rule only reports a handler whose controller (or the handler
+itself) carries `@UseInterceptors(ClassSerializerInterceptor)` or
+`@SerializeOptions()`. The reason is that the harm it names — `@Exclude()`
+stops applying — needs a serializer to have been applying in the first place.
+
+If your app registers the serializer globally, a controller file has no way to
+know that, and the rule would stay silent on real findings:
+
+```typescript
+// main.ts — invisible from users.controller.ts
+app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+```
+
+```typescript
+// app.module.ts — equally invisible
+providers: [{ provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor }];
+```
+
+If either of those is how you mount it, turn the option on:
+
+```json
+{
+  "nestjs-security/no-res-bypass-serialization": [
+    "error",
+    { "assumeGlobalSerializer": true }
+  ]
+}
+```
+
+The default is `false` because the opposite failure is worse in practice. Run
+at `error` against four production NestJS codebases, 23 of 27 findings were in
+repos with no `ClassSerializerInterceptor` and no `@Exclude()` anywhere — every
+one of them describing a leak that could not happen.
 
 ## Scope
 

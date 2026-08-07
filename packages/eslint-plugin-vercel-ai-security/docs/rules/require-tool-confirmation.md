@@ -77,9 +77,9 @@ const tools = {
 
 ## ⚙️ Options
 
-| Option                | Type       | Default                                                                                            | Description                               |
-| --------------------- | ---------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------- | ---------- | --------------------------------------------------------------------- | ----------------------------------- |
-| `destructivePatterns` | `string[]` | `['delete', 'remove', 'drop', 'transfer', 'send', 'execute', 'run', 'update', 'modify', 'create']` | Tool name patterns requiring confirmation | // `confirmationProperties` | `string[]` | `['requiresConfirmation', 'requiresApproval', 'confirm', 'approval']` | Properties that enable confirmation |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `destructivePatterns` | `string[]` | `["delete","remove","drop","truncate","destroy","transfer","send","pay","withdraw","purchase","execute","run","eval","exec","spawn","update","modify","change","alter","create","insert","post","write"]` | Patterns that suggest destructive operations |
 
 ## 🛡️ Why This Matters
 

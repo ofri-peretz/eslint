@@ -2,6 +2,8 @@
   "title": "Rules",
   "defaultOpen": false,
   "pages": [
+    "no-mass-assignment",
+    "no-raw-identifier-interpolation",
     "no-unsafe-query",
     "no-unscoped-mutation"
   ]

@@ -93,10 +93,15 @@ worker.onmessage = (e) => {
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-worker-message-innerhtml": [
+    "browser-security/no-worker-message-innerhtml": [
       "error",
       {
         "allowInTests": true
@@ -119,6 +124,20 @@ Workers process data in the background, often from external sources like APIs or
 1. **API responses**: Validate server data
 2. **File processing**: Sanitize file contents
 3. **Third-party integrations**: Never trust external data
+
+## Rule ownership
+
+This rule fires **only when the receiver is positively identified** as a `new Worker(...)` or `new SharedWorker(...)` in
+the same file. `X.onmessage = …` on a receiver this file cannot resolve is not
+evidence of Worker — it is unknown, and unknown belongs to
+[`no-innerhtml`](./no-innerhtml.md) / [`no-eval`](./no-eval.md), which report it
+without claiming a provenance they cannot prove.
+
+The two tests are complements, so exactly one rule reports any given value.
+Before this gate both fired at the identical range in `recommended`.
+
+A receiver that arrives as a parameter or from another module therefore falls to
+the generic rule. That is deliberate: the alternative is guessing.
 
 ## Known False Negatives
 

@@ -193,3 +193,9 @@ await fetch(url);
 - **[OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)** - Comprehensive guide
 - **[CWE-918: Server-Side Request Forgery](https://cwe.mitre.org/data/definitions/918.html)** - Official CWE entry
 - **[AWS IMDS Security](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html)** - IMDSv2 protection
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow user-controlled URLs in test files |

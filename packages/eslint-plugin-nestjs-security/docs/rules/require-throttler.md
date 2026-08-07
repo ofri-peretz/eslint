@@ -60,6 +60,15 @@ export class AppModule {}
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalThrottler` | `boolean` | `true` | Look for a globally registered ThrottlerGuard before reporting |
+| `skipRoutes` | `string[]` | `[]` | Route paths exempt from the throttling requirement |
+| `assumeGlobalThrottler` | `boolean` | `false` | Assume a global ThrottlerGuard exists even if none is found |
+| `onlySensitiveRoutes` | `boolean` | `true` | Only require throttling on authentication and mutation routes |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)

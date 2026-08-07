@@ -58,7 +58,7 @@ When adding a rule, decide which plugin owns it using the **scope rule**:
 - **Test runner:** Vitest (workspace config at `vitest.workspace.ts`)
 - **Coverage:** v8 / c8, uploaded to Codecov
 - **Release flow:** [`gh workflow run release.yml`](.github/workflows/release.yml) (Trusted Publishing OIDC for `@interlace/*`, `NPM_TOKEN` for unscoped); each package versions independently from conventional-commits
-- **ESLint compatibility:** every package declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dep, and the FN/FP arena ([`benchmarks/suites/ilb-arena/`](benchmarks/suites/ilb-arena/)) runs against all three majors. Driven by [docs/ESLINT_VERSION_SUPPORT.md](docs/ESLINT_VERSION_SUPPORT.md) — refresh data with `npm run stats:eslint-versions`.
+- **ESLint compatibility:** every package declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` as a peer dep, and the FN/FP arena ([`benchmarks/suites/ilb-arena/`](benchmarks/suites/ilb-arena/)) runs against all three majors. Driven by [docs/ESLINT_VERSION_SUPPORT.md](docs/ESLINT_VERSION_SUPPORT.md) — refresh data with `npm run stats:eslint-versions`.
 
 ## Documentation site
 

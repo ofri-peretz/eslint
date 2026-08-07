@@ -212,8 +212,9 @@ nestjs-security	require-guards	unaware
 nestjs-security	require-throttler	unaware	
 nestjs-security	require-validation-pipe-whitelist	unaware	
 nestjs-security	no-permissive-cors	unaware	
-nestjs-security	no-missing-validation-pipe	unaware	
+nestjs-security	no-missing-validation-pipe	optional	undecoratedDto resolves the @Body() DTO and its decorators' origin when parserOptions.project is set; syntax-only behaviour is unchanged without it
 nestjs-security	no-exposed-private-fields	unaware
+nestjs-security	no-hybrid-app-config-loss	unaware	
 nestjs-security	no-res-bypass-serialization	unaware
 nestjs-security	no-unguarded-swagger	unaware			
 node-security	require-secure-credential-storage	unaware	
@@ -418,13 +419,28 @@ reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
 modernization	prefer-template-literal	unaware	
 modularity	no-mutable-exports	unaware	
+sequelize-security	no-mass-assignment	unaware	
+sequelize-security	no-hardcoded-credentials	unaware	
 sequelize-security	no-unsafe-query	unaware	
+sequelize-security	require-tls	unaware	
+mysql-security	no-hardcoded-credentials	unaware	
 mysql-security	no-unsafe-query	unaware	
+mysql-security	require-tls	unaware	
+prisma-security	no-mass-assignment	unaware	
+prisma-security	no-raw-identifier-interpolation	unaware	
 prisma-security	no-unsafe-query	unaware	
 prisma-security	no-unscoped-mutation	unaware	
+drizzle-security	no-mass-assignment	unaware	
+drizzle-security	no-raw-identifier-interpolation	unaware	
 drizzle-security	no-unsafe-query	unaware	
 drizzle-security	no-unscoped-mutation	unaware	
+knex-security	no-mass-assignment	unaware	
+knex-security	no-hardcoded-credentials	unaware	
 knex-security	no-unsafe-query	unaware	
 knex-security	no-unscoped-mutation	unaware	
+knex-security	require-tls	unaware	
 sqlite-security	no-unsafe-query	unaware	
+typeorm-security	no-mass-assignment	unaware	
+typeorm-security	no-hardcoded-credentials	unaware	
 typeorm-security	no-unsafe-query	unaware	
+typeorm-security	require-tls	unaware	

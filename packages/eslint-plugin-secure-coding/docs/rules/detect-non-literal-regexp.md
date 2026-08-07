@@ -278,3 +278,11 @@ obj[method](userInput);
 - **[Safe Regex Library](https://github.com/substack/safe-regex)** - Safe regex patterns
 - **[CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)** - Official CWE entry
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
+| `additionalPatterns` | `string[]` | `[]` | Additional RegExp creation patterns to check |
+| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |

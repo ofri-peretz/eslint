@@ -14,13 +14,17 @@
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
+import { noHardcodedCredentials } from './rules/no-hardcoded-credentials';
 import { noUnsafeQuery } from './rules/no-unsafe-query';
+import { requireTls } from './rules/require-tls';
 
 /**
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  'no-hardcoded-credentials': noHardcodedCredentials,
   'no-unsafe-query': noUnsafeQuery,
+  'require-tls': requireTls,
 };
 
 /**
@@ -29,7 +33,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mysql-security',
-    version: '0.1.1',
+    version: '0.3.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -75,4 +79,4 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
  */
 export default plugin;
 
-export type { AllMySQLRulesOptions, NoUnsafeQueryOptions } from './types/index';
+export type { AllMySQLRulesOptions, NoHardcodedCredentialsOptions, NoUnsafeQueryOptions } from './types/index';

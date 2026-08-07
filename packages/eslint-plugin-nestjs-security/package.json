@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-nestjs-security",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -11,8 +11,8 @@
       "default": "./dist/src/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -71,11 +71,10 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.7.0"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0",
     "@nestjs/throttler": "^4.0.0 || ^5.0.0 || ^6.0.0",
     "class-validator": "^0.14.0 || ^0.15.0",

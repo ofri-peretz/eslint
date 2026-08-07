@@ -170,3 +170,10 @@ crypto.createCipheriv(algo, key, iv);
 - **[NIST Cipher Recommendations](https://csrc.nist.gov/publications/detail/sp/800-131a/rev-2/final)** - NIST guidance
 - **[OWASP Cryptographic Storage](https://owasp.org/www-community/vulnerabilities/Weak_Cryptography)** - OWASP guidance
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `additionalWeakCiphers` | `string[]` | `[]` | Additional weak ciphers to detect |
+| `allowInTests` | `boolean` | `false` | Allow weak ciphers in test files |

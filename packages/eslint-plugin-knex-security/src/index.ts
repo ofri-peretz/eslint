@@ -14,15 +14,21 @@
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
+import { noHardcodedCredentials } from './rules/no-hardcoded-credentials';
+import { noMassAssignment } from './rules/no-mass-assignment';
 import { noUnsafeQuery } from './rules/no-unsafe-query';
 import { noUnscopedMutation } from './rules/no-unscoped-mutation';
+import { requireTls } from './rules/require-tls';
 
 /**
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  'no-hardcoded-credentials': noHardcodedCredentials,
+  'no-mass-assignment': noMassAssignment,
   'no-unsafe-query': noUnsafeQuery,
   'no-unscoped-mutation': noUnscopedMutation,
+  'require-tls': requireTls,
 };
 
 /**
@@ -31,7 +37,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-knex-security',
-    version: '0.2.0',
+    version: '0.4.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -77,4 +83,4 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
  */
 export default plugin;
 
-export type { AllKnexRulesOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';
+export type { AllKnexRulesOptions, NoHardcodedCredentialsOptions, NoMassAssignmentOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';

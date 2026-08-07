@@ -36,6 +36,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { transformSync } from 'esbuild';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,6 +88,53 @@ type Violation = {
  * comments correctly needs a real parser; this needs neither.
  */
 const STRIP_SENTINEL = 'Copyright (c) 2025 Ofri Peretz';
+
+/**
+ * Detects emitted JS that still carries tsc's layout.
+ *
+ * Indentation alone is ~32% of a compiled rule file, so build-package.ts step
+ * 3e re-emits every .js through esbuild's `minifyWhitespace`. Measured across
+ * the ecosystem that is 3233 kB -> 2063 kB. Nothing else would notice if that
+ * step were removed or silently failed — the build still succeeds and the
+ * package still works, just 37% fatter.
+ *
+ * Tested by IDEMPOTENCY rather than by looking at the text: re-run the exact
+ * transform the build applies, and see whether it still finds anything to
+ * remove. A stripped file is a fixed point; an unstripped one collapses.
+ *
+ * Every text heuristic considered here was fragile in the same way the
+ * comment-counter was. "Any indented line" false-positives on a rule whose
+ * message or fixture is a multi-line template literal, because stripping never
+ * touches string contents. Adding a proportion guard does not fix it either:
+ * stripping collapses the code onto very few lines, so a 25-line indented
+ * literal can dominate the *stripped* file's line count and trip a ratio test
+ * on a correctly-stripped file. Re-running the transform has no such edge —
+ * the literal is identical on both sides and cancels out.
+ *
+ * Threshold is a margin, not a guess: across 40 real rule files, re-stripping
+ * an already-stripped file changed it by 0%, while stripping an indented one
+ * removed 27-41%.
+ */
+const RESTRIP_SHRINK_LIMIT = 0.05;
+const INDENTED_LINE = {
+  test(source: string): boolean {
+    if (source.length === 0) return false;
+    let restripped: string;
+    try {
+      restripped = transformSync(source, {
+        loader: 'js',
+        minifyWhitespace: true,
+      }).code;
+    } catch {
+      // Not parseable as plain JS — nothing this gate can conclude. The build
+      // would have failed long before shipping something unparseable.
+      return false;
+    }
+    return (
+      (source.length - restripped.length) / source.length > RESTRIP_SHRINK_LIMIT
+    );
+  },
+};
 
 /**
  * Fields that must never survive into a published manifest.
@@ -153,6 +201,7 @@ const exportGaps: { pkg: string; subpath: string; missing: string }[] = [];
 
 const violations: Violation[] = [];
 const commentRegressions: { pkg: string; files: number }[] = [];
+const whitespaceRegressions: { pkg: string; files: number }[] = [];
 const metadataGaps: { pkg: string; fields: string[] }[] = [];
 const manifestLeaks: { pkg: string; fields: string[] }[] = [];
 const sizes: { name: string; kb: number }[] = [];
@@ -163,8 +212,8 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
   // output from a deleted package (e.g. eslint-plugin-crypto) — skip it.
   if (!existsSync(join(pkgDir, 'package.json'))) continue;
   // Skip private packages — they never reach npm, so their artifact is not a
-  // published artifact. (@interlace/eslint-config and @interlace/ui are both
-  // private; auditing them reported gaps that could never matter.)
+  // published artifact. (@interlace/ui is private; auditing it reported gaps
+  // that could never matter.)
   const srcManifest = JSON.parse(
     readFileSync(join(pkgDir, 'package.json'), 'utf8'),
   ) as { private?: boolean };
@@ -232,6 +281,15 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
     commentRegressions.push({ pkg: meta.name, files: commented.length });
   }
 
+  const indented = meta.files.filter(
+    (f) =>
+      f.path.endsWith('.js') &&
+      INDENTED_LINE.test(readFileSync(join(distDir, f.path), 'utf8')),
+  );
+  if (indented.length > 0) {
+    whitespaceRegressions.push({ pkg: meta.name, files: indented.length });
+  }
+
   for (const f of meta.files) {
     const hit = FORBIDDEN.find((r) => r.test(f.path));
     if (hit) {
@@ -255,6 +313,7 @@ for (const dir of readdirSync(PACKAGES_DIR)) {
 const FAILURES = [
   violations.length,
   commentRegressions.length,
+  whitespaceRegressions.length,
   metadataGaps.length,
   exportGaps.length,
   manifestLeaks.length,
@@ -273,6 +332,7 @@ if (JSON_OUT) {
       {
         violations,
         commentRegressions,
+        whitespaceRegressions,
         metadataGaps,
         exportGaps,
         manifestLeaks,
@@ -299,6 +359,22 @@ if (commentRegressions.length > 0) {
     console.error(`    ${c.pkg}  ${c.files} .js file(s) still carry comments`);
   }
   console.error('');
+}
+
+if (whitespaceRegressions.length > 0) {
+  console.error(
+    `  ❌ ${whitespaceRegressions.length} package(s) ship indented JS — the` +
+      ' whitespace-strip pass in scripts/build-package.ts is not running:\n',
+  );
+  for (const w of whitespaceRegressions) {
+    console.error(
+      `    ${w.pkg}  ${w.files} .js file(s) still carry tsc layout`,
+    );
+  }
+  console.error(
+    '\n    Indentation is ~32% of a compiled rule file; the pass is worth\n' +
+      '    37% of the shipped JavaScript across the ecosystem.\n',
+  );
 }
 
 if (exportGaps.length > 0) {
@@ -342,7 +418,7 @@ const failed = FAILURES.some((n) => n > 0);
 
 if (!failed) {
   console.log(
-    '  ✅ No source maps, no AGENTS.md, no commented JS;' +
+    '  ✅ No source maps, no AGENTS.md, no commented or indented JS;' +
       ' every declared export resolves; no build-only manifest fields;' +
       ' metadata complete.\n',
   );

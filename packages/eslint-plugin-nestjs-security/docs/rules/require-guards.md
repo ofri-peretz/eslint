@@ -3,8 +3,8 @@ title: require-guards
 description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'nestjs']
 category: security
-severity: medium
-cwe: CWE-284
+severity: high
+cwe: CWE-306
 owasp: 'A01:2021'
 autofix: false
 ---
@@ -21,19 +21,19 @@ The rule provides LLM-optimized error messages (Compact 2-line format) with acti
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-284 OWASP:A01 CVSS:7.5 | Improper Access Control detected | HIGH
+🔒 CWE-306 OWASP:A01 CVSS:7.5 | Missing Authentication for Critical Function | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-284](https://cwe.mitre.org/data/definitions/284.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Improper Access Control detected`                                                                                                                                                                                                                            |
-| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                   |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                                   |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-306](https://cwe.mitre.org/data/definitions/306.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AN%2FI%3AH%2FA%3AN) |
+| **Issue Description**     | Specific vulnerability | `Improper Access Control detected`                                                                                                                                                                                                                                        |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                                    |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                                      |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                               |
 
 ## Rule Details
 
@@ -42,8 +42,19 @@ This rule detects NestJS controllers and route handlers that lack authorization 
 ## OWASP Mapping
 
 - **OWASP Top 10 2021**: A01:2021 - Broken Access Control
-- **CWE**: CWE-284 - Improper Access Control
-- **CVSS**: 9.8 (Critical)
+- **CWE**: [CWE-306 - Missing Authentication for Critical Function](https://cwe.mitre.org/data/definitions/306.html), or
+  [CWE-862 - Missing Authorization](https://cwe.mitre.org/data/definitions/862.html) when a route is
+  guarded but lacks one of the `requiredGuards`
+- **CVSS**: 7.5 (High) for an unguarded route; 6.5 (Medium) for a missing required guard
+
+This rule used to report `CWE-284` at CVSS `9.8` on every finding. Both were
+wrong. [CWE-284](https://cwe.mitre.org/data/definitions/284.html) is a _Pillar_,
+and MITRE marks it **Discouraged** for mapping real vulnerabilities — its own
+guidance notes the name "is often misused in low-information vulnerability
+reports". And `9.8` requires `C:H/I:H/A:H` simultaneously; an unguarded route
+that reads scores `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N` = 7.5, and one that
+mutates scores `C:N/I:H/A:N` = 7.5. Reporting every finding as CRITICAL leaves
+nothing to say when something genuinely is.
 
 ## ❌ Incorrect
 
@@ -81,6 +92,16 @@ class UsersController {
 ```
 
 ## Options
+
+| Option                 | Type       | Default | Description                                              |
+| ---------------------- | ---------- | ------- | -------------------------------------------------------- |
+| `allowInTests`         | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files          |
+| `detectGlobalGuards`   | `boolean`  | `true`  | Look for globally registered guards before reporting     |
+| `requiredGuards`       | `string[]` | `[]`    | Guard names that must be present                         |
+| `allowPublicDecorator` | `boolean`  | `true`  | Treat a `@Public()` decorator as intentionally unguarded |
+| `assumeGlobalGuards`   | `boolean`  | `false` | Assume global guards exist even if none are found        |
+| `authDecorators`       | `string[]` | `[]`    | Extra decorator names that count as authentication       |
+| `publicRoutes`         | `string[]` | —       | Route paths that may be left unguarded                   |
 
 ```typescript
 {

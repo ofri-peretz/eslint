@@ -161,9 +161,14 @@ function ensureSubpathExport(pkgPath) {
   const json = JSON.parse(raw);
   const exports_ = json.exports || {};
 
+  // Point at the BUILD OUTPUT, not the source. `src/oxlint.ts` is TypeScript;
+  // the only JavaScript the tarball ships is `dist/src/oxlint.js`. Pointing at
+  // `./src/oxlint.js` — a file no build ever produces — made
+  // `require('<pkg>/oxlint')` throw MODULE_NOT_FOUND for every published
+  // package, while every README documented that exact wiring.
   const desired = {
-    types: './src/oxlint.d.ts',
-    default: './src/oxlint.js',
+    types: './dist/src/oxlint.d.ts',
+    default: './dist/src/oxlint.js',
   };
 
   const current = exports_['./oxlint'];

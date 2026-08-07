@@ -14,6 +14,8 @@
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
+import { noMassAssignment } from './rules/no-mass-assignment';
+import { noRawIdentifierInterpolation } from './rules/no-raw-identifier-interpolation';
 import { noUnsafeQuery } from './rules/no-unsafe-query';
 import { noUnscopedMutation } from './rules/no-unscoped-mutation';
 
@@ -21,6 +23,8 @@ import { noUnscopedMutation } from './rules/no-unscoped-mutation';
  * Collection of all rules
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+  'no-mass-assignment': noMassAssignment,
+  'no-raw-identifier-interpolation': noRawIdentifierInterpolation,
   'no-unsafe-query': noUnsafeQuery,
   'no-unscoped-mutation': noUnscopedMutation,
 };
@@ -31,7 +35,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-drizzle-security',
-    version: '0.2.0',
+    version: '0.3.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -77,4 +81,4 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
  */
 export default plugin;
 
-export type { AllDrizzleRulesOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';
+export type { AllDrizzleRulesOptions, NoRawIdentifierInterpolationOptions, NoMassAssignmentOptions, NoUnsafeQueryOptions, NoUnscopedMutationOptions } from './types/index';

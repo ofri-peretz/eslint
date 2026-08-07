@@ -64,6 +64,12 @@ class UsersController {
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `[]` | Extra field-name patterns to treat as sensitive |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)

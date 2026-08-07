@@ -2,7 +2,10 @@
   "title": "Rules",
   "defaultOpen": false,
   "pages": [
+    "no-hardcoded-credentials",
+    "no-mass-assignment",
     "no-unsafe-query",
-    "no-unscoped-mutation"
+    "no-unscoped-mutation",
+    "require-tls"
   ]
 }

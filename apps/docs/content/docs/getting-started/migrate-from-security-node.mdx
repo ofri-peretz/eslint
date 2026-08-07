@@ -37,13 +37,13 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 | `detect-insecure-randomness` | ✓ | [`node-security/no-math-random-crypto`](/docs/security/plugin-node-security/rules/no-math-random-crypto) | `Math.random()` in security-sensitive contexts. |
 | `detect-non-literal-require-calls` | ✓ | [`node-security/no-unsafe-dynamic-require`](/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | Related: `node-security/no-dynamic-require`. |
 | `detect-nosql-injection` | ✓ | [`mongodb-security/no-operator-injection`](/docs/security/plugin-mongodb-security/rules/no-operator-injection) | Related: `mongodb-security/no-unsafe-where`, `mongodb-security/no-unsafe-query`. |
-| `detect-option-multiplestatements-in-mysql` | ✗ gap | — | No `mysql`/`mysql2` plugin. The SQL plugin (`eslint-plugin-pg`) targets PostgreSQL clients. |
+| `detect-option-multiplestatements-in-mysql` | ✗ gap | — | No `mysql`/`mysql2` plugin. The SQL plugin (`eslint-plugin-postgresql-security`) targets PostgreSQL clients. |
 | `detect-option-rejectunauthorized-in-nodejs-httpsrequest` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `rejectUnauthorized: false` in TLS/HTTPS options. |
 | `detect-option-unsafe-in-serialize-javascript-npm-package` | ✗ gap | — | No rule targets `serialize-javascript`'s `unsafe: true` option. `secure-coding/no-unsafe-deserialization` covers deserialization sinks, not this serialization option. |
 | `detect-possible-timing-attacks` | ✓ | [`node-security/no-timing-unsafe-compare`](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | Related: `secure-coding/no-insecure-comparison`. |
 | `detect-runinthiscontext-method-in-nodes-vm` | ✗ gap | — | No rules for the Node.js `vm` module. |
 | `detect-security-missconfiguration-cookie` | ✓ | [`express-security/no-insecure-cookie-options`](/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | Express cookie flags (`httpOnly`, `secure`, …). Browser-side counterpart: `browser-security/require-cookie-secure-attrs`. |
-| `detect-sql-injection` | ◐ partial | [`pg/no-unsafe-query`](/docs/security/plugin-pg/rules/no-unsafe-query) | Upstream rule flags string-built queries for any SQL client. `eslint-plugin-pg` (`no-unsafe-query`, `check-query-params`) covers PostgreSQL clients; string-built `mysql`/`mysql2` queries are not covered. |
+| `detect-sql-injection` | ◐ partial | [`pg/no-unsafe-query`](/docs/security/plugin-pg/rules/no-unsafe-query) | Upstream rule flags string-built queries for any SQL client. `eslint-plugin-postgresql-security` (`no-unsafe-query`, `check-query-params`) covers PostgreSQL clients; string-built `mysql`/`mysql2` queries are not covered. |
 | `detect-unhandled-async-errors` | ◐ partial | [`reliability/no-unhandled-promise`](/docs/quality/plugin-reliability/rules/no-unhandled-promise) | Equivalent lives in a quality plugin (`eslint-plugin-reliability`), not a security plugin. |
 | `detect-unhandled-event-errors` | ✗ gap | — | No rule requires an `'error'` listener on `EventEmitter` instances. |
 | `disable-ssl-across-node-server` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `NODE_TLS_REJECT_UNAUTHORIZED = '0'`. |
@@ -57,7 +57,7 @@ The 13 direct-mapping rules span five plugins. Install the ones your codebase ne
 npm install --save-dev eslint-plugin-node-security eslint-plugin-secure-coding eslint-plugin-express-security eslint-plugin-mongodb-security eslint-plugin-browser-security
 ```
 
-Add `eslint-plugin-pg` or `eslint-plugin-reliability` if the partial rows above apply to you.
+Add `eslint-plugin-postgresql-security` or `eslint-plugin-reliability` if the partial rows above apply to you.
 
 <Tabs items={['Before (security-node)', 'After (Interlace)']}>
 <Tab value="Before (security-node)">

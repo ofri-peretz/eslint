@@ -81,10 +81,10 @@ The rule offers editor suggestions (no auto-fix):
 
 ## Options
 
-| Option           | Type       | Default                                                | Description                                                                          |
-| ---------------- | ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `protectedPaths` | `string[]` | `['admin', 'api', 'dashboard', 'internal', 'private']` | Substrings that mark a compared value as a protected path (replaces the default set) |
-| `checkAllPaths`  | `boolean`  | `false`                                                | Flag every case-sensitive path guard regardless of the compared value                |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `protectedPaths` | `string[]` | — | Substrings that mark a compared value as a protected path |
+| `checkAllPaths` | `boolean` | — | Flag every case-sensitive path guard regardless of the compared value |
 
 ```json
 {

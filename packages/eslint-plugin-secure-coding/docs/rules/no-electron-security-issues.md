@@ -138,11 +138,14 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 
 ## Options
 
-| Option                | Type       | Default          | Description                            |
-| --------------------- | ---------- | ---------------- | -------------------------------------- |
-| `allowInDev`          | `boolean`  | `false`          | Allow insecure settings in development |
-| `safePreloadPatterns` | `string[]` | `['preload.js']` | Safe preload script patterns           |
-| `allowedIpcChannels`  | `string[]` | `[]`             | Allowed IPC channels                   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInDev` | `boolean` | `false` | Allow insecure settings in development |
+| `safePreloadPatterns` | `string[]` | `["contextBridge","ipcRenderer"]` | Preload-script APIs treated as safe |
+| `allowedIpcChannels` | `string[]` | `[]` | IPC channel names allowed without validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

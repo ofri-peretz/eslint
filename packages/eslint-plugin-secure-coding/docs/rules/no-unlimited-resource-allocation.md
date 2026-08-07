@@ -104,12 +104,15 @@ const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
 
 ## Options
 
-| Option                      | Type       | Default              | Description                           |
-| --------------------------- | ---------- | -------------------- | ------------------------------------- |
-| `maxResourceSize`           | `number`   | `10485760`           | Maximum allowed resource size (bytes) |
-| `userInputVariables`        | `string[]` | `['req', 'request']` | User input variable patterns          |
-| `safeResourceFunctions`     | `string[]` | `[]`                 | Safe allocation functions             |
-| `requireResourceValidation` | `boolean`  | `true`               | Require validation before allocation  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `maxResourceSize` | `number` | `1048576` | Allocation size in bytes above which a call is reported |
+| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input |
+| `safeResourceFunctions` | `string[]` | `["validateSize","checkLimits","limitResource","safeAlloc"]` | Function names that bound an allocation |
+| `requireResourceValidation` | `boolean` | `true` | Require an explicit size check before allocating |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as resource validators |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 
