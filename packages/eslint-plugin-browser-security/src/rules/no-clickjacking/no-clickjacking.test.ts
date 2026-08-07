@@ -43,6 +43,15 @@ describe('no-clickjacking', () => {
         // Guard written window-qualified, assignment written bare — the same
         // program, and the reason the reference check walks the AST.
         `if (window.top != window.self) { top.location = self.location; }`,
+        // A function boundary inside the guard is crossed only when the
+        // function cannot escape it. An inline callback has no name to call
+        // it by, so the frame check still gates the redirect.
+        `if (top != self) { setTimeout(() => { top.location = self.location; }, 0); }`,
+        // Same for an IIFE.
+        `if (top != self) { (function () { top.location = self.location; })(); }`,
+        // A named declaration whose every reference is inside the guard can
+        // only run under it.
+        `if (top != self) { function bust() { top.location = self.location; } bust(); }`,
         // Trusted iframe sources (starts with /)
         {
           code: '<iframe src="/local-content.html"></iframe>',
@@ -71,6 +80,23 @@ describe('no-clickjacking', () => {
           // An `if` that is NOT a frame comparison does not make the assignment
           // frame-busting — this is a redirect gated on an unrelated flag.
           code: `if (isEmbedded) { top.location = 'https://evil.test'; }`,
+          errors: 1,
+        },
+        {
+          // The guard does not reach through an escaping function. `var` is
+          // function-scoped, so this binding hoists out of the block and the
+          // call below resolves to it — the redirect can run with no frame
+          // check having happened at all.
+          //
+          // The block-scoped spelling (`function doRedirect() {}` inside the
+          // `if`) is deliberately NOT here: nothing outside can resolve it, so
+          // it is unreachable rather than unguarded.
+          code: `if (top != self) { var doRedirect = () => { top.location = 'https://evil.test'; }; } doRedirect();`,
+          errors: 1,
+        },
+        {
+          // Stored on an object inside the guard, callable from anywhere.
+          code: `if (top != self) { window.doRedirect = () => { top.location = 'https://evil.test'; }; }`,
           errors: 1,
         },
       ],

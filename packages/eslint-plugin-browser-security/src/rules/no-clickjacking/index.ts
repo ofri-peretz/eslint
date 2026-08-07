@@ -81,6 +81,73 @@ function isFrameRef(node: TSESTree.Node): boolean {
   return false;
 }
 
+/** Is this `if` test the canonical "am I framed?" comparison? */
+function isFrameBustingTest(test: TSESTree.Node): boolean {
+  return (
+    test.type === 'BinaryExpression' &&
+    ['!=', '!==', '==', '==='].includes(test.operator) &&
+    isFrameRef(test.left) &&
+    isFrameRef(test.right)
+  );
+}
+
+const FUNCTION_TYPES = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+]);
+
+/**
+ * Can this function only run while the guard's branch is executing?
+ *
+ * The guard suppresses a redirect because the frame check gates it. That
+ * reasoning survives a function boundary only when the function cannot be
+ * reached from outside the guard — otherwise the redirect runs with no frame
+ * check ever having happened, and the rule must still report it.
+ *
+ * Contained: an inline callback or IIFE (`setTimeout(() => …)`), which has no
+ * name to call it by. Contained: a declaration or `const` whose every
+ * reference sits inside the guard. Everything else — stored on an object,
+ * returned, referenced after the block — escapes.
+ */
+function runsOnlyInsideGuard(
+  fn: TSESTree.Node,
+  guard: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const parent = fn.parent as TSESTree.Node | undefined;
+
+  // An inline callback or IIFE is invoked where it is written.
+  if (
+    parent?.type === 'CallExpression' &&
+    (parent.arguments as TSESTree.Node[]).includes(fn)
+  ) {
+    return true;
+  }
+  if (parent?.type === 'CallExpression' && parent.callee === fn) return true;
+
+  // A named binding is reachable wherever its name is in scope. Ask the scope
+  // manager where it is actually referenced rather than guessing from shape.
+  const declarator =
+    fn.type === 'FunctionDeclaration'
+      ? fn
+      : parent?.type === 'VariableDeclarator'
+        ? parent
+        : undefined;
+  if (declarator === undefined) return false;
+
+  // Every binding the declaration introduces must stay inside the guard.
+  return sourceCode
+    .getDeclaredVariables(declarator)
+    .every((variable) =>
+      variable.references.every(
+        (ref) =>
+          ref.identifier.range[0] >= guard.range[0] &&
+          ref.identifier.range[1] <= guard.range[1],
+      ),
+    );
+}
+
 /**
  * Is this node inside an `if` whose test compares two frame references?
  *
@@ -89,21 +156,24 @@ function isFrameRef(node: TSESTree.Node): boolean {
  * which is whitespace-sensitive — `top !=  self` and `top!==self` are the same
  * program and did not match — and matches a comment or string that merely
  * contains the phrase. See scripts/audit-gettext-classification.ts.
+ *
+ * Crossing a function boundary is only safe when that function cannot escape
+ * the guard — see runsOnlyInsideGuard. A redirect parked in a function that is
+ * callable from outside runs with no frame check at all.
  */
-function insideFrameBustingGuard(node: TSESTree.Node): boolean {
+function insideFrameBustingGuard(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const crossed: TSESTree.Node[] = [];
   let current: TSESTree.Node | undefined = node.parent as
-    TSESTree.Node | undefined;
+    | TSESTree.Node
+    | undefined;
   while (current) {
-    if (current.type === 'IfStatement') {
-      const test = current.test;
-      if (
-        test.type === 'BinaryExpression' &&
-        ['!=', '!==', '==', '==='].includes(test.operator) &&
-        isFrameRef(test.left) &&
-        isFrameRef(test.right)
-      ) {
-        return true;
-      }
+    if (FUNCTION_TYPES.has(current.type)) crossed.push(current);
+    if (current.type === 'IfStatement' && isFrameBustingTest(current.test)) {
+      const guard = current;
+      return crossed.every((fn) => runsOnlyInsideGuard(fn, guard, sourceCode));
     }
     current = current.parent as TSESTree.Node | undefined;
   }
@@ -487,7 +557,7 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
               // `top.location = self.location` inside `if (top != self)` is
               // frame-busting — the very remediation `requireFrameBusting`
               // asks for. Reporting it means the rule flags its own fix.
-              if (insideFrameBustingGuard(node)) {
+              if (insideFrameBustingGuard(node, sourceCode)) {
                 return;
               }
 
