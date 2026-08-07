@@ -227,8 +227,15 @@ describe('identical-functions', () => {
     //     different content, so the length ceiling passes and the walk has to
     //     start before it can prove the pair hopeless.
     //
-    // Both must stay `valid` — a prune that changed a finding would be a bug,
-    // and that is exactly what these lock.
+    // Both must stay `valid` — a prune that reported a duplicate it shouldn't
+    // would be a correctness bug, and these cases verify that half of the
+    // contract.
+    //
+    // They do NOT lock the prunes themselves. Deleting either one leaves every
+    // case here green; the rule would simply run ~30x slower and still report
+    // exactly this. That other half — that the prunes actually fire and cannot
+    // be silently removed — needs an observable signal rather than a finding,
+    // and lives in `identical-functions-perf.test.ts`.
     ruleTester.run('similarity prunes (performance)', identicalFunctions, {
       valid: [
         {
