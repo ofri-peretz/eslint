@@ -1,17 +1,17 @@
 {
   "summary": {
-    "totalCoverage": 92.5,
-    "totalFiles": 12,
-    "totalLines": 9467,
-    "coveredLines": 8757,
-    "uncoveredLines": 710
+    "totalCoverage": 85,
+    "totalFiles": 245,
+    "totalLines": 12500,
+    "coveredLines": 10625,
+    "uncoveredLines": 1875
   },
   "plugins": {
     "security": [
       {
         "name": "eslint-plugin-browser-security",
         "slug": "browser-security",
-        "coverage": 95,
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
@@ -32,14 +32,28 @@
       {
         "name": "eslint-plugin-vercel-ai-security",
         "slug": "vercel-ai-security",
-        "coverage": 90.7,
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-mongodb-security",
         "slug": "mongodb-security",
-        "coverage": 96.1,
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-jwt",
+        "slug": "jwt",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-jwt-security",
+        "slug": "jwt-security",
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
@@ -51,30 +65,107 @@
         "category": "security"
       },
       {
-        "name": "eslint-plugin-jwt",
-        "slug": "jwt",
-        "coverage": 100,
+        "name": "eslint-plugin-postgresql-security",
+        "slug": "postgresql-security",
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
       {
-        "name": "eslint-plugin-lambda-security",
-        "slug": "lambda-security",
-        "coverage": 97.6,
+        "name": "eslint-plugin-knex-security",
+        "slug": "knex-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-drizzle-security",
+        "slug": "drizzle-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-mcp-sdk-security",
+        "slug": "mcp-sdk-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-prisma-security",
+        "slug": "prisma-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-sequelize-security",
+        "slug": "sequelize-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-typeorm-security",
+        "slug": "typeorm-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-anthropic-security",
+        "slug": "anthropic-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-gemini-security",
+        "slug": "gemini-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-mysql-security",
+        "slug": "mysql-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-openai-security",
+        "slug": "openai-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-sqlite-security",
+        "slug": "sqlite-security",
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-express-security",
         "slug": "express-security",
-        "coverage": 93.4,
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-lambda-security",
+        "slug": "lambda-security",
+        "coverage": 85,
         "status": "production",
         "category": "security"
       },
       {
         "name": "eslint-plugin-nestjs-security",
         "slug": "nestjs-security",
-        "coverage": 96.2,
+        "coverage": 85,
         "status": "production",
         "category": "security"
       }
@@ -83,7 +174,7 @@
       {
         "name": "eslint-plugin-import-next",
         "slug": "import-next",
-        "coverage": 89.1,
+        "coverage": 80,
         "status": "production",
         "category": "quality"
       },
@@ -97,7 +188,7 @@
       {
         "name": "eslint-plugin-maintainability",
         "slug": "maintainability",
-        "coverage": 91.2,
+        "coverage": 80,
         "status": "production",
         "category": "quality"
       },
@@ -137,8 +228,8 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-05-24T03:17:18.338Z",
-    "source": "local-lcov",
+    "generatedAt": "2026-08-07T02:23:34.761Z",
+    "source": "estimated",
     "ttl": 14400
   }
 }
