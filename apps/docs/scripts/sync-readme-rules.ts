@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../../../');
@@ -305,7 +306,10 @@ async function main() {
       
       if (data && data.rules.length > 0) {
         const outputPath = path.join(outputDir, `${pluginSlug}.json`);
-        fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
+        // Content-diffed on `lastSynced` (see write-json-if-changed.ts) — this
+        // loop writes ~30 files, so an unconditional write meant every run
+        // rewrote the whole directory whether or not a README had moved.
+        writeJsonIfChanged(outputPath, data, `plugin-rules/${pluginSlug}.json`);
         results.success.push(`${pluginSlug}: ${data.rules.length} rules`);
         console.log(`✓ ${pluginSlug}: ${data.rules.length} rules synced`);
       } else {
@@ -320,13 +324,13 @@ async function main() {
   
   // Write summary file
   const summaryPath = path.join(outputDir, '_sync-summary.json');
-  fs.writeFileSync(summaryPath, JSON.stringify({
+  writeJsonIfChanged(summaryPath, {
     lastSynced: new Date().toISOString(),
     plugins: Object.keys(PLUGIN_MAPPINGS).length,
     success: results.success.length,
     errors: results.errors.length,
     details: results,
-  }, null, 2));
+  }, '_sync-summary.json');
   
   console.log(`\nSync complete: ${results.success.length} succeeded, ${results.errors.length} errors`);
   
