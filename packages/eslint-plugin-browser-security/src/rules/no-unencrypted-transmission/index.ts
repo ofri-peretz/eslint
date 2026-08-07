@@ -8,12 +8,16 @@
  * ESLint Rule: no-unencrypted-transmission
  * Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)
  * CWE-319: Cleartext Transmission of Sensitive Information
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/319.html
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Transport
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unencryptedTransmission' | 'useHttps';
@@ -21,13 +25,13 @@ type MessageIds = 'unencryptedTransmission' | 'useHttps';
 export interface Options {
   /** Allow unencrypted transmission in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** Insecure protocol patterns. Default: ['http://', 'ws://', 'ftp://', 'tcp://', 'mongodb://', 'redis://', 'mysql://'] */
   insecureProtocols?: string[];
-  
+
   /** Secure protocol alternatives mapping. Default: { 'http://': 'https://', 'ws://': 'wss://', ... } */
   secureAlternatives?: Record<string, string>;
-  
+
   /** Additional safe patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 }
@@ -66,10 +70,10 @@ const SECURE_ALTERNATIVES: Record<string, string> = {
 function containsInsecureProtocol(
   value: string,
   insecureProtocols: string[],
-  secureAlternatives: Record<string, string>
+  secureAlternatives: Record<string, string>,
 ): { isInsecure: boolean; protocol: string } {
   const lowerValue = value.toLowerCase();
-  
+
   for (const protocol of insecureProtocols) {
     const lowerProtocol = protocol.toLowerCase();
     // Check if the protocol appears in the value (as a URL scheme)
@@ -87,7 +91,7 @@ function containsInsecureProtocol(
       }
     }
   }
-  
+
   return { isInsecure: false, protocol: '' };
 }
 
@@ -95,7 +99,7 @@ function containsInsecureProtocol(
  * Check if a string matches any ignore pattern
  */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
+  return patterns.some((pattern) => {
     try {
       const regex = new RegExp(pattern, 'i');
       return regex.test(text);
@@ -105,13 +109,107 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
   });
 }
 
+/**
+ * URIs that are *identifiers*, not network destinations.
+ *
+ * `xmlns="http://www.w3.org/2000/svg"` is the single most common `http://`
+ * string in any React codebase — every inline SVG carries one. It is never
+ * fetched: XML namespaces are opaque identifiers, and changing it to https
+ * breaks the document. Same for the XSD/XSL/DTD namespaces and the XML
+ * specification URIs.
+ */
+const NAMESPACE_URI_PREFIXES = [
+  'http://www.w3.org/',
+  'http://schemas.xmlsoap.org/',
+  'http://purl.org/',
+  'http://xmlns.com/',
+  'http://ns.adobe.com/',
+  'http://sodipodi.sourceforge.net/',
+  'http://www.inkscape.org/',
+];
+
+/** Is this string an XML/RDF namespace identifier rather than an endpoint? */
+function isNamespaceUri(value: string): boolean {
+  return NAMESPACE_URI_PREFIXES.some((prefix) => value.startsWith(prefix));
+}
+
+/**
+ * String methods that *inspect* a value rather than transmit it.
+ *
+ * `url.startsWith('http://')` is a guard — the literal is the thing being
+ * looked for, not an endpoint being called. Reporting it flags the security
+ * check as the vulnerability, which is exactly backwards: measured on the
+ * Interlace repo, the rule's own finding landed inside an `if` that *skips*
+ * insecure URLs.
+ */
+/** Of the inspection methods, these write their second argument. */
+const WRITES_SECOND_ARGUMENT = new Set(['replace', 'replaceAll']);
+
+const INSPECTION_METHODS = new Set([
+  'startsWith',
+  'endsWith',
+  'includes',
+  'indexOf',
+  'lastIndexOf',
+  'search',
+  'match',
+  'matchAll',
+  'test',
+  'split',
+  'replace',
+  'replaceAll',
+]);
+
+/**
+ * Is this literal being examined rather than used as a destination?
+ *
+ * Two shapes count: an argument to one of the inspection methods above, and an
+ * operand of an equality/comparison expression (`protocol === 'http://'`). Both
+ * mean the code is reasoning *about* the protocol string.
+ */
+function isProtocolInspection(
+  node: TSESTree.Node,
+  parent: TSESTree.Node,
+): boolean {
+  if (
+    parent.type === AST_NODE_TYPES.CallExpression &&
+    parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+    parent.callee.property.type === AST_NODE_TYPES.Identifier &&
+    INSPECTION_METHODS.has(parent.callee.property.name)
+  ) {
+    // `replace`/`replaceAll` take a *replacement* as their second argument, and
+    // that one is content being written — `url.replace(p, 'http://evil.test')`
+    // is a genuine insecure destination. Only the search operand is inspection.
+    //
+    // Compared by identity against argument 0 rather than scanned for with
+    // indexOf: the only question is whether this literal is the first argument,
+    // and scanning made a call with many literal arguments O(n²) over the pass.
+    if (WRITES_SECOND_ARGUMENT.has(parent.callee.property.name)) {
+      return parent.arguments[0] === node;
+    }
+    return true;
+  }
+
+  return (
+    parent.type === AST_NODE_TYPES.BinaryExpression &&
+    COMPARISON_OPERATORS.has(parent.operator)
+  );
+}
+
+/**
+ * Equality operators only. Nobody orders protocol strings with `<` / `>`, so
+ * including them widened the exemption past what the function promises.
+ */
+const COMPARISON_OPERATORS = new Set(['===', '!==', '==', '!=']);
+
 export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   name: 'no-unencrypted-transmission',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unencrypted-transmission.md',
-      description: 'Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)',
+      description:
+        'Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)',
       cwe: 'CWE-319',
       cvss: 7.5,
     },
@@ -132,7 +230,8 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         description: 'Use secure protocol',
         severity: 'LOW',
         fix: 'Replace http:// with https://',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Security/Transport_Layer_Security',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/Security/Transport_Layer_Security',
       }),
     },
     schema: [
@@ -154,7 +253,8 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
             type: 'object',
             additionalProperties: { type: 'string' },
             default: {},
-            description: 'Mapping of insecure protocols to their secure alternatives',
+            description:
+              'Mapping of insecure protocols to their secure alternatives',
           },
           ignorePatterns: {
             type: 'array',
@@ -177,7 +277,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
@@ -186,17 +286,20 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const protocolsToCheck = insecureProtocols && insecureProtocols.length > 0
-      ? insecureProtocols
-      : DEFAULT_INSECURE_PROTOCOLS;
-    
+    const protocolsToCheck =
+      insecureProtocols && insecureProtocols.length > 0
+        ? insecureProtocols
+        : DEFAULT_INSECURE_PROTOCOLS;
+
     // Merge user-provided secure alternatives with defaults
-    const secureAlternativesToUse = secureAlternatives && Object.keys(secureAlternatives).length > 0
-      ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
-      : SECURE_ALTERNATIVES;
+    const secureAlternativesToUse =
+      secureAlternatives && Object.keys(secureAlternatives).length > 0
+        ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
+        : SECURE_ALTERNATIVES;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
@@ -206,7 +309,17 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
 
       const value = node.value;
       const text = sourceCode.getText(node);
-      
+
+      // A protocol string being tested against is not a transmission.
+      if (isProtocolInspection(node, node.parent as TSESTree.Node)) {
+        return;
+      }
+
+      // Nor is an XML namespace identifier, which is never fetched.
+      if (isNamespaceUri(value)) {
+        return;
+      }
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(text, ignorePatterns)) {
         return;
@@ -221,12 +334,17 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         // For other URLs in test files, still check them
       }
 
-      const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck, secureAlternativesToUse);
-      
+      const { isInsecure, protocol } = containsInsecureProtocol(
+        value,
+        protocolsToCheck,
+        secureAlternativesToUse,
+      );
+
       if (isInsecure) {
         // NOTE: localhost URLs in test files already returned above, so no
         // second `isTestFile && localhost` check is needed here.
-        const secureProtocol = secureAlternativesToUse[protocol.toLowerCase()] || 'secure protocol';
+        const secureProtocol =
+          secureAlternativesToUse[protocol.toLowerCase()] || 'secure protocol';
         const safeAlternative = `Use ${secureProtocol} instead of ${protocol}`;
 
         context.report({
@@ -237,20 +355,26 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
             safeAlternative,
           },
           suggest: [
-              {
-                messageId: 'useHttps',
-                data: {
-                  protocol,
-                  secureProtocol,
-                },
-                fix(fixer: TSESLint.RuleFixer) {
-                  if (secureProtocol && secureProtocol !== 'secure protocol') {
-                    // Replace the insecure protocol with secure one
-                    const newValue = value.replace(new RegExp(protocol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), secureProtocol);
-                    return fixer.replaceText(node, JSON.stringify(newValue));
-                  }
-                  return null;
-                },
+            {
+              messageId: 'useHttps',
+              data: {
+                protocol,
+                secureProtocol,
+              },
+              fix(fixer: TSESLint.RuleFixer) {
+                if (secureProtocol && secureProtocol !== 'secure protocol') {
+                  // Replace the insecure protocol with secure one
+                  const newValue = value.replace(
+                    new RegExp(
+                      protocol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                      'gi',
+                    ),
+                    secureProtocol,
+                  );
+                  return fixer.replaceText(node, JSON.stringify(newValue));
+                }
+                return null;
+              },
             },
           ],
         });
@@ -263,7 +387,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       }
 
       const text = sourceCode.getText(node);
-      
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(text, ignorePatterns)) {
         return;
@@ -272,10 +396,16 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // Check each quasis (static parts) and expressions
       for (const quasi of node.quasis) {
         const value = quasi.value.raw;
-        const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck, secureAlternativesToUse);
-        
+        const { isInsecure, protocol } = containsInsecureProtocol(
+          value,
+          protocolsToCheck,
+          secureAlternativesToUse,
+        );
+
         if (isInsecure) {
-          const secureProtocol = secureAlternativesToUse[protocol.toLowerCase()] || 'secure protocol';
+          const secureProtocol =
+            secureAlternativesToUse[protocol.toLowerCase()] ||
+            'secure protocol';
           const safeAlternative = `Use ${secureProtocol} instead of ${protocol}`;
 
           context.report({
@@ -297,4 +427,3 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-
