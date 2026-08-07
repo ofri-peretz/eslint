@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 import process from 'node:process';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 interface PluginStat {
   name: string;
@@ -157,7 +158,9 @@ async function main(): Promise<void> {
   };
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
+  // Content-diffed: `meta.generatedAt` moves on every run and would otherwise
+  // make each sync a commit of nothing (see write-json-if-changed.ts).
+  writeJsonIfChanged(OUTPUT_PATH, output, 'coverage-stats.json');
 
   console.log(`Coverage stats: ${output.summary.totalCoverage}% across ${totalFiles} package(s)`);
   console.log(

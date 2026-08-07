@@ -182,7 +182,7 @@ DEV_TO_API_KEY=... npx tsx apps/docs/scripts/update-articles-data.ts
 Two traps, both live:
 
 - **Always run it authenticated.** The unauthenticated endpoint omits `page_views_count` and the script coerces it to `0` — an anonymous run silently zeroes every view count in the mirror. Confirm `🔑 Source: authenticated API` in the output.
-- **`apps/docs/scripts/update-articles.ts` is a dead second writer** of the same file, keyed off a *differently spelled* `DEVTO_API_KEY`. It is referenced by no workflow and no npm script. Don't run it; it is a deletion candidate.
+- **`apps/docs/scripts/update-articles.ts` was a dead second writer** of the same file, keyed off a *differently spelled* `DEVTO_API_KEY`. Referenced by no workflow and no npm script, so it was deleted (2026-08-04) rather than kept in sync with the idempotent-write change. `update-articles-data.ts` is the only writer.
 
 The `†`-marked rows in [`distribution/PUBLISHING_QUEUE.md`](distribution/PUBLISHING_QUEUE.md) have been updated to the retitled headlines: that file logs what is published, and what is published is now the corrected title.
 
