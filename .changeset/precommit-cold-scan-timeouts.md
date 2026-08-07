@@ -1,10 +1,10 @@
 ---
 'eslint-plugin-express-security': patch
-'eslint-plugin-jwt': patch
+'eslint-plugin-jwt-security': patch
 'eslint-plugin-lambda-security': patch
 'eslint-plugin-mongodb-security': patch
 'eslint-plugin-nestjs-security': patch
-'eslint-plugin-pg': patch
+'eslint-plugin-postgresql-security': patch
 'eslint-plugin-vercel-ai-security': patch
 ---
 

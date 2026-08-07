@@ -94,7 +94,10 @@ describe('snippets: pure helpers', () => {
 
     it('emits an import + spread for each enabled plugin', () => {
       const out = buildConfigSnippet(['pg', 'secure-coding']);
-      expect(out).toContain("import pg from 'eslint-plugin-pg';");
+      // `pg/` findings are served by eslint-plugin-postgresql-security — the
+      // rename kept the namespace, so the derived name would be the deprecated
+      // package. This is the lock for that exception.
+      expect(out).toContain("import pg from 'eslint-plugin-postgresql-security';");
       expect(out).toContain("import secureCoding from 'eslint-plugin-secure-coding';");
       expect(out).toContain('...pg.configs.flagship,');
       expect(out).toContain('...secureCoding.configs.flagship,');

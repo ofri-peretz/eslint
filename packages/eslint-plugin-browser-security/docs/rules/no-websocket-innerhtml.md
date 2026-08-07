@@ -170,6 +170,22 @@ You may disable this rule if:
 
 However, **always sanitize WebSocket data** before rendering as HTML.
 
+## Rule ownership
+
+This rule fires **only when the receiver is positively identified** as a `new WebSocket(...)` in
+the same file. `X.onmessage = …` on a receiver this file cannot resolve is not
+evidence of WebSocket — it is unknown, and unknown belongs to
+[`no-innerhtml`](./no-innerhtml.md) / [`no-eval`](./no-eval.md), which report it
+without claiming a provenance they cannot prove.
+
+The two tests are complements, so exactly one rule reports any given value.
+Before this gate both fired at the identical range in `recommended`, and this
+rule additionally reported `postMessage` and Worker handlers as WebSocket data,
+because it gated on the handler shape rather than on the receiver.
+
+A receiver that arrives as a parameter or from another module therefore falls to
+the generic rule. That is deliberate: the alternative is guessing.
+
 ## Related Rules
 
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require secure wss:// connections
