@@ -110,7 +110,6 @@ function shortDescription(description: string): string {
 }
 
 function row(p: Plugin): string {
-  const slug = p.name.replace(/^eslint-plugin-/, '');
   const npm = `https://www.npmjs.com/package/${p.name}`;
   const dm = `https://img.shields.io/npm/dm/${p.name}?style=flat-square&label=`;
   return `| [\`${p.name}\`](${npm}) | ${p.rules} | ${shortDescription(p.description)} | ${docsLink(p)} | ![downloads](${dm}) |`;
