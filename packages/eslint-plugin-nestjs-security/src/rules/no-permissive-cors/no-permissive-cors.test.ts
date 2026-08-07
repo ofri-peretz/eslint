@@ -354,6 +354,108 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
   ],
 });
 
+/**
+ * A CORS config declared in one file and used in another.
+ *
+ * `resolveLocalObject` only resolves same-file bindings, so an exported config
+ * consumed by a different app was invisible to every branch of this rule. The
+ * annotation is what makes the object provably a CORS config without leaving
+ * the file — the name is not evidence, the import it resolves to is.
+ */
+ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
+  valid: [
+    // The allowlist form. This is the fix ultimate-backend should apply, and it
+    // is already written 7 lines below the defect in their own file.
+    `
+      import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+      const whitelist = ['https://app.example.com'];
+      export const corsOptions: CorsOptions = { origin: whitelist, credentials: true };
+    `,
+    // Unannotated: an object with an `origin` key is not a CORS config. Config
+    // objects, test fixtures and HTTP client options all have one. Without the
+    // annotation there is no evidence, and guessing is how this rule would
+    // earn a reputation for noise.
+    `export const corsOptions = { origin: true, credentials: true };`,
+    // A different annotation from the same module. Plenty of NestJS option
+    // objects carry an `origin` key without being CORS configuration; the type
+    // name is what narrows this, and it has to be checked.
+    `
+      import { HttpModuleOptions } from '@nestjs/common';
+      export const opts: HttpModuleOptions = { origin: true };
+    `,
+    // A deeper qualification names a type nested inside a namespace, which no
+    // import statement introduces as a binding. There is nothing to resolve.
+    `
+      import * as a from '@nestjs/common';
+      export const corsOptions: a.b.CorsOptions = { origin: true };
+    `,
+    // A locally-declared `CorsOptions` resolves to no import, so the name alone
+    // proves nothing — classify by AST fact, not by spelling.
+    `
+      interface CorsOptions { origin: unknown }
+      export const corsOptions: CorsOptions = { origin: true };
+    `,
+    // Namespace import, allowlist form — exercises the qualified type name.
+    `
+      import * as common from '@nestjs/common';
+      export const corsOptions: common.CorsOptions = { origin: ['https://a.example'] };
+    `,
+    // Development-scoped declarations are excused for the same reason calls are.
+    `
+      import { CorsOptions } from '@nestjs/common';
+      if (process.env.NODE_ENV !== 'production') {
+        const corsOptions: CorsOptions = { origin: true };
+      }
+    `,
+  ],
+  invalid: [
+    // The ultimate-backend shape, reduced. Reflected origin + credentials.
+    {
+      code: `
+        import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+        export const corsOptions: CorsOptions = { origin: true, credentials: true };
+      `,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+    // The `cors` package exports the same interface; @nestjs/common re-exports it.
+    {
+      code: `
+        import { CorsOptions } from 'cors';
+        export const corsOptions: CorsOptions = { origin: '*' };
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    // Namespace import — `common.CorsOptions` resolves through the namespace
+    // binding, the same way `@common.Get()` does for the decorator rules.
+    {
+      code: `
+        import * as common from '@nestjs/common';
+        export const corsOptions: common.CorsOptions = { origin: true };
+      `,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+    // No `origin` key at all: the cors default is '*'.
+    {
+      code: `
+        import { CorsOptions } from '@nestjs/common';
+        export const corsOptions: CorsOptions = { methods: ['GET'] };
+      `,
+      errors: [{ messageId: 'defaultOrigin' }],
+    },
+    // Declared *and* used in the same file: reported once, at the declaration,
+    // because that is where the edit goes. Two reports for one defect is how a
+    // rule reads as noisy even when it is right.
+    {
+      code: `
+        import { CorsOptions } from '@nestjs/common';
+        const corsOptions: CorsOptions = { origin: true };
+        app.enableCors(corsOptions);
+      `,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+  ],
+});
+
 // A computed key named `origin` is a variable reference, not the property.
 // Reading it as the literal key would let `{ [origin]: 'https://ok' }` masquerade
 // as a configured allowlist and silence the default-'*' report.
