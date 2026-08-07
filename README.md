@@ -65,6 +65,9 @@ export default [pg.configs.recommended];
 
 ```js
 // app.js
+import { Pool } from 'pg';
+const pool = new Pool();
+
 export async function getUser(id) {
   return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
 }

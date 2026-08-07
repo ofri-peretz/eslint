@@ -90,8 +90,8 @@ Create a fine-grained PAT with `administration: read` + `contents: read` on this
 repo, store it as `SCORECARD_REPO_TOKEN`, re-run the workflow.
 
 ⚠️ **Verify our protection rules score 10 before enabling this.** The check is
-excluded today; turning it on at, say, 6 would _lower_ the aggregate. Per
-[[branch-protection-policy]] `main` requires up-to-date branches, resolved
+excluded today; turning it on at, say, 6 would _lower_ the aggregate. `main`
+already requires up-to-date branches, resolved
 conversations, and linear history, which should land near the top — but confirm on
 a manual run first.
 
@@ -117,7 +117,7 @@ and the `Dockerfile`, and pin the `pip` install in `codecov.yml`.
 ### 7. SAST: 9 → 10 · **+0.06** · a judgement call
 
 CodeQL runs on the T3 promote gate and a weekly cron, deliberately — it costs ~4
-min/run and [[eslint-ci-runner-budget]] says 82% of our CI time is already queue,
+min/run in a repo where roughly 82% of CI wall-clock is already queue,
 not compute. Scorecard wants it on every commit.
 
 **Recommendation: don't.** 0.06 points is not worth adding a 4-minute job to every
@@ -149,11 +149,16 @@ README rewrite and the ecosystem-integration work are for.
 
 ## Projected outcome
 
-| Scenario                                    |    Result |
-| :------------------------------------------ | --------: |
-| Today                                       |   **6.8** |
-| Items 1–6 (no Code-Review, no Contributors) | **≈ 8.9** |
-| …plus Code-Review                           | **≈ 9.7** |
+| Scenario                                    | Numerator | Denominator |    Result |
+| :------------------------------------------ | --------: | ----------: | --------: |
+| Today                                       |     612.5 |          90 |   **6.8** |
+| Items 1–6 (no Code-Review, no Contributors) |       870 |        97.5 | **≈ 8.9** |
+| …plus Code-Review                           |       945 |        97.5 | **≈ 9.7** |
+
+The denominator moves from 90 to 97.5 in rows 2 and 3 because item 4 makes
+Branch-Protection scoreable, adding its weight of 7.5 to both sides. That is
+why enabling it is worth only +0.25 rather than a full 7.5/90 — and why
+enabling it while the check would score badly is actively harmful.
 
 Items 1–6 are roughly two days of work and need no one else's cooperation.
 
@@ -173,4 +178,4 @@ we pursue it; leaving it alone is a legitimate choice.
 ## Also worth fixing (not Scorecard-scored)
 
 - **A withdrawn claim was live on the storefront.** `CLAIMS.md` withdrew "97.6% precision / 100% recall" on 2026-05-13, but the root README still carried it until this rewrite — and `npm run audit:claims` passed, because it greps for the full withdrawn sentence and the README used a paraphrase. The gate needs to match on the _numbers_, not the phrasing.
-- **`SECURITY.md` supported-versions table is wrong.** It claims "1.x supported, < 1.0 unsupported" across a monorepo whose packages range from 0.1.4 to 8.3.5. Replace it with a statement that the latest published minor of each package is supported.
+- **`SECURITY.md` supported-versions table was wrong** — fixed alongside this plan. It claimed "1.x supported, < 1.0 unsupported" across a monorepo whose packages range from 0.1.4 to 8.3.5.
