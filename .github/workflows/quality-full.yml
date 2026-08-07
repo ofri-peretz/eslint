@@ -47,7 +47,19 @@ permissions:
   contents: read
 
 env:
-  TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
+  # No `--filter=...[origin/main]`. It made both Build and Unit Tests report a
+  # green check having executed nothing whenever a PR touched only workflows,
+  # root docs or configs — observed on PR #355:
+  #
+  #   • Packages in scope: //
+  #   • Running test in 1 packages
+  #   WARNING  No tasks were executed as part of this run.
+  #   Tasks:    0 successful, 0 total
+  #
+  # Turbo's own cache already provides the affected-detection speedup: packages
+  # whose inputs are unchanged replay from cache instead of rebuilding. The
+  # filter bought nothing the cache wasn't already giving us, and cost the
+  # correctness of every check that used it.
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
@@ -57,6 +69,11 @@ jobs:
     timeout-minutes: 1
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      shards: ${{ steps.matrix.outputs.shards }}
+      any: ${{ steps.matrix.outputs.any }}
+      heavy: ${{ steps.matrix.outputs.heavy }}
+      build_shards: ${{ steps.build_matrix.outputs.build_shards }}
+      build_any: ${{ steps.build_matrix.outputs.build_any }}
     steps:
       - id: decide
         env:
@@ -81,47 +98,243 @@ jobs:
             echo "::notice::Draft PR without \`run-full-ci\` label — skipping heavy quality gates. Mark ready-for-review or apply the label to promote."
           fi
 
-  test:
-    name: Unit Tests (Turbo)
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      # Compute the shard matrix here, in the job that already exists, so the
+      # test matrix contains only shards that actually have work. Runners are
+      # the scarce resource (measured on PR #356: 4640s queueing vs 1052s
+      # computing, 82%), so spawning ten jobs for a one-package PR would cost
+      # nine runner acquisitions to print "nothing to do".
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        if: steps.decide.outputs.run == 'true'
         with:
-          fetch-depth: 0
+          fetch-depth: 50
+      # Pin Node from .nvmrc before running a .mts file. The runner default is
+      # Node 22, which cannot execute type annotations without
+      # --experimental-strip-types: the step would error, emit no `shards`
+      # output, and every test shard would be skipped while this gate still
+      # reported success — precisely the silent-pass class this workflow exists
+      # to prevent. `install: false` because matrix mode imports only node:
+      # builtins and ./lib, so npm ci would be pure cost.
       - uses: ./.github/actions/setup
-      - name: Run tests via Turbo
-        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
+        if: steps.decide.outputs.run == 'true'
+        with:
+          turbo-cache: "false"
+          install: "false"
+      - id: matrix
+        if: steps.decide.outputs.run == 'true'
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: node scripts/ci-test-shard.mts --matrix 10
 
-  build:
-    name: Build (Turbo)
+      # Same treatment for the build matrix. It was static [1,2,3,4], so on a
+      # PR touching one plugin all four shards acquired a runner, paid ~24s of
+      # checkout+setup, found they owned nothing affected, and exited 0. Warm,
+      # a build shard does 2-8s of real work inside a ~24s job — the overhead
+      # IS the job — so dispatching empty ones is pure waste of the scarce
+      # resource. Measured on a true single-plugin diff: 1 of 4 shards.
+      - id: build_matrix
+        if: steps.decide.outputs.run == 'true'
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: node scripts/ci-build.mts --matrix 4
+
+      # The matrix step is now a single point of failure for the whole test
+      # gate: if it dies, `shards` is empty, every shard's `if` evaluates false,
+      # all of them skip, and the aggregate gate still goes green. That is the
+      # exact silent-pass this workflow was rewritten to eliminate, so assert
+      # the output exists rather than trusting the step's exit code alone.
+      - name: Guard — the shard matrix must have been computed
+        if: steps.decide.outputs.run == 'true'
+        env:
+          SHARDS: ${{ steps.matrix.outputs.shards }}
+          HEAVY: ${{ steps.matrix.outputs.heavy }}
+          BUILD_SHARDS: ${{ steps.build_matrix.outputs.build_shards }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SHARDS" ] || [ -z "$HEAVY" ]; then
+            echo "::error::The shard matrix step produced no output. Every test shard would skip while this gate reported success. Failing instead."
+            exit 1
+          fi
+          if [ -z "$BUILD_SHARDS" ]; then
+            echo "::error::The build shard matrix is empty. scripts/ci-build.mts --matrix did not emit build_shards, so every build shard would silently skip while this gate reported success."
+            exit 1
+          fi
+          echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
+
+  # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
+  # so splitting inside a package would make each shard an uncacheable slice of
+  # the same task and trade one cache hit for N cold runs. Whole-package buckets
+  # keep every `<pkg>#test:coverage` a normal, cacheable Turbo task.
+  #
+  # Runs `test:coverage` so the `thresholds: { lines: 100, ... }` each package
+  # already declares in its vitest.config.mts are enforced on PRs. Previously
+  # only plain `test` ran here, so those thresholds were dead config on every
+  # PR and only took effect in the push-to-main codecov job.
+  # 10 shards is the measured optimum, not a guess. Packages are bucketed
+  # longest-first (LPT) by test-file count, so the longest bucket can never be
+  # smaller than the largest single package: `docs` holds 83 of the repo's 738
+  # test files. Balance by shard count:
+  #
+  #   N=4  max=185 files   N=8  max=93
+  #   N=6  max=123         N=10 max=83  <- equals `docs`, the floor
+  #   N=12/16/20 -> still 83, just with progressively more idle runners
+  #
+  # Going past 10 cannot shorten the critical path; it only adds ~17s-overhead
+  # jobs that finish early. Dropping below 83 means splitting `docs` itself.
+  test:
+    name: Unit Tests + Coverage (${{ matrix.shard }}/10)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # Don't cancel sibling shards on the first failure — one broken package
+      # shouldn't hide the results of the others.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.gate.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        # Enough history for `git merge-base HEAD origin/main` — the affected
+        # filter needs it. Not fetch-depth: 0; a shallow window is plenty and
+        # full history on this repo is real setup cost times ten shards.
+        with:
+          fetch-depth: 50
+      - uses: ./.github/actions/setup
+        with:
+          # Own lineage per shard. Sharing one key made the shards race to save
+          # it on main, so only one shard's outputs were ever banked and the
+          # rest ran cold every time (`Cached: 0 cached, 8 total`).
+          turbo-cache-scope: test-shard-${{ matrix.shard }}
+      - name: Run shard ${{ matrix.shard }} of 10
+        env:
+          # Affected-filter on PRs; run the full battery everywhere else.
+          # A PR's blast radius is knowable from its diff, so most PRs test 1-2
+          # packages instead of 33. main / cron / dispatch have no meaningful
+          # base to diff against and are the backstop, so they run everything.
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
+
+  # Sharded across runners. A single runner running `turbo run build` for 34
+  # packages queues them behind its own 4-vCPU concurrency limit — measured
+  # 230s. Build work has no outlier (no package over 25s), so splitting it is
+  # effective in a way test sharding is not.
+  build:
+    name: Build (${{ matrix.shard }}/4)
+    needs: gate
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.gate.outputs.build_shards) }}
+    # `heavy` is false when the diff touches no package source at all — a
+    # root README, a workflow comment, a .md doc. Nothing those can break is
+    # observable to build/typecheck/portability, and markdown still gets linted
+    # by quality.yml, which is a separate workflow and always runs.
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.build_any == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
+          # 50, not 0. ci-build.mts only needs a merge-base with origin/main,
+          # which the gate and the test shards already resolve at this depth.
+          fetch-depth: 50
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
-      - name: Build via Turbo
-        run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+          # One lineage PER BUILD SHARD. A single `build` scope meant all four
+          # shards raced to save the same key on main — GitHub reserves a cache
+          # key atomically, so the first writer won and the other three were
+          # discarded, banking one shard's outputs per commit. Because shard
+          # assignment is a pure function of the repo (see ci-build.mts), shard
+          # N always holds the same packages, so its lineage is exactly the set
+          # it needs. The `turbo-<os>-build-` restore-key prefix still lets a
+          # shard fall back to any sibling's lineage on a cold start.
+          turbo-cache-scope: build-${{ matrix.shard }}
+      - name: Build via Turbo (affected only)
+        env:
+          # Same affected filter as the test shards; main / cron / dispatch
+          # build everything.
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # The base COMMIT, handed over by the event payload. `origin/main` is
+          # not a ref that exists in a pull_request checkout — actions/checkout
+          # fetches refs/pull/N/merge and nothing else — so merge-base against
+          # it always failed and every PR silently ran the full matrix.
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+          CI_BUILD_SHARD: ${{ matrix.shard }}
+          CI_BUILD_SHARD_TOTAL: "4"
+        run: node scripts/ci-build.mts
+      # Runs here because the artifacts already exist — no extra runner, no
+      # second build, ~5s. Reads the emitted JS for module-scope requires of
+      # packages the manifest does not guarantee are installed. Every package is
+      # built now (the affected filter was removed — see the env block), so this
+      # checks all of them on PRs as well as main.
+      # The exhaustive `npm run verify:published-install` actually installs each
+      # tarball and is ~2.5min — too slow for every push, kept for pre-release.
+      - name: Runtime dependency check (published packages must be requirable)
+        run: npm run verify:runtime-deps
+      # Packaging lock that reads devkit's own dist/. It lives here, not in the
+      # unit suite, so `test` does not have to dependOn `build` — a unit test
+      # should never wait on a compile. Same invariant as the step above,
+      # asserted at the source level.
+      # Only on the shard that actually built devkit — the packaging lock reads
+      # its dist/, which no other shard has.
+      - name: Devkit must not require an optional peer at runtime
+        run: |
+          if grep -q '"@interlace/eslint-devkit"' .ci-built-packages.json; then
+            npm run test:dist --workspace=@interlace/eslint-devkit
+          else
+            echo "devkit not built by shard ${{ matrix.shard }} — checked on the shard that owns it."
+          fi
+      # The detection logic itself is locked: a plausible tidy-up of either the
+      # eager-require pattern or the optional-peer rule silently disarms the gate
+      # above, so both mutations are asserted against.
+      #
+      # `npm run test:scripts` in quality.yml now also covers this file (it runs
+      # the whole scripts/__tests__ directory). Kept here anyway: this step sits
+      # next to the gate it protects, and the duplicate run costs ~5s.
+      - name: Lock the runtime-dependency detection logic
+        if: matrix.shard == 1
+        run: npm run test:runtime-deps
+      # Every rule schema sets additionalProperties: false, so an option that
+      # exists only in the docs aborts the consumer's whole lint run — and
+      # configuring a rule means copying the name out of our documentation.
+      # ~2s, no build needed.
+      - name: Documented rule options must exist in the schema
+        if: matrix.shard == 1
+        run: npm run test:documented-options
 
   typecheck:
     name: Typecheck (whole-graph tsgo)
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
+          # Typecheck reads no git history — it is `tsgo --build` over the
+          # solution plus `tsc --noEmit` for @interlace/ui, both file-based.
+          # A full clone was pure cost.
+          fetch-depth: 1
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: typecheck
+          tsbuildinfo-cache: "true"
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
@@ -132,11 +345,11 @@ jobs:
   portability:
     name: Portability Audit
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.heavy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -156,6 +369,12 @@ jobs:
           R_BUILD: ${{ needs.build.result }}
           R_TYPECHECK: ${{ needs.typecheck.result }}
           R_PORTABILITY: ${{ needs.portability.result }}
+          # Needed to tell a LEGITIMATE skip from a broken one. `heavy` is false
+          # when the diff touches no package source; `any` is false when no
+          # testable package is affected.
+          HEAVY: ${{ needs.gate.outputs.heavy }}
+          ANY: ${{ needs.gate.outputs.any }}
+          BUILD_ANY: ${{ needs.gate.outputs.build_any }}
         run: |
           set -euo pipefail
           icon() {
@@ -168,10 +387,38 @@ jobs:
             esac
           }
 
+          # A skipped job is a PASS only when the gate deliberately skipped it.
+          #
+          # This used to be a flat `[ "$r" = "success" ]`, which meant a
+          # markdown-only PR — where `heavy=false` skips build/typecheck/
+          # portability and `any=false` skips the test shards — hard-FAILED the
+          # required check instead of fast-passing. The skip optimisation was
+          # unusable: skipping the work made the gate red.
+          #
+          # `cancelled` and `failure` are never a pass, and a skip is only
+          # accepted against the gate output that authorised it, so an upstream
+          # failure cascading into a skip is still caught.
           all_pass=true
-          for r in "$R_TEST" "$R_BUILD" "$R_TYPECHECK" "$R_PORTABILITY"; do
-            [ "$r" = "success" ] || all_pass=false
-          done
+          check() { # $1=result $2=allowed-to-be-skipped(true/false) $3=label
+            case "$1" in
+              success) return 0 ;;
+              skipped)
+                if [ "$2" = "true" ]; then
+                  echo "note: $3 skipped by the gate (nothing affected) — counted as pass."
+                  return 0
+                fi
+                echo "::error::$3 was skipped but the gate did not authorise it."
+                return 1 ;;
+              *) return 1 ;;
+            esac
+          }
+          [ "$ANY"   = "true" ] && test_skip_ok=false || test_skip_ok=true
+          [ "$HEAVY" = "true" ] && heavy_skip_ok=false || heavy_skip_ok=true
+          check "$R_TEST"        "$test_skip_ok"  "Unit tests"       || all_pass=false
+          [ "$BUILD_ANY" = "true" ] && build_skip_ok=false || build_skip_ok=true
+          check "$R_BUILD"       "$build_skip_ok" "Build"            || all_pass=false
+          check "$R_TYPECHECK"   "$heavy_skip_ok" "Typecheck"        || all_pass=false
+          check "$R_PORTABILITY" "$heavy_skip_ok" "Rule portability" || all_pass=false
           if $all_pass; then
             header="✅ All heavy quality gates passed"
           else
@@ -183,8 +430,8 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
-            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test\` + coverage thresholds, 10 shards, affected-filtered |"
+            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\`, 4 shards, affected-filtered |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
             echo ""

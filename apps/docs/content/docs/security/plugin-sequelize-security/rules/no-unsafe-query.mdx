@@ -1,0 +1,139 @@
+---
+title: no-unsafe-query
+description: Detects SQL injection in raw Sequelize queries built with string concatenation or template literals
+tags: ['security', 'sequelize', 'orm']
+category: security
+severity: critical
+cwe: CWE-89
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Sequelize, sequelize.query, Sequelize.literal, replacements, bind, ORM
+
+**CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Detects SQL injection in Sequelize's two raw-SQL escapes. This rule is part of [`eslint-plugin-sequelize-security`](https://www.npmjs.com/package/eslint-plugin-sequelize-security).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
+
+## Why this rule exists
+
+An ORM is not a defence against SQL injection — it just narrows the surface to
+the raw escapes. OWASP Juice Shop's two flagship injections are both
+`sequelize.query()` template literals:
+
+```typescript
+// routes/search.ts — full product table disclosure via UNION
+models.sequelize.query(
+  `SELECT * FROM Products WHERE ((name LIKE '%${criteria}%' ...`,
+);
+
+// routes/login.ts — authentication bypass with ' OR 1=1--
+models.sequelize.query(
+  `SELECT * FROM Users WHERE email = '${req.body.email}' ...`,
+);
+```
+
+Both are pinned as test cases in this rule's suite.
+
+## Rule Details
+
+Reports three shapes when they reach a raw-SQL sink:
+
+1. String concatenation — `sequelize.query('SELECT ... ' + value)`
+2. Template interpolation — ``sequelize.query(`SELECT ... ${value}`)``
+3. A variable tainted by either, including via `+=`, then passed to a sink
+
+### Sinks
+
+- `sequelize.query()` — raw SQL execution
+- `Sequelize.literal()` — raw SQL spliced into a builder query, the usual
+  `ORDER BY` / column-name injection
+
+Both names are matched by method name, so `models.sequelize.query(...)` and a
+destructured `literal(...)` assigned to an object property both report. There
+is no SQL-keyword filter: a `literal()` holding nothing but an interpolated
+column name is a real injection, and carries no SQL keyword of its own.
+
+### ❌ Incorrect
+
+```typescript
+// Interpolated raw query
+await sequelize.query(`SELECT * FROM Users WHERE id = ${userId}`);
+
+// Concatenated raw query
+await sequelize.query('DELETE FROM Sessions WHERE token = ' + token);
+
+// ORDER BY injection through literal()
+Product.findAll({ order: Sequelize.literal(`${sortColumn} DESC`) });
+
+// Built up across statements
+let sql = 'SELECT * FROM Products WHERE 1=1';
+sql += ` AND name = '${name}'`;
+await sequelize.query(sql);
+```
+
+### ✅ Correct
+
+```typescript
+// Named replacements
+await sequelize.query('SELECT * FROM Users WHERE id = :id', {
+  replacements: { id: userId },
+});
+
+// Bind parameters (sent to the driver, never interpolated)
+await sequelize.query('SELECT * FROM Users WHERE email = $1', {
+  bind: [email],
+});
+
+// Let the query builder generate the SQL
+await User.findAll({ where: { id: userId } });
+
+// ORDER BY against an allowlist, not user input
+const column = ALLOWED_SORTS.includes(sortColumn) ? sortColumn : 'createdAt';
+Product.findAll({ order: [[column, 'DESC']] });
+```
+
+## Known limitations
+
+- Only identifier member access is matched, so `sequelize['query'](...)` is a
+  false negative.
+- Taint tracking is single-scope and name-based — it does not follow a query
+  string across function boundaries.
+- `Sequelize.literal()` is matched by method name. A same-named method on an
+  unrelated object in a Sequelize codebase would also report.
+
+## When Not To Use It
+
+- In migration or seed files whose SQL is fully static and never sees user
+  input.
+
+## Implementation
+
+The detection is shared across the driver plugins via `createSqlInjectionRule`
+in `@interlace/eslint-devkit`; this rule supplies Sequelize's sinks and
+Sequelize's remediation copy. `pg/no-unsafe-query` is the same detector with
+the pg sink and `$1, $2` guidance — install the one matching your stack and
+you get exactly one finding per line.
+
+## Further Reading
+
+- [Sequelize — Raw queries and replacements](https://sequelize.org/docs/v6/core-concepts/raw-queries/#replacements)
+- [OWASP — SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
+- [CWE-89](https://cwe.mitre.org/data/definitions/89.html)

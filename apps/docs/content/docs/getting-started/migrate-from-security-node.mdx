@@ -16,9 +16,9 @@ This page maps each of its 22 rules to the closest Interlace equivalent, or stat
 
 | Status | Count |
 | :--- | :--- |
-| Direct equivalent | 12 |
+| Direct equivalent | 13 |
 | Partial equivalent (see notes) | 3 |
-| No equivalent — gap | 7 |
+| No equivalent — gap | 6 |
 
 ## Rule-by-rule mapping
 
@@ -27,7 +27,7 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 | `security-node` rule | Status | Interlace equivalent | Notes |
 | :--- | :---: | :--- | :--- |
 | `detect-absence-of-name-option-in-exrpress-session` | ✗ gap | — | No `express-session` rules in `eslint-plugin-express-security`. |
-| `detect-buffer-unsafe-allocation` | ✗ gap | — | Upstream flags `Buffer.allocUnsafe()` only (CWE-908, uninitialized memory). No Interlace rule flags it. `node-security/no-deprecated-buffer` is the adjacent rule but targets the deprecated `Buffer()`/`new Buffer()` constructor — the two do not overlap. |
+| `detect-buffer-unsafe-allocation` | ✓ | [`node-security/no-unsafe-buffer-alloc`](/docs/security/plugin-node-security/rules/no-unsafe-buffer-alloc) | Both flag `Buffer.allocUnsafe()` unconditionally (CWE-908). Ours also covers `Buffer.allocUnsafeSlow()`, exempts `Buffer.allocUnsafe(n).fill(0)`, and offers a `Buffer.alloc` suggestion. Not to be confused with `node-security/no-deprecated-buffer`, which targets the deprecated `Buffer()`/`new Buffer()` constructor (CWE-676). |
 | `detect-child-process` | ✓ | [`node-security/detect-child-process`](/docs/security/plugin-node-security/rules/detect-child-process) | Same rule name. Related: `node-security/no-shell-injection`. |
 | `detect-crlf` | ✗ gap | — | Log forging (CWE-117) via user input in log calls. `secure-coding/no-pii-in-logs` targets PII exposure, not CRLF forging — different concern. |
 | `detect-dangerous-redirects` | ✓ | `express-security/no-user-controlled-redirect` | Flags user-controlled `res.redirect()` arguments. Browser-side counterpart: `browser-security/no-insecure-redirects`. |
@@ -37,13 +37,13 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 | `detect-insecure-randomness` | ✓ | [`node-security/no-math-random-crypto`](/docs/security/plugin-node-security/rules/no-math-random-crypto) | `Math.random()` in security-sensitive contexts. |
 | `detect-non-literal-require-calls` | ✓ | [`node-security/no-unsafe-dynamic-require`](/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | Related: `node-security/no-dynamic-require`. |
 | `detect-nosql-injection` | ✓ | [`mongodb-security/no-operator-injection`](/docs/security/plugin-mongodb-security/rules/no-operator-injection) | Related: `mongodb-security/no-unsafe-where`, `mongodb-security/no-unsafe-query`. |
-| `detect-option-multiplestatements-in-mysql` | ✗ gap | — | No `mysql`/`mysql2` plugin. The SQL plugin (`eslint-plugin-pg`) targets PostgreSQL clients. |
+| `detect-option-multiplestatements-in-mysql` | ✗ gap | — | No `mysql`/`mysql2` plugin. The SQL plugin (`eslint-plugin-postgresql-security`) targets PostgreSQL clients. |
 | `detect-option-rejectunauthorized-in-nodejs-httpsrequest` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `rejectUnauthorized: false` in TLS/HTTPS options. |
 | `detect-option-unsafe-in-serialize-javascript-npm-package` | ✗ gap | — | No rule targets `serialize-javascript`'s `unsafe: true` option. `secure-coding/no-unsafe-deserialization` covers deserialization sinks, not this serialization option. |
 | `detect-possible-timing-attacks` | ✓ | [`node-security/no-timing-unsafe-compare`](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | Related: `secure-coding/no-insecure-comparison`. |
 | `detect-runinthiscontext-method-in-nodes-vm` | ✗ gap | — | No rules for the Node.js `vm` module. |
 | `detect-security-missconfiguration-cookie` | ✓ | [`express-security/no-insecure-cookie-options`](/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | Express cookie flags (`httpOnly`, `secure`, …). Browser-side counterpart: `browser-security/require-cookie-secure-attrs`. |
-| `detect-sql-injection` | ◐ partial | [`pg/no-unsafe-query`](/docs/security/plugin-pg/rules/no-unsafe-query) | Upstream rule flags string-built queries for any SQL client. `eslint-plugin-pg` (`no-unsafe-query`, `check-query-params`) covers PostgreSQL clients; string-built `mysql`/`mysql2` queries are not covered. |
+| `detect-sql-injection` | ◐ partial | [`pg/no-unsafe-query`](/docs/security/plugin-pg/rules/no-unsafe-query) | Upstream rule flags string-built queries for any SQL client. `eslint-plugin-postgresql-security` (`no-unsafe-query`, `check-query-params`) covers PostgreSQL clients; string-built `mysql`/`mysql2` queries are not covered. |
 | `detect-unhandled-async-errors` | ◐ partial | [`reliability/no-unhandled-promise`](/docs/quality/plugin-reliability/rules/no-unhandled-promise) | Equivalent lives in a quality plugin (`eslint-plugin-reliability`), not a security plugin. |
 | `detect-unhandled-event-errors` | ✗ gap | — | No rule requires an `'error'` listener on `EventEmitter` instances. |
 | `disable-ssl-across-node-server` | ✓ | [`node-security/no-self-signed-certs`](/docs/security/plugin-node-security/rules/no-self-signed-certs) | Covers `NODE_TLS_REJECT_UNAUTHORIZED = '0'`. |
@@ -51,13 +51,13 @@ Rule IDs in the first column are the exact keys exported by `security-node` v1.1
 
 ## Config migration
 
-The 12 direct-mapping rules span five plugins. Install the ones your codebase needs:
+The 13 direct-mapping rules span five plugins. Install the ones your codebase needs:
 
 ```bash
 npm install --save-dev eslint-plugin-node-security eslint-plugin-secure-coding eslint-plugin-express-security eslint-plugin-mongodb-security eslint-plugin-browser-security
 ```
 
-Add `eslint-plugin-pg` or `eslint-plugin-reliability` if the partial rows above apply to you.
+Add `eslint-plugin-postgresql-security` or `eslint-plugin-reliability` if the partial rows above apply to you.
 
 <Tabs items={['Before (security-node)', 'After (Interlace)']}>
 <Tab value="Before (security-node)">
@@ -89,9 +89,9 @@ export default [
 
 Still on `.eslintrc`? Do the [flat-config migration](/docs/getting-started/flat-config) first — all Interlace plugins support flat config natively (legacy configs are also exported).
 
-## If you depend on one of the 7 gaps
+## If you depend on one of the 6 gaps
 
 The gaps are listed above exactly as measured; nothing here substitutes for them today. Options:
 
-- Keep `eslint-plugin-security-node` installed **alongside** the Interlace plugins, enabling only its gap rules (`detect-buffer-unsafe-allocation`, `detect-crlf`, `detect-unhandled-event-errors`, `detect-runinthiscontext-method-in-nodes-vm`, `detect-option-multiplestatements-in-mysql`, `detect-option-unsafe-in-serialize-javascript-npm-package`, `detect-absence-of-name-option-in-exrpress-session`). ESLint runs both without conflict; note the upstream package targets ESLint 8-era APIs.
+- Keep `eslint-plugin-security-node` installed **alongside** the Interlace plugins, enabling only its gap rules (`detect-crlf`, `detect-unhandled-event-errors`, `detect-runinthiscontext-method-in-nodes-vm`, `detect-option-multiplestatements-in-mysql`, `detect-option-unsafe-in-serialize-javascript-npm-package`, `detect-absence-of-name-option-in-exrpress-session`). ESLint runs both without conflict; note the upstream package targets ESLint 8-era APIs.
 - [Open an issue](https://github.com/ofri-peretz/eslint/issues) if one of the gaps matters to your codebase — gap reports directly feed rule prioritization.

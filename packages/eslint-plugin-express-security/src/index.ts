@@ -58,6 +58,17 @@ import { noStaticRootExposure } from './rules/no-static-root-exposure';
 import { requireCaseInsensitivePathGuard } from './rules/require-case-insensitive-path-guard';
 import { requireQueryTypeGuard } from './rules/require-query-type-guard';
 
+// Helmet header family (F#26 Express-depth gap) — CWE-693/319/79/348
+import { noDisabledHelmetProtections } from './rules/no-disabled-helmet-protections';
+import { requireStrictTransportSecurity } from './rules/require-strict-transport-security';
+import { noUnsafeCspDirectives } from './rules/no-unsafe-csp-directives';
+import { noPermissiveTrustProxy } from './rules/no-permissive-trust-proxy';
+
+// CWE Top 25 (2025) access-control adjacency — CWE-306/863/639
+import { requireRouteAuthentication } from './rules/require-route-authentication';
+import { noClientControlledAuthorization } from './rules/no-client-controlled-authorization';
+import { noIdorResourceAccess } from './rules/no-idor-resource-access';
+
 /**
  * Collection of all Express security ESLint rules
  */
@@ -101,6 +112,17 @@ export const rules: Record<
   'no-static-root-exposure': noStaticRootExposure,
   'require-case-insensitive-path-guard': requireCaseInsensitivePathGuard,
   'require-query-type-guard': requireQueryTypeGuard,
+
+  // Helmet header family (F#26 Express-depth gap)
+  'no-disabled-helmet-protections': noDisabledHelmetProtections,
+  'require-strict-transport-security': requireStrictTransportSecurity,
+  'no-unsafe-csp-directives': noUnsafeCspDirectives,
+  'no-permissive-trust-proxy': noPermissiveTrustProxy,
+
+  // CWE Top 25 (2025) access-control adjacency
+  'require-route-authentication': requireRouteAuthentication,
+  'no-client-controlled-authorization': noClientControlledAuthorization,
+  'no-idor-resource-access': noIdorResourceAccess,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -109,7 +131,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-express-security',
-    version: '1.4.0',
+    version: '1.5.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -155,6 +177,18 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/no-static-root-exposure': 'error',
   'express-security/require-case-insensitive-path-guard': 'warn',
   'express-security/require-query-type-guard': 'warn',
+
+  // Helmet header family — structural helmet-option shapes, enforcement-grade
+  'express-security/no-disabled-helmet-protections': 'error',
+  'express-security/require-strict-transport-security': 'error',
+  'express-security/no-unsafe-csp-directives': 'error',
+  'express-security/no-permissive-trust-proxy': 'error',
+
+  // Access control — path/property vocabularies drive detection, so these
+  // ship as review-prompt severity per scope audit I3 (naming-heuristic).
+  'express-security/require-route-authentication': 'warn',
+  'express-security/no-client-controlled-authorization': 'warn',
+  'express-security/no-idor-resource-access': 'warn',
 };
 
 /**
@@ -201,6 +235,10 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       'express-security/require-helmet': 'error',
+      'express-security/no-disabled-helmet-protections': 'error',
+      'express-security/require-strict-transport-security': 'error',
+      'express-security/no-unsafe-csp-directives': 'error',
+      'express-security/no-permissive-trust-proxy': 'error',
       'express-security/no-permissive-cors': 'error',
       'express-security/require-csrf-protection': 'error',
       'express-security/no-insecure-cookie-options': 'error',

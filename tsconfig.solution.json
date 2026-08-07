@@ -13,7 +13,7 @@
   // @interlace/ui is intentionally excluded: it is a bundler-resolution React
   // package with no workspace deps and keeps its own `tsc --noEmit` typecheck.
   //
-  // Sync lock: packages/eslint-config-interlace/src/ts7-solution-graph-lock.test.ts
+  // Sync lock: scripts/__tests__/ts7-solution-graph-lock.test.ts
   // asserts this list matches every composite plugin-graph package — add new
   // packages here too.
   "files": [],
@@ -23,7 +23,6 @@
     { "path": "./packages/eslint-plugin-conventions/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-express-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-import-next/tsconfig.lib.json" },
-    { "path": "./packages/eslint-plugin-jwt/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-lambda-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-maintainability/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-modernization/tsconfig.lib.json" },
@@ -32,12 +31,23 @@
     { "path": "./packages/eslint-plugin-nestjs-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-node-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-operability/tsconfig.lib.json" },
-    { "path": "./packages/eslint-plugin-pg/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-react-a11y/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-react-features/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-reliability/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-secure-coding/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-sequelize-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-mysql-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-prisma-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-drizzle-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-knex-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-sqlite-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-typeorm-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json" },
-    { "path": "./packages/eslint-config-interlace/tsconfig.lib.json" }
+    { "path": "./packages/eslint-plugin-mcp-sdk-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-openai-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-anthropic-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-gemini-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" }
   ]
 }

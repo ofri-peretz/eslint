@@ -56,11 +56,27 @@ const ALLOWED_THIRD_PARTY = [
   // Subject of getting-started/migrate-from-security-node.mdx — the
   // migration guide maps its 22 rules (pinned at v1.1.4) to ours.
   'eslint-plugin-security-node',
+  // Cited in the landscape table of
+  // `security/plugin-node-security/rules/no-unsafe-buffer-alloc.mdx`.
+  // The real package is `@microsoft/eslint-plugin-sdl`; the scanner sees
+  // the unscoped tail.
+  'eslint-plugin-sdl',
 
   // === Documentation placeholders ===
   // `eslint-config-mycompany` is the "your shared config" example in
   // `getting-started/configuration.mdx`. Not a real package.
   'eslint-config-mycompany',
+
+  // === Deprecated pre-rename names ===
+  // Renamed to eslint-plugin-postgresql-security / eslint-plugin-jwt-security
+  // and deprecated on npm. Every install and usage reference in the docs was
+  // rewritten to the new names; what survives is the generated `changelog.mdx`
+  // pages, which project each package's CHANGELOG.md and therefore record the
+  // name the release actually shipped under. Rewriting those would make the
+  // history lie. Drop these two entries once the changelogs roll past the
+  // rename.
+  'eslint-plugin-pg',
+  'eslint-plugin-jwt',
 ] as const;
 
 describe('plugin-name drift (eslint content/docs)', () => {

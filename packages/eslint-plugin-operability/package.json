@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-operability",
-  "version": "3.0.11",
+  "version": "3.0.15",
   "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -11,8 +11,8 @@
       "default": "./dist/src/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -51,8 +51,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -60,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-operability"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-operability?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-operability",
@@ -74,10 +73,10 @@
     "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-browser-security",
-  "version": "1.2.9",
+  "version": "1.2.14",
   "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -10,13 +10,9 @@
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
     },
-    "./types": {
-      "types": "./src/types/index.d.ts",
-      "default": "./src/types/index.js"
-    },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -24,7 +20,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-browser-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-browser-security"
   },
   "bugs": {
@@ -80,11 +76,10 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.3"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -98,6 +93,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

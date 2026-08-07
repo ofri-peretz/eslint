@@ -75,3 +75,9 @@ User.findById(id).populate(req.body.populateOptions);
 - [CVE-2025-23061](https://nvd.nist.gov/vuln/detail/CVE-2025-23061)
 - [Mongoose Population](https://mongoosejs.com/docs/populate.html)
 - [CWE-943](https://cwe.mitre.org/data/definitions/943.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

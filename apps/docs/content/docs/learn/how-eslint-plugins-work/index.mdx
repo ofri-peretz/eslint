@@ -231,23 +231,23 @@ A user writes a config:
 
 ```js
 // eslint.config.js
-import secureCoding from '@interlace/eslint-plugin-secure-coding';
+import secureCoding from 'eslint-plugin-secure-coding';
 
 export default [
   {
     plugins: { 'secure-coding': secureCoding },
     rules: {
-      'secure-coding/no-eval': 'error',
+      'secure-coding/no-hardcoded-credentials': 'error',
     },
   },
 ];
 ```
 
-ESLint resolves `secure-coding/no-eval` by:
+ESLint resolves `secure-coding/no-hardcoded-credentials` by:
 
 1. Look up the plugin named `'secure-coding'` in the config's `plugins`
    map → finds the `secureCoding` import.
-2. Look up `'no-eval'` in `secureCoding.rules` → finds the rule module
+2. Look up `'no-hardcoded-credentials'` in `secureCoding.rules` → finds the rule module
    (the `{ meta, create }` object).
 3. Call `create(context)` for each file being linted.
 
@@ -294,7 +294,7 @@ Every assertion above is in the source. The links below let you verify.
 - **The default parser** — [github.com/eslint/espree](https://github.com/eslint/espree) — the parser ESLint ships with. Produces an `ESTree`-shaped AST.
 - **AST shape** — [github.com/estree/estree](https://github.com/estree/estree) — the formal spec for the node-type names you register visitors for (`CallExpression`, `Identifier`, `Program`, …).
 - **AST Explorer** — [astexplorer.net](https://astexplorer.net) — paste any source, see the AST. Indispensable when writing a new rule.
-- **Our flagship rules** — [`.agent/flagship-rules.md`](https://github.com/ofri-peretz/eslint/blob/main/.agent/flagship-rules.md) — the 10 rules this monorepo holds up as exemplars. Read [`packages/eslint-plugin-pg/src/rules/no-unsafe-query/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-pg/src/rules/no-unsafe-query) for a hand-rolled SQL-injection visitor.
+- **Our flagship rules** — [`.agent/flagship-rules.md`](https://github.com/ofri-peretz/eslint/blob/main/.agent/flagship-rules.md) — the 10 rules this monorepo holds up as exemplars. Read [`packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-query/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-query) for a hand-rolled SQL-injection visitor.
 - **Oxlint's JS-plugin contract** — [oxc.rs/docs/guide/usage/linter/writing-js-plugins](https://oxc.rs/docs/guide/usage/linter/writing-js-plugins.html) — the same shape this chapter describes, but with `createOnce(context)` as a more efficient `create(context)` variant. Alpha as of 2026-05.
 
 If a paragraph here didn't earn its keep — tell me. Suggest changes

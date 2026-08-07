@@ -13,7 +13,8 @@
  *     benchVersion:      "1.0",
  *     timestamp:         "2026-05-09T15:34:11.000Z",
  *     toolchain:         { ...standard toolchain block... },
- *     methodologyCommit: "abc1234",            // optional until item 1.5 ships
+ *     methodologyCommit: "abc1234",            // branch SHA — dropped by squash-merge
+ *     methodologyHash:   "sha256:...",         // squash-proof receipt; see lib/methodology.ts
  *     summary: {                               // ≤ 500 bytes — drill via JSON files for full data
  *       f1, precision, recall, msPerFile, tokensO200k, ...
  *     },
@@ -81,6 +82,10 @@ export function appendHistory(result: any, resultPath: string, opts: any = {}) {
     timestamp: result.timestamp ?? new Date().toISOString(),
     toolchain: result.toolchain ?? getToolchain(),
     methodologyCommit: result.methodologyCommit ?? null,
+    // Squash-proof receipt. `methodologyPaths` stays out of the row (it would
+    // blow the 4096B budget) — read it from `resultPath`, which is the file
+    // this hash was computed over.
+    methodologyHash: result.methodologyHash ?? null,
     summary: distillSummary(result),
     resultPath: path.relative(REPO_ROOT_FROM_HERE, path.resolve(resultPath)),
     superseded: false,

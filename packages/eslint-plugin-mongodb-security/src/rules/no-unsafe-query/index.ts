@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { isTestFile } from '../../utils/paths';
 
 type MessageIds = 'unsafeQuery' | 'suggestionUseEq';
 
@@ -202,9 +203,9 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true, additionalMethods = [] } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const inTestFile = isTestFile(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && inTestFile) {
       return {};
     }
 

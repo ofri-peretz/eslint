@@ -56,10 +56,16 @@ sessionStorage.setItem('searchQuery', query);
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalPatterns` | `string[]` | — | Extra key-name patterns to treat as sensitive |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-sensitive-sessionstorage": [
+    "browser-security/no-sensitive-sessionstorage": [
       "error",
       {
         "allowInTests": true,

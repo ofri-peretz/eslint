@@ -1,5 +1,712 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.10.0
+
+### Minor Changes
+
+- [#406](https://github.com/ofri-peretz/eslint/pull/406) [`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - New rule `no-untrusted-content-in-prompt` (CWE-1427) on all three raw inference
+  SDKs, from a shared `createSystemPromptInjectionRule` factory.
+
+  A system prompt is instruction text: whatever is spliced into it is read by the
+  model as instructions rather than as data, so anyone who controls that value
+  controls the agent. The rule reports a system prompt that is not static, in both
+  shapes the raw SDKs use — the named option (`system`, `instructions`,
+  `systemInstruction`) and the `messages: [{ role: 'system', content }]` array.
+
+  A bare identifier counts as static. `system: SYSTEM_PROMPT` is the correct
+  pattern and by far the most common one; following it is the data-flow analysis
+  these rules avoid.
+
+  **`strict` only.** Unlike the credential rules, this one has a genuine
+  false-positive shape — a system prompt interpolating today's date is not an
+  injection and the rule cannot tell the difference. Promotion to `recommended`
+  waits on the corpus measurement.
+
+  Gating is by qualified member path (`messages.create`, `completions.create`,
+  `generateContent`), not by leaf method name. `create` alone is shared across
+  these SDKs, and matching on it made a file importing two of them report one line
+  twice. `vercel-ai-security/no-dynamic-system-prompt` keeps the bare-function
+  `generateText(...)` form, which has no member path at all — verified by linting
+  a file that imports all four SDKs and uses every shape: no line is reported
+  twice.
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+## 1.9.0
+
+### Minor Changes
+
+- [#403](https://github.com/ofri-peretz/eslint/pull/403) [`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-browser-api-key-exposure` now covers the Anthropic SDK too.
+
+  The rule shipped on `eslint-plugin-openai-security` only. Its detection moved
+  into a shared `createBrowserEscapeHatchRule` factory in
+  `@interlace/eslint-devkit`, and `eslint-plugin-anthropic-security` gains the
+  rule at `error` in every preset.
+
+  Both SDKs refuse to run in a browser by default and both unlock it with the
+  same `dangerouslyAllowBrowser` flag; the Anthropic SDK's own JSDoc says
+  client-side use "risks exposing your secret API credentials to attackers".
+
+  **Two instantiations, not three.** Verified against the published tarballs
+  rather than assumed: neither `@google/generative-ai@0.24` nor
+  `@google/genai@2.15` has a browser escape hatch, because neither refuses the
+  browser in the first place. There is no flag to detect and no structural signal
+  a linter can read without knowing whether a file ships to a client, so
+  `eslint-plugin-gemini-security` does not get this rule. Inventing a fuzzy third
+  detection would report correct code.
+
+  OpenAI's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#402](https://github.com/ofri-peretz/eslint/pull/402) [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hardcoded-api-key` now covers all three raw inference SDKs.
+
+  The rule shipped on `eslint-plugin-anthropic-security` only. Its detection moved
+  into a shared `createSdkApiKeyRule` factory in `@interlace/eslint-devkit` and is
+  now instantiated for OpenAI and Gemini as well, at the same severity in every
+  preset — one rule with three module gates rather than three separate ones that
+  could drift.
+
+  Gemini adds a shape the other two do not have: the legacy
+  `new GoogleGenerativeAI(apiKey)` client takes the key as a **positional**
+  argument, with no options object to inspect. Both that and the current
+  `new GoogleGenAI({ apiKey })` form are checked.
+
+  Module matching is exact-or-subpath, not a prefix: `openai` opens the gate for
+  `openai` and `openai/resources`, and deliberately not for `openai-edge`, which
+  is a different package with a different client.
+
+  Anthropic's behaviour and its reported messages are unchanged; only the
+  implementation moved.
+
+- [#386](https://github.com/ofri-peretz/eslint/pull/386) [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-hardcoded-credentials` (CWE-798) to the knex, mysql, Sequelize and
+  TypeORM plugins, via a new shared `createHardcodedCredentialsRule` factory.
+
+  A password in source is a password in git history, in every fork, and in every
+  layer of the built image. Deleting the line later changes nothing — a real fix
+  means rotating the credential _and_ rewriting history, so the only cheap moment
+  is before it lands.
+
+  The detection generalizes what `eslint-plugin-postgresql-security` has shipped
+  for pg, and tightens two false positives in the process:
+
+  - A connection URL is a finding only when it embeds a password. The pg version
+    reports any `postgres://…` literal, including `postgres://localhost:5432/app`,
+    which is safe to commit.
+  - A credential key is a finding only when its value is a non-empty string
+    literal, so `password: ''` (the local trust-auth sentinel) stays silent.
+
+  It also refuses to treat the credential as its own evidence: an object must name
+  somewhere to connect _to_ — `host`, `port`, `database`, `connectionString` —
+  before its `password` counts. Without that, `{ user, password }` makes the login
+  form of every app with a database a finding.
+
+- [#389](https://github.com/ofri-peretz/eslint/pull/389) [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-mass-assignment` (CWE-915) to the five ORM plugins with object writes,
+  via a new shared `createMassAssignmentRule` factory.
+
+  ```ts
+  await prisma.user.update({ where: { id }, data: req.body });
+  await User.create(req.body);
+  await db.insert(users).values({ ...req.body });
+  ```
+
+  Each of those updates the fields the endpoint is about — and every other column
+  on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`, `credits`. None of
+  them appear in the diff, which is why the shape survives review.
+
+  It also gets worse without anyone touching it: adding a sensitive column to a
+  model later silently widens every existing mass-assignment site. No line
+  changes, and the exposure is new.
+
+  Silent by design: a payload that names its fields (`{ name: req.body.name }`) is
+  the fix; an object that merely has a `body` key (`form.body`) is not a request;
+  `ctx.data` is ordinary application state in several frameworks; and a value the
+  rule cannot see through is not guessed at.
+
+  No options, deliberately. An allowlist would let a project re-approve the
+  dangerous shape wholesale, one config file further from the call site.
+
+  mysql2 and better-sqlite3 do not carry this rule — their writes are raw SQL
+  strings, already covered by `no-unsafe-query`.
+
+- [#385](https://github.com/ofri-peretz/eslint/pull/385) [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-raw-identifier-interpolation` (CWE-89) to the Drizzle and Prisma plugins.
+
+  Bind parameters can only ever substitute _values_. When a table name, a column
+  name, or a sort direction is interpolated into a tagged template, the driver has
+  nothing to bind and splices the string in verbatim — inside the API the docs
+  call safe:
+
+  ```ts
+  await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id}`; // parameterized
+  await prisma.$queryRaw`SELECT * FROM ${table}`; // injectable
+  await db.execute(sql`SELECT * FROM users ORDER BY ${column}`); // injectable
+  ```
+
+  This is the shape behind Drizzle's GHSA-gpj5-g38j-94v9, and it is invisible to
+  linters that decide by asking "is this a raw API" — this _is_ the safe API.
+
+  The rule reports only identifier positions, so it never overlaps
+  `no-unsafe-query`, whose sinks are the raw string entry points
+  (`$queryRawUnsafe`, `sql.raw()`). Value holes, string literals,
+  `sql.identifier()` and nested `sql` fragments are all silent. Only Drizzle and
+  Prisma ship a value-parameterizing tagged template, so the other five ORM
+  plugins do not carry this rule.
+
+  New shared factory `createRawIdentifierRule` in `@interlace/eslint-devkit`.
+
+## 1.8.0
+
+### Minor Changes
+
+- [#373](https://github.com/ofri-peretz/eslint/pull/373) [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `require-tls` (CWE-319) to the Knex, mysql2, Sequelize and TypeORM security plugins.
+
+  Reports two distinct failures, because they do not share a remediation:
+
+  - **`tlsDisabled`** — the connection is plaintext (`ssl: false`, `?sslmode=disable`).
+    Every query, every row and the credentials that open the session cross the
+    network in the clear.
+  - **`certificateValidationDisabled`** — `rejectUnauthorized: false` (or
+    `trustServerCertificate: true` on mssql, which inverts the polarity). The
+    traffic is encrypted but the server is never authenticated, so the client
+    completes a handshake just as willingly with whoever answered in the
+    database's place. The fix is to supply the CA, never to switch the check off.
+
+  The detection gate is a _database connection config_ — driver import plus a
+  connection-shaped sibling key — which is what keeps the rule out of
+  `eslint-plugin-node-security`, where a bare `rejectUnauthorized: false` would
+  also match every https agent and fetch option in the repo, and double-report
+  this line from two plugins.
+
+  A value the rule cannot read statically (`ssl: useTls`) is never reported. That
+  is a deliberate false negative in exchange for findings that are always real.
+
+  Not shipped for `prisma-security` (connection config lives in `schema.prisma`,
+  not JavaScript), `drizzle-security` (delegates connection setup to the
+  underlying driver, which its own plugin covers) or `sqlite-security` (a local
+  file, no network to protect).
+
+- [#391](https://github.com/ofri-peretz/eslint/pull/391) [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now follows same-file query helpers
+
+  The rule only ever treated a literal driver method call as a sink. Real
+  codebases do not call `client.query` at every call site — they wrap it once:
+
+  ```ts
+  const q = (sql: string, params: unknown[]) => pool.query(sql, params);
+
+  q(`SELECT * FROM users WHERE id = ${userInput}`, []); // was silent
+  q('SELECT * FROM users WHERE id = ' + userInput, []); // was silent
+  ```
+
+  Both of those are textbook CWE-89 and both went unreported — not because the
+  helper was hard to reach, but because the callee was named `q` instead of
+  `query`. The helper being in the _same file_, three lines above, made no
+  difference. Any project that wraps its driver once, which is most of them, was
+  getting no SQL injection coverage at all from this rule.
+
+  A function whose parameter is handed straight to a driver sink is now itself a
+  sink at that argument position, and calls to it are checked like the driver call
+  they stand for. `function` declarations, arrow functions in a `const`, class
+  methods and object-literal methods are all traced, including when the helper is
+  declared below its call site. Concatenation, interpolation, and a
+  previously-tainted variable passed to the helper all report.
+
+  Findings through a helper require the string to contain SQL keywords, even for
+  instances configured with `requireSqlKeywords: false` (`eslint-plugin-pg`).
+  "This identifier eventually reaches a sink" is weaker evidence than a literal
+  driver call, and without the gate a file that defined any helper over
+  `pool.query` would start reporting unrelated calls like ``log(`hello ${name}`)``.
+  A bare `query(...)` with no member access is likewise never treated as a driver
+  sink — only as a possible helper.
+
+  Parameterized calls through a helper stay silent, which is what
+  [#261](https://github.com/ofri-peretz/eslint/issues/261) asked for:
+  ``q(`SELECT * FROM users WHERE id = $1`, [id])`` interpolates nothing and is
+  safe at any distance.
+
+  Helpers imported from another module are still not traced — that needs type
+  information the rule does not request. This is documented as a known false
+  negative rather than silently missing.
+
+  Affects `no-unsafe-query` in all eight SQL plugins: `pg`, `mysql-security`,
+  `prisma-security`, `drizzle-security`, `knex-security`, `sqlite-security`,
+  `typeorm-security` and `sequelize-security`.
+
+### Patch Changes
+
+- [#377](https://github.com/ofri-peretz/eslint/pull/377) [`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Complete the logo row across every published package.
+
+  The six AI SDK family plugins landed after the logo row shipped, so they had no
+  marks; @interlace/eslint-devkit never had a header row at all. All of them now
+  carry Interlace -> ecosystem -> oxlint -> ESLint (devkit has no ecosystem mark).
+
+  The four AI SDK READMEs are also brought to the canonical structure they were
+  missing: Philosophy, Getting Started, Configuration Presets, Compatibility,
+  Related Plugins, and the 11-column rule table with the type-awareness column.
+
+  README-only change; no rule behaviour is affected. The patch bump is what
+  carries the new README onto npm, which only refreshes a package README on
+  publish.
+
+- [#381](https://github.com/ofri-peretz/eslint/pull/381) [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Declare what we support, load only what we use
+
+  **`tslib` is gone from every package.** It was a NON-optional peer of
+  `@interlace/eslint-devkit`, so all 26 plugins declared it as a dependency to
+  satisfy that peer — 124 kB every consumer installed so twelve
+  `require("tslib")` calls could resolve. The shipped JavaScript now inlines
+  the TypeScript helpers instead (`--importHelpers false` on the emit pass that
+  already re-writes it), costing ~9.5 kB in devkit. Zero `tslib` requires remain
+  anywhere; verified by installing every plugin with no `tslib` in the tree and
+  loading all 26 with every rule intact.
+
+  **`eslint-plugin-import-next` had a phantom dependency.** Its rules
+  `require("typescript")` at module load, but it was declared in neither
+  `dependencies` nor `peerDependencies` — it worked only because something else
+  in the tree happened to install it. A clean install crashed the whole plugin,
+  not just the type-aware rules. `typescript` is now a required peer, which is
+  what the code actually needs.
+
+  **23 "technologies we support" declarations did nothing.** Seven plugins
+  listed their target libraries in `peerDependenciesMeta` with no matching
+  `peerDependencies` entry, and npm ignores meta for a package that is not
+  declared a peer — verified by installing `eslint-plugin-express-security` and
+  watching nothing install and nothing warn. `eslint-plugin-jwt` appeared to
+  support six JWT libraries and formally supported none. All 23 are now real
+  optional peers, matching the convention `pg`, `mongodb`, `prisma` and the
+  other nine already followed:
+
+  | plugin                                                          | technologies now actually declared                                                                    |
+  | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `eslint-plugin-jwt`                                             | jsonwebtoken, @nestjs/jwt, express-jwt, jose, jwks-rsa, jwt-decode                                    |
+  | `eslint-plugin-lambda-security`                                 | @aws-sdk/client-lambda, @middy/core, @middy/http-cors, @middy/http-security-headers, @middy/validator |
+  | `eslint-plugin-express-security`                                | express, helmet, cors, csurf, express-rate-limit                                                      |
+  | `eslint-plugin-nestjs-security`                                 | @nestjs/common, @nestjs/throttler, class-validator, class-transformer                                 |
+  | `eslint-plugin-vercel-ai-security`                              | ai                                                                                                    |
+  | `eslint-plugin-maintainability`, `eslint-plugin-react-features` | typescript                                                                                            |
+
+  All optional, so nothing is installed on the consumer’s behalf — the
+  declaration is the supported-technology signal, which is exactly what it was
+  meant to be.
+
+  **A new gate compares declared dependencies against what the emitted
+  JavaScript actually loads**, in both directions: a `require` with no
+  declaration (works until someone installs cleanly) and a declaration nothing
+  requires (weight every consumer pays). It understands that a dependency may
+  exist to satisfy an optional peer of another dependency, which is why
+  `eslint-plugin-import-next` legitimately declares `oxc-resolver` that devkit
+  lazily loads.
+
+- [#379](https://github.com/ofri-peretz/eslint/pull/379) [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-query` now reports CWE-89 on the template-literal path, not just the concatenation path
+
+  `createSqlInjectionRule` builds two findings for the same vulnerability and picks
+  between them on shape: `noUnsafeQuery` for concatenation, `unsafeTemplateLiteral`
+  for an interpolated template. Only the first carried standards metadata, so a
+  finding like this
+
+  ```js
+  db.query(`SELECT * FROM users WHERE id = ${userInput}`);
+  ```
+
+  was emitted with no CWE, no OWASP category and no compliance tags — while the
+  equivalent `'...' + userInput` reported `CWE-89 OWASP:A03 CVSS:9.8`. Anything
+  grouping findings by CWE (SARIF consumers, security dashboards, our own corpus
+  scoring) therefore counted only half of every SQL injection rule, and the half it
+  missed is the idiomatic modern way to write the bug.
+
+  Both messages now take their CWE from the same `meta.docs.cwe` the rule
+  documents. This affects the `no-unsafe-query` rule in all eight SQL plugins:
+  `pg`, `mysql-security`, `prisma-security`, `drizzle-security`, `knex-security`,
+  `sqlite-security`, `typeorm-security` and `sequelize-security`.
+
+  Detection behaviour is unchanged — the same code reports in the same places, with
+  the same severity. Only the emitted message text gains the standards tokens.
+
+## 1.7.0
+
+### Minor Changes
+
+- [#353](https://github.com/ofri-peretz/eslint/pull/353) [`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add `no-unscoped-mutation` (CWE-284) to the Prisma, Drizzle and Knex plugins
+
+  Every ORM ships a bulk mutation whose _unscoped_ form rewrites or deletes the
+  whole table. `prisma.user.deleteMany()`, `db.delete(users)`, `knex('users').del()`
+  — each one type-checks, passes review, and only shows up once it has run against
+  production data. `eslint-plugin-drizzle`'s entire published surface is this single
+  check for a single ORM; this generalizes it.
+
+  The detection lives in one place, `createUnscopedMutationRule` in
+  `@interlace/eslint-devkit`, and each plugin instantiates it with its own sinks and
+  remediation copy — the same shape `createSqlInjectionRule` already uses. Each
+  plugin declares where its scope lives: an options-object filter for Prisma, a
+  chained `.where*()` for Drizzle and Knex.
+
+  Every instantiation is gated on the driver: the rule is silent in files that
+  never import it, and silent on receivers that do not read as a driver handle.
+  Without that gate, `delete` and `update` would match `map.delete(key)` and
+  `store.update(patch)` — method names alone are not discriminators.
+
+  | Plugin             | Sinks                      | Where scope comes from             |
+  | :----------------- | :------------------------- | :--------------------------------- |
+  | `prisma-security`  | `deleteMany`, `updateMany` | `{ where }` in the options object  |
+  | `drizzle-security` | `delete`, `update`         | a chained `.where()`               |
+  | `knex-security`    | `del`, `delete`, `update`  | any of the chained `where*` family |
+
+  `argumentRole` is the one thing that cannot be inferred from the AST. A lone
+  identifier argument is the _filter_ for Prisma (`deleteMany(opts)`) and the _table_
+  for Drizzle (`db.delete(users)`); reading it wrong either suppresses the headline
+  Drizzle finding or invents a false positive on every dynamically built filter.
+
+  **Not shipped for Sequelize or TypeORM.** Sequelize gives its instance and static
+  forms the same names and both accept an options object, so
+  `user.destroy({ transaction: t })` (one row) and `User.destroy({})` (the whole
+  table) are the same AST. Two false positives surfaced in its test suite, and the
+  rule was withdrawn from that package rather than shipped with them — a rule that
+  fires on correct code is the one users disable. The genuinely detectable case,
+  `destroy({ truncate: true })`, becomes its own rule. TypeORM's bare-criteria shape
+  (`repo.delete({ id })`, with no `where` key) is a third detection shape and is
+  deferred for the same reason.
+
+  Scope that cannot be read statically is treated as present, so the rule stays
+  silent rather than guessing. Ships in `strict` only — promotion to `recommended`
+  and `flagship` waits on a measured false-positive profile against the benchmark
+  corpus.
+
+## 1.6.2
+
+### Patch Changes
+
+- [#341](https://github.com/ofri-peretz/eslint/pull/341) [`a8f5e13`](https://github.com/ofri-peretz/eslint/commit/a8f5e13f3e0ae01ff99d6ca0882dfc624e305d9d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix "Cannot find module '@typescript-eslint/utils'" on a clean install — every
+  published plugin was failing to load.
+
+  `rule-creation/sql-injection-rule.ts` imported `AST_NODE_TYPES` from
+  `@typescript-eslint/utils`. That is an **enum — a runtime value**, so the built
+  output emitted `require("@typescript-eslint/utils")`. But the devkit declares
+  that package as an `optional` peer dependency, which npm does not install. The
+  result: any project doing `npm i -D eslint-plugin-<any>` got a package that threw
+  on `require`.
+
+  Reproduced from nothing:
+
+  ```
+  npm i -D eslint eslint-plugin-mongodb-security
+  node -e "require('eslint-plugin-mongodb-security')"
+  → Error: Cannot find module '@typescript-eslint/utils'
+  ```
+
+  Verified on `nestjs-security`, `secure-coding`, `node-security` and `jwt` too —
+  **all four failed identically**, so this affected the whole published ecosystem.
+
+  The fix keeps the zero-dependency goal intact: `AST_NODE_TYPES` now comes from the
+  local `../ast-node-types` shim that exists for exactly this reason, and
+  `TSESLint` / `TSESTree` become `import type`, which is erased at compile time.
+  No dependency added, no artifact-size regression.
+
+  A lock test asserts the built output contains no runtime `require` of
+  `@typescript-eslint/utils`, so this cannot regress silently again.
+
+## 1.6.1
+
+### Patch Changes
+
+- [#338](https://github.com/ofri-peretz/eslint/pull/338) [`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Re-publish every package so npm carries the optimised artifact
+
+  No source changed. This is a no-op patch whose entire purpose is to ship the
+  artifact the current build already produces.
+
+  **Manifests.** `scripts` and `devDependencies` are now stripped from every
+  published `package.json`. Neither can do anything in a consumer’s
+  node_modules — npm never runs one and never installs the other — but they
+  shipped in all 27 manifests, cluttered the npm page, and were read by SCA
+  tools scanning installed manifests. No package declares a lifecycle hook, so
+  nothing observable changes. Every published package is bumped so this applies
+  uniformly rather than to a subset.
+
+  **Tarballs.** 20 packages were last published before the build pipeline
+  changed and still ship `AGENTS.md`, `CHANGELOG.md`, JSDoc in the emitted
+  `.js`, and the full generated `.d.ts` tree:
+
+  | package                            | published | rebuilt | saving  |
+  | ---------------------------------- | --------- | ------- | ------- |
+  | `eslint-plugin-react-features`     | 547 kB    | 320 kB  | −227 kB |
+  | `eslint-plugin-secure-coding`      | 653 kB    | 477 kB  | −176 kB |
+  | `eslint-plugin-conventions`        | 241 kB    | 116 kB  | −125 kB |
+  | `eslint-plugin-browser-security`   | 380 kB    | 291 kB  | −89 kB  |
+  | `eslint-plugin-maintainability`    | 178 kB    | 116 kB  | −62 kB  |
+  | `eslint-plugin-react-a11y`         | 232 kB    | 173 kB  | −59 kB  |
+  | `eslint-plugin-reliability`        | 148 kB    | 90 kB   | −58 kB  |
+  | `eslint-plugin-vercel-ai-security` | 187 kB    | 130 kB  | −57 kB  |
+  | `eslint-plugin-operability`        | 90 kB     | 43 kB   | −47 kB  |
+  | `eslint-plugin-jwt`                | 140 kB    | 95 kB   | −45 kB  |
+  | `eslint-plugin-modularity`         | 98 kB     | 58 kB   | −40 kB  |
+  | `eslint-plugin-nestjs-security`    | 122 kB    | 86 kB   | −36 kB  |
+  | `eslint-plugin-sqlite-security`    | 54 kB     | 20 kB   | −34 kB  |
+  | `eslint-plugin-sequelize-security` | 54 kB     | 21 kB   | −34 kB  |
+  | `eslint-plugin-prisma-security`    | 52 kB     | 19 kB   | −33 kB  |
+  | `eslint-plugin-mysql-security`     | 52 kB     | 19 kB   | −33 kB  |
+  | `eslint-plugin-typeorm-security`   | 52 kB     | 19 kB   | −33 kB  |
+  | `eslint-plugin-drizzle-security`   | 52 kB     | 19 kB   | −33 kB  |
+  | `eslint-plugin-knex-security`      | 51 kB     | 19 kB   | −32 kB  |
+  | `eslint-plugin-modernization`      | 45 kB     | 38 kB   | −7 kB   |
+
+  Those 20 go from 3428 kB to 2169 kB — **−36.7%**. The remaining
+  7 were released after the pipeline change and only gain the manifest strip.
+
+  A new check in `scripts/check-published-artifacts.ts` fails the build if
+  `scripts` or `devDependencies` ever reappear in a published manifest, so the
+  strip cannot silently regress.
+
+  The dependency ranges did **not** need updating: every plugin pins
+  `@interlace/eslint-devkit` with a caret that 1.6.0 satisfies, verified by a
+  clean install of an unchanged plugin resolving devkit 1.6.0 with zero
+  dependencies and no `typescript` in the tree.
+
+## 1.6.0
+
+### Minor Changes
+
+- [#334](https://github.com/ofri-peretz/eslint/pull/334) [`a5fad9f`](https://github.com/ofri-peretz/eslint/commit/a5fad9f97a5ef5a64c091d5174fec74fbe1e96c3) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Zero runtime dependencies: install 7500 kB → 444 kB, load 242 ms → 13.6 ms
+
+  `@interlace/eslint-devkit` is the infrastructure package every plugin in this
+  ecosystem depends on, so its dependency tree was every plugin's dependency
+  tree — 2 dependencies pulling 22 packages, 5.42 MB as reported by
+  packagephobia, and 433 modules evaluated on every `require`.
+
+  It now declares **no dependencies at all**. A bare install is one package;
+  the tarball is 65.9 kB packed; a cold `require` of the barrel loads 29
+  modules in 13.6 ms instead of 433 in 242 ms — roughly a quarter-second off
+  every ESLint process start, per plugin.
+
+  End to end, on the same fixture and min-of-10 warm: **ESLint 288 → 216 ms
+  (−25%)** and **oxlint 320 → 145 ms (−55%)**. oxlint benefits because it loads
+  these plugins through the JS-plugin shims in `tools/oxlint-plugins/`; against
+  its 68 ms pure-Rust floor, the JS-plugin overhead fell **252 → 77 ms (−69%)**.
+
+  The compiled output only ever made five external `require()` calls. Four were
+  avoidable:
+
+  - **`typescript` (24 MB)** — imported only for `ts.TypeFlags` bitflag
+    constants in `type-utils.ts`. Those values are now inlined, and `typescript`
+    is an optional peer. `src/types/type-flags.test.ts` asserts the inlined
+    table against the real compiler so it cannot silently drift.
+  - **`@typescript-eslint/utils` (~4.5 MB with its tree)** — used at runtime
+    only for `ESLintUtils.RuleCreator` and `AST_NODE_TYPES`. `RuleCreator` is
+    ported in-tree with its full generic signature;
+    `src/rule-creation/rule-creator.parity.test.ts` diffs the port against
+    upstream on every run. Crucially, `utils` declares a _non-optional_
+    `typescript` peer — dropping it as a hard dependency is what actually
+    releases the 24 MB above.
+  - **`@typescript-eslint/types` (144 KB)** — 168 self-mapped strings behind a
+    144 KB package. `AST_NODE_TYPES` is now inlined in `src/ast-node-types.ts`
+    (12 KB), cast to the upstream enum type so the _exported type is unchanged_:
+    a plain `as const` object would break consumers, because TypeScript rejects
+    a string literal where a string-enum member is expected.
+    `src/ast-node-types.test.ts` compares the table to the real enum in both
+    directions, so an upstream addition or rename fails the build instead of
+    silently shipping a node type our rules can never match.
+  - **`oxc-resolver` (~1.5 MB native binary)** — exactly one plugin
+    (`eslint-plugin-import-next`) resolves imports, but all 21 consumers
+    downloaded the binary. It is now an optional peer, loaded lazily on first
+    use rather than at module load; `eslint-plugin-import-next` declares it
+    directly. A missing binary raises `MissingResolverPeerError` with install
+    instructions rather than being swallowed into "this import doesn't resolve".
+
+  Type-only imports from `@typescript-eslint/utils` remain and cost nothing at
+  runtime, so the public type surface is unchanged. No exported symbol was
+  removed or retyped; `turbo build` across all 22 workspace packages, 43/43 test
+  tasks, and the oxlint-parity benchmark (100%) all pass unchanged, and a
+  packed plugin lints correctly in a project with no `@typescript-eslint`
+  scope, no `typescript`, and no `oxc-resolver` installed.
+
+  Two further reductions were measured and rejected as bad trades: lazy-loading
+  the resolver and ARIA subtrees (~8 ms of the 13.6 ms load, but it moves cost
+  onto `eslint-plugin-import-next`'s per-import hot path), and dropping `tslib`
+  via `importHelpers: false` (+8 KB of emitted JS to shed a peer every plugin
+  declares anyway).
+
+  **Every package also stops shipping dead bytes** — 1.5 MB across the
+  ecosystem, 5539.4 kB → 3546 kB unpacked (−36.0%), with no consumer-visible
+  change. `scripts/build-package.ts` owns all five exclusions:
+
+  - **Source maps** (322 kB, 93 files). `tsconfig.base.json` sets
+    `sourceMap: true` and only eslint-devkit opted out. Every published map was
+    dead on arrival: `.npmignore` strips `*.ts`, so each pointed at a source
+    file absent from the tarball. They are now deleted outright rather than
+    filtered at pack time — a map is only useful beside the source it maps to,
+    and the comment-strip pass below rewrites the `.js` anyway, so a retained
+    map would be stale as well as unpublishable.
+  - **`AGENTS.md`** (48 kB, 12 packages). Contributor docs — "context for AI
+    coding agents _working on_ \<pkg\>", with monorepo-root install steps and
+    `nx` commands this repo no longer uses.
+  - **JSDoc in emitted `.js`** (571 kB, 17% of all shipped JavaScript). Nobody
+    reads comments in `node_modules/**/dist/*.js`; the `.d.ts` comments, which
+    editors _do_ surface on hover, are untouched. `removeComments` can't just be
+    switched on — it strips `.d.ts` docs too (devkit's declarations drop
+    98 kB → 31 kB and every hover doc vanishes), and a second in-place pass is
+    rejected on composite projects and clobbers the good `.d.ts`. So the build
+    re-emits to a scratch dir and copies back only the `.js`. Same compiler,
+    same input, output identical apart from comments. Costs ~1.5 s per package
+    on a cold build (turbo caches it) and does **not** change load time — V8
+    skips comments cheaply (measured 16.15 → 16.01 ms); this is a size win only. Per-file MIT headers go
+    with the comments; `LICENSE` still ships at every package root.
+
+  - **Generated declarations for the plugins** (595 kB). A plugin is consumed by
+    ESLint at runtime, not imported as a typed library, but tsc still inlined
+    every inferred rule-option type into the entry declaration —
+    `eslint-plugin-import-next` shipped a 166 kB `index.d.ts`. They can't just
+    be deleted: a TypeScript flat config does
+    `import plugin from 'eslint-plugin-foo'`, which is TS7016 with no
+    declaration (verified). So the entry declarations are replaced by a ~350-byte
+    hand-written one typing the plugin object shape — all a config file touches.
+    `src/types/**` is preserved verbatim, because 14 plugins expose it as a
+    public `./types` subpath that consumers really do import. Only
+    `eslint-plugin-*` is pruned; `@interlace/eslint-devkit` is a real library
+    whose declarations are the product.
+
+  - **`CHANGELOG.md`** (225 kB, 6% of everything shipped). The one component
+    that grows with every release forever, so its share only rises. npm does not
+    render it on the package page — the history stays on GitHub, in npm's
+    "Versions" tab, and in the changesets release notes. `README.md` is kept: it
+    IS the npm package page.
+
+  `scripts/check-published-artifacts.ts` (new, wired into `pre-push`,
+  `npm run quality`, and the release workflow's pre-publish stage) fails the
+  build if any of these comes back, and also locks the discoverability metadata
+  npm search and quality scorers read. It runs on the exact artifact the release
+  job publishes — locally, any `tsc --build` over the solution (e.g.
+  `npm run typecheck`) re-emits into `dist/` and undoes the post-processing; a
+  rebuild restores it, and the gate catches it either way.
+
+  `scripts/check-artifact-size.ts` (new) reports per-package size against a
+  committed baseline (`.agent/artifact-size-baseline.json`). It is **advisory —
+  it never blocks**, because bundles legitimately grow and a hard cap would just
+  get raised until it meant nothing. The point is that growth becomes a noticed
+  decision rather than a surprise found later on npm. `--update` refreshes the
+  baseline; `--strict` exits non-zero for a deliberate audit.
+
+  Every before/after pair above was measured on the SAME codebase — `origin/main`
+  at 8172db04 built in one worktree, this branch in another — min-of-10 warm runs
+  on Node 24. Earlier figures in this changeset came from a stale branch and were
+  restated on 2026-08-03.
+
+  **Migration.** With npm 7+ these are auto-installed as peers where a real
+  dependency exists, so most consumers need no change. If you use a strict
+  package manager (pnpm without hoisting, or `--legacy-peer-deps`) and hit a
+  missing module, install it explicitly:
+
+  - type-aware rules → `typescript`
+  - `eslint-plugin-import-next` → `oxc-resolver` (now declared for you)
+
+  Marked `minor`, not `major`. The API is unchanged — no exported symbol was
+  removed or retyped — and with npm 7+ the three ex-dependencies are auto-installed
+  as peers wherever a real dependency exists. The honest caveat: a strict package
+  manager (pnpm without hoisting, or `--legacy-peer-deps`) will now need them
+  declared explicitly, which is the one respect in which this is a bigger change
+  than the version implies. Dependents pin `^1.4.4`, which already satisfies
+  1.5.0, so consumers pick up the slim infrastructure on their next install
+  without a range rewrite.
+
+### Patch Changes
+
+- [#328](https://github.com/ofri-peretz/eslint/pull/328) [`0231140`](https://github.com/ofri-peretz/eslint/commit/023114046b2844d3daab88f40293bddd75519fe3) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Eliminate the false-positive storm on real MongoDB/Mongoose codebases.
+
+  A dry run against mikemajesty/nestjs-microservice-boilerplate-api (393★,
+  NestJS 11 + Mongoose, 253 files) produced 145 findings under `recommended`,
+  138 of which were false positives. Method names alone were doing all the work:
+  `find` is also `Array.prototype.find`, `connect` is also a Redis client and a
+  TypeORM query runner, and `findOne`/`updateOne` are the vocabulary of every
+  generic repository wrapper ever written.
+
+  | Rule                         | Before  | After  |
+  | ---------------------------- | ------- | ------ |
+  | `no-select-sensitive-fields` | 80      | 0      |
+  | `no-unbounded-find`          | 41      | 8      |
+  | `no-bypass-middleware`       | 11      | 6      |
+  | `require-auth-mechanism`     | 7       | 0      |
+  | `require-tls-connection`     | 2       | 0      |
+  | **total**                    | **145** | **18** |
+
+  The remaining 18 are all real Mongoose model calls in one repository file.
+
+  New shared `utils/receiver.ts` answers, once per file, whether a call's
+  _receiver_ is plausibly MongoDB — a PascalCase model identifier, a
+  `model`/`collection`/`db` name, a `db.collection(...)` chain, or a value bound
+  to a `mongodb`/`mongoose` import. Connection rules are stricter still:
+  `client`/`connection` earn no benefit of the doubt, since they are just as
+  likely Redis or Postgres.
+
+  `no-select-sensitive-fields` additionally requires evidence that a sensitive
+  field exists before claiming one is exposed — either the query names it
+  (`.select('password')`, `{ projection: { password: 1 } }`) or a sensitive
+  field name is visible in the file. The new `requireVisibleSensitiveField`
+  option (default `true`) restores the old behaviour for codebases whose schemas
+  live outside the files that query them.
+
+  `allowInTests` now recognises `test/`, `tests/`, `__tests__/`, `__mocks__/`,
+  `e2e/` and `fixtures/` directories, not only a `*.test.ts` suffix — a
+  testcontainers helper is not a production connection.
+
+  Every fix ships a regression fixture taken from the real scan alongside a
+  true-positive test, so no rule goes inert.
+
+- [#320](https://github.com/ofri-peretz/eslint/pull/320) [`4cc62d6`](https://github.com/ofri-peretz/eslint/commit/4cc62d63908f91a7c54addadf21678c46c2bcc19) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - **`no-cycle` no longer crashes on deep import chains.** Tarjan's SCC pass recursed once per graph node, so a chain deeper than the JS call stack threw `RangeError: Maximum call stack size exceeded` — and since the rule defaults to unlimited traversal depth, nothing capped the descent. ESLint exited 2 with no results at all: not a slow lint, no lint. Observed at file 4,974 of a 5,000-node chain on Node 24.
+
+  The traversal now runs on an explicit frame stack. Traversal order and every write to the Tarjan state are unchanged, so the components produced are identical; depth is bounded by heap rather than by the call stack. `eslint-plugin-import` has the same defect in its own `lib/scc.js` and still crashes on the same input.
+
+  Chains reach these depths through generated API clients, nested barrel files, and long `export … from` ladders — depth accumulates through re-export edges, which is exactly what the rule follows. Reproduce with `node benchmarks/scripts/repro-deep-chain.mjs 6000`.
+
+## 1.5.0
+
+### Minor Changes
+
+Extract the raw-SQL-injection detector (CWE-89) into
+`@interlace/eslint-devkit` as `createSqlInjectionRule`, so every driver plugin
+can instantiate it with its own sinks and remediation copy.
+
+Background: scanning OWASP Juice Shop with the recommended presets of
+`secure-coding`, `node-security`, `express-security` and `mongodb-security`
+produced zero findings on its two flagship SQL injections
+(`routes/search.ts`, `routes/login.ts` — both `sequelize.query()` template
+literals). The detection was never the problem: `pg/no-unsafe-query` matches
+any `.query()` member call and flags both correctly. The problem is
+distribution — nobody on Sequelize installs the Postgres plugin.
+
+The factory takes the sink list, a SQL-keyword precision gate, and the
+remediation copy, which is everything that actually differs between drivers.
+`pg/no-unsafe-query` is now an instantiation of it: same rule id, message
+ids, sink and behaviour, and all 28 pre-existing rule tests pass untouched.
+
+Also raises the timeout on the `no-deprecated-plugin-references` guard in
+devkit. Both layers shell out to a repo-wide `grep`, which cannot finish
+inside vitest's 5s default once the suite has enough test files running in
+parallel — it failed as a timeout, not a violation.
+
+Driver-scoped plugins that instantiate the factory ship separately.
+
+## 1.4.4
+
+### Patch Changes
+
+- [#302](https://github.com/ofri-peretz/eslint/pull/302) [`09d2951`](https://github.com/ofri-peretz/eslint/commit/09d2951b3ac74efc9ba49b64e9089d66800b16cc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Add the Interlace OG banner to the README, so the npm page matches every
+  published plugin in the ecosystem. devkit was the only published package
+  carrying the closing Interlace mark but no banner. README-only change — no
+  runtime, API, or type surface is affected; the release exists to get the
+  updated README onto npm, where it is baked in at publish time.
+
 ## 1.4.3
 
 ### Patch Changes

@@ -17,7 +17,7 @@ ESLint Rule: no-insecure-redirects
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 
@@ -99,7 +99,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'secure-coding/no-insecure-redirects': 'error',
+      'browser-security/no-insecure-redirects': 'error',
     },
   },
 ];
@@ -158,3 +158,10 @@ obj[method](userInput);
 
 - **[OWASP Unvalidated Redirects Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html)** - Protection guide
 - **[CWE-601: URL Redirection to Untrusted Site](https://cwe.mitre.org/data/definitions/601.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ignoreInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowedDomains` | `string[]` | `[]` | Redirect target domains treated as safe |

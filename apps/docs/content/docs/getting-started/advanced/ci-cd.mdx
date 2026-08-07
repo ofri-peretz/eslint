@@ -130,19 +130,21 @@ Configure different behaviors per severity:
 
 ```js title="eslint.config.js"
 import secureCoding from 'eslint-plugin-secure-coding';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 import nodeSecurity from 'eslint-plugin-node-security';
 import browserSecurity from 'eslint-plugin-browser-security';
+import pg from 'eslint-plugin-postgresql-security';
 
 export default [
   secureCoding.configs.recommended,
   jwt.configs.recommended,
   nodeSecurity.configs.recommended,
   browserSecurity.configs.recommended,
+  pg.configs.recommended,
   {
     rules: {
       // Critical (CVSS 9+): Always error
-      'secure-coding/no-sql-injection': 'error',
+      'pg/no-unsafe-query': 'error',
       'jwt/no-hardcoded-secret': 'error',
 
       // High (CVSS 7-8.9): Error in CI, warn locally

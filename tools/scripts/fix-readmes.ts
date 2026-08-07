@@ -58,8 +58,18 @@ const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
     'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
     'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
-    'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
-    'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    // jwt / pg are the deprecated pre-rename names. They keep their entries so
+    // the generator can still regenerate their READMEs while the deprecation
+    // ages out; the -security names below are the ones that ship.
+    'eslint-plugin-jwt-security': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
+    'eslint-plugin-postgresql-security': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    'eslint-plugin-sequelize-security': 'Security rules for the Sequelize ORM (SQL injection prevention in raw queries).',
+    'eslint-plugin-mysql-security': 'Security rules for mysql2 / mysql (SQL injection prevention in raw queries).',
+    'eslint-plugin-prisma-security': 'Security rules for @prisma/client (SQL injection prevention in raw queries).',
+    'eslint-plugin-drizzle-security': 'Security rules for drizzle-orm (SQL injection prevention in raw queries).',
+    'eslint-plugin-knex-security': 'Security rules for knex (SQL injection prevention in raw queries).',
+    'eslint-plugin-sqlite-security': 'Security rules for better-sqlite3 / sqlite3 (SQL injection prevention in raw queries).',
+    'eslint-plugin-typeorm-security': 'Security rules for typeorm (SQL injection prevention in raw queries).',
     'eslint-plugin-browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
     'eslint-plugin-lambda-security': 'Security best practices for AWS Lambda functions (IAM, timeouts, environment).',
     'eslint-plugin-secure-coding': 'General secure coding practices and OWASP compliance for JavaScript/TypeScript.',
@@ -115,9 +125,9 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | Plugin | Downloads | Description |
 | :--- | :---: | :--- |
 | [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-postgresql-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | PostgreSQL security & best practices. |
 | [\`eslint-plugin-node-security\`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
-| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt-security) | JWT security & best practices. |
 | [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
 | [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
 | [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |

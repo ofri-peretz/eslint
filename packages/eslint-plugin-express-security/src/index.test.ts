@@ -30,9 +30,18 @@ describe('eslint-plugin-express-security plugin interface', () => {
         'no-missing-security-headers',
         // Open redirect (structural CWE-601)
         'no-user-controlled-redirect',
+        // Helmet header family (F#26 Express-depth gap)
+        'no-disabled-helmet-protections',
+        'require-strict-transport-security',
+        'no-unsafe-csp-directives',
+        'no-permissive-trust-proxy',
+        // CWE Top 25 access-control adjacency
+        'require-route-authentication',
+        'no-client-controlled-authorization',
+        'no-idor-resource-access',
       ]),
     );
-    expect(ruleKeys.length).toBe(21);
+    expect(ruleKeys.length).toBe(28);
   });
 
   describe('configurations', () => {
@@ -90,7 +99,7 @@ import * as typeExports from './types';
 describe('oxlint sub-export', () => {
   it('exposes the plugin object directly (module.exports = plugin)', () => {
     expect(oxlint).toBe(plugin);
-    expect(Object.keys(oxlint.rules || {})).toHaveLength(21);
+    expect(Object.keys(oxlint.rules || {})).toHaveLength(28);
   });
 });
 

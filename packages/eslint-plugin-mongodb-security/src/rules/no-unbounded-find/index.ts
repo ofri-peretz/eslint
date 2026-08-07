@@ -11,6 +11,8 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isTestFile } from '../../utils/paths';
+import { analyzeMongoScope } from '../../utils/receiver';
 
 type MessageIds = 'unboundedFind' | 'suggestionAddLimit';
 export interface Options { allowInTests?: boolean; }
@@ -52,11 +54,13 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const inTestFile = isTestFile(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && inTestFile) {
       return {};
     }
+
+    const mongo = analyzeMongoScope(context.sourceCode.ast);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -69,6 +73,12 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           : null;
 
         if (!methodName || !FIND_METHODS.has(methodName)) {
+          return;
+        }
+
+        // `Array.prototype.find` outnumbers Mongo `find()` in most codebases.
+        // Only a model/collection receiver can exhaust a database.
+        if (!mongo.isModelReceiver(node)) {
           return;
         }
 

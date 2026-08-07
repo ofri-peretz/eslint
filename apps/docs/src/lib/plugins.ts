@@ -38,7 +38,7 @@ export interface PluginEntry {
 }
 
 /**
- * Canonical 19-plugin registry. Order doesn't matter for correctness; alphabetical
+ * Canonical 20-plugin registry. Order doesn't matter for correctness; alphabetical
  * within each pillar keeps the changelog tables and registries deterministic.
  */
 export const PLUGINS: PluginEntry[] = [
@@ -57,7 +57,7 @@ export const PLUGINS: PluginEntry[] = [
   },
   {
     slug: 'jwt',
-    package: 'eslint-plugin-jwt',
+    package: 'eslint-plugin-jwt-security',
     pillar: 'security',
     description: 'Token security',
   },
@@ -87,7 +87,7 @@ export const PLUGINS: PluginEntry[] = [
   },
   {
     slug: 'pg',
-    package: 'eslint-plugin-pg',
+    package: 'eslint-plugin-postgresql-security',
     pillar: 'security',
     description: 'PostgreSQL security',
   },
@@ -96,6 +96,48 @@ export const PLUGINS: PluginEntry[] = [
     package: 'eslint-plugin-secure-coding',
     pillar: 'security',
     description: 'Injection prevention',
+  },
+  {
+    slug: 'mysql-security',
+    package: 'eslint-plugin-mysql-security',
+    pillar: 'security',
+    description: 'MySQL security',
+  },
+  {
+    slug: 'prisma-security',
+    package: 'eslint-plugin-prisma-security',
+    pillar: 'security',
+    description: 'Prisma security',
+  },
+  {
+    slug: 'drizzle-security',
+    package: 'eslint-plugin-drizzle-security',
+    pillar: 'security',
+    description: 'Drizzle security',
+  },
+  {
+    slug: 'knex-security',
+    package: 'eslint-plugin-knex-security',
+    pillar: 'security',
+    description: 'Knex security',
+  },
+  {
+    slug: 'sqlite-security',
+    package: 'eslint-plugin-sqlite-security',
+    pillar: 'security',
+    description: 'SQLite security',
+  },
+  {
+    slug: 'typeorm-security',
+    package: 'eslint-plugin-typeorm-security',
+    pillar: 'security',
+    description: 'TypeORM security',
+  },
+  {
+    slug: 'sequelize-security',
+    package: 'eslint-plugin-sequelize-security',
+    pillar: 'security',
+    description: 'Sequelize ORM security',
   },
   {
     slug: 'vercel-ai-security',

@@ -84,6 +84,12 @@ User.find({ email: { $eq: email } });
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalMethods` | `string[]` | `[]` | Additional method names to check |
+
+
 ```json
 {
   "rules": {

@@ -2,9 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": [
-    "tsconfig.base.json",
+    ".markdownlint.json",
     ".oxlintrc.json",
-    ".markdownlint.json"
+    "scripts/build-package.ts",
+    "scripts/lib/**",
+    "tsconfig.base.json"
   ],
   "tasks": {
     "build": {
@@ -15,61 +17,89 @@
         "tsconfig.lib.json",
         "package.json",
         "README.md",
-        "CHANGELOG.md",
         "LICENSE",
-        "AGENTS.md",
         ".npmignore"
       ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**"
-      ]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "docs#test": {
+      "dependsOn": ["^build"]
+    },
+    "docs#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-conventions#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modernization#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-modularity#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-operability#test:coverage": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test": {
+      "dependsOn": ["^build"]
+    },
+    "eslint-plugin-reliability#test:coverage": {
+      "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.lib.json",
-        "tsconfig.spec.json",
-        "vitest.config.mts",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "package.json"
-      ],
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.lib.json",
-        "tsconfig.spec.json",
-        "vitest.config.mts",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "package.json"
-      ],
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },
     "lint": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", ".oxlintrc.json", ".eslintrc.*", "eslint.config.*", "package.json"],
+      "inputs": [
+        "src/**",
+        ".oxlintrc.json",
+        ".eslintrc.*",
+        "eslint.config.*",
+        "package.json"
+      ],
       "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "tsconfig.json", "tsconfig.lib.json", "package.json"],
-      "outputs": []
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "package.json"
+      ],
+      "outputs": [".tsbuildinfo"]
     },
     "//#oxlint": {
       "inputs": [".oxlintrc.json", "packages/**/src/**"],
       "outputs": []
     },
     "//#lint:md": {
-      "inputs": [".markdownlint.json", "**/*.md", "!node_modules/**", "!**/dist/**"],
+      "inputs": [
+        ".markdownlint.json",
+        "**/*.md",
+        "!node_modules/**",
+        "!**/dist/**"
+      ],
       "outputs": []
     },
     "dev": {

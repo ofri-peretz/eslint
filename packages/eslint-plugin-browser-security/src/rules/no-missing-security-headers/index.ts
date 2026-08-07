@@ -166,7 +166,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
           requiredHeaders: {
             type: 'array',
             items: { type: 'string' },
-            default: DEFAULT_REQUIRED_HEADERS,
+            default: DEFAULT_REQUIRED_HEADERS, description: 'Security headers a response must set'
           },
           ignoreInTests: {
             type: 'boolean',

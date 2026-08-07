@@ -116,10 +116,6 @@
       "types": "./dist/primitives/breadcrumb.d.ts",
       "default": "./dist/primitives/breadcrumb.js"
     },
-    "./breadcrumb": {
-      "types": "./dist/primitives/breadcrumb.d.ts",
-      "default": "./dist/primitives/breadcrumb.js"
-    },
     "./avatar": {
       "types": "./dist/primitives/avatar.d.ts",
       "default": "./dist/primitives/avatar.js"
@@ -127,10 +123,6 @@
     "./skeleton": {
       "types": "./dist/primitives/skeleton.d.ts",
       "default": "./dist/primitives/skeleton.js"
-    },
-    "./progress": {
-      "types": "./dist/primitives/progress.d.ts",
-      "default": "./dist/primitives/progress.js"
     },
     "./progress": {
       "types": "./dist/primitives/progress.d.ts",
@@ -237,6 +229,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.lib.json && node scripts/preserve-use-client.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "clean": "rm -rf dist tsconfig.lib.tsbuildinfo"
   },
   "peerDependencies": {

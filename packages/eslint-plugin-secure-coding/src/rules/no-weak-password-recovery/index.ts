@@ -216,22 +216,22 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           minTokenEntropy: {
             type: 'number',
             minimum: 64,
-            default: 128,
+            default: 128, description: 'Minimum recovery-token entropy in bits'
           },
           maxTokenLifetimeHours: {
             type: 'number',
             minimum: 0.25,
-            default: 1,
+            default: 1, description: 'Maximum recovery-token lifetime in hours'
           },
           recoveryKeywords: {
             type: 'array',
             items: { type: 'string' },
-            default: ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'],
+            default: ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'], description: 'Identifier keywords that mark password-recovery code'
           },
           secureTokenFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
+            default: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'], description: 'Functions that generate cryptographically secure tokens'
           },
           trustedSanitizers: {
             type: 'array',

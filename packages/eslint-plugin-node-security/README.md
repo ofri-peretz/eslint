@@ -1,7 +1,11 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://nodejs.org" target="_blank"><img src="https://eslint.interlace.tools/logos/node.svg" alt="Node.js" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -58,7 +62,7 @@ npm install eslint-plugin-node-security --save-dev
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
@@ -93,6 +97,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-data-in-temp-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-data-in-temp-storage?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-312 |  |  | Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected | 🟢 |  |  |  |  |  |
 | [no-deprecated-buffer](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-buffer?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-676 |  |  | Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call. | 🟢 |  |  |  | 💡 |  |
 | [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-cipher-method?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow deprecated crypto.createCipher/createDecipher methods | 🟢 |  |  |  |  |  |
+| [no-dynamic-command-string](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-command-string?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-77 | A03:2021 |  | Detects dynamically assembled command strings handed to a shell flag (bash -c) or to a command-runner that… | 🟢 |  |  |  |  |  |
 | [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-1104 |  |  | This rule detects dynamically constructed paths in require() and import() statements | 🟢 |  |  |  |  |  |
 | [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) |  |  |  | Forbid require() calls with non-literal arguments | 🟢 |  |  |  |  |  |
 | [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow ECB encryption mode (use GCM or CBC instead) | 🟢 |  |  |  |  |  |
@@ -105,6 +110,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-static-iv](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-static-iv?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-329 | A02:2021 |  | Disallow static or hardcoded initialization vectors (IVs) | 🟢 |  |  |  |  |  |
 | [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-timing-unsafe-compare?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-208 | A02:2021 |  | Disallow timing-unsafe comparison of secrets | 🟢 |  |  |  |  |  |
 | [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-367 | A01:2021 |  | Detects Time-of-Check-Time-of-Use (TOCTOU) race condition vulnerabilities in file system operations. | 🟢 |  |  |  |  |  |
+| [no-unsafe-buffer-alloc](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-buffer-alloc?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-908 | A01:2021 |  | Disallow `Buffer.allocUnsafe()` and `Buffer.allocUnsafeSlow()`, which return uninitialized memory. | 🟢 |  |  |  | 💡 |  |
 | [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-494 |  |  | Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities | 🟢 |  |  |  |  |  |
 | [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish, RC2, IDEA) | 🟢 |  |  |  |  |  |
 | [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Disallow weak hash algorithms (MD5, MD4, SHA-1, RIPEMD) | 🟢 |  |  |  |  |  |

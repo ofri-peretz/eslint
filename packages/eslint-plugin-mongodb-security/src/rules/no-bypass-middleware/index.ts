@@ -11,6 +11,8 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isTestFile } from '../../utils/paths';
+import { analyzeMongoScope } from '../../utils/receiver';
 
 type MessageIds = 'bypassMiddleware';
 export interface Options { allowInTests?: boolean; }
@@ -52,11 +54,13 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const inTestFile = isTestFile(filename);
 
-    if (allowInTests && isTestFile) {
+    if (allowInTests && inTestFile) {
       return {};
     }
+
+    const mongo = analyzeMongoScope(context.sourceCode.ast);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -68,7 +72,10 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (methodName && BYPASS_METHODS.has(methodName)) {
+        // `updateOne`/`findOneAndDelete` are also the vocabulary of every
+        // generic repository wrapper. Only a Mongoose model has middleware to
+        // bypass in the first place.
+        if (methodName && BYPASS_METHODS.has(methodName) && mongo.isModelReceiver(node)) {
           context.report({
             node,
             messageId: 'bypassMiddleware',

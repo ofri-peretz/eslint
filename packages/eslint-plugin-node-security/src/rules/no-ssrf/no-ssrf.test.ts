@@ -23,6 +23,7 @@ describe('no-ssrf', () => {
         // Literal URLs — always safe
         { code: 'fetch("https://api.example.com/data");' },
         { code: 'axios.get("https://api.stripe.com/charges");' },
+        { code: 'needle.get("https://api.example.com/data");' },
         // Template literal without expressions — safe
         { code: 'fetch(`https://api.example.com/data`);' },
         // Non-HTTP calls — not relevant
@@ -53,6 +54,11 @@ describe('no-ssrf', () => {
         // axios.get with user-controlled endpoint
         {
           code: 'axios.get(endpoint);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // needle.get with user-controlled endpoint
+        {
+          code: 'needle.get(req.query.url);',
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // axios.post

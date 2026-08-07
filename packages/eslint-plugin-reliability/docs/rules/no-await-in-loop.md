@@ -139,7 +139,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'architecture/no-await-in-loop': 'warn'
+    'reliability/no-await-in-loop': 'warn'
   }
 }
 ```
@@ -149,7 +149,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'architecture/no-await-in-loop': ['warn', {
+    'reliability/no-await-in-loop': ['warn', {
       allowForOf: true,
       allowWhile: false
     }]
@@ -162,7 +162,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'architecture/no-await-in-loop': ['error', {
+    'reliability/no-await-in-loop': ['error', {
       allowForOf: false,
       allowWhile: false,
       checkConcurrency: true

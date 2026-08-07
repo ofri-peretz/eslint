@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-08-03T02:33:16.637Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "competitor": "import-official",
   "host": "eslint",
   "package": "eslint-plugin-import",
@@ -974,5 +986,6 @@
       "line": 2,
       "message": "Dependency cycle via ./nest-application-context.interface:22=>../services/logger.service:2=>../decorators/core:1"
     }
-  ]
+  ],
+  "timestamp": "2026-05-17T04:38:53.000Z"
 }

@@ -144,3 +144,9 @@ const stats = await User.aggregate([
 
 - [Mongoose Lean Queries](https://mongoosejs.com/docs/tutorials/lean.html)
 - [CWE-400](https://cwe.mitre.org/data/definitions/400.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

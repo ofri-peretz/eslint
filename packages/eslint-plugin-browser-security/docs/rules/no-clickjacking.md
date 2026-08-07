@@ -17,7 +17,7 @@ Detects clickjacking vulnerabilities and missing frame protections
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 💼 This rule is set to **error** in the `recommended` config.
 
@@ -87,7 +87,7 @@ const csp = "default-src 'self'"; // No frame protection!
 ```javascript
 {
   rules: {
-    'secure-coding/no-clickjacking': ['error', {
+    'browser-security/no-clickjacking': ['error', {
       trustedSources: ['self', 'https://trusted.com'],
       requireFrameBusting: true,
       detectTransparentOverlays: true
@@ -98,11 +98,14 @@ const csp = "default-src 'self'"; // No frame protection!
 
 ## Options
 
-| Option                      | Type       | Default    | Description                 |
-| --------------------------- | ---------- | ---------- | --------------------------- |
-| `trustedSources`            | `string[]` | `['self']` | Trusted iframe sources      |
-| `requireFrameBusting`       | `boolean`  | `true`     | Require frame-busting code  |
-| `detectTransparentOverlays` | `boolean`  | `true`     | Detect transparent overlays |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trustedSources` | `string[]` | `["self","same-origin"]` | Frame-ancestor sources treated as safe |
+| `requireFrameBusting` | `boolean` | `true` | Require frame-busting code in addition to headers |
+| `detectTransparentOverlays` | `boolean` | `true` | Report transparent overlays positioned over clickable elements |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as frame protectors |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

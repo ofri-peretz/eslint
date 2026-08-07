@@ -209,12 +209,12 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           safePreloadPatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: ['contextBridge', 'ipcRenderer'],
+            default: ['contextBridge', 'ipcRenderer'], description: 'Preload-script APIs treated as safe'
           },
           allowedIpcChannels: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            default: [], description: 'IPC channel names allowed without validation'
           },
           trustedSanitizers: {
             type: 'array',

@@ -118,10 +118,10 @@ Never add a wildcard to that set. An `Api*` prefix heuristic would swallow ack's
 
 ## Recognized Decorators
 
-| Rule                | Skip Decorators                                              |
-| ------------------- | ------------------------------------------------------------ |
+| Rule                | Skip Decorators                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------- |
 | `require-guards`    | @Public, @IsPublic, @SkipAuth, @AllowAnonymous, @Anonymous, @NoAuth, any unresolved decorator |
-| `require-throttler` | reports only on the root module; no per-route decorators      |
+| `require-throttler` | reports only on the root module; no per-route decorators                                      |
 
 ## Security Considerations
 
