@@ -16,6 +16,12 @@ export default defineConfig({
     // an idle machine and mis-reports contention as failure. A hang still fails,
     // just at 30s instead of 5s.
     testTimeout: 30_000,
+    // hookTimeout does NOT inherit testTimeout — it stays at vitest's 10s
+    // default unless set, so an I/O-bound beforeAll/afterEach still dies with
+    // "Hook timed out in 10000ms" under the turbo fan-out while the test
+    // itself finishes comfortably. Paired deliberately; see the
+    // prepush-and-vitest-timeouts lock.
+    hookTimeout: 120_000,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
     // SDK interface-compat suites (src/__compatibility__/) import third-party
     // SDKs, not our code, and cost minutes on a cold module cache. They run via
