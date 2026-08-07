@@ -17,9 +17,11 @@ landed on this line:
 if (url.startsWith('http://') || url.startsWith('https://') || …)
 ```
 
-A protocol string passed to `startsWith` / `includes` / `replace` / `match`, or
-compared with `===`, is the thing being *looked for* — not an endpoint being
-called.
+A protocol string passed to `startsWith` / `includes` / `match`, passed as the
+**first** argument to `replace` / `replaceAll`, or compared with `===`, is the
+thing being *looked for* — not an endpoint being called. The second argument to
+`replace` / `replaceAll` is content being written, so
+`url.replace(p, 'http://evil.test')` still reports.
 
 **XML namespaces.** `xmlns="http://www.w3.org/2000/svg"` is the most common
 `http://` string in any React codebase — every inline SVG carries one. It is

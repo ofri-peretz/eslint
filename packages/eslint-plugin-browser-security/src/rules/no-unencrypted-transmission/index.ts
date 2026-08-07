@@ -177,16 +177,16 @@ function isProtocolInspection(
     parent.callee.property.type === AST_NODE_TYPES.Identifier &&
     INSPECTION_METHODS.has(parent.callee.property.name)
   ) {
-    // No -1 guard: `parent` is the call and the callee is a MemberExpression,
-    // so a Literal reaching here is necessarily one of the arguments.
-    const index = parent.arguments.indexOf(
-      node as TSESTree.CallExpressionArgument,
-    );
     // `replace`/`replaceAll` take a *replacement* as their second argument, and
     // that one is content being written — `url.replace(p, 'http://evil.test')`
     // is a genuine insecure destination. Only the search operand is inspection.
-    if (WRITES_SECOND_ARGUMENT.has(parent.callee.property.name))
-      return index === 0;
+    //
+    // Compared by identity against argument 0 rather than scanned for with
+    // indexOf: the only question is whether this literal is the first argument,
+    // and scanning made a call with many literal arguments O(n²) over the pass.
+    if (WRITES_SECOND_ARGUMENT.has(parent.callee.property.name)) {
+      return parent.arguments[0] === node;
+    }
     return true;
   }
 
