@@ -39,7 +39,11 @@ beforeAll(async () => {
   } catch {
     console.warn('jwt-decode not installed');
   }
-}, 30_000); // native-addon packages can take >10s to load cold
+});
+// No per-file hook timeout: it would override vitest.compat.config.mts and
+// re-create the bug — nestjs-security's own 30s ceiling still blew on a 209s
+// cold load, and a blown hook reports every test in the file as SKIPPED, i.e.
+// green. The ceiling is sized once, in the compat config.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // JSONWEBTOKEN INTERFACE
