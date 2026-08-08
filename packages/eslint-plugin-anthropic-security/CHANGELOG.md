@@ -1,5 +1,58 @@
 # Changelog — eslint-plugin-anthropic-security
 
+## 0.3.0
+
+### Minor Changes
+
+- [#406](https://github.com/ofri-peretz/eslint/pull/406) [`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - New rule `no-untrusted-content-in-prompt` (CWE-1427) on all three raw inference
+  SDKs, from a shared `createSystemPromptInjectionRule` factory.
+
+  A system prompt is instruction text: whatever is spliced into it is read by the
+  model as instructions rather than as data, so anyone who controls that value
+  controls the agent. The rule reports a system prompt that is not static, in both
+  shapes the raw SDKs use — the named option (`system`, `instructions`,
+  `systemInstruction`) and the `messages: [{ role: 'system', content }]` array.
+
+  A bare identifier counts as static. `system: SYSTEM_PROMPT` is the correct
+  pattern and by far the most common one; following it is the data-flow analysis
+  these rules avoid.
+
+  **`strict` only.** Unlike the credential rules, this one has a genuine
+  false-positive shape — a system prompt interpolating today's date is not an
+  injection and the rule cannot tell the difference. Promotion to `recommended`
+  waits on the corpus measurement.
+
+  Gating is by qualified member path (`messages.create`, `completions.create`,
+  `generateContent`), not by leaf method name. `create` alone is shared across
+  these SDKs, and matching on it made a file importing two of them report one line
+  twice. `vercel-ai-security/no-dynamic-system-prompt` keeps the bare-function
+  `generateText(...)` form, which has no member path at all — verified by linting
+  a file that imports all four SDKs and uses every shape: no line is reported
+  twice.
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+- Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:
+  - @interlace/eslint-devkit@1.10.0
+
 ## 0.2.0
 
 ### Minor Changes

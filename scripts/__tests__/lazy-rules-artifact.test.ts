@@ -30,7 +30,7 @@ const REPO_ROOT = join(__dirname, '..', '..');
 /** A plugin with no per-rule value re-exports, so every rule can be deferred. */
 const FULLY_LAZY = 'eslint-plugin-node-security';
 /** Re-exports all 13 rule objects as public API — those requires must survive. */
-const RE_EXPORTING = 'eslint-plugin-jwt';
+const RE_EXPORTING = 'eslint-plugin-jwt-security';
 
 const entryFor = (pkg: string): string =>
   join(REPO_ROOT, 'packages', pkg, 'dist', 'src', 'index.js');
@@ -40,23 +40,42 @@ const built = (pkg: string): string | null => {
   return existsSync(entry) ? readFileSync(entry, 'utf8') : null;
 };
 
-/** `const x_1 = require("./rules/y");` at module scope — the thing we removed. */
-const EAGER_RULE_REQUIRE = /^const \w+ = require\("\.\/rules\/[^"]+"\);$/m;
+/**
+ * How many rule modules a plugin pulls in purely by being `require`d.
+ *
+ * Asserted as BEHAVIOUR, not text. The first version of this lock matched
+ * tsc's emitted shape (`^const x_1 = require("./rules/y");$`), and the
+ * whitespace-strip pass — which runs after the barrel transform and puts the
+ * module on one line without spaces — silently made every one of those
+ * patterns unmatchable. The lock kept passing while testing nothing. What
+ * actually matters is how many modules load, and that survives any formatting.
+ */
+const rulesLoadedOnRequire = (pkg: string): number => {
+  const probe = `
+    const path = ${JSON.stringify(entryFor(pkg))};
+    require(path);
+    console.log(
+      Object.keys(require.cache).filter((f) => f.includes('/dist/src/rules/')).length,
+    );
+  `;
+  return Number(
+    execFileSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).trim(),
+  );
+};
 
 describe('lazy rule barrel (built artifact)', () => {
-  it('defers every rule in a plugin with no rule re-exports', () => {
-    const code = built(FULLY_LAZY);
-    if (code === null) return; // dist not built in this job — nothing to lock
-    expect(code).not.toMatch(EAGER_RULE_REQUIRE);
-    expect(code).toMatch(/get '[\w-]+'\(\) \{ return require\("\.\/rules\//);
+  it('loads no rule module when a fully-lazy plugin is required', () => {
+    if (built(FULLY_LAZY) === null) return; // dist not built here — nothing to lock
+    expect(rulesLoadedOnRequire(FULLY_LAZY)).toBe(0);
   });
 
-  it('keeps the eager require a public rule re-export depends on', () => {
-    const code = built(RE_EXPORTING);
-    if (code === null) return;
-    // Both shapes coexist: deferred inside `rules`, eager for `export { … }`.
-    expect(code).toMatch(EAGER_RULE_REQUIRE);
-    expect(code).toMatch(/get '[\w-]+'\(\) \{ return require\("\.\/rules\//);
+  it('still loads eagerly where a public re-export forces it', () => {
+    if (built(RE_EXPORTING) === null) return;
+    // `export { noAlgorithmNone } from './rules/...'` cannot be deferred, so
+    // this plugin is expected to load its rules at require time. Pinning it
+    // documents the carve-out rather than leaving it to look like a bug — and
+    // fails if someone "fixes" it by dropping the public exports.
+    expect(rulesLoadedOnRequire(RE_EXPORTING)).toBeGreaterThan(0);
   });
 
   it('loads only the rules that are actually read', () => {

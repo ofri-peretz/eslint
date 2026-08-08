@@ -213,7 +213,7 @@ Before approving any new ESLint rule:
 3. **Performance**: O(n) complexity, single AST pass
 4. **Documentation**: Rule docs with OWASP mapping
 5. **Messages**: Clear, actionable error messages
-6. **ESLint Peer Dep**: Package declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
+6. **ESLint Peer Dep**: Package declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
 
 See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the full checklist.
 

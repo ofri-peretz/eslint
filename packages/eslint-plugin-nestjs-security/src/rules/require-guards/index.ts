@@ -7,9 +7,10 @@
 /**
  * ESLint Rule: require-guards
  * Requires @UseGuards decorator on controllers or route handlers
- * CWE-284: Improper Access Control
+ * CWE-306: Missing Authentication for Critical Function
+ * CWE-862: Missing Authorization (when a required guard is absent but others run)
  *
- * @see https://cwe.mitre.org/data/definitions/284.html
+ * @see https://cwe.mitre.org/data/definitions/306.html
  * @see https://docs.nestjs.com/guards
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -200,7 +201,8 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Header names that carry a credential.
+ * Names that denote a credential — a header, an environment variable, or a
+ * config key.
  *
  * A webhook receiver authenticates by comparing a shared secret or an HMAC
  * signature inside the handler — the mechanism Stripe, GitHub and Stigg all
@@ -208,9 +210,15 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
  * establish, and demanding one is wrong. Real instance:
  * `amplication/.../subscription.controller.ts:20` reads
  * `@Headers("stigg-webhooks-secret")` and throws on a mismatch.
+ *
+ * The name is what carries the intent, and it is the only thing separating a
+ * credential check from an environment check. `process.env.CRON_SECRET !== key`
+ * authenticates; `process.env.NODE_ENV !== 'production'` is a feature flag, and
+ * treating the two alike would let any handler switch this rule off by
+ * inspecting its environment.
  */
-const CREDENTIAL_HEADER =
-  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature/i;
+const CREDENTIAL_NAME =
+  /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature|password|credential/i;
 
 /** A route handler awaiting resolution once every class in the file is known. */
 interface Pending {
@@ -227,41 +235,55 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-guards.md',
       description:
         'Requires @UseGuards decorator on controllers or route handlers',
-      cwe: 'CWE-284',
-      cvss: 9.8,
+      // CWE-306 (Base, mapping Allowed), not CWE-284. CWE-284 is a Pillar and
+      // MITRE marks it Discouraged for real findings — "often misused in
+      // low-information vulnerability reports", which is exactly how a
+      // security linter loses a reader's trust.
+      cwe: 'CWE-306',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
       missingGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Authorization Guards',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        cwe: 'CWE-306',
+        // AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N = 7.5, and an unguarded route
+        // that only *reads* scores the same 7.5 via C:H/I:N/A:N — so 7.5 holds
+        // whichever way the handler goes. 9.8 needs C:H **and** I:H **and**
+        // A:H at once, which one missing guard does not produce; claiming it
+        // on every finding leaves no room to say when something is worse.
+        cvss: 7.5,
         description:
           'Controller/route handler {{name}} lacks @UseGuards for access control',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Add @UseGuards(AuthGuard): @UseGuards(AuthGuard) before the handler',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
       emptyGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Empty Guard List',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        cwe: 'CWE-306',
+        cvss: 7.5,
         description:
           '@UseGuards() on {{name}} declares no guard, so it enforces nothing',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Pass a guard class: @UseGuards(AuthGuard)',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
       missingRequiredGuard: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Required Guard',
-        cwe: 'CWE-284',
-        cvss: 9.8,
+        // A different weakness from the two above: the route *is* guarded, so
+        // authentication is present and only a required policy guard is
+        // absent. That is missing authorization (CWE-862), and the attacker
+        // needs privileges to reach it — PR:L rather than PR:N.
+        cwe: 'CWE-862',
+        // AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N = 6.5
+        cvss: 6.5,
         description:
           'Route handler {{name}} is guarded, but none of the required guards ({{required}}) is applied',
-        severity: 'CRITICAL',
+        severity: 'MEDIUM',
         fix: 'Add one of the required guards: @UseGuards({{firstRequired}})',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
@@ -659,10 +681,112 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
             (arg) =>
               arg.type === AST_NODE_TYPES.Literal &&
               typeof arg.value === 'string' &&
-              CREDENTIAL_HEADER.test(arg.value),
+              CREDENTIAL_NAME.test(arg.value),
           );
         }),
       );
+    }
+
+    /**
+     * Whether the handler compares something against a configured secret.
+     *
+     * The sibling of `verifiesCredentialHeader`, one step further in: instead of
+     * declaring the credential as a `@Headers()` parameter, these handlers take
+     * it as a query or route parameter and check it against the environment
+     * themselves.
+     *
+     *     if (this.configService.get<string>('FEATURE_TOKEN') !== token) {
+     *       this.logger.error('InvalidToken, process aborted');
+     *       return false;
+     *     }
+     *
+     * That is amplication's `user.controller.ts:19`, reported as an unguarded
+     * route while it authenticates on its first statement. A secret read from
+     * `process.env` or a config service, on either side of an equality
+     * comparison, is not a value an unauthenticated caller can supply.
+     *
+     * Narrow on purpose. Only equality against a *secret source* counts —
+     * `if (user.role === 'admin')` is authorization on already-trusted data and
+     * says nothing about whether the caller was authenticated. Requiring the
+     * comparison, rather than a bare `process.env` read, keeps a handler that
+     * merely logs `process.env.NODE_ENV` from silencing the rule.
+     */
+    function comparesAgainstConfiguredSecret(
+      node: TSESTree.MethodDefinition,
+    ): boolean {
+      // Non-null here for the same reason as elsewhere in this file: TypeScript
+      // forbids decorators on an overload or abstract signature, so a body-less
+      // method is never a route handler.
+      const body = node.value.body as TSESTree.BlockStatement;
+
+      /**
+       * `process.env.SOME_SECRET`, or `config.get('SOME_SECRET')`.
+       *
+       * The *name* has to look like a credential, exactly as
+       * `verifiesCredentialHeader` requires of the header it reads. Without
+       * that, `process.env.NODE_ENV !== 'production'` would silence this rule
+       * as effectively as a token check, and any handler could switch its own
+       * access control off by looking at its environment.
+       */
+      const isSecretSource = (expr: TSESTree.Node): boolean => {
+        if (expr.type === AST_NODE_TYPES.MemberExpression) {
+          return (
+            expressionName(expr.object) === 'env' &&
+            CREDENTIAL_NAME.test(expressionName(expr))
+          );
+        }
+        if (expr.type !== AST_NODE_TYPES.CallExpression) return false;
+        if (expressionName(expr.callee) !== 'get') return false;
+        if (expr.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+        // The receiver is usually `this.configService`, a member expression
+        // rather than a bare identifier, so match on its property name.
+        if (!/config/i.test(expressionName(expr.callee.object))) return false;
+        return expr.arguments.some(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            typeof arg.value === 'string' &&
+            CREDENTIAL_NAME.test(arg.value),
+        );
+      };
+
+      let found = false;
+      const visit = (current: TSESTree.Node): void => {
+        if (found) return;
+        // Authentication is something the handler does, not something a
+        // callback it passes along happens to contain. A comparison inside
+        // `.filter(item => item.secret !== process.env.FILTER_TOKEN)` is data
+        // processing, and letting it count would hand every handler an easy
+        // way to look authenticated.
+        if (
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return;
+        }
+        if (
+          current.type === AST_NODE_TYPES.BinaryExpression &&
+          ['===', '!==', '==', '!='].includes(current.operator) &&
+          (isSecretSource(current.left) || isSecretSource(current.right))
+        ) {
+          found = true;
+          return;
+        }
+        for (const key of Object.keys(current) as (keyof TSESTree.Node)[]) {
+          if (key === 'parent') continue;
+          const value = current[key] as unknown;
+          if (Array.isArray(value)) {
+            for (const child of value) {
+              if (child && typeof child === 'object' && 'type' in child) {
+                visit(child as TSESTree.Node);
+              }
+            }
+          } else if (value && typeof value === 'object' && 'type' in value) {
+            visit(value as TSESTree.Node);
+          }
+        }
+      };
+      visit(body);
+      return found;
     }
 
     function registerClass(node: ClassNode): void {
@@ -683,6 +807,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         if (hasPublicDecorator(cls.decorators)) return;
         if (middlewareProtected(node, cls)) return;
         if (verifiesCredentialHeader(node)) return;
+        if (comparesAgainstConfiguredSecret(node)) return;
 
         pending.push({ node, cls, name: memberName(node) ?? '<anonymous>' });
       },

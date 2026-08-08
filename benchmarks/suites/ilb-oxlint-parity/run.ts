@@ -53,8 +53,8 @@ const THRESHOLD = Number.parseFloat(ARG('--threshold', '0.95'));
 // node-security (PR #167) and its rules are covered under that plugin.
 // Locked by scripts/__tests__/oxlint-export-lock.test.ts.
 const PLUGINS_DEFAULT = [
-  'secure-coding', 'node-security', 'pg', 'express-security',
-  'browser-security', 'jwt', 'mongodb-security', 'nestjs-security',
+  'secure-coding', 'node-security', 'postgresql-security', 'express-security',
+  'browser-security', 'jwt-security', 'mongodb-security', 'nestjs-security',
   'lambda-security', 'vercel-ai-security',
 ];
 const PLUGINS = (ARG('--plugins', PLUGINS_DEFAULT.join(',')) || '')

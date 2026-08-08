@@ -22,8 +22,8 @@ import {
 } from '../lib/ci-shard-affected.mts';
 
 const PKGS: AffectedPkg[] = [
-  { name: 'eslint-plugin-jwt', dir: 'packages/eslint-plugin-jwt' },
-  { name: 'eslint-plugin-pg', dir: 'packages/eslint-plugin-pg' },
+  { name: 'eslint-plugin-jwt-security', dir: 'packages/eslint-plugin-jwt-security' },
+  { name: 'eslint-plugin-postgresql-security', dir: 'packages/eslint-plugin-postgresql-security' },
   { name: 'docs', dir: 'apps/docs' },
 ];
 
@@ -49,17 +49,17 @@ describe('decideAffected', () => {
   });
 
   it('selects only the packages whose directories changed', () => {
-    const d = decideAffected(['packages/eslint-plugin-jwt/src/index.ts'], PKGS);
+    const d = decideAffected(['packages/eslint-plugin-jwt-security/src/index.ts'], PKGS);
     expect(d.mode).toBe('some');
-    expect(d.mode === 'some' && [...d.names]).toEqual(['eslint-plugin-jwt']);
+    expect(d.mode === 'some' && [...d.names]).toEqual(['eslint-plugin-jwt-security']);
   });
 
   it('selects multiple packages when several change', () => {
     const d = decideAffected(
-      ['packages/eslint-plugin-jwt/src/a.ts', 'apps/docs/src/b.tsx'],
+      ['packages/eslint-plugin-jwt-security/src/a.ts', 'apps/docs/src/b.tsx'],
       PKGS,
     );
-    expect(d.mode === 'some' && [...d.names].sort()).toEqual(['docs', 'eslint-plugin-jwt']);
+    expect(d.mode === 'some' && [...d.names].sort()).toEqual(['docs', 'eslint-plugin-jwt-security']);
   });
 
   it('reports "none" — not a silent pass — when no package changed', () => {

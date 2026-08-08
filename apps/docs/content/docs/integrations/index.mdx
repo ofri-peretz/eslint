@@ -1,0 +1,28 @@
+---
+title: Integrations
+description: Wire Interlace rules into AI coding agents via the official ESLint MCP server
+icon: Plug
+---
+
+import { Sparkles, MousePointer } from 'lucide-react';
+
+Interlace plugins work anywhere ESLint runs — including inside AI coding agents. We **do not ship our own MCP server**: the official [`@eslint/mcp`](https://www.npmjs.com/package/@eslint/mcp) auto-discovers every plugin from your `eslint.config.*`, so one local server exposes all Interlace rules (CWE-mapped metadata included) to your agent.
+
+## Editor & Agent Integrations
+
+<Cards>
+  <Card
+    title="Claude Code"
+    href="/docs/integrations/claude-code"
+    icon={<Sparkles />}
+  >
+    ~2 minutes to a fully autonomous lint → fix → re-lint loop via the ESLint
+    MCP server
+  </Card>
+  <Card title="Cursor" href="/docs/integrations/cursor" icon={<MousePointer />}>
+    Same ESLint MCP surface wired into Cursor's agent — identical setup, ~2
+    minutes
+  </Card>
+</Cards>
+
+Looking for classic editor setup (VS Code, WebStorm, error highlighting)? See [Editor Integration](/docs/getting-started/editor-integration).

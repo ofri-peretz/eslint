@@ -36,7 +36,20 @@
  * app is present by construction, and adding `inheritAppConfig: true` is
  * harmless even in the rare case it inherits nothing.
  *
- * CWE-284: Improper Access Control
+ * That "never changed an answer" claim no longer holds, and the conclusion
+ * survives anyway. A later sweep found three amplication services
+ * (git-sync-manager, build-manager, notification-service) that register no
+ * globals at all — not in `main.ts`, not as `APP_PIPE`/`APP_GUARD` providers.
+ * So a gate *would* have changed those three answers, to no one's benefit: the
+ * fix is a harmless one-liner that also future-proofs the service against the
+ * day it does register a pipe, and staying ungated keeps the rule from going
+ * quiet on the projects it cannot read.
+ *
+ * CWE-20: Improper Input Validation. Not CWE-284 — that is a Pillar, which
+ * MITRE marks Discouraged for real findings. The reproducible consequence is a
+ * `@MessagePattern` DTO whose `@IsString()` never runs: verified on NestJS
+ * 9.4.3, where a Kafka handler received a number through a validated DTO with
+ * no `inheritAppConfig`, and rejected it with the flag set.
  */
 
 import {
@@ -69,19 +82,19 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-hybrid-app-config-loss.md',
       description:
         'Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard from the microservice transport',
-      cwe: 'CWE-284',
-      cvss: 7.5,
+      cwe: 'CWE-20',
+      cvss: 5.3,
     },
     messages: {
       configNotInherited: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Hybrid Application Drops Global Configuration',
-        cwe: 'CWE-284',
-        owasp: 'A01:2021',
-        cvss: 7.5,
+        cwe: 'CWE-20',
+        owasp: 'A03:2021',
+        cvss: 5.3,
         description:
           'connectMicroservice() without inheritAppConfig: true gives the microservice transport none of the global pipes, guards, interceptors or filters registered on the HTTP app — its @MessagePattern handlers run unvalidated and unguarded',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         compliance: ['SOC2'],
         fix: 'Pass the hybrid options: app.connectMicroservice(options, { inheritAppConfig: true })',
         documentationLink:

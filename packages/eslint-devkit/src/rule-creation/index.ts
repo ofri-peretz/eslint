@@ -26,6 +26,14 @@ export * from './sdk-api-key-rule';
 // Two instantiations, not three: neither Gemini SDK has the flag (verified
 // against the published tarballs).
 export * from './browser-escape-hatch-rule';
+// Shared CWE-1427 detector — untrusted content built into a raw SDK's system
+// prompt. Gated on member calls, so it can never collide with
+// vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form.
+export * from './system-prompt-injection-rule';
+// Which untrusted message source a handler belongs to. Decides whether a sink
+// finding is owned by a source-specific rule or by the generic one — the two
+// used to report the same range, measured on the shipped tarball.
+export * from './message-source';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';

@@ -9,7 +9,7 @@ This document defines the supported versions of key dependencies and runtime env
 | Dependency                   | Supported Versions               | Notes                                |
 | :--------------------------- | :------------------------------- | :----------------------------------- |
 | **Node.js**                  | `>=18.0.0`                       | LTS versions recommended             |
-| **ESLint**                   | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` | Legacy + flat config + v10           |
+| **ESLint**                   | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` | Legacy + flat config + v10           |
 | **TypeScript**               | `^4.7.0 \|\| ^5.0.0`             | **Optional** - JS projects supported |
 | **@typescript-eslint/utils** | `^7.0.0 \|\| ^8.0.0`             | Core AST utilities                   |
 | **tslib**                    | `^2.3.0`                         | Runtime helper library               |

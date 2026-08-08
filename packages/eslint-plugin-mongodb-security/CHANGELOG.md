@@ -1,5 +1,58 @@
 ## [8.3.0] - 2026-02-08
 
+## 8.3.5
+
+### Patch Changes
+
+- [#415](https://github.com/ofri-peretz/eslint/pull/415) [`bdca95c`](https://github.com/ofri-peretz/eslint/commit/bdca95c195ae366eea3d370b261f56af8314c6f1) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `require-projection` and `require-lean-queries` no longer report
+  `Array.prototype.find`.
+
+  Both rules keyed off the method name alone — any `X.find(...)`, `X.findOne(...)`
+  or `X.findById(...)` — with no check that the receiver was a MongoDB handle. A
+  plain `[1, 2, 3].find((x) => x === 2)` in a file containing no MongoDB reported
+  CWE-200. Both rules are in `recommended`, so every consumer got an error on
+  every `Array.prototype.find` in their codebase.
+
+  Measured by running the whole published ruleset over the Interlace monorepo,
+  which uses no MongoDB: **115 findings each, all false positives**, including one
+  on a React component doing `pluginStats.plugins.find((p) => p.name === …)`.
+
+  The plugin already had the fix: `analyzeMongoScope().isModelReceiver()` exists
+  precisely because "method names alone are hopeless discriminators", and five
+  sibling rules use it. These two never adopted it. They now do, ordered after the
+  cheap syntax checks so the receiver analysis only runs on a candidate call.
+
+  Locked with the array cases as `valid` in both rules — verified by reverting the
+  gate and watching them report again.
+
+  True positives are unaffected: `db.collection('users').find({})` and
+  `User.find({ active: true })` still report.
+
+## 8.3.4
+
+### Patch Changes
+
+- [#411](https://github.com/ofri-peretz/eslint/pull/411) [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Ship the JavaScript without tsc's layout.
+
+  Every emitted `.js` is re-written through esbuild's `minifyWhitespace`, which
+  removes indentation and line breaks. Across the ecosystem that is 3233 kB ->
+  2023 kB of shipped JavaScript, a 37% cut; on disk a package install drops about
+  28%. Indentation alone was ~32% of a compiled rule file.
+
+  This is deliberately NOT minification. Identifiers keep their names, string
+  contents are untouched, and the syntax tree is not rewritten — rule `meta`
+  (messages, schema, docs URLs) stays byte-identical, which is what the docs site
+  and `--print-config` read, and a stack trace from inside a rule still names
+  the function it came from. Full mangling would have bought another 4 kB gzipped
+  and cost both.
+
+  Verified against the published artifact: identical lint findings including
+  message IDs, identical rule names, and zero differences across every rule's
+  meta, messages, schema and presets.
+
+- Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:
+  - @interlace/eslint-devkit@1.10.0
+
 ## 8.3.3
 
 ### Patch Changes

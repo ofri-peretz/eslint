@@ -5,7 +5,10 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { createWithMockContext } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createWithMockContext,
+} from '@interlace/eslint-devkit';
 import { noXxeInjection } from './index';
 
 // Configure RuleTester for Vitest
@@ -27,6 +30,34 @@ describe('no-xxe-injection', () => {
   describe('Valid Code - Secure XML Parsing', () => {
     ruleTester.run('valid - secure XML parsing', noXxeInjection, {
       valid: [
+        // `parse` is not an XML-only method name. Ungated, this rule reported
+        // CWE-611 on JSON — measured across this monorepo, on lines like
+        // `JSON.parse(fs.readFileSync(file, 'utf-8'))`.
+        `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
+        `const cfg = JSON.parse(req.body);`,
+        `const when = Date.parse(input);`,
+        `const parts = path.parse(userPath);`,
+        `const q = url.parse(req.url);`,
+      // Receiver shapes that are NOT xml — the other two branches of
+      // isXmlReceiver seen from the silent side.
+      `const rows = lib.csv.parse(req.body);`,
+      `const v = new Semver().parse(req.body);`,
+      // A receiver the rule cannot name at all — a call result, and a
+      // constructor reached through a namespace. Unknown is not XML.
+      `const out = getParser().parse(req.body);`,
+      `const out2 = new lib.Parser().parse(req.body);`,
+      // A name ending in `Parser` says nothing about the FORMAT parsed. The
+      // receiver pattern used to end in `parser$` and reported all of these.
+      `const j = jsonParser.parse(input);`,
+      `const c = csvParser.parse(input);`,
+      `const h = htmlParser.parse(input);`,
+      `const j2 = new JsonParser().parse(input);`,
+      `const r = new CsvParser(); r.parse(data);`,
+      // `dom` used to be an unanchored substring, so every one of these
+      // receivers read as a DOM parser.
+      `const x = random.parse(input);`,
+      `const y = domain.parse(input);`,
+      `const z = freedom.parse(input);`,
         // Secure libxmljs usage with noent: false
         'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
 
@@ -182,9 +213,15 @@ describe('no-xxe-injection', () => {
       const callExpression = listeners.CallExpression as (node: unknown) => void;
 
       callExpression({
-        type: 'CallExpression',
-        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
-        arguments: [{ type: 'Identifier', name: 'xmlInput', parent: undefined }],
+        type: AST_NODE_TYPES.CallExpression,
+        callee: {
+          type: AST_NODE_TYPES.MemberExpression,
+          // The receiver has to name an XML parser for a bare `parse` to
+          // count — otherwise `JSON.parse` matches. See isXmlReceiver.
+          object: { type: AST_NODE_TYPES.Identifier, name: 'xmlParser' },
+          property: { type: AST_NODE_TYPES.Identifier, name: 'parse' },
+        },
+        arguments: [{ type: AST_NODE_TYPES.Identifier, name: 'xmlInput', parent: undefined }],
       });
 
       expect(reports).toHaveLength(1);
@@ -196,17 +233,23 @@ describe('no-xxe-injection', () => {
       const callExpression = listeners.CallExpression as (node: unknown) => void;
 
       callExpression({
-        type: 'CallExpression',
-        callee: { type: 'MemberExpression', property: { type: 'Identifier', name: 'parse' } },
+        type: AST_NODE_TYPES.CallExpression,
+        callee: {
+          type: AST_NODE_TYPES.MemberExpression,
+          // The receiver has to name an XML parser for a bare `parse` to
+          // count — otherwise `JSON.parse` matches. See isXmlReceiver.
+          object: { type: AST_NODE_TYPES.Identifier, name: 'xmlParser' },
+          property: { type: AST_NODE_TYPES.Identifier, name: 'parse' },
+        },
         arguments: [
-          { type: 'Identifier', name: 'cleanXml', parent: undefined },
+          { type: AST_NODE_TYPES.Identifier, name: 'cleanXml', parent: undefined },
           {
-            type: 'ObjectExpression',
+            type: AST_NODE_TYPES.ObjectExpression,
             properties: [
               {
-                type: 'Property',
-                key: { type: 'Identifier', name: 'resolveExternals' },
-                value: { type: 'Literal', value: true },
+                type: AST_NODE_TYPES.Property,
+                key: { type: AST_NODE_TYPES.Identifier, name: 'resolveExternals' },
+                value: { type: AST_NODE_TYPES.Literal, value: true },
               },
             ],
           },
@@ -222,8 +265,8 @@ describe('no-xxe-injection', () => {
       const newExpression = listeners.NewExpression as (node: unknown) => void;
 
       newExpression({
-        type: 'NewExpression',
-        callee: { type: 'Identifier', name: 'DOMParser' },
+        type: AST_NODE_TYPES.NewExpression,
+        callee: { type: AST_NODE_TYPES.Identifier, name: 'DOMParser' },
       });
 
       expect(reports).toHaveLength(1);
@@ -235,7 +278,7 @@ describe('no-xxe-injection', () => {
       const literal = listeners.Literal as (node: unknown) => void;
 
       literal({
-        type: 'Literal',
+        type: AST_NODE_TYPES.Literal,
         value: '<!ENTITY xxe SYSTEM "file:///etc/passwd">',
       });
 

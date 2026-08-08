@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-features",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -58,7 +58,7 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "typescript": ">=4.8.4"
   },
   "peerDependenciesMeta": {
@@ -67,7 +67,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.8.0"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
