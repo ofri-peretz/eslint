@@ -59,6 +59,26 @@ Unsafe deserialization occurs when untrusted data is deserialized in a way that 
 - JSON with prototype pollution
 - Insecure serialization libraries
 
+### What is NOT reported
+
+Two exclusions were added in 2026-07 after a 1,470-file corpus run (webpack,
+lodash, eslint-plugin-import, two NestJS boilerplates) produced 35 findings, all
+of them false, all at CVSS 9.8 CRITICAL:
+
+- **`setTimeout` / `setInterval` with a non-string first argument.** These are a
+  code-execution sink only in their implied-`eval` form. `setTimeout(cb, 1000)`
+  is a scheduler. The rule previously reported
+  `await new Promise(resolve => setTimeout(resolve, 1000))` — an ordinary sleep
+  — because `setTimeout` is on the dangerous-function list and `resolve` is an
+  enclosing arrow-function parameter. `setTimeout("alert(" + userCode + ")", 100)`
+  still reports.
+- **Calls inside a deserializer implementation.** `super.deserialize(context)`,
+  `this.deserialize(context)`, and any `x.deserialize(…)` sitting inside a
+  function named `deserialize` / `unserialize` / `fromJSON` / `fromBuffer`. That
+  is a class implementing a (de)serialization protocol and chaining to the next
+  layer of it — webpack's `static deserialize(context)` factories account for 33
+  of the 35 findings. A rule that cannot see the protocol cannot judge it.
+
 ### Why This Matters
 
 | Issue                      | Impact                 | Solution                       |
@@ -113,11 +133,14 @@ const obj = safeDeserialize(userInput);
 
 ## Options
 
-| Option                | Type       | Default                               | Description                         |
-| --------------------- | ---------- | ------------------------------------- | ----------------------------------- |
-| `dangerousFunctions`  | `string[]` | `['eval', 'Function', 'unserialize']` | Dangerous deserialization functions |
-| `safeLibraries`       | `string[]` | `['safe-serialize']`                  | Safe deserialization libraries      |
-| `validationFunctions` | `string[]` | `['isValidJson', 'validateInput']`    | Input validation functions          |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `dangerousFunctions` | `string[]` | `["eval","Function","setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
+| `safeLibraries` | `string[]` | `["JSON","safe-json-parse","js-yaml.safeLoad","protobuf","msgpack"]` | Parsers that do not execute their input |
+| `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | Function names that count as input validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

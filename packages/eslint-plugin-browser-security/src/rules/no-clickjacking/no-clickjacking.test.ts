@@ -31,13 +31,34 @@ describe('no-clickjacking', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - protected against clickjacking', noClickjacking, {
       valid: [
+        // Frame-busting is the remediation `requireFrameBusting` asks for. The
+        // rule reported it as `frameManipulation` — flagging its own fix. All
+        // four spellings are the same program; the old check matched printed
+        // source, so spacing changed the verdict.
+        `if (top != self) { top.location = self.location; }`,
+        `if (top !=  self) { top.location = self.location; }`,
+        `if (top!==self) { top.location = self.location; }`,
+        `if (window.top !== window.self) { window.top.location = window.self.location; }`,
+        `if (top === self) { ok(); } else { top.location = self.location; }`,
+        // Guard written window-qualified, assignment written bare — the same
+        // program, and the reason the reference check walks the AST.
+        `if (window.top != window.self) { top.location = self.location; }`,
+        // A function boundary inside the guard is crossed only when the
+        // function cannot escape it. An inline callback has no name to call
+        // it by, so the frame check still gates the redirect.
+        `if (top != self) { setTimeout(() => { top.location = self.location; }, 0); }`,
+        // Same for an IIFE.
+        `if (top != self) { (function () { top.location = self.location; })(); }`,
+        // A named declaration whose every reference is inside the guard can
+        // only run under it.
+        `if (top != self) { function bust() { top.location = self.location; } bust(); }`,
         // Trusted iframe sources (starts with /)
         {
           code: '<iframe src="/local-content.html"></iframe>',
         },
         // Proper CSP (would be set server-side) - no UI elements
         {
-          code: '// CSP: frame-ancestors \'self\'; const x = 1;',
+          code: "// CSP: frame-ancestors 'self'; const x = 1;",
         },
         // Code without UI elements doesn't require frame-busting
         {
@@ -48,26 +69,60 @@ describe('no-clickjacking', () => {
           code: 'if (top != self) { console.log("framed"); }',
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          // A call result is not a frame reference — this is not frame-busting.
+          code: `if (getTop() != self) { top.location = 'https://evil.test'; }`,
+          errors: 1,
+        },
+
+        {
+          // An `if` that is NOT a frame comparison does not make the assignment
+          // frame-busting — this is a redirect gated on an unrelated flag.
+          code: `if (isEmbedded) { top.location = 'https://evil.test'; }`,
+          errors: 1,
+        },
+        {
+          // The guard does not reach through an escaping function. `var` is
+          // function-scoped, so this binding hoists out of the block and the
+          // call below resolves to it — the redirect can run with no frame
+          // check having happened at all.
+          //
+          // The block-scoped spelling (`function doRedirect() {}` inside the
+          // `if`) is deliberately NOT here: nothing outside can resolve it, so
+          // it is unreachable rather than unguarded.
+          code: `if (top != self) { var doRedirect = () => { top.location = 'https://evil.test'; }; } doRedirect();`,
+          errors: 1,
+        },
+        {
+          // Stored on an object inside the guard, callable from anywhere.
+          code: `if (top != self) { window.doRedirect = () => { top.location = 'https://evil.test'; }; }`,
+          errors: 1,
+        },
+      ],
     });
   });
 
   describe('Invalid Code - Missing Frame Busting', () => {
     // Note: missingFrameBusting now only triggers on entry point files (index/app/page.tsx/jsx)
     // These tests use the default test filename which is not an entry point
-    ruleTester.run('valid - non-entry-point files skip frame-busting check', noClickjacking, {
-      valid: [
-        // Code with button (UI element) but no frame-busting - now valid since not entry point
-        {
-          code: 'const x = 1; function handleClick() {} button;',
-        },
-        // Code with onClick handler but no frame-busting - now valid since not entry point
-        {
-          code: 'element.onClick = handler;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - non-entry-point files skip frame-busting check',
+      noClickjacking,
+      {
+        valid: [
+          // Code with button (UI element) but no frame-busting - now valid since not entry point
+          {
+            code: 'const x = 1; function handleClick() {} button;',
+          },
+          // Code with onClick handler but no frame-busting - now valid since not entry point
+          {
+            code: 'element.onClick = handler;',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Invalid Code - Unsafe iframe Usage', () => {
@@ -125,39 +180,43 @@ describe('no-clickjacking', () => {
   });
 
   describe('Invalid Code - Transparent Overlays', () => {
-    ruleTester.run('invalid - transparent elements that could hide attacks', noClickjacking, {
-      valid: [],
-      invalid: [
-        // Literal must include 'style=' or 'css' to trigger
-        // missingFrameBusting only triggers for UI elements
-        {
-          code: 'const css = "style=opacity: 0; position: absolute; top: 0; left: 0;";',
-          errors: [
-            {
-              messageId: 'transparentFrameOverlay',
-            },
-          ],
-        },
-        // cssText with visibility hidden
-        {
-          code: 'element.cssText = "css visibility: hidden; z-index: -1;";',
-          errors: [
-            {
-              messageId: 'transparentFrameOverlay',
-            },
-          ],
-        },
-        // Template literal with 'style' keyword
-        {
-          code: 'const style = `style opacity: 0; position: absolute; top: 0; left: 0;`;',
-          errors: [
-            {
-              messageId: 'transparentFrameOverlay',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - transparent elements that could hide attacks',
+      noClickjacking,
+      {
+        valid: [],
+        invalid: [
+          // Literal must include 'style=' or 'css' to trigger
+          // missingFrameBusting only triggers for UI elements
+          {
+            code: 'const css = "style=opacity: 0; position: absolute; top: 0; left: 0;";',
+            errors: [
+              {
+                messageId: 'transparentFrameOverlay',
+              },
+            ],
+          },
+          // cssText with visibility hidden
+          {
+            code: 'element.cssText = "css visibility: hidden; z-index: -1;";',
+            errors: [
+              {
+                messageId: 'transparentFrameOverlay',
+              },
+            ],
+          },
+          // Template literal with 'style' keyword
+          {
+            code: 'const style = `style opacity: 0; position: absolute; top: 0; left: 0;`;',
+            errors: [
+              {
+                messageId: 'transparentFrameOverlay',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Valid Code - False Positives Reduced', () => {
@@ -213,41 +272,49 @@ describe('no-clickjacking', () => {
       ],
     });
 
-    ruleTester.run('config - disable frame-busting requirement', noClickjacking, {
-      valid: [
-        // With requireFrameBusting=false, UI elements don't trigger missingFrameBusting
-        {
-          code: '<form><input type="text" /><button>Submit</button></form>',
-          options: [{ requireFrameBusting: false }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'config - disable frame-busting requirement',
+      noClickjacking,
+      {
+        valid: [
+          // With requireFrameBusting=false, UI elements don't trigger missingFrameBusting
+          {
+            code: '<form><input type="text" /><button>Submit</button></form>',
+            options: [{ requireFrameBusting: false }],
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Complex Clickjacking Scenarios', () => {
-    ruleTester.run('complex - real-world clickjacking attack patterns', noClickjacking, {
-      valid: [],
-      invalid: [
-        // Untrusted iframe source - only unsafeIframeUsage (iframe doesn't count as UI element)
-        {
-          code: '<iframe src="https://untrusted-social-widget.com/like" width="200" height="50" />',
-          errors: [
-            {
-              messageId: 'unsafeIframeUsage',
-            },
-          ],
-        },
-        // Frame manipulation attempt - only frameManipulation
-        {
-          code: 'window.location = "https://evil.com";',
-          errors: [
-            {
-              messageId: 'frameManipulation',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'complex - real-world clickjacking attack patterns',
+      noClickjacking,
+      {
+        valid: [],
+        invalid: [
+          // Untrusted iframe source - only unsafeIframeUsage (iframe doesn't count as UI element)
+          {
+            code: '<iframe src="https://untrusted-social-widget.com/like" width="200" height="50" />',
+            errors: [
+              {
+                messageId: 'unsafeIframeUsage',
+              },
+            ],
+          },
+          // Frame manipulation attempt - only frameManipulation
+          {
+            code: 'window.location = "https://evil.com";',
+            errors: [
+              {
+                messageId: 'frameManipulation',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 });

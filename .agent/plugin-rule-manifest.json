@@ -1,4 +1,23 @@
 {
+  "eslint-plugin-anthropic-security": {
+    "no-browser-api-key-exposure": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "The SDK's browser escape hatch turned on with a literal true. Gated on the SDK import. An explicit false, a spread, or a runtime-decided value all stay silent rather than guess. Two SDKs carry this flag, not three: neither Gemini client has an equivalent (verified against the published tarballs)."
+    },
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
+    }
+  },
   "eslint-plugin-browser-security": {
     "no-innerhtml": {
       "environment": "browser",
@@ -144,19 +163,19 @@
       "environment": "browser",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-cors-check"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-cors-check"
     },
     "no-missing-csrf-protection": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-csrf-protection"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-csrf-protection"
     },
     "no-missing-security-headers": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-security-headers"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-security-headers"
     },
     "no-password-in-url": {
       "environment": "universal",
@@ -307,52 +326,39 @@
     }
   },
   "eslint-plugin-express-security": {
-    "require-helmet": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "no-permissive-cors": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-csrf-protection": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
-    },
-    "no-insecure-cookie-options": {
-      "environment": "express",
-      "detection": "structural-pattern",
-      "confidence": "enforcement"
-    },
-    "require-rate-limiting": {
-      "environment": "express",
-      "detection": "naming-heuristic",
-      "confidence": "review-prompt"
-    },
-    "no-graphql-introspection-production": {
-      "environment": "express",
-      "detection": "structural-api",
-      "confidence": "review-prompt"
-    },
     "no-cors-credentials-wildcard": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "require-express-body-parser-limits": {
+    "no-error-details-in-response": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks catch-clause params and error-first callback params into res.send/json sinks via a scope frame stack."
+    },
+    "no-exposed-debug-endpoints": {
       "environment": "express",
       "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "confidence": "enforcement"
     },
     "no-express-unsafe-regex-route": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
-    "no-exposed-debug-endpoints": {
+    "no-graphql-introspection-production": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
+    },
+    "no-host-header-in-links": {
+      "environment": "express",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "Tracks req.headers.host / req.get('host') assignments into URL construction and mail sinks within a function — conservative same-scope flow, not a name match."
+    },
+    "no-insecure-cookie-options": {
       "environment": "express",
       "detection": "structural-pattern",
       "confidence": "enforcement"
@@ -361,25 +367,141 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-csrf-protection": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-security-headers": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
+    },
+    "no-permissive-cors": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-data-in-query": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Token-based matching of sensitive parameter names on req.query reads — names are the signal, so ships as warn per I3."
+    },
+    "no-static-root-exposure": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on express.static/serveIndex argument shapes (__dirname, '.', process.cwd(), traversal segments, non-literal joins)."
     },
     "no-user-controlled-redirect": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on res.redirect(req.query.*) AST shape \u2014 structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+      "notes": "Fires on res.redirect(req.query.*) AST shape — structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+    },
+    "no-user-controlled-render-locals": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the res.render(view, req.body|query|params) AST shape incl. spreads. The shape carries the signal, but the request/response roots are matched against fixed name sets (req/request/ctx, res/response/reply), so an unconventional alias is not tracked."
+    },
+    "require-case-insensitive-path-guard": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Protected-path detection keys off configurable path literals (admin/api/dashboard/...), so it ships as warn."
+    },
+    "require-csrf-protection": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-express-body-parser-limits": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "require-helmet": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-query-type-guard": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt",
+      "notes": "String-method call on a req.query member with no typeof/Array.isArray/String() guard in scope; ships as warn while cross-function flow is untracked."
+    },
+    "require-rate-limiting": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt"
+    },
+    "no-disabled-helmet-protections": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on helmet({ <protection>: false }) option shapes (CSP/frameguard/noSniff/referrerPolicy/hidePoweredBy, helmet 6 and 7 spellings)."
+    },
+    "require-strict-transport-security": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory — disabled, max-age below floor, includeSubDomains false."
+    },
+    "no-unsafe-csp-directives": {
+      "environment": "express",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "CSP directive literals: 'unsafe-inline'/'unsafe-eval'/wildcard sources, frame-ancestors '*', missing frame-ancestors under useDefaults:false, upgradeInsecureRequests:null."
+    },
+    "no-permissive-trust-proxy": {
+      "environment": "express",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') — req.ip becomes client-controlled (CWE-348)."
+    },
+    "require-route-authentication": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Route-path vocabulary decides what counts as a critical function, so it ships as warn per I3. Structural around it: registration shape, middleware chain, principal read in the handler."
+    },
+    "no-client-controlled-authorization": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "Structural half is req.body/query/params/headers/cookies member reads in a decision position; the authorization-attribute vocabulary (role/permission/userId) is the name-based half, so it ships as warn per I3."
+    },
+    "no-idor-resource-access": {
+      "environment": "express",
+      "detection": "naming-heuristic",
+      "confidence": "review-prompt",
+      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based — ships as warn per I3."
+    }
+  },
+  "eslint-plugin-gemini-security": {
+    "no-disabled-safety-settings": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-import-next": {
@@ -627,16 +749,83 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "import-style": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-jwt": {
+    "no-algorithm-none": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-algorithm-confusion": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-algorithm-whitelist": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-decode-without-verify": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-weak-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-expiration": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-hardcoded-secret": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issued-at": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-issuer-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-audience-validation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-timestamp-manipulation": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-max-age": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-sensitive-payload": {
+      "environment": "jwt",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    }
+  },
+  "eslint-plugin-jwt-security": {
     "no-algorithm-none": {
       "environment": "jwt",
       "detection": "structural-pattern",
@@ -837,6 +1026,31 @@
       "confidence": "opt-in"
     }
   },
+  "eslint-plugin-mcp-sdk-security": {
+    "no-command-injection-in-tool": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports — that split is what keeps one line from carrying findings from two plugins."
+    },
+    "no-tool-description-injection": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Tool descriptions and titles reach the model as instruction text, so they must be static. Reports anything that is not a literal, an interpolation-free template, or a concatenation of those. A const holding a literal is a deliberate false negative."
+    },
+    "no-unvalidated-tool-args": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Compares the handler destructuring against the declared inputSchema keys. Silent for any schema it cannot statically read, since judging a handler against an invisible shape would report correct code."
+    },
+    "require-tool-input-schema": {
+      "environment": "mcp",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
   "eslint-plugin-modernization": {
     "no-instanceof-array": {
       "environment": "universal",
@@ -989,19 +1203,34 @@
       "detection": "structural-api",
       "confidence": "review-prompt"
     },
-    "require-class-validator": {
+    "require-validation-pipe-whitelist": {
       "environment": "nestjs",
-      "detection": "structural-pattern",
-      "confidence": "review-prompt"
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-permissive-cors": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
     },
     "no-exposed-private-fields": {
       "environment": "nestjs",
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
     },
-    "no-exposed-debug-endpoints": {
+    "no-res-bypass-serialization": {
       "environment": "nestjs",
-      "detection": "structural-pattern",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-unguarded-swagger": {
+      "environment": "nestjs",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-hybrid-app-config-loss": {
+      "environment": "nestjs",
+      "detection": "structural-api",
       "confidence": "enforcement"
     }
   },
@@ -1020,6 +1249,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-unsafe-buffer-alloc": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "review-prompt"
     },
     "no-unsafe-dynamic-require": {
       "environment": "node",
@@ -1070,7 +1304,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use CI tooling instead \u2014 this checks filesystem for lock file existence, not AST analysis"
+      "deprecated": "Use CI tooling instead — this checks filesystem for lock file existence, not AST analysis"
     },
     "no-dynamic-dependency-loading": {
       "environment": "universal",
@@ -1182,6 +1416,31 @@
       "detection": "structural-api",
       "confidence": "enforcement",
       "notes": "crypto.createHash/Hmac/Cipher with dynamic first arg. Attacker controls algorithm = downgrade attack. Static literals are already checked by no-weak-hash-algorithm."
+    },
+    "no-dynamic-command-string": {
+      "environment": "node",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "Shell binary + -c/-Command argv position with an assembled string, or a non-escaping command-runner (execaCommand/$.raw). Distinct from no-shell-injection (CWE-78 exec concat)."
+    }
+  },
+  "eslint-plugin-openai-security": {
+    "no-browser-api-key-exposure": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-api-key": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A string literal in the SDK client's credential option (or, for the legacy Gemini client, its positional key). Gated on the SDK import, so it stays out of files that do not construct the client. Measured: no eslint-plugin-secure-coding rule reports this shape."
+    },
+    "no-untrusted-content-in-prompt": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-operability": {
@@ -1217,6 +1476,73 @@
     }
   },
   "eslint-plugin-pg": {
+    "no-unsafe-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-insecure-ssl": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-hardcoded-credentials": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "check-query-params": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-missing-client-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-transaction-on-pool": {
+      "environment": "pg",
+      "detection": "structural-api",
+      "confidence": "enforcement"
+    },
+    "no-floating-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-select-all": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "prefer-pool-query": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-batch-insert-loop": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-unsafe-search-path": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-unsafe-copy-from": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "prevent-double-release": {
+      "environment": "pg",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    }
+  },
+  "eslint-plugin-postgresql-security": {
     "no-unsafe-query": {
       "environment": "pg",
       "detection": "structural-pattern",
@@ -1473,13 +1799,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "wcag-aa": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-react-features": {
@@ -1917,7 +2243,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "no-privilege-escalation": {
       "environment": "universal",
@@ -1933,7 +2259,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "no-hardcoded-credentials": {
       "environment": "universal",
@@ -1969,7 +2295,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use a dedicated electron-security plugin \u2014 Electron requires framework-specific context"
+      "deprecated": "Use a dedicated electron-security plugin — Electron requires framework-specific context"
     },
     "no-hardcoded-session-tokens": {
       "environment": "universal",
@@ -1985,7 +2311,7 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-vercel-ai-security": {
@@ -2083,6 +2409,170 @@
       "environment": "vercel-ai",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-sequelize-security": {
+    "no-hardcoded-credentials": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
+    "no-mass-assignment": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
+    "no-unsafe-query": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Sequelize's raw-SQL sinks: sequelize.query() and Sequelize.literal()."
+    },
+    "require-tls": {
+      "environment": "sequelize",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). Sequelize passes TLS settings through `dialectOptions`."
+    }
+  },
+  "eslint-plugin-mysql-security": {
+    "no-hardcoded-credentials": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
+    "no-unsafe-query": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with MySQL's raw-SQL sinks."
+    },
+    "require-tls": {
+      "environment": "mysql",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). mysql2 accepts the verification flag at the top level as well as under `ssl`."
+    }
+  },
+  "eslint-plugin-prisma-security": {
+    "no-raw-identifier-interpolation": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template ($queryRaw / $executeRaw), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
+    },
+    "no-mass-assignment": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
+    "no-unsafe-query": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Prisma's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "prisma",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit) with Prisma bulk-mutation sinks."
+    }
+  },
+  "eslint-plugin-drizzle-security": {
+    "no-raw-identifier-interpolation": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template (sql``), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
+    },
+    "no-mass-assignment": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
+    "no-unsafe-query": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Drizzle's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "drizzle",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit); Drizzle scope arrives as a chained .where()."
+    }
+  },
+  "eslint-plugin-knex-security": {
+    "no-hardcoded-credentials": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
+    "no-mass-assignment": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
+    "no-unsafe-query": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with Knex's raw-SQL sinks."
+    },
+    "no-unscoped-mutation": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createUnscopedMutationRule (@interlace/eslint-devkit); Knex scope arrives as a chained .where*() clause."
+    },
+    "require-tls": {
+      "environment": "knex",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). Knex nests connection settings under `connection`."
+    }
+  },
+  "eslint-plugin-sqlite-security": {
+    "no-unsafe-query": {
+      "environment": "sqlite",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with SQLite's raw-SQL sinks."
+    }
+  },
+  "eslint-plugin-typeorm-security": {
+    "no-hardcoded-credentials": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createHardcodedCredentialsRule (@interlace/eslint-devkit). Literal credential keys in a connection-shaped object, plus the user:pass@ userinfo form in a connection URL. A credential-free URL and an empty password are deliberately silent."
+    },
+    "no-mass-assignment": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createMassAssignmentRule (@interlace/eslint-devkit). Reports an inbound request object, or a spread of one, reaching a write. A payload that names its fields is the fix and stays silent."
+    },
+    "no-unsafe-query": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createSqlInjectionRule (@interlace/eslint-devkit) with TypeORM's raw-SQL sinks."
+    },
+    "require-tls": {
+      "environment": "typeorm",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). TypeORM keeps DataSourceOptions flat; `extra` is the driver passthrough bag."
     }
   }
 }

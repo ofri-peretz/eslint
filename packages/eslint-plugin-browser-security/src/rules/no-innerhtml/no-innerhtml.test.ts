@@ -19,6 +19,17 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-innerhtml', noInnerhtml, {
   valid: [
+    // Owned by no-websocket-innerhtml. The generic rule must stay silent here
+    // or the same range carries two findings in `recommended` — which is what
+    // it did before the ownership gate, measured on the shipped tarball.
+    {
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.onmessage = (event) => { element.innerHTML = event.data; };
+      `,
+    },
+    // Same value, no identifiable source: this one IS ours, and stays reported
+    // by the invalid case below. The two tests are complements.
     // Literal string assignment (allowed by default)
     {
       code: `element.innerHTML = '<div>Hello</div>';`,

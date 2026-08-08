@@ -204,3 +204,9 @@ export const handler = async (event) => {
 - **[CWE-209: Info Disclosure in Errors](https://cwe.mitre.org/data/definitions/209.html)** - Official CWE entry
 - **[OWASP Error Handling](https://owasp.org/www-community/Improper_Error_Handling)** - Best practices
 - **[AWS Lambda Error Handling](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-exceptions.html)** - AWS documentation
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

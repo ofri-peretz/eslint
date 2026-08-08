@@ -62,6 +62,47 @@ describe('no-insecure-comparison', () => {
     });
   });
 
+  describe('Nullish comparison (== null / != null)', () => {
+    ruleTester.run('valid - idiomatic nullish check', noInsecureComparison, {
+      valid: [
+        // `x == null` matches null AND undefined in one comparison. Rewriting
+        // it to `=== null` drops the undefined case, so the rule must not
+        // report it — core `eqeqeq` exempts it under `smart` for the same
+        // reason. Regression guard for the behaviour-changing autofix.
+        'if (body == null) { return 0; }',
+        'if (body != null) { send(body); }',
+        'const size = length == null ? compute() : length;',
+        'if (null == body) { return 0; }',
+        'if (null != body) { send(body); }',
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('invalid - non-null loose equality is suggestion-only', noInsecureComparison, {
+      valid: [],
+      invalid: [
+        {
+          // Still reported, but with NO auto-applied `output`: swapping == for
+          // === can change behaviour when operand types differ, so it may only
+          // be offered as a suggestion the author opts into.
+          code: 'if (count == "5") { go(); }',
+          output: null,
+          errors: [
+            {
+              messageId: 'insecureComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: 'if (count === "5") { go(); }',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Loose Equality', () => {
     ruleTester.run('invalid - loose equality operator', noInsecureComparison, {
       valid: [],
@@ -79,7 +120,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
         {
           code: 'if (user.id == userId) {}',
@@ -94,7 +135,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (user.id === userId) {}',
+          output: null,
         },
         {
           code: 'const result = a == b ? 1 : 0;',
@@ -109,7 +150,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'const result = a === b ? 1 : 0;',
+          output: null,
         },
       ],
     });
@@ -132,22 +173,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x !== y) {}',
-        },
-        {
-          code: 'if (value != null) {}',
-          errors: [
-            {
-              messageId: 'insecureComparison',
-              suggestions: [
-                {
-                  messageId: 'useStrictEquality',
-                  output: 'if (value !== null) {}',
-                },
-              ],
-            },
-          ],
-          output: 'if (value !== null) {}',
+          output: null,
         },
       ],
     });
@@ -178,7 +204,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
       ],
     });
@@ -218,7 +244,7 @@ describe('no-insecure-comparison', () => {
               ],
             },
           ],
-          output: 'if (x === y) {}',
+          output: null,
         },
       ],
     });
@@ -497,7 +523,7 @@ describe('no-insecure-comparison', () => {
                 ],
               },
             ],
-            output: "if (node.key === 'foo') {}",
+            output: null,
           },
           // Has an ImportDeclaration, but its source does not match any
           // AST_TOOL_PACKAGES entry — the scan loop must continue past it
@@ -522,10 +548,7 @@ describe('no-insecure-comparison', () => {
                 ],
               },
             ],
-            output: `
-              import React from 'react';
-              if (node.key === 'foo') {}
-            `,
+            output: null,
           },
         ],
       },
@@ -533,3 +556,48 @@ describe('no-insecure-comparison', () => {
   });
 });
 
+
+/**
+ * Regression lock — word-level secret detection.
+ *
+ * The timing-attack half of this rule used to substring-match secret keywords
+ * against the WHOLE expression source text, with `key`, `auth` and `mac` on the
+ * keyword list. That turned `if (key === "__non_webpack_require__")` (webpack)
+ * into a CWE-208 timing-attack finding, and would equally have fired on
+ * `monkey`, `keyword`, `machine` and `author`. Matching is now on identifier
+ * word segments.
+ */
+describe('no-insecure-comparison — word-level secret matching', () => {
+  ruleTester.run('no-insecure-comparison', noInsecureComparison, {
+    valid: [
+      // Verbatim shape from webpack lib/RuntimeTemplate.js
+      'if (key === "__non_webpack_require__") {}',
+      // Words that merely CONTAIN a keyword must not match.
+      'if (monkey === other) {}',
+      'if (keyword === other) {}',
+      'if (machine === other) {}',
+      'if (author === other) {}',
+      'if (obj.keys === other) {}',
+      // Computed member access: the property is a Literal, not an Identifier,
+      // so it contributes no name segment.
+      'if (headers["x-custom"] === other) {}',
+      // Call expressions contribute their callee name only.
+      'if (getValue() === other) {}',
+    ],
+    invalid: [
+      // TRUE POSITIVES: real secret comparisons still report.
+      {
+        code: 'if (providedToken === storedToken) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+      {
+        code: 'if (req.headers.apiKey === config.apiKey) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+      {
+        code: 'if (computedHmac !== expectedSignature) {}',
+        errors: [{ messageId: 'timingUnsafeComparison', suggestions: 1 }],
+      },
+    ],
+  });
+});

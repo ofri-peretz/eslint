@@ -57,10 +57,15 @@ store.add({ theme: 'dark', language: 'en' });
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-sensitive-indexeddb": [
+    "browser-security/no-sensitive-indexeddb": [
       "error",
       {
         "allowInTests": true

@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-react-features",
-  "version": "1.2.4",
-  "description": "ESLint React rules for modern react features, hooks, and patterns.",
+  "version": "1.2.10",
+  "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -15,8 +15,8 @@
       "default": "./src/types/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -33,18 +33,33 @@
   ],
   "keywords": [
     "eslint",
+    "eslintplugin",
     "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
     "interlace-quality",
     "react",
     "jsx",
     "hooks",
-    "llm-optimized"
+    "react-hooks",
+    "exhaustive-deps",
+    "prop-types",
+    "eslint-plugin-react",
+    "eslint-plugin-react-alternative",
+    "component-api",
+    "performance",
+    "migration",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
+    "typescript": ">=4.8.4"
   },
   "peerDependenciesMeta": {
     "typescript": {
@@ -52,8 +67,7 @@
     }
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "*"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -61,7 +75,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-react-features"
   },
   "homepage": "https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-react-features",
@@ -76,6 +90,6 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

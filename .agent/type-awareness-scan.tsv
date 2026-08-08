@@ -68,13 +68,27 @@ crypto	no-hardcoded-crypto-key	unaware
 express-security	require-csrf-protection	unaware	
 express-security	require-express-body-parser-limits	unaware	
 express-security	no-cors-credentials-wildcard	unaware	
+express-security	no-exposed-debug-endpoints	unaware	
 express-security	no-graphql-introspection-production	unaware	
 express-security	require-rate-limiting	unaware	
 express-security	no-insecure-cookie-options	unaware	
 express-security	no-permissive-cors	unaware	
 express-security	no-express-unsafe-regex-route	unaware	
-express-security	no-exposed-debug-endpoints	unaware	
 express-security	require-helmet	unaware	
+express-security	no-host-header-in-links	unaware	
+express-security	no-error-details-in-response	unaware	
+express-security	no-sensitive-data-in-query	unaware	
+express-security	no-user-controlled-render-locals	unaware	
+express-security	no-static-root-exposure	unaware	
+express-security	require-case-insensitive-path-guard	unaware	
+express-security	require-query-type-guard	unaware	
+express-security	no-disabled-helmet-protections	unaware	
+express-security	require-strict-transport-security	unaware	
+express-security	no-unsafe-csp-directives	unaware	
+express-security	no-permissive-trust-proxy	unaware	
+express-security	require-route-authentication	unaware	
+express-security	no-client-controlled-authorization	unaware	
+express-security	no-idor-resource-access	unaware	
 import-next	no-commonjs	unaware	
 import-next	enforce-team-boundaries	unaware	
 import-next	no-namespace	unaware	
@@ -147,6 +161,7 @@ jwt	require-issued-at	unaware
 lambda-security	require-timeout-handling	unaware	
 lambda-security	no-permissive-cors-response	unaware	
 lambda-security	no-missing-authorization-check	unaware	
+lambda-security	no-exposed-debug-endpoints	unaware	
 lambda-security	no-error-swallowing	unaware	
 lambda-security	no-user-controlled-requests	unaware	
 lambda-security	no-unbounded-batch-processing	unaware	
@@ -156,7 +171,6 @@ lambda-security	no-overly-permissive-iam-policy	unaware
 lambda-security	no-unvalidated-event-body	unaware	
 lambda-security	no-hardcoded-credentials-sdk	unaware	
 lambda-security	no-exposed-error-details	unaware	
-lambda-security	no-exposed-debug-endpoints	unaware	
 lambda-security	no-env-logging	unaware	
 maintainability	no-unhandled-promise	unaware	
 maintainability	no-silent-errors	unaware	
@@ -195,11 +209,14 @@ mongodb-security	require-tls-connection	unaware
 mongodb-security	no-unsafe-populate	unaware	
 mongodb-security	no-hardcoded-credentials	unaware	
 nestjs-security	require-guards	unaware	
-nestjs-security	require-class-validator	unaware	
 nestjs-security	require-throttler	unaware	
-nestjs-security	no-missing-validation-pipe	unaware	
-nestjs-security	no-exposed-debug-endpoints	unaware	
-nestjs-security	no-exposed-private-fields	unaware	
+nestjs-security	require-validation-pipe-whitelist	unaware	
+nestjs-security	no-permissive-cors	unaware	
+nestjs-security	no-missing-validation-pipe	optional	undecoratedDto resolves the @Body() DTO and its decorators' origin when parserOptions.project is set; syntax-only behaviour is unchanged without it
+nestjs-security	no-exposed-private-fields	unaware
+nestjs-security	no-hybrid-app-config-loss	unaware	
+nestjs-security	no-res-bypass-serialization	unaware
+nestjs-security	no-unguarded-swagger	unaware			
 node-security	require-secure-credential-storage	unaware	
 node-security	detect-eval-with-expression	unaware	
 node-security	no-zip-slip	unaware	
@@ -395,8 +412,35 @@ vercel-ai-security	no-hardcoded-api-keys	unaware
 conventions	no-json-schema-tags	unaware	backfilled docs 2026-05-10
 node-security	no-deprecated-buffer	unaware	backfilled docs 2026-05-10
 node-security	no-ssrf	unaware	backfilled docs 2026-05-10
+node-security	no-dynamic-command-string	unaware	
+node-security	no-unsafe-buffer-alloc	unaware	
 react-a11y	alt-text	unaware	backfilled docs 2026-05-10
 reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
 secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10
 modernization	prefer-template-literal	unaware	
 modularity	no-mutable-exports	unaware	
+sequelize-security	no-mass-assignment	unaware	
+sequelize-security	no-hardcoded-credentials	unaware	
+sequelize-security	no-unsafe-query	unaware	
+sequelize-security	require-tls	unaware	
+mysql-security	no-hardcoded-credentials	unaware	
+mysql-security	no-unsafe-query	unaware	
+mysql-security	require-tls	unaware	
+prisma-security	no-mass-assignment	unaware	
+prisma-security	no-raw-identifier-interpolation	unaware	
+prisma-security	no-unsafe-query	unaware	
+prisma-security	no-unscoped-mutation	unaware	
+drizzle-security	no-mass-assignment	unaware	
+drizzle-security	no-raw-identifier-interpolation	unaware	
+drizzle-security	no-unsafe-query	unaware	
+drizzle-security	no-unscoped-mutation	unaware	
+knex-security	no-mass-assignment	unaware	
+knex-security	no-hardcoded-credentials	unaware	
+knex-security	no-unsafe-query	unaware	
+knex-security	no-unscoped-mutation	unaware	
+knex-security	require-tls	unaware	
+sqlite-security	no-unsafe-query	unaware	
+typeorm-security	no-mass-assignment	unaware	
+typeorm-security	no-hardcoded-credentials	unaware	
+typeorm-security	no-unsafe-query	unaware	
+typeorm-security	require-tls	unaware	

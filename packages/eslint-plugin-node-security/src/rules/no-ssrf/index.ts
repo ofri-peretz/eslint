@@ -45,8 +45,10 @@ const HTTP_CLIENT_METHODS = new Set([
 ]);
 
 // Object names that are HTTP client libraries
+// `needle.get(url)` is covered here; the `needle('get', url)` verb-first form
+// is not — the URL sits in argument 1, and this rule only reads argument 0.
 const HTTP_CLIENT_OBJECTS = new Set([
-  'axios', 'got', 'superagent', 'request', 'http', 'https', 'undici',
+  'axios', 'got', 'superagent', 'request', 'http', 'https', 'undici', 'needle',
 ]);
 
 // Function names that indicate URL validation
@@ -68,6 +70,93 @@ const USER_INPUT_SUBSTRINGS = [
 function isUserInputParamName(name: string): boolean {
   const lower = name.toLowerCase();
   return USER_INPUT_SUBSTRINGS.some(sub => lower.includes(sub));
+}
+
+// Object roots whose members carry attacker-controlled data in the common
+// server frameworks: Express `req`/`request`, Koa `ctx`, Lambda `event`.
+const REQUEST_ROOT_NAMES = new Set(['req', 'request', 'ctx', 'event']);
+
+// Keys of a Node `http.request(options)` object that actually name a URL.
+// `host`/`hostname`/`path`/`port` are deliberately absent: a helper that
+// parameterises them is ordinary internal plumbing, not evidence of user flow.
+const URL_OPTION_KEYS = new Set(['url', 'href', 'uri']);
+
+/**
+ * True when the expression reads off a request object — `req.query.url`,
+ * `ctx.request.body.target`, `event.queryStringParameters.u`. Everything
+ * hanging off a request is untrusted, so the root name is the whole test.
+ */
+function isRequestSourced(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+  while (current.type === AST_NODE_TYPES.MemberExpression) {
+    current = current.object;
+  }
+  return (
+    current !== node &&
+    current.type === AST_NODE_TYPES.Identifier &&
+    REQUEST_ROOT_NAMES.has(current.name.toLowerCase())
+  );
+}
+
+/**
+ * Does the URL argument carry untrusted data into the request?
+ *
+ * The rule reports on evidence of flow, never on the mere presence of a
+ * dynamic argument. Three shapes qualify:
+ *
+ *   1. The whole argument is a user-input-named identifier — `fetch(userUrl)`.
+ *      This is the rule's documented naming heuristic: a bare identifier in
+ *      URL position *is* the URL.
+ *   2. Any part of the expression reads from a request object —
+ *      `fetch(req.query.url)`, `https.request({ host: req.query.h })`.
+ *   3. A template literal URL interpolates either of the above —
+ *      `fetch(\`https://\${userHost}/x\`)`.
+ *
+ * Everything else is not evidence. In particular an options object whose
+ * fields are plain locals — `https.request({ host, path, method: 'GET' })`,
+ * benchmarks/corpus/CWE-444/safe/request-default-parser.js — used to be
+ * reported unconditionally because a non-Identifier argument bypassed the
+ * name gate entirely.
+ */
+function carriesUntrustedUrl(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case AST_NODE_TYPES.Identifier:
+      return isUserInputParamName(node.name);
+
+    case AST_NODE_TYPES.MemberExpression:
+      return isRequestSourced(node);
+
+    case AST_NODE_TYPES.TemplateLiteral:
+      return node.expressions.some(carriesUntrustedUrl);
+
+    // `new URL(userUrl)` / `String(req.query.url)` — inspect the arguments.
+    case AST_NODE_TYPES.CallExpression:
+    case AST_NODE_TYPES.NewExpression:
+      return node.arguments.some(carriesUntrustedUrl);
+
+    // `'https://host' + userPath`
+    case AST_NODE_TYPES.BinaryExpression:
+      return carriesUntrustedUrl(node.left as TSESTree.Node) || carriesUntrustedUrl(node.right);
+
+    // `http.request({ url: x, host: y })` — only URL-naming keys count by
+    // name; every other key still counts if its value is request-sourced.
+    case AST_NODE_TYPES.ObjectExpression:
+      return node.properties.some(property => {
+        if (property.type !== AST_NODE_TYPES.Property) return false;
+        const value = property.value as TSESTree.Node;
+        if (isRequestSourced(value)) return true;
+        const key =
+          property.key.type === AST_NODE_TYPES.Identifier
+            ? property.key.name
+            : property.key.type === AST_NODE_TYPES.Literal
+              ? String(property.key.value)
+              : '';
+        return URL_OPTION_KEYS.has(key.toLowerCase()) && carriesUntrustedUrl(value);
+      });
+
+    default:
+      return false;
+  }
 }
 
 /**
@@ -190,7 +279,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
       description:
-        'Flags HTTP calls whose URL argument is an identifier with a user-input-sounding name — a heuristic prompt for code review, not a proof of SSRF',
+        'Flags HTTP calls whose URL argument is a user-input-named identifier or reads off a request object — a heuristic prompt for code review, not a proof of SSRF',
       cwe: 'CWE-918',
       cvss: 9.1,
     },
@@ -261,30 +350,19 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
         const urlArg = node.arguments[0];
         if (!urlArg) return;
 
-        // Safe: literal string URL — fetch('https://api.example.com')
-        if (urlArg.type === AST_NODE_TYPES.Literal) return;
+        // Static URLs — fetch('https://api.example.com'), fetch(`https://…`) —
+        // carry nothing untrusted and fall out at the evidence gate below.
 
-        // Safe: template literal without expressions — fetch(`https://api.example.com`)
-        if (
-          urlArg.type === AST_NODE_TYPES.TemplateLiteral &&
-          urlArg.expressions.length === 0
-        ) {
-          return;
-        }
-
-        // The URL is dynamic (identifier, template with expressions, etc.)
         // Check if there is URL validation before this call
         if (hasValidationBefore(node)) {
           return;
         }
 
-        // Check if the argument is a function parameter that looks like user input
-        if (urlArg.type === AST_NODE_TYPES.Identifier) {
-          // If the variable name doesn't suggest user input, skip
-          // This reduces false positives on internal API calls
-          if (!isUserInputParamName(urlArg.name)) {
-            return;
-          }
+        // Require evidence that untrusted data reaches the URL. Applies to
+        // every argument shape — an options object or a template literal used
+        // to bypass this gate entirely and report unconditionally.
+        if (!carriesUntrustedUrl(urlArg as TSESTree.Node)) {
+          return;
         }
 
         context.report({

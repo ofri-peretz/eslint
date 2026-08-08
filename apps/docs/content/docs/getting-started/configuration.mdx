@@ -50,7 +50,7 @@ Combine multiple plugins for comprehensive coverage:
 
 ```js title="eslint.config.js"
 import browserSecurity from 'eslint-plugin-browser-security';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 import secureCoding from 'eslint-plugin-secure-coding';
 import conventions from 'eslint-plugin-conventions';
 
@@ -88,18 +88,20 @@ Apply different rules to different file types:
 ```js title="eslint.config.js"
 import browserSecurity from 'eslint-plugin-browser-security';
 import secureCoding from 'eslint-plugin-secure-coding';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
+import pg from 'eslint-plugin-postgresql-security';
 
 export default [
   browserSecurity.configs.recommended,
   secureCoding.configs.recommended,
   jwt.configs.recommended,
+  pg.configs.recommended,
 
   // Stricter rules for API routes
   {
     files: ['**/api/**/*.ts', '**/routes/**/*.ts'],
     rules: {
-      'secure-coding/no-sql-injection': 'error',
+      'pg/no-unsafe-query': 'error',
       'jwt/no-algorithm-none': 'error',
     },
   },
@@ -201,7 +203,7 @@ export default tseslint.config(
 ```js title="packages/eslint-config-mycompany/index.js"
 import browserSecurity from 'eslint-plugin-browser-security';
 import secureCoding from 'eslint-plugin-secure-coding';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 import conventions from 'eslint-plugin-conventions';
 
 export default [

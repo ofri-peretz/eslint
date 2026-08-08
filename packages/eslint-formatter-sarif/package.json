@@ -21,7 +21,7 @@
     "interlace"
   ],
   "peerDependencies": {
-    "eslint": ">=8.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "scripts": {
     "test": "vitest run",

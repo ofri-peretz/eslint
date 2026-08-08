@@ -210,3 +210,9 @@ export const handler = async (event, lambdaCtx) => {
 - **[Lambda Context Object](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html)** - AWS documentation
 - **[CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)** - Official CWE entry
 - **[AbortController in Node.js](https://nodejs.org/api/globals.html#class-abortcontroller)** - Node.js docs
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

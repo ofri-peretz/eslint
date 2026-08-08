@@ -60,7 +60,46 @@ const userSchema = new Schema({
 });
 ```
 
+## Receiver Requirement
+
+`find()`, `findOne()` and `findById()` are are not MongoDB-exclusive. This rule only fires when the receiver is
+plausibly a Mongo model, collection or database handle — a PascalCase model
+identifier (`User.find(...)`), a name ending in `Model`/`Collection`/`Schema`
+(`this.userModel`, the idiomatic `@InjectModel()` injection), a bare
+`db`/`model`/`collection`, a `db.collection('users')` chain, or a value bound
+to a `mongodb`/`mongoose` import. PascalCase counts only for a module-level
+identifier, not for a property reached through `this` — `this.UserRepository`
+is an injected service, not a model.
+
+It stays silent on:
+
+- `Array.prototype.find` (array literals, predicate callbacks).
+- Generic repository wrappers and other ORMs — a `Repository<T>.findOne()`
+  says nothing about whether `T` has a password.
+
+## Schema Visibility
+
+Even on a real model, the rule needs to see evidence that a sensitive field
+exists before claiming one is exposed. It reports when either:
+
+1. the query itself names a sensitive field (`.select('password')`,
+   `{ projection: { password: 1 } }`), or
+2. a sensitive field name is visible in the file — a `new Schema({...})` key,
+   an `@Prop()`/`@Column()` property, an interface member.
+
+Set `requireVisibleSensitiveField: false` to go back to flagging every
+unprojected read regardless of what the rule can see. That trades a large
+amount of noise for recall on codebases whose schemas live entirely outside
+the files that query them.
+
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitiveFields` | `string[]` | `["password","refreshToken","apiKey","secret"]` | Document field names treated as sensitive |
+| `requireVisibleSensitiveField` | `boolean` | `true` | Only report when a sensitive field is visibly selected |
+
 
 ```json
 {
@@ -74,7 +113,8 @@ const userSchema = new Schema({
           "apiKey",
           "secret",
           "ssn"
-        ]
+        ],
+        "requireVisibleSensitiveField": true
       }
     ]
   }

@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-node-security",
-  "version": "4.4.3",
-  "description": "Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, path, Buffer). Detects command injection, path traversal, code execution vulnerabilities with AI-parseable error messages.",
+  "version": "4.8.1",
+  "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -15,8 +15,8 @@
       "default": "./src/types/index.js"
     },
     "./oxlint": {
-      "types": "./src/oxlint.d.ts",
-      "default": "./src/oxlint.js"
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -24,7 +24,7 @@
   "homepage": "https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-node-security",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofri-peretz/eslint",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-node-security"
   },
   "bugs": {
@@ -43,38 +43,45 @@
   ],
   "keywords": [
     "eslint",
-    "eslint-plugin",
     "eslintplugin",
-    "interlace-security",
-    "security",
-    "node-security",
-    "nodejs",
-    "child-process",
-    "command-injection",
-    "path-traversal",
-    "fs",
-    "vm",
-    "buffer",
-    "owasp",
-    "cwe",
-    "vulnerability",
-    "llm-optimized",
-    "ai-assistant",
-    "auto-fix",
-    "typescript",
+    "eslint-plugin",
+    "static-analysis",
     "linting",
     "code-quality",
-    "ast",
-    "static-analysis",
-    "mcp",
-    "model-context-protocol"
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "node",
+    "nodejs",
+    "node-security",
+    "nodesecurity",
+    "command-injection",
+    "cwe-78",
+    "path-traversal",
+    "cwe-22",
+    "ssrf",
+    "zip-slip",
+    "child-process",
+    "crypto",
+    "cryptography",
+    "weak-hash",
+    "md5",
+    "sha1",
+    "timing-attack",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "^1.4.2"
+    "@interlace/eslint-devkit": "^1.10.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -87,10 +94,10 @@
     "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/ofri-peretz/eslint"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   }
 }

@@ -13,7 +13,28 @@
  * @see https://docs.nestjs.com/security/rate-limiting
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import {
+  decoratorCall,
+  enclosingClass,
+  expressionName,
+  findDecorator,
+  hasDecorator,
+  collectImportOrigins,
+  isAccessControlDecorator,
+  HTTP_METHOD_DECORATORS,
+  isControllerClass,
+  isTestFile,
+  memberName,
+  type ClassNode,
+} from '../../utils/nest-ast';
+import { getProjectContext } from '../../utils/project-context';
+import { tokenize } from '../../utils/sensitive-names';
 
 type MessageIds = 'missingThrottler' | 'addThrottler';
 
@@ -24,24 +45,98 @@ export interface Options {
   skipRoutes?: string[];
   /** Skip rule if ThrottlerModule is configured globally in AppModule. Default: false */
   assumeGlobalThrottler?: boolean;
+  /**
+   * Only require throttling on credential/abuse-prone routes (login, signup,
+   * password reset, OTP, ...). Default: true.
+   *
+   * Set false to require it on every route — accurate to CWE-770 in the
+   * abstract, but on real codebases that reports every endpoint, because rate
+   * limiting is normally applied globally via ThrottlerModule + APP_GUARD
+   * rather than per route.
+   */
+  onlySensitiveRoutes?: boolean;
+  /**
+   * Scan the project for rate limiting registered app-wide via `ThrottlerModule` plus a guard,
+   * and stay quiet when one is found. Default: true.
+   *
+   * The registration lives in a different file from the route, so a
+   * single-file rule cannot see it — this is the cross-file scan that
+   * makes the difference between silence and reporting a correctly
+   * configured application.
+   */
+  detectGlobalThrottler?: boolean;
 }
 
 type RuleOptions = [Options?];
 
-// HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = new Set([
-  'Get',
-  'Post',
-  'Put',
-  'Patch',
-  'Delete',
-  'Options',
-  'Head',
-  'All',
-]);
+/** No per-rule extra names here; the module origin decides. */
+const EMPTY_NAMES: ReadonlySet<string> = new Set();
 
 // Throttle-related decorators
 const THROTTLE_DECORATORS = new Set(['Throttle', 'SkipThrottle']);
+
+/**
+ * Route/handler name tokens that mark a credential or abuse-prone endpoint.
+ * These are where missing rate limiting is exploitable (brute force, user
+ * enumeration, OTP flooding, mail bombing) rather than merely absent.
+ */
+const SENSITIVE_ROUTE_TOKENS = [
+  'login',
+  'signin',
+  'sign-in',
+  'logout',
+  'signup',
+  'sign-up',
+  'register',
+  'registration',
+  'password',
+  'passwd',
+  'forgot',
+  'reset',
+  'recover',
+  'confirm',
+  'verify',
+  'verification',
+  'otp',
+  'mfa',
+  '2fa',
+  'totp',
+  'token',
+  'refresh',
+  'resend',
+  'invite',
+  'invitation',
+  'auth',
+  'session',
+];
+
+const SENSITIVE_ROUTE_TOKEN_SET: ReadonlySet<string> = new Set(
+  SENSITIVE_ROUTE_TOKENS,
+);
+
+// Deliberately NOT in the list: 'search', 'upload', 'email', 'sms'. Those are
+// capacity and cost concerns, not credential abuse — and in the corpus they are
+// almost always authenticated endpoints, where brute force is not the threat.
+// immich's `@Post('smart')` search sat behind `@Authenticated` and was reported
+// purely because "search" was on the list.
+
+/**
+ * Whether a route path or handler name looks credential/abuse-prone.
+ *
+ * Matched per token, not by substring. `lower.includes('auth')` is true of
+ * `authors`, `AuthorsController` and `authorize`, and true of `tokenize` for
+ * `token` — a rule that reports an author listing for rate limiting is telling
+ * the reader it does not understand the code.
+ *
+ * A sensitive token counts in any position: the corpus names these handlers
+ * `verifyEmail`, `requestPasswordReset` and `resendVerifyEmail` as often as it
+ * names them `login`, so suffix-only matching would drop most of them.
+ */
+function isSensitiveRoute(candidates: readonly string[]): boolean {
+  return candidates.some((c) =>
+    tokenize(c).some((token) => SENSITIVE_ROUTE_TOKEN_SET.has(token)),
+  );
+}
 
 export const requireThrottler = createRule<RuleOptions, MessageIds>({
   name: 'require-throttler',
@@ -49,7 +144,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-throttler.md',
-      description: 'Requires ThrottlerGuard or @Throttle decorator for rate limiting',
+      description:
+        'Requires ThrottlerGuard or @Throttle decorator for rate limiting',
       cwe: 'CWE-770',
       cvss: 7.5,
     },
@@ -60,7 +156,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         issueName: 'Missing Rate Limiting',
         cwe: 'CWE-770',
         cvss: 7.5,
-        description: 'Controller {{name}} lacks rate limiting protection (Throttler)',
+        description:
+          'Controller {{name}} lacks rate limiting protection (Throttler)',
         severity: 'HIGH',
         fix: 'Add @UseGuards(ThrottlerGuard) or configure global ThrottlerModule',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
@@ -68,7 +165,8 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       addThrottler: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Add Rate Limiting',
-        description: 'Configure ThrottlerModule to protect against DoS/brute-force attacks',
+        description:
+          'Configure ThrottlerModule to protect against DoS/brute-force attacks',
         severity: 'LOW',
         fix: 'npm i @nestjs/throttler && ThrottlerModule.forRoot({ ttl: 60, limit: 10 })',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
@@ -79,131 +177,156 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          skipRoutes: { type: 'array', items: { type: 'string' }, default: [] },
-          assumeGlobalThrottler: { type: 'boolean', default: false },
+          detectGlobalThrottler: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Look for a globally registered ThrottlerGuard before reporting',
+          },
+          skipRoutes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Route paths exempt from the throttling requirement',
+          },
+          assumeGlobalThrottler: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Assume a global ThrottlerGuard exists even if none is found',
+          },
+          onlySensitiveRoutes: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Only require throttling on authentication and mutation routes',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true, skipRoutes: [], assumeGlobalThrottler: false }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowInTests = true, assumeGlobalThrottler = false } = options as Options;
+  defaultOptions: [
+    { allowInTests: true, skipRoutes: [], assumeGlobalThrottler: false },
+  ],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const {
+      allowInTests = true,
+      assumeGlobalThrottler = false,
+      detectGlobalThrottler = true,
+      skipRoutes = [],
+      onlySensitiveRoutes = true,
+    } = options as Options;
 
     // Skip entirely if global ThrottlerModule is assumed (configured in AppModule)
     if (assumeGlobalThrottler) {
       return {};
     }
 
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-
-    if (allowInTests && isTestFile) {
+    if (allowInTests && isTestFile(context.filename)) {
       return {};
     }
 
-    // Track class-level throttler and controller state
-    let isController = false;
-    let hasClassLevelThrottler = false;
-    let hasThrottlerGuard = false;
-
-    /**
-     * Check if decorators include @UseGuards with ThrottlerGuard
-     */
-    function hasThrottlerGuardDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        if (dec.expression.type === AST_NODE_TYPES.CallExpression) {
-          const callee = dec.expression.callee;
-          if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'UseGuards') {
-            return dec.expression.arguments.some(
-              (arg: TSESTree.CallExpressionArgument) => arg.type === AST_NODE_TYPES.Identifier && arg.name === 'ThrottlerGuard'
-            );
-          }
-        }
-        return false;
-      });
+    // The registration lives in another file, so this is the only way a
+    // single-file rule can know it exists. Without it the rule reports every
+    // route of a correctly-configured application.
+    if (
+      detectGlobalThrottler &&
+      getProjectContext(context).hasGlobalThrottler
+    ) {
+      return {};
     }
 
-    /**
-     * Check if decorators include @Throttle or @SkipThrottle
-     */
-    function hasThrottleDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return THROTTLE_DECORATORS.has(name);
-      });
+    const origins = collectImportOrigins(context.sourceCode.ast);
+    const skipped = new Set(skipRoutes);
+
+    /** Whether @UseGuards(...) installs a ThrottlerGuard. */
+    function hasThrottlerGuardDecorator(
+      decorators: TSESTree.Decorator[] | undefined,
+    ): boolean {
+      const dec = findDecorator(decorators, 'UseGuards');
+      const call = dec ? decoratorCall(dec) : null;
+      if (!call) return false;
+      return call.arguments.some(
+        (arg) => expressionName(arg) === 'ThrottlerGuard',
+      );
     }
 
-    /**
-     * Check if class has @Controller decorator
-     */
-    function hasControllerDecorator(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return name === 'Controller';
-      });
+    /** Whether @Throttle or @SkipThrottle is applied. */
+    function hasThrottleDecorator(
+      decorators: TSESTree.Decorator[] | undefined,
+    ): boolean {
+      return hasDecorator(decorators, THROTTLE_DECORATORS);
     }
 
-    /**
-     * Check if method has HTTP method decorator
-     */
-    function isRouteHandler(decorators: TSESTree.Decorator[] | undefined): boolean {
-      if (!decorators) return false;
-      return decorators.some((dec) => {
-        const name =
-          dec.expression.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.name
-            : dec.expression.type === AST_NODE_TYPES.CallExpression &&
-              dec.expression.callee.type === AST_NODE_TYPES.Identifier
-            ? dec.expression.callee.name
-            : '';
-        return HTTP_METHOD_DECORATORS.has(name);
-      });
+    /** Route paths declared by an HTTP-method decorator, without slashes. */
+    function routePaths(routeDecorator: TSESTree.Decorator): string[] {
+      const call = decoratorCall(routeDecorator);
+      if (!call) return [];
+      return call.arguments
+        .filter(
+          (arg): arg is TSESTree.StringLiteral =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            typeof arg.value === 'string',
+        )
+        .map((arg) => arg.value.replace(/^\/+|\/+$/g, ''));
     }
 
     return {
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        isController = hasControllerDecorator(node.decorators);
-        hasClassLevelThrottler = hasThrottleDecorator(node.decorators);
-        hasThrottlerGuard = hasThrottlerGuardDecorator(node.decorators);
-      },
-
       MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (!isController) return;
-        if (!isRouteHandler(node.decorators)) return;
+        // A MethodDefinition is always a ClassBody child, so this is non-null.
+        const cls = enclosingClass(node) as ClassNode;
+        if (!isControllerClass(cls)) return;
+
+        const routeDecorator = findDecorator(
+          node.decorators,
+          HTTP_METHOD_DECORATORS,
+        );
+        if (!routeDecorator) return;
 
         // Skip if class or method has throttler
         if (
-          hasClassLevelThrottler ||
-          hasThrottlerGuard ||
+          hasThrottleDecorator(cls.decorators) ||
+          hasThrottlerGuardDecorator(cls.decorators) ||
           hasThrottleDecorator(node.decorators) ||
           hasThrottlerGuardDecorator(node.decorators)
         ) {
           return;
         }
 
-        // Skip constructor
-        if (node.key.type === AST_NODE_TYPES.Identifier && node.key.name === 'constructor') {
+        // A route behind authentication is not a brute-force target: the
+        // attacker needs credentials to reach it at all. Rate limiting there is
+        // a capacity decision, not CWE-770 credential abuse. This makes the rule
+        // the exact complement of require-guards, which exempts the public
+        // authentication entry points that this rule protects.
+        if (
+          onlySensitiveRoutes &&
+          ((node.decorators ?? []).some((d) =>
+            isAccessControlDecorator(d, origins, EMPTY_NAMES),
+          ) ||
+            (cls.decorators ?? []).some((d) =>
+              isAccessControlDecorator(d, origins, EMPTY_NAMES),
+            ))
+        ) {
           return;
         }
 
-        const methodName =
-          node.key.type === AST_NODE_TYPES.Identifier ? node.key.name : '<anonymous>';
+        const methodName = memberName(node) ?? '<anonymous>';
+        const paths = routePaths(routeDecorator);
+
+        // `skipRoutes` matches either the handler name or a declared route path.
+        if (skipped.has(methodName) || paths.some((p) => skipped.has(p))) {
+          return;
+        }
+
+        // By default only credential/abuse-prone routes must declare throttling;
+        // everything else is normally covered by a global ThrottlerModule.
+        if (onlySensitiveRoutes && !isSensitiveRoute([methodName, ...paths])) {
+          return;
+        }
 
         context.report({
           node,

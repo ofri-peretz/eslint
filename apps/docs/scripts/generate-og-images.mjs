@@ -30,6 +30,31 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PLUGINS } from '../src/lib/plugins.ts';
 
+/**
+ * Published packages that carry the same README banner but are NOT plugins, so
+ * they don't (and shouldn't) appear in the PLUGINS registry that drives the docs
+ * sidebar. Same card shape — `pillar` is the footer tag and picks the accent.
+ * Only add entries here for packages that are actually published to npm.
+ */
+const EXTRAS = [
+  // Published 2026-08-02/03, not yet integrated into the docs sidebar — that
+  // needs MDX pages, TSV type-awareness rows and a DESCRIPTIONS entry each.
+  // They still need an OG banner because readme-og-banner-lock requires one
+  // for every published package.
+  { slug: 'mcp-sdk-security', package: 'eslint-plugin-mcp-sdk-security', pillar: 'security', description: 'Model Context Protocol SDK' },
+  { slug: 'openai-security', package: 'eslint-plugin-openai-security', pillar: 'security', description: 'OpenAI SDK & Agents SDK' },
+  { slug: 'anthropic-security', package: 'eslint-plugin-anthropic-security', pillar: 'security', description: 'Anthropic SDK & Claude Agent SDK' },
+  { slug: 'gemini-security', package: 'eslint-plugin-gemini-security', pillar: 'security', description: 'Google Gemini SDK safety settings' },
+  { slug: 'postgresql-security', package: 'eslint-plugin-postgresql-security', pillar: 'security', description: 'PostgreSQL queries & connections' },
+  { slug: 'jwt-security', package: 'eslint-plugin-jwt-security', pillar: 'security', description: 'JWT signing & verification' },
+  {
+    slug: 'devkit',
+    package: '@interlace/eslint-devkit',
+    pillar: 'tooling',
+    description: 'AST helpers & rule testing',
+  },
+];
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = path.resolve(__dirname, '..');
 const PUBLIC_DIR = path.join(DOCS_ROOT, 'public');
@@ -224,7 +249,7 @@ function main() {
     }
 
     if (doPlugins) {
-      for (const plugin of PLUGINS) {
+      for (const plugin of [...PLUGINS, ...EXTRAS]) {
         const outPath = path.join(IMAGES_DIR, `og-${plugin.slug}.png`);
         const isNew = !existsSync(outPath);
         const svg = pluginCardSVG(plugin);

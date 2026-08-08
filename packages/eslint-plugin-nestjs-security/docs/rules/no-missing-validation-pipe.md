@@ -1,18 +1,18 @@
 ---
 title: no-missing-validation-pipe
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-20
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
 > Require ValidationPipe for DTO input parameters
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -27,13 +27,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Improper Input Validation detected`                                                                                                                                                                                                                        |
+| **Severity & Compliance** | Impact assessment      | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]`                                                                                                                                                                                                                   |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Rule Details
 
@@ -82,13 +82,32 @@ app.useGlobalPipes(
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalPipes` | `boolean` | `true` | Look for a globally registered ValidationPipe before reporting |
+| `assumeGlobalPipes` | `boolean` | `false` | Assume a global ValidationPipe exists even if none is found |
+| `requireExplicitPipe` | `boolean` | `false` | Require a per-handler pipe even when a global one is registered |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Skip if global pipes configured in main.ts (default: false)
+  // Scan the project's module and bootstrap files for an app-wide pipe
+  // (APP_PIPE / app.useGlobalPipes) and stay silent when one exists
+  // (default: true)
+  detectGlobalPipes?: boolean;
+
+  // Assume a global pipe without scanning (default: false)
   assumeGlobalPipes?: boolean;
+
+  // Require an explicit per-route pipe even where a global one would validate
+  // the input. Off by default: the rule reports only shapes no ValidationPipe
+  // can validate — missing annotation, any, unknown, object, inline type
+  // literals (default: false)
+  requireExplicitPipe?: boolean;
 }
 ```
 
@@ -106,21 +125,25 @@ new ValidationPipe({
 
 - If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
 
+## Cross-File Detection
+
+### Registered app-wide
+
+The rule scans the project's module and bootstrap files and stays silent when it
+finds an app-wide registration, so this is _not_ a false positive:
+
+```typescript
+// main.ts
+app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+```
+
+Turn the scan off with `detectGlobalPipes: false` if you want the routes reported anyway.
+What the scan still cannot resolve is a registration built at runtime or
+supplied by a library — `assumeGlobalPipes: true` covers those.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### Global Pipe in Separate File
-
-**Why**: Global pipes in main.ts are not linked to controller files.
-
-```typescript
-// ❌ NOT DETECTED - Global pipe exists but not visible
-// main.ts: app.useGlobalPipes(new ValidationPipe())
-// controller.ts: No @UsePipes needed, but rule flags it
-```
-
-**Mitigation**: Set `assumeGlobalPipes: true` in rule options.
 
 ### Conditional Pipe Application
 

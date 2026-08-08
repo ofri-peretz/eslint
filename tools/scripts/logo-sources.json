@@ -1,0 +1,31 @@
+{
+  "_comment": "Upstream source for every mark in apps/docs/public/logos/. Vector sources run through normalize-logos.mjs (nested <svg>); raster sources are downscaled to 180px and inlined as a data URI in the same 120x90 canvas. Always pick the variant that reads on white — npm's README background.",
+  "_verify": "After regenerating, open each mark at height=90 on white and LOOK at it. Two silent failure modes bit us: a truncated PNG still reports valid dimensions to `file` but renders as a partial band, and a mark that colours itself with a root-level fill goes black if the attribute is dropped.",
+
+  "interlace": { "url": "apps/docs/public/icon-light.svg", "type": "vector", "note": "local; light-pair mark for white backgrounds" },
+  "eslint": { "url": "apps/docs/public/eslint-logo.svg", "type": "vector", "note": "local; carries its own prefers-color-scheme dark override" },
+  "oxlint": { "url": "https://oxc.rs/oxc-dark.svg", "type": "vector", "note": "oxc names variants by INK colour, not background — '-dark' is the dark-ink file for light backgrounds" },
+
+  "node": { "url": "https://nodejs.org/static/logos/jsIconGreen.svg", "type": "vector" },
+  "nestjs": { "url": "https://nestjs.com/img/logo-small.svg", "type": "vector" },
+  "express": { "url": "https://expressjs.com/images/logos/logo-express-black.svg", "type": "vector", "note": "'-white' is invisible on npm's white background" },
+  "chromium": { "url": "https://commons.wikimedia.org/wiki/File:Chromium_Logo.svg", "type": "vector", "note": "the real Chromium mark, not a fork's wordmark" },
+  "lambda": { "url": "https://icon.icepanel.io/AWS/svg/Compute/Lambda.svg", "type": "vector", "note": "AWS blocks hotlinking from awsstatic; not in simple-icons" },
+  "claude": { "url": "https://cdn.simpleicons.org/claude/D97757", "type": "vector", "note": "root-level fill — see _verify" },
+
+  "vercel": { "url": "https://avatars.githubusercontent.com/u/14985020?s=200&v=4", "type": "raster" },
+  "openai": { "url": "https://avatars.githubusercontent.com/u/14957082?s=200&v=4", "type": "raster" },
+  "gemini": { "url": "https://images.seeklogo.com/logo-png/63/1/gemini-new-logo-png_seeklogo-638161.png", "type": "raster" },
+  "mcp": { "url": "https://avatars.githubusercontent.com/u/182288589?s=200&v=4", "type": "raster" },
+  "postgresql": { "url": "https://avatars.githubusercontent.com/u/177543?s=200&v=4", "type": "raster" },
+  "mongodb": { "url": "https://avatars.githubusercontent.com/u/45120?s=200&v=4", "type": "raster" },
+  "mysql": { "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqTQE9SHua_q8_ltMyXwBYOM2QvkjFAkbTcEujEEYFBw", "type": "raster" },
+  "sqlite": { "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJeCy5_I7jwXy2c0aW13p9SmK3M6PCh6Aj8CEhjHo_kqCYYY36PDTeG5c", "type": "raster" },
+  "jwt": { "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQIRj7oxNUVrxEDkGbvSbOXGs1E7L0MHSDA8YfEOy8g6A", "type": "raster" },
+  "react": { "url": "https://avatars.githubusercontent.com/u/102812?s=200&v=4", "type": "raster" },
+  "prisma": { "url": "https://avatars.githubusercontent.com/u/17219288?s=200&v=4", "type": "raster" },
+  "drizzle": { "url": "https://avatars.githubusercontent.com/u/108468352?s=200&v=4", "type": "raster" },
+  "knex": { "url": "https://avatars.githubusercontent.com/u/10490573?s=200&v=4", "type": "raster" },
+  "typeorm": { "url": "https://avatars.githubusercontent.com/u/20165699?s=200&v=4", "type": "raster" },
+  "sequelize": { "url": "https://avatars.githubusercontent.com/u/3591786?s=200&v=4", "type": "raster" }
+}

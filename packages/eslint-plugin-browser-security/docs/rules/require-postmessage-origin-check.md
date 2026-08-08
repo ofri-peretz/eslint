@@ -94,9 +94,10 @@ message
 
 ## Options
 
-| Option         | Type      | Default | Description                              |
-| -------------- | --------- | ------- | ---------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow missing origin check in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `trustedOrigins` | `string[]` | `[]` | Origins accepted without an explicit check |
 
 ```json
 {

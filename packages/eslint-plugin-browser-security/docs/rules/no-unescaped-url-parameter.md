@@ -17,7 +17,7 @@ Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or 
 **CWE:** [CWE-116](https://cwe.mitre.org/data/definitions/116.html)  
 **OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
-Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
@@ -129,7 +129,7 @@ const url = `https://example.com?${params}`; // ✅ Safe
 ```javascript
 {
   rules: {
-    'secure-coding/no-unescaped-url-parameter': ['error', {
+    'browser-security/no-unescaped-url-parameter': ['error', {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['url', 'querystring'], // Trusted URL construction libraries
       ignorePatterns: []                     // Additional safe patterns to ignore
@@ -140,11 +140,11 @@ const url = `https://example.com?${params}`; // ✅ Safe
 
 ## Options
 
-| Option             | Type       | Default                  | Description                                     |
-| ------------------ | ---------- | ------------------------ | ----------------------------------------------- |
-| `allowInTests`     | `boolean`  | `false`                  | Allow unescaped URL parameters in test files    |
-| `trustedLibraries` | `string[]` | `['url', 'querystring']` | Trusted URL construction libraries to recognize |
-| `ignorePatterns`   | `string[]` | `[]`                     | Additional safe patterns to ignore              |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow unescaped URL parameters in test files |
+| `trustedLibraries` | `string[]` | `["url","querystring"]` | Trusted URL construction libraries |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ## Rule Logic Flow
 

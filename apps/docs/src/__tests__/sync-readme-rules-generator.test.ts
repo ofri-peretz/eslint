@@ -1,7 +1,7 @@
 /**
  * Unit tests for the root-level rules-table generator at
  * `scripts/sync-readme-rules.ts`. The generator is the single source of truth
- * for README rule tables across all 19 plugins — these tests lock the
+ * for README rule tables across all 26 plugins — these tests lock the
  * behaviors that regressed in 2026-05 (eating adjacent markdown tables,
  * dropping rules silently, non-idempotent output).
  */
@@ -34,7 +34,7 @@ const SAMPLE_RULE: RuleMeta = {
 
 describe('renderRulesTable', () => {
   it('emits the canonical 11-column schema with glyph for type-unaware', () => {
-    const out = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality');
+    const out = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality', 'eslint-plugin-reliability');
     expect(out.split('\n')[0]).toBe(
       '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |',
     );
@@ -49,8 +49,8 @@ describe('renderRulesTable', () => {
   it('uses 🟡 for optional and 🟠 for aware', () => {
     const refining: RuleMeta = { ...SAMPLE_RULE, typeStatus: 'optional' };
     const graceful: RuleMeta = { ...SAMPLE_RULE, typeStatus: 'aware' };
-    expect(renderRulesTable([refining], 'reliability', 'quality')).toContain('🟡');
-    expect(renderRulesTable([graceful], 'reliability', 'quality')).toContain('🟠');
+    expect(renderRulesTable([refining], 'reliability', 'quality', 'eslint-plugin-reliability')).toContain('🟡');
+    expect(renderRulesTable([graceful], 'reliability', 'quality', 'eslint-plugin-reliability')).toContain('🟠');
   });
 
   it('sorts rules alphabetically by name', () => {
@@ -59,7 +59,7 @@ describe('renderRulesTable', () => {
       { ...SAMPLE_RULE, name: 'apple' },
       { ...SAMPLE_RULE, name: 'mango' },
     ];
-    const out = renderRulesTable(rules, 'reliability', 'quality');
+    const out = renderRulesTable(rules, 'reliability', 'quality', 'eslint-plugin-reliability');
     const order = out.match(/\[(apple|mango|zebra)\]/g) ?? [];
     expect(order).toEqual(['[apple]', '[mango]', '[zebra]']);
   });
@@ -94,7 +94,7 @@ describe('spliceTable', () => {
 ## 📦 Compatibility
 `;
 
-  const NEW_TABLE = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality');
+  const NEW_TABLE = renderRulesTable([SAMPLE_RULE], 'reliability', 'quality', 'eslint-plugin-reliability');
 
   it('on first run wraps the existing rule table with markers and leaves neighbors intact', () => {
     const { content, modified } = spliceTable(FIXTURE, NEW_TABLE);
@@ -179,9 +179,9 @@ describe('spliceTable', () => {
 });
 
 describe('loadPluginRegistry', () => {
-  it('parses the canonical 19-plugin registry from apps/docs/src/lib/plugins.ts', () => {
+  it('parses the canonical 26-plugin registry from apps/docs/src/lib/plugins.ts', () => {
     const registry = loadPluginRegistry(resolve(ROOT, 'apps', 'docs', 'src', 'lib', 'plugins.ts'));
-    expect(registry.length).toBe(19);
+    expect(registry.length).toBe(26);
     const slugs = registry.map((p) => p.slug);
     expect(slugs).toContain('reliability');
     expect(slugs).toContain('browser-security');

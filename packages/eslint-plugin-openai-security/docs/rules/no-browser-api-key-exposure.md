@@ -1,0 +1,40 @@
+---
+title: no-browser-api-key-exposure
+description: Forbid dangerouslyAllowBrowser, which exposes the OpenAI API key to the client
+tags: ['security','openai']
+category: security
+severity: high
+cwe: CWE-522
+autofix: false
+---
+
+# no-browser-api-key-exposure
+
+> Forbid `dangerouslyAllowBrowser`, which exposes the OpenAI API key to the client.
+
+- **CWE:** [CWE-522 — Insufficiently Protected Credentials](https://cwe.mitre.org/data/definitions/522.html)
+- **OWASP:** A07:2021 — Identification and Authentication Failures
+- **CVSS:** 8.6 (High) · **Recommended:** `error`
+
+## Why
+
+The flag exists to let the SDK run in a browser. That means the API key is shipped to every visitor and readable in devtools or the network tab. A leaked key is billable by whoever finds it, and rotating it requires a deploy.
+
+The rule fires only in files importing `openai` or `@openai/`, and only when the flag is literally `true` — a variable or spread could be `false`, so those are left alone.
+
+## Incorrect
+
+```ts
+import OpenAI from 'openai';
+const client = new OpenAI({ apiKey: KEY, dangerouslyAllowBrowser: true });
+```
+
+## Correct
+
+```ts
+// server route
+import OpenAI from 'openai';
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+```
+
+Call the model server-side and forward the result, so the key never leaves the server.

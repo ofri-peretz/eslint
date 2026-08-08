@@ -67,6 +67,25 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       expect(recommendedRules['secure-coding/no-unsafe-deserialization']).toBe('warn');
     });
 
+    /**
+     * Regression lock — `no-insecure-comparison` must stay OUT of the presets
+     * that ship as "turn this on and go".
+     *
+     * It is `deprecated` in favour of `node-security/no-timing-unsafe-compare`,
+     * and on a 1,470-file corpus (webpack, lodash, eslint-plugin-import, two
+     * NestJS boilerplates) 100% of its 876 findings were plain `==` / `!=`
+     * reports already produced by core `eqeqeq`. It remains exported and
+     * reachable via `strict` / explicit opt-in.
+     */
+    it('keeps no-insecure-comparison out of recommended and owasp-top-10', () => {
+      expect(configs.recommended.rules?.['secure-coding/no-insecure-comparison']).toBeUndefined();
+      expect(configs['recommended-strict'].rules?.['secure-coding/no-insecure-comparison']).toBeUndefined();
+      expect(configs['owasp-top-10'].rules?.['secure-coding/no-insecure-comparison']).toBeUndefined();
+      // Still shipped, still opt-in-able.
+      expect(rules['no-insecure-comparison']).toBeDefined();
+      expect(configs.strict.rules?.['secure-coding/no-insecure-comparison']).toBe('error');
+    });
+
     it('should provide strict configuration', () => {
       expect(configs.strict).toBeDefined();
       expect(configs.strict.plugins?.['secure-coding']).toBeDefined();

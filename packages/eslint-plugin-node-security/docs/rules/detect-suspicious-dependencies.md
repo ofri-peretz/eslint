@@ -75,7 +75,7 @@ If a package name is within 2 edits of a popular package name, it's flagged as s
 ```javascript
 {
   rules: {
-    'secure-coding/detect-suspicious-dependencies': 'error'
+    'node-security/detect-suspicious-dependencies': 'error'
   }
 }
 ```

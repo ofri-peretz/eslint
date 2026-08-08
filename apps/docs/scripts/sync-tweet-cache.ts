@@ -14,9 +14,10 @@
  * the tweet data for each ID found.
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = join(__dirname, '../src');
@@ -113,27 +114,17 @@ export interface TweetCache {
 }
 
 /**
- * Save cache to file
+ * Save cache to file.
+ *
+ * The comparison ignores `_cachedAt` / `_lastUpdated` (see
+ * `write-json-if-changed.ts`). It used to include the per-tweet `_cachedAt`,
+ * which meant every re-fetch after the 7-day TTL rewrote the file even when
+ * Twitter returned byte-identical tweets — churn that dirties the tree on a
+ * plain `npm run build` and blocks `git merge`.
  */
 function saveCache(cache: TweetCache) {
-  // Read directly and catch ENOENT instead of `existsSync()` + `readFileSync()`
-  // (CodeQL: "Potential file system race condition" — the file could vanish
-  // between the two calls). Any read/parse failure means we should just write.
-  let writeNeeded = true;
-  try {
-    const existing = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    if (JSON.stringify(existing.tweets) === JSON.stringify(cache.tweets)) {
-      writeNeeded = false;
-      console.log(`\n✅ cached-tweets.json data unchanged, skipping write to prevent git churn.`);
-    }
-  } catch {
-    // Missing or unparseable — fall through to write.
-  }
-
-  if (writeNeeded) {
-    cache._lastUpdated = new Date().toISOString();
-    writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
-  }
+  cache._lastUpdated = new Date().toISOString();
+  writeJsonIfChanged(CACHE_FILE, cache, 'cached-tweets.json');
 }
 
 /**

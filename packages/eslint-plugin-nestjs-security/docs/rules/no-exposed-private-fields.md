@@ -5,14 +5,14 @@ tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-200
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 ---
 
 > Detect exposed sensitive fields in DTOs/entities
 
-
 <!-- @rule-summary -->
+
 This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
 <!-- @/rule-summary -->
 
@@ -64,10 +64,21 @@ class UsersController {
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitivePatterns` | `string[]` | `[]` | Extra field-name patterns to treat as sensitive |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
+
+  // Field-name terms treated as sensitive. Matched on token boundaries, so
+  // `hashedPassword` matches while `passwordChangedAt` and `shippingAddress`
+  // do not (default: password, secret, token, apiKey, privateKey, …)
+  sensitivePatterns?: string[];
 }
 ```
 

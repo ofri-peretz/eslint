@@ -26,7 +26,24 @@ describe('require-secure-deletion coverage gaps', () => {
       // Non-delete unary operators → operator check false
       { code: 'const negated = !flag;' },
       { code: 'const kind = typeof value;' },
+      // `delete` of a non-member expression → no statically known property
+      { code: 'delete window[Symbol.iterator];' },
+      // Computed member with a non-string literal key
+      { code: 'delete arr[0];' },
+      // Custom fragment not configured → not sensitive
+      { code: 'delete record.pinCode;' },
+      // Argument is not a member expression at all → no property name
+      { code: 'delete (a, b.password);' },
     ],
-    invalid: [],
+    invalid: [
+      // Optional chaining still resolves to the property name
+      { code: 'delete user?.password;', errors: [{ messageId: 'violationDetected' }] },
+      // Custom fragment configured → reported
+      {
+        code: 'delete record.pinCode;',
+        options: [{ additionalSensitiveProperties: ['pincode'] }],
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
   });
 });

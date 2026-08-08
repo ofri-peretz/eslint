@@ -72,9 +72,11 @@ app.post('/login', loginLimiter, (req, res) => {
 
 ## Options
 
-| Option         | Type      | Default | Description                               |
-| -------------- | --------- | ------- | ----------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow missing rate limiting in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `alternativeMiddleware` | `string[]` | `[]` | Extra middleware names that count as rate limiting |
+| `assumeRateLimiting` | `boolean` | `false` | Skip if rate limiting is provided by infrastructure (API Gateway, nginx, etc.) |
 
 ```json
 {

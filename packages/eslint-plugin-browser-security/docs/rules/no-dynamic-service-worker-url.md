@@ -56,10 +56,15 @@ navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-dynamic-service-worker-url": [
+    "browser-security/no-dynamic-service-worker-url": [
       "error",
       {
         "allowInTests": true

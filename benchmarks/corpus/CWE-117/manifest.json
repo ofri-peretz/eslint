@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-117",
+  "name": "Improper Output Neutralization for Logs (log injection)",
+  "owasp": "A09:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-secure-coding"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "newline-in-log-message.js",
+        "description": "req.body.username concatenated into a log message (CR/LF forges records)"
+      },
+      {
+        "file": "template-literal-log.js",
+        "description": "Untrusted header/query values interpolated into a log template literal"
+      }
+    ],
+    "safe": [
+      {
+        "file": "stripped-newlines.js",
+        "description": "CR/LF and control characters stripped before logging"
+      },
+      {
+        "file": "structured-logging.js",
+        "description": "Constant message plus JSON-encoded fields for untrusted values"
+      }
+    ]
+  }
+}

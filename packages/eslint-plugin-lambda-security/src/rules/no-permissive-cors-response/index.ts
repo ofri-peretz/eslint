@@ -20,8 +20,6 @@ type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Allowed origins (patterns). Default: [] */
-  allowedOrigins?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -65,23 +63,12 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Allow permissive CORS in test files',
           },
-          allowedOrigins: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Patterns for allowed origins',
-          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [
-    {
-      allowInTests: true,
-      allowedOrigins: [],
-    },
-  ],
+  defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
@@ -135,25 +122,39 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * Check a Lambda-shaped response object literal for permissive CORS.
+     */
+    function checkResponseObject(obj: TSESTree.ObjectExpression): void {
+      if (!isLambdaResponse(obj)) return;
+
+      // Find headers property
+      for (const prop of obj.properties) {
+        if (
+          prop.type === AST_NODE_TYPES.Property &&
+          prop.key.type === AST_NODE_TYPES.Identifier &&
+          prop.key.name === 'headers' &&
+          prop.value.type === AST_NODE_TYPES.ObjectExpression
+        ) {
+          checkHeadersObject(prop.value);
+        }
+      }
+    }
+
     return {
       // Check return statements that return Lambda response objects
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (node.argument?.type === AST_NODE_TYPES.ObjectExpression) {
-          const obj = node.argument;
-          
-          if (isLambdaResponse(obj)) {
-            // Find headers property
-            for (const prop of obj.properties) {
-              if (
-                prop.type === AST_NODE_TYPES.Property &&
-                prop.key.type === AST_NODE_TYPES.Identifier &&
-                prop.key.name === 'headers' &&
-                prop.value.type === AST_NODE_TYPES.ObjectExpression
-              ) {
-                checkHeadersObject(prop.value);
-              }
-            }
-          }
+          checkResponseObject(node.argument);
+        }
+      },
+
+      // Implicit-return arrow helpers: `const jsonResponse = (s, d) => ({ ... })`
+      // are the idiomatic way to build Lambda responses, and have no
+      // ReturnStatement for the handler above to see.
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
+        if (node.body.type === AST_NODE_TYPES.ObjectExpression) {
+          checkResponseObject(node.body);
         }
       },
 
@@ -164,20 +165,7 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
           node.id.name.toLowerCase().includes('response') &&
           node.init?.type === AST_NODE_TYPES.ObjectExpression
         ) {
-          const obj = node.init;
-          
-          if (isLambdaResponse(obj)) {
-            for (const prop of obj.properties) {
-              if (
-                prop.type === AST_NODE_TYPES.Property &&
-                prop.key.type === AST_NODE_TYPES.Identifier &&
-                prop.key.name === 'headers' &&
-                prop.value.type === AST_NODE_TYPES.ObjectExpression
-              ) {
-                checkHeadersObject(prop.value);
-              }
-            }
-          }
+          checkResponseObject(node.init);
         }
       },
     };

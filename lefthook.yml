@@ -6,13 +6,13 @@ pre-commit:
   parallel: true
   commands:
     oxlint:
-      glob: "packages/**/*.{ts,tsx,js,mjs}"
+      glob: 'packages/**/*.{ts,tsx,js,mjs}'
       run: npm run --silent oxlint
     markdown:
-      glob: "**/*.md"
+      glob: '**/*.md'
       run: npx --no markdownlint-cli2 {staged_files}
     shim-drift:
-      run: npm run --silent oxlint:shims:check
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
     stale-build-artifacts:
       # Fails closed if any .js/.d.ts/.js.map files exist alongside .ts source
       # in packages/<pkg>/src/. These shadow current .ts at workspace runtime
@@ -24,7 +24,7 @@ pre-commit:
       # Validates that every ESLint rule lives in the correct plugin and that
       # its detection method matches its severity. Runs only when rule source
       # files or the manifest change. See scripts/ilb-plugin-scope-audit.ts.
-      glob: "{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}"
+      glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}'
       run: npm run --silent ilb:scope-audit
     tests-affected:
       run: |
@@ -44,25 +44,104 @@ pre-push:
     typecheck:
       # Whole-graph TS7 (tsgo) typecheck of the plugin graph + @interlace/ui.
       # One tsgo --build over tsconfig.solution.json; see .agent/TS7_MIGRATION_PLAN.md.
-      run: npm run --silent typecheck
-    build:
-      run: npx --no turbo run build --output-logs=errors-only
-    tests:
-      run: npx --no turbo run test --output-logs=errors-only
+      #
+      # perl alarm is a portable timeout(1) — macOS ships none. Exit 142 means
+      # the watchdog fired, i.e. the gate wedged rather than merely ran long.
+      #
+      # glob: a push with no TypeScript in it cannot break the typecheck, so it
+      # does not pay for one. Same idea as pre-commit's globs, applied to the
+      # files being PUSHED.
+      glob: '**/*.{ts,tsx,mts,cts}'
+      run: perl -e 'alarm 300; exec @ARGV' -- npm run --silent typecheck
+    # build and test in ONE turbo invocation, deliberately.
+    #
+    # They used to be two commands, and because this hook is `parallel: true`
+    # they ran as two turbo processes writing the same `.turbo/cache` at once.
+    # They raced: one lost with `IO error: Operation not permitted (os error 1)`
+    # and turbo exited non-zero *after every one of its tasks had succeeded*.
+    # The gate reported `build` red with zero real failures, and the poisoned
+    # entry meant the next run rebuilt from cold and often raced again.
+    #
+    # It cost most of a day. The symptom is maximally misleading: re-running
+    # the same command by hand always passes, because a single turbo process
+    # never collides with itself — so it reads as a flake right up until you
+    # notice the gate has never once gone green on a cold cache.
+    #
+    # One invocation keeps the parallelism (turbo schedules both task graphs
+    # itself, `test` has no `^build` dependency so nothing serialises) and
+    # keeps one shared cache. Splitting the cache dirs instead would also fix
+    # the race, at the price of never sharing a cache entry with a manual
+    # `turbo run build` — every pre-push would rebuild the world.
+    #
+    # `oxlint:shims:verify` is chained on the end rather than left as its own
+    # parallel command, for the same reason: every shim in tools/oxlint-plugins
+    # `require()`s `<pkg>/dist/src/index.js`, so it reads exactly the tree the
+    # build is writing. Run alongside, it fails in ~2s having read a file
+    # mid-write, prints nothing at all, and the push aborts with no explanation.
+    # Chaining guarantees it sees a finished dist. `shim-drift` stays parallel —
+    # it compares generated shim *source*, and never touches dist.
+    # Scoped to the packages affected vs origin/main, mirroring pre-commit's
+    # `tests-affected`. Whole-repo was 74 tasks; affected is 21. That gap only
+    # matters after a rebase — a rebase rewrites turbo's input hashes, so the
+    # cache goes cold and the whole-repo form rebuilt the world (minutes)
+    # instead of hitting cache (seconds). CI still runs the full graph, so
+    # nothing reaches main unverified.
+    #
+    # The `git rev-parse` guard is the honesty check: with no origin/main to
+    # diff against (detached HEAD, fresh clone) we run EVERYTHING rather than
+    # silently scoping to nothing and reporting a green gate that verified
+    # zero tasks.
+    # The watchdog is `perl alarm`, never a backgrounded `sleep`. A
+    # `( sleep N; kill ) &` watchdog was tried and is a trap twice over: the
+    # EXIT handler's own `kill` overwrites `$?`, so a wedged gate reports
+    # SUCCESS, and killing the subshell orphans its `sleep`, which holds the
+    # pipe open and makes lefthook wait out the full N seconds on every run —
+    # it manufactures the stall it exists to prevent. `perl -e 'alarm N; exec'`
+    # replaces itself with the command: one process, no child to leak, and a
+    # timeout surfaces as exit 142 (a FAILED gate, never a green one).
+    build-and-test:
+      # Nothing outside these paths can change what `turbo run build test`
+      # produces, so a config-only or docs-only push does not pay for a build.
+      glob: '{packages/**,apps/**,tools/**,scripts/**,turbo.json,package.json,package-lock.json,tsconfig*.json,vitest*.*}'
+      # Kept on ONE line and chained with `&&` on purpose — see the
+      # lefthook-turbo-cache-race lock, which pins exactly that shape so
+      # `oxlint:shims:verify` can never read a half-written dist.
+      # `set -f` stops the unquoted $FILTER from glob-expanding `[origin/main]`.
+      run: perl -e 'alarm 420; exec @ARGV' -- bash -c 'set -f; FILTER=; git rev-parse --verify --quiet origin/main >/dev/null && FILTER=--filter=...[origin/main]; npx --no turbo run build test $FILTER --output-logs=errors-only && npm run --silent oxlint:shims:verify'
+    # Only the markdown this push actually changes. `lint:md` walks 832 files
+    # every time; a push that touches one .md paid for all of them.
+    #
+    # `{push_files}` is lefthook's own list of the pushed files, substituted and
+    # quoted by lefthook — the exact counterpart of pre-commit's
+    # `{staged_files}` above. An earlier version shelled out to `git diff` and
+    # expanded the result unquoted, which word-split any path containing a
+    # space; the `shellcheck disable=SC2086` on it silenced the diagnostic
+    # without changing the behaviour. There is no shell quoting to get wrong
+    # when there is no shell. Verified against `docs/a file with spaces.md`.
     markdown-full:
-      run: npm run --silent lint:md
+      glob: '**/*.md'
+      run: npx --no markdownlint-cli2 {push_files}
     portability:
-      run: npm run --silent audit:portability:ci
+      # Scores oxlint portability of the RULES; nothing else can move it.
+      glob: 'packages/eslint-plugin-*/src/**/*.ts'
+      run: perl -e 'alarm 180; exec @ARGV' -- npm run --silent audit:portability:ci
     lockfile:
-      run: npm run --silent check-versions
+      # Version alignment can only drift when a manifest or the lockfile
+      # changes. This gate was ~30s on every push, including pushes that
+      # touched one .md.
+      glob: '{package.json,package-lock.json,packages/*/package.json,apps/*/package.json,tools/*/package.json}'
+      run: perl -e 'alarm 180; exec @ARGV' -- npm run --silent check-versions
     workflows:
-      run: npm run --silent lint:workflows
+      glob: '.github/**'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent lint:workflows
     changelog:
-      run: npm run --silent changeset:status
+      # A changeset is only required when publishable source moves.
+      glob: '{.changeset/**,packages/**}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changeset:status
     shim-drift:
-      run: npm run --silent oxlint:shims:check
-    shim-verify:
-      run: npm run --silent oxlint:shims:verify
+      # Shims are generated from rule sources and the manifest.
+      glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
 
 commit-msg:
   commands:

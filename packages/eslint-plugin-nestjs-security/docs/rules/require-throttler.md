@@ -5,14 +5,14 @@ tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-770
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 ---
 
 > Require ThrottlerGuard or @Throttle decorator for rate limiting
 
-
 <!-- @rule-summary -->
+
 This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
 <!-- @/rule-summary -->
 
@@ -60,13 +60,35 @@ export class AppModule {}
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalThrottler` | `boolean` | `true` | Look for a globally registered ThrottlerGuard before reporting |
+| `skipRoutes` | `string[]` | `[]` | Route paths exempt from the throttling requirement |
+| `assumeGlobalThrottler` | `boolean` | `false` | Assume a global ThrottlerGuard exists even if none is found |
+| `onlySensitiveRoutes` | `boolean` | `true` | Only require throttling on authentication and mutation routes |
+
+
 ```typescript
 {
   // Skip rule in test files (default: true)
   allowInTests?: boolean;
 
-  // Skip if global throttler configured in app.module (default: false)
+  // Scan the project's module and bootstrap files for app-wide rate limiting
+  // (ThrottlerModule plus a guard) and stay silent when it exists
+  // (default: true)
+  detectGlobalThrottler?: boolean;
+
+  // Assume global rate limiting without scanning (default: false)
   assumeGlobalThrottler?: boolean;
+
+  // Report only unauthenticated credential-adjacent routes — login, signup,
+  // reset, otp, mfa, token. Turning this off reports every unthrottled route,
+  // which is a capacity concern rather than a security one (default: true)
+  onlySensitiveRoutes?: boolean;
+
+  // Route path segments to leave alone (default: [])
+  skipRoutes?: string[];
 }
 ```
 
@@ -79,21 +101,28 @@ export class AppModule {}
 - If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
+## Cross-File Detection
+
+### Registered app-wide
+
+The rule scans the project's module and bootstrap files and stays silent when it
+finds an app-wide registration, so this is _not_ a false positive:
+
+```typescript
+@Module({
+  imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+})
+export class AppModule {}
+```
+
+Turn the scan off with `detectGlobalThrottler: false` if you want the routes reported anyway.
+What the scan still cannot resolve is a registration built at runtime or
+supplied by a library — `assumeGlobalThrottler: true` covers those.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### Global Throttler Module
-
-**Why**: ThrottlerModule.forRoot in app.module is not linked to controllers.
-
-```typescript
-// ❌ NOT DETECTED - Global throttler exists
-// app.module.ts: imports: [ThrottlerModule.forRoot(...)]
-// controller.ts: Already throttled globally, but flagged
-```
-
-**Mitigation**: Set `assumeGlobalThrottler: true` in rule options.
 
 ### Custom Rate Limiting
 

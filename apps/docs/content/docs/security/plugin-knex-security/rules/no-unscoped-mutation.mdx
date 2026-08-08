@@ -1,0 +1,72 @@
+---
+title: no-unscoped-mutation
+description: Require a chained `.where()` on Knex delete and update builders, so a bulk mutation cannot rewrite or delete every row in the table.
+tags: ['security', 'knex']
+category: security
+severity: high
+cwe: CWE-284
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+**CWE:** [CWE-284](https://cwe.mitre.org/data/definitions/284.html)
+**OWASP:** [A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+Detects Knex bulk mutations that reach every row in the table. This rule is part of [`eslint-plugin-knex-security`](https://www.npmjs.com/package/eslint-plugin-knex-security).
+
+💼 This rule is set to **error** in the `strict` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-284](https://cwe.mitre.org/data/definitions/284.html) (Improper Access Control) |
+| **Severity**      | High (CVSS 7.5)                                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                             |
+| **Category**      | Security                                                                             |
+
+## Why this matters
+
+A bulk mutation without a filter is one forgotten clause away from rewriting or
+deleting the entire table. It type-checks, it passes review, and it usually only
+shows up once it has run against production data. Knex's `update()` argument is the values object rather than a filter, and `del()` takes none — the scope always arrives as a chained `.where*()` clause. Every spelling of the `where` family counts.
+
+## ❌ Incorrect
+
+```ts
+// Empties the table
+await knex('users').del();
+
+// The values object is not a filter
+await knex('users').update({ role: 'admin' });
+```
+
+## ✅ Correct
+
+```ts
+await knex('users').where({ id }).del();
+
+await knex('users').whereIn('id', ids).del();
+
+await knex('users').where({ id }).update({ active: false });
+```
+
+## Known limitations
+
+This rule reports only what it can prove. Scope that cannot be read statically is
+treated as present, so the rule stays silent rather than guessing.
+
+## When not to use it
+
+Disable this rule in maintenance scripts, seeders, and test fixtures whose job is
+to clear a table. Prefer a scoped `eslint-disable-next-line` on the specific call
+over switching the rule off for the whole project.
+
+## Further reading
+
+- [Knex documentation](https://knexjs.org/guide/query-builder.html#del-delete)
+- [CWE-284: Improper Access Control](https://cwe.mitre.org/data/definitions/284.html)

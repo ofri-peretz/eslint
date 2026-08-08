@@ -73,10 +73,15 @@ res.setHeader('Content-Security-Policy', "default-src 'self'");
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-unsafe-inline-csp": [
+    "browser-security/no-unsafe-inline-csp": [
       "error",
       {
         "allowInTests": true

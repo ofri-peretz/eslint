@@ -84,6 +84,11 @@ window.postMessage(data, { targetOrigin: 'https://trusted-domain.com' });
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "browser-security/no-postmessage-wildcard-origin": [

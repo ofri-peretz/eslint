@@ -224,3 +224,9 @@ const cipher = crypto['createCipher']('aes-256-cbc', pwd);
 - **[Node.js Crypto Deprecation](https://nodejs.org/api/crypto.html#cryptocreatecipheralgorithm-password-options)** - Official deprecation notice
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
 - **[OWASP Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)** - Best practices
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow deprecated methods in test files |

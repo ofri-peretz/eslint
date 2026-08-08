@@ -21,7 +21,7 @@
 | **eslint-plugin-lambda-security**    | `1.2.0` | 16    | AWS Lambda & Middy security                                  | [📦](https://npmjs.com/package/eslint-plugin-lambda-security)    |
 | **eslint-plugin-express-security**   | `1.2.0` | 14    | Express.js security (Cookies, CORS, ReDoS)                   | [📦](https://npmjs.com/package/eslint-plugin-express-security)   |
 | **eslint-plugin-nestjs-security**    | `1.2.0` | 10    | NestJS security (Guards, Validation)                         | [📦](https://npmjs.com/package/eslint-plugin-nestjs-security)    |
-| **eslint-plugin-import-next**        | `2.3.0` | 61    | 100x faster eslint-plugin-import replacement                 | [📦](https://npmjs.com/package/eslint-plugin-import-next)        |
+| **eslint-plugin-import-next**        | `2.3.0` | 61    | Drop-in eslint-plugin-import replacement; 3.1x faster end-to-end with `no-cycle` on | [📦](https://npmjs.com/package/eslint-plugin-import-next)        |
 | **eslint-plugin-conventions**       | `4.0.1` | 9     | Team disciplinary patterns and conventions                   | [📦](https://npmjs.com/package/eslint-plugin-conventions)        |
 | **eslint-plugin-maintainability**   | `3.0.0` | 8     | Reducing cognitive load and reading ease                     | [📦](https://npmjs.com/package/eslint-plugin-maintainability)    |
 | **eslint-plugin-reliability**       | `3.0.1` | 8     | Runtime stability and fault tolerance                        | [📦](https://npmjs.com/package/eslint-plugin-reliability)        |
@@ -410,7 +410,7 @@
 
 | Rule                         | Description                   |
 | ---------------------------- | ----------------------------- |
-| `no-cycle`                   | **100x faster** circular deps |
+| `no-cycle`                   | **8x faster** in pure rule execution time |
 | `no-internal-modules`        | Internal module access        |
 | `no-cross-domain-imports`    | Cross-domain imports          |
 | `max-dependencies`           | Dependency count limits       |

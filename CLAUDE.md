@@ -270,8 +270,11 @@ dispatches the per-app deploy workflow for each affected app:
 | Affected workspace | Dispatched workflow | Production URL |
 |---|---|---|
 | `docs` (or any dep via `...[<sha>]`, eg `@interlace/ui`, `*PHILOSOPHY.md`) | `deploy-docs.yml` (`environment=production`, includes Playwright smoke gate) | https://eslint.interlace.tools |
-| `@interlace/storybook` (or any dep, eg `@interlace/ui`) | `deploy.yml` (`app=storybook target=production`) | https://storybook.interlace.tools |
-| `registry` (or any dep, eg `packages/ui/src/primitives/**`) | `deploy.yml` (`app=registry target=production`) | https://ds.interlace.tools |
+
+`docs` is the only app this repo deploys. `storybook.interlace.tools` and
+`ds.interlace.tools` belong to `ofri-peretz/interlace` and deploy from there
+via Vercel git integration — see
+`interlace/docs/adr/0001-consolidate-duplicated-design-system.md` (D2/D4).
 
 After merging, **don't claim "live"** until:
 

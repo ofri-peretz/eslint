@@ -56,6 +56,29 @@ mongoose.connect(uri, { ssl: false });
 const x = 1;
 ```
 
+## Receiver Requirement
+
+A `.connect()` is not evidence of MongoDB. Redis clients, TypeORM query
+runners and pino transports all have one, and naming another database's
+connection "MongoDB" is worse than staying silent. This rule only fires when
+the receiver is bound to a `mongodb`/`mongoose` import, is a
+`new MongoClient(...)`, or is named `mongo*`.
+
+```typescript
+// ✅ Not reported — Redis
+const client = createClient({ url: REDIS_URL });
+await client.connect();
+
+// ✅ Not reported — TypeORM
+const queryRunner = this.repository.manager.connection.createQueryRunner();
+await queryRunner.connect();
+```
+
+`allowInTests` (on by default) also covers files under `test/`, `tests/`,
+`__tests__/`, `__mocks__/`, `e2e/` and `fixtures/` directories, not just
+`*.test.ts` / `*.spec.ts` — testcontainers helpers are not production
+connections.
+
 ## Known False Positives
 
 ### Local Development
@@ -87,3 +110,9 @@ mongoose.connect(uri, options); // TLS may or may not be enabled
 
 - [MongoDB TLS/SSL Configuration](https://www.mongodb.com/docs/manual/tutorial/configure-ssl/)
 - [CWE-295](https://cwe.mitre.org/data/definitions/295.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

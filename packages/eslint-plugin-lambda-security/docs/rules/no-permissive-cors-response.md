@@ -50,9 +50,9 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
   }
 }}%%
 flowchart TD
-    A[🔍 Return Statement Found] --> B{Returns object?}
+    A[🔍 ReturnStatement / arrow implicit-return / response variable] --> B{Object literal?}
     B -->|No| C[✅ Skip]
-    B -->|Yes| D{Has statusCode property?}
+    B -->|Yes| D{Has statusCode or body property?}
     D -->|No| C
     D -->|Yes| E{Has headers property?}
     E -->|No| C
@@ -142,9 +142,9 @@ export const handler = async (event) => {
 
 ## Options
 
-| Option         | Type      | Default | Description                         |
-| -------------- | --------- | ------- | ----------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow permissive CORS in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow permissive CORS in test files |
 
 ```json
 {
@@ -211,23 +211,30 @@ return { statusCode: 200, headers: { ...baseHeaders }, body: '...' };
 
 **Mitigation**: Explicitly define CORS headers inline.
 
-### Response Factory Functions
-
-**Why**: Response helpers are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Response factory
-function createResponse(body) {
-  return {
-    statusCode: 200,
-    headers: { 'Access-Control-Allow-Origin': '*' }, // Hidden
-    body: JSON.stringify(body),
-  };
-}
-export const handler = async () => createResponse({ data: 'test' });
-```
-
-**Mitigation**: Apply rule to response helper modules.
+> **Response factory functions are detected.** Both the explicit-return form
+> and the concise arrow form are checked wherever the object literal is
+> written, as long as it carries `statusCode` or `body`:
+>
+> ```typescript
+> // ✅ DETECTED — explicit return
+> function createResponse(body) {
+>   return {
+>     statusCode: 200,
+>     headers: { 'Access-Control-Allow-Origin': '*' },
+>     body: JSON.stringify(body),
+>   };
+> }
+>
+> // ✅ DETECTED — implicit arrow return
+> const jsonResponse = (statusCode, data) => ({
+>   statusCode,
+>   headers: { 'Access-Control-Allow-Origin': '*' },
+>   body: JSON.stringify(data),
+> });
+> ```
+>
+> A factory is only invisible when the headers themselves come from a
+> variable or a spread — the two cases above.
 
 ### API Gateway Configuration
 

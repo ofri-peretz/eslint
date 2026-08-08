@@ -128,8 +128,98 @@ ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt
     { code: `generateText(cfg);` },
     // spread-only options object
     { code: `generateText({ ...cfg });` },
-    // string-literal 'system' key is skipped (keyName resolves to null)
-    { code: `generateText({ 'system': buildPrompt() });` },
+    // computed key — the name genuinely isn't statically known
+    { code: `generateText({ [k]: buildPrompt() });` },
+  ],
+  invalid: [
+    // Quoted keys are the same property as bare ones. This used to sit in
+    // `valid` with the note "keyName resolves to null", which recorded the gap
+    // as if it were intended: a rule that stops firing because someone put
+    // quotes round the key is a silent miss, not a design decision.
+    { code: `generateText({ 'system': buildPrompt() });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
+    { code: `streamText({ "instructions": \`\${userInput}\` });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
+  ],
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SDK v7: `instructions` is the system prompt; `system` is deprecated.
+// Regression lock — before this was fixed the rule matched only `system`, so it
+// was inert on any code written against current AI SDK docs.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPrompt, {
+  valid: [
+    {
+      code: `
+        await streamText({
+          model,
+          instructions: 'You are a helpful assistant.',
+          prompt: userInput,
+        });
+      `,
+    },
+  ],
+  invalid: [
+    {
+      code: `
+        await streamText({
+          model,
+          instructions: \`You are a helpful assistant. \${userName}\`,
+          prompt: userInput,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+    // The shape actually found in nuxt-ui-templates/chat
+    // (server/api/chats/[id].post.ts) — a conditional interpolating the
+    // session username straight into the system prompt.
+    {
+      code: `
+        const result = streamText({
+          abortSignal: abortController.signal,
+          model,
+          instructions: \`You are a knowledgeable and helpful AI assistant. \${session.user?.username ? \`The user's name is \${session.user.username}.\` : ''} Your goal is to provide clear responses.\`,
+          messages,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+    // Both props present: each is reported on its own.
+    {
+      code: `
+        await generateText({
+          model,
+          instructions: \`\${a}\`,
+          system: \`\${b}\`,
+        });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }, { messageId: 'dynamicSystemPrompt' }],
+    },
+  ],
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A computed key whose variable is named exactly like the property.
+// `{ [instructions]: x }` has an Identifier key called `instructions`, but it is
+// a variable reference — the property being set is unknown. Reading it as the
+// literal name made these rules treat an arbitrary property as the system
+// prompt. The collision case is the only one that was broken.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSystemPrompt, {
+  valid: [
+    {
+      code: `
+        const instructions = 'temperature';
+        streamText({ model, [instructions]: \`\${x}\` });
+      `,
+    },
+    {
+      code: `
+        const system = 'topP';
+        generateText({ model, [system]: buildValue() });
+      `,
+    },
+    // Numeric literal key — not a string, so not a statically known name.
+    { code: 'generateText({ model, 0: buildValue() });' },
   ],
   invalid: [],
 });

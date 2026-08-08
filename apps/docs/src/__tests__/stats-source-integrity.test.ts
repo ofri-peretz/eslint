@@ -6,8 +6,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import Ajv from 'ajv';
 
 // Use __dirname so this works regardless of whether vitest is invoked from the
 // repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
@@ -42,6 +43,35 @@ describe('Stats page: data integrity', () => {
     }
     expect(typeof data.allPluginsCount).toBe('number');
     expect(typeof data.generatedAt).toBe('string');
+  });
+
+  it('interlace-numbers.json has the manifest shape consumers depend on', () => {
+    const data = readJSON<{
+      schemaVersion: number;
+      source: string;
+      plugins: {
+        total: number;
+        security: number;
+        quality: number;
+        react: number;
+      };
+      rules: {
+        total: number;
+        security: number;
+        quality: number;
+        react: number;
+      };
+      generatedAt: string;
+    }>('interlace-numbers.json');
+    expect(data.schemaVersion).toBe(1);
+    expect(typeof data.source).toBe('string');
+    expect(typeof data.generatedAt).toBe('string');
+    for (const group of [data.plugins, data.rules]) {
+      for (const key of ['total', 'security', 'quality', 'react'] as const) {
+        expect(typeof group[key]).toBe('number');
+        expect(group[key]).toBeGreaterThanOrEqual(0);
+      }
+    }
   });
 
   it('coverage-stats.json has the shape the page consumes', () => {
@@ -81,4 +111,35 @@ describe('Stats page: data integrity', () => {
       }
     }
   });
+});
+
+// Without this, src/data/schemas/*.json is decorative — nothing loaded it, so
+// articles.schema.json sat describing a `fetchedAt` envelope the writer never
+// emitted. Every schema must validate its sibling data file.
+describe('Data schemas: every schema validates its data file', () => {
+  const schemaDir = join(dataDir, 'schemas');
+  // ponytail: no ajv-formats — `format` is documentation here, not a constraint.
+  // Add it if a date-time/uri value ever drifts in a way key+type checks miss.
+  const ajv = new Ajv({
+    strict: false,
+    validateFormats: false,
+    allErrors: true,
+  });
+
+  for (const schemaFile of readdirSync(schemaDir).filter((f) =>
+    f.endsWith('.schema.json'),
+  )) {
+    const dataFile = schemaFile.replace('.schema', '');
+    it(`${dataFile} matches ${schemaFile}`, () => {
+      const validate = ajv.compile(
+        JSON.parse(readFileSync(join(schemaDir, schemaFile), 'utf-8')),
+      );
+      const valid = validate(readJSON(dataFile));
+      expect(
+        validate.errors ?? [],
+        JSON.stringify(validate.errors, null, 2),
+      ).toEqual([]);
+      expect(valid).toBe(true);
+    });
+  }
 });
