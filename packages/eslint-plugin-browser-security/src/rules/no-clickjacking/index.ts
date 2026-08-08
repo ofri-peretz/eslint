@@ -192,7 +192,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         'Detects clickjacking vulnerabilities and missing frame protections',
       cwe: 'CWE-1021',
     },
-    hasSuggestions: true,
     messages: {
       clickjackingVulnerability: formatLLMMessage({
         icon: MessageIcons.SECURITY,

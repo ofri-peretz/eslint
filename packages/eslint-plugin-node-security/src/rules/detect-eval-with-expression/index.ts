@@ -166,6 +166,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       cvss: 9.8,
       confidence: 'high',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
       evalWithExpression: formatLLMMessage({

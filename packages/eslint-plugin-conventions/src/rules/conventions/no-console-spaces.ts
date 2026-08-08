@@ -26,7 +26,6 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         'Prevent leading/trailing space between console.log parameters',
     },
     fixable: 'code',
-    hasSuggestions: true,
     messages: {
       noConsoleSpaces: formatLLMMessage({
         icon: MessageIcons.WARNING,

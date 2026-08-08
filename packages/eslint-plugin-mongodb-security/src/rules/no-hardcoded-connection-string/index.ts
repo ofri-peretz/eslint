@@ -28,7 +28,6 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-798',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       hardcodedConnectionString: formatLLMMessage({
         icon: MessageIcons.SECURITY,

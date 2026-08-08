@@ -82,6 +82,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/nested-complexity-hotspots.md',
       description: 'Identifies nested control structures that harm readability',
     },
+    hasSuggestions: true,
     messages: {
       nestedComplexity: formatLLMMessage({
         icon: MessageIcons.COMPLEXITY,

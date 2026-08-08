@@ -46,7 +46,6 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-200',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       selectSensitiveFields: formatLLMMessage({
         icon: MessageIcons.SECURITY,
