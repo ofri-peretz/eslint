@@ -121,6 +121,10 @@ describe('writeJsonIfChanged', () => {
     const emitted = new Set<string>();
     for (const file of readdirSync(SCRIPTS_DIR).filter((f) => f.endsWith('.ts'))) {
       const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
+      // Only scripts that write committed JSON can cause the churn this locks
+      // against. A script that renders markdown to stdout (lighthouse-report)
+      // may stamp a date in its header without ever touching src/data.
+      if (!source.includes('writeJsonIfChanged')) continue;
       for (const [, key] of source.matchAll(
         /(?:^\s*|\.)(\w+)\s*[:=]\s*new Date\(\)\.toISOString\(\)/gm,
       )) {
