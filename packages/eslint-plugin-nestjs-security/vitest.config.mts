@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
@@ -18,6 +18,11 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+    // SDK interface-compat suites (src/__compatibility__/) import third-party
+    // SDKs, not our code, and cost minutes on a cold module cache. They run via
+    // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
+    // run that backs `turbo run test` and the lefthook pre-commit hook.
+    exclude: [...configDefaults.exclude, 'src/__compatibility__/**'],
     passWithNoTests: false,
     pool: 'vmThreads',
     coverage: {

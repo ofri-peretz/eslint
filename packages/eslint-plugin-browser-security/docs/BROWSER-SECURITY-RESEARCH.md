@@ -503,15 +503,15 @@ Client-side CSP via `<meta>` tags can be misconfigured.
 
 ### Phase 1: Critical P0 Rules (8 new rules)
 
-| #   | Rule                             | Category    | CVSS | Est. Effort |
+| #   | Rule                             | Category    | CVSS | Est. Effort | Status      |
 | --- | -------------------------------- | ----------- | ---- | ----------- | ----------- |
-| 1   | `no-sensitive-sessionstorage`    | Storage     | 7.5  | Low         |
-| 2   | `no-jwt-in-storage`              | Storage     | 8.1  | Low         |
-| 3   | `no-credentials-in-storage`      | Storage     | 8.5  | Low         |
+| 1   | `no-sensitive-sessionstorage`    | Storage     | 7.5  | Low         | ✅ **Done** |
+| 2   | `no-jwt-in-storage`              | Storage     | 8.1  | Low         | ✅ **Done** |
+| 3   | `no-credentials-in-storage`      | Storage     | 8.5  | Low         | 🔲 New      |
 | 4   | `no-postmessage-wildcard-origin` | postMessage | 7.5  | Low         | ✅ **Done** |
-| 5   | `no-postmessage-innerhtml`       | postMessage | 8.8  | Low         | 🔲 New      |
+| 5   | `no-postmessage-innerhtml`       | postMessage | 8.8  | Low         | ✅ **Done** |
 | 6   | `no-sensitive-cookie-js`         | Cookies     | 8.1  | Medium      | ✅ **Done** |
-| 7   | `no-filereader-innerhtml`        | File API    | 8.1  | Low         | 🔲 New      |
+| 7   | `no-filereader-innerhtml`        | File API    | 8.1  | Low         | ✅ **Done** |
 | 8   | `require-websocket-wss`          | WebSocket   | 7.5  | Low         | ✅ **Done** |
 
 ### Phase 2: High Priority P1 Rules (10 new rules)
