@@ -84,8 +84,8 @@ We propose a new formatting engine that renders messages based on the **Target I
 ## 4. Benchmark: Current vs. Proposed
 
 | Feature         | Current (`eslint-devkit`) | Proposed "AI-Native"                         | Improvement         |
-| :-------------- | :------------------------ | :------------------------------------------- | :------------------ | --------------------- |
-| **Puntuation**  | ` | ` separators                                 | JSON/YAML keys      | Parsing 100% reliable |
+| :-------------- | :------------------------ | :------------------------------------------- | :------------------ |
+| **Punctuation** | `\|` separators           | JSON/YAML keys                               | Parsing 100% reliable |
 | **Token Cost**  | ~50 tokens/msg            | ~20 tokens/msg (Compressed)                  | **60% Reduction**   |
 | **Context**     | "Fix: Use X"              | "Fix: X via Standard Y"                      | Contextual Accuracy |
 | **Speed**       | 100ms (Text Gen)          | 5ms (Structured Lookup)                      | Faster Planning     |
