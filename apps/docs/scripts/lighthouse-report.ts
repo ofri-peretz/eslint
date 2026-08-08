@@ -76,7 +76,10 @@ function median(values: number[]): number {
 function formatValue(auditId: string | undefined, value: number): string {
   if (auditId === 'cumulative-layout-shift') return value.toFixed(3);
   if (auditId === 'unused-javascript') return `${Math.round(value / 1024)} KB`;
-  if (auditId?.startsWith('categories:')) return value.toFixed(2);
+  // Category scores are 0–1 in the budget but read as percentages everywhere
+  // else in this report (see `pct`); rendering them raw here made the same
+  // number appear as both "86" and "0.86" in one issue body.
+  if (auditId?.startsWith('categories:')) return pct(value);
   if (value >= 1000) return `${(value / 1000).toFixed(2)} s`;
   return `${Math.round(value)} ms`;
 }

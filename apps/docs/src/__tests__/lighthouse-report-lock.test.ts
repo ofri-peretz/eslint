@@ -121,7 +121,10 @@ describe('weekly Lighthouse report', () => {
     expect(report).toContain('❌ **1 budget breached**');
     expect(report).toContain('categories:performance');
     expect(report).toContain('`/articles`');
-    expect(report).toContain('0.71'); // a score, not "710 ms"
+    // A score, not "710 ms" — and rendered as a percentage so it reads in the
+    // same unit as the Scores table above it, rather than 0.71 vs 71.
+    expect(report).toContain('71');
+    expect(report).not.toContain('710 ms');
   });
 
   it('separates warnings from errors in the verdict', () => {
@@ -218,5 +221,19 @@ describe('the workflow that runs it', () => {
       workflow.indexOf('- name: Render report'),
     );
     expect(renderStep.slice(0, 200)).toContain('if: always()');
+  });
+
+  it('only files and closes issues on the cron, never on a manual run', () => {
+    // The whole point of moving off PRs is that a human firing this by hand
+    // gets a job summary and nothing else — no issue churn. Every step that
+    // touches an issue must carry the schedule guard.
+    const issueSteps = workflow
+      .split(/^\s*- name: /m)
+      .filter((step) => /^[^\n]*tracking issue/i.test(step));
+
+    expect(issueSteps).toHaveLength(2); // file-or-update, and close
+    for (const step of issueSteps) {
+      expect(step).toContain("github.event_name == 'schedule'");
+    }
   });
 });
