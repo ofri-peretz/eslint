@@ -57,6 +57,7 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/max-parameters.md',
       description: 'Detects functions with too many parameters',
     },
+    hasSuggestions: true,
     messages: {
       tooManyParameters: formatLLMMessage({
         icon: MessageIcons.COMPLEXITY,

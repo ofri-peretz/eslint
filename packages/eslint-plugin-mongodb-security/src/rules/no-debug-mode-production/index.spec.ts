@@ -24,24 +24,36 @@ ruleTester.run('no-debug-mode-production', noDebugModeProduction, {
     // mongoose.set('debug', true)
     {
       code: `mongoose.set('debug', true);`,
-      errors: [{ messageId: 'debugModeProduction' }],
+      errors: [{
+        messageId: 'debugModeProduction',
+        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');` }],
+      }],
     },
     // Any object.set('debug', true)
     {
       code: `db.set('debug', true);`,
-      errors: [{ messageId: 'debugModeProduction' }],
+      errors: [{
+        messageId: 'debugModeProduction',
+        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `db.set('debug', process.env.NODE_ENV !== 'production');` }],
+      }],
     },
     // config.set('debug', true) - also flags since any .set('debug', true) is risky
     {
       code: `config.set('debug', true);`,
-      errors: [{ messageId: 'debugModeProduction' }],
+      errors: [{
+        messageId: 'debugModeProduction',
+        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `config.set('debug', process.env.NODE_ENV !== 'production');` }],
+      }],
     },
     // allowInTests: false
     {
       code: `mongoose.set('debug', true);`,
       filename: 'setup.test.ts',
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'debugModeProduction' }],
+      errors: [{
+        messageId: 'debugModeProduction',
+        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');` }],
+      }],
     },
   ],
 });

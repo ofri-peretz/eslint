@@ -270,6 +270,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       cvss: 9.8,
       confidence: 'medium',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 44% reduction (55→31 tokens) - removes ❌/✅/📚 labels
       childProcessCommandInjection: formatLLMMessage({
