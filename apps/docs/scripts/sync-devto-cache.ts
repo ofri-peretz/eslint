@@ -8,9 +8,10 @@
  * Usage: tsx scripts/sync-devto-cache.ts
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -114,9 +115,11 @@ async function main() {
   // Update timestamp and save
   cache._lastUpdated = new Date().toISOString();
   cache._comment = 'Cached DEV.to article data to avoid API rate limits during builds. Updated by scripts/sync-devto-cache.mjs';
-  
-  writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
-  
+
+  // Content-diffed: `_lastUpdated` and the per-article `_cachedAt` change on
+  // every run and would otherwise make each sync a commit of nothing.
+  writeJsonIfChanged(CACHE_FILE, cache, 'cached-devto-articles.json');
+
   console.log(`\n✅ Cache updated: ${successCount} succeeded, ${failedCount} failed`);
   console.log(`📁 Saved to: ${CACHE_FILE}\n`);
 }
