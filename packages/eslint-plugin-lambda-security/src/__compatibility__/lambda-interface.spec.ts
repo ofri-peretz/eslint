@@ -11,13 +11,19 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 let middyCore: typeof import('@middy/core');
 
+// No per-hook timeout argument here on purpose. Cold SDK loads in this suite
+// have been measured at 82s (express) and 209s (@nestjs/common) on a fresh
+// worktree after `npm ci`; every fixed ceiling we tried (10s, 30s) blew and
+// reported the whole file as skipped. The ceiling now lives in
+// vitest.compat.config.mts, sized off those cold numbers — and this suite no
+// longer runs in the default test task, so it can't gate a commit.
 beforeAll(async () => {
   try {
     middyCore = await import('@middy/core');
   } catch {
     console.warn('@middy/core not installed');
   }
-}, 30_000); // native-addon packages can take >10s to load cold
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // @MIDDY/CORE
