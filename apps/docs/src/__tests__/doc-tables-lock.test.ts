@@ -69,8 +69,8 @@ describe('doc tables — the shipped bug', () => {
   // GFM drops the excess — the cell contents silently vanish from the page.
   it('flags an unescaped pipe inside a code span', () => {
     const violations = findTableViolations(UNESCAPED_PIPE_IN_CODE, 'fixture.md');
-    expect(violations).not.toEqual([]);
-    expect(violations.map((v) => v.kind)).toContain('ROW_OVERFLOW');
+    expect(violations).toHaveLength(1);
+    expect(violations[0].kind).toBe('ROW_OVERFLOW');
   });
 
   it('flags a row with more cells than the header (content silently dropped)', () => {
