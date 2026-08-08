@@ -19,7 +19,17 @@ Detects variable[key] as a left- or right-hand assignment operand (prototype pol
 
 Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **🔧 Opt-in — not in `recommended`**
+
+> **Opt-in only.** This rule is deliberately absent from `recommended`,
+> `recommended-strict` and `owasp-top-10`. It reports every computed member
+> access it cannot prove safe, so on ordinary application code it fires on
+> `obj[key]` throughout — a trade worth making deliberately, not one a preset
+> should make for you. It ships in `strict`, or enable it explicitly:
+>
+> ```js
+> rules: { 'secure-coding/detect-object-injection': 'error' }
+> ```
 
 ## Quick Summary
 
