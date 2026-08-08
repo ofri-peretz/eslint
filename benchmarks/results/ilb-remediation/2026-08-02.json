@@ -1,11 +1,11 @@
 {
   "bench": "ILB-Remediation",
   "benchVersion": "1.0",
-  "timestamp": "2026-08-02T06:15:28.985Z",
-  "methodologyCommit": "78e332a9ff52f4352278234295055c8c6a717d00",
+  "timestamp": "2026-08-02T14:41:23.267Z",
+  "methodologyCommit": "e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5",
   "toolchain": {
     "node": "24.12.0",
-    "eslint": "10.7.0",
+    "eslint": "10.4.1",
     "typescript": "6.0.3",
     "tsCompiler": "tsc-go",
     "typescriptEslint": "8.54.0",
@@ -20,20 +20,11 @@
       "rulesTotal": 28,
       "fixableDeclared": 4,
       "fixableImplemented": 4,
-      "suggestionsDeclared": 19,
-      "suggestionsImplemented": 14,
+      "suggestionsDeclared": 16,
+      "suggestionsImplemented": 16,
       "deadFixableDeclarations": [],
-      "deadSuggestionDeclarations": [
-        "no-directive-injection",
-        "no-electron-security-issues",
-        "no-improper-sanitization",
-        "no-unlimited-resource-allocation",
-        "no-weak-password-recovery"
-      ],
-      "undeclaredSuggestionImpls": [
-        "detect-non-literal-regexp",
-        "detect-object-injection"
-      ]
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
     },
     {
       "package": "eslint-plugin-node-security",
@@ -42,17 +33,11 @@
       "rulesTotal": 35,
       "fixableDeclared": 1,
       "fixableImplemented": 1,
-      "suggestionsDeclared": 16,
-      "suggestionsImplemented": 15,
+      "suggestionsDeclared": 18,
+      "suggestionsImplemented": 18,
       "deadFixableDeclarations": [],
-      "deadSuggestionDeclarations": [
-        "no-buffer-overread"
-      ],
-      "undeclaredSuggestionImpls": [
-        "detect-child-process",
-        "detect-eval-with-expression",
-        "detect-non-literal-fs-filename"
-      ]
+      "deadSuggestionDeclarations": [],
+      "undeclaredSuggestionImpls": []
     },
     {
       "package": "eslint-plugin-browser-security",
@@ -61,23 +46,21 @@
       "rulesTotal": 45,
       "fixableDeclared": 1,
       "fixableImplemented": 1,
-      "suggestionsDeclared": 28,
+      "suggestionsDeclared": 27,
       "suggestionsImplemented": 27,
       "deadFixableDeclarations": [],
-      "deadSuggestionDeclarations": [
-        "no-clickjacking"
-      ],
+      "deadSuggestionDeclarations": [],
       "undeclaredSuggestionImpls": []
     },
     {
       "package": "eslint-plugin-express-security",
       "version": "1.3.4",
       "side": "interlace",
-      "rulesTotal": 14,
+      "rulesTotal": 21,
       "fixableDeclared": 0,
       "fixableImplemented": 0,
-      "suggestionsDeclared": 12,
-      "suggestionsImplemented": 12,
+      "suggestionsDeclared": 18,
+      "suggestionsImplemented": 18,
       "deadFixableDeclarations": [],
       "deadSuggestionDeclarations": [],
       "undeclaredSuggestionImpls": []
@@ -115,26 +98,10 @@
       "rulesTotal": 16,
       "fixableDeclared": 0,
       "fixableImplemented": 0,
-      "suggestionsDeclared": 16,
-      "suggestionsImplemented": 1,
+      "suggestionsDeclared": 5,
+      "suggestionsImplemented": 5,
       "deadFixableDeclarations": [],
-      "deadSuggestionDeclarations": [
-        "no-bypass-middleware",
-        "no-debug-mode-production",
-        "no-hardcoded-connection-string",
-        "no-hardcoded-credentials",
-        "no-operator-injection",
-        "no-select-sensitive-fields",
-        "no-unbounded-find",
-        "no-unsafe-populate",
-        "no-unsafe-regex-query",
-        "no-unsafe-where",
-        "require-auth-mechanism",
-        "require-lean-queries",
-        "require-projection",
-        "require-schema-validation",
-        "require-tls-connection"
-      ],
+      "deadSuggestionDeclarations": [],
       "undeclaredSuggestionImpls": []
     },
     {
@@ -262,10 +229,10 @@
   "summary": {
     "interlace": {
       "packages": 10,
-      "rulesTotal": 203,
+      "rulesTotal": 210,
       "fixableImplemented": 7,
-      "suggestionsImplemented": 87,
-      "deadDeclarations": 22
+      "suggestionsImplemented": 102,
+      "deadDeclarations": 0
     },
     "competitors": {
       "packages": 5,

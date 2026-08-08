@@ -31,7 +31,6 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
         'Enforce consistent style for checking object property existence',
     },
     fixable: 'code',
-    hasSuggestions: true,
     messages: {
       consistentExistenceCheck: formatLLMMessage({
         icon: MessageIcons.WARNING,

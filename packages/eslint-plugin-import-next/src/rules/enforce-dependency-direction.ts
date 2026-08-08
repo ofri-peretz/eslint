@@ -87,6 +87,7 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
       description:
         'Ensures dependencies flow in the correct architectural direction',
     },
+    hasSuggestions: true,
     messages: {
       dependencyDirectionViolation: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

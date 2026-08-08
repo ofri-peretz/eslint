@@ -107,6 +107,7 @@ jobs:
         if: steps.decide.outputs.run == 'true'
         with:
           fetch-depth: 50
+          persist-credentials: false
       # Pin Node from .nvmrc before running a .mts file. The runner default is
       # Node 22, which cannot execute type annotations without
       # --experimental-strip-types: the step would error, emit no `shards`
@@ -170,6 +171,29 @@ jobs:
           fi
           echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
 
+  # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
+  # tools/*, benchmarks), so turbo has no task for it and `turbo run test` never
+  # reaches scripts/__tests__. CI only ever executed the files pinned by name:
+  # oxlint-export-lock.test.ts (oxlint-parity.yml) and runtime-deps.test.ts
+  # (#354, in the Build job). gap-closure, sync-source-versions and the
+  # turbo-cache-inputs lock from #343 were dead weight — committed, green
+  # locally, never run by the gate. Pinning suites by filename is what let that
+  # drift; this runs the directory.
+  scripts-tests:
+    name: Script & Repo-Config Locks
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Shallow: vitest only, no turbo and no git range.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Run scripts/__tests__
+        run: npm run --silent test:scripts
+
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
   # the same task and trade one cache hit for N cold runs. Whole-package buckets
@@ -229,6 +253,13 @@ jobs:
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
 
+      # Workspace-level locks: keep slow, unbounded work out of the lefthook
+      # pre-commit path — SDK compat suites excluded from the default run (and
+      # still wired into sdk-compatibility.yml), whole-repo scans carrying a
+      # cold-sized timeout.
+      - name: Pre-commit gate locks
+        run: npm run --silent test:precommit-locks
+
   # Sharded across runners. A single runner running `turbo run build` for 34
   # packages queues them behind its own 4-vCPU concurrency limit — measured
   # 230s. Build work has no outlier (no package over 25s), so splitting it is
@@ -253,6 +284,7 @@ jobs:
           # 50, not 0. ci-build.mts only needs a merge-base with origin/main,
           # which the gate and the test shards already resolve at this depth.
           fetch-depth: 50
+          persist-credentials: false
       - uses: ./.github/actions/setup
         with:
           next-cache: "true"
@@ -331,6 +363,7 @@ jobs:
           # solution plus `tsc --noEmit` for @interlace/ui, both file-based.
           # A full clone was pure cost.
           fetch-depth: 1
+          persist-credentials: false
       - uses: ./.github/actions/setup
         with:
           turbo-cache-scope: typecheck
@@ -350,6 +383,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -360,11 +395,20 @@ jobs:
     name: Quality (Full) Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [gate, test, build, typecheck, portability]
-    if: always() && needs.gate.outputs.run == 'true'
+    needs: [gate, test, scripts-tests, build, typecheck, portability]
+    # `needs.gate.outputs.run` alone is not enough. If `gate` itself fails that
+    # output is empty, this job is skipped — and GitHub reports a skipped
+    # *required* check as passing, so a broken gate would wave a PR through with
+    # none of the heavy suites having run. Stay eligible on gate
+    # failure/cancellation and report it below.
+    if: >-
+      always() && (needs.gate.outputs.run == 'true'
+      || needs.gate.result == 'failure' || needs.gate.result == 'cancelled')
     steps:
       - name: Render gate report
         env:
+          R_GATE: ${{ needs.gate.result }}
+          R_SCRIPTS: ${{ needs['scripts-tests'].result }}
           R_TEST: ${{ needs.test.result }}
           R_BUILD: ${{ needs.build.result }}
           R_TYPECHECK: ${{ needs.typecheck.result }}
@@ -399,6 +443,14 @@ jobs:
           # accepted against the gate output that authorised it, so an upstream
           # failure cascading into a skip is still caught.
           all_pass=true
+          # The gate itself is never legitimately skipped — this job stays
+          # eligible when the gate dies precisely so it can say so. If the gate
+          # died, every downstream `result` is `skipped`, which check() would
+          # read as an authorised skip and wave through. Assert it separately.
+          if [ "$R_GATE" != "success" ]; then
+            echo "::error::The gate job did not succeed ($R_GATE). Downstream skips cannot be trusted as passes."
+            all_pass=false
+          fi
           check() { # $1=result $2=allowed-to-be-skipped(true/false) $3=label
             case "$1" in
               success) return 0 ;;
@@ -419,6 +471,9 @@ jobs:
           check "$R_BUILD"       "$build_skip_ok" "Build"            || all_pass=false
           check "$R_TYPECHECK"   "$heavy_skip_ok" "Typecheck"        || all_pass=false
           check "$R_PORTABILITY" "$heavy_skip_ok" "Rule portability" || all_pass=false
+          # scripts-tests has no `any`/`heavy` condition — it runs whenever the
+          # gate authorised the workflow at all, so a skip is never legitimate.
+          check "$R_SCRIPTS"     false            "Script & repo-config locks" || all_pass=false
           if $all_pass; then
             header="✅ All heavy quality gates passed"
           else
@@ -430,7 +485,9 @@ jobs:
             echo ""
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
+            echo "| Gate                | $(icon "$R_GATE") $R_GATE               | draft/label decision |"
             echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test\` + coverage thresholds, 10 shards, affected-filtered |"
+            echo "| Script/config locks | $(icon "$R_SCRIPTS") $R_SCRIPTS         | \`scripts/__tests__\` — outside every workspace |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\`, 4 shards, affected-filtered |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"
             echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"

@@ -88,7 +88,7 @@ describe('real-world FP regressions', () => {
       {
         code: `import mongoose from 'mongoose';
                await mongoose.connect(MONGO_URL, { authMechanism: 'SCRAM-SHA-256' });`,
-        errors: [{ messageId: 'requireTls' }],
+        errors: [{ messageId: 'requireTls', suggestions: 1 }],
       },
     ],
   });
@@ -117,22 +117,22 @@ describe('real-world FP regressions', () => {
       // Still fires on a Mongoose model and on the native driver.
       {
         code: `const results = await this.model.find(filter);`,
-        errors: [{ messageId: 'unboundedFind' }],
+        errors: [{ messageId: 'unboundedFind', suggestions: 1 }],
       },
       {
         code: `User.find({ active: true });`,
-        errors: [{ messageId: 'unboundedFind' }],
+        errors: [{ messageId: 'unboundedFind', suggestions: 1 }],
       },
       {
         code: `db.collection('users').find({ active: true }).toArray();`,
-        errors: [{ messageId: 'unboundedFind' }],
+        errors: [{ messageId: 'unboundedFind', suggestions: 1 }],
       },
       // The idiomatic NestJS injection — `@InjectModel(Cat.name) catModel`.
       // An exact-match handle list would miss the commonest Mongoose
       // receiver in the ecosystem entirely.
       {
         code: `const cats = await this.catModel.find({ age: 3 });`,
-        errors: [{ messageId: 'unboundedFind' }],
+        errors: [{ messageId: 'unboundedFind', suggestions: 1 }],
       },
     ],
   });
