@@ -1,9 +1,9 @@
 {
   "bench": "ILB-CWE-Corpus",
   "version": "1.0",
-  "timestamp": "2026-08-09T19:07:35.555Z",
+  "timestamp": "2026-08-09T19:37:04.767Z",
   "environment": {
-    "nodeVersion": "v24.12.0",
+    "nodeVersion": "v24.18.0",
     "eslintVersion": "10.7.0",
     "platform": "darwin",
     "arch": "arm64"
@@ -891,13 +891,13 @@
           "name": "Improper Encoding or Escaping of Output (broken sanitizers)",
           "owasp": "A03:2021",
           "TP": 2,
-          "FP": 1,
+          "FP": 0,
           "FN": 0,
-          "TN": 1,
-          "precision": 66.7,
+          "TN": 2,
+          "precision": 100,
           "recall": 100,
-          "f1": 80,
-          "bas": 50,
+          "f1": 100,
+          "bas": 100,
           "fixtures": [
             {
               "file": "single-pass-replace.js",
@@ -926,10 +926,8 @@
             {
               "file": "replace-until-stable.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "secure-coding/no-unchecked-loop-condition": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             }
           ]
         },
@@ -1832,13 +1830,13 @@
       },
       "aggregate": {
         "TP": 51,
-        "FP": 12,
+        "FP": 11,
         "FN": 18,
-        "TN": 48,
-        "precision": 81,
+        "TN": 49,
+        "precision": 82.3,
         "recall": 73.9,
-        "f1": 77.3,
-        "bas": 53.9
+        "f1": 77.9,
+        "bas": 55.6
       }
     },
     "eslint-plugin-security": {
