@@ -1,20 +1,20 @@
 {
   "description": "Labelled ground truth for the 13-repo wild corpus (Express + NestJS boilerplates, 1,900 files). Same contract as edge-ground-truth.json: every class carries an adjudicated verdict, FP classes must reach zero, and an UNLABELLED class fails --strict so untriaged findings can never silently become the published FP number.",
-  "method": "A finding's class is its rule plus the shape of the offending expression with identifiers erased — the unit at which one rule change resolves every member. FP = the rule should not fire on this shape; the class is a bug and must reach zero. TP = the rule is right and the finding belongs upstream. Every verdict must cite a measurement or a named file:line, never an impression.",
+  "method": "A finding's class is its rule plus the shape of the offending expression with identifiers erased \u2014 the unit at which one rule change resolves every member. FP = the rule should not fire on this shape; the class is a bug and must reach zero. TP = the rule is right and the finding belongs upstream. Every verdict must cite a measurement or a named file:line, never an impression.",
   "corpus": "13 repositories, all 1K+ stars, recommended presets only",
   "generatedAt": "2026-08-09",
   "totals": {
-    "findings": 355,
+    "findings": 312,
     "classes": 44,
-    "labelled": 4,
-    "unlabelled": 40
+    "labelled": 14,
+    "unlabelled": 30
   },
   "classes": [
     {
       "id": "express-security/no-missing-csrf-protection::other",
       "count": 40,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "FP",
+      "reason": "Deprecated rule (meta.deprecated=true, replacedBy require-csrf-protection) that was still in `recommended` at 'warn' alongside its replacement at 'error'. 21 of these locations were reported by both rules at once. Removed from the preset; the rule stays exported.",
       "samples": [
         "express/examples/auth/index.js:104",
         "express/examples/cookies/index.js:39",
@@ -24,8 +24,8 @@
     {
       "id": "express-security/require-rate-limiting::other",
       "count": 31,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "TP-ADVISORY",
+      "reason": "Detection is correct \u2014 every one of these files creates an Express app and genuinely mounts no rate limiter. But 27 of 30 are express/examples/*, 20-line demos of a single feature, where the advice is true and not actionable. Already 'warn' in recommended, which is the right severity for a class that fires once per app-creating file with identical advice. Not an FP; do not silence.",
       "samples": [
         "express/examples/auth/index.js:12",
         "express/examples/content-negotiation/index.js:4",
@@ -35,8 +35,8 @@
     {
       "id": "express-security/require-helmet::other",
       "count": 29,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "TP-ADVISORY",
+      "reason": "Same shape as require-rate-limiting: correct detection, 27 of 29 on express/examples/*. Sits at 'error' while its sibling sits at 'warn' \u2014 that inconsistency is the actionable part, not the detection.",
       "samples": [
         "express/examples/auth/index.js:12",
         "express/examples/content-negotiation/index.js:4",
@@ -47,7 +47,7 @@
       "id": "node-security/no-timing-unsafe-compare::other",
       "count": 27,
       "verdict": "TP",
-      "reason": "Measured on the 13-repo corpus: 27 of 33 findings compare something secret-shaped, including three confirmed upstream bugs — express-mongoose-es6-rest-api auth.controller.js:22 (`req.body.password === user.password`, plaintext and timing-unsafe), express/examples/auth/index.js:70 (`hash === user.hash`), bulletproof-nodejs config/index.ts:51 (hardcoded `password: '123456'`). The 6 misses are enum/env comparisons where the rule keys off an identifier containing \"auth\" rather than the compared value being a secret; that is a precision bug inside a TP class, not an FP class.",
+      "reason": "Measured on the 13-repo corpus: 27 of 33 findings compare something secret-shaped, including three confirmed upstream bugs \u2014 express-mongoose-es6-rest-api auth.controller.js:22 (`req.body.password === user.password`, plaintext and timing-unsafe), express/examples/auth/index.js:70 (`hash === user.hash`), bulletproof-nodejs config/index.ts:51 (hardcoded `password: '123456'`). The 6 misses are enum/env comparisons where the rule keys off an identifier containing \"auth\" rather than the compared value being a secret; that is a precision bug inside a TP class, not an FP class.",
       "samples": [
         "express/examples/auth/index.js:70",
         "express-mongoose-es6-rest-api/server/auth/auth.controller.js:22",
@@ -57,8 +57,8 @@
     {
       "id": "node-security/detect-non-literal-fs-filename::other",
       "count": 23,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "TP-ADVISORY",
+      "reason": "express/lib/view.js:201 `fs.statSync(path)`, lib/boot.js:14 `fs.readdirSync(dir)` \u2014 library internals with no request-derived input. The rule has no notion of a trust boundary, which its own recommended-preset comment already documents, and it ships at 'warn' for exactly this reason. Correct by its own definition; low yield.",
       "samples": [
         "express/lib/view.js:201",
         "express/examples/markdown/index.js:18",
@@ -69,7 +69,7 @@
       "id": "express-security/require-csrf-protection::other",
       "count": 19,
       "verdict": "FP",
-      "reason": "Not because CSRF does not matter, but because every one of these 19 locations is also reported by express-security/no-missing-csrf-protection — 19/19 overlap, two rules in one plugin firing on one condition, two errors on one line, and silencing either leaves the other. One of the pair must defer.",
+      "reason": "Not because CSRF does not matter, but because every one of these 19 locations is also reported by express-security/no-missing-csrf-protection \u2014 19/19 overlap, two rules in one plugin firing on one condition, two errors on one line, and silencing either leaves the other. One of the pair must defer.",
       "samples": [
         "express/examples/auth/index.js:104",
         "express/examples/cookies/index.js:39",
@@ -79,8 +79,8 @@
     {
       "id": "secure-coding/no-hardcoded-credentials::other",
       "count": 18,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "MIXED",
+      "reason": "1 confirmed upstream true positive: bulletproof-nodejs/src/config/index.ts:51 `password: '123456'` in a 5.8K-star boilerplate. The other 17 are all in express-rest-boilerplate/integration/auth.test.js \u2014 real fixture credentials in a file matching *.test.js, which `allowInTests` should already skip. Needs investigation: either the option is not applied on this path or its pattern misses `integration/*.test.js`.",
       "samples": [
         "bulletproof-nodejs/src/config/index.ts:51",
         "express-rest-boilerplate/src/api/tests/integration/auth.test.js:42",
@@ -91,7 +91,7 @@
       "id": "secure-coding/no-improper-sanitization::replace(...)",
       "count": 14,
       "verdict": "TP",
-      "reason": "What remains after PR #457 is genuine unescaped interpolation into HTML — `'<li>' + user.name + '</li>'` in express/examples/content-negotiation, `req.session.views` in examples/session. Express itself fixes this exact class with escapeHtml elsewhere in the same tree (examples/route-map/index.js:47), so the finding is actionable and correct. The 28 authored-text and already-escaped findings that used to sit in this class are gone.",
+      "reason": "What remains after PR #457 is genuine unescaped interpolation into HTML \u2014 `'<li>' + user.name + '</li>'` in express/examples/content-negotiation, `req.session.views` in examples/session. Express itself fixes this exact class with escapeHtml elsewhere in the same tree (examples/route-map/index.js:47), so the finding is actionable and correct. The 28 authored-text and already-escaped findings that used to sit in this class are gone.",
       "samples": [
         "express/examples/content-negotiation/index.js:12",
         "express/examples/content-negotiation/index.js:13",
@@ -112,8 +112,8 @@
     {
       "id": "secure-coding/no-weak-password-recovery::other",
       "count": 12,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "FP",
+      "reason": "Fires on correct password-recovery implementations, keyed off the function name. node-express-boilerplate/controllers/auth.controller.js:28 is `const forgotPassword = catchAsync(async (req, res) => {...})` whose body generates a single-use token via tokenService and emails it \u2014 the recommended flow. Same name-as-evidence defect fixed in no-unchecked-loop-condition.",
       "samples": [
         "node-express-boilerplate/src/controllers/auth.controller.js:28",
         "node-express-boilerplate/src/controllers/auth.controller.js:34",
@@ -123,8 +123,8 @@
     {
       "id": "express-security/require-express-body-parser-limits::other",
       "count": 11,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "TP",
+      "reason": "`app.use(express.urlencoded())` and `app.use(express.json())` with no `limit` option \u2014 the default is 100kb for json but urlencoded without extended/limit is a genuine unbounded-payload risk. Real finding, actionable in one line, and it lands on node-express-boilerplate/src/app.js:28 as well as the demos.",
       "samples": [
         "express/examples/auth/index.js:21",
         "express/examples/cookies/index.js:22",
@@ -134,8 +134,8 @@
     {
       "id": "secure-coding/no-sensitive-data-exposure::other",
       "count": 10,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "FP",
+      "reason": "Fires on generic error messages that contain no sensitive data at all: `throw new Error('Token not found')` (token.service.js:58), `throw new Error('Invalid token type')` (passport.js:14), `throw new Error('Password must contain at least one letter and one number')` (user.model.js:33). The last is a validation message quoting a policy, not a secret. The rule appears to key off words like token/password appearing in a thrown string.",
       "samples": [
         "express/lib/response.js:751",
         "node-express-boilerplate/src/config/passport.js:14",
@@ -145,8 +145,8 @@
     {
       "id": "express-security/require-route-authentication::other",
       "count": 10,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "TP-ADVISORY",
+      "reason": "All 10 are express/examples/* demo routes (`app.get('/users', user.list)`). An unauthenticated GET in a feature demo is intended. Same class as require-helmet: correct detection, wrong context, and not distinguishable statically.",
       "samples": [
         "express/examples/content-negotiation/index.js:40",
         "express/examples/params/index.js:63",
@@ -156,8 +156,8 @@
     {
       "id": "secure-coding/no-unlimited-resource-allocation::other",
       "count": 9,
-      "verdict": "UNLABELLED",
-      "reason": "",
+      "verdict": "FP",
+      "reason": "Fires on standard passport-jwt configuration: `jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()` in four different repos. Extracting a bearer token from a header allocates nothing and has no relationship to resource limits. Nothing in these findings concerns allocation.",
       "samples": [
         "node-express-boilerplate/src/config/passport.js:8",
         "express-rest-boilerplate/src/config/passport.js:10",
@@ -469,5 +469,6 @@
         "ultimate-backend/libs/common/src/utils/cors-config.util.ts:12"
       ]
     }
-  ]
+  ],
+  "note": "Verdicts: FP = the rule should not fire on this shape, the class is a bug and must reach zero. TP = the rule is right and the finding belongs upstream. TP-ADVISORY = detection is correct but the finding is advice rather than a vulnerability in context; these are not silenced and not counted as FPs. MIXED = the class contains both and must be split before it can be closed. The target is zero FALSE positives, not zero findings \u2014 a corpus with no findings would mean we stopped looking."
 }
