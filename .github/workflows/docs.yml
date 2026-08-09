@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -42,6 +42,13 @@ jobs:
 
       - name: Check rule tables sync (dry run)
         run: npx tsx scripts/sync-readme-rules.ts --dry-run
+
+      # Catches markdown tables that parse as paragraphs and ship as literal
+      # pipe text (require-tool-confirmation#options, 2026-08). Uses the same
+      # remark-gfm pipeline the site renders through, so a pass here means the
+      # docs site emits a real <table>.
+      - name: Check doc tables render as tables (regression lock)
+        run: npx tsx scripts/validate-doc-tables.ts
 
       - name: Check README + homepage UTM links (regression lock)
         run: npx tsx scripts/check-utm-links.ts

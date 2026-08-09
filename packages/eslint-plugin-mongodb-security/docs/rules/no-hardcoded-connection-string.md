@@ -161,3 +161,9 @@ mongoose.connect('mongodb://localhost/db', {
 - [CWE-798: Use of Hardcoded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 - [MongoDB Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

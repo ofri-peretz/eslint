@@ -68,7 +68,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       description: 'Detects improper sanitization of user input',
       cwe: 'CWE-116',
     },
-    hasSuggestions: true,
     messages: {
       improperSanitization: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -198,22 +197,22 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           safeSanitizers: {
             type: 'array',
             items: { type: 'string' },
-            default: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
+            default: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'], description: 'Sanitizer calls treated as sufficient'
           },
           dangerousChars: {
             type: 'array',
             items: { type: 'string' },
-            default: ['<', '>', '"', "'", '&', '`', '$', '{', '}', '|', ';', '(', ')'],
+            default: ['<', '>', '"', "'", '&', '`', '$', '{', '}', '|', ';', '(', ')'], description: 'Characters a sanitizer is expected to handle'
           },
           contexts: {
             type: 'array',
             items: { type: 'string' },
-            default: ['html', 'url', 'sql', 'command', 'javascript', 'css'],
+            default: ['html', 'url', 'sql', 'command', 'javascript', 'css'], description: 'Output contexts checked for a context-appropriate sanitizer'
           },
           trustedLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['DOMPurify', 'he', 'validator', 'express-validator'],
+            default: ['DOMPurify', 'he', 'validator', 'express-validator'], description: 'Libraries whose sanitizers are trusted'
           },
           trustedSanitizers: {
             type: 'array',

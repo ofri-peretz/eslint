@@ -140,3 +140,9 @@ The following patterns are **not detected** due to static analysis limitations:
 - [CWE-829: Inclusion of Functionality from Untrusted Control Sphere](https://cwe.mitre.org/data/definitions/829.html)
 - [OWASP Mobile Top 10 M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
 - [npm-lockfile-security](https://docs.npmjs.com/configuring-npm/package-lock-json.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `packageManager` | `"npm"` \| `"yarn"` \| `"pnpm"` | — | Package manager whose lock file is required |

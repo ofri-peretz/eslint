@@ -134,21 +134,21 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           maxStaticIterations: {
             type: 'number',
             minimum: 100,
-            default: 10000,
+            default: 10000, description: 'Literal iteration count above which a loop is reported'
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
+            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'], description: 'Variable names treated as user-controlled input'
           },
           allowWhileTrueWithBreak: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Allow `while (true)` when the body contains a `break`'
           },
           maxRecursionDepth: {
             type: 'number',
             minimum: 1,
-            default: 10,
+            default: 10, description: 'Recursion depth above which a call is reported'
           },
           trustedSanitizers: {
             type: 'array',

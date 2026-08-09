@@ -15,5 +15,10 @@
     "noEmit": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  // Test files are excluded from the library build and the whole-graph
+  // typecheck: they import node: builtins and this package carries no
+  // @types/node (matching every other package here — see
+  // eslint-formatter/tsconfig.lib.json). Vitest typechecks them at run time
+  // via its own esbuild pass.
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**"]
 }

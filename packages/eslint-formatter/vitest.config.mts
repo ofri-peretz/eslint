@@ -7,13 +7,17 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-    passWithNoTests: true,
+    passWithNoTests: false,
     // The `real ESLint -f handshake` integration test loads ESLint itself, which
     // is I/O-heavy on a cold page cache (~8s observed). Vitest's 5s default
     // turned that into a "failure" under the 44-task `turbo run test` fan-out
     // behind the lefthook pre-push hook. Same remedy as
     // eslint-plugin-import-next/vitest.config.mts.
     testTimeout: 30_000,
+    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
+    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
+    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    hookTimeout: 30_000,
     pool: 'vmThreads',
     coverage: {
       enabled: true,

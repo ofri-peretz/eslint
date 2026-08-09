@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup
         with:
           playwright-cache: "true"
@@ -84,8 +84,10 @@ jobs:
       #
       # Go through turbo rather than two raw `npm run build --workspace=` calls
       # so the output lands in the shared Turbo cache and can replay the
-      # `docs#build` that quality-full and lighthouse already produced for the
-      # same SHA instead of rebuilding the site a third time.
+      # `docs#build` that quality-full already produced for the same SHA
+      # instead of rebuilding the site a second time. (Lighthouse used to be a
+      # third producer here; it is weekly-cron-only now, so it never warms the
+      # cache for a PR.)
       #
       # `--only` is load-bearing. Without it, `--filter=docs` expands via
       # `dependsOn: ["^build"]` to all 21 workspaces docs depends on, and a

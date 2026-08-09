@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 
 /**
  * Vitest configuration for eslint-plugin-secure-coding package
@@ -10,6 +11,10 @@ import { defineConfig } from 'vitest/config';
  * - JUnit reporting for CI/CD pipeline integration
  */
 export default defineConfig({
+  // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
+  resolve: {
+    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+  },
   root: __dirname,
   plugins: [],
   test: {
@@ -18,6 +23,10 @@ export default defineConfig({
     // an idle machine and mis-reports contention as failure. A hang still fails,
     // just at 30s instead of 5s.
     testTimeout: 30_000,
+    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
+    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
+    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    hookTimeout: 30_000,
 
     globals: true,
     environment: 'node',
@@ -38,7 +47,7 @@ export default defineConfig({
       '**/storybook-static/**',
       '**/coverage/**',
     ],
-    passWithNoTests: true,
+    passWithNoTests: false,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'secure-coding', color: 'green' },
     // Use forks to prevent coverage race conditions

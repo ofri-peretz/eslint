@@ -1,7 +1,7 @@
 name: Link Integrity Check
 
 # Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
-# weekly Sunday cron for drift. See AGENTS.md "Promotion gate".
+# weekly Friday cron for drift. See AGENTS.md "Promotion gate".
 
 on:
   pull_request:
@@ -55,7 +55,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6

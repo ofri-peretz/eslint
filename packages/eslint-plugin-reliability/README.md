@@ -1,7 +1,9 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>
+  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  &nbsp;&nbsp;
+  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
 </p>
 
 <p align="center">
@@ -132,7 +134,7 @@ const results = await Promise.all(userIds.map((id) => fetchUser(id)));
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
 | Node.js | `>=18.0.0` |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
@@ -160,7 +162,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-jsdoc-terminator-in-example](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-jsdoc-terminator-in-example?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | Detect `*/` sequences inside JSDoc `@example` blocks that prematurely close the JSDoc comment. | 🟢 |  |  |  | 💡 |  |
 | [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-error-context?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
 | [no-missing-null-checks](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-null-checks?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) | CWE-476 |  |  | ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
-| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
 | [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unhandled-promise?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) | CWE-1024 |  |  | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This… | 🟢 |  |  |  | 💡 |  |
 | [no-unsafe-type-narrowing](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unsafe-type-narrowing?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
 | [require-network-timeout](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/require-network-timeout?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-reliability) |  |  |  | Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and prov… | 🟢 | 💼 |  |  | 💡 |  |

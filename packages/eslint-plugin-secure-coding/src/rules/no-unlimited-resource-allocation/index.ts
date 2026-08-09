@@ -70,7 +70,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       description: 'Detects unlimited resource allocation that could cause DoS',
       cwe: 'CWE-770',
     },
-    hasSuggestions: true,
     messages: {
       unlimitedResourceAllocation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -201,20 +200,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             type: 'number',
             minimum: 1024,
             default: 1048576, // 1MB
+            description: 'Allocation size in bytes above which a call is reported',
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
+            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'], description: 'Variable names treated as user-controlled input'
           },
           safeResourceFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateSize', 'checkLimits', 'limitResource', 'safeAlloc'],
+            default: ['validateSize', 'checkLimits', 'limitResource', 'safeAlloc'], description: 'Function names that bound an allocation'
           },
           requireResourceValidation: {
             type: 'boolean',
-            default: true,
+            default: true, description: 'Require an explicit size check before allocating'
           },
           trustedSanitizers: {
             type: 'array',

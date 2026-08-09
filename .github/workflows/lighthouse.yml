@@ -6,38 +6,27 @@ name: Lighthouse (Web Vitals Budget)
 # philosophies — MOTION_PHILOSOPHY.md (CLS = 0), UX_PHILOSOPHY.md #6 (LCP),
 # COLOR_PHILOSOPHY.md (contrast budget), TYPOGRAPHY_PHILOSOPHY.md (AA floor).
 #
-# Gating model (intentionally split):
-#   • PR runs (pull_request)        → ADVISORY. The lhci step uses
-#     `continue-on-error: true`. The report still uploads as an artifact
-#     and renders in checks, but a budget breach doesn't block merge.
-#     Rationale: single-pass Lighthouse on a shared GitHub runner has
-#     ~50–100ms of LCP jitter from cold CPU / network — too noisy to use
-#     as a PR-blocking gate. We were treating noise as failure.
-#   • Schedule (weekly Sunday)      → HARD GATE. Same job, same config,
-#     but a budget breach exits non-zero and pages the perf owner. This
-#     is the canonical "did we regress?" check.
-#   • workflow_dispatch (manual)    → HARD GATE. Use for opt-in PR runs
-#     when you're explicitly chasing a perf claim.
+# Not a PR check. It used to run advisory on every docs PR, which spent ~15
+# minutes of runner time per PR to produce a result nobody could act on: a
+# single-pass Lighthouse on a shared runner carries ~50–100ms of LCP jitter
+# from cold CPU and network, so a breach was as likely to be noise as a
+# regression — and `continue-on-error` meant it never blocked anything anyway.
 #
-# Config: apps/docs/lighthouserc.json
-# Triggers: ready_for_review / `run-full-ci` label / synchronize, plus the
-# weekly Sunday cron. See AGENTS.md "Promotion gate".
+# So it runs weekly against main, where it is a HARD GATE, and reports:
+#   • the job summary always carries the scores table and any breach rows
+#   • a breach opens (or updates) a single tracking issue labelled `perf`
+#   • the HTML reports upload as an artifact either way
+#
+# workflow_dispatch is the escape hatch when you're chasing a perf claim on a
+# branch and want the numbers now.
+#
+# Config: apps/docs/lighthouserc.json   Report: apps/docs/scripts/lighthouse-report.ts
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  pull_request:
-    branches: [main]
-    # See a11y.yml — `opened`/`reopened` are required for a PR created
-    # directly as non-draft to trigger this at all.
-    types: [opened, reopened, ready_for_review, labeled, synchronize]
-    paths:
-      - "apps/docs/**"
-      - "packages/eslint-devkit/**"
-      - ".github/workflows/lighthouse.yml"
-      - "apps/docs/lighthouserc.json"
   workflow_dispatch:
   schedule:
-    - cron: "5 4 * * 3" # Wed 04:05 UTC — weekly (staggered off the Sunday burst)
+    - cron: '5 4 * * 3' # Wed 04:05 UTC — weekly, staggered off the Sunday burst
 
 concurrency:
   group: lighthouse-${{ github.ref }}
@@ -45,53 +34,26 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write # for the result comment
+  issues: write # the weekly report files/updates its own tracking issue
 
 jobs:
-  gate:
-    name: Gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    outputs:
-      run: ${{ steps.decide.outputs.run }}
-    steps:
-      - id: decide
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          IS_DRAFT: ${{ github.event.pull_request.draft }}
-          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" != "pull_request" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Draft PR without \`run-full-ci\` label — skipping Lighthouse."
-          fi
-
   lighthouse:
     name: Web Vitals Budget
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "true"
-          next-cache: "true"
+          turbo-cache: 'true'
+          next-cache: 'true'
 
       - name: Build docs site
         run: npx turbo run build --filter=docs
         env:
           NODE_ENV: production
           # Disable telemetry during CI builds.
-          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_TELEMETRY_DISABLED: '1'
 
       - name: Start docs server
         working-directory: apps/docs
@@ -99,31 +61,75 @@ jobs:
           npm run start &
           npx wait-on http://localhost:3000 --timeout 60000
         env:
-          PORT: "3000"
+          PORT: '3000'
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.0
 
       - name: Run Lighthouse CI
         id: lhci
         working-directory: apps/docs
-        # Advisory on PRs (single-pass Lighthouse is too noisy to block on),
-        # hard gate on the weekly cron + manual dispatch. The step always
-        # produces the .lighthouseci/ artifact for the upload step below.
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
-        # `npx` over a global install: the version is still pinned, but it
-        # resolves from the npm cache the setup action already hydrated
-        # instead of a fresh ~30s registry fetch on every run.
-        run: npx --yes @lhci/cli@0.14.0 autorun --config=./lighthouserc.json
+        # Deliberately not continue-on-error: the reason this left the PR path
+        # is so that a breach here means something. The report step below runs
+        # on failure too, so a red run still explains itself.
+        run: lhci autorun --config=./lighthouserc.json
         env:
           LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Annotate PR when budgets breach (advisory)
-        if: github.event_name == 'pull_request' && steps.lhci.outcome == 'failure'
+      - name: Render report
+        id: report
+        if: always()
+        working-directory: apps/docs
         run: |
-          echo "::warning title=Lighthouse budget breached (advisory)::Lighthouse assertions failed but did not block this PR. Download the lighthouse-report artifact for full diagnostics, or re-run with the \`run-full-ci\` label / manual dispatch to enforce. The weekly Sunday cron still enforces the budget on main."
+          set -euo pipefail
+          npx tsx scripts/lighthouse-report.ts \
+            --dir .lighthouseci \
+            --out "$RUNNER_TEMP/lighthouse-report.md" > /dev/null
+          cat "$RUNNER_TEMP/lighthouse-report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: File or update the tracking issue
+        if: always() && steps.lhci.outcome == 'failure' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_PATH: ${{ runner.temp }}/lighthouse-report.md
+          TITLE: 'Web Vitals budget breached (weekly run)'
+        run: |
+          set -euo pipefail
+          # The label may not exist yet; creating it here keeps the first
+          # breach from failing on `--label perf` instead of reporting.
+          gh label create perf --color FBCA04 \
+            --description "Performance / Web Vitals budget" 2>/dev/null || true
+          # One issue, reopened and re-bodied each week — a fresh issue every
+          # Wednesday would bury the signal it exists to raise.
+          existing=$(gh issue list --state all --label perf --search "$TITLE in:title" \
+            --json number,title --jq "[.[] | select(.title == \"$TITLE\")][0].number // empty")
+          if [[ -n "$existing" ]]; then
+            gh issue edit "$existing" --body-file "$REPORT_PATH"
+            gh issue reopen "$existing" 2>/dev/null || true
+            echo "::notice::Updated perf issue #$existing"
+          else
+            gh issue create --title "$TITLE" --label perf --body-file "$REPORT_PATH"
+          fi
+
+      - name: Close the tracking issue once budgets are met again
+        if: steps.lhci.outcome == 'success' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: 'Web Vitals budget breached (weekly run)'
+        run: |
+          set -euo pipefail
+          open=$(gh issue list --state open --label perf --search "$TITLE in:title" \
+            --json number,title --jq "[.[] | select(.title == \"$TITLE\")][0].number // empty")
+          if [[ -n "$open" ]]; then
+            gh issue close "$open" --comment "Budgets met again as of $GITHUB_SHA — closing until the next breach."
+          fi
 
       - name: Upload Lighthouse artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: lighthouse-report
-          path: apps/docs/.lighthouseci/
-          retention-days: 14
+          path: |
+            apps/docs/.lighthouseci/
+            ${{ runner.temp }}/lighthouse-report.md
+          retention-days: 90

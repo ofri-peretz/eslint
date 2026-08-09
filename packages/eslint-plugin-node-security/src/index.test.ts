@@ -86,6 +86,22 @@ describe('eslint-plugin-node-security plugin interface', () => {
       ).toBeDefined();
     });
 
+    // Demoted 2026-08-05 alongside the binding-resolution fix, which widened
+    // detection from the single `fs.x` spelling to every way the module can be
+    // bound. Measured 854 findings on this repo (555 outside test files); the
+    // rule has no trust-boundary notion, so a build script reading its own repo
+    // reports like a handler reading user input. Re-promoting to 'error' is a
+    // deliberate act gated on W6's corpus FP measurement, not something a later
+    // refactor should do by accident.
+    it('keeps detect-non-literal-fs-filename at warn in recommended', () => {
+      const recommendedRules = configs['recommended'].rules || {};
+      expect(
+        recommendedRules['node-security/detect-non-literal-fs-filename'],
+        'the widened binding resolution multiplies findings; promote to error ' +
+          'only after the corpus run measures its FP profile',
+      ).toBe('warn');
+    });
+
     it('should provide strict configuration', () => {
       expect(configs['strict']).toBeDefined();
       expect(configs['strict'].plugins?.['node-security']).toBeDefined();

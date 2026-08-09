@@ -70,10 +70,10 @@ The `max-age` finding offers one editor suggestion (no auto-fix): **raise `maxAg
 
 ## Options
 
-| Option              | Type      | Default    | Description                                       |
-| ------------------- | --------- | ---------- | ------------------------------------------------- |
-| `minMaxAge`         | `number`  | `15552000` | Minimum accepted `max-age`, in seconds (six months; use `31536000` for preload eligibility) |
-| `requireSubDomains` | `boolean` | `true`     | Report `includeSubDomains: false`                 |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `minMaxAge` | `number` | — | Minimum accepted max-age in seconds |
+| `requireSubDomains` | `boolean` | — | Require includeSubDomains |
 
 ```json
 {

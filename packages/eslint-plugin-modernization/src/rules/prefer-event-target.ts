@@ -31,7 +31,6 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         'Prefer EventTarget over EventEmitter for cross-platform compatibility',
     },
     fixable: 'code',
-    hasSuggestions: true,
     messages: {
       preferEventTarget: formatLLMMessage({
         icon: MessageIcons.WARNING,

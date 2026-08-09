@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-400
 owasp: "A04:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** CWE-400, lean, performance, Mongoose, memory
@@ -144,3 +144,9 @@ const stats = await User.aggregate([
 
 - [Mongoose Lean Queries](https://mongoosejs.com/docs/tutorials/lean.html)
 - [CWE-400](https://cwe.mitre.org/data/definitions/400.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

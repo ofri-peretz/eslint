@@ -18,7 +18,7 @@ Use this checklist for every rule before release:
 □ Documentation - Complete README, rule docs, CHANGELOG (see §4)
 □ Rule Documentation - Has description, examples, OWASP mapping (see §5)
 □ Coverage Limitations - Follows c8 ignore guidelines (see §6)
-□ ESLint Peer Dep - package.json declares "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0" (see ESLINT_VERSION_SUPPORT.md)
+□ ESLint Peer Dep - package.json declares "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0" (see ESLINT_VERSION_SUPPORT.md)
 ```
 
 ---

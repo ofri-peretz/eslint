@@ -158,3 +158,9 @@ delete user[key];
 
 - [CWE-459: Incomplete Cleanup](https://cwe.mitre.org/data/definitions/459.html)
 - [OWASP Secure Coding: Data Destruction](https://owasp.org/www-project-secure-coding-practices-guide/v2/guides/secure-coding-practices)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `additionalSensitiveProperties` | `string[]` | `[]` | Extra property-name fragments to treat as sensitive |

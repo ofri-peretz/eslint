@@ -29,7 +29,6 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-287',
       cvss: 6.5,
     },
-    hasSuggestions: true,
     messages: {
       requireAuthMechanism: formatLLMMessage({
         icon: MessageIcons.INFO,

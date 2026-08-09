@@ -219,3 +219,9 @@ compare(userToken, validToken);
 - **[Node.js timingSafeEqual](https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b)** - Official documentation
 - **[CWE-208: Observable Timing Discrepancy](https://cwe.mitre.org/data/definitions/208.html)** - Official CWE entry
 - **[Timing Attacks Explained](https://codahale.com/a-lesson-in-timing-attacks/)** - Classic article on timing attacks
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `secretPatterns` | `string[]` | `["token","secret","key","password","hash","signature","mac","hmac","digest","apiKey","api_key","api-key","auth","credential","bearer","jwt","csrf","nonce","ssn","social_security","social-security","pii","private_key","private-key","privateKey","access_token","access-token","accessToken","refresh_token","refresh-token","refreshToken","session_id","session-id","sessionId","auth_token","auth-token","authToken","encryption_key","encryption-key","encryptionKey"]` | Variable name patterns that indicate secrets |

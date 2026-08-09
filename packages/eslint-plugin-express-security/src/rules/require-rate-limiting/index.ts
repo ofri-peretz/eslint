@@ -122,7 +122,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
           alternativeMiddleware: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            default: [], description: 'Extra middleware names that count as rate limiting'
           },
           assumeRateLimiting: {
             type: 'boolean',

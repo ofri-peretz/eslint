@@ -189,3 +189,9 @@ rand(16);
 - **[CVE-2020-36732](https://nvd.nist.gov/vuln/detail/CVE-2020-36732)** - Official CVE entry
 - **[CWE-338: Weak PRNG](https://cwe.mitre.org/data/definitions/338.html)** - Official CWE entry
 - **[Breaking Math.random()](https://blog.securityevaluators.com/hacking-the-javascript-lottery-80cc437e3b7f)** - How Math.random can be predicted
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |

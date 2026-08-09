@@ -302,3 +302,11 @@ myEval(userInput); // Uses eval internally
 - **[Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)** - Node.js security guidelines
 - **[CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html)** - Official CWE entry
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowLiteralStrings` | `boolean` | `false` | Allow eval with literal strings (false = stricter) |
+| `additionalEvalFunctions` | `string[]` | `[]` | Additional functions to treat as eval-like |
+| `strategy` | `"remove"` \| `"refactor"` \| `"validate"` \| `"auto"` | `"auto"` | Strategy for fixing eval usage (auto = smart detection) |

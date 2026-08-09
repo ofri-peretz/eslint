@@ -190,17 +190,17 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           ldapFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['search', 'bind', 'modify', 'add', 'delete', 'compare', 'searchAsync'],
+            default: ['search', 'bind', 'modify', 'add', 'delete', 'compare', 'searchAsync'], description: 'LDAP client methods treated as query sinks'
           },
           ldapEscapeFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['escape.filterValue', 'escape.dnValue', 'filterEscape', 'dnEscape'],
+            default: ['escape.filterValue', 'escape.dnValue', 'filterEscape', 'dnEscape'], description: 'Function names that escape LDAP filter or DN values'
           },
           ldapValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateLdapInput', 'sanitizeLdapFilter', 'cleanLdapValue', 'checkLdapFilter'],
+            default: ['validateLdapInput', 'sanitizeLdapFilter', 'cleanLdapValue', 'checkLdapFilter'], description: 'Function names that count as LDAP input validation'
           },
           trustedSanitizers: {
             type: 'array',

@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-489
 owasp: "A05:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** CWE-489, debug, Mongoose, logging, production, security
@@ -131,3 +131,9 @@ mongoose.set(setting, true);
 
 - [Mongoose Debug](<https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()>)
 - [CWE-489](https://cwe.mitre.org/data/definitions/489.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

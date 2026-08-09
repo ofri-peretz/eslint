@@ -68,7 +68,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects directive injection vulnerabilities in templates',
       cwe: 'CWE-96',
     },
-    hasSuggestions: true,
     messages: {
       directiveInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -198,21 +197,21 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           trustedDirectives: {
             type: 'array',
             items: { type: 'string' },
-            default: ['ngIf', 'ngFor', 'ngClass', 'v-if', 'v-for', 'v-bind', 'v-on'],
+            default: ['ngIf', 'ngFor', 'ngClass', 'v-if', 'v-for', 'v-bind', 'v-on'], description: 'Template directives treated as safe'
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
           frameworks: {
             type: 'array',
             items: { type: 'string' },
-            default: ['angular', 'vue', 'react', 'svelte'],
+            default: ['angular', 'vue', 'react', 'svelte'], description: 'Template frameworks to analyse'
           },
           allowDynamicInComponents: {
             type: 'boolean',
-            default: false,
+            default: false, description: 'Allow dynamic directives inside component code'
           },
           trustedSanitizers: {
             type: 'array',

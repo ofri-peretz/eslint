@@ -94,11 +94,11 @@ const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
 
 ## Options
 
-| Option                    | Type       | Default                     | Description                           |
-| ------------------------- | ---------- | --------------------------- | ------------------------------------- |
-| `archiveFunctions`        | `string[]` | `['extract', 'extractAll']` | Archive extraction functions to check |
-| `pathValidationFunctions` | `string[]` | `['validatePath']`          | Path validation functions             |
-| `safeLibraries`           | `string[]` | `[]`                        | Libraries with safe extraction        |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `archiveFunctions` | `string[]` | `["extract","extractAll","extractAllTo","unzip","untar","extractArchive"]` | Archive extraction functions to check |
+| `pathValidationFunctions` | `string[]` | `["validatePath","sanitizePath","checkPath","safePath"]` | Path validation functions |
+| `safeLibraries` | `string[]` | `["yauzl","safe-archive-extract","tar-stream","unzipper"]` | Libraries with safe extraction |
 
 ## Error Message Format
 

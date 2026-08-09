@@ -665,8 +665,8 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
-    pluginName: 'eslint-plugin-jwt',
-    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    pluginName: 'eslint-plugin-jwt-security',
+    pluginEntry: 'packages/eslint-plugin-jwt-security/src/index.ts',
     fullRuleName: 'jwt/no-algorithm-none',
     shortRuleName: 'no-algorithm-none',
     cases: [
@@ -707,8 +707,8 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
-    pluginName: 'eslint-plugin-jwt',
-    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    pluginName: 'eslint-plugin-jwt-security',
+    pluginEntry: 'packages/eslint-plugin-jwt-security/src/index.ts',
     fullRuleName: 'jwt/no-hardcoded-secret',
     shortRuleName: 'no-hardcoded-secret',
     cases: [
@@ -874,8 +874,8 @@ const CASES: RuleSpec[] = [
     ],
   },
   {
-    pluginName: 'eslint-plugin-pg',
-    pluginEntry: 'packages/eslint-plugin-pg/src/index.ts',
+    pluginName: 'eslint-plugin-postgresql-security',
+    pluginEntry: 'packages/eslint-plugin-postgresql-security/src/index.ts',
     fullRuleName: 'pg/no-unsafe-query',
     shortRuleName: 'no-unsafe-query',
     cases: [
@@ -1074,8 +1074,8 @@ const CASES: RuleSpec[] = [
   },
   // ── jwt/require-expiration suggestion (verify suggestion is emitted) ──────
   {
-    pluginName: 'eslint-plugin-jwt',
-    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    pluginName: 'eslint-plugin-jwt-security',
+    pluginEntry: 'packages/eslint-plugin-jwt-security/src/index.ts',
     fullRuleName: 'jwt/require-expiration',
     shortRuleName: 'require-expiration',
     cases: [

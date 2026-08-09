@@ -40,7 +40,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-697',
       cvss: 5.3,
     },
-    fixable: 'code',
+    // No `fixable`: this rule emits suggestions only. Rewriting `==` to `===`
+    // is not guaranteed to preserve behaviour, so it must not run under
+    // `--fix`.
     hasSuggestions: true,
     messages: {
       insecureComparison: formatLLMMessage({
@@ -149,6 +151,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           return text.toLowerCase().includes(pattern.toLowerCase());
         }
       });
+    }
+
+    /**
+     * `null` literal, ignoring parentheses.
+     */
+    function isNullLiteral(node: TSESTree.Node): boolean {
+      return node.type === 'Literal' && node.raw === 'null';
     }
 
     /**
@@ -293,6 +302,17 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // `x == null` / `x != null` is the idiomatic nullish check: it matches
+        // null *and* undefined in one comparison, which is exactly why it is
+        // written that way. It is not a type-coercion weakness, and rewriting
+        // it to `=== null` silently drops the `undefined` case. Core `eqeqeq`
+        // exempts it under the `smart`/`allow-null` options for the same
+        // reason. Measured on express/axios/sequelize: 73 of 161 reports from
+        // this rule were this pattern.
+        if (isNullLiteral(node.left) || isNullLiteral(node.right)) {
+          return;
+        }
+
         const strictOperator = node.operator === '==' ? '===' : '!==';
         const leftText = sourceCode.getText(node.left);
         const rightText = sourceCode.getText(node.right);
@@ -306,9 +326,10 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             strictOperator,
             example,
           },
-          fix: (fixer: TSESLint.RuleFixer) => {
-            return fixer.replaceText(node, example);
-          },
+          // No `fix` here on purpose: swapping `==` for `===` can change
+          // runtime behaviour when the operands differ in type, so it is not
+          // safe to run under `--fix`. Offered as a suggestion the author
+          // opts into.
           suggest: [
             {
               messageId: 'useStrictEquality',

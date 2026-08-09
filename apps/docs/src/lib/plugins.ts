@@ -57,7 +57,7 @@ export const PLUGINS: PluginEntry[] = [
   },
   {
     slug: 'jwt',
-    package: 'eslint-plugin-jwt',
+    package: 'eslint-plugin-jwt-security',
     pillar: 'security',
     description: 'Token security',
   },
@@ -87,7 +87,7 @@ export const PLUGINS: PluginEntry[] = [
   },
   {
     slug: 'pg',
-    package: 'eslint-plugin-pg',
+    package: 'eslint-plugin-postgresql-security',
     pillar: 'security',
     description: 'PostgreSQL security',
   },

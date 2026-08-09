@@ -67,9 +67,9 @@ The rule offers one editor suggestion (no auto-fix): **trust exactly `hopCount` 
 
 ## Options
 
-| Option     | Type     | Default | Description                                                    |
-| ---------- | -------- | ------- | -------------------------------------------------------------- |
-| `hopCount` | `number` | `1`     | Number of reverse proxies in front of the app, used in the suggested fix |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `hopCount` | `number` | — | Number of reverse proxies used in the suggested fix |
 
 ```json
 {

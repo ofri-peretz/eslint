@@ -65,10 +65,15 @@ document.cookie = 'locale=en-US';
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/no-cookie-auth-tokens": [
+    "browser-security/no-cookie-auth-tokens": [
       "error",
       {
         "allowInTests": true

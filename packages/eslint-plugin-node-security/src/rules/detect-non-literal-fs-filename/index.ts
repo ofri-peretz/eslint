@@ -148,6 +148,83 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
 };
 
 /**
+ * The four specifiers that resolve to Node's filesystem module.
+ *
+ * `fs/promises` is included because the promise API is the same set of sinks
+ * under a different import path — `readFile(userPath)` there is exactly as
+ * exploitable as `fs.readFile(userPath)`.
+ */
+const FS_MODULES = new Set(['fs', 'node:fs', 'fs/promises', 'node:fs/promises']);
+
+export const isFsModule = (source: unknown): boolean =>
+  typeof source === 'string' && FS_MODULES.has(source);
+
+/**
+ * The fs method this callee invokes, if any.
+ *
+ * The rule used to require the receiver be literally the identifier `fs`, so
+ * every other way of binding the module was silently unchecked — a named
+ * import, a renamed default, `fs.promises`, a namespace import. A path
+ * traversal is not less exploitable because the author wrote
+ * `import { readFile } from 'node:fs/promises'`, so the gate now resolves the
+ * binding instead of pattern-matching one spelling of it.
+ *
+ * Module-scope so each shape is directly unit-testable (Layer-2).
+ */
+export function fsMethodName(
+  callee: TSESTree.Node,
+  namespaces: ReadonlySet<string>,
+  named: ReadonlyMap<string, string>,
+): string | undefined {
+  // `readFile(userPath)` — named import or destructured require.
+  if (callee.type === AST_NODE_TYPES.Identifier) return named.get(callee.name);
+
+  if (
+    callee.type !== AST_NODE_TYPES.MemberExpression ||
+    callee.computed ||
+    callee.property.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return undefined;
+  }
+
+  const object = callee.object;
+
+  // `fs.readFile(userPath)` — under whatever name the module was bound to.
+  if (object.type === AST_NODE_TYPES.Identifier && namespaces.has(object.name)) {
+    return callee.property.name;
+  }
+
+  // `fs.promises.readFile(userPath)`.
+  if (
+    object.type === AST_NODE_TYPES.MemberExpression &&
+    !object.computed &&
+    object.object.type === AST_NODE_TYPES.Identifier &&
+    namespaces.has(object.object.name) &&
+    object.property.type === AST_NODE_TYPES.Identifier &&
+    object.property.name === 'promises'
+  ) {
+    return callee.property.name;
+  }
+
+  return undefined;
+}
+
+/**
+ * Is this expression `require('fs')` (or any of the four fs specifiers)?
+ * Module-scope so it is directly unit-testable (Layer-2).
+ */
+export function isFsRequire(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier &&
+    node.callee.name === 'require' &&
+    node.arguments.length > 0 &&
+    node.arguments[0].type === AST_NODE_TYPES.Literal &&
+    isFsModule(node.arguments[0].value)
+  );
+}
+
+/**
  * Determine risk level based on the operation and path.
  * Module-scope so the non-dangerous fallback (no FS_OPERATIONS entry sets
  * dangerous: false today) is directly unit-testable (Layer-2).
@@ -174,6 +251,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-22',
       confidence: 'medium',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
       fsPathTraversal: formatLLMMessage({
@@ -539,18 +617,39 @@ allowLiterals = false,
     };
 
     /**
+     * Names bound to the fs module itself.
+     *
+     * Seeded with `fs`, so a file that never imports it — the shape the rule
+     * has always reported — keeps being reported. Anything else has to be
+     * traced to an import or a require.
+     */
+    const fsNamespaces = new Set<string>(['fs']);
+    /** Local name → fs method, for named imports and destructured requires. */
+    const fsNamedMethods = new Map<string, string>();
+    /** Calls to judge at Program:exit, once every binding in the file is known. */
+    const pendingCalls: TSESTree.CallExpression[] = [];
+
+    /**
+     * Record what a destructured / named binding refers to.
+     *
+     * `promises` is the one member of the fs module that is itself a module
+     * object, so `const { promises } = require('fs')` binds a *namespace*, not
+     * a method — filing it under methods left `promises.readFile(userPath)`
+     * unresolvable and therefore silently unchecked.
+     */
+    function bindFsName(local: string, imported: string): void {
+      if (imported === 'promises') fsNamespaces.add(local);
+      else fsNamedMethods.set(local, imported);
+    }
+
+    /**
      * Check fs method calls for path traversal vulnerabilities
      */
     const checkFsCall = (node: TSESTree.CallExpression) => {
-      // Check if it's an fs method call
-      if (node.callee.type !== 'MemberExpression' ||
-          node.callee.object.type !== 'Identifier' ||
-          node.callee.object.name !== 'fs' ||
-          node.callee.property.type !== 'Identifier') {
+      const methodName = fsMethodName(node.callee, fsNamespaces, fsNamedMethods);
+      if (methodName === undefined) {
         return;
       }
-
-      const methodName = node.callee.property.name;
 
       // Skip if not a dangerous method
       if (!dangerousMethods.has(methodName)) {
@@ -607,7 +706,61 @@ allowLiterals = false,
     };
 
     return {
-      CallExpression: checkFsCall
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (!isFsModule(node.source.value)) return;
+        for (const spec of node.specifiers) {
+          if (spec.type === AST_NODE_TYPES.ImportSpecifier) {
+            // `import { readFile as read }` — the *imported* name is the fs
+            // method, the local name is what the call site writes. The string
+            // form (`import { 'readFile' as read }`) names the same method, so
+            // skipping it would be a false negative, not a narrower gate.
+            const imported =
+              spec.imported.type === AST_NODE_TYPES.Identifier
+                ? spec.imported.name
+                : spec.imported.value;
+            bindFsName(spec.local.name, imported);
+            continue;
+          }
+          // Default and namespace specifiers both bind the module object.
+          fsNamespaces.add(spec.local.name);
+        }
+      },
+
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (node.init === null || !isFsRequire(node.init)) return;
+        if (node.id.type === AST_NODE_TYPES.Identifier) {
+          fsNamespaces.add(node.id.name);
+          return;
+        }
+        if (node.id.type !== AST_NODE_TYPES.ObjectPattern) return;
+        for (const prop of node.id.properties) {
+          if (prop.type !== AST_NODE_TYPES.Property || prop.computed) continue;
+          if (prop.value.type !== AST_NODE_TYPES.Identifier) continue;
+          // `const { 'readFile': read } = require('fs')` names the same method
+          // as the bare form. The import path already reads the string spelling
+          // (`import { 'readFile' as read }`), so gating it out here would be an
+          // asymmetry, not a narrower gate.
+          const key =
+            prop.key.type === AST_NODE_TYPES.Identifier
+              ? prop.key.name
+              : prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
+                ? prop.key.value
+                : undefined;
+          if (key === undefined) continue;
+          bindFsName(prop.value.name, key);
+        }
+      },
+
+      // Collected, not judged: a `const fs = require('fs')` below the call
+      // site still binds it, and a rule that missed those would be reporting
+      // on statement order rather than on risk.
+      CallExpression(node: TSESTree.CallExpression) {
+        pendingCalls.push(node);
+      },
+
+      'Program:exit'() {
+        for (const call of pendingCalls) checkFsCall(call);
+      },
     };
   },
 });
