@@ -97,6 +97,15 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
      * ordinary application code it fires on `obj[key]` throughout. That is a
      * deliberate opt-in trade, not something a preset should make for you.
      */
+    it('keeps no-unchecked-loop-condition out of recommended and owasp-top-10', () => {
+      expect(configs.recommended.rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      expect(configs['recommended-strict'].rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      expect(configs['owasp-top-10'].rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      // Still shipped, still opt-in-able.
+      expect(rules['no-unchecked-loop-condition']).toBeDefined();
+      expect(configs.strict.rules?.['secure-coding/no-unchecked-loop-condition']).toBe('error');
+    });
+
     it('keeps detect-object-injection out of recommended and owasp-top-10', () => {
       expect(configs.recommended.rules?.['secure-coding/detect-object-injection']).toBeUndefined();
       expect(configs['recommended-strict'].rules?.['secure-coding/detect-object-injection']).toBeUndefined();
