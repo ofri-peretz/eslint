@@ -215,6 +215,22 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     const taintedVariables = new Set<string>();
 
     /**
+     * Names that actually denote a request. Taint starts here and spreads by
+     * assignment — it is not inferred from what a variable is called.
+     *
+     * The `body`/`query`/`params`/`input`/`data` entries in the default
+     * `userInputVariables` are *properties* of one of these, not standalone
+     * evidence: `req.query` is user input, a local `query` object is not.
+     */
+    const REQUEST_OBJECTS = new Set([
+      'req',
+      'request',
+      'ctx',
+      'context',
+      'event',
+    ]);
+
+    /**
      * Check if a variable contains user input
      */
     const isUserInput = (varName: string): boolean => {
@@ -235,14 +251,25 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         return userInputVariables.some(input => lowerVarName === input.toLowerCase());
       }
 
-      // Using defaults, use broader matching
-      return userInputVariables.some(input =>
-        lowerVarName.includes(input.toLowerCase()) ||
-        lowerVarName === input.toLowerCase() ||
-        // Handle cases like "userInput", "customInput", etc.
-        lowerVarName.includes('input') ||
-        lowerVarName.includes('data')
-      );
+      // Using defaults: a *request object* name is evidence; a bare noun is
+      // not. The previous form substring-matched the identifier against all
+      // seven defaults and additionally OR-ed in `includes('input')` and
+      // `includes('data')` unconditionally, so every one of these read as
+      // attacker-controlled:
+      //
+      //   metadataMap   dataSource   queryBuilder   requestId   bodyParser
+      //
+      // Worse, the guess propagated: a variable assigned from a "tainted"
+      // one joins `taintedVariables`, so `const found = coll.find(query)`
+      // made `found` tainted and every `for (const r of found)` a finding.
+      // 25 of this rule's 28 findings on the wild corpus started that way,
+      // as did the ILB-CWE-Corpus false positive — whose only sin was a
+      // parameter named `input`:
+      //
+      //   function stripTags(input) { … do { … } while (current !== previous); }
+      //
+      // `req.query` is evidence. `query` is a name.
+      return REQUEST_OBJECTS.has(lowerVarName);
     };
 
 
@@ -326,12 +353,17 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
      * Check if an expression involves user input
      */
     const involvesUserInput = (expression: TSESTree.Expression): boolean => {
-      const expressionText = sourceCode.getText(expression).toLowerCase();
-
-      // Check for user input variables in expression text (case-insensitive)
-      if (userInputVariables.some(input => expressionText.includes(input.toLowerCase()))) {
-        return true;
-      }
+      // A printed-source substring test used to run first here:
+      //
+      //   const expressionText = sourceCode.getText(expression).toLowerCase();
+      //   if (userInputVariables.some(i => expressionText.includes(i))) return true;
+      //
+      // It short-circuited the AST walk below and matched the seven default
+      // names anywhere in the rendered text — inside a longer identifier, a
+      // property name, a string literal or a comment. `orderByExtractFromRequest`
+      // and `LoggerRequestIdHeaders` were both findings on that basis. The
+      // structural walk that follows was already the correct check; it just
+      // never got to run.
 
       // Recursively check all parts of the expression
       const checkExpression = (node: TSESTree.Expression): boolean => {
@@ -452,8 +484,18 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             const varName = declarator.id.name;
             const initText = sourceCode.getText(declarator.init);
 
-            // Check if the initializer contains user input patterns, but not if it's sanitized
-            const hasUserInput = userInputVariables.some(input => initText.toLowerCase().includes(input.toLowerCase()));
+            // Seed taint structurally, from the initializer's AST. This was a
+            // substring test over the initializer's printed text against the
+            // same seven names, and it is where the whole rule went wrong:
+            //
+            //   let current = String(input);   // 'String(input)' contains
+            //                                  // 'input' → `current` tainted
+            //   do { … } while (current !== previous);   // → reported
+            //
+            // The ILB-CWE-Corpus CWE-116 fixture is that exact code, and its
+            // loop provably terminates — the string shrinks on every pass.
+            // Its only offence was a parameter named `input`.
+            const hasUserInput = involvesUserInput(declarator.init);
             const isSanitized = initText.includes('Math.min(') || initText.includes('Math.max(') ||
                               initText.includes('parseInt(') || initText.includes('parseFloat(') ||
                               (initText.includes('&&') && initText.includes('.length'));
