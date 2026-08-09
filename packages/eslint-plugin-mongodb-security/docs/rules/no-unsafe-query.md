@@ -6,7 +6,7 @@ category: security
 severity: medium
 cwe: CWE-943
 owasp: "A03:2021"
-autofix: false
+autofix: suggestions
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security

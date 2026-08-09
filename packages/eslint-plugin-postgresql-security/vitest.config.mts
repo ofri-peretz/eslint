@@ -26,6 +26,11 @@ export default defineConfig({
     // Setting `exclude` replaces vitest's defaults — spread them back in and
     // add build-artifact dirs so stale outputs can never shadow real tests.
     exclude: [
+      // SDK interface-compat suites import third-party SDKs, not our code, and
+      // cost minutes on a cold module cache. They run via
+      // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
+      // run that backs `turbo run test` and the lefthook pre-commit hook.
+      'src/__compatibility__/**',
       '**/node_modules/**',
       '**/dist/**',
       '**/cypress/**',

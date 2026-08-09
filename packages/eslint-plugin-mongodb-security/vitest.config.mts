@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -12,11 +12,20 @@ export default defineConfig({
     // an idle machine and mis-reports contention as failure. A hang still fails,
     // just at 30s instead of 5s.
     testTimeout: 30_000,
+    // Same rationale as testTimeout above, for setup/teardown: hookTimeout
+    // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
+    // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    hookTimeout: 30_000,
 
     name: 'eslint-plugin-mongodb-security',
     globals: true,
     environment: 'node',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // SDK interface-compat suites (src/__compatibility__/) import third-party
+    // SDKs, not our code, and cost minutes on a cold module cache. They run via
+    // vitest.compat.config.mts / sdk-compatibility.yml — never in the default
+    // run that backs `turbo run test` and the lefthook pre-commit hook.
+    exclude: [...configDefaults.exclude, 'src/__compatibility__/**'],
     coverage: {
       enabled: true,
       provider: 'v8',

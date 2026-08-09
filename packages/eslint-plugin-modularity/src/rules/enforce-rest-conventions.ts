@@ -42,6 +42,7 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/enforce-rest-conventions.md',
       description: 'Validates REST endpoint design against best practices',
     },
+    hasSuggestions: true,
     messages: {
       restConventionViolation: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

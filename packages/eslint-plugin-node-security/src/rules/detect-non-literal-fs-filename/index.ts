@@ -251,6 +251,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-22',
       confidence: 'medium',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
       fsPathTraversal: formatLLMMessage({

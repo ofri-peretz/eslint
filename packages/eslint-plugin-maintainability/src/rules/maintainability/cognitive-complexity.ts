@@ -63,6 +63,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1104',
       cvss: 7.5,
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 40% reduction (60→36 tokens) - keeps complexity metrics inline
       highCognitiveComplexity: formatLLMMessage({
