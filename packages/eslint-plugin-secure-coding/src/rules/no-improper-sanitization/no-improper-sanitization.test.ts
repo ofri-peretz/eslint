@@ -70,9 +70,18 @@ describe('no-improper-sanitization', () => {
         },
         // User input concatenated into the response — the actual CWE-116 shape
         // the rule exists for.
+        //
+        // Two errors, not one: the Literal visitor fires per string literal, so
+        // the opening `'<div>'` and closing `'</div>'` each report. That
+        // duplicate is pre-existing behaviour on this branch and is asserted
+        // here as-is rather than silently accepted by a looser matcher — if it
+        // is ever deduplicated, this test should fail and be updated.
         {
           code: `res.send('<div>' + req.query.name + '</div>');`,
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
         },
       ],
     });
