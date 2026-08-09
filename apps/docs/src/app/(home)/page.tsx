@@ -136,7 +136,7 @@ export default async function HomePage() {
         <div className="mb-6">
           <StepLabel n={1} label="Install" />
           <InstallSnippet
-            packages="eslint-plugin-browser-security eslint-plugin-jwt"
+            packages="eslint-plugin-browser-security eslint-plugin-jwt-security"
             dev
           />
         </div>
@@ -172,7 +172,7 @@ export default async function HomePage() {
             <pre className="p-6 text-sm md:text-base overflow-x-auto">
               <code className="font-mono">
                 <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">browserSecurity</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-browser-security&apos;</span>;{'\n'}
-                <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">jwt</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-jwt&apos;</span>;{'\n'}
+                <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">jwt</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-jwt-security&apos;</span>;{'\n'}
                 {'\n'}
                 <span className="text-orange-800 dark:text-orange-300">export default</span> [{'\n'}
                 {'  '}browserSecurity.configs.<span className="text-amber-800 dark:text-yellow-400">recommended</span>,{'\n'}
@@ -213,14 +213,14 @@ export default async function HomePage() {
             cwe="CWE-89"
             title="SQL injection"
             ruleId="pg/no-unsafe-query"
-            href="/docs/security/plugin-pg/rules/no-unsafe-query"
+            href="/docs/security/plugin-postgresql-security/rules/no-unsafe-query"
             snippet={`db.query(\n  \`SELECT * FROM users WHERE id = \${id}\`,\n)`}
           />
           <CatchCard
             cwe="CWE-347"
             title="JWT algorithm confusion"
             ruleId="jwt/no-algorithm-none"
-            href="/docs/security/plugin-jwt/rules/no-algorithm-none"
+            href="/docs/security/plugin-jwt-security/rules/no-algorithm-none"
             snippet={`jwt.verify(token, secret, {\n  algorithms: ['none'],\n})`}
           />
           <CatchCard

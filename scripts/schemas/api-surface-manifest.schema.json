@@ -53,7 +53,24 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100,
-          "description": "Must equal round(callableApis_covered / callableApis_total * 100) within ±1."
+          "description": "Must equal round(callableApis_covered / (callableApis_total - outOfScope.length) * 100) within ±1. The denominator is the security-relevant surface, not the raw API count."
+        },
+        "outOfScope": {
+          "type": "array",
+          "description": "APIs on the target surface that are deliberately not rule targets because they are not security sinks under this plugin's threat model. Subtracted from the coverage denominator. NOT a place to park unclosed gaps: the audit rejects reasons that argue from rarity ('niche', 'rare', 'low-traffic') rather than threat model.",
+          "items": {
+            "type": "object",
+            "required": ["api", "reason"],
+            "properties": {
+              "api": { "type": "string" },
+              "reason": {
+                "type": "string",
+                "minLength": 20,
+                "description": "Why this API cannot be misused in a way this plugin should catch. Must argue threat model, not frequency."
+              }
+            },
+            "additionalProperties": false
+          }
         },
         "ruleCount": { "type": "integer", "minimum": 0 },
         "uncovered_examples": {
