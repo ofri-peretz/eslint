@@ -1,0 +1,23 @@
+{
+  "description": "Labelled ground truth for the ILB-Edge corpus. The bench calls its findings 'FP candidates by default' — an assumption, not a measurement. Each pattern class here carries an adjudicated verdict so that 'false positive' means false positive, and so a zero-FP target can be hit by fixing rules rather than by muting true findings. Regenerate the class list with `npm run ilb:edge:triage`.",
+  "method": "A finding's class is its rule plus the shape of the offending expression with identifiers erased — the unit at which one rule change resolves every member. FP = the rule should not fire on this shape; the class is a bug and must reach zero. TP = the rule is right; the class stays reported and the finding belongs upstream. An unlabelled class fails `--strict`: untriaged findings must never silently become the published FP number.",
+  "generatedAt": "2026-08-03",
+  "classes": {
+    "secure-coding/detect-object-injection::obj[<ident>]": {
+      "verdict": "TP",
+      "reason": "Verified by execution, not inspection. three.js EventDispatcher.addEventListener does `listeners[type]` on a plain `{}`; calling it with type='__proto__' or 'constructor' throws `TypeError: listeners[type].indexOf is not a function`, so any app passing a user-supplied event type has a remote crash. three.js AnimationClip.findByName does `animationToMorphTargets[name]` where name comes from the capture group ([\\w-]*?) — \\w covers every character of __proto__, so a morph target named '__proto__001' yields the key '__proto__', the truthiness guard is skipped, and the following .push() is undefined. Whether a given member is exploitable depends on where the identifier came from, which is data flow and out of scope for an AST-structural rule; reporting is the correct behaviour."
+    },
+    "secure-coding/detect-object-injection::obj[<arithmetic expr>]": {
+      "verdict": "FP",
+      "reason": "Array index arithmetic over identifiers, e.g. `targetTrack.values[valueStart + k]`. The result is numeric in every real path, so it can never be '__proto__'/'prototype'/'constructor', but `+` between two identifiers is not provably numeric from the expression alone. Closing this needs the operands' numeric-ness resolved through scope analysis (the generalisation of the existing isLoopCounterIdentifier) rather than a suppression."
+    },
+    "node-security/no-buffer-overread::obj[<arithmetic expr>]": {
+      "verdict": "FP",
+      "reason": "Fires on plain JS array indexing such as `const timeNext = times[i + 1]` inside a bounded `for` loop in three.js KeyframeTrack. `times` is a keyframe Float32Array, not a Node Buffer — the only 'Buffer' identifiers in three.js are WebGPU GPUBuffer. A buffer-overread rule must key off an actual Buffer/DataView receiver before reporting."
+    },
+    "node-security/no-buffer-overread::obj[<ident>]": {
+      "verdict": "FP",
+      "reason": "Same root cause as the arithmetic variant: `const time = times[i]` on an ordinary array. Reporting requires evidence the receiver is a Node Buffer or DataView; a bare identifier index on an unknown object is not that evidence."
+    }
+  }
+}
