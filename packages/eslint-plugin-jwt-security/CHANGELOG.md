@@ -1,5 +1,81 @@
 ## [2.2.3] - 2026-02-08
 
+## 2.3.3
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#329](https://github.com/ofri-peretz/eslint/pull/329) [`75d3497`](https://github.com/ofri-peretz/eslint/commit/75d349787f8ec081ae961cc4984ea4973c8be730) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Test infrastructure only — no rule, config, or API behavior changes. These
+  packages ship `src/` in their npm tarball, so the moved SDK compatibility specs
+  technically alter the published files, hence the patch bump.
+
+  The `src/__compatibility__/` suites no longer run as part of each package's
+  default `vitest` run. They assert the export surface of the third-party SDK
+  (express, jose, @middy/core, mongodb, @nestjs/common, pg, ai), not our rules, and
+  `sdk-compatibility.yml` already exercises them against each SDK's `@latest` —
+  the only run that produces new signal. Loading those SDK graphs on a cold module
+  cache was measured at 82s (express) and 209s (`@nestjs/common`), which blew every
+  per-file hook timeout and blocked unrelated local commits via the lefthook
+  `tests-affected` pre-commit hook. The ceiling now lives once in
+  `vitest.compat.config.mts`, sized off those cold numbers.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#414](https://github.com/ofri-peretz/eslint/pull/414) [`d527f14`](https://github.com/ofri-peretz/eslint/commit/d527f1485512db5441aa269e207d1b7510bf29bb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Remove the superseded `eslint-plugin-pg` and `eslint-plugin-jwt` sources from
+  the monorepo.
+
+  Both were renamed to their `-security` names and every published version on npm
+  is deprecated. The sources stayed in `packages/`, and because
+  `.changeset/config.json` has `ignore: []`, **every release versioned and
+  republished them** — `eslint-plugin-pg@1.4.13` and `eslint-plugin-jwt@2.2.13`
+  went out on 2026-08-05. A newly published version carries no deprecation flag,
+  so each release silently un-deprecated the packages until someone re-ran
+  `npm deprecate`.
+
+  Deleting the sources is what stops that loop; re-deprecating alone gets undone
+  by the next release.
+
+  No published rule is lost. The `-security` packages carry identical rule sets
+  (13 each, verified by comparing the rule directories) and keep the original
+  `pg/` and `jwt/` rule namespaces, so no consumer config changes. The published
+  catalogue is unchanged at 465 rules across 30 plugins — the removed entries were
+  already marked unpublished, which is why the totals only drop for the
+  including-unpublished count (491 → 465).
+
+  Also fixes a user-facing consequence the removal surfaced: the playground's
+  copy-config button derived package names as `eslint-plugin-<prefix>`, so `jwt/`
+  and `pg/` findings emitted install lines for the **deprecated** packages. Those
+  two prefixes are now mapped explicitly, with a lock.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 2.3.2
 
 ### Patch Changes

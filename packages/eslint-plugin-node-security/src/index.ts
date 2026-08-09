@@ -98,7 +98,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '4.8.1',
+    version: '4.9.0',
   },
   rules,
 };
@@ -165,6 +165,23 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-ecb-mode': 'error',
   'node-security/no-math-random-crypto': 'error',
   'node-security/no-cryptojs': 'error',
+
+  // Added to `recommended` 2026-08-09. `rejectUnauthorized: false` accepts any
+  // certificate, including a MITM's self-signed one, and is the most-cited
+  // Node TLS mistake there is — yet ILB-CWE-Corpus scored CWE-295 as a miss
+  // for the ecosystem. The rule was never the problem: it fires on the
+  // fixture exactly as intended, it simply was not in any preset, so nobody
+  // running `recommended` ever had it on.
+  //
+  // Measured before promoting, over the 13-repo wild corpus (~1,900 files of
+  // real Express and NestJS code): **0 findings**. Pure recall, no FP cost.
+  //
+  // `browser-security/no-disabled-certificate-validation` detects the same
+  // thing and was deliberately left out of that plugin's preset: enabling
+  // both would double-report one defect, which is its own FP class (see the
+  // two CSRF rules). `rejectUnauthorized` is a Node TLS option with no
+  // browser equivalent, so node-security owns it.
+  'node-security/no-self-signed-certs': 'error',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

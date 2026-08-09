@@ -1,3 +1,265 @@
+## 3.5.0
+
+### Minor Changes
+
+- [#372](https://github.com/ofri-peretz/eslint/pull/372) [`a7520c8`](https://github.com/ofri-peretz/eslint/commit/a7520c89cf30d1895a503dbd3d3097c699ef38aa) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Drop `detect-object-injection` from the `recommended` preset
+
+  Measured over `express` + `axios` + `sequelize`, the rule fired **535 times —
+  85% of everything `recommended` reported on those three repos** (632 total).
+  528 of the 535 had no taint indicator anywhere on the reported line:
+
+  ```js
+  this.dataValues[updatedAtAttrName] = ...       // sequelize
+  where[field] = insertValues[field];            // sequelize
+  Axios.prototype[method] = generateHTTPMethod(); // axios
+  ```
+
+  That is ordinary internal object manipulation, not attacker-controlled key
+  access. Without the rule, `recommended` reports 97 findings on the same corpus
+  instead of 632.
+
+  This is a design limit rather than a tuning gap. The rule reports every
+  computed key that fails to match one of its hand-maintained "safe" heuristics,
+  so on real code the default answer is "report". Inverting that — report only
+  when the key is reachable from a taint source — is dataflow analysis the rule
+  does not perform, and the rule's own fixtures contradict it (`obj[config.key]`
+  is asserted as a violation, which is exactly the axios false positive).
+
+  The rule is unchanged, still exported and still documented. Teams that want the
+  paranoid sweep can enable it explicitly and triage the output. It is no longer
+  handed to consumers as a default, because at this precision it does not protect
+  anyone — it teaches them to disable the plugin.
+
+  No rule behaviour changes; this only affects what `recommended` turns on.
+
+### Patch Changes
+
+- [#323](https://github.com/ofri-peretz/eslint/pull/323) [`4d6114d`](https://github.com/ofri-peretz/eslint/commit/4d6114d1db6050518193ac01a4e0ec193e2b2166) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-object-injection`: decide numeric keys by provability, not by variable name.
+
+  The rule treated a key as a safe array index when the identifier was _called_
+  `i`, `j`, `k`, `index`, `idx`, `n` or `len`. That both missed real numeric
+  indices (`result[dstOffset++]`, `arr[lastIndex]`, `buf[stride * n]`) and would
+  have been fooled by a string-valued variable that happened to be named `n`.
+
+  `isNumericKey` now recognises the shapes that are numeric by JS semantics
+  regardless of what any identifier holds: `++`/`--` (ToNumeric), unary `-` and
+  `~`, `**`, `+` when _both_ operands are themselves provably numeric, and a
+  conditional whose arms both are. A numeric key can never be the string
+  `__proto__` / `prototype` / `constructor`, so these cannot pollute a prototype.
+
+  Also added: a key built on a string literal prefix (`nodeProperties['node' + i]`)
+  is safe, because the result always begins with that prefix and so can never
+  equal a dangerous name. Only a _prefix_ counts — a trailing literal (`arr[a + 1]`)
+  still reports, since `+` runs through string concatenation and the rule's threat
+  model covers unintended-key writes beyond the three prototype names.
+
+  Measured on the ILB-Edge corpus (three.js + webpack + lodash): **1,753 → 1,621
+  findings**. Recall is unchanged by construction — every suppressed shape is one
+  where the key provably cannot be a dangerous string.
+
+- [#323](https://github.com/ofri-peretz/eslint/pull/323) [`4d6114d`](https://github.com/ofri-peretz/eslint/commit/4d6114d1db6050518193ac01a4e0ec193e2b2166) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-object-injection`: resolve index expressions through scope, and drop the index-name allowlist.
+
+  Three changes, all replacing naming heuristics with facts about the code:
+
+  **Operands resolved through scope.** `values[valueStart + k]` is ordinary index
+  arithmetic, but `+` between two identifiers proves nothing on its own. Each
+  operand is now resolved to its declaration: if every value the variable ever
+  receives is provably numeric, the sum is numeric. Deliberately conservative — a
+  parameter, a `for..of` binding, or a single non-numeric assignment anywhere
+  leaves the variable unproven and the access still reports, so the analysis can
+  only fail to clear a safe access, never clear an unsafe one.
+
+  **A literal on either side of `+` disqualifies the dangerous names.**
+  `array[offset + 1]` always ends with `1` and `obj['node' + i]` always begins
+  with `node`; neither can equal `__proto__`, `prototype` or `constructor` — the
+  rule's own `dangerousProperties`. This is the dominant real form once the
+  offset is a function parameter, where the declaration proves nothing. Scoped to
+  `dangerousProperties`, so narrowing that option narrows what disqualifies.
+
+  **The index-name allowlist is gone.** Treating a key as safe because it was
+  _named_ `i`, `j`, `k`, `index`, `idx`, `n` or `len` was unsound in both
+  directions: it silently cleared `function put(o, k) { o[k] = 1 }`, where `k` is
+  an untrusted parameter that merely looks like a counter — a false negative — and
+  it missed every real index not on the list (`offset`, `lastIndex`, `stride`).
+  Scope resolution covers the genuine counters and refuses the parameters.
+
+  `Math.floor(...)` and the other `Math` methods are now recognised as numeric,
+  which is how indices are actually computed (`Math.floor(Math.random() * n)`).
+
+  Measured on the ILB-Edge corpus: the index-arithmetic class drops **275 → 55**
+  (−80%), total Edge findings **2,759 → 2,539**. The new false-negative lock
+  (`o[k]` on a parameter) reports where the old allowlist stayed silent.
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#457](https://github.com/ofri-peretz/eslint/pull/457) [`742d76f`](https://github.com/ofri-peretz/eslint/commit/742d76f4e8e4658f915b587a24e2e6b61d2e1e89) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-improper-sanitization` no longer reports developer-authored output or code
+  that already escapes.
+
+  This rule produced 42 of the 411 findings on the 13-repo wild corpus — its
+  largest single contributor — and one of the 16 ILB-CWE-Corpus false positives.
+
+  **Removed the custom-sanitizer check** (8 wild findings, 1 corpus). It reported
+  any call to a function whose _name_ contained sanitize/escape/clean when an
+  argument's printed text contained `req.`/`body`/`query`/`params`/`input`/`data`
+  — so `sanitizeForLog(req.body.username)` was a finding. That is the correct
+  code, and the claim "custom sanitizer may be incomplete or bypassable" was made
+  about an implementation the check never read. The `dangerousSanitizerUsage`
+  messageId is gone with it.
+
+  **Widened the authored-text exemption** (34 wild findings). A literal reaching
+  `res.send`/`write`/`json` is exempt when no tainted leaf reaches the sink with
+  it, rather than only when it is the direct argument. Now covered: concatenated
+  literals, `['<li>', '</li>'].join('\n')`, values passed through a named
+  sanitizer (`escapeHtml`, `DOMPurify.sanitize`, `he.encode`), and object
+  literals served as JSON.
+
+  The [#441](https://github.com/ofri-peretz/eslint/issues/441) false negatives stay closed — `res.send(req.query.name || '<p>x</p>')`,
+  the ternary form, and any tainted operand still report, as do computed callees,
+  deeper member chains, and template literals carrying expressions.
+
+- [#441](https://github.com/ofri-peretz/eslint/pull/441) [`60686f9`](https://github.com/ofri-peretz/eslint/commit/60686f91c21c4763df97b577b29e680e3ca037ba) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Stop `no-improper-sanitization` reporting static developer-authored HTML
+
+  A bare string literal reaching `res.send()` / `res.write()` / `res.json()` was
+  reported as CWE-116 whenever it contained `<` or `>`, with no requirement of
+  interpolation or user input. Express's own `examples/auth/index.js:89` —
+  `res.send('… <a href="/logout">logout</a>')` — was one of 188 findings the
+  recommended preset produced on Express's reference code ([#398](https://github.com/ofri-peretz/eslint/issues/398)).
+
+  The rule already applied the opposite reasoning on the `innerHTML` path
+  ("static developer-authored HTML normally has no taint source"); that
+  exemption now covers the response-output sinks too. Dangerous markup
+  (`<script>`, inline `on*=` handlers, `javascript:`) still reports even when
+  hardcoded, because there the literal is itself the vector.
+
+- [#459](https://github.com/ofri-peretz/eslint/pull/459) [`8b3ce82`](https://github.com/ofri-peretz/eslint/commit/8b3ce82dda83ed9a7623b90e24e1279f3020ea72) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unchecked-loop-condition` no longer infers user input from identifier names.
+
+  Taint was decided by substring-matching identifiers — and the printed text of
+  whole expressions — against
+  `['req','request','body','query','params','input','data']`, with
+  `includes('input')` and `includes('data')` OR-ed in unconditionally. So
+  `metadataMap`, `dataSource`, `queryBuilder`, `LoggerRequestIdHeaders` and a
+  local `query` object all read as attacker-controlled.
+
+  The guess also propagated: a variable whose initializer _text_ mentioned one of
+  those names joined the taint set, so `const found = coll.find(query)` made
+  `found` tainted and every later `for (const r of found)` a finding.
+
+  Taint now starts only at a real request object (`req`, `request`, `ctx`,
+  `context`, `event`) and spreads by assignment, seeded from the initializer's
+  AST rather than its printed text. `req.query` is evidence; `query` is a name.
+
+  28 findings across express, ultimate-backend and ack-nestjs-boilerplate drop to
+  1 — a genuine true positive iterating `ctx.headers`. Request-derived loops
+  still report, directly and through assignment.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#309](https://github.com/ofri-peretz/eslint/pull/309) [`237a6b0`](https://github.com/ofri-peretz/eslint/commit/237a6b03313e2ea935999ee84b2a6c8af33e50bc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `meta.hasSuggestions` now matches what each rule actually emits.
+
+  ILB-Remediation measured 27 rules where the declaration and the implementation
+  disagreed: 22 declared `hasSuggestions: true` without ever passing `suggest:`
+  to `context.report()` (IDE quick-fix menus advertising remediation that never
+  arrives), and 5 emitted `suggest:` without the declaration (latent — ESLint
+  throws on that combination as soon as one of those suggestions carries a real
+  fixer).
+
+  `eslint-plugin-mongodb-security` gains four real suggestions where the rewrite
+  is mechanical:
+
+  - `require-lean-queries` — appends `.lean()`
+  - `no-unbounded-find` — appends `.limit(100)`
+  - `no-debug-mode-production` — rewrites the flag to `process.env.NODE_ENV !== 'production'`
+  - `require-tls-connection` — adds (or flips) `tls: true` in the connection options
+
+  Every other dead declaration was removed rather than faked. A workspace lock
+  (`scripts/__tests__/suggestions-meta-lock.test.ts`) now fails CI on either
+  direction of the drift.
+
+- [#417](https://github.com/ofri-peretz/eslint/pull/417) [`658368a`](https://github.com/ofri-peretz/eslint/commit/658368a967cb4daf7c8c4f96fa6a263d9cdc1d8d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Two more false-positive classes from the whole-ruleset sweep.
+
+  **`no-timing-unsafe-compare`: 108 → 12 findings.** Two causes.
+
+  An _existence check_ is not a secret comparison — `if (token !== undefined)`,
+  `hash === null`, `signature.length === 0`. A timing attack needs an
+  attacker-supplied operand on the other side; a sentinel leaks nothing.
+
+  And `key` was in the default secret patterns, substring-matched. It hit `key`,
+  `firstKey`, `keys`, and every AST walker's `key === 'text'` — 88 findings on this
+  repo, none of them secrets. The names that actually denote a secret (`apiKey`,
+  `privateKey`, `encryptionKey`, `accessToken`, …) are listed in full and still
+  fire; a project that really does compare a bare `key` can add it back via
+  `secretPatterns`.
+
+  Word-boundary matching was tried first and dropped: it fixed `firstKey` but
+  stopped matching `req.headers.authorization`, trading one false positive for a
+  worse false negative.
+
+  **`no-xxe-injection`: 76 → 1 finding.** `parse` was treated as an XML method
+  name, so `JSON.parse(fs.readFileSync(file, 'utf-8'))` reported CWE-611. The
+  XML-specific names (`parseFromString`, `parseXmlString`, `parseXML`,
+  `parseString`) still match on the name alone; a bare `parse` now has to be
+  positively identified as XML by its receiver, which drops `JSON.parse`,
+  `Date.parse`, `path.parse` and `url.parse`. Allowlist rather than denylist, so a
+  future `csv.parse` is silent by default.
+
+  Every class is locked as `valid` cases and verified by reverting the guard.
+
+- [#422](https://github.com/ofri-peretz/eslint/pull/422) [`41b9903`](https://github.com/ofri-peretz/eslint/commit/41b990349c21b7c71f4183dad22d5e3dccafc3cd) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-xpath-injection` no longer treats every path join as XPath construction.
+
+  The heuristic for "does this string concatenation look like XPath" was
+  `includes('/') || includes('[')`, which matches every path join, URL build and
+  array index in existence. Measured on the Interlace monorepo, it reported
+  CWE-643 on:
+
+  ```js
+  return fullPath.replace(baseDir + '/', '');
+  ```
+
+  XPath has syntax of its own, so the gate now requires some of it: the descendant
+  axis (`//`), an attribute predicate (`[@id=`), an explicit axis (`child::`), the
+  node tests and functions (`text()`, `node()`, `contains(`, `starts-with(`,
+  `local-name(`, `position()`), or a location step carrying a predicate (`/user[`)
+  — the form that has no `//`.
+
+  Verified in both directions: path joins, URL builds and array-index strings go
+  silent, while `"//user[name='" + input + "']"`, `"/root[@id='" + input + "']"`
+  and `"/root/user[" + input + "]"` all still report.
+
+  Known limitation, unchanged and now documented in the source: the
+  variable-declaration path still matches on the name `path`, so
+  `let path = template;` reports. Dropping that keyword was tried and reverted —
+  it also stopped `let searchPath = userInput;` firing, and by name alone the two
+  are indistinguishable. Separating them needs the declaration's use to reach an
+  XPath sink, which is the data-flow analysis these rules avoid.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 3.4.4
 
 ### Patch Changes

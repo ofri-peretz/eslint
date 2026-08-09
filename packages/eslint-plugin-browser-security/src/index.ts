@@ -169,7 +169,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-browser-security',
-    version: '1.2.14',
+    version: '1.3.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

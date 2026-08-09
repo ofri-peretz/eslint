@@ -50,7 +50,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mcp-sdk-security',
-    version: '0.2.1',
+    version: '0.2.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
