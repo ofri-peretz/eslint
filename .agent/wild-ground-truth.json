@@ -1,0 +1,473 @@
+{
+  "description": "Labelled ground truth for the 13-repo wild corpus (Express + NestJS boilerplates, 1,900 files). Same contract as edge-ground-truth.json: every class carries an adjudicated verdict, FP classes must reach zero, and an UNLABELLED class fails --strict so untriaged findings can never silently become the published FP number.",
+  "method": "A finding's class is its rule plus the shape of the offending expression with identifiers erased — the unit at which one rule change resolves every member. FP = the rule should not fire on this shape; the class is a bug and must reach zero. TP = the rule is right and the finding belongs upstream. Every verdict must cite a measurement or a named file:line, never an impression.",
+  "corpus": "13 repositories, all 1K+ stars, recommended presets only",
+  "generatedAt": "2026-08-09",
+  "totals": {
+    "findings": 355,
+    "classes": 44,
+    "labelled": 4,
+    "unlabelled": 40
+  },
+  "classes": [
+    {
+      "id": "express-security/no-missing-csrf-protection::other",
+      "count": 40,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/auth/index.js:104",
+        "express/examples/cookies/index.js:39",
+        "express/examples/resource/index.js:22"
+      ]
+    },
+    {
+      "id": "express-security/require-rate-limiting::other",
+      "count": 31,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/auth/index.js:12",
+        "express/examples/content-negotiation/index.js:4",
+        "express/examples/cookie-sessions/index.js:10"
+      ]
+    },
+    {
+      "id": "express-security/require-helmet::other",
+      "count": 29,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/auth/index.js:12",
+        "express/examples/content-negotiation/index.js:4",
+        "express/examples/cookie-sessions/index.js:10"
+      ]
+    },
+    {
+      "id": "node-security/no-timing-unsafe-compare::other",
+      "count": 27,
+      "verdict": "TP",
+      "reason": "Measured on the 13-repo corpus: 27 of 33 findings compare something secret-shaped, including three confirmed upstream bugs — express-mongoose-es6-rest-api auth.controller.js:22 (`req.body.password === user.password`, plaintext and timing-unsafe), express/examples/auth/index.js:70 (`hash === user.hash`), bulletproof-nodejs config/index.ts:51 (hardcoded `password: '123456'`). The 6 misses are enum/env comparisons where the rule keys off an identifier containing \"auth\" rather than the compared value being a secret; that is a precision bug inside a TP class, not an FP class.",
+      "samples": [
+        "express/examples/auth/index.js:70",
+        "express-mongoose-es6-rest-api/server/auth/auth.controller.js:22",
+        "brocoders-nestjs-boilerplate/src/database/config/database.config.ts:94"
+      ]
+    },
+    {
+      "id": "node-security/detect-non-literal-fs-filename::other",
+      "count": 23,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/view.js:201",
+        "express/examples/markdown/index.js:18",
+        "express/examples/mvc/lib/boot.js:14"
+      ]
+    },
+    {
+      "id": "express-security/require-csrf-protection::other",
+      "count": 19,
+      "verdict": "FP",
+      "reason": "Not because CSRF does not matter, but because every one of these 19 locations is also reported by express-security/no-missing-csrf-protection — 19/19 overlap, two rules in one plugin firing on one condition, two errors on one line, and silencing either leaves the other. One of the pair must defer.",
+      "samples": [
+        "express/examples/auth/index.js:104",
+        "express/examples/cookies/index.js:39",
+        "express/examples/route-middleware/index.js:82"
+      ]
+    },
+    {
+      "id": "secure-coding/no-hardcoded-credentials::other",
+      "count": 18,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "bulletproof-nodejs/src/config/index.ts:51",
+        "express-rest-boilerplate/src/api/tests/integration/auth.test.js:42",
+        "express-rest-boilerplate/src/api/tests/integration/auth.test.js:48"
+      ]
+    },
+    {
+      "id": "secure-coding/no-improper-sanitization::replace(...)",
+      "count": 14,
+      "verdict": "TP",
+      "reason": "What remains after PR #457 is genuine unescaped interpolation into HTML — `'<li>' + user.name + '</li>'` in express/examples/content-negotiation, `req.session.views` in examples/session. Express itself fixes this exact class with escapeHtml elsewhere in the same tree (examples/route-map/index.js:47), so the finding is actionable and correct. The 28 authored-text and already-escaped findings that used to sit in this class are gone.",
+      "samples": [
+        "express/examples/content-negotiation/index.js:12",
+        "express/examples/content-negotiation/index.js:13",
+        "express/examples/content-negotiation/index.js:13"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-exposed-private-fields::other",
+      "count": 13,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/users/infrastructure/persistence/document/entities/user.schema.ts:26",
+        "brocoders-nestjs-boilerplate/src/users/infrastructure/persistence/relational/entities/user.entity.ts:32",
+        "ack-nestjs-boilerplate/src/modules/api-key/dtos/response/api-key.create.response.dto.ts:7"
+      ]
+    },
+    {
+      "id": "secure-coding/no-weak-password-recovery::other",
+      "count": 12,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "node-express-boilerplate/src/controllers/auth.controller.js:28",
+        "node-express-boilerplate/src/controllers/auth.controller.js:34",
+        "node-express-boilerplate/src/services/token.service.js:99"
+      ]
+    },
+    {
+      "id": "express-security/require-express-body-parser-limits::other",
+      "count": 11,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/auth/index.js:21",
+        "express/examples/cookies/index.js:22",
+        "express/examples/mvc/index.js:47"
+      ]
+    },
+    {
+      "id": "secure-coding/no-sensitive-data-exposure::other",
+      "count": 10,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/response.js:751",
+        "node-express-boilerplate/src/config/passport.js:14",
+        "node-express-boilerplate/src/models/user.model.js:33"
+      ]
+    },
+    {
+      "id": "express-security/require-route-authentication::other",
+      "count": 10,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/content-negotiation/index.js:40",
+        "express/examples/params/index.js:63",
+        "express/examples/route-separation/index.js:40"
+      ]
+    },
+    {
+      "id": "secure-coding/no-unlimited-resource-allocation::other",
+      "count": 9,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "node-express-boilerplate/src/config/passport.js:8",
+        "express-rest-boilerplate/src/config/passport.js:10",
+        "brocoders-nestjs-boilerplate/src/auth/strategies/jwt-refresh.strategy.ts:16"
+      ]
+    },
+    {
+      "id": "nestjs-security/require-throttler::protection(...)",
+      "count": 9,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/auth/auth.controller.ts:36",
+        "brocoders-nestjs-boilerplate/src/auth/auth.controller.ts:48",
+        "brocoders-nestjs-boilerplate/src/auth/auth.controller.ts:54"
+      ]
+    },
+    {
+      "id": "secure-coding/detect-non-literal-regexp::other",
+      "count": 7,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:215",
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:223",
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:399"
+      ]
+    },
+    {
+      "id": "secure-coding/no-xpath-injection::other",
+      "count": 6,
+      "verdict": "FP",
+      "reason": "Zero XPath exists anywhere in the corpus. The rule now gates on XPATH_SYNTAX over literalTextOf, but that pattern matches `://` and `::`, so every URL template and namespaced key qualifies: `${env.app.schema}://${host}:${port}`, `nats://${host}:${port}`, `${domain}::${req.userId}`. `://` is close to the most common substring in any codebase. Needs a real XPath sink (evaluate/selectNodes/XPathEvaluator), not a syntax guess.",
+      "samples": [
+        "express-typescript-boilerplate/src/lib/banner.ts:6",
+        "express-typescript-boilerplate/src/loaders/swaggerLoader.ts:50",
+        "ack-nestjs-boilerplate/src/common/database/services/database.service.ts:104"
+      ]
+    },
+    {
+      "id": "express-security/no-permissive-cors::cors(...)",
+      "count": 5,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "node-express-boilerplate/src/app.js:41",
+        "node-express-boilerplate/src/app.js:42",
+        "bulletproof-nodejs/src/loaders/express.ts:25"
+      ]
+    },
+    {
+      "id": "nestjs-security/require-guards::other",
+      "count": 5,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/files/infrastructure/uploader/local/files.controller.ts:57",
+        "ack-nestjs-boilerplate/src/modules/hello/controllers/hello.public.controller.ts:17",
+        "awesome-nest-boilerplate/src/modules/post/post.controller.ts:82"
+      ]
+    },
+    {
+      "id": "secure-coding/no-unsafe-regex-construction::other",
+      "count": 5,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:216",
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:399",
+        "ack-nestjs-boilerplate/src/modules/auth/utils/auth.two-factor.util.ts:199"
+      ]
+    },
+    {
+      "id": "secure-coding/no-ldap-injection::other",
+      "count": 4,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/response.js:269",
+        "express-rest-boilerplate/src/api/models/passwordResetToken.model.js:38",
+        "express-rest-boilerplate/src/api/models/refreshToken.model.js:39"
+      ]
+    },
+    {
+      "id": "node-security/no-unsafe-dynamic-require::require(...)",
+      "count": 4,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/view.js:81",
+        "express/examples/content-negotiation/index.js:34",
+        "express/examples/mvc/lib/boot.js:18"
+      ]
+    },
+    {
+      "id": "node-security/no-arbitrary-file-access::other",
+      "count": 4,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/view.js:201",
+        "express/examples/markdown/index.js:18",
+        "express/examples/mvc/lib/boot.js:14"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-hybrid-app-config-loss::connectMicroservice(...)",
+      "count": 4,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "awesome-nest-boilerplate/src/main.ts:79",
+        "ultimate-backend/libs/core/src/setup/microservices.setup.ts:21",
+        "ultimate-backend/libs/core/src/setup/microservices.setup.ts:31"
+      ]
+    },
+    {
+      "id": "secure-coding/no-privilege-escalation::other",
+      "count": 4,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "ultimate-backend/apps/api-admin/src/tenant-members/tenant-members-mutation.resolver.ts:36",
+        "ultimate-backend/apps/api-admin/src/tenant-members/tenant-members-mutation.resolver.ts:61",
+        "ultimate-backend/apps/api-admin/src/tenant-members/tenant-members.resolver.ts:64"
+      ]
+    },
+    {
+      "id": "express-security/no-sensitive-data-in-query::other",
+      "count": 3,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/web-service/index.js:31",
+        "node-express-boilerplate/src/controllers/auth.controller.js:35",
+        "node-express-boilerplate/src/controllers/auth.controller.js:46"
+      ]
+    },
+    {
+      "id": "node-security/no-math-random-crypto::Math.random(...)",
+      "count": 3,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express-mongoose-es6-rest-api/server/auth/auth.controller.js:46",
+        "rest-api-nodejs-mongodb/helpers/utility.js:5",
+        "ultimate-backend/libs/common/src/utils/magic-code.generator.ts:12"
+      ]
+    },
+    {
+      "id": "secure-coding/no-redos-vulnerable-regex::trade(...)",
+      "count": 3,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express-rest-boilerplate/src/api/models/user.model.js:23",
+        "express-rest-boilerplate/src/api/models/user.model.js:23",
+        "ack-nestjs-boilerplate/src/common/helper/services/helper.service.ts:223"
+      ]
+    },
+    {
+      "id": "express-security/no-missing-security-headers::other",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/lib/application.js:161",
+        "express/lib/response.js:1005"
+      ]
+    },
+    {
+      "id": "express-security/no-client-controlled-authorization::other",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "node-express-boilerplate/src/middlewares/auth.js:15",
+        "express-rest-boilerplate/src/api/middlewares/auth.js:26"
+      ]
+    },
+    {
+      "id": "express-security/no-static-root-exposure::other",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express-typescript-boilerplate/src/loaders/publicLoader.ts:11",
+        "express-rest-boilerplate/src/api/routes/v1/index.js:15"
+      ]
+    },
+    {
+      "id": "node-security/no-ssrf::other",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express-rest-boilerplate/src/api/services/authProviders.js:8",
+        "express-rest-boilerplate/src/api/services/authProviders.js:24"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-permissive-cors::enableCors(...)",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/main.ts:17",
+        "dev-nestjs-prisma-starter/src/main.ts:45"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-unguarded-swagger::SwaggerModule.setup(...)",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/main.ts:55",
+        "ultimate-backend/apps/api-admin/src/main.ts:47"
+      ]
+    },
+    {
+      "id": "nestjs-security/require-validation-pipe-whitelist::other",
+      "count": 2,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "awesome-nest-boilerplate/src/modules/user/user.controller.ts:57",
+        "dev-nestjs-prisma-starter/src/main.ts:17"
+      ]
+    },
+    {
+      "id": "express-security/no-insecure-cookie-options::flag(...)",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/cookies/index.js:43"
+      ]
+    },
+    {
+      "id": "secure-coding/no-xxe-injection::other",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "express/examples/search/public/client.js:7"
+      ]
+    },
+    {
+      "id": "express-security/no-missing-cors-check::origin(...)",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "node-express-boilerplate/src/app.js:42"
+      ]
+    },
+    {
+      "id": "express-security/no-permissive-trust-proxy::other",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "bulletproof-nodejs/src/loaders/express.ts:20"
+      ]
+    },
+    {
+      "id": "express-security/no-idor-resource-access::findOne(...)",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "rest-api-nodejs-mongodb/controllers/AuthController.js:117"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-missing-validation-pipe::Param(...)",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/files/infrastructure/uploader/local/files.controller.ts:59"
+      ]
+    },
+    {
+      "id": "secure-coding/no-template-injection::Handlebars.compile(...)",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "brocoders-nestjs-boilerplate/src/mailer/mailer.service.ts:38"
+      ]
+    },
+    {
+      "id": "secure-coding/no-unchecked-loop-condition::other",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "ultimate-backend/libs/common/src/helpers/headers.datasource.ts:16"
+      ]
+    },
+    {
+      "id": "nestjs-security/no-permissive-cors::other",
+      "count": 1,
+      "verdict": "UNLABELLED",
+      "reason": "",
+      "samples": [
+        "ultimate-backend/libs/common/src/utils/cors-config.util.ts:12"
+      ]
+    }
+  ]
+}
