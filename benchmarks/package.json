@@ -10,6 +10,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:configs-load": "vitest run --config vitest.configs-load.mts",
     "ilb:perf-import": "tsx suites/ilb-perf-import/run.js",
     "ilb:perf-import-nestjs": "tsx suites/ilb-perf-import-nestjs/run.ts",
     "ilb:cwe-corpus": "tsx suites/ilb-cwe-corpus/run.ts",
@@ -46,7 +47,7 @@
     "eslint-plugin-conventions": "*",
     "eslint-plugin-express-security": "*",
     "eslint-plugin-import-next": "*",
-    "eslint-plugin-jwt": "*",
+    "eslint-plugin-jwt-security": "*",
     "eslint-plugin-lambda-security": "*",
     "eslint-plugin-maintainability": "*",
     "eslint-plugin-modernization": "*",
@@ -55,7 +56,7 @@
     "eslint-plugin-nestjs-security": "*",
     "eslint-plugin-node-security": "*",
     "eslint-plugin-operability": "*",
-    "eslint-plugin-pg": "*",
+    "eslint-plugin-postgresql-security": "*",
     "eslint-plugin-reliability": "*",
     "eslint-plugin-secure-coding": "*",
     "eslint-plugin-vercel-ai-security": "*"
@@ -83,6 +84,7 @@
     "eslint-plugin-unicorn": "^73.0.0",
     "eslint-plugin-vue": "^10.10.0",
     "tsx": "^4.23.9",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vue-eslint-parser": "^10.4.1"
   }
 }
