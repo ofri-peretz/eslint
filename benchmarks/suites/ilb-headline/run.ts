@@ -30,7 +30,7 @@
  *     headline.
  *
  * Usage:
- *   npx tsx benchmarks/suites/ilb-headline/run.ts --repo=three.js --repeat=5
+ *   npx tsx benchmarks/suites/ilb-headline/run.ts --repo=nestjs --repeat=5
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -69,7 +69,10 @@ for (const a of process.argv.slice(2)) {
   argv[k] = v ?? true;
 }
 
-const REPO = String(argv.repo || 'three.js');
+// nestjs is the Node-side corpus. three.js is NOT benchmarked: it is a
+// graphics library with almost no security-relevant surface, so our
+// security rules find nothing there and the run measures parse cost only.
+const REPO = String(argv.repo || 'nestjs');
 const REPEAT = Math.max(1, Number(argv.repeat) || 5);
 const repoPath = resolve(OOS_DIR, REPO);
 
