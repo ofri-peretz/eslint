@@ -55,8 +55,11 @@ on:
         type: boolean
         default: true
 
+# Shares the `pages-deploy` group with seed-badges.yml: both deploy to the
+# same Pages site, and two concurrent deploys can land in either order —
+# a placeholder overwriting real numbers is the failure mode to avoid.
 concurrency:
-  group: weekly-benchmark
+  group: pages-deploy
   cancel-in-progress: false
 
 permissions:

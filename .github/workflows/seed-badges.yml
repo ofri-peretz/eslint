@@ -1,0 +1,67 @@
+name: Seed badge placeholders
+
+# Closes the gap between merging the README (which hardcodes badge URLs) and
+# the first weekly benchmark run that produces real badges.
+#
+# Without this, every badge in the README renders as a broken-image icon until
+# Monday — which reads as "this project is broken", not "not measured yet".
+# The placeholders say "pending first run" and are replaced by real values the
+# moment the benchmark deploys.
+#
+# Runs once on merge to the default branch when the badge tooling changes, and
+# on demand. It never overwrites an existing badge, so it cannot clobber a real
+# measurement with a placeholder.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/seed-badge-placeholders.ts'
+      - '.github/workflows/seed-badges.yml'
+      - 'README.md'
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  seed:
+    name: Seed placeholders and deploy to Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+
+      # Only seeds badges that do not already exist. If a real benchmark has
+      # already deployed, this is a no-op rather than a regression.
+      - name: Seed placeholder badges
+        run: npx tsx scripts/seed-badge-placeholders.ts
+
+      - name: Prepare Pages artifact
+        run: |
+          set -euo pipefail
+          if [ -z "$(ls -A benchmark-results/badges 2>/dev/null)" ]; then
+            echo "::error::No badges to deploy."
+            exit 1
+          fi
+          mkdir -p _site/badges
+          cp -r benchmark-results/badges/. _site/badges/
+          ls _site/badges | head -40
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
