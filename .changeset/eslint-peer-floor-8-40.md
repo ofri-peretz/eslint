@@ -7,7 +7,6 @@
 'eslint-plugin-express-security': patch
 'eslint-plugin-gemini-security': patch
 'eslint-plugin-import-next': patch
-'eslint-plugin-jwt': patch
 'eslint-plugin-jwt-security': patch
 'eslint-plugin-knex-security': patch
 'eslint-plugin-lambda-security': patch
@@ -21,7 +20,6 @@
 'eslint-plugin-node-security': patch
 'eslint-plugin-openai-security': patch
 'eslint-plugin-operability': patch
-'eslint-plugin-pg': patch
 'eslint-plugin-postgresql-security': patch
 'eslint-plugin-prisma-security': patch
 'eslint-plugin-react-a11y': patch
