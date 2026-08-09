@@ -112,5 +112,9 @@ describe('doc tables — live corpus', () => {
     expect(
       violations.map((v) => `${v.file}:${v.line} [${v.kind}] ${v.message}`),
     ).toEqual([]);
-  });
+    // 60s, not the config-wide 30s: this walks the whole published corpus
+    // (500+ files) and remark-parses every one. It is I/O- and CPU-bound in a
+    // shard that also runs the Tailwind Next build, so 30s is not a real
+    // budget for it — the assertion is cheap, the corpus walk is not.
+  }, 60_000);
 });
