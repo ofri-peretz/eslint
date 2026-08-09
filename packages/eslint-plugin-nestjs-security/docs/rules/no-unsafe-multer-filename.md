@@ -121,6 +121,10 @@ The value went from the wire to the filesystem untouched.
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
 ```ts
 {
   // Skip files matching the test-file heuristic. Default: true
