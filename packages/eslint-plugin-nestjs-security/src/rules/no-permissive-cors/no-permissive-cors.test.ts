@@ -400,6 +400,13 @@ ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
       import * as common from '@nestjs/common';
       export const corsOptions: common.CorsOptions = { origin: ['https://a.example'] };
     `,
+    // The inverse of the alias case: a local binding *named* CorsOptions that
+    // was imported from something else entirely. Resolving the alias must read
+    // the imported name, not re-admit the local spelling as evidence.
+    `
+      import { HttpOptions as CorsOptions } from '@nestjs/common';
+      export const corsOptions: CorsOptions = { origin: '*' };
+    `,
     // Development-scoped declarations are excused for the same reason calls are.
     `
       import { CorsOptions } from '@nestjs/common';
@@ -431,6 +438,25 @@ ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
       code: `
         import * as common from '@nestjs/common';
         export const corsOptions: common.CorsOptions = { origin: true };
+      `,
+      errors: [{ messageId: 'reflectedOrigin' }],
+    },
+    // Aliased import: the local binding is `Opts`, but it still names the
+    // imported `CorsOptions`. Matching the local spelling missed this — the
+    // alias is exactly the case where name and evidence come apart.
+    {
+      code: `
+        import { CorsOptions as Opts } from '@nestjs/common';
+        export const corsOptions: Opts = { origin: '*' };
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
+    // Same, via `import type` — the specifier shape is identical, and a
+    // type-only import is the spelling the compiler prefers for an annotation.
+    {
+      code: `
+        import type { CorsOptions as Opts } from 'cors';
+        export const corsOptions: Opts = { origin: true, credentials: true };
       `,
       errors: [{ messageId: 'reflectedOrigin' }],
     },

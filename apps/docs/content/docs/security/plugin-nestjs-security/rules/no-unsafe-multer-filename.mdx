@@ -132,11 +132,21 @@ The value went from the wire to the filesystem untouched.
 
 ## When Not To Use It
 
-If uploads land in a directory that is not served, not executed, and not shared
-with anything the application reads by path, the write is contained. That is a
-narrower condition than it sounds — `express.static` over the upload directory
-puts you back in scope — so prefer fixing the two-line callback over disabling
-the rule.
+Effectively never on a `filename` callback that reaches `file.originalname` raw.
+
+The tempting exemption — "our upload directory is not served, so a bad name is
+harmless" — does not hold, because a traversing name does not stay in the upload
+directory. `1712345678-921-../../../../home/app/dist/main.js` escapes it before
+any property of that directory applies; what matters is where the write lands,
+which the client chose. Reach for the two-line fix above (`path.basename`, or an
+extension-checked random name) rather than a disable comment.
+
+Disabling is defensible only where the name never reaches disk under client
+control at all — a fixture that hardcodes `filename`, or a callback whose value
+is generated and `originalname` is used solely for a MIME/extension lookup. In
+those cases the rule should not be firing; if it is, that is a false positive
+worth [reporting](https://github.com/ofri-peretz/eslint/issues) rather than
+suppressing.
 
 ## Further Reading
 

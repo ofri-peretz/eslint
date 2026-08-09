@@ -171,6 +171,7 @@ const CORS_OPTIONS_MODULE = /^(@nestjs\/(common|platform-\w+)\b|cors$)/;
 function isCorsOptionsAnnotation(
   declarator: TSESTree.VariableDeclarator,
   origins: ReadonlyMap<string, string>,
+  importedNames: ReadonlyMap<string, string>,
 ): boolean {
   const annotation = declarator.id.typeAnnotation?.typeAnnotation;
   if (annotation?.type !== AST_NODE_TYPES.TSTypeReference) return false;
@@ -186,9 +187,45 @@ function isCorsOptionsAnnotation(
           name.left.type === AST_NODE_TYPES.Identifier
         ? [name.left.name, name.right.name]
         : [null, null];
-  if (root === null || leaf !== 'CorsOptions') return false;
+  if (root === null) return false;
+  // A bare reference may be an alias — `import { CorsOptions as Opts }` binds
+  // `Opts` locally while still naming the imported interface, so the local
+  // spelling is not the evidence. Resolve it back to the imported name; a
+  // qualified `ns.CorsOptions` needs no resolution because the leaf is the
+  // exported name as written in the module.
+  const exported =
+    name.type === AST_NODE_TYPES.Identifier
+      ? (importedNames.get(root) ?? leaf)
+      : leaf;
+  if (exported !== 'CorsOptions') return false;
   const source = origins.get(root);
   return source !== undefined && CORS_OPTIONS_MODULE.test(source);
+}
+
+/**
+ * Local binding name → the name it was imported under.
+ *
+ * `collectImportOrigins` keeps only `local → module`, which cannot tell
+ * `import { CorsOptions }` from `import { CorsOptions as Opts }`. Kept local to
+ * this rule rather than widened into the shared helper, which three other rules
+ * consume for decorator roots where the imported name is not needed.
+ */
+function collectImportedNames(
+  program: TSESTree.Program,
+): Map<string, string> {
+  const names = new Map<string, string>();
+  for (const stmt of program.body) {
+    if (stmt.type !== AST_NODE_TYPES.ImportDeclaration) continue;
+    for (const spec of stmt.specifiers) {
+      if (
+        spec.type === AST_NODE_TYPES.ImportSpecifier &&
+        spec.imported.type === AST_NODE_TYPES.Identifier
+      ) {
+        names.set(spec.local.name, spec.imported.name);
+      }
+    }
+  }
+  return names;
 }
 
 export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
@@ -265,6 +302,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     if (allowInTests && isTestFile(context.filename)) return {};
 
     let origins: ReadonlyMap<string, string> = new Map();
+    let importedNames: ReadonlyMap<string, string> = new Map();
     /**
      * Objects already reported, so a config that is both declared and used in
      * this file is reported once — at its declaration, which is where the fix
@@ -397,6 +435,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     return {
       Program(node: TSESTree.Program) {
         origins = collectImportOrigins(node);
+        importedNames = collectImportedNames(node);
       },
 
       /**
@@ -419,7 +458,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
        */
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.init?.type !== AST_NODE_TYPES.ObjectExpression) return;
-        if (!isCorsOptionsAnnotation(node, origins)) return;
+        if (!isCorsOptionsAnnotation(node, origins, importedNames)) return;
         if (insideEnvironmentBranch(node)) return;
         checkOptionsObject(node.init, node.init);
       },
