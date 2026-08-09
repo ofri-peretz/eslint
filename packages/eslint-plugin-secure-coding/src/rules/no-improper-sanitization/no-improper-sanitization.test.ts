@@ -137,28 +137,24 @@ describe('no-improper-sanitization', () => {
     });
   });
 
-  describe('Invalid Code - Custom Sanitizer Functions', () => {
-    ruleTester.run('invalid - custom sanitizer with user input', noImproperSanitization, {
-      valid: [],
-      invalid: [
-        // Custom sanitize function with user input
-        {
-          code: 'const clean = mySanitize(req.body.content);',
-          errors: [{ messageId: 'dangerousSanitizerUsage' }],
-        },
-        // Custom escape function with user data
-        {
-          code: 'const safe = myEscape(req.query.data);',
-          errors: [{ messageId: 'dangerousSanitizerUsage' }],
-        },
-        // Custom clean function with user input
-        {
-          code: 'const result = myClean(req.params.id);',
-          errors: [{ messageId: 'dangerousSanitizerUsage' }],
-        },
-      ],
-    });
-  });
+  // The "custom sanitizer" checks that lived here asserted that calling a
+  // function whose NAME contains sanitize/escape/clean on user input is a
+  // finding — `mySanitize(req.body.content)`, `myEscape(req.query.data)`.
+  //
+  // That is the correct code. The rule fired on writing a sanitizer and using
+  // it on user input, which is the behaviour it exists to encourage, and no
+  // edit short of renaming the function resolved it. It also claimed an
+  // impact it never established: "custom sanitizer may be incomplete or
+  // bypassable" is a statement about an implementation the check never read.
+  //
+  // ILB-CWE-Corpus CWE-117/stripped-newlines.js was one of the 16 false
+  // positives for exactly this reason:
+  //
+  //   logger.info('login attempt: ' + sanitizeForLog(req.body.username));
+  //
+  // 8 of this rule's 42 findings on the wild corpus came from the same path.
+  // The detection and its messageId are gone; these tests went with them.
+
 
   describe('Invalid Code - innerHTML Without Sanitization', () => {
     ruleTester.run('invalid - innerHTML with user input', noImproperSanitization, {
@@ -251,23 +247,6 @@ describe('no-improper-sanitization', () => {
       invalid: [],
     });
 
-    // ids 25+27 FALSE: no user input in args (all OR arms false) → hasUserInput stays false
-    ruleTester.run('coverage - custom sanitizer with static arg', noImproperSanitization, {
-      valid: [{ code: 'const r = mySanitize("static text");' }],
-      invalid: [],
-    });
-
-    // id 26: 6-way OR binary-expr arms [1-5] - body/query/params/input/data without req. prefix
-    ruleTester.run('coverage - custom sanitizer user input variants', noImproperSanitization, {
-      valid: [],
-      invalid: [
-        { code: 'mySanitize(bodyParam);',  errors: [{ messageId: 'dangerousSanitizerUsage' }] },
-        { code: 'mySanitize(queryParam);', errors: [{ messageId: 'dangerousSanitizerUsage' }] },
-        { code: 'mySanitize(paramsValue);',errors: [{ messageId: 'dangerousSanitizerUsage' }] },
-        { code: 'mySanitize(inputValue);', errors: [{ messageId: 'dangerousSanitizerUsage' }] },
-        { code: 'mySanitize(dataValue);',  errors: [{ messageId: 'dangerousSanitizerUsage' }] },
-      ],
-    });
 
     // id 30 FALSE: AssignmentExpression left is not MemberExpression
     ruleTester.run('coverage - assignment to identifier left side', noImproperSanitization, {
@@ -326,19 +305,6 @@ describe('no-improper-sanitization', () => {
       expect(reports[0].data?.line).toBe('0');
     });
 
-    it('CallExpression dangerousSanitizerUsage falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noImproperSanitization, {
-        sourceText: 'mySanitize(req.body.data)',
-      });
-      (listeners.CallExpression as (n: unknown) => void)({
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'mySanitize' },
-        arguments: [{ type: 'Identifier', name: 'reqBodyData' }],
-      });
-      expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
-    });
-
     it('AssignmentExpression insufficientXssProtection falls back to line 0 when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noImproperSanitization, {
         sourceText: 'element.innerHTML = req.body.data',
@@ -378,5 +344,129 @@ describe('no-improper-sanitization', () => {
       expect(reports).toHaveLength(1);
       expect(reports[0].data?.line).toBe('0');
     });
+  });
+});
+
+/**
+ * ILB-CWE-Corpus and wild-corpus regressions.
+ *
+ * This rule produced 42 of the 411 findings on the 13-repo wild corpus — its
+ * single largest contributor — and one of the 16 ILB-CWE-Corpus false
+ * positives. 34 came from the literal-in-a-response-sink path below, 8 from
+ * the removed custom-sanitizer path.
+ *
+ * The exemption is written as "no tainted leaf reaches the sink", not as a
+ * node-type blacklist. #441 excluded TemplateLiteral/BinaryExpression by name
+ * and silenced `res.send(req.query.name || '<p>x</p>')` — trading a false
+ * positive for a false negative. Every widening here is paired with the
+ * invalid case that pins its edge.
+ */
+describe('corpus regressions', () => {
+  ruleTester.run('authored text reaching a response sink', noImproperSanitization, {
+    valid: [
+      // express/examples/cookies/index.js:28 — three string literals, zero
+      // variables, reported three times.
+      {
+        code: `res.send('<form method="post"><p>Check to <label>'
+          + '<input type="checkbox" name="remember"/> remember me</label> '
+          + '<input type="submit" value="Submit"/>.</p></form>');`,
+      },
+      // express/examples/resource/index.js:80-87 — eight lines of static
+      // markup in an array, joined. Eight findings.
+      {
+        code: `res.send(['<h1>Examples:</h1> <ul>', '<li>GET /users</li>', '</ul>'].join('\\n'));`,
+      },
+      // express/examples/route-map/index.js:47 — the input IS escaped. This
+      // rule exists to demand escaping and was reporting the code that does it.
+      {
+        code: `res.send('user ' + escapeHtml(req.params.uid) + "'s pets")`,
+      },
+      // express/examples/web-service/index.js:110 — an object argument is
+      // serialised as JSON and served as application/json; the apostrophe in
+      // it is not markup. Reported because `'` is in dangerousChars.
+      {
+        code: `res.send({ error: "Sorry, can't find that" })`,
+      },
+      {
+        code: `res.json({ message: 'Done <ok>' })`,
+      },
+      // A sanitizer reached through a member chain, not a bare identifier.
+      {
+        code: `res.send('<p>' + DOMPurify.sanitize(req.body.bio) + '</p>')`,
+      },
+      {
+        code: `res.send('<p>' + he.encode(req.body.bio) + '</p>')`,
+      },
+    ],
+    invalid: [
+      // Each concatenation reports once per literal operand — two literals
+      // bracketing a tainted value gives two findings, which is the existing
+      // behaviour and not what these cases are pinning.
+      //
+      // An unescaped value inside an otherwise-static array still taints it,
+      // so the `.join()` exemption cannot be reached by hiding input in the
+      // array.
+      {
+        code: `res.send(['<li>', req.query.name, '</li>'].join(''))`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // Only *named* sanitizers earn the exemption — an arbitrary call does
+      // not, or `escapeHtml` recognition would become "any call launders
+      // taint".
+      {
+        code: `res.send('<p>' + renderBio(req.body.bio) + '</p>')`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // A tainted object property is still tainted — the JSON exemption is
+      // per-value, not per-argument.
+      {
+        code: `res.send({ error: '<b>' + req.query.msg + '</b>' })`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // A computed callee yields no resolvable name, so it cannot match the
+      // sanitizer list — taint launders through nothing.
+      {
+        code: `res.send('<p>' + sanitizers[kind](req.body.bio) + '</p>')`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // A deeper member chain (`lib.html.escape`) resolves to no name at all,
+      // so it cannot match the sanitizer list. Widening the resolver to walk
+      // arbitrary chains would let `attacker.controlled.escape()` launder taint.
+      {
+        code: `res.send('<p>' + lib.html.escape(req.body.bio) + '</p>')`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // A template literal WITH expressions is interpolation, not authored text.
+      {
+        code: 'res.send(\'<p>\' + `${req.body.bio}` + \'</p>\')',
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+      // A non-string literal operand is not authored text either.
+      {
+        code: `res.send('<b>' + count + '</b>')`,
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+    ],
   });
 });
