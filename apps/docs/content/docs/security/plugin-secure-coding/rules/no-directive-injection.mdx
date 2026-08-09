@@ -1,6 +1,6 @@
 ---
 title: no-directive-injection
-description: Detects directive injection vulnerabilities in template systems
+description: "Detects directive injection vulnerabilities in template systems"
 tags: ['security', 'core']
 category: security
 severity: critical
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
 
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -100,12 +98,15 @@ if (allowedDirectives.includes(directive)) {
 
 ## Options
 
-| Option                     | Type       | Default                       | Description                               |
-| -------------------------- | ---------- | ----------------------------- | ----------------------------------------- |
-| `trustedDirectives`        | `string[]` | `[]`                          | Allowed directive names                   |
-| `userInputVariables`       | `string[]` | `['req', 'request', 'input']` | User input variable patterns              |
-| `frameworks`               | `string[]` | `['react', 'angular', 'vue']` | Frameworks to check                       |
-| `allowDynamicInComponents` | `boolean`  | `false`                       | Allow dynamic directives in safe contexts |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trustedDirectives` | `string[]` | `["ngIf","ngFor","ngClass","v-if","v-for","v-bind","v-on"]` | Template directives treated as safe |
+| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
+| `frameworks` | `string[]` | `["angular","vue","react","svelte"]` | Template frameworks to analyse |
+| `allowDynamicInComponents` | `boolean` | `false` | Allow dynamic directives inside component code |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as template sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

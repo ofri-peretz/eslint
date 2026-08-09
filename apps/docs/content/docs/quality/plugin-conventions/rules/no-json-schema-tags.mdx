@@ -1,6 +1,6 @@
 ---
 title: no-json-schema-tags
-description: Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags.
+description: "Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags."
 tags: ['conventions', 'jsdoc', 'documentation']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** no-json-schema-tags, JSDoc, JSON Schema, @minimum, @maximum, @pattern, @format, TSDoc, DefinitelyTyped, ESLint rule
 
 Disallow JSON Schema keywords (e.g. `@minimum`, `@maximum`, `@pattern`, `@format`) used as JSDoc tags. These keywords are valid in OpenAPI / JSON Schema documents but not in JSDoc; they fail in projects with strict tag validation (e.g. DefinitelyTyped, TSDoc-strict CI).
 

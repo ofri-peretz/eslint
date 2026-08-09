@@ -5,7 +5,6 @@ tags: ['security', 'express']
 category: security
 severity: high
 cwe: CWE-73
-owasp: 'A03:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -14,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** template injection, render locals, CWE-73, external control of file name or path, res.render, view engine, pug, ejs, path traversal, ESLint rule, LLM-optimized
 
 Detects template-object injection where `res.render()` receives locals wholly controlled by the request, or a view name derived from request input. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 
@@ -211,9 +208,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Options
 
-| Option            | Type       | Default | Description                                                                                                           |
-| ----------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| `allowSanitizers` | `string[]` | `[]`    | Callee names that make a wrapped locals expression safe (plain `pick(...)` and member `_.pick(...)` calls both match) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowSanitizers` | `string[]` | — | Callee names that sanitize locals (e.g. ["pick", "sanitizeLocals"]); calls to them are not flagged |
 
 ## Best Practices
 

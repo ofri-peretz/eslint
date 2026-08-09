@@ -1,6 +1,6 @@
 ---
 title: no-mutable-exports
-description: Disallow mutable let/var declarations on exported bindings
+description: "Disallow mutable let/var declarations on exported bindings"
 tags: ['architecture', 'modularity']
 category: modularity
 autofix: code
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** mutable export, live binding, let, var, const, ESLint rule, JavaScript, TypeScript, auto-fix, LLM-optimized
 
 Disallow `export let` and `export var` declarations — they create shared live bindings that all importers observe. This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity).
 
@@ -61,26 +59,6 @@ export const config = Object.freeze({});
 export function increment() { return count + 1; }
 export class Counter {}
 ```
-
-## Auto-fix
-
-ESLint can fix this automatically. Running `eslint --fix` replaces the mutable keyword with `const`.
-
-**Before**
-
-```js
-export let count = 0;
-export var config = {};
-```
-
-**After**
-
-```js
-export const count = 0;
-export const config = {};
-```
-
-If the variable is reassigned inside the module, TypeScript or the runtime will surface the error — which is exactly the intent. Refactor the mutation behind an exported function rather than using a mutable live binding.
 
 ## Configuration Examples
 

@@ -1,11 +1,10 @@
 ---
 title: require-query-type-guard
-description: "Require a type guard or String() coercion before calling string methods on req.query values"
+description: "This rule detects string methods called on req.query values without a type guard — Express query values can be arrays or objects, not just strings"
 tags: ['security', 'express']
 category: security
 severity: high
 cwe: CWE-843
-owasp: 'A03:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -16,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require a type guard or String() coercion before calling string methods on req.query values
-
-This rule detects string methods called on req.query values without a type guard — Express query values can be arrays or objects, not just strings
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-843](https://cwe.mitre.org/data/definitions/843.html)
@@ -94,10 +91,10 @@ The rule offers editor suggestions (no auto-fix):
 
 ## Options
 
-| Option       | Type       | Default                  | Description                                                            |
-| ------------ | ---------- | ------------------------ | ---------------------------------------------------------------------- |
-| `coercers`   | `string[]` | `['String']`             | Callee names whose result is a safe string coercion (replaces default) |
-| `validators` | `string[]` | `['parse', 'safeParse']` | Callee / method names treated as type-safe sources (replaces default)  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `coercers` | `string[]` | — | Callee names whose result is a safe string coercion |
+| `validators` | `string[]` | — | Callee / method names treated as type-safe sources |
 
 ```json
 {

@@ -1,12 +1,12 @@
 ---
 title: no-debug-mode-production
-description: Detects Mongoose debug mode that could expose sensitive query information in production.
+description: "Detects Mongoose debug mode that could expose sensitive query information in production."
 tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-489
 owasp: "A05:2021"
-autofix: false
+autofix: suggestions
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** CWE-489, debug, Mongoose, logging, production, security
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 
@@ -134,3 +132,9 @@ mongoose.set(setting, true);
 
 - [Mongoose Debug](<https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()>)
 - [CWE-489](https://cwe.mitre.org/data/definitions/489.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

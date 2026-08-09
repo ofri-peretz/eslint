@@ -17,8 +17,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
 
-This rule prevents using "" as the targetOrigin parameter in postMessage() calls
-
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -89,6 +87,10 @@ window.postMessage(data, { targetOrigin: 'https://trusted-domain.com' });
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```json
 {

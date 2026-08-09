@@ -1,6 +1,6 @@
 ---
 title: no-error-details-in-response
-description: "Disallow sending caught error objects, stacks, or spreads of them in HTTP responses"
+description: "Disallow sending caught error objects, stack traces, or spreads of them in HTTP responses."
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -14,10 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** stack trace exposure, error message leak, CWE-209, information disclosure, err.stack, express error handling, error middleware, verbose errors, reconnaissance
-
-Disallow sending caught error objects, stack traces, or spreads of them in HTTP responses.
 
 **CWE:** [CWE-209](https://cwe.mitre.org/data/definitions/209.html)  
 **OWASP:** [A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
@@ -228,3 +224,10 @@ res.send(failure.stack);
 - **[CWE-209: Generation of Error Message Containing Sensitive Information](https://cwe.mitre.org/data/definitions/209.html)**
 - **[OWASP: Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)**
 - **[Express: Error handling best practices](https://expressjs.com/en/guide/error-handling.html)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowMessage` | `boolean` | `true` | Allow err.message in responses |
+| `allowInDev` | `boolean` | `false` | Allow error details inside an if-guard checking NODE_ENV |

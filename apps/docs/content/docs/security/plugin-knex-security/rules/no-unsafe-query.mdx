@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-query
-description: Prevent SQL injection by disallowing string concatenation or interpolated template literals in knex.raw() calls.
+description: "Prevent SQL injection by disallowing string concatenation or interpolated template literals in knex.raw() calls."
 tags: ['security', 'knex']
 category: security
 severity: critical
@@ -13,6 +13,7 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 **CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
 **OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
