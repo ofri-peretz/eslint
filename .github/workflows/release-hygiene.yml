@@ -143,8 +143,20 @@ jobs:
             process.exit(0);
           }
           const { summary, findings } = report;
-          const drift = (summary.orphanTags ?? 0) + (summary.missingTags ?? 0);
-          const header = drift === 0 ? '✅ No drift detected' : `🧹 Drift: ${summary.orphanTags} orphan / ${summary.missingTags} missing`;
+          // Only `missing` is actionable drift. An orphan tag means the git tag
+          // exists and the npm version does not — which is the expected state
+          // for every version we have unpublished or deprecated off the
+          // registry (the renamed eslint-plugin-jwt / -pg lines, and the 2.x–7.x
+          // history of several plugins). Those tags are the only surviving
+          // record that the release happened; deleting them to satisfy a
+          // counter would destroy history, so they are reported, not gated on.
+          //
+          // A `missing` tag is the reverse and always a real defect: a version
+          // is on npm with no tag pointing at the commit that produced it.
+          const drift = summary.missingTags ?? 0;
+          const header = drift === 0
+            ? `✅ No actionable drift (${summary.orphanTags ?? 0} orphan tag(s) — informational)`
+            : `🧹 Drift: ${summary.missingTags} missing tag(s) · ${summary.orphanTags} orphan (informational)`;
           console.log(`# ${header}`);
           console.log('');
           console.log(`| Field | Value |`);
@@ -193,7 +205,10 @@ jobs:
               return;
             }
             const { summary, findings } = report;
-            const drift = (summary?.orphanTags ?? 0) + (summary?.missingTags ?? 0);
+            // Gate on `missing` only — see the rationale in the summary step
+            // above. Orphan tags are expected for unpublished/deprecated
+            // versions and are reported in the body, not treated as drift.
+            const drift = summary?.missingTags ?? 0;
 
             const marker = '<!-- release-hygiene -->';
             const { data: existing } = await github.rest.issues.listForRepo({
@@ -231,11 +246,21 @@ jobs:
               if (f.orphan.length === 0 && f.missing.length === 0) continue;
               lines.push(`| \`${f.name}\` | ${f.orphan.join(', ') || '—'} | ${f.missing.join(', ') || '—'} |`);
             }
+            lines.push('');
+            lines.push(`**This issue is open because ${summary.missingTags} tag(s) are missing.** A missing tag`);
+            lines.push('means a version is published on npm with no git tag pointing at the commit that');
+            lines.push('produced it — always a real defect, fixed with `backfill-missing`.');
+            lines.push('');
+            lines.push(`The ${summary.orphanTags} orphan tag(s) above are **informational** and do not open this`);
+            lines.push('issue on their own. An orphan means the tag exists and the npm version does not,');
+            lines.push('which is the expected state for anything unpublished or deprecated off the');
+            lines.push('registry. Those tags are the only surviving record that the release happened —');
+            lines.push('`cleanup-orphans` would delete real history to make a counter read zero.');
             lines.push('', '### Recovery commands');
             lines.push('```bash');
             lines.push('# Re-run from the workflow_dispatch UI:');
-            lines.push('#   action=backfill-missing  → create the missing tags + push');
-            lines.push('#   action=cleanup-orphans   → DELETE orphan tags (destructive)');
+            lines.push('#   action=backfill-missing  → create the missing tags + push   ← the fix for THIS issue');
+            lines.push('#   action=cleanup-orphans   → DELETE orphan tags (destructive; read the note above first)');
             lines.push('#   action=full              → backfill + create-releases');
             lines.push('# Or locally:');
             lines.push('npm run release:reconcile               # report');
