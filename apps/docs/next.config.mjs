@@ -158,6 +158,27 @@ const config = {
       destination: '/docs/getting-started/advanced/launch',
       permanent: true,
     },
+    // 2026-08-06: docs slugs realigned to the packages they document, after
+    // `eslint-plugin-jwt` → `eslint-plugin-jwt-security` and
+    // `eslint-plugin-pg` → `eslint-plugin-postgresql-security`. Every other
+    // plugin's slug already matched its package name; these two were the
+    // holdouts, and their pages still linked to `packages/eslint-plugin-jwt/`
+    // and `packages/eslint-plugin-pg/` on GitHub, which now 404.
+    //
+    // The ESLint rule namespace is deliberately unchanged — findings are still
+    // `jwt/no-algorithm-none` and `pg/no-unsafe-query` so no consumer config
+    // has to move. Only the docs URLs shift, and per the URL contract
+    // (UX_PHILOSOPHY §2) the old ones redirect rather than 404.
+    {
+      source: '/docs/security/plugin-jwt/:path*',
+      destination: '/docs/security/plugin-jwt-security/:path*',
+      permanent: true,
+    },
+    {
+      source: '/docs/security/plugin-pg/:path*',
+      destination: '/docs/security/plugin-postgresql-security/:path*',
+      permanent: true,
+    },
   ],
 };
 
