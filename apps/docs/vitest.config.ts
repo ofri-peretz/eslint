@@ -62,6 +62,8 @@ export default defineConfig({
     // Same rationale as testTimeout above, for setup/teardown: hookTimeout
     // defaults to 10s and is NOT covered by testTimeout, so a beforeAll/afterEach
     // starved by the parallel turbo fan-out fails as "Hook timed out in 10000ms".
+    // tailwind-classes.test.ts runs a full Next build in beforeAll and hits this
+    // on any cold cache — it is what failed all ten shards of this PR.
     hookTimeout: 30_000,
     // False, like every other workspace: docs has 74 test files, so a run that
     // matches none is a broken filter, not an empty package. See the

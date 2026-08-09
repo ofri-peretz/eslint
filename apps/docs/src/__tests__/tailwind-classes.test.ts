@@ -159,7 +159,12 @@ describe('Tailwind CSS Compilation', () => {
     }
     
     compiledCSS = findCompiledCSS(buildOutputDir);
-  });
+    // 150s, not the config-wide 30s: this hook budgets 120s for `npm run build`
+    // above, and vitest kills the *hook* independently of the subprocess. At the
+    // shared 30s the inner timeout was unreachable — a cold `.next` failed the
+    // hook every time under the 10-shard fan-out, while a warm one skipped the
+    // build and passed. That is why this file failed only on cache-cold runs.
+  }, 150_000);
 
   describe('Critical Class Generation', () => {
     CRITICAL_CLASSES.forEach((className) => {
