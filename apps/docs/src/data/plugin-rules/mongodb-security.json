@@ -27,7 +27,7 @@
       "recommended": true,
       "warns": false,
       "fixable": false,
-      "hasSuggestions": false,
+      "hasSuggestions": true,
       "deprecated": false,
       "category": "General",
       "href": "/docs/mongodb-security/rules/no-debug-mode-production"
@@ -102,7 +102,7 @@
       "recommended": false,
       "warns": false,
       "fixable": false,
-      "hasSuggestions": false,
+      "hasSuggestions": true,
       "deprecated": false,
       "category": "General",
       "href": "/docs/mongodb-security/rules/no-unbounded-find"
@@ -132,7 +132,7 @@
       "recommended": true,
       "warns": false,
       "fixable": false,
-      "hasSuggestions": false,
+      "hasSuggestions": true,
       "deprecated": false,
       "category": "General",
       "href": "/docs/mongodb-security/rules/no-unsafe-query"
@@ -192,7 +192,7 @@
       "recommended": false,
       "warns": true,
       "fixable": false,
-      "hasSuggestions": false,
+      "hasSuggestions": true,
       "deprecated": false,
       "category": "General",
       "href": "/docs/mongodb-security/rules/require-lean-queries"
@@ -237,12 +237,12 @@
       "recommended": false,
       "warns": false,
       "fixable": false,
-      "hasSuggestions": false,
+      "hasSuggestions": true,
       "deprecated": false,
       "category": "General",
       "href": "/docs/mongodb-security/rules/require-tls-connection"
     }
   ],
   "totalRules": 16,
-  "lastSynced": "2026-08-07T02:23:32.993Z"
+  "lastSynced": "2026-08-09T03:05:47.403Z"
 }

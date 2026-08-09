@@ -19,8 +19,8 @@
     },
     {
       "name": "no-hybrid-app-config-loss",
-      "cwe": "CWE-284",
-      "owasp": "A01:2021",
+      "cwe": "CWE-20",
+      "owasp": "A03:2021",
       "cvss": "",
       "description": "Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard fro…",
       "typeStatus": "unaware",
@@ -93,8 +93,23 @@
       "href": "/docs/nestjs-security/rules/no-unguarded-swagger"
     },
     {
+      "name": "no-unsafe-multer-filename",
+      "cwe": "CWE-22",
+      "owasp": "A01:2021",
+      "cvss": "",
+      "description": "Flags a multer diskStorage filename callback that stores an upload under the name the client chose.",
+      "typeStatus": "unaware",
+      "recommended": true,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/no-unsafe-multer-filename"
+    },
+    {
       "name": "require-guards",
-      "cwe": "CWE-284",
+      "cwe": "CWE-306",
       "owasp": "A01:2021",
       "cvss": "",
       "description": "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:",
@@ -138,6 +153,6 @@
       "href": "/docs/nestjs-security/rules/require-validation-pipe-whitelist"
     }
   ],
-  "totalRules": 9,
-  "lastSynced": "2026-08-07T02:23:32.993Z"
+  "totalRules": 10,
+  "lastSynced": "2026-08-09T03:05:47.404Z"
 }

@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4347164,
+      "title": "innerHTML Has Five Doors. Most Reviews Only Watch One.",
+      "description": "A DOM sink is easy to grep for. The hard part is that one sink has many sources, and the source is where the trust decision actually lives — not the assignment.",
+      "url": "https://dev.to/ofri-peretz/innerhtml-has-five-doors-most-reviews-only-watch-one-587c",
+      "canonical_url": "https://ofriperetz.dev/articles/dom-sink-taxonomy",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fdom-sink-taxonomy.jpg",
+      "published_at": "2026-08-08T08:19:02Z",
+      "readable_publish_date": "Aug 8",
+      "reading_time_minutes": 5,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "ai",
+        "webdev",
+        "security"
+      ]
+    },
+    {
       "id": 4286252,
       "title": "Nobody Writes Bad Crypto. They Write Correct Crypto at Four Layers.",
       "description": "Crypto failures are not one mistake repeated. They are four distinct layers of correctness, and each one looks fine from the layer above it.",
@@ -115,8 +135,8 @@
       "readable_publish_date": "Jul 20",
       "reading_time_minutes": 8,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
       "comments_count": 0,
       "tag_list": [
         "security",
@@ -136,8 +156,8 @@
       "readable_publish_date": "Jul 20",
       "reading_time_minutes": 9,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
       "comments_count": 0,
       "tag_list": [
         "security",
@@ -198,8 +218,8 @@
       "readable_publish_date": "Jul 19",
       "reading_time_minutes": 8,
       "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
       "comments_count": 0,
       "tag_list": [
         "security",
@@ -1623,7 +1643,7 @@
       ]
     }
   ],
-  "total": 79,
-  "lastUpdated": "2026-08-07T02:23:34.057Z",
+  "total": 80,
+  "lastUpdated": "2026-08-09T03:05:48.456Z",
   "source": "public"
 }

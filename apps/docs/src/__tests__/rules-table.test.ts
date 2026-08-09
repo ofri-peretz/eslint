@@ -456,7 +456,7 @@ Real description starts here.
   
   describe('parseRulesFromReadme', () => {
     it('should parse rules from markdown table', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       
       expect(rules).toHaveLength(3);
       expect(rules[0].name).toBe('no-unsafe-query');
@@ -465,12 +465,12 @@ Real description starts here.
     });
     
     it('should correctly parse recommended (💼) status', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       expect(rules.every(r => r.recommended)).toBe(true);
     });
     
     it('should correctly parse fixable (🔧) status', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       
       expect(rules[0].fixable).toBe(false);
       expect(rules[1].fixable).toBe(false);
@@ -478,7 +478,7 @@ Real description starts here.
     });
     
     it('should correctly parse suggestions (💡) status', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       
       expect(rules[0].hasSuggestions).toBe(true);
       expect(rules[1].hasSuggestions).toBe(true);
@@ -486,7 +486,7 @@ Real description starts here.
     });
     
     it('should correctly parse warns (⚠️) status', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       
       expect(rules[0].warns).toBe(false);
       expect(rules[1].warns).toBe(true);
@@ -494,10 +494,10 @@ Real description starts here.
     });
     
     it('should generate correct hrefs for security plugins', () => {
-      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'pg', 'security');
+      const rules = parseRulesFromReadme(MOCK_README_TABLE, 'postgresql-security', 'security');
       
-      expect(rules[0].href).toBe('/docs/security/plugin-pg/rules/no-unsafe-query');
-      expect(rules[1].href).toBe('/docs/security/plugin-pg/rules/no-insecure-ssl');
+      expect(rules[0].href).toBe('/docs/security/plugin-postgresql-security/rules/no-unsafe-query');
+      expect(rules[1].href).toBe('/docs/security/plugin-postgresql-security/rules/no-insecure-ssl');
     });
     
     it('should generate correct hrefs for quality plugins', () => {

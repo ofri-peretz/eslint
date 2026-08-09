@@ -1,0 +1,38 @@
+{
+  "repo": "react",
+  "meta": {
+    "stars": 230000,
+    "commit": "d5736f098edee62c44f27b053e6e48f5fa443803",
+    "category": "UI Library (FP corpus)",
+    "plugins": [
+      "browser-security",
+      "secure-coding"
+    ],
+    "fpEdge": true,
+    "srcGlob": "packages/react-dom/src/**/*.{js,ts}"
+  },
+  "fileCount": 37,
+  "loc": 4539,
+  "timing": {
+    "runsMs": [
+      2631,
+      1301,
+      1142
+    ],
+    "medianMs": 1301,
+    "meanMs": 1691,
+    "stddevMs": 668,
+    "cv": 39.5,
+    "msPerFile": 35.16
+  },
+  "peakRssMb": 119,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 23
+  }
+}

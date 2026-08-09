@@ -1,6 +1,6 @@
 {
-  "plugin": "jwt",
-  "package": "eslint-plugin-jwt",
+  "plugin": "jwt-security",
+  "package": "eslint-plugin-jwt-security",
   "rules": [
     {
       "name": "no-algorithm-confusion",
@@ -15,7 +15,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-algorithm-confusion"
+      "href": "/docs/jwt-security/rules/no-algorithm-confusion"
     },
     {
       "name": "no-algorithm-none",
@@ -30,7 +30,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-algorithm-none"
+      "href": "/docs/jwt-security/rules/no-algorithm-none"
     },
     {
       "name": "no-decode-without-verify",
@@ -45,7 +45,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-decode-without-verify"
+      "href": "/docs/jwt-security/rules/no-decode-without-verify"
     },
     {
       "name": "no-hardcoded-secret",
@@ -60,7 +60,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-hardcoded-secret"
+      "href": "/docs/jwt-security/rules/no-hardcoded-secret"
     },
     {
       "name": "no-sensitive-payload",
@@ -75,7 +75,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-sensitive-payload"
+      "href": "/docs/jwt-security/rules/no-sensitive-payload"
     },
     {
       "name": "no-timestamp-manipulation",
@@ -90,7 +90,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-timestamp-manipulation"
+      "href": "/docs/jwt-security/rules/no-timestamp-manipulation"
     },
     {
       "name": "no-weak-secret",
@@ -105,7 +105,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/no-weak-secret"
+      "href": "/docs/jwt-security/rules/no-weak-secret"
     },
     {
       "name": "require-algorithm-whitelist",
@@ -120,7 +120,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-algorithm-whitelist"
+      "href": "/docs/jwt-security/rules/require-algorithm-whitelist"
     },
     {
       "name": "require-audience-validation",
@@ -135,7 +135,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-audience-validation"
+      "href": "/docs/jwt-security/rules/require-audience-validation"
     },
     {
       "name": "require-expiration",
@@ -150,7 +150,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-expiration"
+      "href": "/docs/jwt-security/rules/require-expiration"
     },
     {
       "name": "require-issued-at",
@@ -165,7 +165,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-issued-at"
+      "href": "/docs/jwt-security/rules/require-issued-at"
     },
     {
       "name": "require-issuer-validation",
@@ -180,7 +180,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-issuer-validation"
+      "href": "/docs/jwt-security/rules/require-issuer-validation"
     },
     {
       "name": "require-max-age",
@@ -195,9 +195,9 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/jwt/rules/require-max-age"
+      "href": "/docs/jwt-security/rules/require-max-age"
     }
   ],
   "totalRules": 13,
-  "lastSynced": "2026-08-07T02:23:32.992Z"
+  "lastSynced": "2026-08-09T03:05:47.402Z"
 }
