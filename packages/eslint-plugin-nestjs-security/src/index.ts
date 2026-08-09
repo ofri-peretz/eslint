@@ -33,6 +33,7 @@ import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
 import { noResBypassSerialization } from './rules/no-res-bypass-serialization';
 import { noUnguardedSwagger } from './rules/no-unguarded-swagger';
 import { noHybridAppConfigLoss } from './rules/no-hybrid-app-config-loss';
+import { noUnsafeMulterFilename } from './rules/no-unsafe-multer-filename';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -53,6 +54,7 @@ export const rules: Record<
   'no-res-bypass-serialization': noResBypassSerialization,
   'no-unguarded-swagger': noUnguardedSwagger,
   'no-hybrid-app-config-loss': noHybridAppConfigLoss,
+  'no-unsafe-multer-filename': noUnsafeMulterFilename,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -87,6 +89,11 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // reading once the project registers globals, and every hybrid app measured
   // was in the failing state.
   'nestjs-security/no-hybrid-app-config-loss': 'error',
+  // Enters at 'error': the shape is unambiguous — an attacker-controlled string
+  // reaching the storage callback with no call in between — and the rule
+  // abstains the moment anything is done to the value, so a finding is never a
+  // judgement call about whether the sanitiser was good enough.
+  'nestjs-security/no-unsafe-multer-filename': 'error',
 };
 
 /**

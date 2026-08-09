@@ -36,8 +36,9 @@ describe('eslint-plugin-nestjs-security plugin interface', () => {
       'no-res-bypass-serialization',
       'no-unguarded-swagger',
       'no-hybrid-app-config-loss',
+      'no-unsafe-multer-filename',
     ]);
-    expect(ruleKeys.length).toBe(9);
+    expect(ruleKeys.length).toBe(10);
   });
 
   describe('configurations', () => {

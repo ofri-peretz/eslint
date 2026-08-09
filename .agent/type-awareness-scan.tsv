@@ -209,6 +209,7 @@ mongodb-security	require-tls-connection	unaware
 mongodb-security	no-unsafe-populate	unaware	
 mongodb-security	no-hardcoded-credentials	unaware	
 nestjs-security	require-guards	unaware	
+nestjs-security	no-unsafe-multer-filename	unaware	
 nestjs-security	require-throttler	unaware	
 nestjs-security	require-validation-pipe-whitelist	unaware	
 nestjs-security	no-permissive-cors	unaware	
