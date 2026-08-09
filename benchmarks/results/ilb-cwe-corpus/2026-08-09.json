@@ -1,7 +1,7 @@
 {
   "bench": "ILB-CWE-Corpus",
   "version": "1.0",
-  "timestamp": "2026-08-09T17:04:36.607Z",
+  "timestamp": "2026-08-09T19:07:35.555Z",
   "environment": {
     "nodeVersion": "v24.12.0",
     "eslintVersion": "10.7.0",
@@ -937,13 +937,13 @@
           "name": "Improper Output Neutralization for Logs (log injection)",
           "owasp": "A09:2021",
           "TP": 0,
-          "FP": 1,
+          "FP": 0,
           "FN": 2,
-          "TN": 1,
+          "TN": 2,
           "precision": 0,
           "recall": 0,
           "f1": 0,
-          "bas": -50,
+          "bas": 0,
           "fixtures": [
             {
               "file": "newline-in-log-message.js",
@@ -960,10 +960,8 @@
             {
               "file": "stripped-newlines.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "secure-coding/no-improper-sanitization": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             },
             {
               "file": "structured-logging.js",
@@ -1834,13 +1832,13 @@
       },
       "aggregate": {
         "TP": 51,
-        "FP": 13,
+        "FP": 12,
         "FN": 18,
-        "TN": 47,
-        "precision": 79.7,
+        "TN": 48,
+        "precision": 81,
         "recall": 73.9,
-        "f1": 76.7,
-        "bas": 52.2
+        "f1": 77.3,
+        "bas": 53.9
       }
     },
     "eslint-plugin-security": {

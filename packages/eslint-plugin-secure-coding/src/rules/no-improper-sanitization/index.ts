@@ -33,7 +33,6 @@ type MessageIds =
   | 'incompleteHtmlEscaping'
   | 'unsafeReplaceSanitization'
   | 'missingContextEncoding'
-  | 'dangerousSanitizerUsage'
   | 'sqlInjectionSanitization'
   | 'commandInjectionSanitization'
   | 'useProperSanitization'
@@ -113,15 +112,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Encode output according to usage context (HTML, URL, SQL, etc.)',
         documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
-      }),
-      dangerousSanitizerUsage: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous Sanitizer Usage',
-        cwe: 'CWE-94',
-        description: 'Custom sanitizer may be incomplete or bypassable',
-        severity: 'LOW',
-        fix: 'Use well-tested sanitization libraries',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/94.html',
       }),
       sqlInjectionSanitization: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -349,48 +339,30 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check for custom sanitizer functions
-        if (callee.type === 'Identifier') {
-          const functionName = callee.name;
-
-          // Check if it's a known dangerous sanitizer pattern
-          if (functionName.toLowerCase().includes('sanitize') ||
-              functionName.toLowerCase().includes('escape') ||
-              functionName.toLowerCase().includes('clean')) {
-
-            // If it's not in our safe list, flag it
-            if (!safeSanitizers.some(safe => functionName.includes(safe))) {
-              // Check if arguments contain user input
-              const args = node.arguments;
-              let hasUserInput = false;
-
-              for (const arg of args) {
-                const argText = sourceCode.getText(arg).toLowerCase();
-                if (argText.includes('req.') || argText.includes('body') ||
-                    argText.includes('query') || argText.includes('params') ||
-                    argText.includes('input') || argText.includes('data')) {
-                  hasUserInput = true;
-                  break;
-                }
-              }
-
-              if (hasUserInput) {
-                if (safetyChecker.isSafe(node, context)) {
-                  return;
-                }
-
-                context.report({
-                  node,
-                  messageId: 'dangerousSanitizerUsage',
-                  data: {
-                    filePath: filename,
-                    line: String(node.loc?.start.line ?? 0),
-                  },
-                });
-              }
-            }
-          }
-        }
+        // A "custom sanitizer" check used to live here. It reported any call
+        // to a function whose *name* contained sanitize/escape/clean when an
+        // argument's printed text contained req./body/query/params/input/data:
+        //
+        //   logger.info('login attempt: ' + sanitizeForLog(req.body.username));
+        //
+        // That is the ILB-CWE-Corpus fixture for CWE-117, and it is the
+        // *correct* code — `sanitizeForLog` strips \r\n\t before logging. The
+        // check fired on writing a sanitizer and using it on user input, which
+        // is the behaviour the rule is supposed to encourage, and it could not
+        // be resolved by any edit short of renaming the function.
+        //
+        // It also asserted an impact it never established. "Custom sanitizer
+        // may be incomplete or bypassable" is a claim about an implementation
+        // the rule never looked at — the callee is usually imported, and the
+        // check inspected only the call site. Name-and-substring matching on
+        // printed source made it worse: `data` matches `metadata`, `userData`,
+        // `dataset`, and the argument text was scanned inside comments and
+        // string literals too.
+        //
+        // 8 of this rule's 42 findings on the wild corpus came from here, and
+        // every one was a call to a working sanitizer. Removed rather than
+        // narrowed: there is no version of "your sanitizer might be bad" that
+        // is actionable without reading the sanitizer.
       },
 
       // Check assignments that might need sanitization
@@ -525,12 +497,135 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           // The literal only earns the exemption when it IS the argument, so
           // any wrapper (`||`, `?:`, a call, a member access) falls through to
           // the normal checks below.
-          const isDirectResponseArgument =
-            directParent?.type === 'CallExpression' &&
-            (directParent as TSESTree.CallExpression).arguments.includes(
-              node as TSESTree.CallExpressionArgument,
-            );
-          const isBareLiteral = isDirectResponseArgument;
+          // Concatenation of literals is still developer-authored. Requiring
+          // the literal to be the *direct* argument left 34 findings across
+          // express/examples alone, all of this shape:
+          //
+          //   res.send('<form method="post"><p>Check to <label>'
+          //     + '<input type="checkbox" name="remember"/> remember me</label> '
+          //     + '<input type="submit" value="Submit"/>.</p></form>');
+          //
+          // Zero variables, three string literals, reported three times.
+          //
+          // The walk only climbs `+` — a `||`, a ternary, a call or a member
+          // access stops it, so the #441 false negatives stay closed: in
+          // `res.send(req.query.name || '<p>fallback</p>')` the literal never
+          // reaches an argument position on its own, and in
+          // `res.send('<div>' + req.query.name + '</div>')` the concatenation
+          // is reached but contains a non-literal leaf.
+          const enclosingArgument = (
+            literal: TSESTree.Node,
+          ): TSESTree.Node | undefined => {
+            let current = literal;
+            let parent = current.parent as TSESTree.Node | undefined;
+            // Climb the text-composing nodes only: `+`, and the
+            // `[...] .join(sep)` triple (ArrayExpression → the `.join` member
+            // → its call). Anything else — `||`, `?:`, a member access, a
+            // call on a value — stops the climb, which is what keeps the
+            // #441 false negatives closed.
+            for (;;) {
+              if (parent?.type === 'BinaryExpression' && parent.operator === '+') {
+                current = parent;
+              } else if (parent?.type === 'ArrayExpression') {
+                current = parent;
+              } else if (
+                // `res.send({ error: "Sorry, can't find that" })` — an object
+                // argument is serialised as JSON and served as
+                // application/json, so an apostrophe in it is not markup. The
+                // literal was reported because `'` is in `dangerousChars`.
+                parent?.type === 'Property' ||
+                (parent?.type === 'ObjectExpression' && current.type === 'Property')
+              ) {
+                current = parent;
+              } else if (
+                parent?.type === 'MemberExpression' &&
+                parent.object === current &&
+                parent.property.type === 'Identifier' &&
+                parent.property.name === 'join'
+              ) {
+                current = parent;
+              } else if (parent?.type === 'CallExpression' && parent.callee === current) {
+                current = parent;
+              } else {
+                break;
+              }
+              parent = current.parent as TSESTree.Node | undefined;
+            }
+            if (
+              parent?.type === 'CallExpression' &&
+              (parent as TSESTree.CallExpression).arguments.includes(
+                current as TSESTree.CallExpressionArgument,
+              )
+            ) {
+              return current;
+            }
+            return undefined;
+          };
+
+          /** `escapeHtml` / `DOMPurify.sanitize` / `encodeURIComponent`… */
+          const sanitizerNames = new Set([
+            ...safeSanitizers,
+            ...trustedSanitizers,
+            'escapeHtml',
+            'escapeHTML',
+            'htmlEscape',
+          ]);
+          const calleeName = (callee: TSESTree.Node): string | undefined => {
+            if (callee.type === 'Identifier') return callee.name;
+            if (
+              callee.type === 'MemberExpression' &&
+              callee.object.type === 'Identifier' &&
+              callee.property.type === 'Identifier'
+            ) {
+              return `${callee.object.name}.${callee.property.name}`;
+            }
+            return undefined;
+          };
+
+          /**
+           * Every leaf is either text the developer typed or a value that has
+           * been run through a sanitizer — nothing an attacker controls
+           * reaches the sink unescaped.
+           */
+          const isSafeText = (expr: TSESTree.Node): boolean => {
+            if (expr.type === 'Literal') return typeof expr.value === 'string';
+            if (expr.type === 'TemplateLiteral') return expr.expressions.length === 0;
+            if (expr.type === 'BinaryExpression' && expr.operator === '+') {
+              return isSafeText(expr.left) && isSafeText(expr.right);
+            }
+            if (expr.type === 'ObjectExpression') {
+              return expr.properties.every(
+                (property) =>
+                  property.type === 'Property' && isSafeText(property.value),
+              );
+            }
+            if (expr.type === 'CallExpression') {
+              const callee = expr.callee;
+              // ['<h1>', '<li>…'].join('\n') — express/examples/resource
+              // builds eight lines of static markup this way, and every one
+              // of them was reported.
+              if (
+                callee.type === 'MemberExpression' &&
+                callee.property.type === 'Identifier' &&
+                callee.property.name === 'join' &&
+                callee.object.type === 'ArrayExpression'
+              ) {
+                return callee.object.elements.every(
+                  (element) => element !== null && isSafeText(element),
+                );
+              }
+              // `res.send('user ' + escapeHtml(req.params.uid) + "'s pets")`
+              // — this rule exists to demand escaping, and was reporting the
+              // code that escapes. Only *named* sanitizers count; an
+              // arbitrary call still taints the concatenation.
+              const name = calleeName(callee);
+              return name !== undefined && sanitizerNames.has(name);
+            }
+            return false;
+          };
+
+          const argument = enclosingArgument(node as TSESTree.Node);
+          const isBareLiteral = argument !== undefined && isSafeText(argument);
           const hasDangerousMarkup =
             /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(text);
           if (isBareLiteral && !hasDangerousMarkup) {
