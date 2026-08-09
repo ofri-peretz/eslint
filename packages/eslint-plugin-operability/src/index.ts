@@ -34,7 +34,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-operability',
-    version: '3.0.15',
+    version: '3.0.16',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
