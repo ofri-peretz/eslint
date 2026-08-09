@@ -11,6 +11,107 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-error-swallowing', noErrorSwallowing, {
   valid: [
+    // ── The four ILB-CWE-Corpus fixtures this rule used to report ────────
+    // Each is the *correct, secure* form of its pattern. Together they were
+    // 4 of the suite's 16 false positives — a quarter, from one rule.
+    //
+    // A safe fallback value. The old check demanded the returned expression
+    // match /500|error|fail/, so `return '#'` from a scheme allowlist and
+    // `return false` from a hostname validator both read as swallowing.
+    {
+      name: 'CWE-020/scheme-allowlist — catch returns a safe fallback',
+      code: `
+        function sanitizeHref(raw) {
+          try {
+            const parsed = new URL(raw, window.location.origin);
+            return ALLOWED_PROTOCOLS.includes(parsed.protocol) ? parsed.href : '#';
+          } catch (err) {
+            return '#';
+          }
+        }
+      `,
+    },
+    {
+      name: 'CWE-020/url-parse-hostname — catch returns false',
+      code: `
+        function isTrustedApi(url) {
+          try {
+            return new URL(url).hostname === 'trusted.com';
+          } catch (err) {
+            return false;
+          }
+        }
+      `,
+    },
+    // Forwarding to an error handler is `throw` spelled asynchronously —
+    // Express's error middleware is reached no other way.
+    {
+      name: 'CWE-209/generic-error-response — catch forwards via next(err)',
+      code: `
+        app.get('/reports/:id', async (req, res, next) => {
+          try {
+            res.json(await loadReport(req.params.id));
+          } catch (err) {
+            next(err);
+          }
+        });
+      `,
+    },
+    // Answering the request is handling it. No return statement here — the
+    // response happens inside an if — so the old return check never applied.
+    {
+      name: 'CWE-248/pipeline-promises — catch answers the request',
+      code: `
+        async function download(req, res) {
+          try {
+            await pipeline(fs.createReadStream('./uploads/report.json'), res);
+          } catch {
+            if (!res.headersSent) res.status(404).end();
+          }
+        }
+      `,
+    },
+    // Related shapes the AST rewrite must also accept.
+    {
+      name: 'promise rejection is propagation',
+      code: `
+        new Promise((resolve, reject) => {
+          try { risky(); } catch (error) { reject(error); }
+        });
+      `,
+    },
+    {
+      name: 'node-style callback is propagation',
+      code: `try { risky(); } catch (error) { callback(error); }`,
+    },
+    {
+      name: 'logger reached through a member chain',
+      code: `try { risky(); } catch (error) { this.logger.error('failed', error); }`,
+    },
+    {
+      name: 'sentry capture counts as recording',
+      code: `try { risky(); } catch (error) { Sentry.captureException(error); }`,
+    },
+    {
+      name: 'logging from inside a nested callback still records',
+      code: `
+        try { risky(); } catch (error) {
+          process.nextTick(() => { console.error('failed', error); });
+        }
+      `,
+    },
+    // Object returns that carry no success claim are fail-closed fallbacks:
+    // no status-like key at all, and a status whose value is computed rather
+    // than a literal (nothing to read, so nothing to treat as 2xx).
+    {
+      name: 'object fallback with no status key is fail-closed',
+      code: `try { risky(); } catch (error) { return { data: [] }; }`,
+    },
+    {
+      name: 'object fallback with a computed status is fail-closed',
+      code: `try { risky(); } catch (error) { return { statusCode: fallbackCode }; }`,
+    },
+    // ── end corpus regressions ──────────────────────────────────────────
     // Rethrows the error — not swallowed
     {
       code: `
@@ -183,6 +284,99 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
   ],
 
   invalid: [
+    // ── FN boundary for the AST rewrite above ───────────────────────────
+    // Widening a rule to kill false positives is exactly how a false
+    // negative gets introduced (see #441, where excluding TemplateLiteral
+    // by name silenced `res.send(req.query.name || '<p>x</p>')`). These pin
+    // the edge of each new exemption.
+    //
+    // `return <value>` is a deliberate fallback; a bare `return;` records
+    // nothing and produces nothing. It must still report.
+    {
+      name: 'bare return is still swallowing',
+      code: `
+        function attempt() {
+          try {
+            riskyOperation();
+          } catch (error) {
+            return;
+          }
+        }
+      `,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // The mirror of the two valid fallback cases above, and the reason the
+    // exemption is written in terms of fail-closed rather than "returns a
+    // value". `return false` from a hostname validator denies; `return true`
+    // from an auth check grants access on a malformed token. One token apart,
+    // opposite sides of the line. A draft of this fix exempted both and turned
+    // this exact corpus fixture into a false negative.
+    {
+      name: 'CWE-636/catch-returns-true — fail-open auth must still report',
+      code: `
+        function isAuthorized(token) {
+          try {
+            return verifyToken(token).valid;
+          } catch (err) {
+            return true;
+          }
+        }
+      `,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'fail-open object literal must still report',
+      code: `try { risky(); } catch (error) { return { authorized: true }; }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // A non-forwarding call must not be mistaken for propagation just
+    // because a call is present.
+    {
+      name: 'an unrelated call is not propagation',
+      code: `try { risky(); } catch (error) { cleanup(); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // The caught error going nowhere, with a response object present but no
+    // response method called on it.
+    {
+      name: 'touching res without answering is still swallowing',
+      code: `
+        function handler(req, res) {
+          try { risky(); } catch (error) { res.locals.failed = true; }
+        }
+      `,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'return undefined is still swallowing',
+      code: `
+        function attempt() {
+          try { riskyOperation(); } catch (error) { return undefined; }
+        }
+      `,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // Member chains the AST walk has to survive without mistaking them for a
+    // logger. A string-literal property is not an Identifier, so the chain
+    // yields no usable method name — the rule must fall through to reporting
+    // rather than treat the empty name as a match.
+    {
+      name: 'string-keyed member call is not logging',
+      code: `try { risky(); } catch (error) { registry['run'](); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'string-keyed nested member call is not logging',
+      code: `try { risky(); } catch (error) { services['audit'].dispatch(error); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // A callee that is itself a call — neither Identifier nor MemberExpression.
+    {
+      name: 'immediately-invoked handler lookup is not logging',
+      code: `try { risky(); } catch (error) { (getHandler())(error); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // ── end FN boundary ─────────────────────────────────────────────────
     // Empty catch block — classic error swallowing (has suggestion with fix)
     {
       code: `

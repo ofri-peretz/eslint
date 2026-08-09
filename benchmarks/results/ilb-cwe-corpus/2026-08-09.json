@@ -1,7 +1,7 @@
 {
   "bench": "ILB-CWE-Corpus",
   "version": "1.0",
-  "timestamp": "2026-08-09T16:26:14.541Z",
+  "timestamp": "2026-08-09T17:04:36.607Z",
   "environment": {
     "nodeVersion": "v24.12.0",
     "eslintVersion": "10.7.0",
@@ -426,13 +426,13 @@
           "name": "Improper Input Validation (validation-bypass cluster)",
           "owasp": "A03:2021",
           "TP": 3,
-          "FP": 5,
+          "FP": 3,
           "FN": 2,
-          "TN": 0,
-          "precision": 37.5,
+          "TN": 2,
+          "precision": 50,
           "recall": 60,
-          "f1": 46.2,
-          "bas": -40,
+          "f1": 54.5,
+          "bas": 0,
           "fixtures": [
             {
               "file": "incomplete-hostname-regexp.js",
@@ -497,18 +497,14 @@
             {
               "file": "scheme-allowlist.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "lambda-security/no-error-swallowing": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             },
             {
               "file": "url-parse-hostname.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "lambda-security/no-error-swallowing": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             }
           ]
         },
@@ -1069,47 +1065,43 @@
           "name": "Generation of Error Message Containing Sensitive Information (stack-trace exposure)",
           "owasp": "A05:2021",
           "TP": 2,
-          "FP": 1,
+          "FP": 0,
           "FN": 0,
-          "TN": 0,
-          "precision": 66.7,
+          "TN": 1,
+          "precision": 100,
           "recall": 100,
-          "f1": 80,
-          "bas": 0,
+          "f1": 100,
+          "bas": 100,
           "fixtures": [
             {
               "file": "error-object-in-json.js",
               "expectedVulnerable": true,
-              "findings": 8,
+              "findings": 7,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "express-security/require-csrf-protection": 1,
                 "express-security/no-missing-csrf-protection": 1,
                 "express-security/require-route-authentication": 1,
-                "lambda-security/no-error-swallowing": 1,
                 "express-security/no-error-details-in-response": 2
               }
             },
             {
               "file": "stack-in-response.js",
               "expectedVulnerable": true,
-              "findings": 7,
+              "findings": 6,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "lambda-security/no-missing-authorization-check": 2,
-                "express-security/no-error-details-in-response": 2,
-                "lambda-security/no-error-swallowing": 1
+                "express-security/no-error-details-in-response": 2
               }
             },
             {
               "file": "generic-error-response.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "lambda-security/no-error-swallowing": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             }
           ]
         },
@@ -1152,10 +1144,9 @@
             {
               "file": "pipeline-promises.js",
               "expectedVulnerable": false,
-              "findings": 2,
+              "findings": 1,
               "ruleHits": {
-                "node-security/detect-non-literal-fs-filename": 1,
-                "lambda-security/no-error-swallowing": 1
+                "node-security/detect-non-literal-fs-filename": 1
               }
             }
           ]
@@ -1843,13 +1834,13 @@
       },
       "aggregate": {
         "TP": 51,
-        "FP": 16,
+        "FP": 13,
         "FN": 18,
-        "TN": 44,
-        "precision": 76.1,
+        "TN": 47,
+        "precision": 79.7,
         "recall": 73.9,
-        "f1": 75,
-        "bas": 47.2
+        "f1": 76.7,
+        "bas": 52.2
       }
     },
     "eslint-plugin-security": {
