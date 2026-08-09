@@ -83,6 +83,20 @@ describe('no-improper-sanitization', () => {
             { messageId: 'unsafeReplaceSanitization' },
           ],
         },
+        // The literal is a fallback, not the argument — tainted input still
+        // reaches the sink. An earlier version of this exemption excluded
+        // TemplateLiteral/BinaryExpression by name and silenced both of these,
+        // turning a false-positive fix into a false negative. The exemption is
+        // now an allowlist (literal IS the argument), so any wrapper falls
+        // through to the normal checks.
+        {
+          code: `res.send(req.query.name || '<p>fallback</p>');`,
+          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+        },
+        {
+          code: `res.send(flag ? req.query.name : '<p>x</p>');`,
+          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+        },
       ],
     });
   });

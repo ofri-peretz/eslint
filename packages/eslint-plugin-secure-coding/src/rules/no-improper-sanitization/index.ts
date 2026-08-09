@@ -517,9 +517,20 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           //
           // Dangerous markup still reports even when hardcoded, because there
           // the literal *is* the vector regardless of who wrote it.
-          const isBareLiteral =
-            directParent?.type !== 'TemplateLiteral' &&
-            directParent?.type !== 'BinaryExpression';
+          //
+          // Allowlist, not blacklist. Excluding TemplateLiteral/BinaryExpression
+          // silenced `res.send(req.query.name || '<p>fallback</p>')` and the
+          // ternary form, where tainted input still reaches the sink — a false
+          // negative is a worse outcome than the false positive being fixed.
+          // The literal only earns the exemption when it IS the argument, so
+          // any wrapper (`||`, `?:`, a call, a member access) falls through to
+          // the normal checks below.
+          const isDirectResponseArgument =
+            directParent?.type === 'CallExpression' &&
+            (directParent as TSESTree.CallExpression).arguments.includes(
+              node as TSESTree.CallExpressionArgument,
+            );
+          const isBareLiteral = isDirectResponseArgument;
           const hasDangerousMarkup =
             /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(text);
           if (isBareLiteral && !hasDangerousMarkup) {
