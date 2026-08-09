@@ -221,6 +221,14 @@ jobs:
       #      for free instead of waking a function on eslint.interlace.tools.
       - name: Prepare Pages artifact
         run: |
+          set -euo pipefail
+          # Fail with a readable reason rather than a bare `cp` error: an empty
+          # badge dir means the compose step produced nothing, and deploying it
+          # would replace working badges on Pages with 404s.
+          if [ -z "$(ls -A benchmark-results/badges 2>/dev/null)" ]; then
+            echo "::error::No badges were generated — refusing to deploy an empty site."
+            exit 1
+          fi
           mkdir -p _site/badges
           cp -r benchmark-results/badges/. _site/badges/
           # Ship the human-readable breakdown next to the badges so the
