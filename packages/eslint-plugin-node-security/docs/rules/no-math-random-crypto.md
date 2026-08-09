@@ -59,6 +59,11 @@ const j = Math.floor(Math.random() * deck.length);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow Math.random() in test files |
+
+
 ```js
 {
   "node-security/no-math-random-crypto": ["error", { "allowInTests": false }]

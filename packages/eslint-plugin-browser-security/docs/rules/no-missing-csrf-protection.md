@@ -141,12 +141,12 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Options
 
-| Option                   | Type       | Default                              | Description                   |
-| ------------------------ | ---------- | ------------------------------------ | ----------------------------- |
-| `allowInTests`           | `boolean`  | `false`                              | Allow missing CSRF in tests   |
-| `csrfMiddlewarePatterns` | `string[]` | `['csrf', 'csurf', ...]`             | CSRF middleware patterns      |
-| `protectedMethods`       | `string[]` | `['post', 'put', 'delete', 'patch']` | HTTP methods requiring CSRF   |
-| `ignorePatterns`         | `string[]` | `[]`                                 | Additional patterns to ignore |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CSRF protection in test files |
+| `csrfMiddlewarePatterns` | `string[]` | `[]` | CSRF middleware patterns to recognize |
+| `protectedMethods` | `string[]` | `[]` | HTTP methods that require CSRF protection |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ### Example Configuration
 

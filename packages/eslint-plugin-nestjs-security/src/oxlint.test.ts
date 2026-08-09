@@ -28,14 +28,15 @@ describe('eslint-plugin-nestjs-security/oxlint sub-export', () => {
       fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'),
     );
     expect(pkgJson.exports['./oxlint']).toEqual({
-      types: './src/oxlint.d.ts',
-      default: './src/oxlint.js',
+      types: './dist/src/oxlint.d.ts',
+      default: './dist/src/oxlint.js',
     });
   });
 
   it('re-exports the plugin object (meta + rules at top level)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     expect(oxlintPlugin).toBeDefined();
     expect(oxlintPlugin.meta?.name).toBe('eslint-plugin-nestjs-security');
     expect(oxlintPlugin.rules).toBeDefined();
@@ -43,7 +44,8 @@ describe('eslint-plugin-nestjs-security/oxlint sub-export', () => {
 
   it('exposes the same rule names as the main entry (no rules dropped)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     expect(Object.keys(oxlintPlugin.rules || {}).toSorted()).toEqual(
       Object.keys(mainPlugin.rules || {}).toSorted(),
     );
@@ -51,7 +53,8 @@ describe('eslint-plugin-nestjs-security/oxlint sub-export', () => {
 
   it('exposes the same rule references (pass-through, not a copy)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     for (const ruleName of Object.keys(mainPlugin.rules || {})) {
       expect(oxlintPlugin.rules?.[ruleName]).toBe(
         (mainPlugin.rules as Record<string, unknown>)[ruleName],

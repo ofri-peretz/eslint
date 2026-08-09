@@ -62,7 +62,27 @@ describe('no-debug-mode-production', () => {
         // Triggers debugModeProduction: debug mode in production
         {
           code: `mongoose.set('debug', true);`,
-          errors: [{ messageId: 'debugModeProduction' }],
+          errors: [{
+        messageId: 'debugModeProduction',
+        suggestions: [{ messageId: 'suggestionGateOnNodeEnv', output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');` }],
+      }],
+        },
+      ],
+    });
+  });
+describe('Suggestions', () => {
+    ruleTester.run('suggestion - gates debug on NODE_ENV', noDebugModeProduction, {
+      valid: [],
+      invalid: [
+        {
+          code: `mongoose.set('debug', true);`,
+          errors: [{
+            messageId: 'debugModeProduction',
+            suggestions: [{
+              messageId: 'suggestionGateOnNodeEnv',
+              output: `mongoose.set('debug', process.env.NODE_ENV !== 'production');`,
+            }],
+          }],
         },
       ],
     });

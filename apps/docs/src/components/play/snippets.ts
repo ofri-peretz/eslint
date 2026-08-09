@@ -275,8 +275,24 @@ export function pluginsInSnippet(snippet: PlaygroundSnippet): string[] {
  * actually exists in `packages/`.
  */
 export function pluginPrefixToPackage(prefix: string): string {
-  return `eslint-plugin-${prefix}`;
+  return RENAMED_PREFIXES[prefix] ?? `eslint-plugin-${prefix}`;
 }
+
+/**
+ * Prefixes whose package name is no longer `eslint-plugin-<prefix>`.
+ *
+ * Both plugins were renamed to `-security` and the old npm packages are
+ * deprecated, but the **rule namespace was deliberately kept** so nothing
+ * downstream had to move. That is exactly what breaks the derivation: `jwt/…`
+ * findings are served by `eslint-plugin-jwt-security`, not `eslint-plugin-jwt`.
+ * Left underived, the copy-config button handed users an install line for a
+ * deprecated package — the same class of bug the derivation was introduced to
+ * kill, so it stays derived-by-default with these two as named exceptions.
+ */
+const RENAMED_PREFIXES: Readonly<Record<string, string>> = {
+  jwt: 'eslint-plugin-jwt-security',
+  pg: 'eslint-plugin-postgresql-security',
+};
 
 /**
  * Map a plugin prefix to the JS identifier we use in the generated config

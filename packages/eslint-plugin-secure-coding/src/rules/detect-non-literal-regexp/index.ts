@@ -104,6 +104,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       description: 'Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression',
       cwe: 'CWE-400',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 41% reduction (51→30 tokens) - compact template variables
       regexpReDoS: formatLLMMessage({

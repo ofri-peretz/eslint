@@ -25,6 +25,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'xxeInjection'
@@ -43,16 +44,72 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * Does this receiver name an XML parser?
+ *
+ * Allowlist rather than a denylist of non-XML `parse` receivers: a new
+ * `csv.parse` or `toml.parse` should be silent by default, and being wrong in
+ * that direction costs a false positive on every consumer's JSON handling.
+ */
+/**
+ * Receivers that name an XML parser.
+ *
+ * Explicit XML tokens only. The previous shape was `/xml|dom|libxml|parser$/i`,
+ * which decided XXE from a name's spelling: the `parser$` SUFFIX matched
+ * `jsonParser`, `csvParser`, and `htmlParser`, and an unanchored `dom` matched
+ * `random`, `domain`, and `freedom`. A receiver's name is not evidence about
+ * the format it parses, so the suffix is gone and `dom` is anchored to the
+ * shapes that really are DOM parsers.
+ *
+ * A receiver named exactly `parser` stays: it is the conventional name for the
+ * XML parser in this rule's own sinks, and being anchored it cannot reach
+ * `jsonParser`. It is still a name rather than a resolved binding — narrowing
+ * it further wants construction-site resolution, not a tighter regex.
+ */
+const XML_RECEIVER = /xml|^dom$|domparser|jsdom|libxml|^sax$|^expat$|^parser$/i;
+
+const isXmlReceiver = (node: TSESTree.Node): boolean => {
+  if (node.type === AST_NODE_TYPES.Identifier)
+    return XML_RECEIVER.test(node.name);
+  if (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    return XML_RECEIVER.test(node.property.name);
+  }
+  if (
+    node.type === AST_NODE_TYPES.NewExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier
+  ) {
+    return XML_RECEIVER.test(node.callee.name);
+  }
+  return false;
+};
+
+/**
  * Check if this is an XML parsing operation
  */
 const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
   const callee = node.callee;
 
   // Check for XML library method calls
-  if (callee.type === 'MemberExpression' &&
-      callee.property.type === 'Identifier' &&
-      ['parse', 'parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(callee.property.name)) {
-    return true;
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    const method = callee.property.name;
+
+    // These names are XML-specific — the receiver adds nothing.
+    if (['parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(method)) {
+      return true;
+    }
+
+    // `parse` is not. `JSON.parse(fs.readFileSync(f, 'utf-8'))` matched this
+    // rule and reported CWE-611 on JSON — measured across this monorepo. So a
+    // bare `parse` has to be positively identified as XML by its receiver;
+    // `Date.parse`, `path.parse`, `url.parse` and `JSON.parse` all fall out.
+    if (method === 'parse') {
+      return isXmlReceiver(callee.object);
+    }
   }
 
   // Check for constructor calls

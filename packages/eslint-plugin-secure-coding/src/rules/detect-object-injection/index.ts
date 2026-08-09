@@ -118,6 +118,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-915',
       confidence: 'low',
     },
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 37% reduction (54→34 tokens) - removes verbose current/fix/doc labels
       objectInjection: formatLLMMessage({

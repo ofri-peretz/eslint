@@ -85,8 +85,8 @@ const fs = require("fs");
 
 ## Options
 
-| Option               | Type      | Default | Description                                                     |
-| -------------------- | --------- | ------- | --------------------------------------------------------------- |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
 | `allowDynamicImport` | `boolean` | `false` | Allow ES6 dynamic `import()` (generally safer than `require()`) |
 
 ### Allow Dynamic Import

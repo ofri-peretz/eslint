@@ -195,3 +195,71 @@ ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
     },
   ],
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SDK version compatibility.
+// v4 bounded the tool loop with `maxSteps`; v5+ replaced it with
+// `stopWhen` (idiomatically `stopWhen: stepCountIs(n)` — `maxSteps` no longer
+// exists in ai@6). Both must satisfy the rule, or every v5+ codebase gets a
+// false positive.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxSteps, {
+  valid: [
+    // v5+: the canonical replacement
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          tools: { weather: weatherTool },
+          stopWhen: stepCountIs(5),
+        });
+      `,
+    },
+    // v5+: streamText with stopWhen
+    {
+      code: `
+        await streamText({
+          model: anthropic('claude-3'),
+          prompt: 'Hello',
+          tools: { search: searchTool },
+          stopWhen: stepCountIs(10),
+        });
+      `,
+    },
+    // v5+: stopWhen accepts an array of conditions
+    {
+      code: `
+        await generateText({
+          tools: { weather: weatherTool },
+          stopWhen: [stepCountIs(5), hasToolCall('final')],
+        });
+      `,
+    },
+    // v5+: any StopCondition terminates the loop, not just stepCountIs
+    { code: `generateText({ tools: myTools, stopWhen: hasToolCall('answer') });` },
+    // v5+: string-literal key
+    { code: `generateText({ tools: myTools, 'stopWhen': stepCountIs(3) });` },
+    // v4 spelling still accepted
+    { code: `generateText({ tools: myTools, maxSteps: 3 });` },
+  ],
+  invalid: [
+    // v5+ call with tools and no bound at all is still reported
+    {
+      code: `
+        await generateText({
+          model: openai('gpt-4'),
+          prompt: 'Hello',
+          tools: { weather: weatherTool },
+          maxOutputTokens: 4096,
+        });
+      `,
+      errors: [{ messageId: 'missingMaxSteps' }],
+    },
+    // near-miss key must not be mistaken for the real option
+    {
+      code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });`,
+      errors: [{ messageId: 'missingMaxSteps' }],
+    },
+  ],
+});

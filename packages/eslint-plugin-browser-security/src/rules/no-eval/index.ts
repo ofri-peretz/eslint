@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createPayloadResolver } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -87,6 +88,8 @@ export const noEval = createRule<RuleOptions, MessageIds>({
           allowFunctionConstructor: {
             type: 'boolean',
             default: false,
+            description:
+              'Allow `new Function(...)` while still reporting `eval()`',
           },
         },
         additionalProperties: false,
@@ -114,9 +117,18 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    const payloadSource = createPayloadResolver(context.sourceCode);
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+
+        // WebSocket only. `no-websocket-eval` is the ONLY eval rule with a
+        // source of its own, so skipping every resolved source would drop
+        // Worker, SharedWorker and FileReader payloads entirely — nobody would
+        // report them. The complement is per-SINK, not per-resolver.
+        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
+          return;
 
         // Check for eval(), execScript()
         if (callee.type === 'Identifier') {
@@ -197,6 +209,14 @@ export const noEval = createRule<RuleOptions, MessageIds>({
 
       // Check for new Function()
       NewExpression(node: TSESTree.NewExpression) {
+        // Same ownership gate as CallExpression below. Without it
+        // `new Function(event.data)` in a WebSocket handler reports from BOTH
+        // no-websocket-eval and here — the exact double-report this rule pair
+        // exists to prevent, and the complement only holds if every reporting
+        // path asks the question.
+        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
+          return;
+
         if (allowFunctionConstructor) {
           return;
         }

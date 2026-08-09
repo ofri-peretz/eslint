@@ -48,6 +48,18 @@ describe('require-tls-connection', () => {
         {
           code: `mongoose.connect(uri, { tls: true });`,
         },
+        // Quoted keys are the same config. Matching only identifier keys
+        // reported these as missing TLS — a false positive on secure code,
+        // and the reason the report used to carry no suggestion.
+        {
+          code: `mongoose.connect(uri, { 'tls': true });`,
+        },
+        {
+          code: `mongoose.connect(uri, { "ssl": true });`,
+        },
+        {
+          code: `mongoose.createConnection(uri, { 'ssl': true, w: 1 });`,
+        },
         // Allowed in test files
         {
           code: `if (x == y) {}`,
@@ -66,7 +78,55 @@ describe('require-tls-connection', () => {
         // Triggers requireTls: no TLS configured
         {
           code: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true });`,
-          errors: [{ messageId: 'requireTls' }],
+          errors: [{
+        messageId: 'requireTls',
+        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });` }],
+      }],
+        },
+      ],
+    });
+  });
+describe('Suggestions', () => {
+    ruleTester.run('suggestion - adds tls: true', requireTlsConnection, {
+      valid: [],
+      invalid: [
+        // Existing options object: merge the property in.
+        {
+          code: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true });`,
+          errors: [{
+            messageId: 'requireTls',
+            suggestions: [{
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true, tls: true });`,
+            }],
+          }],
+        },
+        // Empty options object: replace it wholesale.
+        {
+          code: `mongoose.connect('mongodb://localhost/db', {});`,
+          errors: [{
+            messageId: 'requireTls',
+            suggestions: [{
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
+            }],
+          }],
+        },
+        // No options argument at all: append one.
+        {
+          code: `mongoose.connect('mongodb://localhost/db');`,
+          errors: [{
+            messageId: 'requireTls',
+            suggestions: [{
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect('mongodb://localhost/db', { tls: true });`,
+            }],
+          }],
+        },
+        // Non-object second argument: no mechanical rewrite, no suggestion.
+        {
+          code: `mongoose.connect('mongodb://localhost/db', connectOptions);`,
+          errors: [{ messageId: 'requireTls', suggestions: [] }],
         },
       ],
     });

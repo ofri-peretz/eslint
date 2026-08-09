@@ -192,17 +192,17 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           dangerousFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['eval', 'Function', 'setTimeout', 'setInterval', 'unserialize', 'deserialize', 'parseUnsafe'],
+            default: ['eval', 'Function', 'setTimeout', 'setInterval', 'unserialize', 'deserialize', 'parseUnsafe'], description: 'Functions that execute or deserialize untrusted input'
           },
           safeLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['JSON', 'safe-json-parse', 'js-yaml.safeLoad', 'protobuf', 'msgpack'],
+            default: ['JSON', 'safe-json-parse', 'js-yaml.safeLoad', 'protobuf', 'msgpack'], description: 'Parsers that do not execute their input'
           },
           validationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateInput', 'sanitizeData', 'checkSchema', 'validateSchema'],
+            default: ['validateInput', 'sanitizeData', 'checkSchema', 'validateSchema'], description: 'Function names that count as input validation'
           },
           trustedSanitizers: {
             type: 'array',

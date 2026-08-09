@@ -148,12 +148,16 @@ const safeQuery = buildQuery({ user: { id: userId } });
 
 ## Options
 
-| Option                    | Type       | Default                        | Description                 |
-| ------------------------- | ---------- | ------------------------------ | --------------------------- |
-| `allowIntrospection`      | `boolean`  | `false`                        | Allow introspection queries |
-| `maxQueryDepth`           | `number`   | `10`                           | Maximum allowed query depth |
-| `trustedGraphqlLibraries` | `string[]` | `['graphql', 'apollo-server']` | Safe GraphQL libraries      |
-| `validationFunctions`     | `string[]` | `['validate', 'sanitize']`     | Input validation functions  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowIntrospection` | `boolean` | `false` | Allow introspection queries |
+| `maxQueryDepth` | `number` | `10` | Maximum query nesting depth before reporting a DoS risk |
+| `trustedGraphqlLibraries` | `string[]` | `["graphql","apollo-server","graphql-tools","graphql-tag"]` | GraphQL libraries recognised as query builders |
+| `validationFunctions` | `string[]` | `["validate","sanitize","isValid","assertValid"]` | Function names that count as query validation |
+| `safeTemplateLiteralCallers` | `string[]` | `[]` | Additional callers where template literals are never GraphQL. Format: object.method or ClassName. |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as GraphQL sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

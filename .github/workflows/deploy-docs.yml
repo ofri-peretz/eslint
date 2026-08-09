@@ -72,7 +72,7 @@ jobs:
       # verify a `target=preview` dispatch end-to-end first.
       VERCEL_CLI_VERSION: 54.20.1
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.ref || github.ref }}
           fetch-depth: 1

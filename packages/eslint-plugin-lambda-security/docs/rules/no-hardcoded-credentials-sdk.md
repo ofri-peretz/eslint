@@ -140,9 +140,9 @@ const client = new S3Client({
 
 ## Options
 
-| Option         | Type      | Default | Description                               |
-| -------------- | --------- | ------- | ----------------------------------------- |
-| `allowInTests` | `boolean` | `true`  | Allow hardcoded credentials in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Allow hardcoded credentials in test files |
 
 ```json
 {

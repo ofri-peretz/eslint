@@ -46,7 +46,6 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-200',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       selectSensitiveFields: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -60,7 +59,7 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://mongoosejs.com/docs/api/query.html#Query.prototype.select()',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true }, sensitiveFields: { type: 'array', items: { type: 'string' } }, requireVisibleSensitiveField: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true }, sensitiveFields: { type: 'array', items: { type: 'string' }, description: 'Document field names treated as sensitive' }, requireVisibleSensitiveField: { type: 'boolean', default: true, description: 'Only report when a sensitive field is visibly selected' } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true, sensitiveFields: DEFAULT_SENSITIVE_FIELDS, requireVisibleSensitiveField: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {

@@ -94,7 +94,6 @@ export const preferTreeShakeableImports = createRule<RuleOptions, MessageIds>({
       description:
         'Prefer import patterns that enable effective tree-shaking',
     },
-    hasSuggestions: true,
     messages: {
       namespaceImport: formatLLMMessage({
         icon: MessageIcons.INFO,

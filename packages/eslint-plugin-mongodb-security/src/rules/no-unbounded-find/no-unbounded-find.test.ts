@@ -62,7 +62,27 @@ describe('no-unbounded-find', () => {
         // Triggers unboundedFind: unbounded find without limit
         {
           code: `const results = await Model.find({});`,
-          errors: [{ messageId: 'unboundedFind' }],
+          errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `const results = await Model.find({}).limit(100);` }],
+      }],
+        },
+      ],
+    });
+  });
+describe('Suggestions', () => {
+    ruleTester.run('suggestion - appends .limit(100)', noUnboundedFind, {
+      valid: [],
+      invalid: [
+        {
+          code: `const docs = await Model.find({ active: true });`,
+          errors: [{
+            messageId: 'unboundedFind',
+            suggestions: [{
+              messageId: 'suggestionAddLimit',
+              output: `const docs = await Model.find({ active: true }).limit(100);`,
+            }],
+          }],
         },
       ],
     });

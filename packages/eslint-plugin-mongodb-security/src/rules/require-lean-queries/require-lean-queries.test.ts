@@ -28,6 +28,18 @@ describe('require-lean-queries', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe patterns', requireLeanQueries, {
       valid: [
+        // Array.prototype.find — the receiver is not a Mongo handle. Ungated,
+        // this rule reported every `.find()` in every codebase: 115 findings on
+        // the Interlace repo alone, which contains no MongoDB. It ships in
+        // `recommended`, so that reached every consumer.
+        {
+          name: 'a plain array find is not a Mongo query',
+          code: 'const users = [1, 2, 3];\nconst u = users.find((x) => x === 2);',
+        },
+        {
+          name: 'a find with a predicate on an unknown receiver stays silent',
+          code: 'const entry = list.find((p) => p.name === key);',
+        },
         // Unrelated code should not trigger
         {
           code: `const x = 1;`,
@@ -62,7 +74,27 @@ describe('require-lean-queries', () => {
         // Triggers useLean: read query without .lean()
         {
           code: `const docs = await Model.find({ active: true });`,
-          errors: [{ messageId: 'useLean' }],
+          errors: [{
+        messageId: 'useLean',
+        suggestions: [{ messageId: 'suggestionAddLean', output: `const docs = await Model.find({ active: true }).lean();` }],
+      }],
+        },
+      ],
+    });
+  });
+describe('Suggestions', () => {
+    ruleTester.run('suggestion - appends .lean()', requireLeanQueries, {
+      valid: [],
+      invalid: [
+        {
+          code: `const docs = await Model.find({ active: true });`,
+          errors: [{
+            messageId: 'useLean',
+            suggestions: [{
+              messageId: 'suggestionAddLean',
+              output: `const docs = await Model.find({ active: true }).lean();`,
+            }],
+          }],
         },
       ],
     });

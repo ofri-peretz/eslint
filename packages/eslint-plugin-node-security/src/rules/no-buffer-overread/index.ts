@@ -66,7 +66,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       description: 'Detects buffer access beyond bounds',
       cwe: 'CWE-126',
     },
-    hasSuggestions: true,
     messages: {
       bufferOverread: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -187,17 +186,17 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           bufferMethods: {
             type: 'array',
             items: { type: 'string' },
-            default: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'copy'],
+            default: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'copy'], description: 'Buffer read/write methods checked for bounds'
           },
           boundsCheckFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
+            default: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'], description: 'Function names that count as a bounds check'
           },
           bufferTypes: {
             type: 'array',
             items: { type: 'string' },
-            default: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
+            default: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'], description: 'Constructor names treated as buffer types'
           },
           trustedSanitizers: {
             type: 'array',

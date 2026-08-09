@@ -177,3 +177,12 @@ obj[method](userInput);
 
 - **[OWASP Selective Data Exposure](https://owasp.org/www-community/vulnerabilities/Sensitive_Data_Exposure)** - Guidelines
 - **[CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitivePatterns` | `string[]` | `["password","passwd","secret","token","access_token","auth_token","ssn","credit_card","creditcard","api_key","apikey","secret_key","private_key","encryption_key"]` | Sensitive data patterns |
+| `checkConsoleLog` | `boolean` | `true` | Check console.log statements |
+| `checkErrorMessages` | `boolean` | `true` | Check error messages |
+| `checkApiResponses` | `boolean` | `true` | Check API responses |

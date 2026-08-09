@@ -98,7 +98,10 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if a token limit is present: maxTokens (v4) or maxOutputTokens (v5+ rename)
+        // Check if a token limit is present: maxTokens (v4) or maxOutputTokens (v5+ rename).
+        // Both spellings also appear snake_cased — the raw provider APIs use that
+        // form (OpenAI Responses `max_output_tokens`, Anthropic `max_tokens`), and
+        // options often reach the SDK straight from a provider-shaped config object.
         const hasMaxTokens = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
           const keyName = prop.key.type === 'Identifier'
@@ -106,7 +109,12 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
             : prop.key.type === 'Literal'
               ? String(prop.key.value)
               : null;
-          return keyName === 'maxTokens' || keyName === 'max_tokens' || keyName === 'maxOutputTokens';
+          return (
+            keyName === 'maxTokens' ||
+            keyName === 'max_tokens' ||
+            keyName === 'maxOutputTokens' ||
+            keyName === 'max_output_tokens'
+          );
         });
 
         if (!hasMaxTokens) {

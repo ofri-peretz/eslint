@@ -11,6 +11,7 @@ Internal repository documentation. User-facing rule docs live under `apps/docs/`
 ## Process & Workflow
 
 - [`PLUGIN-REVIEW-WORKFLOW.md`](./PLUGIN-REVIEW-WORKFLOW.md) — step-by-step review process for any plugin (used during release reviews).
+- [`AI_SDK_FAMILY.md`](./AI_SDK_FAMILY.md) — architecture and build plan for the per-provider LLM security plugins (MCP, OpenAI, Anthropic, Gemini): shared devkit detector factories, which package each rule ships in, and the phase checklist. Rule *content* stays in `roadmaps/`.
 - [`SDK_COMPATIBILITY_OVERVIEW.md`](./SDK_COMPATIBILITY_OVERVIEW.md) — system overview for the SDK compatibility tests in `.github/workflows/sdk-*.yml` (weekly checks against latest SDK versions).
 - [`SDK_COMPATIBILITY_TEMPLATE.md`](./SDK_COMPATIBILITY_TEMPLATE.md) — template + pattern doc for adding a new SDK compat test.
 

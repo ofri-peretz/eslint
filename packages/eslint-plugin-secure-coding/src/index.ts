@@ -122,7 +122,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-secure-coding',
-    version: '3.4.1',
+    version: '3.4.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -150,11 +150,28 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-redos-vulnerable-regex': 'error',
   'secure-coding/no-unsafe-regex-construction': 'error',
 
-  // High - Prototype pollution
-  'secure-coding/detect-object-injection': 'warn',
-
   // Critical - Credentials
   'secure-coding/no-hardcoded-credentials': 'error',
+
+  // NOTE: `detect-object-injection` is intentionally NOT in `recommended`
+  // (removed 2026-08-04). Measured over express + axios + sequelize it fired
+  // 535 times — 85% of everything `recommended` reported on those three
+  // repos (632 total). 528 of the 535 had no taint indicator anywhere on the
+  // line: `this.dataValues[attrName]`, `where[field] = insertValues[field]`,
+  // `Axios.prototype[method]`. Ordinary internal object manipulation.
+  //
+  // This is a design limit, not a tuning gap. The rule flags every computed
+  // key that does not match one of its hand-maintained "safe" heuristics, so
+  // the default answer on real code is "report". Making it precise needs the
+  // opposite contract — report only when the key is reachable from a taint
+  // source — which is dataflow analysis the rule does not do, and which its
+  // own fixtures contradict (`obj[config.key]` is asserted as a violation,
+  // and that is exactly the axios false positive).
+  //
+  // The rule stays exported and documented for teams that want the paranoid
+  // sweep and will triage it. It is not something to hand a new consumer as a
+  // default: at this precision it does not protect anyone, it just teaches
+  // them to disable the plugin.
 
   // NOTE: `no-insecure-comparison` is intentionally NOT in `recommended`
   // (removed 2026-07-31). It is `deprecated` in favour of

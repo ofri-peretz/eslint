@@ -134,6 +134,11 @@ mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1'); // Weak mechani
 
 ### Options from Variable
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+
 **Why**: Variable contents are not analyzed.
 
 ```typescript

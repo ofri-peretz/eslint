@@ -110,9 +110,9 @@ execa('git', ['clone', url]);
 
 ## Options
 
-| Option                | Type       | Default | Description                                                     |
-| --------------------- | ---------- | ------- | --------------------------------------------------------------- |
-| `extraCommandRunners` | `string[]` | `[]`    | Extra functions that accept a full command line without escaping |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `extraCommandRunners` | `string[]` | — | Extra functions that accept a full command line without escaping |
 
 ```json
 {

@@ -140,9 +140,9 @@ The source-level findings (`'unsafe-inline'`, `'unsafe-eval'`, wildcards) offer 
 
 ## Options
 
-| Option          | Type      | Default | Description                                                        |
-| --------------- | --------- | ------- | ------------------------------------------------------------------ |
-| `checkStyleSrc` | `boolean` | `true`  | Also report unsafe sources in `style-src` / `style-src-elem` / `style-src-attr` |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `checkStyleSrc` | `boolean` | — | Also report unsafe sources in style-executing directives |
 
 ```json
 {

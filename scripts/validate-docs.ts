@@ -32,8 +32,6 @@ const PACKAGES_DIR = path.join(ROOT_DIR, 'packages');
 
 const PLUGIN_NAMES = [
   'eslint-plugin-secure-coding',
-  'eslint-plugin-pg',
-  'eslint-plugin-jwt',
   'eslint-plugin-express-security',
   'eslint-plugin-nestjs-security',
   'eslint-plugin-lambda-security',

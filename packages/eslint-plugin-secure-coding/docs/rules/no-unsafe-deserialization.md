@@ -133,11 +133,14 @@ const obj = safeDeserialize(userInput);
 
 ## Options
 
-| Option                | Type       | Default                               | Description                         |
-| --------------------- | ---------- | ------------------------------------- | ----------------------------------- |
-| `dangerousFunctions`  | `string[]` | `['eval', 'Function', 'unserialize']` | Dangerous deserialization functions |
-| `safeLibraries`       | `string[]` | `['safe-serialize']`                  | Safe deserialization libraries      |
-| `validationFunctions` | `string[]` | `['isValidJson', 'validateInput']`    | Input validation functions          |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `dangerousFunctions` | `string[]` | `["eval","Function","setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
+| `safeLibraries` | `string[]` | `["JSON","safe-json-parse","js-yaml.safeLoad","protobuf","msgpack"]` | Parsers that do not execute their input |
+| `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | Function names that count as input validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

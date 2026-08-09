@@ -77,7 +77,6 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
         'Prefer using the node: protocol when importing Node.js builtin modules',
     },
     fixable: 'code',
-    hasSuggestions: true,
     messages: {
       preferNodeProtocol: formatLLMMessage({
         icon: MessageIcons.WARNING,

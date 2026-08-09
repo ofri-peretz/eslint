@@ -134,12 +134,15 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 ## Options
 
-| Option                    | Type       | Default              | Description                       |
-| ------------------------- | ---------- | -------------------- | --------------------------------- |
-| `maxStaticIterations`     | `number`   | `10000`              | Maximum allowed static iterations |
-| `userInputVariables`      | `string[]` | `['req', 'request']` | User input variable patterns      |
-| `allowWhileTrueWithBreak` | `boolean`  | `true`               | Allow while(true) with break      |
-| `maxRecursionDepth`       | `number`   | `100`                | Maximum recursion depth           |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `maxStaticIterations` | `number` | `10000` | Literal iteration count above which a loop is reported |
+| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input |
+| `allowWhileTrueWithBreak` | `boolean` | `true` | Allow `while (true)` when the body contains a `break` |
+| `maxRecursionDepth` | `number` | `10` | Recursion depth above which a call is reported |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as loop protectors |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

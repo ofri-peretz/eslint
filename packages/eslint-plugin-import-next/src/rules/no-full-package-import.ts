@@ -133,7 +133,6 @@ export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow full package imports from known large packages that prevent tree-shaking',
     },
-    hasSuggestions: true,
     messages: {
       fullPackageImport: formatLLMMessage({
         icon: MessageIcons.INFO,

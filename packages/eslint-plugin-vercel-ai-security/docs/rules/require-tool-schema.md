@@ -73,9 +73,9 @@ const weatherTool = tool({
 
 ## ⚙️ Options
 
-| Option                | Type       | Default                                   | Description                                |
-| --------------------- | ---------- | ----------------------------------------- | ------------------------------------------ |
-| `schemaPropertyNames` | `string[]` | `['inputSchema', 'parameters', 'schema']` | Property names considered as valid schemas |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow tools without inputSchema in test files |
 
 ## 🛡️ Why This Matters
 
@@ -146,7 +146,10 @@ const weatherTool = createTool({
 });
 ```
 
-**Mitigation**: Configure `schemaPropertyNames` for custom helpers.
+**Mitigation**: none available for custom helpers — the schema property names
+this rule looks for are fixed and not configurable. Declare the tool directly
+instead, with `tool({ inputSchema })` on AI SDK v5+ or `tool({ parameters })`
+on v4; both satisfy the rule.
 
 ## 📚 References
 
