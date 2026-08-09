@@ -64,18 +64,26 @@ RUN apk add --no-cache git
 # Verified — that is not a style preference.)
 WORKDIR /
 RUN printf '{"name":"interlace-image","private":true}' > /package.json
+# Pinned, not `@latest`: an unpinned install makes the image non-reproducible
+# (two builds of the same Dockerfile ship different rules) and is what
+# Scorecard's PinnedDependenciesID flags. Bump these deliberately.
+#
+# `eslint-plugin-jwt` and `eslint-plugin-pg` used to be listed here. Both were
+# renamed to their `-security` names and their sources removed from the
+# monorepo, so the image was shipping two superseded packages and omitting
+# their replacements.
 RUN npm install --no-fund --no-audit --omit=dev \
-      eslint@latest \
-      eslint-plugin-secure-coding@latest \
-      eslint-plugin-browser-security@latest \
-      eslint-plugin-node-security@latest \
-      eslint-plugin-jwt@latest \
-      eslint-plugin-express-security@latest \
-      eslint-plugin-lambda-security@latest \
-      eslint-plugin-mongodb-security@latest \
-      eslint-plugin-nestjs-security@latest \
-      eslint-plugin-vercel-ai-security@latest \
-      eslint-plugin-pg@latest
+      eslint@10.8.1 \
+      eslint-plugin-secure-coding@3.4.4 \
+      eslint-plugin-browser-security@1.2.14 \
+      eslint-plugin-node-security@4.8.1 \
+      eslint-plugin-jwt-security@2.3.2 \
+      eslint-plugin-express-security@1.5.5 \
+      eslint-plugin-lambda-security@1.3.3 \
+      eslint-plugin-mongodb-security@8.3.5 \
+      eslint-plugin-nestjs-security@2.2.0 \
+      eslint-plugin-vercel-ai-security@1.5.3 \
+      eslint-plugin-postgresql-security@1.5.2
 
 # ─── runtime ────────────────────────────────────────────────────────────────
 FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14
