@@ -83,6 +83,14 @@ function loadFailure(absPath: string): string {
     execFileSync(process.execPath, ['--input-type=module', '-e', probe], {
       stdio: ['ignore', 'ignore', 'pipe'],
       encoding: 'utf-8',
+      // execFileSync blocks the event loop, so the per-case `timeout: 30_000`
+      // below cannot fire while it waits — a config whose import hangs (a
+      // top-level await on something unresolved, a plugin probing the network)
+      // would hang the whole run rather than fail it, which is the opposite of
+      // what a guard against silent failure should do. The child gets its own
+      // limit, and SIGKILL so a handler cannot ignore it.
+      timeout: 20_000,
+      killSignal: 'SIGKILL',
     });
     return '';
   } catch (error) {
