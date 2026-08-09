@@ -301,6 +301,7 @@
     "reflect-metadata": "^0.2.2",
     "remark-parse": "^11.0.0",
     "rxjs": "^7.8.2",
+    "shiki": "^4.4.2",
     "storybook": "^10.5.2",
     "ts-jest": "^29.4.11",
     "ts-node": "10.9.2",
@@ -316,7 +317,7 @@
   },
   "overrides": {
     "html-encoding-sniffer": "^6.0.0",
-    "dompurify": ">=3.4.11"
+    "dompurify": "^3.4.13"
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.5.1",
