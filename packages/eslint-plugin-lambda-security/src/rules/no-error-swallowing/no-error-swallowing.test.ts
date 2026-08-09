@@ -85,6 +85,10 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
       code: `try { risky(); } catch (error) { callback(error); }`,
     },
     {
+      name: 'the error travelling inside a larger expression still forwards',
+      code: `try { risky(); } catch (error) { next(new Error(error.message)); }`,
+    },
+    {
       name: 'logger reached through a member chain',
       code: `try { risky(); } catch (error) { this.logger.error('failed', error); }`,
     },
@@ -327,6 +331,30 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
     {
       name: 'fail-open object literal must still report',
       code: `try { risky(); } catch (error) { return { authorized: true }; }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // Forwarding must actually forward. Classifying on the callee name alone
+    // let a zero-argument `next()` count as handled while discarding the error
+    // — the exact false negative this exemption exists to avoid creating.
+    {
+      name: 'next() with no argument discards the error',
+      code: `try { risky(); } catch (err) { next(); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'reject() with no argument discards the error',
+      code: `try { risky(); } catch (err) { reject(); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    {
+      name: 'forwarding something other than the caught error',
+      code: `try { risky(); } catch (err) { next(previousFailure); }`,
+      errors: [{ messageId: 'emptyCatchBlock' }],
+    },
+    // An omitted catch binding has nothing to forward.
+    {
+      name: 'no catch binding leaves nothing to forward',
+      code: `try { risky(); } catch { next(); }`,
       errors: [{ messageId: 'emptyCatchBlock' }],
     },
     // A non-forwarding call must not be mistaken for propagation just

@@ -20,4 +20,9 @@ Fail-open returns still report, and that distinction is the point:
 malformed token. `true`, a 2xx `statusCode`, `null` and `undefined` are all
 excluded from the exemption.
 
-Fixes four false positives in ILB-CWE-Corpus with no loss of true positives.
+Removes the rule's findings from four ILB-CWE-Corpus fixtures. The corpus
+false-positive total drops from 16 to 13 rather than 4, because
+`pipeline-promises.js` is still reported by
+`node-security/detect-non-literal-fs-filename` — that fixture builds a read
+path straight from `req.params.id`, so the remaining finding is a true
+positive against a mislabelled fixture. No true positives lost.

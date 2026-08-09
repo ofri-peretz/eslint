@@ -111,6 +111,29 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     const RESPONSE_METHODS =
       /^(status|sendStatus|json|send|end|writeHead|render|redirect)$/;
 
+    /**
+     * Does the caught error appear anywhere in these arguments?
+     *
+     * Searches the whole subtree rather than the top level, so `next(err)`,
+     * `next(err.message)` and `reject(new Error(err))` all count — the error
+     * travels in each. `next()` does not.
+     */
+    function mentions(nodes: readonly TSESTree.Node[], name: string): boolean {
+      const stack = [...nodes];
+      while (stack.length > 0) {
+        const node = stack.pop();
+        if (!node || typeof node.type !== 'string') continue;
+        if (node.type === AST_NODE_TYPES.Identifier && node.name === name) return true;
+        for (const key of Object.keys(node)) {
+          if (key === 'parent') continue;
+          const value = (node as unknown as Record<string, unknown>)[key];
+          if (Array.isArray(value)) stack.push(...(value as TSESTree.Node[]));
+          else if (value && typeof value === 'object') stack.push(value as TSESTree.Node);
+        }
+      }
+      return false;
+    }
+
     /** The root identifier of a member chain: `a.b.c()` → `a`. */
     function rootName(node: TSESTree.Node): string | undefined {
       let current: TSESTree.Node = node;
@@ -137,11 +160,23 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
      * `/\b(log|error|warn)\w*\s*\(/`, which matched any identifier beginning
      * with "log" — and matched inside comments and string literals too.
      */
-    function classifyCall(call: TSESTree.CallExpression): 'log' | 'forward' | 'respond' | undefined {
+    function classifyCall(
+      call: TSESTree.CallExpression,
+      caughtName: string | undefined,
+    ): 'log' | 'forward' | 'respond' | undefined {
       const callee = call.callee;
 
       if (callee.type === AST_NODE_TYPES.Identifier) {
-        if (FORWARDING_CALLBACKS.test(callee.name)) return 'forward';
+        // Forwarding requires the caught error to actually travel. Classifying
+        // on the callee name alone let `catch (err) { next(); }` pass as
+        // handled while discarding the error entirely — the exact false
+        // negative this exemption was supposed to avoid creating. A catch with
+        // no binding at all has nothing to forward, so it cannot qualify.
+        if (FORWARDING_CALLBACKS.test(callee.name)) {
+          return caughtName !== undefined && mentions(call.arguments, caughtName)
+            ? 'forward'
+            : undefined;
+        }
         if (LOGGING_FUNCTIONS.test(callee.name)) return 'log';
         return undefined;
       }
@@ -178,7 +213,10 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
      * the error. A nested function body is deliberately included: a `catch`
      * that logs from inside a callback still records the error.
      */
-    function analyze(block: TSESTree.BlockStatement): {
+    function analyze(
+      block: TSESTree.BlockStatement,
+      caughtName: string | undefined,
+    ): {
       logs: boolean;
       forwards: boolean;
       responds: boolean;
@@ -191,7 +229,7 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         seen.add(node);
 
         if (node.type === AST_NODE_TYPES.CallExpression) {
-          const kind = classifyCall(node);
+          const kind = classifyCall(node, caughtName);
           if (kind === 'log') result.logs = true;
           else if (kind === 'forward') result.forwards = true;
           else if (kind === 'respond') result.responds = true;
@@ -346,7 +384,9 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
         // The old return check demanded the returned expression match
         // /500|error|fail/, so `return false` from a hostname validator read
         // as swallowing while `return errorish` did not.
-        const { logs, forwards, responds } = analyze(body);
+        const caughtName =
+          node.param?.type === AST_NODE_TYPES.Identifier ? node.param.name : undefined;
+        const { logs, forwards, responds } = analyze(body, caughtName);
         if (logs || forwards || responds || returnsFallback(body)) {
           return;
         }
