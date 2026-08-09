@@ -77,11 +77,26 @@ Two consequences, both load-bearing:
 1. **Type-aware linting via `parserServices` is no longer a nice-to-have.** It is
    the only mechanism that can follow `this.userService.findOne(id)` across the
    controller/service boundary. Everything in §5's "provable" column depends on it.
-2. **The SQL sinks are not ours to rule on.** 67 `$queryRawUnsafe` files and 34
-   query-builder template literals live in service classes — that is
-   `eslint-plugin-prisma-security` / `eslint-plugin-typeorm-security` territory,
-   both of which we already publish. NestJS repos are a _corpus_ for those plugins,
-   not a rule surface for this one.
+2. **None of these sinks are ours to rule on.** The plugin is decided by the
+   **sink**, not by the framework the file happens to sit in — that is the
+   standing taxonomy rule, and it disqualifies every sink in the table above:
+
+   | sink                                         | owner                                                              | shipped rules that already cover it                                                                    |
+   | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+   | `exec` / `spawn` / `execSync`                | `eslint-plugin-node-security`                                      | `detect-child-process`, `no-shell-injection`, `no-dynamic-command-string`                              |
+   | `readFile` / `createReadStream` / `sendFile` | `eslint-plugin-node-security`                                      | `detect-non-literal-fs-filename`, `no-arbitrary-file-access`, `no-zip-slip`, `no-toctou-vulnerability` |
+   | `$queryRawUnsafe`, query-builder templates   | `eslint-plugin-prisma-security` / `eslint-plugin-typeorm-security` | —                                                                                                      |
+
+   And this is not a filing technicality. Running node-security over the corpus
+   files that contain these sinks: **74 of 202 exec-sink files and 239 of 274
+   fs-sink files already report**, led by `detect-non-literal-fs-filename` (668)
+   and `no-arbitrary-file-access` (212). A NestJS-plugin taint rule would have
+   fired a _second_ time on lines a shipped rule already flags. Two plugins
+   reporting one line is worse than a taxonomy violation — it is the noise the
+   ecosystem split exists to prevent.
+
+   NestJS repos are a **corpus** for those plugins, not a rule surface for this
+   one.
 
 ### And the SQL hits are clean anyway — sampled, not assumed
 
@@ -215,23 +230,48 @@ can we prove it from the file". Both matter; provability is the gate.
 
 | Rule                                      | Evidence                            | Notes                                                                                                                                                                                                                                          |
 | ----------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`no-permissive-cors` imported-config FN fix** | 1 confirmed TP (§4), 1 refuted candidate, 1 confirmed FN (§4b) | Not a new rule — a correctness fix. Do first. The env-guard FP this row used to cite was withdrawn on 2026-08-07: it was inferred from a grep hit, and the rule never fired on it. The real defect is the opposite — an imported `corsOptions` was invisible to `resolveLocalObject`, which is the shape of the only true positive we have. |
+| **`no-permissive-cors` env-guard fix**    | 1 confirmed TP, 1 confirmed FP (§4) | Not a new rule — a correctness fix. Do first.                                                                                                                                                                                                  |
 | **`no-graphql-introspection-production`** | 2 corpus files literal `true`       | Presence of a literal `true` **is** the evidence; env-gated forms don't fire. Same shape as the CORS rule, which is the shape that works.                                                                                                      |
 | **`no-sensitive-error-response`**         | not yet counted                     | Exception filter returning `error.stack` / raw `exception.message`. Local, CWE-209, one-line fix. **Count before writing.**                                                                                                                    |
 | **`no-unsafe-multer-filename`**           | 17 files use `originalname`         | `diskStorage({ filename })` echoing `file.originalname` → path traversal / overwrite, CWE-22+434. All evidence inside the `FileInterceptor` options object. Fix: `basename()`/uuid. **Triage the 17 first** — some will legitimately sanitize. |
 
-### Tier B — needs `parserServices` (type-aware) to exist at all
+### Tier B — **empty. Withdrawn 2026-08-07.**
 
-Blocked on the §2 finding. This is where NestJS's _real_ vulnerabilities live, and
-nobody else can reach them either — which is exactly why it's worth the investment.
+This tier previously listed three cross-file taint rules and called them "where
+NestJS's _real_ vulnerabilities live". That was wrong, and wrong twice over.
 
-- **`no-tainted-param-to-fs`** — `@Param()` → service → `readFile`/`sendFile`. 13 same-file hits today; cross-file will be far more.
-- **`no-tainted-param-to-exec`** — 171 exec sites currently invisible.
-- **`no-mass-assignment-sink`** — `@Body()` → `Object.assign(entity, dto)` / `repo.save({...dto})` across the boundary.
+| withdrawn candidate        | why                                                                                                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-tainted-param-to-exec` | `child_process` is a Node platform sink. `eslint-plugin-node-security` owns it and already ships `detect-child-process` / `no-shell-injection` / `no-dynamic-command-string`. |
+| `no-tainted-param-to-fs`   | `fs` is a Node platform sink, same owner, already covered by `detect-non-literal-fs-filename` / `no-arbitrary-file-access`.                                                   |
+| `no-mass-assignment-sink`  | The sink is a write to an ORM entity — ORM-plugin territory. The NestJS-side precondition is already covered by `require-validation-pipe-whitelist`.                          |
 
-**Spike first, one week, one rule.** If cross-file resolution through
-`this.xService.method()` proves unreliable in real monorepos (Nx, path aliases),
-Tier B dies and we say so — same as the four candidates already dropped on evidence.
+The taxonomy rule is one line: **the sink decides the plugin.** §2 applied it to
+SQL and then failed to apply it to `exec` and `fs` in the very next section. Both
+belong to node-security, which is framework-agnostic by charter and correctly so.
+
+Measurement, not just principle: node-security already reports on **74 of 202**
+exec-sink files and **239 of 274** fs-sink files in this corpus. Shipping these
+rules would have double-reported lines a shipped rule already flags.
+
+**So Tier B is empty, and nestjs-security has no cross-file rule roadmap.** It is
+a plugin of locally-provable rules — which, per §1, is the only kind that was ever
+going to produce a PR-able finding anyway.
+
+### What the `parserServices` GO is actually for
+
+The W4 result (§7b) stands: cross-file symbol resolution works, the service method
+body is walkable, the sink is found. Its beneficiary is just not this plugin.
+
+The opportunity it points at is **precision in the plugins that already own these
+sinks**. `detect-non-literal-fs-filename` produced **668 findings** over the
+NestJS corpus, and in a codebase where the taint source is a decorator in another
+file, a same-file rule cannot tell an `@Param()`-derived path from a config
+constant. Cross-file resolution is how that rule learns the difference.
+
+**This is a hypothesis with a number attached, not a finding — those 668 are
+untriaged.** Triaging them is the prerequisite, and it belongs to a node-security
+plan, not this one.
 
 ### Tier C — explicitly dropped (do not revisit without new counts)
 
@@ -406,7 +446,12 @@ Costs and untested risks, recorded honestly:
   set of sink matchers. That is the real engineering cost, not the resolution.
 - Not covered by the spike: injection by token or interface rather than concrete
   class, Nx path aliases, and monorepo project boundaries. Those are where this
-  will actually break; scope the first Tier-B rule to measure them.
+  will actually break, and they still need measuring.
+
+**Whose GO it is** was corrected on 2026-08-07: not this plugin's. Every sink the
+mechanism would reach belongs to `node-security` or an ORM plugin, all of which
+already ship rules for them (§5, Tier B — withdrawn). The result is real; the
+follow-up belongs in a node-security plan.
 
 ---
 
@@ -418,7 +463,8 @@ Costs and untested risks, recorded honestly:
   now reports it. **Blocked on Ofri's per-repo approval** — outside this repo, so
   outside this PR.
 - ✅ **W3 — corpus tier-2.** 21 repos, 833 findings, 0 PR-able TPs (§7b).
-- ✅ **W4 — `parserServices` spike.** GO, with the `ts.Node` cost named (§7b).
+- ✅ **W4 — `parserServices` spike.** GO on the mechanism, with the `ts.Node` cost
+  named (§7b) — but the beneficiary is node-security, not this plugin (§5).
 - ✅ **W5 — Tier A rules.** `no-unsafe-multer-filename` shipped;
   `no-graphql-introspection-production` dropped on evidence;
   `no-sensitive-error-response` deferred with its count recorded (§7b).
@@ -432,12 +478,16 @@ Costs and untested risks, recorded honestly:
 **What is left, in order:**
 
 1. **W2** — open the ultimate-backend PR, on approval.
-2. **First Tier-B rule** — `no-tainted-param-to-fs`, scoped to measure the three
-   untested risks in W4 (token injection, path aliases, monorepo boundaries)
-   rather than to maximise findings.
-3. **Microservices FN work** — `@MessagePattern` handlers get no guard and no
-   validation check today, and `ValidationPipe` semantics differ on RPC.
-4. **W7** — the article, once W2 resolves either way.
+2. **Microservices FN work** — the only remaining rule surface that is genuinely
+   this plugin's. `@MessagePattern` handlers get no guard and no validation check
+   today, and `ValidationPipe` semantics differ on RPC. 6 corpus files, 0 findings.
+3. **W7** — the article, once W2 resolves either way.
+
+**Handed off, not dropped:** the cross-file taint work now belongs to
+`eslint-plugin-node-security` (§5, Tier B). Its first step is triaging that
+plugin's 668 `detect-non-literal-fs-filename` findings over the NestJS corpus to
+establish whether cross-file resolution would actually improve its precision.
+That is a node-security plan, and nothing in it should land in this plugin.
 
 The §8 confidence gate's open boxes (stratified per-rule triage, NestJS benchmark
 fixtures, whole-repo `no-exposed-private-fields`) are unchanged and still block
