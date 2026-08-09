@@ -41,8 +41,8 @@
 <p align="center">
   <strong>⭐ <a href="https://github.com/ofri-peretz/eslint">Star the repo</a></strong> &nbsp;·&nbsp;
   <a href="https://github.com/ofri-peretz/eslint/subscription">👀 Watch releases</a> &nbsp;·&nbsp;
-  <a href="https://dev.to/ofri-peretz">📨 Follow the writeups</a> &nbsp;·&nbsp;
-  <a href="https://ofriperetz.dev/stats?utm_source=github&utm_medium=referral&utm_campaign=monorepo">📊 Live metrics</a>
+  <a href="https://eslint.interlace.tools/articles?utm_source=github&utm_medium=referral&utm_campaign=monorepo">📨 Follow the writeups</a> &nbsp;·&nbsp;
+  <a href="https://eslint.interlace.tools/stats?utm_source=github&utm_medium=referral&utm_campaign=monorepo">📊 Live metrics</a>
 </p>
 <p align="center">
   <sub>If these plugins caught a real bug for you, a star is the signal that keeps the ecosystem maintained.</sub>
@@ -233,44 +233,78 @@ maps to the evidence file that produced it, carries a verification date, goes
 
 ---
 
-## Performance — cold cache vs. warm cache
+## Performance — measured weekly, not claimed
 
-Latency is measured per rule on real OSS repos (next.js, supabase, lodash, vercel-ai,
-payload, shadcn-ui, three.js…) in both **cold** (`--no-cache`) and **warm**
-(`--cache`, second consecutive run) profiles. From the
-[latest flagship scorecard](./benchmark-results/ilb-flagship-scorecard.md)
-(ESLint 9.39.4 · oxlint 1.63.0 · Node 24.13.0):
+<!-- INTERLACE:BENCH_TABLE — every cell is a generated badge. Do not hand-edit
+     numbers here: they render from the weekly benchmark and are served from
+     GitHub Pages, so this markup stays frozen while the values refresh. -->
 
-| Stack               | Median cold | Median warm |        Δ | Cache benefit |
-| :------------------ | ----------: | ----------: | -------: | ------------: |
-| **Ours (ESLint)**   |    9,966 ms |      429 ms | 9,537 ms |       **96%** |
-| Competitor (ESLint) |    4,843 ms |      410 ms | 4,433 ms |           92% |
-| oxlint native       |       87 ms |       86 ms |     1 ms |            1% |
+![last verified](https://ofri-peretz.github.io/eslint/badges/verified.svg) ![corpus](https://ofri-peretz.github.io/eslint/badges/corpus.svg) ![file-set parity](https://ofri-peretz.github.io/eslint/badges/parity.svg)
 
-**The honest read:** cold, we are slower than the competitor plugins we replace — we
-do more analysis per file. Warm, that gap closes to ~19 ms of median difference and
-the cache absorbs 96% of our cost. If you haven't enabled it, you're paying ~23×
-more per lint run than you need to:
+| Stack | Cold | Warm | Findings | Files |
+| :--- | :---: | :---: | :---: | :---: |
+| **Interlace on ESLint** | ![cold](https://ofri-peretz.github.io/eslint/badges/ours-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/ours-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/ours-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/ours-files.svg) |
+| **Interlace on oxlint** | ![cold](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-files.svg) |
+| Community plugins (ESLint) | ![cold](https://ofri-peretz.github.io/eslint/badges/competitor-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/competitor-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/competitor-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/competitor-files.svg) |
+| oxlint built-ins *(different scope)* | ![cold](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-files.svg) |
 
-```bash
-eslint --cache --cache-location node_modules/.cache/eslint .
-```
+**Cold** = `--no-cache`. **Warm** = `--cache`, primed — the number you feel on
+every save and every CI run.
 
-oxlint stays ~5× faster warm than either ESLint stack. That's a real result and we
-publish it rather than hide it — it's also why the
-[oxlint parity gate](./.github/workflows/oxlint-parity.yml) exists.
+`Interlace on oxlint` runs the *same rulesets* through the oxlint engine via our
+[JS-plugin shims](./tools/oxlint-plugins/). Same rules, different engine.
+
+### Head-to-head, by job
+
+Whole-plugin comparisons mislead in both directions: a plugin bundles jobs its
+rival does not have, so an aggregate delta is partly a difference in *scope*
+rather than speed. The unit of comparison here is a **job** — a concrete
+capability — with the specific rules named on both sides.
+
+![head-to-head](https://ofri-peretz.github.io/eslint/badges/jobs-summary.svg) ![uncontested](https://ofri-peretz.github.io/eslint/badges/jobs-uncontested.svg)
+
+| Job | Result |
+| :--- | :---: |
+| Circular dependencies | ![circular deps](https://ofri-peretz.github.io/eslint/badges/job-circular-dependencies.svg) |
+| DOM XSS sinks | ![dom xss](https://ofri-peretz.github.io/eslint/badges/job-dom-xss-sinks-innerhtml-and-friends.svg) |
+| Hardcoded secrets | ![secrets](https://ofri-peretz.github.io/eslint/badges/job-hardcoded-secrets-credentials.svg) |
+| Command / shell injection | ![command injection](https://ofri-peretz.github.io/eslint/badges/job-command-shell-injection.svg) |
+| ReDoS | ![redos](https://ofri-peretz.github.io/eslint/badges/job-redos-catastrophic-backtracking.svg) |
+| Path traversal | ![path traversal](https://ofri-peretz.github.io/eslint/badges/job-path-traversal-non-literal-fs-access.svg) |
+| Timing-attack comparison | ![timing](https://ofri-peretz.github.io/eslint/badges/job-timing-attack-unsafe-comparison.svg) |
+
+Two of those rows are losses. They stay: a table where every row favours us is
+authored, not measured. The full breakdown — including where competitors are
+genuinely better — lives in
+[`benchmarks/suites/ilb-headline/matchups.ts`](./benchmarks/suites/ilb-headline/matchups.ts),
+where every cited rule is CI-verified to exist.
+
+### Who we compare against
+
+Named, versioned, and linked — so you can check we did not pick a weak opponent:
+
+[`eslint-plugin-security`](https://www.npmjs.com/package/eslint-plugin-security) ·
+[`eslint-plugin-sonarjs`](https://www.npmjs.com/package/eslint-plugin-sonarjs) ·
+[`@microsoft/eslint-plugin-sdl`](https://www.npmjs.com/package/@microsoft/eslint-plugin-sdl) ·
+[`eslint-plugin-no-unsanitized`](https://www.npmjs.com/package/eslint-plugin-no-unsanitized) ·
+[`eslint-plugin-security-node`](https://www.npmjs.com/package/eslint-plugin-security-node) ·
+[`eslint-plugin-no-secrets`](https://www.npmjs.com/package/eslint-plugin-no-secrets) ·
+[`eslint-plugin-regexp`](https://www.npmjs.com/package/eslint-plugin-regexp) ·
+[`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import)
 
 ### How we benchmark the benchmark
 
-- **Frozen corpus per bench version** — [`npm run ilb:corpus-integrity`](./scripts/ilb-corpus-integrity.ts) is a CI gate, because silent commit drift in the corpus invalidates every prior number.
-- **Append-only history** in [`benchmark-results/history.ndjson`](./benchmark-results/history.ndjson), so any figure can be plotted over time.
-- **Detection parity is checked before timing is trusted** — a crashed run exits early, and timing a crash would score it as a win.
-- **Cross-version matrix** against ESLint 8 / 9 / 10 on every PR ([`eslint-version-matrix.yml`](./.github/workflows/eslint-version-matrix.yml)).
+- **Scope**: only our **SDK-agnostic** plugins — `secure-coding`, `node-security`, `browser-security`, `import-next`. Framework-bound plugins (pg, jwt, nestjs-security…) have no comparable competitor; an uncontested win there tells you nothing.
+- **Corpus**: two real repos — [nestjs](https://github.com/nestjs/nest) (Node) and [shadcn-ui](https://github.com/shadcn-ui/ui) (frontend), shallow-cloned at a recorded commit SHA.
+- **Same file set**: every stack lints an identical glob, and parity is *asserted* — a run where the stacks saw different files is refused, not published.
+- **Median of N** after a discarded warmup, with min–max spread recorded so a noisy machine is visible rather than hidden.
+- **Failures are recorded, never dropped.** A crash cannot be timed as a fast run; a stack that processed 0 files fails the gate instead of rendering an impossibly fast bar.
+- **oxlint built-ins** run a different rule scope (no secrets, injection, or CSP analysis). Shown for context and excluded from "fastest" highlighting — a different job, not a peer.
 
-Run it yourself: `npm run ilb:scorecard`. Vocabulary contract and the ten principles
-are in [`benchmarks/README.md`](./benchmarks/README.md).
-
----
+Every number is regenerated by
+[`weekly-benchmark.yml`](./.github/workflows/weekly-benchmark.yml) (Mondays,
+09:00 UTC) on public runners, stored append-only, and published as the badges
+above. Reproduce locally: `npm run ilb:headline -- --repo=nestjs --repeat=5`.
 
 ## Compatibility
 

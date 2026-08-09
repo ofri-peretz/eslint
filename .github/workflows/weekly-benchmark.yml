@@ -1,0 +1,307 @@
+name: Weekly Benchmark (public, transparent)
+
+# Refreshes the published benchmark numbers once a week and commits the
+# results back to main so every surface (README, eslint.interlace.tools)
+# can state WHEN it was last verified.
+#
+# Why this exists
+# ---------------
+# The flagship scorecard sat at 2026-05-10 numbers for three months because
+# refreshing it was a manual local step nobody re-ran. Worse, a partial
+# snapshot (1 of 10 rules) landed in results/ and the loader silently fell
+# back to the older complete one — so the bench looked "run" while publishing
+# stale numbers. Automation is the fix: a number nobody re-measures is a
+# number that quietly rots.
+#
+# Why the public repo
+# -------------------
+# 1. TRANSPARENCY — anyone can read this file, see the exact commands, click
+#    into the run logs, and reproduce it. A benchmark you cannot audit is
+#    marketing, not measurement.
+# 2. COST — public repos get unmetered GitHub-hosted runner minutes, so a
+#    weekly multi-repo bench costs nothing.
+#
+# Schedule: Mondays 09:00 UTC (early morning US — off-peak for runners, and
+# fresh numbers land before the US work week starts).
+#
+# Repo secrets (already present; same ones daily-impact-ingest.yml uses):
+#   SUPABASE_URL              — https://<project-ref>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY — full-access JWT. WRITE step only.
+#   SUPABASE_ANON_KEY         — public read key. Badge READ step only.
+#
+# On secrets in a public repo: GitHub never exposes secrets to workflows
+# triggered from forks, and this workflow only runs on `schedule` and
+# `workflow_dispatch` — neither is fork-triggerable. The service-role key is
+# scoped to the single write step; the badge step reads with the anon key, so
+# the credential that can mutate data appears exactly once in this file.
+# Never `echo` these, and never pass them to a step that prints its env.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      headline_repo:
+        description: "Repo for the headline chart"
+        required: false
+        default: "three.js"
+      repeat:
+        description: "Timed repeats per measurement (median-of-N)"
+        required: false
+        default: "5"
+      commit:
+        description: "Commit refreshed results back to main"
+        required: false
+        type: boolean
+        default: true
+
+# Shares the `pages-deploy` group with seed-badges.yml: both deploy to the
+# same Pages site, and two concurrent deploys can land in either order —
+# a placeholder overwriting real numbers is the failure mode to avoid.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  benchmark:
+    name: Refresh published benchmark numbers
+    runs-on: ubuntu-latest
+    # Cold multi-repo lint runs are slow by nature; the whole point is that
+    # nothing here is rushed into a misleading fast number.
+    timeout-minutes: 90
+
+    steps:
+      # Pages is a single production surface and the commit step writes to
+      # main, so a dispatch from a feature branch would publish that branch's
+      # badges as the official numbers. Refuse anything but the default branch.
+      - name: Refuse to publish from a non-default branch
+        if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "::error::weekly-benchmark publishes to production Pages and pushes to           ${{ github.event.repository.default_branch }}. Refusing to run from ${{ github.ref }}."
+          exit 1
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      # ── Corpus ────────────────────────────────────────────────────────
+      # The OOS corpus lives outside the repo (../oos locally). On a runner
+      # it does not exist, so clone it shallow. --depth=1 keeps each repo at
+      # ~tens of MB instead of GB; we lint a working tree, never history.
+      #
+      # Pinned to the same repos the manifest references. A cache keeps the
+      # weekly run from re-cloning ~5 large repos every Monday.
+      - name: Restore OOS corpus cache
+        id: oos-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          path: oos
+          key: oos-corpus-v1-${{ hashFiles('benchmarks/suites/ilb-flagship/manifest.json') }}
+          restore-keys: |
+            oos-corpus-v1-
+
+      - name: Shallow-clone OOS corpus
+        run: |
+          set -euo pipefail
+          mkdir -p oos
+          clone() {
+            local name="$1" url="$2"
+            if [ -d "oos/$name/.git" ]; then
+              echo "::group::$name (cached, refreshing)"
+              git -C "oos/$name" fetch --depth=1 origin HEAD || true
+              git -C "oos/$name" reset --hard FETCH_HEAD || true
+            else
+              echo "::group::$name (cloning)"
+              git clone --depth=1 --single-branch "$url" "oos/$name"
+            fi
+            # Record the exact commit each number was measured against.
+            echo "$name $(git -C "oos/$name" rev-parse HEAD)" >> oos/COMMITS.txt
+            echo "::endgroup::"
+          }
+          : > oos/COMMITS.txt
+          clone three.js  https://github.com/mrdoob/three.js.git
+          clone next.js   https://github.com/vercel/next.js.git
+          clone supabase  https://github.com/supabase/supabase.git
+          clone lodash    https://github.com/lodash/lodash.git
+          clone shadcn-ui https://github.com/shadcn-ui/ui.git
+          clone payload   https://github.com/payloadcms/payload.git
+          clone vercel-ai https://github.com/vercel/ai.git
+          echo "--- corpus commits ---"
+          cat oos/COMMITS.txt
+
+      # Our plugins must be BUILT before benching: the oxlint JS-plugin shims
+      # and the per-job configs load from each package's dist/. On a clean
+      # runner dist/ does not exist, so without this the `ours (oxlint)` row
+      # and every per-job matchup silently fall back to "skipped".
+      - name: Build plugins (dist/ is what the bench loads)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
+      - name: Install benchmark workspace (eslint + oxlint + plugins)
+        working-directory: benchmarks/suites/ilb-flagship/workspace
+        run: npm install --no-audit --no-fund
+
+      # Fail BEFORE measuring if the matchup table cites a rule that no longer
+      # exists. A renamed or deleted rule turns the published comparison into
+      # a false claim, and this is the only thing standing between a refactor
+      # and that claim going live.
+      - name: Verify matchup table (every cited rule exists)
+        run: npx tsx scripts/verify-matchups.ts
+
+      # ── Headline chart (the esbuild-style number) ──────────────────────
+      # TWO repos: one Node (nestjs) and one frontend (shadcn-ui). A single
+      # repo would let a corpus quirk read as a property of the plugins —
+      # nestjs alone found 0 issues for most security jobs, which says more
+      # about nestjs being well-audited than about detection quality.
+      - name: Run ILB-Headline (Node — nestjs)
+        env:
+          ILB_OOS_DIR: ${{ github.workspace }}/oos
+        run: |
+          npm run ilb:headline -- \
+            --repo="${{ github.event.inputs.headline_repo || 'nestjs' }}" \
+            --repeat="${{ github.event.inputs.repeat || '5' }}"
+
+      - name: Run ILB-Headline (frontend — shadcn-ui)
+        env:
+          ILB_OOS_DIR: ${{ github.workspace }}/oos
+        run: |
+          npm run ilb:headline -- \
+            --repo=shadcn-ui \
+            --repeat="${{ github.event.inputs.repeat || '5' }}"
+
+      - name: Render headline scorecard
+        run: npm run ilb:headline:scorecard
+
+      # ── Flagship per-rule scorecard ───────────────────────────────────
+      # continue-on-error: a flagship failure must not discard a good
+      # headline result. The verify step below decides what is publishable.
+      - name: Run ILB-Flagship
+        id: flagship
+        continue-on-error: true
+        env:
+          ILB_OOS_DIR: ${{ github.workspace }}/oos
+        run: npm run ilb:flagship -- --repeat="${{ github.event.inputs.repeat || '5' }}"
+
+      - name: Render flagship scorecard
+        id: flagship_scorecard
+        continue-on-error: true
+        run: npm run ilb:flagship:scorecard
+
+      # ── Verify before publishing ──────────────────────────────────────
+      # A green checkmark must not mean "a command exited 0". This step
+      # asserts the artifacts actually contain fresh, complete, comparable
+      # numbers — the specific failure modes that produced the stale
+      # scorecard in the first place.
+      - name: Verify results are publishable
+        run: npx tsx scripts/verify-weekly-benchmark.ts
+
+      # ── Store the raw data ────────────────────────────────────────────
+      # Runs after BOTH benches so headline and per-rule flagship rows land
+      # together. Supabase is the reusable record: every measurement with its
+      # corpus commit + tool versions, append-only, queryable from anywhere.
+      # Written before the badges so the badges can be rendered FROM it.
+      - name: Publish raw results to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: npx tsx scripts/publish-benchmark-supabase.ts
+
+      # Badges render from the stored rows (--from-supabase), which proves the
+      # published badge and the reusable record are the same data. Falls back
+      # to the local snapshot if the store is unreachable, so a Supabase
+      # outage degrades to "badges still correct" rather than "no badges".
+      - name: Compose badges
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run ilb:headline:badges -- --from-supabase
+
+      # ── Publish badges to GitHub Pages ────────────────────────────────
+      # Badges go to Pages, NOT into a commit. Two reasons:
+      #   1. No commit churn — refreshing a number must not require writing
+      #      to main. Weekly commits that only bump an SVG pollute history
+      #      and re-trigger every downstream deploy for no reason.
+      #   2. No load on our own site — a README <img> is fetched by every
+      #      viewer and every crawler. Pages serves that from GitHub's CDN
+      #      for free instead of waking a function on eslint.interlace.tools.
+      - name: Prepare Pages artifact
+        run: |
+          set -euo pipefail
+          # Fail with a readable reason rather than a bare `cp` error: an empty
+          # badge dir means the compose step produced nothing, and deploying it
+          # would replace working badges on Pages with 404s.
+          if [ -z "$(ls -A benchmark-results/badges 2>/dev/null)" ]; then
+            echo "::error::No badges were generated — refusing to deploy an empty site."
+            exit 1
+          fi
+          mkdir -p _site/badges
+          cp -r benchmark-results/badges/. _site/badges/
+          # Ship the human-readable breakdown next to the badges so the
+          # badge can link to the evidence behind it.
+          cp benchmark-results/ilb-headline.md _site/ 2>/dev/null || true
+          cp benchmark-results/ilb-flagship-scorecard.md _site/ 2>/dev/null || true
+          ls -R _site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: pages
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: benchmark-results-${{ github.run_id }}
+          path: |
+            benchmarks/results/ilb-headline/
+            benchmark-results/ilb-headline.md
+            benchmark-results/ilb-flagship-scorecard.md
+            apps/docs/src/data/headline-bench.json
+            oos/COMMITS.txt
+          retention-days: 90
+
+      # ── Publish ───────────────────────────────────────────────────────
+      # Commit straight to main: these are generated artifacts, and the
+      # verify gate above already refused anything not publishable.
+      - name: Commit refreshed numbers
+        if: github.event.inputs.commit != 'false'
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A \
+            benchmarks/results/ilb-headline \
+            benchmarks/results/ilb-flagship \
+            benchmark-results/ilb-headline.md \
+            benchmark-results/ilb-flagship-scorecard.md \
+            apps/docs/src/data/headline-bench.json
+          if git diff --staged --quiet; then
+            echo "No changes — numbers identical to last week."
+            exit 0
+          fi
+          # Body built via heredoc into a file: an inline multi-line -m
+          # would dedent out of this YAML block scalar and break parsing.
+          {
+            echo "chore(bench): weekly benchmark refresh $(date -u +%Y-%m-%d)"
+            echo
+            echo "Automated run of ilb:headline + ilb:flagship against the"
+            echo "shallow-cloned OOS corpus. Verified publishable by"
+            echo "scripts/verify-weekly-benchmark.ts."
+            echo
+            echo "Corpus commits:"
+            cat oos/COMMITS.txt
+          } > /tmp/bench-commit-msg.txt
+          git commit -F /tmp/bench-commit-msg.txt
+          git pull --rebase origin main
+          git push origin HEAD:main

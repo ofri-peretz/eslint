@@ -22,7 +22,12 @@
     "@typescript-eslint/parser": "^8.0.0"
   },
   "devDependencies": {
+    "@microsoft/eslint-plugin-sdl": "^1.1.0",
     "eslint": "^9.0.0",
+    "eslint-plugin-no-unsanitized": "^4.1.5",
+    "eslint-plugin-security": "^4.0.1",
+    "eslint-plugin-security-node": "^1.1.4",
+    "eslint-plugin-sonarjs": "^4.2.0",
     "oxlint": "^1.0.0"
   }
 }

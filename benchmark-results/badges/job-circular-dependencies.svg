@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="219" height="20" role="img" aria-label="circular dependencies: pending">
+  <title>circular dependencies: pending</title>
+  <rect width="154" height="20" fill="#24292f"/>
+  <rect x="154" width="65" height="20" fill="#6e7681"/>
+  <g fill="#ffffff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+    <text x="77" y="14">circular dependencies</text>
+    <text x="186.5" y="14">pending</text>
+  </g>
+</svg>
