@@ -50,6 +50,17 @@ describe('growth conversion lock', () => {
         'img.shields.io/github/stars/ofri-peretz/eslint',
       );
     });
+
+    // The CTA's owned-property links point at the ecosystem site, not the
+    // personal-brand domain. ofriperetz.dev has no /articles route at all and
+    // its /stats is a different (personal) surface — a reader clicking
+    // "Live metrics" from an ESLint README expects THIS ecosystem's numbers.
+    it('routes the growth CTA to eslint.interlace.tools, not ofriperetz.dev', () => {
+      const cta = readme.split('<!-- INTERLACE:GROWTH_CTA -->')[1]?.split('---')[0] ?? '';
+      expect(cta).toContain('https://eslint.interlace.tools/articles');
+      expect(cta).toContain('https://eslint.interlace.tools/stats');
+      expect(cta).not.toContain('ofriperetz.dev');
+    });
   });
 
   describe('every eslint-plugin-* README carries the star/follow CTA', () => {
