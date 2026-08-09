@@ -42,7 +42,6 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       description:
         'Require performance optimizations for React components based on usage patterns',
     },
-    hasSuggestions: true,
     messages: {
       considerMemo: formatLLMMessage({
         icon: MessageIcons.PERFORMANCE,

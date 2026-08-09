@@ -13,7 +13,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isTestFile } from '../../utils/paths';
 
-type MessageIds = 'debugModeProduction';
+type MessageIds = 'debugModeProduction' | 'suggestionGateOnNodeEnv';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
@@ -39,6 +39,7 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
         fix: 'Use mongoose.set("debug", process.env.NODE_ENV !== "production")',
         documentationLink: 'https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()',
       }),
+      suggestionGateOnNodeEnv: "Gate debug mode on process.env.NODE_ENV !== 'production'",
     },
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
@@ -73,6 +74,13 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'debugModeProduction',
+              suggest: [
+                {
+                  messageId: 'suggestionGateOnNodeEnv',
+                  fix: (fixer: TSESLint.RuleFixer) =>
+                    fixer.replaceText(secondArg, "process.env.NODE_ENV !== 'production'"),
+                },
+              ],
             });
           }
         }

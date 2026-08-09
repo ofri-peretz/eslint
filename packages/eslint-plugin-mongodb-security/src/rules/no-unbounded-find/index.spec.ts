@@ -28,24 +28,36 @@ ruleTester.run('no-unbounded-find', noUnboundedFind, {
     // find without limit
     {
       code: `User.find({});`,
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `User.find({}).limit(100);` }],
+      }],
     },
     // find without any chaining
     {
       code: `const users = User.find({ active: true });`,
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `const users = User.find({ active: true }).limit(100);` }],
+      }],
     },
     // find with sort but no limit
     {
       code: `User.find({}).sort({ name: 1 });`,
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `User.find({}).limit(100).sort({ name: 1 });` }],
+      }],
     },
     // allowInTests: false
     {
       code: `User.find({});`,
       filename: 'query.test.ts',
       options: [{ allowInTests: false }],
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `User.find({}).limit(100);` }],
+      }],
     },
   ],
 });

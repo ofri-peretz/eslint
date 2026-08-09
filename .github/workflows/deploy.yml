@@ -112,7 +112,15 @@ jobs:
             -o /dev/null
           echo "✓ Project config reset: rootDirectory=$ROOT_DIRECTORY, build/output/install/framework → null (use local vercel.json)"
 
+      # `VERCEL_TOKEN` is job-level because every `vercel` invocation below needs
+      # it, but an install step does not — and npm lifecycle scripts run with the
+      # step's full environment. Blanking it here keeps a compromised release of
+      # the CLI (or any of its transitive deps) from reading a deploy token it
+      # has no reason to see. The pinned version limits which release that could
+      # be; this limits what one would get.
       - name: Install Vercel CLI
+        env:
+          VERCEL_TOKEN: ''
         run: npm install --global vercel@56.3.2
 
       - name: Pull Vercel environment (${{ inputs.target }})

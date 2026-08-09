@@ -165,7 +165,10 @@ ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
     // Native-driver options object present but without a `limit` property.
     {
       code: `db.users.find({}, { skip: 5 });`,
-      errors: [{ messageId: 'unboundedFind' }],
+      errors: [{
+        messageId: 'unboundedFind',
+        suggestions: [{ messageId: 'suggestionAddLimit', output: `db.users.find({}, { skip: 5 }).limit(100);` }],
+      }],
     },
   ],
 });
@@ -450,17 +453,30 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     `mongoose['connect'](uri);`,
     // Zero arguments — nothing to report on.
     `mongoose.connect();`,
+    // A quoted key is the same option. This sat in `invalid` below, asserting
+    // `suggestions: []` — the rule reported secure config and then had nothing
+    // to offer, which is what a false positive looks like from the inside. The
+    // test was reaching a branch that only existed because `hasTls` matched
+    // identifier keys while the repair lookup stripped quotes.
+    `mongoose.connect(uri, { 'tls': true });`,
+    `mongoose.connect(uri, { "ssl": true });`,
   ],
   invalid: [
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
-      errors: [{ messageId: 'requireTls' }],
+      errors: [{
+        messageId: 'requireTls',
+        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { ...opts, tls: true });` }],
+      }],
     },
-    // String-literal 'tls' key is not recognized (Identifier keys only).
+    // A quoted key that is NOT true still reports, and is repairable in place.
     {
-      code: `mongoose.connect(uri, { 'tls': true });`,
-      errors: [{ messageId: 'requireTls' }],
+      code: `mongoose.connect(uri, { 'tls': false });`,
+      errors: [{
+        messageId: 'requireTls',
+        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { 'tls': true });` }],
+      }],
     },
   ],
 });

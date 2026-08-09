@@ -28,7 +28,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-798',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       hardcodedCredentials: formatLLMMessage({
         icon: MessageIcons.SECURITY,

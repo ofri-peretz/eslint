@@ -225,6 +225,7 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/ddd-anemic-domain-model.md',
       description: 'Detects entities with only getters/setters and no business logic',
     },
+    hasSuggestions: true,
     messages: {
       anemicDomainModel: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,

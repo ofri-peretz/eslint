@@ -34,7 +34,6 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-284',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       bypassMiddleware: formatLLMMessage({
         icon: MessageIcons.INFO,
