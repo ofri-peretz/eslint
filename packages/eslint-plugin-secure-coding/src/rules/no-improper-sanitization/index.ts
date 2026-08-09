@@ -504,6 +504,28 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         }
 
         if (isInDangerousContext) {
+          // A bare literal is developer-authored and carries no taint: nothing
+          // an attacker controls reaches it, so `<` in it is markup the author
+          // typed, not injection. Same reasoning the innerHTML branch above
+          // already applies — extended here because the response-output path
+          // (`res.send`/`write`/`json`) was reporting static HTML.
+          //
+          // Express's own examples/auth/index.js:89 is the case that surfaced
+          // it (#398): `res.send('… <a href="/logout">logout</a>')` reported
+          // CWE-116 with a message about `replace()`, where the statement has
+          // no `replace()` and no interpolation at all.
+          //
+          // Dangerous markup still reports even when hardcoded, because there
+          // the literal *is* the vector regardless of who wrote it.
+          const isBareLiteral =
+            directParent?.type !== 'TemplateLiteral' &&
+            directParent?.type !== 'BinaryExpression';
+          const hasDangerousMarkup =
+            /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(text);
+          if (isBareLiteral && !hasDangerousMarkup) {
+            return;
+          }
+
           // Check if string contains dangerous characters without proper escaping
           const hasDangerousChars = dangerousChars.some(char => text.includes(char));
           const hasEscaping = text.includes('&lt;') || text.includes('&gt;') ||

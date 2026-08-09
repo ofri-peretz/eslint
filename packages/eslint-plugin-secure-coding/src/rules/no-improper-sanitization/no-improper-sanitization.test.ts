@@ -43,8 +43,38 @@ describe('no-improper-sanitization', () => {
         `,
         // Proper HTML entity escaping
 
+        // #398: Express's own examples/auth/index.js:89. A bare string literal
+        // reaching res.send() is developer-authored — nothing an attacker
+        // controls flows into it, so the `<` is markup the author typed. This
+        // reported CWE-116 with a message about `replace()` on a statement that
+        // has no replace() and no interpolation, one of 188 findings on
+        // Express's own reference code.
+        `res.send('Wahoo! restricted area, click to <a href="/logout">logout</a>');`,
+        // Same shape on the other response sinks the rule watches.
+        `res.write('<p>static</p>');`,
+        `res.json('<b>ok</b>');`,
       ],
       invalid: [],
+    });
+  });
+
+  describe('#398 regression: static output stays silent, real sinks do not', () => {
+    ruleTester.run('static vs tainted response output', noImproperSanitization, {
+      valid: [],
+      invalid: [
+        // Hardcoded but genuinely dangerous: the literal IS the vector, so
+        // author-controlled is not a defence. Must still report.
+        {
+          code: `res.send('<script>alert(1)</script>');`,
+          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+        },
+        // User input concatenated into the response — the actual CWE-116 shape
+        // the rule exists for.
+        {
+          code: `res.send('<div>' + req.query.name + '</div>');`,
+          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+        },
+      ],
     });
   });
 
