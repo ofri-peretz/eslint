@@ -87,10 +87,10 @@ jobs:
             {
               "key": "jwt",
               "label": "JWT Ecosystem",
-              "plugin": "eslint-plugin-jwt",
+              "plugin": "eslint-plugin-jwt-security",
               "issue_label": "jwt",
               "packages": "jose@latest jsonwebtoken@latest express-jwt@latest",
-              "rules": "| jose / jsonwebtoken | no-weak-algorithm, require-expiration, no-hardcoded-secret |\n| express-jwt | require-issuer, require-audience |\n"
+              "rules": "| jose / jsonwebtoken | no-algorithm-none, no-weak-secret, require-expiration, no-hardcoded-secret |\n| express-jwt | require-issuer-validation, require-audience-validation |\n"
             },
             {
               "key": "lambda",
@@ -119,10 +119,10 @@ jobs:
             {
               "key": "pg",
               "label": "PostgreSQL Ecosystem (pg)",
-              "plugin": "eslint-plugin-pg",
+              "plugin": "eslint-plugin-postgresql-security",
               "issue_label": "pg",
               "packages": "pg@latest",
-              "rules": "| pg | no-unsafe-query, require-parameterized-query |\n"
+              "rules": "| pg | no-unsafe-query, check-query-params, no-missing-client-release |\n"
             },
             {
               "key": "vercel-ai",
