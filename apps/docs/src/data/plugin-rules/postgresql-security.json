@@ -1,6 +1,6 @@
 {
-  "plugin": "pg",
-  "package": "eslint-plugin-pg",
+  "plugin": "postgresql-security",
+  "package": "eslint-plugin-postgresql-security",
   "rules": [
     {
       "name": "check-query-params",
@@ -15,7 +15,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/check-query-params"
+      "href": "/docs/postgresql-security/rules/check-query-params"
     },
     {
       "name": "no-batch-insert-loop",
@@ -30,7 +30,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-batch-insert-loop"
+      "href": "/docs/postgresql-security/rules/no-batch-insert-loop"
     },
     {
       "name": "no-floating-query",
@@ -45,7 +45,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-floating-query"
+      "href": "/docs/postgresql-security/rules/no-floating-query"
     },
     {
       "name": "no-hardcoded-credentials",
@@ -60,7 +60,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-hardcoded-credentials"
+      "href": "/docs/postgresql-security/rules/no-hardcoded-credentials"
     },
     {
       "name": "no-insecure-ssl",
@@ -75,7 +75,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-insecure-ssl"
+      "href": "/docs/postgresql-security/rules/no-insecure-ssl"
     },
     {
       "name": "no-missing-client-release",
@@ -90,7 +90,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-missing-client-release"
+      "href": "/docs/postgresql-security/rules/no-missing-client-release"
     },
     {
       "name": "no-select-all",
@@ -105,7 +105,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-select-all"
+      "href": "/docs/postgresql-security/rules/no-select-all"
     },
     {
       "name": "no-transaction-on-pool",
@@ -120,7 +120,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-transaction-on-pool"
+      "href": "/docs/postgresql-security/rules/no-transaction-on-pool"
     },
     {
       "name": "no-unsafe-copy-from",
@@ -135,7 +135,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-unsafe-copy-from"
+      "href": "/docs/postgresql-security/rules/no-unsafe-copy-from"
     },
     {
       "name": "no-unsafe-query",
@@ -150,7 +150,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-unsafe-query"
+      "href": "/docs/postgresql-security/rules/no-unsafe-query"
     },
     {
       "name": "no-unsafe-search-path",
@@ -165,7 +165,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/no-unsafe-search-path"
+      "href": "/docs/postgresql-security/rules/no-unsafe-search-path"
     },
     {
       "name": "prefer-pool-query",
@@ -180,7 +180,7 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/prefer-pool-query"
+      "href": "/docs/postgresql-security/rules/prefer-pool-query"
     },
     {
       "name": "prevent-double-release",
@@ -195,9 +195,9 @@
       "hasSuggestions": false,
       "deprecated": false,
       "category": "General",
-      "href": "/docs/pg/rules/prevent-double-release"
+      "href": "/docs/postgresql-security/rules/prevent-double-release"
     }
   ],
   "totalRules": 13,
-  "lastSynced": "2026-08-07T02:23:32.993Z"
+  "lastSynced": "2026-08-09T03:05:47.404Z"
 }

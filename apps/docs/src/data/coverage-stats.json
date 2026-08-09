@@ -44,22 +44,8 @@
         "category": "security"
       },
       {
-        "name": "eslint-plugin-jwt",
-        "slug": "jwt",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
         "name": "eslint-plugin-jwt-security",
         "slug": "jwt-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-pg",
-        "slug": "pg",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -228,7 +214,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-08-07T02:23:34.761Z",
+    "generatedAt": "2026-08-09T03:05:49.245Z",
     "source": "estimated",
     "ttl": 14400
   }
