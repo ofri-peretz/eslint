@@ -1,0 +1,5 @@
+# Generated per-run by run.ts — configs are derived from matchups.ts and the
+# plugin presets, so committing them would create a second source of truth
+# that silently drifts from the one the bench actually reads.
+.configs/
+.cache/
