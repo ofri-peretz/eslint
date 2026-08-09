@@ -178,6 +178,40 @@ if (!url || !key) {
   process.exit(REQUIRED ? 1 : 0);
 }
 
+// Validate the destination before sending anything. CodeQL flags this call as
+// "outbound request depends on file data" — correctly: `rows` is built from
+// JSON on disk. The data is our own benchmark output, but a benchmark artifact
+// is still an input, so constrain what can leave and where it can go rather
+// than suppressing the alert.
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)) {
+  console.error(
+    `SUPABASE_URL is not a Supabase HTTPS endpoint: ${url.slice(0, 60)}. Refusing to send.`,
+  );
+  process.exit(REQUIRED ? 1 : 0);
+}
+
+// Whitelist the fields that may be transmitted. A snapshot is machine-written,
+// but reading it is still trusting a file: if a future field ever carried a
+// path, token, or environment value, this stops it leaving the machine.
+const ALLOWED_FIELDS = new Set([
+  'suite', 'stack', 'stack_label', 'repo', 'rule_id',
+  'cold_ms', 'warm_ms', 'cold_min_ms', 'cold_max_ms',
+  'findings', 'files_processed', 'repeats',
+  'ok', 'failure_note', 'file_set_parity',
+  'corpus_commit', 'eslint_version', 'oxlint_version', 'node_version',
+  'runner', 'gha_run_id', 'measured_at',
+]);
+
+const payload = rows.map((r) =>
+  Object.fromEntries(
+    Object.entries(r)
+      .filter(([k]) => ALLOWED_FIELDS.has(k))
+      // Truncate free-text so a huge stderr blob cannot be exfiltrated or
+      // blow up the request.
+      .map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 2000) : v]),
+  ),
+);
+
 // PostgREST insert. on_conflict on the UNIQUE key makes re-runs idempotent:
 // publishing the same measured_at twice cannot double-count a week.
 const endpoint =
@@ -197,7 +231,7 @@ async function main() {
         // ignore-duplicates: never overwrite a measured row.
         Prefer: 'resolution=ignore-duplicates,return=minimal',
       },
-      body: JSON.stringify(rows),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
