@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-08-07T02:23:32.995Z",
+  "lastSynced": "2026-08-09T03:05:47.406Z",
   "plugins": 9,
   "success": 9,
   "errors": 0,
@@ -7,11 +7,11 @@
     "success": [
       "browser-security: 45 rules",
       "express-security: 24 rules",
-      "jwt: 13 rules",
+      "jwt-security: 13 rules",
       "lambda-security: 14 rules",
       "mongodb-security: 16 rules",
-      "nestjs-security: 9 rules",
-      "pg: 13 rules",
+      "nestjs-security: 10 rules",
+      "postgresql-security: 13 rules",
       "secure-coding: 27 rules",
       "vercel-ai-security: 19 rules"
     ],
