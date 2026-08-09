@@ -195,9 +195,38 @@ grandfathered — renaming a published package is a separate decision with its o
 
 When creating or reviewing rules, ensure they're in the correct plugin:
 
+**The decisive test — apply it before anything else:** *can this rule fire on
+code whose only dependency is the language and the platform?*
+
+- **Yes** → `secure-coding` (language), `node-security` (Node runtime/stdlib),
+  `browser-security` (DOM/BOM/transport).
+- **No — it needs driver, framework or SDK X installed** → X's own protective
+  plugin. Never the code-agnostic three, no matter how generic the *vulnerability
+  class* sounds.
+
+The vulnerability class is not the scope test; the detection gate is. SQL
+injection is a universal class, but detecting it means matching `.query()` /
+`.raw()` sinks that only exist in a DB driver — so it lives in `pg` and the other
+per-driver plugins, not in `secure-coding`. The recurring failure is name
+association: every `no-*-injection` rule drifts toward `secure-coding` because
+its siblings are there.
+
+Two smells that mean you are in the wrong plugin:
+
+1. You compare against a package identifier (`'sequelize'`, `'multer'`, `'cors'`)
+   anywhere in the detection path.
+2. Two plugins would report the same line, and you are reaching for a dedupe
+   test to make that acceptable. Fix the placement instead — no rule can detect
+   that another plugin is installed, so the duplicate reaches the user.
+
+Enforced by `npm run lint:taxonomy` (`scripts/lint-plugin-taxonomy.ts`, gated in
+the fast quality job). Violations predating the guard are listed in its
+`GRANDFATHERED` array with the reason and the migration target.
+
 | If the rule...                                                  | It belongs in...                   |
 | --------------------------------------------------------------- | ---------------------------------- |
-| Applies to any JavaScript/TypeScript code                       | `eslint-plugin-secure-coding`      |
+| Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`      |
+| Needs a SQL driver or ORM (`.query()`, `.raw()`, `.execute()`)  | `eslint-plugin-pg` + the per-driver plugins |
 | Checks Vercel AI SDK patterns (`generateText`, `streamText`)    | `eslint-plugin-vercel-ai-security` |
 | Checks OpenAI SDK patterns (`openai.chat.completions`)          | `eslint-plugin-openai-security`    |
 | Detects agentic patterns (tools, autonomous agents) across SDKs | `eslint-plugin-agentic-security`   |

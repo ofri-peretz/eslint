@@ -17,6 +17,7 @@ run-name: >-
 #   - Markdown Lint             ~20s
 #   - CHANGELOG Check           ~15s
 #   - Workflow + script locks   ~30s
+#   - Plugin Taxonomy           ~5s
 #   - Lockfile Sync             ~10s
 #
 # Total wall ~30s. Compared to the pre-split ~3m, ~80% GHA-minute reduction.
@@ -104,6 +105,17 @@ jobs:
           turbo-cache: "false"
       - run: npm run lint:publish
 
+  taxonomy:
+    name: Plugin Taxonomy
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run lint:taxonomy
+
   lockfile:
     name: Lockfile Sync
     runs-on: ubuntu-latest
@@ -138,7 +150,7 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, publish-metadata, lockfile]
+    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile]
     if: always()
     steps:
       - name: Render gate report
@@ -147,6 +159,7 @@ jobs:
           R_MARKDOWN: ${{ needs.markdown.result }}
           R_CHANGELOG: ${{ needs.changelog.result }}
           R_WORKFLOWS: ${{ needs.workflows.result }}
+          R_TAXONOMY: ${{ needs.taxonomy.result }}
           R_PUBLISH: ${{ needs.publish-metadata.result }}
           R_LOCKFILE: ${{ needs.lockfile.result }}
         run: |
@@ -162,7 +175,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_PUBLISH" "$R_LOCKFILE"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -180,6 +193,7 @@ jobs:
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
             echo "| Workflow + script locks | $(icon "$R_WORKFLOWS") $R_WORKFLOWS | \`lint-workflows.ts\` + \`scripts/__tests__\` |"
+            echo "| Plugin taxonomy     | $(icon "$R_TAXONOMY") $R_TAXONOMY       | code-agnostic plugins carry no SDK gates |"
             echo "| Publish metadata    | $(icon "$R_PUBLISH") $R_PUBLISH         | no package publishes with an npm warning |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo ""
