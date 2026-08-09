@@ -2,7 +2,7 @@
 'eslint-plugin-secure-coding': minor
 ---
 
-Drop `no-unchecked-loop-condition` from the `recommended` preset
+Drop `no-unchecked-loop-condition` from `recommended` — and from every preset derived from it
 
 Measured over `express` + `axios` + `sequelize`, the rule fired 39 times and
 **38 of them were bounded loops**:
@@ -27,5 +27,10 @@ The rule is unchanged, still exported, still documented, and still `error` in
 `strict`. Teams that want to sweep for runaway loops can enable it explicitly
 and triage the output. It is no longer part of what a new consumer gets by
 default.
+
+**Which presets change.** `recommended-strict` and `owasp-top-10` are derived
+from the same `recommendedRules` object, so this one removal drops the rule from
+all three. Only `strict` still enables it. If you are on `recommended-strict`
+rather than `recommended`, this release changes your output too.
 
 No rule behaviour changes; this only affects the presets.

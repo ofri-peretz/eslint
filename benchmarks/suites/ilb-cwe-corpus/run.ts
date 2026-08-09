@@ -208,6 +208,27 @@ async function main() {
     process.exit(1);
   }
 
+  // Load every config before scoring anything. A config that throws on import
+  // used to be caught per-fixture and returned as `{error}`; the scorer read
+  // the missing `findings` field as zero, so a plugin that could not load and
+  // a plugin that found nothing produced identical numbers. That is exactly
+  // what happened when #414 renamed eslint-plugin-pg/-jwt out from under
+  // interlace.config.js: this suite reported Interlace at F1 0%, FN 69, last
+  // place, for two days. Fail the run instead — a benchmark that cannot load a
+  // competitor must not publish a score for it.
+  for (const plugin of plugins) {
+    try {
+      await loadConfig(plugin.config);
+    } catch (e) {
+      console.error(
+        `\n❌ Config failed to load for "${plugin.displayName}" (${plugin.config})\n   ${(e as Error).message}\n\n` +
+          `Refusing to score. A config that does not load would otherwise be\n` +
+          `indistinguishable from a plugin that detects nothing.`,
+      );
+      process.exit(3);
+    }
+  }
+
   if (!EMIT_JSON) {
     console.log(`\n🧪 ILB-CWE-Corpus v1.0 — ${corpus.length} CWE${corpus.length === 1 ? "" : "s"} × ${plugins.length} plugin${plugins.length === 1 ? "" : "s"}\n`);
     for (const c of corpus) {

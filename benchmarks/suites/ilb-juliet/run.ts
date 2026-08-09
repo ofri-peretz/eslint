@@ -201,6 +201,21 @@ async function main() {
     process.exit(1);
   }
 
+  // See the same preflight in ilb-cwe-corpus/run.ts — this suite shares both
+  // the arena configs and the swallow-the-error-and-score-zero defect.
+  for (const plugin of plugins) {
+    try {
+      await loadConfig(plugin.config);
+    } catch (e) {
+      console.error(
+        `\n❌ Config failed to load for "${plugin.displayName}" (${plugin.config})\n   ${(e as Error).message}\n\n` +
+          `Refusing to score. A config that does not load would otherwise be\n` +
+          `indistinguishable from a plugin that detects nothing.`,
+      );
+      process.exit(3);
+    }
+  }
+
   if (!EMIT_JSON) {
     console.log(`\n🧪 ILB-Juliet v1.0 — ${corpus.length} CWE${corpus.length === 1 ? "" : "s"} × ${plugins.length} plugin${plugins.length === 1 ? "" : "s"}\n`);
     for (const c of corpus) {
