@@ -73,6 +73,15 @@ jobs:
     timeout-minutes: 90
 
     steps:
+      # Pages is a single production surface and the commit step writes to
+      # main, so a dispatch from a feature branch would publish that branch's
+      # badges as the official numbers. Refuse anything but the default branch.
+      - name: Refuse to publish from a non-default branch
+        if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "::error::weekly-benchmark publishes to production Pages and pushes to           ${{ github.event.repository.default_branch }}. Refusing to run from ${{ github.ref }}."
+          exit 1
+
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       - uses: ./.github/actions/setup
