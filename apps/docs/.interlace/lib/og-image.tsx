@@ -73,14 +73,21 @@ export function createDocsOGRoute(options: DocsOGRouteOptions) {
     const page = src.getPage(pageSlug);
     if (!page) notFound();
 
+    // `page.data.title` is optional from fumadocs 16.14 on (it was `string`
+    // before). An OG card with no title is a rendering bug rather than a valid
+    // state, so fall back to the site name instead of widening `render`'s
+    // contract to `string | undefined` and pushing the same decision onto every
+    // consumer's override.
+    const title = page.data.title ?? options.site;
+
     const tree = options.render
       ? options.render({
-          title: page.data.title,
+          title,
           description: page.data.description,
         })
       : (
           <DefaultOGImage
-            title={page.data.title}
+            title={title}
             description={page.data.description}
             site={options.site}
           />
