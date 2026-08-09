@@ -8,6 +8,7 @@
     "no-permissive-cors",
     "no-res-bypass-serialization",
     "no-unguarded-swagger",
+    "no-unsafe-multer-filename",
     "require-guards",
     "require-throttler",
     "require-validation-pipe-whitelist"
