@@ -25,23 +25,23 @@ describe('no-unsafe-query', () => {
       valid: [
         {
           name: 'safe idiom',
-          code: 'db.select().from(users).where(sql`id = ${userId}`);',
+          code: 'import sql from "drizzle-orm";\ndb.select().from(users).where(sql`id = ${userId}`);',
         },
         {
           name: 'static SQL, no interpolation',
-          code: "sql.raw('SELECT * FROM users');",
+          code: "import sql from 'drizzle-orm';\nsql.raw('SELECT * FROM users');",
         },
         {
           name: 'no arguments',
-          code: 'sql.raw();',
+          code: 'import sql from "drizzle-orm";\nsql.raw();',
         },
         {
           name: 'unrelated code',
-          code: 'const x = 1;',
+          code: 'import sql from "drizzle-orm";\nconst x = 1;',
         },
         {
           name: 'safe variable passed through',
-          code: "const sql = 'SELECT * FROM users'; sql.raw(sql);",
+          code: "import sql from 'drizzle-orm';\nconst sql = 'SELECT * FROM users'; sql.raw(sql);",
         },
       ],
       invalid: [],
@@ -54,17 +54,18 @@ describe('no-unsafe-query', () => {
       invalid: [
         {
           name: 'template interpolation',
-          code: 'sql.raw(`SELECT * FROM users WHERE id = ${userId}`);',
+          code: 'import sql from "drizzle-orm";\nsql.raw(`SELECT * FROM users WHERE id = ${userId}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: "sql.raw('SELECT * FROM users WHERE id = ' + userId);",
+          code: "import sql from 'drizzle-orm';\nsql.raw('SELECT * FROM users WHERE id = ' + userId);",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable reaches the sink',
           code: [
+            "import sql from 'drizzle-orm';",
             'const sql = `SELECT * FROM users WHERE id = ${id}`;',
             'sql.raw(sql);',
           ].join('\n'),
