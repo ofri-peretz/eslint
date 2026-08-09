@@ -37,83 +37,18 @@ if (!existsSync(RESULTS_DIR)) {
 const HEADLINE_REPO = process.env.BENCH_HEADLINE_REPO || 'nestjs';
 const allFiles = readdirSync(RESULTS_DIR).filter((f) => f.endsWith('.json')).sort();
 const files = allFiles.filter((f) => f.includes(`-${HEADLINE_REPO}.`));
-if (!files.length && allFiles.length) {
-  console.warn(
-    `No snapshot for headline repo "${HEADLINE_REPO}" — falling back to latest of ` +
-    `${allFiles.length} snapshot(s). Set BENCH_HEADLINE_REPO to pick deliberately.`,
-  );
-  files.push(allFiles[allFiles.length - 1]);
-}
 if (!files.length) {
-  console.error('No headline snapshot — run `npm run ilb:headline` first.');
+  // Do NOT fall back to "whatever snapshot is newest". A CI runner caches the
+  // results dir, so a stale snapshot from a repo we no longer benchmark can
+  // survive there — that is exactly how badges published `corpus: three.js`
+  // after a run that measured nestjs and shadcn-ui. Wrong-but-plausible
+  // numbers are worse than no numbers.
+  console.error(
+    `No snapshot for headline repo "${HEADLINE_REPO}". ` +
+    `Found: ${allFiles.join(', ') || '(none)'}.\n` +
+    `Refusing to render badges from a different repo's data.`,
+  );
   process.exit(1);
-}
-
-/**
- * Source of truth for the badges.
- *
- * Default: the local snapshot this run just produced.
- *
- * `--from-supabase`: read back the rows we just published instead. This is
- * the stronger guarantee — it proves the badges render the SAME data that is
- * stored and reusable elsewhere, rather than a parallel copy that happens to
- * agree today. If the store write silently mangled a number, the badge shows
- * the mangled number and we find out immediately.
- *
- * It reads the public `v_benchmark_latest` view with the anon key: the badge
- * step needs no write credentials, so a leaked badge env cannot corrupt data.
- */
-async function loadFromSupabase(): Promise<any | null> {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    console.warn('--from-supabase requested but SUPABASE_URL/key not set.');
-    return null;
-  }
-  const endpoint =
-    `${url.replace(/\/$/, '')}/rest/v1/v_benchmark_latest` +
-    `?suite=eq.ilb-headline&rule_id=is.null&select=*`;
-  const res = await fetch(endpoint, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
-  if (!res.ok) {
-    console.warn(`Supabase read failed (${res.status}) — falling back to local snapshot.`);
-    return null;
-  }
-  const records: any[] = await res.json();
-  if (!records.length) {
-    console.warn('Supabase returned no headline rows — falling back to local snapshot.');
-    return null;
-  }
-  // Reshape the flat rows back into the snapshot shape the renderer expects.
-  const first = records[0];
-  return {
-    generatedAt: records
-      .map((r) => r.measured_at)
-      .sort()
-      .reverse()[0],
-    repo: first.repo,
-    repeat: first.repeats,
-    fileSet: {
-      ours: records.find((r) => r.stack === 'ours')?.files_processed ?? null,
-      competitor: records.find((r) => r.stack === 'competitor')?.files_processed ?? null,
-      eslintParity: records.some((r) => r.file_set_parity === true),
-    },
-    rows: records.map((r) => ({
-      key: r.stack,
-      label: r.stack_label ?? r.stack,
-      coldMs: r.cold_ms == null ? null : Number(r.cold_ms),
-      warmMs: r.warm_ms == null ? null : Number(r.warm_ms),
-      findings: r.findings,
-      files: r.files_processed,
-      ok: true, // the view already excludes failed rows
-    })),
-    versions: {
-      eslint: first.eslint_version,
-      oxlint: first.oxlint_version,
-      node: first.node_version,
-    },
-  };
 }
 
 const localSnapshot = JSON.parse(

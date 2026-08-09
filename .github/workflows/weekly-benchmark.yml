@@ -44,7 +44,7 @@ on:
       headline_repo:
         description: "Repo for the headline chart"
         required: false
-        default: "three.js"
+        default: "nestjs"
       repeat:
         description: "Timed repeats per measurement (median-of-N)"
         required: false
@@ -126,7 +126,6 @@ jobs:
             echo "::endgroup::"
           }
           : > oos/COMMITS.txt
-          clone three.js  https://github.com/mrdoob/three.js.git
           clone next.js   https://github.com/vercel/next.js.git
           clone supabase  https://github.com/supabase/supabase.git
           clone lodash    https://github.com/lodash/lodash.git
@@ -142,6 +141,12 @@ jobs:
       # and every per-job matchup silently fall back to "skipped".
       - name: Build plugins (dist/ is what the bench loads)
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
+      # Results are regenerated every run. A leftover snapshot from a previous
+      # corpus is not history, it is a landmine: the badge step can render it
+      # as though it were this week's measurement.
+      - name: Clear stale headline snapshots
+        run: rm -rf benchmarks/results/ilb-headline
 
       - name: Install benchmark workspace (eslint + oxlint + plugins)
         working-directory: benchmarks/suites/ilb-flagship/workspace
@@ -221,6 +226,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Name the headline repo explicitly. Left implicit, the badge step
+          # picked whatever snapshot sorted last on the runner — which was a
+          # cached three.js file from a repo we no longer benchmark.
+          BENCH_HEADLINE_REPO: ${{ github.event.inputs.headline_repo || 'nestjs' }}
         run: npm run ilb:headline:badges -- --from-supabase
 
       # ── Publish badges to GitHub Pages ────────────────────────────────
