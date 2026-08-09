@@ -103,10 +103,30 @@ jobs:
 
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Read the lease value explicitly instead of letting
+          # `--force-with-lease` infer it.
+          #
+          # Bare `--force-with-lease` compares against the remote-tracking ref,
+          # and rejects the push as "stale info" when it can't resolve one.
+          # actions/checkout makes a SINGLE-BRANCH clone, so both the ref and
+          # the fetch refspec that would map it are absent — and simply fetching
+          # the branch does not help, because an unmapped refspec leaves the
+          # lease unresolvable either way. The result was a workflow that
+          # succeeded exactly once: the run that created $BRANCH pushed fine
+          # (no remote branch, empty lease satisfied) and every run after it
+          # failed on the push having done all the sync work correctly.
+          #
+          # An empty $LEASE is the documented "this ref must not exist yet"
+          # form, so the create path keeps working. This is not `--force` in
+          # disguise: a push that lands on $BRANCH after this read is still
+          # refused, which is the whole point of the lease.
+          LEASE=$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)
+
           git checkout -B "$BRANCH"
           git add apps/docs/src/data/
           git commit -m "chore(docs): sync data [automated]"
-          git push --force-with-lease origin "$BRANCH"
+          git push --force-with-lease="$BRANCH:$LEASE" origin "$BRANCH"
 
           if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
             echo "Existing PR updated with the new sync commit."
