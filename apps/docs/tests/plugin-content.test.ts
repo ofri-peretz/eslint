@@ -232,11 +232,33 @@ describe('Plugin Content Module', () => {
       }
     });
 
-    it('packageName should match expected pattern based on name', () => {
+    // `name` is the ESLint *rule namespace* (the `jwt/` in
+    // `jwt/no-algorithm-none`), not the package suffix. For most plugins the
+    // two coincide, but `eslint-plugin-jwt` → `eslint-plugin-jwt-security` and
+    // `eslint-plugin-pg` → `eslint-plugin-postgresql-security` renamed the
+    // package while deliberately keeping the short namespace so no consumer
+    // config had to move. The old assertion blanket-derived the package from
+    // the namespace — its "handle special cases like pg, jwt" comment promised
+    // an exception it never implemented, and it only passed because
+    // `packageName` was still pinned to the deprecated names.
+    const NAMESPACE_TO_PACKAGE_EXCEPTIONS: Record<string, string> = {
+      jwt: 'eslint-plugin-jwt-security',
+      pg: 'eslint-plugin-postgresql-security',
+    };
+
+    it('packageName matches the namespace, except where the package was renamed', () => {
       for (const plugin of PLUGINS) {
-        // Handle special cases like pg, jwt
-        const expectedSuffix = plugin.name;
-        expect(plugin.packageName).toBe(`eslint-plugin-${expectedSuffix}`);
+        const expected =
+          NAMESPACE_TO_PACKAGE_EXCEPTIONS[plugin.name] ?? `eslint-plugin-${plugin.name}`;
+        expect(plugin.packageName).toBe(expected);
+      }
+    });
+
+    it('never points at a package name that was deprecated on npm', () => {
+      const DEPRECATED = ['eslint-plugin-jwt', 'eslint-plugin-pg'];
+      for (const plugin of PLUGINS) {
+        expect(DEPRECATED).not.toContain(plugin.packageName);
+        expect(DEPRECATED.some((d) => plugin.docsPath.startsWith(`packages/${d}/`))).toBe(false);
       }
     });
 
@@ -303,11 +325,11 @@ describe('Plugin Content Module', () => {
       const plugin = getPlugin('jwt');
       expect(plugin).toEqual({
         name: 'jwt',
-        packageName: 'eslint-plugin-jwt',
+        packageName: 'eslint-plugin-jwt-security',
         displayName: 'JWT Security',
         category: 'security',
         description: 'JSON Web Token security rules',
-        docsPath: 'packages/eslint-plugin-jwt/docs/rules',
+        docsPath: 'packages/eslint-plugin-jwt-security/docs/rules',
       });
     });
   });

@@ -67,16 +67,16 @@ const ALLOWED_THIRD_PARTY = [
   // `getting-started/configuration.mdx`. Not a real package.
   'eslint-config-mycompany',
 
-  // === Deprecated pre-rename names ===
-  // Renamed to eslint-plugin-postgresql-security / eslint-plugin-jwt-security
-  // and deprecated on npm. Every install and usage reference in the docs was
-  // rewritten to the new names; what survives is the generated `changelog.mdx`
-  // pages, which project each package's CHANGELOG.md and therefore record the
-  // name the release actually shipped under. Rewriting those would make the
-  // history lie. Drop these two entries once the changelogs roll past the
-  // rename.
-  'eslint-plugin-pg',
-  'eslint-plugin-jwt',
+  // === Deprecated pre-rename names: intentionally NOT allowlisted ===
+  // `eslint-plugin-pg` and `eslint-plugin-jwt` were allowlisted here while the
+  // generated `changelog.mdx` pages still carried the old names in their
+  // descriptions and their GitHub links. Both were rewritten on 2026-08-06 —
+  // the links had gone 404 when the package directories were renamed — so
+  // nothing under `content/docs` names either package any more and the
+  // exemption is gone. Keeping a dead allowlist entry would silently permit a
+  // regression back to a deprecated package name, which is exactly what this
+  // validator exists to catch. If a docs generator reintroduces one, this test
+  // should fail rather than wave it through.
 ] as const;
 
 describe('plugin-name drift (eslint content/docs)', () => {

@@ -278,14 +278,14 @@ are in [`benchmarks/README.md`](./benchmarks/README.md).
 
 > **Last refresh:** 2026-08-02 (source: npm registry — `npm run stats:eslint-versions`)
 
-| ESLint major    | Weekly downloads | Share | Status                         |
-| :-------------- | ---------------: | ----: | :----------------------------- |
-| **v10**         |            23.6M | 11.1% | ✅ Supported (forward-looking) |
-| **v9**          |           109.1M | 51.1% | ✅ Supported (current default) |
-| **v8** (≥ 8.40) |            60.3M | 28.3% | ✅ Supported (legacy active)   |
-| v7 and older    |            19.9M |  9.4% | ❌ Unsupported (EOL)           |
+| ESLint major    | Weekly downloads |  Share | Status                         |
+| :-------------- | ---------------: | -----: | :----------------------------- |
+| **v10**         |            23.6M | 11.08% | ✅ Supported (forward-looking) |
+| **v9**          |           109.1M | 51.13% | ✅ Supported (current default) |
+| **v8** (≥ 8.40) |            60.3M | 28.29% | ✅ Supported (legacy active)   |
+| v7 and older    |            20.3M |  9.51% | ❌ Unsupported (EOL)           |
 
-Supported majors cover **90.5%** of weekly ESLint downloads. Every published package
+Supported majors cover **90.49%** of weekly ESLint downloads. Every published package
 declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"`.
 
 **Why the floor is 8.40 and not 8.0:** releases before 8.40 predate

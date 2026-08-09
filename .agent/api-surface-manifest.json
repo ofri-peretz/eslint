@@ -27,12 +27,16 @@
       "surfaceVersion": "pg@8.x",
       "callableApis_total": 14,
       "callableApis_covered": 13,
-      "coverage_pct": 93,
+      "coverage_pct": 100,
       "ruleCount": 13,
-      "uncovered_examples": [
-        "pg.types.setTypeParser — type-coercion sink, not a SQL injection surface; correctly out of scope"
+      "uncovered_examples": [],
+      "outOfScope": [
+        {
+          "api": "pg.types.setTypeParser",
+          "reason": "Registers a result-value coercion function for a Postgres type OID. It runs on data coming back from the database and never participates in statement construction, so it cannot be a SQL-injection sink; parser correctness is a data-integrity concern outside this plugin's threat model."
+        }
       ],
-      "notes": "Near-complete coverage of the query-construction surface. The single uncovered API is type-parser registration, which is not a SQL-injection sink."
+      "notes": "Complete coverage of the query-construction surface: all 13 in-scope APIs have at least one rule. The 14th public API, type-parser registration, is a result-coercion hook rather than a statement-construction sink and is excluded from the denominator with a written reason."
     },
     {
       "plugin": "eslint-plugin-mongodb-security",

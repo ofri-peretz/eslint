@@ -206,7 +206,7 @@ function resolvePath(template: string, params: Record<string, string>): string {
  * GET /api/github
  * 
  * Query params:
- * - path: Direct path to file (e.g., "packages/eslint-plugin-jwt/README.md")
+ * - path: Direct path to file (e.g., "packages/eslint-plugin-jwt-security/README.md")
  * - type: Content type shortcut (readme, changelog, rules, meta, coverage, stats)
  * - plugin: Plugin name for templated paths
  * - rule: Rule name for rule documentation

@@ -233,6 +233,81 @@ describe('audit-api-surface: auditManifest', () => {
     const f = auditManifest(make() as any);
     expect(f).toEqual([]);
   });
+
+  // ---- outOfScope: the denominator must stay honest -----------------------
+
+  const withOutOfScope = (outOfScope: unknown[], over: Partial<any> = {}) =>
+    make({
+      plugins: [
+        {
+          plugin: 'eslint-plugin-scoped',
+          surface: 'x',
+          surfaceVersion: '1',
+          callableApis_total: 10,
+          callableApis_covered: 9,
+          coverage_pct: 100,
+          ruleCount: 9,
+          uncovered_examples: [],
+          outOfScope,
+          ...over,
+        },
+      ],
+    });
+
+  it('computes coverage against the in-scope total, not the raw API count', () => {
+    // 9 covered of 10 APIs, but 1 is not a sink → 9/9 = 100%, not 90%.
+    const f = auditManifest(
+      withOutOfScope([
+        { api: 'x.notASink', reason: 'Runs on data returned from the server and never participates in query construction.' },
+      ]) as any,
+    );
+    expect(f).toEqual([]);
+  });
+
+  it('rejects an exclusion with no substantive reason', () => {
+    const f = auditManifest(withOutOfScope([{ api: 'x.bare', reason: 'n/a' }]) as any);
+    expect(f.some((x) => x.severity === 'error' && /substantive reason/.test(x.message))).toBe(true);
+  });
+
+  it('rejects an exclusion argued from rarity rather than threat model', () => {
+    // The gaming path this field exists to block: relabel an unclosed gap as
+    // "niche" and collect a free point.
+    const f = auditManifest(
+      withOutOfScope([
+        { api: 'x.rareSink', reason: 'This API is niche and almost nobody calls it in practice.' },
+      ]) as any,
+    );
+    expect(f.some((x) => x.severity === 'error' && /frequency/.test(x.message))).toBe(true);
+  });
+
+  it('rejects a duplicated exclusion that would deflate the denominator twice', () => {
+    const reason = 'Result-coercion hook that cannot influence statement construction at all.';
+    const f = auditManifest(
+      withOutOfScope(
+        [
+          { api: 'x.dup', reason },
+          { api: 'x.dup', reason },
+        ],
+        { callableApis_covered: 8, coverage_pct: 100 },
+      ) as any,
+    );
+    expect(f.some((x) => x.severity === 'error' && /twice/.test(x.message))).toBe(true);
+  });
+
+  it('errors when covered exceeds the in-scope total', () => {
+    const f = auditManifest(
+      withOutOfScope(
+        [{ api: 'x.notASink', reason: 'Not reachable by attacker-controlled input under this threat model.' }],
+        { callableApis_covered: 10, coverage_pct: 100 },
+      ) as any,
+    );
+    expect(f.some((x) => x.severity === 'error' && /in-scope total/.test(x.message))).toBe(true);
+  });
+
+  it('treats a missing outOfScope as an empty list', () => {
+    const f = auditManifest(make() as any);
+    expect(f).toEqual([]);
+  });
 });
 
 describe('audit-api-surface: recomputeSummary', () => {
