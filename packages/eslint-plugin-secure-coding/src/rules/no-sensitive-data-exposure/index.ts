@@ -42,6 +42,41 @@ type RuleOptions = [Options?];
  * Check if string contains sensitive data patterns.
  * Handles camelCase (secretKey), snake_case (secret_key), and plain text.
  */
+/**
+ * Does a *standalone string literal* carry a credential?
+ *
+ * Distinct from `containsSensitiveData`, and deliberately so — they answer
+ * different questions. An identifier named `password` is sensitive because of
+ * what it holds, so the plain word match is right there. A string literal is
+ * sensitive only when it carries a value; merely naming the concept is not a
+ * leak. These were all reported on the wild corpus:
+ *
+ *   throw new Error('Token not found')                  token.service.js:58
+ *   throw new Error('Invalid token type')               passport.js:14
+ *   throw new Error('Password must contain at least
+ *                   one letter and one number')         user.model.js:33
+ *
+ * The last is a validation message quoting a policy. None contains a
+ * credential; each mentions one. Requiring `<word><separator><value>` keeps
+ * `'password: hunter2'` reported and lets prose through, while
+ * `'password: ' + password` stays caught by the identifier check on the
+ * concatenation's right-hand side — which is why that path must keep using
+ * the plain word match.
+ */
+function literalCarriesSecret(text: string, patterns: string[]): boolean {
+  const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  return patterns.some((pattern) => {
+    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
+    // Word, then a ':' or '=' within a short label, then something non-empty.
+    // The gap allows multi-word labels — 'secret key: sk_live', 'phone
+    // number: 555-0142', 'credit card: 4111...' — while still requiring a
+    // separator and a value, so 'Token not found' and 'Password must contain
+    // at least one letter and one number' stay silent.
+    return new RegExp(`\\b${flexPattern}\\b[^:=\\n]{0,24}[:=]\\s*\\S`, 'i').test(normalized);
+  });
+}
+
 function containsSensitiveData(
   text: string,
   patterns: string[]
@@ -62,6 +97,17 @@ function containsSensitiveData(
   return null;
 }
 
+
+/**
+ * The same three advisory suggestions are offered at every report site. They
+ * carry no autofix — redacting a value is a judgement the author has to make —
+ * so they are defined once rather than reconstructed per site.
+ */
+const REDACTION_SUGGESTIONS = [
+  { messageId: 'redactData' as const, fix: () => null },
+  { messageId: 'useMasking' as const, fix: () => null },
+  { messageId: 'removeFromLogs' as const, fix: () => null },
+];
 
 export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-exposure',
@@ -192,7 +238,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         for (const arg of node.arguments) {
           if (arg.type === 'Literal' && typeof arg.value === 'string') {
             const text = arg.value;
-            const matchedPattern = containsSensitiveData(text, sensitivePatterns);
+            const matchedPattern = literalCarriesSecret(text, sensitivePatterns)
+              ? containsSensitiveData(text, sensitivePatterns)
+              : null;
             if (matchedPattern) {
               context.report({
                 node: arg,
@@ -201,11 +249,37 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'logs',
                   dataType: matchedPattern,
                 },
-                suggest: [
-                  { messageId: 'redactData', fix: () => null },
-                  { messageId: 'useMasking', fix: () => null },
-                  { messageId: 'removeFromLogs', fix: () => null },
-                ],
+                suggest: REDACTION_SUGGESTIONS,
+              });
+              return; // Only report once per call
+            }
+          } else if (arg.type === 'BinaryExpression' && arg.operator === '+') {
+            // `console.log('password: ' + password)` — the classic credential
+            // leak to logs, and the case this rule most exists for. The
+            // logging path handled only Literal and Identifier arguments, so
+            // a concatenation of the two was silent: a pre-existing false
+            // negative, mirrored from the `new Error(...)` path below which
+            // already checked both sides.
+            const side =
+              (arg.left?.type === 'Literal' &&
+              typeof arg.left.value === 'string' &&
+              containsSensitiveData(arg.left.value, sensitivePatterns)
+                ? { node: arg.left, pattern: containsSensitiveData(arg.left.value, sensitivePatterns) }
+                : undefined) ??
+              (arg.right?.type === 'Identifier' &&
+              containsSensitiveData(arg.right.name, sensitivePatterns)
+                ? { node: arg.right, pattern: containsSensitiveData(arg.right.name, sensitivePatterns) }
+                : undefined);
+
+            if (side?.pattern) {
+              context.report({
+                node: side.node,
+                messageId: 'sensitiveDataExposure',
+                data: {
+                  context: 'logs',
+                  dataType: side.pattern,
+                },
+                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -219,11 +293,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'logs',
                   dataType: matchedPattern2,
                 },
-                suggest: [
-                  { messageId: 'redactData', fix: () => null },
-                  { messageId: 'useMasking', fix: () => null },
-                  { messageId: 'removeFromLogs', fix: () => null },
-                ],
+                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -245,7 +315,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         for (const arg of node.arguments) {
             if (arg.type === 'Literal' && typeof arg.value === 'string') {
             const text = arg.value;
-            const matchedErrPattern = containsSensitiveData(text, sensitivePatterns);
+            const matchedErrPattern = literalCarriesSecret(text, sensitivePatterns)
+              ? containsSensitiveData(text, sensitivePatterns)
+              : null;
             if (matchedErrPattern) {
               context.report({
                 node: arg,
@@ -254,11 +326,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'error messages',
                   dataType: matchedErrPattern,
                 },
-                suggest: [
-                  { messageId: 'redactData', fix: () => null },
-                  { messageId: 'useMasking', fix: () => null },
-                  { messageId: 'removeFromLogs', fix: () => null },
-                ],
+                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per error
             }
@@ -266,6 +334,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             // Check left side if it's a literal
             if (arg.left && arg.left.type === 'Literal' && typeof arg.left.value === 'string') {
               const leftText = arg.left.value;
+              // Not `literalCarriesSecret` here: in `'password: ' + password`
+              // the label is on the left and the value on the right, so the
+              // left literal legitimately ends at the separator.
               const leftMatchedPattern = containsSensitiveData(leftText, sensitivePatterns);
               if (leftMatchedPattern) {
                 context.report({
@@ -275,11 +346,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                     context: 'error messages',
                     dataType: leftMatchedPattern,
                   },
-                  suggest: [
-                    { messageId: 'redactData', fix: () => null },
-                    { messageId: 'useMasking', fix: () => null },
-                    { messageId: 'removeFromLogs', fix: () => null },
-                  ],
+                  suggest: REDACTION_SUGGESTIONS,
                 });
                 return; // Only report once per error
               }
@@ -295,11 +362,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                     context: 'error messages',
                     dataType: rightMatchedPattern,
                   },
-                  suggest: [
-                    { messageId: 'redactData', fix: () => null },
-                    { messageId: 'useMasking', fix: () => null },
-                    { messageId: 'removeFromLogs', fix: () => null },
-                  ],
+                  suggest: REDACTION_SUGGESTIONS,
                 });
                 return; // Only report once per error
               }

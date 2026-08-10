@@ -1,10 +1,10 @@
 {
   "bench": "ILB-CWE-Corpus",
   "version": "1.0",
-  "timestamp": "2026-08-09T20:02:30.908Z",
+  "timestamp": "2026-08-09T23:41:46.029Z",
   "environment": {
-    "nodeVersion": "v18.16.1",
-    "eslintVersion": "10.7.0",
+    "nodeVersion": "v24.18.0",
+    "eslintVersion": "10.8.0",
     "platform": "darwin",
     "arch": "arm64"
   },
@@ -425,13 +425,13 @@
         "CWE-020": {
           "name": "Improper Input Validation (validation-bypass cluster)",
           "owasp": "A03:2021",
-          "TP": 3,
-          "FP": 3,
-          "FN": 2,
-          "TN": 2,
+          "TP": 2,
+          "FP": 2,
+          "FN": 3,
+          "TN": 3,
           "precision": 50,
-          "recall": 60,
-          "f1": 54.5,
+          "recall": 40,
+          "f1": 44.4,
           "bas": 0,
           "fixtures": [
             {
@@ -451,10 +451,8 @@
             {
               "file": "incorrect-suffix-check.js",
               "expectedVulnerable": true,
-              "findings": 1,
-              "ruleHits": {
-                "express-security/no-missing-security-headers": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             },
             {
               "file": "missing-regexp-anchor.js",
@@ -481,10 +479,8 @@
             {
               "file": "endswith-boundary.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "express-security/no-missing-security-headers": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             },
             {
               "file": "escaped-anchored-hostname.js",
@@ -565,13 +561,12 @@
             {
               "file": "render-body-spread.js",
               "expectedVulnerable": true,
-              "findings": 6,
+              "findings": 5,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "express-security/require-express-body-parser-limits": 1,
                 "express-security/require-csrf-protection": 1,
-                "express-security/no-missing-csrf-protection": 1,
                 "express-security/no-user-controlled-render-locals": 1
               }
             },
@@ -1072,12 +1067,11 @@
             {
               "file": "error-object-in-json.js",
               "expectedVulnerable": true,
-              "findings": 7,
+              "findings": 6,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "express-security/require-csrf-protection": 1,
-                "express-security/no-missing-csrf-protection": 1,
                 "express-security/require-route-authentication": 1,
                 "express-security/no-error-details-in-response": 2
               }
@@ -1543,12 +1537,11 @@
             {
               "file": "reset-link-forwarded-host.js",
               "expectedVulnerable": true,
-              "findings": 6,
+              "findings": 5,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "express-security/require-csrf-protection": 1,
-                "express-security/no-missing-csrf-protection": 1,
                 "express-security/require-route-authentication": 1,
                 "express-security/no-host-header-in-links": 1
               }
@@ -1556,12 +1549,11 @@
             {
               "file": "reset-link-host-header.js",
               "expectedVulnerable": true,
-              "findings": 6,
+              "findings": 5,
               "ruleHits": {
                 "express-security/require-helmet": 1,
                 "express-security/require-rate-limiting": 1,
                 "express-security/require-csrf-protection": 1,
-                "express-security/no-missing-csrf-protection": 1,
                 "express-security/no-host-header-in-links": 1,
                 "browser-security/no-credentials-in-query-params": 1
               }
@@ -1831,14 +1823,14 @@
         }
       },
       "aggregate": {
-        "TP": 52,
-        "FP": 11,
-        "FN": 17,
-        "TN": 49,
-        "precision": 82.5,
-        "recall": 75.4,
-        "f1": 78.8,
-        "bas": 57
+        "TP": 51,
+        "FP": 10,
+        "FN": 18,
+        "TN": 50,
+        "precision": 83.6,
+        "recall": 73.9,
+        "f1": 78.5,
+        "bas": 57.2
       }
     },
     "eslint-plugin-security": {
