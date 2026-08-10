@@ -16,10 +16,31 @@ import { describe, it, expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noMissingClientRelease } from './index';
 
+/**
+ * The synthetic Program the module gate reads. These tests drive listeners
+ * directly, so the file they stand for has to carry the same PostgreSQL
+ * evidence a real one would — otherwise the rule registers no listeners and
+ * the gap under test is never reached.
+ */
+const PG_AST = {
+  type: 'Program',
+  body: [
+    {
+      type: 'ImportDeclaration',
+      source: { type: 'Literal', value: 'pg' },
+      specifiers: [],
+    },
+  ],
+  tokens: [],
+  comments: [],
+} as never;
+
+
 describe('no-missing-client-release — coverage gaps (Layer 2, synthetic AST)', () => {
   it('returns silently when the declarator resolves to no variable', () => {
     const { listeners, reports } = createWithMockContext(
       noMissingClientRelease,
+      { ast: PG_AST },
     );
     const declarator = {
       type: 'VariableDeclarator',
