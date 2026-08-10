@@ -4,7 +4,7 @@
   "corpus": "13 repositories, all 1K+ stars, recommended presets only",
   "generatedAt": "2026-08-09",
   "totals": {
-    "findings": 312,
+    "findings": 303,
     "classes": 44,
     "labelled": 14,
     "unlabelled": 30
@@ -155,9 +155,9 @@
     },
     {
       "id": "secure-coding/no-unlimited-resource-allocation::other",
-      "count": 9,
-      "verdict": "FP",
-      "reason": "Fires on standard passport-jwt configuration: `jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()` in four different repos. Extracting a bearer token from a header allocates nothing and has no relationship to resource limits. Nothing in these findings concerns allocation.",
+      "count": 0,
+      "verdict": "FP-FIXED",
+      "reason": "CLOSED. The ZIP-bomb branch matched the callee's printed text for the bare substring 'Extract' and reported unconditionally, so passport-jwt's `ExtractJwt.fromAuthHeaderAsBearerToken()` was flagged as an unbounded decompression in four repos. Decompression is now matched structurally, with the receiver resolved through its import/require binding rather than by name \u2014 `const unzip = require('unzipper')` still reports. 9 -> 0 on the wild corpus, no TP lost.",
       "samples": [
         "node-express-boilerplate/src/config/passport.js:8",
         "express-rest-boilerplate/src/config/passport.js:10",
