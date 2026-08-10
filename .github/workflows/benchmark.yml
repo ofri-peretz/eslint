@@ -126,6 +126,48 @@ jobs:
   # at the current passing minimum so the gate is a "don't get worse"
   # ratchet — bump them in scripts/audit-rule-meta-completeness.ts as
   # plugins improve.
+  ilb-corpus-truth:
+    # The one bench that measures behaviour on code we did not write: 107
+    # pinned repositories, ~110k files. It answers "how many findings are about
+    # an SDK the file never imports?" — the question that found four broken
+    # plugins on 2026-08-10 and that no fixture-based bench can ask.
+    #
+    # Scheduled only, never on PRs. Cloning 107 repos is network-heavy and the
+    # per-PR half of this guarantee is `benchmarks/__tests__/
+    # sdk-gate-coverage.lock.test.ts`, which runs in the normal test task in
+    # seconds.
+    name: ILB-Corpus-Truth (off-SDK regression gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache the pinned corpus
+        uses: actions/cache@v4
+        with:
+          # Keyed on the manifest: a repo or commit change is a corpus version
+          # bump and must re-clone rather than silently measure the old tree.
+          path: .bench-repos
+          key: corpus-truth-${{ hashFiles('benchmarks/suites/ilb-corpus-truth/repos.json') }}
+      - name: Run ILB-Corpus-Truth
+        # Exits non-zero when any rule reports more off-SDK findings than its
+        # recorded baseline, or when a new rule arrives with off-SDK findings.
+        run: npm run ilb:corpus-truth
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Upload corpus-truth result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ilb-corpus-truth-${{ github.run_number }}
+          path: benchmarks/results/ilb-corpus-truth/
+
   audit-meta:
     name: Plugin rule-meta hygiene audit (strict)
     needs: gate
