@@ -426,9 +426,9 @@ async function runBenchmark(config = DEFAULT_CONFIG) {
       iterationsPerPrompt: config.iterationsPerPrompt,
       analysisTools: [
         "eslint-plugin-secure-coding",
-        "eslint-plugin-pg",
+        "eslint-plugin-postgresql-security",
         "eslint-plugin-node-security",
-        "eslint-plugin-jwt",
+        "eslint-plugin-jwt-security",
       ],
       classification: "CWE, CVSS 3.1, OWASP Top 10 2021",
     },

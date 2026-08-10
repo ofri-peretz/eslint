@@ -276,8 +276,12 @@ async function runEslint(configPath, targetFile) {
   try {
     config = await loadConfig(configPath);
   } catch (e) {
-    console.error(`  ⚠️  Config load failed for ${configPath}: ${e.message?.slice(0, 200)}`);
-    return [];
+    // Not a warning. Returning [] here scores the plugin as "found nothing",
+    // which is indistinguishable from a plugin that genuinely detects nothing
+    // — that is how a stale import in interlace.config.js put Interlace last
+    // in ilb-cwe-corpus at F1 0% for two days after #414.
+    console.error(`\n❌ Config failed to load: ${configPath}\n   ${e.message}\n\nRefusing to score.`);
+    process.exit(3);
   }
 
   try {
@@ -545,8 +549,8 @@ async function runBenchmark() {
       "eslint-plugin-node-security": getInstalledVersion(
         "eslint-plugin-node-security",
       ),
-      "eslint-plugin-pg": getInstalledVersion("eslint-plugin-pg"),
-      "eslint-plugin-jwt": getInstalledVersion("eslint-plugin-jwt"),
+      "eslint-plugin-postgresql-security": getInstalledVersion("eslint-plugin-postgresql-security"),
+      "eslint-plugin-jwt-security": getInstalledVersion("eslint-plugin-jwt-security"),
       "eslint-plugin-browser-security": getInstalledVersion(
         "eslint-plugin-browser-security",
       ),

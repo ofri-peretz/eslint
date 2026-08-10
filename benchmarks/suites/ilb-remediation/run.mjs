@@ -53,8 +53,8 @@ const OUR_PLUGINS = [
   'eslint-plugin-nestjs-security',
   'eslint-plugin-lambda-security',
   'eslint-plugin-mongodb-security',
-  'eslint-plugin-pg',
-  'eslint-plugin-jwt',
+  'eslint-plugin-postgresql-security',
+  'eslint-plugin-jwt-security',
   'eslint-plugin-vercel-ai-security',
 ];
 

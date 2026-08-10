@@ -22,5 +22,12 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['__tests__/**/*.test.ts'],
+    // configs-load executes the benchmark configs, which import our plugins by
+    // package name and therefore resolve through `exports` into `dist/`. The
+    // jobs that run this `test` task (the lock jobs and the test shards) do not
+    // build, so here it would only ever report a missing dist/ as a broken
+    // config. It is pinned to `test:configs-load` and run by the `Benchmark
+    // configs load` job, which builds first.
+    exclude: ['__tests__/configs-load.test.ts'],
   },
 });

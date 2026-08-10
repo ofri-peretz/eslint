@@ -108,7 +108,7 @@ describe('no-unchecked-loop-condition', () => {
           ],
         },
         {
-          code: 'while (userInput-- > 0) { doWork(); }',
+          code: 'const userInput = req.query.count; while (userInput-- > 0) { doWork(); }',
           errors: [
             {
               messageId: 'userControlledLoopBound',
@@ -132,19 +132,19 @@ describe('no-unchecked-loop-condition', () => {
       valid: [],
       invalid: [
         {
-          code: 'while (-userInput > 0) { /* UnaryExpression */ process(); }',
+          code: 'const userInput = req.query.count; while (-userInput > 0) { /* UnaryExpression */ process(); }',
           errors: [{ messageId: 'userControlledLoopBound' }],
         },
         {
-          code: 'while (userInput++ < 100) { /* UpdateExpression */ process(); }',
+          code: 'const userInput = req.query.count; while (userInput++ < 100) { /* UpdateExpression */ process(); }',
           errors: [{ messageId: 'userControlledLoopBound' }],
         },
         {
-          code: 'while (!userInput) { /* UnaryExpression ! */ process(); }',
+          code: 'const userInput = req.query.count; while (!userInput) { /* UnaryExpression ! */ process(); }',
           errors: [{ messageId: 'userControlledLoopBound' }],
         },
         {
-          code: 'while (check(userInput)) { /* CallExpression with user input */ process(); }',
+          code: 'const userInput = req.query.count; while (check(userInput)) { /* CallExpression with user input */ process(); }',
           errors: [{ messageId: 'userControlledLoopBound' }],
         },
       ],
@@ -270,7 +270,7 @@ describe('no-unchecked-loop-condition', () => {
           ],
         },
         {
-          code: 'for (const key in userInput) { console.log(key); }',
+          code: 'const userInput = req.query.count; for (const key in userInput) { console.log(key); }',
           errors: [
             {
               messageId: 'uncheckedLoopCondition',
@@ -568,7 +568,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [],
       invalid: [
         {
-          code: 'do { doWork(); } while (userInput-- > 0);',
+          code: 'const userInput = req.query.count; do { doWork(); } while (userInput-- > 0);',
           errors: [{ messageId: 'userControlledLoopBound' }],
         },
       ],
@@ -740,6 +740,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [
         {
           code: `
+            const userInput = req.query.count;
             /** @safe */
             while (userInput-- > 0) { doWork(); }
           `,
@@ -800,6 +801,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [
         {
           code: `
+            const userInput = req.query.count;
             /** @safe */
             for (let i = 0; i < userInput; i++) { doWork(); }
           `,
@@ -836,6 +838,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [
         {
           code: `
+            const userInput = req.query.count;
             /** @safe */
             do { doWork(); } while (userInput-- > 0);
           `,
@@ -978,13 +981,13 @@ describe('no-unchecked-loop-condition', () => {
 
     it('WhileStatement userControlledLoopBound falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'userInput > 0',
+        sourceText: 'req',
       });
       const whileStatement = listeners.WhileStatement as (node: unknown) => void;
 
       whileStatement({
         type: 'WhileStatement',
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'Identifier', name: 'userInput' }, right: { type: 'Literal', value: 0 } },
+        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1071,14 +1074,14 @@ describe('no-unchecked-loop-condition', () => {
 
     it('ForStatement userControlledLoopBound falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'userInput > 0',
+        sourceText: 'req',
       });
       const forStatement = listeners.ForStatement as (node: unknown) => void;
 
       forStatement({
         type: 'ForStatement',
         init: null,
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'Identifier', name: 'userInput' }, right: { type: 'Literal', value: 0 } },
+        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
         update: { type: 'UpdateExpression' },
         body: { type: 'BlockStatement', body: [] },
       });
@@ -1141,13 +1144,13 @@ describe('no-unchecked-loop-condition', () => {
 
     it('DoWhileStatement userControlledLoopBound falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'userInput > 0',
+        sourceText: 'req',
       });
       const doWhileStatement = listeners.DoWhileStatement as (node: unknown) => void;
 
       doWhileStatement({
         type: 'DoWhileStatement',
-        test: { type: 'BinaryExpression', operator: '>', left: { type: 'Identifier', name: 'userInput' }, right: { type: 'Literal', value: 0 } },
+        test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1158,14 +1161,14 @@ describe('no-unchecked-loop-condition', () => {
 
     it('ForInStatement uncheckedLoopCondition falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req.body.data',
+        sourceText: 'req',
       });
       const forInStatement = listeners.ForInStatement as (node: unknown) => void;
 
       forInStatement({
         type: 'ForInStatement',
         left: { type: 'Identifier', name: 'key' },
-        right: { type: 'MemberExpression' },
+        right: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'body' } },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1176,7 +1179,7 @@ describe('no-unchecked-loop-condition', () => {
 
     it('ForOfStatement uncheckedLoopCondition falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'req.body.data',
+        sourceText: 'req',
       });
       const forOfStatement = listeners.ForOfStatement as (node: unknown) => void;
 
@@ -1184,7 +1187,7 @@ describe('no-unchecked-loop-condition', () => {
         type: 'ForOfStatement',
         parent: undefined,
         left: { type: 'Identifier', name: 'item' },
-        right: { type: 'MemberExpression' },
+        right: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'body' } },
         body: { type: 'BlockStatement', body: [] },
       });
 
@@ -1192,5 +1195,88 @@ describe('no-unchecked-loop-condition', () => {
       expect(reports[0].messageId).toBe('uncheckedLoopCondition');
       expect(reports[0].data?.line).toBe('0');
     });
+  });
+});
+
+/**
+ * Corpus regressions: a name is not evidence.
+ *
+ * This rule produced 28 findings across express + ultimate-backend +
+ * ack-nestjs-boilerplate, and one of the 16 ILB-CWE-Corpus false positives.
+ * Every one traced to taint inferred from identifier *names* — a substring
+ * test against ['req','request','body','query','params','input','data'] run
+ * over both bare identifiers and the printed text of whole expressions.
+ *
+ * It also propagated. `const found = coll.find(query)` made `found` tainted
+ * because the initializer's text contained "query", so every later
+ * `for (const r of found)` was a finding.
+ *
+ * Taint now starts only at a real request object and spreads by assignment.
+ */
+describe('corpus regressions — names are not taint', () => {
+  ruleTester.run('name-based taint', noUncheckedLoopCondition, {
+    valid: [
+      // ILB-CWE-Corpus CWE-116/replace-until-stable.js. The loop provably
+      // terminates — the string shrinks on every pass. Its only offence was
+      // a parameter named `input`, which tainted `current` through
+      // `String(input)` and made the exit condition "user-controlled".
+      {
+        code: `
+          function stripTags(input) {
+            let current = String(input);
+            let previous;
+            do {
+              previous = current;
+              current = current.replace(/<[^>]*>/g, '');
+            } while (current !== previous);
+            return current;
+          }
+        `,
+      },
+      // ultimate-backend/arango-parser.utils.ts:37 — a locally-built AQL
+      // query object, not a request.
+      { code: `for (let prop in query) { build(prop); }` },
+      // Names that merely contain a default substring.
+      { code: `for (const [k, v] of metadataMap) { use(v); }` },
+      { code: `for (const row of dataSource.rows) { use(row); }` },
+      { code: `for (const h of LoggerRequestIdHeaders) { use(h); }` },
+      { code: `for (const e of orderByExtractFromRequest) { use(e); }` },
+      // The propagation case: `found` is only "tainted" because the
+      // initializer's printed text mentioned `query`.
+      {
+        code: `
+          const found = collection.find(query);
+          for (const result of found) { use(result); }
+        `,
+      },
+    ],
+    invalid: [
+      // Real request-derived data still reports, directly…
+      {
+        code: `for (const key in req.body) { use(key); }`,
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+      {
+        code: `for (const item of request.query.items) { use(item); }`,
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+      // …and through assignment, which is what taint tracking is for.
+      // ultimate-backend/headers.datasource.ts:16 is this shape and remains
+      // a true positive.
+      {
+        code: `
+          const ctxHeaders = ctx.headers;
+          for (const key in ctxHeaders) { use(key); }
+        `,
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+      {
+        code: `
+          const limit = req.query.limit;
+          while (limit-- > 0) { doWork(); }
+        `,
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+    ],
   });
 });

@@ -315,7 +315,7 @@ function main() {
     console.log('');
   }
 
-  const distOk = fs.existsSync(path.join(REPO_ROOT, 'packages', 'eslint-plugin-pg', 'dist', 'src', 'index.js'));
+  const distOk = fs.existsSync(path.join(REPO_ROOT, 'packages', 'eslint-plugin-postgresql-security', 'dist', 'src', 'index.js'));
   if (!distOk) {
     if (CACHED && !CI) {
       // Soft-skip in --cached mode (typically wired into `quality` for local
