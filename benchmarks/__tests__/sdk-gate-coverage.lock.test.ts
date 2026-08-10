@@ -71,7 +71,9 @@ const REPO_ROOT = path.resolve(HERE, '../..');
  */
 const UNGATED: Readonly<Record<string, number>> = {
   // No gate at all — ordered by measured blast radius.
-  'vercel-ai-security': 1738,
+  // vercel-ai-security (was 1,738) is gated as of #489 and now ships
+  // src/module-gate.lock.test.ts; re-measured on the same corpus it reports 0
+  // off-SDK findings.
   'mongodb-security': 1663,
   'nestjs-security': 219,
   // Effectively gated already: `isJwtLibraryCall` requires the file to import a

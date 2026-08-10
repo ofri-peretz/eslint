@@ -5,6 +5,51 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireMaxTokens } from './index';
 
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -13,7 +58,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-max-tokens', requireMaxTokens, {
-  valid: [
+  valid: xai([
     // Has maxTokens
     {
       code: `
@@ -84,9 +129,9 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
         });
       `,
     },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xai([
     // generateText without maxTokens
     {
       code: `
@@ -129,14 +174,14 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
       `,
       errors: [{ messageId: 'missingMaxTokens' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures: argument shapes and key shapes
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
-  valid: [
+  valid: xai([
     // no arguments — nothing to check
     { code: `generateText();` },
     // non-object first argument — nothing to check
@@ -145,14 +190,14 @@ ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
     { code: `generateText({ 'max_tokens': 100, prompt: 'x' });` },
     // spread property skipped, real maxTokens still found
     { code: `generateText({ ...opts, maxTokens: 100 });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // computed key resolves to null — maxTokens not found
     {
       code: `generateText({ [getKey()]: 100, prompt: 'x' });`,
       errors: [{ messageId: 'missingMaxTokens' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,7 +207,7 @@ ruleTester.run('require-max-tokens (coverage gaps)', requireMaxTokens, {
 // Both must satisfy the rule, or every v5+ codebase gets a false positive.
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTokens, {
-  valid: [
+  valid: xai([
     // v5+: generateText with maxOutputTokens
     {
       code: `
@@ -200,8 +245,8 @@ ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTok
     { code: `generateText({ 'maxOutputTokens': 100, prompt: 'x' });` },
     // v4 spelling still accepted
     { code: `generateText({ maxTokens: 100, prompt: 'x' });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // v5+ call with no token limit at all is still reported
     {
       code: `
@@ -218,5 +263,5 @@ ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTok
       code: `generateText({ maxOutputTokenCount: 100, prompt: 'x' });`,
       errors: [{ messageId: 'missingMaxTokens' }],
     },
-  ],
+  ]),
 });

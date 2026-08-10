@@ -46,7 +46,7 @@ import { cloneRepo, resolveBenchDir, type RepoSpec } from '../../lib/clone-repo.
 import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
 import { appendHistory } from '../../lib/history.ts';
-import { SDK_PACKAGES, specifiersIn } from './sdk-map.ts';
+import { SDK_PACKAGES, specifiersIn, fileHasSdk } from './sdk-map.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = path.resolve(HERE, '../..');
@@ -265,7 +265,7 @@ async function main(): Promise<void> {
       }
       const specifiers = specifiersIn(source);
       const hasSdk = (plugin: string): boolean =>
-        SDK_PACKAGES[plugin].some((pkg) => specifiers.has(pkg));
+        fileHasSdk(specifiers, plugin);
 
       for (const plugin of Object.keys(SDK_PACKAGES)) {
         if (!hasSdk(plugin)) continue;
