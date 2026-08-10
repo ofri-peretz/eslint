@@ -38,6 +38,52 @@ import { noUnvalidatedEventBody } from './rules/no-unvalidated-event-body';
 import { noUserControlledRequests } from './rules/no-user-controlled-requests';
 import { requireTimeoutHandling } from './rules/require-timeout-handling';
 
+/**
+ * Every fixture carries the Lambda handler shape, because the rules now abstain
+ * in files that are not Lambda code. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the shape
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const asLambda = (code: string): string =>
+  `import type { Handler } from 'aws-lambda';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const lambda = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asLambda(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asLambda(test.code),
+      // Autofix and suggestion fixtures assert the WHOLE file back, so every
+      // `output` needs the same prefix or each fixable rule fails on the header
+      // alone — including the ones nested under errors[].suggestions[].
+      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asLambda(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -62,12 +108,12 @@ describe('module entry points', () => {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-env-logging (coverage)', noEnvLogging, {
-  valid: [
+  valid: lambda([
     // Computed logging property → prop is a Literal, not an Identifier
     { code: `console['warn'](process.env.SECRET_KEY);` },
     // Identifier object whose name is neither console nor log-like
     { code: `metrics.error(process.env.SECRET_KEY);` },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -76,7 +122,7 @@ ruleTester.run('no-env-logging (coverage)', noEnvLogging, {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-error-swallowing (coverage)', noErrorSwallowing, {
-  valid: [
+  valid: lambda([
     // Non-empty catch with an "intentional" comment (allowWithComment=true default)
     {
       code: `
@@ -85,8 +131,8 @@ ruleTester.run('no-error-swallowing (coverage)', noErrorSwallowing, {
         }
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // Catch whose only return is a bare "return;" — returnStmt.argument is null
     {
       code: `
@@ -96,7 +142,7 @@ ruleTester.run('no-error-swallowing (coverage)', noErrorSwallowing, {
       `,
       errors: [{ messageId: 'emptyCatchBlock' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -104,7 +150,7 @@ ruleTester.run('no-error-swallowing (coverage)', noErrorSwallowing, {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints, {
-  valid: [
+  valid: lambda([
     // ignoreFiles option matches the filename → rule short-circuits to {}
     {
       code: `const route = '/debug';`,
@@ -123,8 +169,8 @@ ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints,
     { code: `const x = event.url === '/debug/x';` },
     // Computed identifier property with non-checked name
     { code: `const x = event[prop] === '/debug/x';` },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // Debug literal on the LEFT of the comparison (checkNode side === node.left)
     {
       code: `if ('/debug' === event.path) { enableDebug(); }`,
@@ -145,7 +191,7 @@ ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints,
       code: `const x = getEvent().path === '/debug';`,
       errors: [{ messageId: 'violationDetected' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -153,7 +199,7 @@ ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints,
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
-  valid: [
+  valid: lambda([
     // Computed sensitive access → property is a Literal (documented FN)
     {
       code: `
@@ -186,7 +232,7 @@ ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
         }
       `,
     },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -195,7 +241,7 @@ ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentialsSdk, {
-  valid: [
+  valid: lambda([
     // NewExpression callee is not an Identifier
     { code: `const c = new (getClientCtor())({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });` },
     // Spread inside config object
@@ -227,8 +273,8 @@ ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentials
     { code: `const credentialsFromVault = getCreds();` },
     // Destructured id → not an Identifier
     { code: `const { credentials } = config;` },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // *Client name matched via the AWS-prefix regex (not the known-client set)
     {
       code: `const c = new BedrockClient({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
@@ -244,7 +290,7 @@ ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentials
       code: `const myCredentials = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };`,
       errors: [{ messageId: 'hardcodedCredentials' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -252,7 +298,7 @@ ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentials
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizationCheck, {
-  valid: [
+  valid: lambda([
     // Computed callee property (not an Identifier) is not a tracked sensitive op;
     // non-object return exercises the ReturnStatement fallthrough
     {
@@ -263,7 +309,7 @@ ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizati
         };
       `,
     },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -273,13 +319,13 @@ ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizati
 
 ruleTester.run('no-overly-permissive-iam-policy (coverage)', noOverlyPermissiveIamPolicy, {
   valid: [],
-  invalid: [
+  invalid: lambda([
     // Array with non-literal and non-string elements around the wildcard
     {
       code: `const policy = { Effect: 'Allow', Action: [dynamicAction, 42, '*'], Resource: 'arn:aws:s3:::bucket/key' };`,
       errors: [{ messageId: 'permissivePolicy' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -287,7 +333,7 @@ ruleTester.run('no-overly-permissive-iam-policy (coverage)', noOverlyPermissiveI
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-permissive-cors-middy (coverage)', noPermissiveCorsMiddy, {
-  valid: [
+  valid: lambda([
     // Spread in options object
     { code: `httpCors({ ...defaults });` },
     // String-literal key is skipped (documented FN)
@@ -296,7 +342,7 @@ ruleTester.run('no-permissive-cors-middy (coverage)', noPermissiveCorsMiddy, {
     { code: `httpCors({ credentials: true });` },
     // Non-object argument
     { code: `httpCors(corsOptions);` },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -305,7 +351,7 @@ ruleTester.run('no-permissive-cors-middy (coverage)', noPermissiveCorsMiddy, {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-permissive-cors-response (coverage)', noPermissiveCorsResponse, {
-  valid: [
+  valid: lambda([
     // Spread inside headers object
     { code: `function h() { return { statusCode: 200, headers: { ...baseHeaders } }; }` },
     // Numeric header key → neither Identifier nor string Literal
@@ -316,15 +362,15 @@ ruleTester.run('no-permissive-cors-response (coverage)', noPermissiveCorsRespons
     { code: `let response;` },
     // response-named object literal that is NOT a Lambda response shape
     { code: `const response = { headers: { 'Access-Control-Allow-Origin': '*' } };` },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // Identifier header key (Vary) + string-literal response key + wildcard → autofixed
     {
       code: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': '*' } }; }`,
       output: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': "https://your-domain.com" } }; }`,
       errors: [{ messageId: 'permissiveCors' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -332,7 +378,7 @@ ruleTester.run('no-permissive-cors-response (coverage)', noPermissiveCorsRespons
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-secrets-in-env (coverage)', noSecretsInEnv, {
-  valid: [
+  valid: lambda([
     // Assignment whose object chain is not process.env
     { code: `config.env.API_KEY = 'super-secret-value';` },
     { code: `process.argv.SECRET_KEY = 'super-secret-value';` },
@@ -342,7 +388,7 @@ ruleTester.run('no-secrets-in-env (coverage)', noSecretsInEnv, {
     { code: `process.env.DB_PASSWORD = loadFromVault();` },
     // Numeric property key in a config object
     { code: `const settings = { 42: 'some-longer-value' };` },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -352,7 +398,7 @@ ruleTester.run('no-secrets-in-env (coverage)', noSecretsInEnv, {
 
 ruleTester.run('no-unbounded-batch-processing (coverage)', noUnboundedBatchProcessing, {
   valid: [],
-  invalid: [
+  invalid: lambda([
     // .length on a computed member, non-size binary comparisons — none of them
     // count as a batch-size check, so the unbounded loop still reports
     {
@@ -368,7 +414,7 @@ ruleTester.run('no-unbounded-batch-processing (coverage)', noUnboundedBatchProce
       `,
       errors: [{ messageId: 'unboundedBatch' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -376,7 +422,7 @@ ruleTester.run('no-unbounded-batch-processing (coverage)', noUnboundedBatchProce
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
-  valid: [
+  valid: lambda([
     // Assignment to a plain identifier is not the exports.handler convention
     { code: `h = function (e) { const x = e.body; };` },
     // Computed exports key → left.property is a Literal
@@ -390,8 +436,8 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
     { code: `const middleware2 = (request, response) => { const y = request.body; };` },
     // .use() argument whose callee is a MemberExpression (not bare validator())
     { code: `pipeline.use(mod.validator(opts));` },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // FunctionDeclaration named handler with short event param
     {
       code: `function handler(e) { const x = e.body; }`,
@@ -415,7 +461,7 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
       `,
       errors: [{ messageId: 'unvalidatedInput' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -423,7 +469,7 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-user-controlled-requests (coverage)', noUserControlledRequests, {
-  valid: [
+  valid: lambda([
     // Template literal whose expressions are untainted
     { code: `const handler = async (event) => { const id = 5; await fetch(\`https://api.example.com/\${id}\`); };` },
     // Binary concatenation with no tainted operand
@@ -440,8 +486,8 @@ ruleTester.run('no-user-controlled-requests (coverage)', noUserControlledRequest
     { code: `const handler = async (event) => { const store = {}; store.url = event.rawPath; };` },
     // Assignment from an untainted source
     { code: `const handler = async (event) => { let u; u = 'https://static.example.com'; await fetch(u); };` },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // Computed (non-Identifier) leaf property → source rendered as [...]
     {
       code: `const handler = async (event) => { await fetch(event.queryStringParameters['target']); };`,
@@ -452,7 +498,7 @@ ruleTester.run('no-user-controlled-requests (coverage)', noUserControlledRequest
       code: `const handler = async (event) => { await fetch(event.rawPath + '/x'); };`,
       errors: [{ messageId: 'ssrfVulnerability' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -460,7 +506,7 @@ ruleTester.run('no-user-controlled-requests (coverage)', noUserControlledRequest
 // ---------------------------------------------------------------------------
 
 ruleTester.run('require-timeout-handling (coverage)', requireTimeoutHandling, {
-  valid: [
+  valid: lambda([
     // Member/new expressions OUTSIDE any handler hit the early-return guards
     {
       code: `
@@ -472,7 +518,7 @@ ruleTester.run('require-timeout-handling (coverage)', requireTimeoutHandling, {
         };
       `,
     },
-  ],
+  ]),
   invalid: [],
 });
 
@@ -491,7 +537,20 @@ function createUnvalidatedEventBodyListeners() {
   const sourceCode = {
     text: '',
     getText: () => '',
-    ast: { body: [] },
+    // The synthetic Program the module gate reads. These tests drive listeners
+    // directly, so the file they stand for has to carry the same Lambda
+    // evidence a real one would — an `aws-lambda` import here — otherwise the
+    // rule registers no listeners and the gap under test is never reached.
+    ast: {
+      type: 'Program',
+      body: [
+        {
+          type: 'ImportDeclaration',
+          source: { type: 'Literal', value: 'aws-lambda' },
+          specifiers: [],
+        },
+      ],
+    },
   };
   const context = {
     id: 'mock-rule',

@@ -10,6 +10,7 @@
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'violationDetected';
 
@@ -64,6 +65,11 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context) {
+    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+    // files, 98% of this plugin's findings were in files with no AWS anything.
+    // Registering no visitors is both the gate and the cheap path.
+    if (!fileIsLambda(context.sourceCode.ast)) return {};
+
     const options = context.options[0] || {};
     const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
     const ignoreFiles = options.ignoreFiles || [];
