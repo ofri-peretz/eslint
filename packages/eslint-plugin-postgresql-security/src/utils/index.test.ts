@@ -150,6 +150,22 @@ describe('fileUsesPostgres', () => {
       expect(uses(code)).toBe(false);
     });
 
+    // The regression a file-wide flag caused: a real `require('pg')` at module
+    // scope must survive an unrelated inner binding. Silencing all thirteen rules
+    // there trades a false positive for a false negative — the worse of the two.
+    it('an unshadowed require survives a shadowing binding elsewhere', () => {
+      expect(uses("const c = require('pg');\nfunction wrapper(require) {}")).toBe(true);
+      expect(uses("function wrapper(require) {}\nconst c = require('pg');")).toBe(true);
+      expect(
+        uses("function outer() { const c = require('pg'); }\nfunction w(require) {}"),
+      ).toBe(true);
+    });
+
+    it('shadowing applies only inside the scope that binds it', () => {
+      expect(uses("function f(require) { require('pg'); }")).toBe(false);
+      expect(uses("{ const require = (m) => m; require('pg'); }")).toBe(false);
+    });
+
     it('the other arms still apply when `require` is shadowed', () => {
       expect(uses("import { Pool } from 'pg';\nfunction f(require) { require('pg'); }")).toBe(true);
       expect(uses("const url = 'postgres://h/db';\nfunction f(require) { require('pg'); }")).toBe(true);

@@ -87,61 +87,44 @@ function isPgConnectionString(node: TSESTree.Node): boolean {
 }
 
 /**
- * Whether the file declares a binding named `require` anywhere — a parameter,
- * a variable, a function.
+ * Whether a scope-introducing node binds the name `require`.
  *
- * `function f(require) { require('pg'); }` is not module loading, and treating
- * it as PostgreSQL evidence would be this plugin committing the exact error it
- * was just fixed for: taking a *name* as proof of an *interface*. When the name
- * is bound locally the `require` arm is dropped entirely; imports, DSNs, and
- * every other arm still apply.
+ * `function f(require) { require('pg'); }` is not module loading, and taking it
+ * as evidence would be this plugin treating a *name* as proof of an
+ * *interface* — the error the gate exists to correct.
+ *
+ * Shadowing is **lexical**, propagated down the walk rather than computed once
+ * for the file. A file-wide flag reads
+ * `const c = require('pg'); function wrapper(require) {}` as fully shadowed and
+ * silences every rule — trading a false positive for a false negative, which is
+ * the worse of the two.
  */
-function declaresRequireBinding(ast: TSESTree.Program): boolean {
-  let shadowed = false;
-  // As in `visit` below: no top guard, because every recursive call site here
-  // already checks, which would make it unreachable.
-  const scan = (node: TSESTree.Node): void => {
-    if (
-      (node.type === AST_NODE_TYPES.FunctionDeclaration ||
-        node.type === AST_NODE_TYPES.FunctionExpression ||
-        node.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
-      node.params.some(
-        (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
-      )
-    ) {
-      shadowed = true;
-      return;
-    }
-    if (
-      node.type === AST_NODE_TYPES.VariableDeclarator &&
-      node.id.type === AST_NODE_TYPES.Identifier &&
-      node.id.name === 'require'
-    ) {
-      shadowed = true;
-      return;
-    }
-    for (const key of Object.keys(node)) {
-      if (key === 'parent') continue;
-      const value = (node as unknown as Record<string, unknown>)[key];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (child && typeof (child as TSESTree.Node).type === 'string') {
-            scan(child as TSESTree.Node);
-            if (shadowed) return;
-          }
-        }
-      } else if (
-        value &&
-        typeof value === 'object' &&
-        typeof (value as TSESTree.Node).type === 'string'
-      ) {
-        scan(value as TSESTree.Node);
-        if (shadowed) return;
-      }
-    }
-  };
-  scan(ast);
-  return shadowed;
+function bindsRequire(node: TSESTree.Node): boolean {
+  if (
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return node.params.some(
+      (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
+    );
+  }
+  // A `const require = …` shadows for the rest of the block it sits in, so the
+  // block — not the declarator — is where the flag is raised.
+  if (
+    node.type === AST_NODE_TYPES.Program ||
+    node.type === AST_NODE_TYPES.BlockStatement
+  ) {
+    return node.body.some(
+      (stmt) =>
+        stmt.type === AST_NODE_TYPES.VariableDeclaration &&
+        stmt.declarations.some(
+          (d) =>
+            d.id.type === AST_NODE_TYPES.Identifier && d.id.name === 'require',
+        ),
+    );
+  }
+  return false;
 }
 
 /**
@@ -181,11 +164,10 @@ export function fileUsesPostgres(ast: TSESTree.Program): boolean {
 
 function computeUsesPostgres(ast: TSESTree.Program): boolean {
   let found = false;
-  const requireIsShadowed = declaresRequireBinding(ast);
 
   // No `if (found) return` guard at the top: every recursive call site below
   // already checks, so it would be unreachable.
-  const visit = (node: TSESTree.Node): void => {
+  const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
       (node.type === AST_NODE_TYPES.ImportDeclaration ||
         node.type === AST_NODE_TYPES.ExportNamedDeclaration ||
@@ -206,13 +188,15 @@ function computeUsesPostgres(ast: TSESTree.Program): boolean {
     }
     // `require` can sit anywhere — inside a function, a branch, an IIFE — so
     // the whole tree is walked rather than just the top-level statements.
+    // Everything below this node is inside any scope it introduces.
+    const shadowedHere = requireIsShadowed || bindsRequire(node);
     for (const key of Object.keys(node)) {
       if (key === 'parent') continue;
       const value = (node as unknown as Record<string, unknown>)[key];
       if (Array.isArray(value)) {
         for (const child of value) {
           if (child && typeof (child as TSESTree.Node).type === 'string') {
-            visit(child as TSESTree.Node);
+            visit(child as TSESTree.Node, shadowedHere);
             if (found) return;
           }
         }
@@ -221,12 +205,12 @@ function computeUsesPostgres(ast: TSESTree.Program): boolean {
         typeof (value as TSESTree.Node).type === 'string' &&
         typeof value === 'object'
       ) {
-        visit(value as TSESTree.Node);
+        visit(value as TSESTree.Node, shadowedHere);
         if (found) return;
       }
     }
   };
 
-  visit(ast);
+  visit(ast, false);
   return found;
 }
