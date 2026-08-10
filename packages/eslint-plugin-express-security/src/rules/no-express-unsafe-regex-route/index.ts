@@ -34,7 +34,15 @@ type RuleOptions = [Options?];
 /**
  * HTTP method names used for routing
  */
-const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all', 'use']);
+const HTTP_METHODS = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'all',
+  'use',
+]);
 
 /**
  * Patterns that indicate potential ReDoS vulnerability
@@ -168,7 +176,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         }
 
         // Check regex literal routes (e.g., /pattern/)
-        if (routeArg.type === 'Literal' && 'regex' in routeArg && routeArg.regex) {
+        if (
+          routeArg.type === 'Literal' &&
+          'regex' in routeArg &&
+          routeArg.regex
+        ) {
           const regexNode = routeArg as TSESTree.RegExpLiteral;
           const pattern = regexNode.regex.pattern;
           if (isVulnerableRegex(pattern)) {
@@ -193,7 +205,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
           routeArg.callee.name === 'RegExp'
         ) {
           const patternArg = routeArg.arguments[0];
-          if (patternArg && patternArg.type === 'Literal' && typeof patternArg.value === 'string') {
+          if (
+            patternArg &&
+            patternArg.type === 'Literal' &&
+            typeof patternArg.value === 'string'
+          ) {
             if (isVulnerableRegex(patternArg.value)) {
               context.report({
                 node: routeArg,

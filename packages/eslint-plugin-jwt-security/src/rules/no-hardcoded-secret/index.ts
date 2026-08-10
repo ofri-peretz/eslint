@@ -15,17 +15,15 @@
  * @see https://cwe.mitre.org/data/definitions/798.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
-  isSignOperation,
-  isVerifyOperation,
-  isEnvVariable,
-} from '../../utils';
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
 import type { NoHardcodedSecretOptions } from '../../types';
 
-type MessageIds =
-  | 'hardcodedSecret'
-  | 'useEnvVariable';
+type MessageIds = 'hardcodedSecret' | 'useEnvVariable';
 
 type RuleOptions = [NoHardcodedSecretOptions?];
 
@@ -35,8 +33,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/docs/rules/no-hardcoded-secret.md',
-      description:
-        'Disallow hardcoded secrets in JWT sign/verify operations',
+      description: 'Disallow hardcoded secrets in JWT sign/verify operations',
       cwe: 'CWE-798',
       cvss: 9.8,
     },
@@ -59,8 +56,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
         description: 'Replace hardcoded secret with environment variable',
         severity: 'LOW',
         fix: 'process.env.JWT_SECRET',
-        documentationLink:
-          'https://12factor.net/config',
+        documentationLink: 'https://12factor.net/config',
       }),
     },
     schema: [
@@ -71,7 +67,8 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Patterns that indicate safe environment variable usage',
+            description:
+              'Patterns that indicate safe environment variable usage',
           },
           trustedSanitizers: {
             type: 'array',
@@ -112,10 +109,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       }
 
       // Template literal without expressions
-      if (
-        node.type === 'TemplateLiteral' &&
-        node.expressions.length === 0
-      ) {
+      if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
         return true;
       }
 
@@ -133,15 +127,19 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Node,
     ): TSESTree.Node | null => {
       if (node.type !== 'Identifier') return null;
-      const scope = context.sourceCode.getScope?.(node) ?? null;
-      if (!scope) return null;
+      // `sourceCode.getScope(node)` landed in ESLint 8.37 and this package's
+      // declared floor is 8.40, so it is always present — the optional call and
+      // null fallback that used to guard it were unreachable branches that no
+      // test could cover.
+      const scope = context.sourceCode.getScope(node);
       const variable = scope.references.find(
         (r) => r.identifier === node,
       )?.resolved;
       const def = variable?.defs[0];
       if (!def || def.type !== 'Variable') return null;
       const decl = def.parent;
-      if (decl?.type !== 'VariableDeclaration' || decl.kind !== 'const') return null;
+      if (decl?.type !== 'VariableDeclaration' || decl.kind !== 'const')
+        return null;
       return def.node.init ?? null;
     };
 

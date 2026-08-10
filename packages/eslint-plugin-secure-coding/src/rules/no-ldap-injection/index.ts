@@ -51,7 +51,6 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate LDAP input */
   ldapValidationFunctions?: string[];
-
 }
 
 type RuleOptions = [Options?];
@@ -65,16 +64,16 @@ type RuleOptions = [Options?];
 export function containsDangerousLdapFilter(filterText: string): boolean {
   // Dangerous LDAP filter patterns
   const dangerousPatterns = [
-    /\*\)$/,     // Ending with *) to match everything
-    /\|\)$/,     // Ending with |) for OR operations
-    /&\)$/,      // Ending with &) for AND operations
-    /!\)$/,      // Ending with !) for NOT operations
-    /\*\|\*/,    // *|* pattern for matching everything
-    /\*&\*/,     // *&* pattern
-    /\*!/,       // NOT operations that could be exploited
+    /\*\)$/, // Ending with *) to match everything
+    /\|\)$/, // Ending with |) for OR operations
+    /&\)$/, // Ending with &) for AND operations
+    /!\)$/, // Ending with !) for NOT operations
+    /\*\|\*/, // *|* pattern for matching everything
+    /\*&\*/, // *&* pattern
+    /\*!/, // NOT operations that could be exploited
   ];
 
-  return dangerousPatterns.some(pattern => pattern.test(filterText));
+  return dangerousPatterns.some((pattern) => pattern.test(filterText));
 }
 
 /**
@@ -84,7 +83,86 @@ export function containsDangerousLdapFilter(filterText: string): boolean {
  * testability — this function is pure and captures no closure state.
  */
 export function containsLdapInterpolation(text: string): boolean {
-  return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
+  return (
+    /\$\{[^}]+\}/.test(text) ||
+    /'[^']*\+[^+]*'/.test(text) ||
+    /"[^"]*\+[^+]*"/.test(text)
+  );
+}
+
+/** Packages that actually speak LDAP. */
+const LDAP_MODULES =
+  /^(ldapjs|ldapts|@ldapjs\/|activedirectory2?$|passport-ldapauth|ldap-authentication|ldap-escape)/;
+
+/**
+ * Whether this file touches LDAP at all.
+ *
+ * Without this the rule reported `var header = req.headers[field.toLowerCase()]`
+ * in **expressjs/morgan** — an HTTP logger with no LDAP anywhere — because the
+ * untrusted-input check matches any member expression whose printed text
+ * contains `req.`, and the "looks like a filter" guard is satisfied by the
+ * parentheses of `toLowerCase()`.
+ *
+ * CWE-90 requires an LDAP directory to inject into. Evidence is either an LDAP
+ * client import (`import` and `require()` both count — LDAP code in the wild is
+ * very often CommonJS) or a call to one of the LDAP methods this rule already
+ * treats as a sink, so a file that builds a filter and calls `client.search()`
+ * without a visible import is still covered.
+ */
+function fileUsesLdap(
+  program: TSESTree.Program,
+  ldapFunctions: readonly string[],
+): boolean {
+  let found = false;
+  const visit = (node: TSESTree.Node): void => {
+    if (found) return;
+    if (node.type === 'ImportDeclaration') {
+      // `source` on an ImportDeclaration is always a StringLiteral, so no
+      // typeof guard here would ever take its false branch.
+      if (LDAP_MODULES.test(node.source.value)) {
+        found = true;
+      }
+      return;
+    }
+    if (node.type === 'CallExpression') {
+      const callee = node.callee;
+      if (callee.type === 'Identifier' && callee.name === 'require') {
+        const arg = node.arguments[0];
+        if (
+          arg?.type === 'Literal' &&
+          typeof arg.value === 'string' &&
+          LDAP_MODULES.test(arg.value)
+        ) {
+          found = true;
+          return;
+        }
+      }
+      // `client.search(...)`, `ldap.modify(...)` — the same sink shape the
+      // rule's own LDAP-operation check uses.
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        ldapFunctions.includes(callee.property.name)
+      ) {
+        found = true;
+        return;
+      }
+    }
+    for (const key of Object.keys(node) as (keyof typeof node)[]) {
+      if (key === 'parent') continue;
+      const child = node[key] as unknown;
+      if (Array.isArray(child)) {
+        for (const c of child) {
+          if (c && typeof c === 'object' && 'type' in c)
+            visit(c as TSESTree.Node);
+        }
+      } else if (child && typeof child === 'object' && 'type' in child) {
+        visit(child as TSESTree.Node);
+      }
+    }
+  };
+  visit(program);
+  return found;
 }
 
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
@@ -181,7 +259,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Build filters programmatically with escaped values',
         documentationLink: 'https://ldap.com/ldap-filters/',
-      })
+      }),
     },
     schema: [
       {
@@ -190,29 +268,52 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           ldapFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['search', 'bind', 'modify', 'add', 'delete', 'compare', 'searchAsync'], description: 'LDAP client methods treated as query sinks'
+            default: [
+              'search',
+              'bind',
+              'modify',
+              'add',
+              'delete',
+              'compare',
+              'searchAsync',
+            ],
+            description: 'LDAP client methods treated as query sinks',
           },
           ldapEscapeFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['escape.filterValue', 'escape.dnValue', 'filterEscape', 'dnEscape'], description: 'Function names that escape LDAP filter or DN values'
+            default: [
+              'escape.filterValue',
+              'escape.dnValue',
+              'filterEscape',
+              'dnEscape',
+            ],
+            description: 'Function names that escape LDAP filter or DN values',
           },
           ldapValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateLdapInput', 'sanitizeLdapFilter', 'cleanLdapValue', 'checkLdapFilter'], description: 'Function names that count as LDAP input validation'
+            default: [
+              'validateLdapInput',
+              'sanitizeLdapFilter',
+              'cleanLdapValue',
+              'checkLdapFilter',
+            ],
+            description: 'Function names that count as LDAP input validation',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as LDAP sanitizers',
+            description:
+              'Additional function names to consider as LDAP sanitizers',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -226,9 +327,27 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      ldapFunctions: ['search', 'bind', 'modify', 'add', 'delete', 'compare', 'searchAsync'],
-      ldapEscapeFunctions: ['escape.filterValue', 'escape.dnValue', 'filterEscape', 'dnEscape'],
-      ldapValidationFunctions: ['validateLdapInput', 'sanitizeLdapFilter', 'cleanLdapValue', 'checkLdapFilter'],
+      ldapFunctions: [
+        'search',
+        'bind',
+        'modify',
+        'add',
+        'delete',
+        'compare',
+        'searchAsync',
+      ],
+      ldapEscapeFunctions: [
+        'escape.filterValue',
+        'escape.dnValue',
+        'filterEscape',
+        'dnEscape',
+      ],
+      ldapValidationFunctions: [
+        'validateLdapInput',
+        'sanitizeLdapFilter',
+        'cleanLdapValue',
+        'checkLdapFilter',
+      ],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -237,9 +356,27 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      ldapFunctions = ['search', 'bind', 'modify', 'add', 'delete', 'compare', 'searchAsync'],
-      ldapEscapeFunctions = ['escape.filterValue', 'escape.dnValue', 'filterEscape', 'dnEscape'],
-      ldapValidationFunctions = ['validateLdapInput', 'sanitizeLdapFilter', 'cleanLdapValue', 'checkLdapFilter'],
+      ldapFunctions = [
+        'search',
+        'bind',
+        'modify',
+        'add',
+        'delete',
+        'compare',
+        'searchAsync',
+      ],
+      ldapEscapeFunctions = [
+        'escape.filterValue',
+        'escape.dnValue',
+        'filterEscape',
+        'dnEscape',
+      ],
+      ldapValidationFunctions = [
+        'validateLdapInput',
+        'sanitizeLdapFilter',
+        'cleanLdapValue',
+        'checkLdapFilter',
+      ],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -263,9 +400,11 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for LDAP method calls
-      if (callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          ldapFunctions.includes(callee.property.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        ldapFunctions.includes(callee.property.name)
+      ) {
         return true;
       }
 
@@ -279,17 +418,39 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       // Check member expressions like req.query.name, req.params.id, etc.
       if (inputNode.type === 'MemberExpression') {
         const fullName = sourceCode.getText(inputNode).toLowerCase();
-        return fullName.includes('req.') || fullName.includes('request.') ||
-               fullName.includes('query.') || fullName.includes('params.') ||
-               fullName.includes('body.');
+        return (
+          fullName.includes('req.') ||
+          fullName.includes('request.') ||
+          fullName.includes('query.') ||
+          fullName.includes('params.') ||
+          fullName.includes('body.')
+        );
       }
 
       // In test contexts, also consider certain variable names as potentially untrusted
       if (inputNode.type === 'Identifier') {
         const varName = inputNode.name.toLowerCase();
-        return ['userid', 'username', 'userinput', 'input', 'term', 'name', 'search', 'query', 'param', 'password', 'id', 'dn'].includes(varName) ||
-               varName.startsWith('user') || varName.startsWith('input') || varName.endsWith('input') ||
-               varName.includes('user') || varName.includes('input');
+        return (
+          [
+            'userid',
+            'username',
+            'userinput',
+            'input',
+            'term',
+            'name',
+            'search',
+            'query',
+            'param',
+            'password',
+            'id',
+            'dn',
+          ].includes(varName) ||
+          varName.startsWith('user') ||
+          varName.startsWith('input') ||
+          varName.endsWith('input') ||
+          varName.includes('user') ||
+          varName.includes('input')
+        );
       }
 
       return false;
@@ -306,20 +467,27 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           const callee = current.callee;
 
           // Check for escape function calls
-          if (callee.type === 'MemberExpression' &&
-              callee.property.type === 'Identifier') {
+          if (
+            callee.type === 'MemberExpression' &&
+            callee.property.type === 'Identifier'
+          ) {
             const propertyName = callee.property.name;
-            if (ldapEscapeFunctions.some(escapeFunc =>
-              escapeFunc.includes(propertyName) ||
-              propertyName.includes('escape')
-            )) {
+            if (
+              ldapEscapeFunctions.some(
+                (escapeFunc) =>
+                  escapeFunc.includes(propertyName) ||
+                  propertyName.includes('escape'),
+              )
+            ) {
               return true;
             }
           }
 
           // Check for validation function calls
-          if (callee.type === 'Identifier' &&
-              ldapValidationFunctions.includes(callee.name)) {
+          if (
+            callee.type === 'Identifier' &&
+            ldapValidationFunctions.includes(callee.name)
+          ) {
             return true;
           }
         }
@@ -329,8 +497,20 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /**
+     * Whether this file touches LDAP at all. Set once from Program, which ESLint
+     * visits before any of its children.
+     *
+     * Used by exactly one branch below — the direct untrusted-assignment case,
+     * which is the only one with no LDAP evidence of its own.
+     */
+    let ldapInFile = false;
 
     return {
+      Program(program: TSESTree.Program) {
+        ldapInFile = fileUsesLdap(program, ldapFunctions);
+      },
+
       // Check LDAP function calls
       CallExpression(node: TSESTree.CallExpression) {
         if (!isLdapOperation(node)) {
@@ -365,7 +545,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               },
             ],
           });
-        } else if (filterArg.type === 'TemplateLiteral' && filterArg.expressions.length > 0) {
+        } else if (
+          filterArg.type === 'TemplateLiteral' &&
+          filterArg.expressions.length > 0
+        ) {
           // Special handling for template literals with any expressions in LDAP calls
           // This is a more aggressive check for LDAP injection in function calls.
           // NOTE: the `expressions.length > 0` guard above already guarantees at
@@ -393,8 +576,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         }
       },
 
-
-
       // Check variable declarations with LDAP filters
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (!node.init || node.id.type !== 'Identifier') {
@@ -403,9 +584,13 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
 
         const varName = node.id.name.toLowerCase();
         // Check if variable name suggests LDAP-related content
-        const isLdapRelated = varName.includes('filter') || varName.includes('ldap') ||
-                             varName.includes('query') || varName.includes('search') ||
-                             varName.includes('dn') || varName.includes('bind');
+        const isLdapRelated =
+          varName.includes('filter') ||
+          varName.includes('ldap') ||
+          varName.includes('query') ||
+          varName.includes('search') ||
+          varName.includes('dn') ||
+          varName.includes('bind');
 
         // If not obviously LDAP-related, check if the assigned value looks like LDAP
         if (!isLdapRelated && node.init) {
@@ -416,7 +601,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check if assigned value contains dangerous LDAP patterns
-        if (node.init.type === 'Literal' && typeof node.init.value === 'string') {
+        if (
+          node.init.type === 'Literal' &&
+          typeof node.init.value === 'string'
+        ) {
           if (containsDangerousLdapFilter(node.init.value)) {
             if (safetyChecker.isSafe(node.init, context)) {
               return;
@@ -438,8 +626,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           // Check for interpolation in LDAP-like expressions
           if (containsLdapInterpolation(fullText)) {
             // Check if any interpolated values are untrusted
-            const hasUntrustedInterpolation = node.init.expressions.some((expr: TSESTree.Expression) =>
-              isUntrustedLdapInput(expr) && !isLdapInputEscaped(expr)
+            const hasUntrustedInterpolation = node.init.expressions.some(
+              (expr: TSESTree.Expression) =>
+                isUntrustedLdapInput(expr) && !isLdapInputEscaped(expr),
             );
 
             if (hasUntrustedInterpolation) {
@@ -479,7 +668,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               },
             });
           }
-        } else if (node.init.type === 'BinaryExpression' && node.init.operator === '+') {
+        } else if (
+          node.init.type === 'BinaryExpression' &&
+          node.init.operator === '+'
+        ) {
           // Handle string concatenation
           const fullText = sourceCode.getText(node.init);
 
@@ -491,12 +683,17 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
                 return true;
               }
               if (expr.type === 'BinaryExpression' && expr.operator === '+') {
-                return hasUntrustedInput(expr.left) || hasUntrustedInput(expr.right);
+                return (
+                  hasUntrustedInput(expr.left) || hasUntrustedInput(expr.right)
+                );
               }
               return false;
             };
 
-            if (hasUntrustedInput(node.init.left) || hasUntrustedInput(node.init.right)) {
+            if (
+              hasUntrustedInput(node.init.left) ||
+              hasUntrustedInput(node.init.right)
+            ) {
               if (safetyChecker.isSafe(node.init, context)) {
                 return;
               }
@@ -508,7 +705,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
                   filePath: filename,
                   line: String(node.loc?.start.line ?? 0),
                   severity: 'HIGH',
-                  safeAlternative: 'Use ldap.escape.filterValue() or parameterized LDAP queries',
+                  safeAlternative:
+                    'Use ldap.escape.filterValue() or parameterized LDAP queries',
                 },
                 suggest: [
                   {
@@ -519,7 +717,17 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               });
             }
           }
-        } else if (isUntrustedLdapInput(node.init) && !isLdapInputEscaped(node.init)) {
+        } else if (
+          // The only branch with no LDAP evidence of its own: it fires on any
+          // member expression whose printed text contains `req.`, which is how
+          // `var header = req.headers[field.toLowerCase()]` in expressjs/morgan
+          // — an HTTP logger with no LDAP anywhere — was reported as CWE-90.
+          // The other branches each carry their own signal (an LDAP method call,
+          // or a literal that parses as a dangerous filter) and stay ungated.
+          ldapInFile &&
+          isUntrustedLdapInput(node.init) &&
+          !isLdapInputEscaped(node.init)
+        ) {
           if (safetyChecker.isSafe(node.init, context)) {
             return;
           }
@@ -541,7 +749,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             ],
           });
         }
-      }
+      },
     };
   },
 });

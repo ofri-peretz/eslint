@@ -13,7 +13,11 @@
  * CWE-359: Exposure of Private Personal Information
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isSignOperation, SENSITIVE_PAYLOAD_FIELDS } from '../../utils';
 import type { NoSensitivePayloadOptions } from '../../types';
 
@@ -86,7 +90,10 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
     const additionalFields = options.additionalSensitiveFields ?? [];
-    const allSensitiveFields = new Set([...SENSITIVE_PAYLOAD_FIELDS, ...additionalFields]);
+    const allSensitiveFields = new Set([
+      ...SENSITIVE_PAYLOAD_FIELDS,
+      ...additionalFields,
+    ]);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

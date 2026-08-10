@@ -23,14 +23,32 @@ describe('require-audience-validation', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - with audience', requireAudienceValidation, {
       valid: [
-        { code: `jwt.verify(token, secret, { audience: 'https://api.example.com' });` },
-        { code: `jwt.verify(token, secret, { aud: 'api.example.com' });` },
-        { code: `jwt.verify(token, secret, { audience: ['api', 'web'] });` },
-        { code: `jwt.sign(payload, secret);` }, // sign not checked
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { audience: 'https://api.example.com' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { aud: 'api.example.com' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { audience: ['api', 'web'] });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        }, // sign not checked
         // Only one argument - edge case
-        { code: `jwt.verify(token);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token);`,
+        },
         // jwtVerify with audience
-        { code: `jwtVerify(token, key, { audience: 'https://api.example.com' });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, { audience: 'https://api.example.com' });`,
+        },
       ],
       invalid: [],
     });
@@ -41,25 +59,30 @@ describe('require-audience-validation', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.verify(token, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingAudienceValidation' }],
         },
         {
-          code: `jwt.verify(token, secret, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, {});`,
           errors: [{ messageId: 'missingAudienceValidation' }],
         },
         {
-          code: `jwt.verify(token, secret, { issuer: 'auth.example.com' });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { issuer: 'auth.example.com' });`,
           errors: [{ messageId: 'missingAudienceValidation' }],
         },
         // jwtVerify without audience
         {
-          code: `jwtVerify(token, key);`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key);`,
           errors: [{ messageId: 'missingAudienceValidation' }],
         },
         // jwtVerify with only issuer
         {
-          code: `jwtVerify(token, key, { issuer: 'auth.example.com' });`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, { issuer: 'auth.example.com' });`,
           errors: [{ messageId: 'missingAudienceValidation' }],
         },
       ],

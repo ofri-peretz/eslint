@@ -17,7 +17,11 @@
  * @see LightSEC 2025 - "JWT Back to the future: On the (ab)use of JWTs"
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
@@ -47,7 +51,8 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
           'Without maxAge, tokens can be replayed long after issuance (Back to the Future attack)',
         severity: 'MEDIUM',
         fix: 'Add maxAge option: { maxAge: "1h" } to limit token lifetime',
-        documentationLink: 'https://securitypattern.com/post/jwt-back-to-the-future',
+        documentationLink:
+          'https://securitypattern.com/post/jwt-back-to-the-future',
       }),
     },
     schema: [
@@ -103,7 +108,10 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for maxAge option
-        if (!hasOption(optionsArg, 'maxAge') && !hasOption(optionsArg, 'clockTolerance')) {
+        if (
+          !hasOption(optionsArg, 'maxAge') &&
+          !hasOption(optionsArg, 'clockTolerance')
+        ) {
           context.report({
             node: optionsArg,
             messageId: 'missingMaxAge',

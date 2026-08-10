@@ -8,7 +8,7 @@
  * ESLint Rule: no-missing-security-headers
  * Detects missing security headers in HTTP responses
  * CWE-693: Protection Mechanism Failure
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/693.html
  * @see https://owasp.org/www-project-secure-headers/
  */
@@ -25,7 +25,7 @@ type MessageIds =
 export interface Options {
   /** Required security headers. Default: ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options'] */
   requiredHeaders?: string[];
-  
+
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
 }
@@ -54,9 +54,11 @@ const RESPONSE_RECEIVER = /^(res|resp|response|reply)$/i;
  */
 function isResponseHeaderCall(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
-  if (callee.type !== 'MemberExpression' ||
-      callee.property.type !== 'Identifier' ||
-      !HEADER_METHODS.has(callee.property.name)) {
+  if (
+    callee.type !== 'MemberExpression' ||
+    callee.property.type !== 'Identifier' ||
+    !HEADER_METHODS.has(callee.property.name)
+  ) {
     return false;
   }
 
@@ -64,7 +66,10 @@ function isResponseHeaderCall(node: TSESTree.CallExpression): boolean {
   if (object.type === 'Identifier') {
     return RESPONSE_RECEIVER.test(object.name);
   }
-  if (object.type === 'MemberExpression' && object.property.type === 'Identifier') {
+  if (
+    object.type === 'MemberExpression' &&
+    object.property.type === 'Identifier'
+  ) {
     return RESPONSE_RECEIVER.test(object.property.name);
   }
   // ponytail: anything else (call results, computed access) is not tracked —
@@ -88,7 +93,7 @@ function extractHeaderName(node: TSESTree.CallExpression): string | null {
 function checkFunctionForSecurityHeaders(
   node: TSESTree.CallExpression,
   requiredHeaders: string[],
-  context: TSESLint.RuleContext<MessageIds, RuleOptions>
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
 ): string[] {
   const setHeaders = new Set<string>();
 
@@ -97,13 +102,16 @@ function checkFunctionForSecurityHeaders(
   let scopeNode: TSESTree.Node | null = null;
 
   while (current) {
-    if (current.type === 'FunctionDeclaration' ||
-        current.type === 'FunctionExpression' ||
-        current.type === 'ArrowFunctionExpression') {
+    if (
+      current.type === 'FunctionDeclaration' ||
+      current.type === 'FunctionExpression' ||
+      current.type === 'ArrowFunctionExpression'
+    ) {
       scopeNode = current;
       break;
     }
-    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
+    current =
+      (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
   }
 
   // If no function found, use the program scope (for test cases)
@@ -123,9 +131,12 @@ function checkFunctionForSecurityHeaders(
     // Recursively check children - only traverse standard AST properties
     if (astNode.type === 'Program' && astNode.body) {
       astNode.body.forEach(collectHeaders);
-    } else if ((astNode.type === 'FunctionDeclaration' ||
-                astNode.type === 'FunctionExpression' ||
-                astNode.type === 'ArrowFunctionExpression') && astNode.body) {
+    } else if (
+      (astNode.type === 'FunctionDeclaration' ||
+        astNode.type === 'FunctionExpression' ||
+        astNode.type === 'ArrowFunctionExpression') &&
+      astNode.body
+    ) {
       collectHeaders(astNode.body);
     } else if (astNode.type === 'BlockStatement' && astNode.body) {
       astNode.body.forEach(collectHeaders);
@@ -138,7 +149,7 @@ function checkFunctionForSecurityHeaders(
   collectHeaders(scopeNode);
 
   // Return missing headers
-  return requiredHeaders.filter(header => !setHeaders.has(header));
+  return requiredHeaders.filter((header) => !setHeaders.has(header));
 }
 
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
@@ -186,7 +197,8 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         description: 'Set security headers manually',
         severity: 'LOW',
         fix: 'res.setHeader("X-Frame-Options", "DENY")',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers',
       }),
     },
     schema: [
@@ -215,13 +227,13 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
-requiredHeaders = DEFAULT_REQUIRED_HEADERS,
+      requiredHeaders = DEFAULT_REQUIRED_HEADERS,
       ignoreInTests = true,
-    
-}: Options = options as Options;
+    }: Options = options as Options;
 
     const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (isTestFile) {
       return {};
@@ -236,12 +248,16 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
       // Find the function that contains this call
       let current: TSESTree.Node | null = node;
       while (current) {
-        if (current.type === 'FunctionDeclaration' ||
-            current.type === 'FunctionExpression' ||
-            current.type === 'ArrowFunctionExpression') {
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
           return `${current.range?.[0]}-${current.range?.[1]}`;
         }
-        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
+        current =
+          (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ??
+          null;
       }
       // If no function found, use program scope
       return 'program';
@@ -263,7 +279,11 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
         return;
       }
 
-      const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
+      const missing = checkFunctionForSecurityHeaders(
+        node,
+        requiredHeaders,
+        context,
+      );
 
       // Mark as checked either way
       reportedScopes.add(scopeKey);
@@ -298,4 +318,3 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
     };
   },
 });
-
