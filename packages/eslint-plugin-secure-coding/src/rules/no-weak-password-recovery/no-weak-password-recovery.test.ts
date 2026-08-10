@@ -63,7 +63,7 @@ describe('no-weak-password-recovery', () => {
         // Password-recovery-specific variable names with BOTH keywords still trigger
         // passwordReset token
         {
-          code: 'const passwordResetToken = generatePredictableToken();',
+          code: 'const passwordResetToken = String(Math.random()).slice(2);',
           errors: [{ messageId: 'predictableRecoveryToken' }],
         },
         // forgotPassword token
@@ -196,7 +196,7 @@ describe('no-weak-password-recovery', () => {
         // true for the CallExpression predictable-token-generation branch.
         `
         /** @secure-recovery */
-        const passwordResetToken = generatePredictableToken();
+        const passwordResetToken = String(Math.random()).slice(2);
         `,
         // Same annotation, BinaryExpression weak-pattern branch.
         `
@@ -297,7 +297,9 @@ describe('no-weak-password-recovery', () => {
   // `sourceText` configured per test.
   describe('Layer 2 - mock context', () => {
     it('predictableRecoveryToken report falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery);
+      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
+        sourceText: 'Math.random()',
+      });
       const variableDeclarator = listeners.VariableDeclarator as (node: unknown) => void;
 
       variableDeclarator({
@@ -305,7 +307,11 @@ describe('no-weak-password-recovery', () => {
         id: { type: 'Identifier', name: 'passwordResetToken' },
         init: {
           type: 'CallExpression',
-          callee: { type: 'Identifier', name: 'generatePredictableToken' },
+          callee: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'Math' },
+            property: { type: 'Identifier', name: 'random' },
+          },
           arguments: [],
         },
       });
@@ -339,6 +345,16 @@ describe('no-weak-password-recovery', () => {
       functionDeclaration({
         type: 'FunctionDeclaration',
         id: { type: 'Identifier', name: 'handlePasswordReset' },
+        // A body with real statements: a function whose whole body is a single
+        // `return` is a declaration (a decorator factory, a selector) and is
+        // deliberately skipped, so the mock has to look like a handler.
+        body: {
+          type: 'BlockStatement',
+          body: [
+            { type: 'ExpressionStatement', expression: { type: 'CallExpression', callee: { type: 'Identifier', name: 'resetPassword' }, arguments: [] } },
+            { type: 'ExpressionStatement', expression: { type: 'CallExpression', callee: { type: 'Identifier', name: 'send' }, arguments: [] } },
+          ],
+        },
       });
 
       expect(reports).toHaveLength(2);
@@ -382,5 +398,116 @@ describe('no-weak-password-recovery', () => {
       expect(reports).toHaveLength(1);
       expect(reports[0].data?.line).toBe('0');
     });
+  });
+});
+
+/**
+ * Wild-corpus regression: guilty only on evidence.
+ *
+ * The rule reported whenever a recovery-named variable's initializer did not
+ * *textually contain* one of four hardcoded generator names. Twelve findings
+ * across the 13-repo corpus, none of them a weak token:
+ *
+ *   const forgotPassword = catchAsync(async (req, res) => {...})   a route handler
+ *   const resetPasswordToken = generateToken(user.id, expires)     a project helper
+ *
+ * The first is not a token at all. The second may well wrap crypto.randomBytes
+ * — this rule cannot see inside it, so calling it predictable asserts
+ * something it never established.
+ *
+ * It now requires a source that is demonstrably predictable, and skips
+ * initializers that take a function argument (middleware wrappers).
+ */
+describe('corpus regression — predictability must be shown, not assumed', () => {
+  ruleTester.run('evidence of weakness', noWeakPasswordRecovery, {
+    valid: [
+      {
+        name: 'route handler wrapped in catchAsync',
+        code: `const forgotPassword = catchAsync(async (req, res) => { await svc.forgot(req.body.email); });`,
+      },
+      {
+        name: 'resetPassword handler',
+        code: `const resetPassword = catchAsync(async (req, res) => { await svc.reset(req.query.token); });`,
+      },
+      {
+        name: 'opaque project helper',
+        code: `const resetPasswordToken = generateToken(user.id, expires, RESET);`,
+      },
+      {
+        name: 'service call',
+        code: `const resetPasswordToken = await tokenService.generateResetPasswordToken(email);`,
+      },
+      {
+        name: 'crypto is fine',
+        code: `const resetPasswordToken = crypto.randomBytes(32).toString('hex');`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'Math.random',
+        code: `const resetPasswordToken = String(Math.random()).slice(2);`,
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+      {
+        name: 'Date.now',
+        code: `const passwordResetToken = String(Date.now());`,
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+      {
+        name: 'new Date().getTime()',
+        code: `const passwordResetToken = String(new Date().getTime());`,
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+      {
+        name: 'time-based uuid v1',
+        code: `const resetPasswordToken = uuid.v1();`,
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+      {
+        name: 'bare v1() import',
+        code: `const resetPasswordToken = v1();`,
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Wild-corpus regression: a recovery-shaped *name* on a declaration.
+ *
+ * `isRecoveryRelated` was applied to function names alone — a deliberate
+ * narrowing, per the comment above it, to stop every function containing the
+ * word "password" from reporting. It swapped one false positive for another:
+ * ack-nestjs-boilerplate's `UserPublicForgotPasswordDoc()` and
+ * `UserPublicResetPasswordDoc()` are Swagger documentation decorators, and
+ * four findings told a doc generator to add token expiry and rate limiting.
+ *
+ * A function whose entire body is one `return <expression>` produces a value
+ * rather than performing a flow, so there is no recovery step in it to secure.
+ */
+describe('corpus regression — declarations are not recovery flows', () => {
+  ruleTester.run('declaration-only functions', noWeakPasswordRecovery, {
+    valid: [
+      {
+        name: 'swagger doc decorator factory',
+        code: `export function UserPublicForgotPasswordDoc() { return applyDecorators(Doc({ summary: 'forgot' })); }`,
+      },
+      {
+        name: 'reset doc decorator factory',
+        code: `export function UserPublicResetPasswordDoc() { return applyDecorators(Doc({ summary: 'reset' })); }`,
+      },
+
+    ],
+    invalid: [
+      // A real handler still reports both.
+      {
+        name: 'handler with no expiry or rate limit',
+        code: `async function forgotPassword(req, res) { const t = await mint(req.body.email); await mail(t); res.end(); }`,
+        errors: [
+          { messageId: 'missingTokenExpiration' },
+          { messageId: 'missingRateLimit' },
+        ],
+      },
+    ],
   });
 });
