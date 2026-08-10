@@ -23,7 +23,7 @@
  * - Trusted XPath libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -324,10 +324,10 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     function isXpathSinkCall(call: TSESTree.CallExpression): boolean {
       const callee = call.callee;
       const name =
-        callee.type === 'Identifier'
+        callee.type === AST_NODE_TYPES.Identifier
           ? callee.name
-          : callee.type === 'MemberExpression' &&
-              callee.property.type === 'Identifier'
+          : callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.property.type === AST_NODE_TYPES.Identifier
             ? callee.property.name
             : null;
       return name !== null && xpathFunctions.includes(name);
@@ -338,17 +338,21 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       if (!parent) return false;
 
       // document.evaluate(`//user[@id="1"]`, doc)
+      //
+      // Only the first argument is the XPath expression — evaluate()'s later
+      // parameters are the context node and result type. Accepting any
+      // position would readmit the false positives this gate exists to stop.
       if (
-        parent.type === 'CallExpression' &&
-        parent.arguments.some((a) => a === node)
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        parent.arguments[0] === node
       ) {
         return isXpathSinkCall(parent);
       }
 
       // const q = `//user`; doc.evaluate(q)
       if (
-        parent.type === 'VariableDeclarator' &&
-        parent.id.type === 'Identifier'
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier
       ) {
         const declared = parent.id;
         const resolved = sourceCode
@@ -357,8 +361,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         return (resolved?.references ?? []).some((ref) => {
           const refParent = ref.identifier.parent;
           return (
-            refParent?.type === 'CallExpression' &&
-            refParent.arguments.some((a) => a === ref.identifier) &&
+            refParent?.type === AST_NODE_TYPES.CallExpression &&
+            refParent.arguments[0] === ref.identifier &&
             isXpathSinkCall(refParent)
           );
         });
@@ -366,8 +370,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // `//user` + suffix, or a nested template — keep walking outward.
       if (
-        parent.type === 'BinaryExpression' ||
-        parent.type === 'TemplateLiteral'
+        parent.type === AST_NODE_TYPES.BinaryExpression ||
+        parent.type === AST_NODE_TYPES.TemplateLiteral
       ) {
         return reachesXpathSink(parent);
       }

@@ -27,6 +27,11 @@ describe('no-xpath-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe XPath operations', noXpathInjection, {
       valid: [
+        // Only args[0] of an evaluator is the XPath expression; a template
+        // in the context-node position is not the query.
+        {
+          code: 'document.evaluate(expr, `//users/..`);',
+        },
         // The safe-annotation escape hatch, now reached only when the string
         // does flow to an evaluator.
         {
