@@ -471,11 +471,35 @@ describe('snapshot tests (byte-level format stability)', () => {
         ────────────────────────────────────────────────────────────
           1 error, 2 warnings across 2 files (2 rules)
           1 fixable with --fix
+          Interlace ESLint · https://eslint.interlace.tools
         "
       `);
     } finally {
       if (prev === undefined) delete process.env['NO_COLOR'];
       else process.env['NO_COLOR'] = prev;
+    }
+  });
+
+  it('omits the attribution footer when INTERLACE_NO_ATTRIBUTION=1', () => {
+    // Exercises the suppressed branch in renderHuman, and proves the opt-out
+    // works on real rendered output rather than only on the helper. A footer
+    // you cannot actually turn off is the version people would be right to
+    // resent.
+    const prevColor = process.env['NO_COLOR'];
+    const prevOptOut = process.env['INTERLACE_NO_ATTRIBUTION'];
+    process.env['NO_COLOR'] = '1';
+    process.env['INTERLACE_NO_ATTRIBUTION'] = '1';
+    try {
+      const grouped = groupByRule(snapshotResults, context, 'human');
+      const summary = computeSummary(snapshotResults, grouped);
+      const out = renderHuman(grouped, summary);
+      expect(out).not.toContain('eslint.interlace.tools');
+      expect(out).toContain('1 error, 2 warnings');
+    } finally {
+      if (prevColor === undefined) delete process.env['NO_COLOR'];
+      else process.env['NO_COLOR'] = prevColor;
+      if (prevOptOut === undefined) delete process.env['INTERLACE_NO_ATTRIBUTION'];
+      else process.env['INTERLACE_NO_ATTRIBUTION'] = prevOptOut;
     }
   });
 
