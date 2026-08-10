@@ -46,7 +46,7 @@ type RuleOptions = [Options?];
 export function checkCookieOptions(
   node: TSESTree.ObjectExpression,
   sourceCode: TSESLint.SourceCode,
-  options: Options
+  options: Options,
 ): { issues: string[]; hasSuggestions: boolean } {
   const text = sourceCode.getText(node);
   const issues: string[] = [];
@@ -66,12 +66,17 @@ export function checkCookieOptions(
   }
 
   if (options.requireSameSite !== false) {
-    const acceptableValues = options.acceptableSameSiteValues || ['strict', 'lax'];
+    const acceptableValues = options.acceptableSameSiteValues || [
+      'strict',
+      'lax',
+    ];
     const sameSiteMatch = text.match(/\bsameSite\s*:\s*['"](\w+)['"]/i);
     if (!sameSiteMatch) {
       issues.push('missing sameSite flag (prevents CSRF)');
     } else if (!acceptableValues.includes(sameSiteMatch[1].toLowerCase())) {
-      issues.push(`sameSite should be 'strict' or 'lax', not '${sameSiteMatch[1]}'`);
+      issues.push(
+        `sameSite should be 'strict' or 'lax', not '${sameSiteMatch[1]}'`,
+      );
     }
   }
 
@@ -192,7 +197,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
                     const lastArg = node.arguments[node.arguments.length - 1];
                     return fixer.insertTextAfter(
                       lastArg,
-                      ', { httpOnly: true, secure: true, sameSite: "strict" }'
+                      ', { httpOnly: true, secure: true, sameSite: "strict" }',
                     );
                   },
                 },
@@ -206,7 +211,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
             const { issues } = checkCookieOptions(
               optionsArg,
               sourceCode,
-              options as Options
+              options as Options,
             );
 
             if (issues.length > 0) {

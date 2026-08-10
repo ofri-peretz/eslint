@@ -24,7 +24,9 @@ describe('no-disabled-helmet-protections', () => {
         {
           code: `app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } } }));`,
         },
-        { code: `app.use(helmet({ referrerPolicy: { policy: 'no-referrer' } }));` },
+        {
+          code: `app.use(helmet({ referrerPolicy: { policy: 'no-referrer' } }));`,
+        },
         // hsts is owned by require-strict-transport-security — not double reported here
         { code: `app.use(helmet({ hsts: false }));` },
         { code: `app.use(helmet({ strictTransportSecurity: false }));` },

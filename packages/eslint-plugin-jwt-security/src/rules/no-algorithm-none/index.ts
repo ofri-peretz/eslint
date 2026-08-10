@@ -16,7 +16,11 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import {
   isVerifyOperation,
   isSignOperation,
@@ -95,7 +99,8 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
           'jwt.decode() does NOT verify the signature — using its result as if it were authenticated is functionally equivalent to algorithm:"none". Any token, including forged ones, will decode.',
         severity: 'CRITICAL',
         fix: 'Use jwt.verify(token, secret, { algorithms: ["RS256"] }) instead. Reserve jwt.decode() for non-security inspection only (e.g. logging the issuer).',
-        documentationLink: 'https://github.com/auth0/node-jsonwebtoken#jwtdecodetoken--options',
+        documentationLink:
+          'https://github.com/auth0/node-jsonwebtoken#jwtdecodetoken--options',
       }),
     },
     schema: [
@@ -156,7 +161,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
      * Check options object for 'none' algorithm
      */
     const checkOptionsForNone = (
-      optionsNode: TSESTree.ObjectExpression
+      optionsNode: TSESTree.ObjectExpression,
     ): void => {
       for (const prop of optionsNode.properties) {
         if (prop.type !== 'Property' || prop.key.type !== 'Identifier') {

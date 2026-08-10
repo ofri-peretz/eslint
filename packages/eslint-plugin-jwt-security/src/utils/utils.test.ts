@@ -24,24 +24,75 @@ import {
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 // Helper to create mock nodes
-function mockCallExpression(calleeName: string): TSESTree.CallExpression {
-  return {
-    type: 'CallExpression',
-    callee: { type: 'Identifier', name: calleeName } as TSESTree.Identifier,
-    arguments: [],
-  } as unknown as TSESTree.CallExpression;
+/**
+ * Attach a Program root that imports `source`, so `isJwtLibraryCall` can see it.
+ *
+ * The matcher walks `parent` to the Program and requires a JWT-library import
+ * before it will match a method name — `verify`, `sign` and `decode` are far too
+ * common to key on alone (it reported `TextDecoder.decode()` and `argon.verify()`
+ * in real repos). A bare mock node with no parent chain therefore matches
+ * nothing, which is the correct behaviour and not something to work around.
+ */
+function withProgram<T extends object>(
+  node: T,
+  source: string | null = 'jsonwebtoken',
+): T {
+  const program = {
+    type: 'Program',
+    body:
+      source === null
+        ? []
+        : [
+            {
+              type: 'ImportDeclaration',
+              source: { value: source },
+              // Real ImportDeclarations always carry specifiers; the mock does
+              // too, so the receiver-origin check is exercised rather than
+              // short-circuited.
+              specifiers: [
+                { type: 'ImportDefaultSpecifier', local: { name: 'jwt' } },
+              ],
+            },
+          ],
+  };
+  (node as { parent?: unknown }).parent = program;
+  return node;
 }
 
-function mockMemberCallExpression(objectName: string, methodName: string): TSESTree.CallExpression {
-  return {
-    type: 'CallExpression',
-    callee: {
-      type: 'MemberExpression',
-      object: { type: 'Identifier', name: objectName } as TSESTree.Identifier,
-      property: { type: 'Identifier', name: methodName } as TSESTree.Identifier,
+function mockCallExpression(
+  calleeName: string,
+  importSource: string | null = 'jsonwebtoken',
+): TSESTree.CallExpression {
+  return withProgram(
+    {
+      type: 'CallExpression',
+      callee: { type: 'Identifier', name: calleeName } as TSESTree.Identifier,
+      arguments: [],
     },
-    arguments: [],
-  } as unknown as TSESTree.CallExpression;
+    importSource,
+  ) as unknown as TSESTree.CallExpression;
+}
+
+function mockMemberCallExpression(
+  objectName: string,
+  methodName: string,
+  importSource: string | null = 'jsonwebtoken',
+): TSESTree.CallExpression {
+  return withProgram(
+    {
+      type: 'CallExpression',
+      callee: {
+        type: 'MemberExpression',
+        object: { type: 'Identifier', name: objectName } as TSESTree.Identifier,
+        property: {
+          type: 'Identifier',
+          name: methodName,
+        } as TSESTree.Identifier,
+      },
+      arguments: [],
+    },
+    importSource,
+  ) as unknown as TSESTree.CallExpression;
 }
 
 function mockLiteral(value: string | number | boolean): TSESTree.Literal {
@@ -51,7 +102,9 @@ function mockLiteral(value: string | number | boolean): TSESTree.Literal {
   } as TSESTree.Literal;
 }
 
-function mockObjectExpression(props: Record<string, TSESTree.Node>): TSESTree.ObjectExpression {
+function mockObjectExpression(
+  props: Record<string, TSESTree.Node>,
+): TSESTree.ObjectExpression {
   return {
     type: 'ObjectExpression',
     properties: Object.entries(props).map(([key, value]) => ({
@@ -76,6 +129,151 @@ describe('JWT Utils', () => {
 
     it('should return false for non-matching calls', () => {
       const call = mockCallExpression('somethingElse');
+      expect(isJwtLibraryCall(call, new Set(['verify']))).toBe(false);
+    });
+
+    // The regression this gate exists for. `verify` and `decode` are among the
+    // most common method names in JS; without a JWT import in the file these
+    // matched `argon.verify(hash, password)` and `TextDecoder.decode(buf)` in
+    // real repositories. See issue #471.
+    it('does not match a JWT method name in a file with no JWT import', () => {
+      const argon = mockMemberCallExpression('argon', 'verify', null);
+      expect(isJwtLibraryCall(argon, new Set(['verify']))).toBe(false);
+
+      const decoder = mockMemberCallExpression('textDecoder', 'decode', null);
+      expect(isJwtLibraryCall(decoder, new Set(['decode']))).toBe(false);
+    });
+
+    it('matches through a subpath import of a JWT library', () => {
+      // `jose/jwt/verify` and `@nestjs/jwt/dist/...` are both real spellings.
+      const call = mockMemberCallExpression(
+        'jose',
+        'jwtVerify',
+        'jose/jwt/verify',
+      );
+      expect(isJwtLibraryCall(call, new Set(['jwtVerify']))).toBe(true);
+
+      const nest = mockMemberCallExpression(
+        'jwtService',
+        'sign',
+        '@nestjs/jwt',
+      );
+      expect(isJwtLibraryCall(nest, new Set(['sign']))).toBe(true);
+    });
+
+    it('ignores non-import statements and non-string import sources', () => {
+      // A Program whose body holds a statement that is not an ImportDeclaration,
+      // and an import whose source is not a string literal (a parser can produce
+      // this for `import x from someExpr` in malformed input).
+      const call = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'jwt' },
+          property: { type: 'Identifier', name: 'verify' },
+        },
+        arguments: [],
+        parent: {
+          type: 'Program',
+          body: [
+            { type: 'ExpressionStatement' },
+            {
+              type: 'ImportDeclaration',
+              source: { value: 42 },
+              specifiers: [],
+            },
+          ],
+        },
+      } as unknown as TSESTree.CallExpression;
+      expect(isJwtLibraryCall(call, new Set(['verify']))).toBe(false);
+    });
+
+    it('rejects a receiver imported from a scoped non-JWT package', () => {
+      // Exercises the scoped-package branch of the receiver check: `@scope/pkg`
+      // resolves to two segments, and argon2 is not a JWT library.
+      const call = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'argon' },
+          property: { type: 'Identifier', name: 'verify' },
+        },
+        arguments: [],
+        parent: {
+          type: 'Program',
+          body: [
+            {
+              type: 'ImportDeclaration',
+              source: { value: 'jsonwebtoken' },
+              specifiers: [
+                { type: 'ImportDefaultSpecifier', local: { name: 'jwt' } },
+              ],
+            },
+            {
+              type: 'ImportDeclaration',
+              source: { value: '@node-rs/argon2' },
+              specifiers: [
+                { type: 'ImportDefaultSpecifier', local: { name: 'argon' } },
+              ],
+            },
+          ],
+        },
+      } as unknown as TSESTree.CallExpression;
+      expect(isJwtLibraryCall(call, new Set(['verify']))).toBe(false);
+    });
+
+    it('does not reject a receiver whose import source cannot be read', () => {
+      // The JWT import satisfies the file gate. The receiver check then walks
+      // past an import with no `specifiers` at all, and finds the receiver bound
+      // by one whose source is not a string literal.
+      //
+      // Expected `true`: only an import we can read and can see is *foreign*
+      // rejects. An unreadable source is not evidence of anything, and treating
+      // "unknown" as "foreign" would silence real findings — the false-negative
+      // trade this gate is specifically designed to avoid.
+      const call = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'weird' },
+          property: { type: 'Identifier', name: 'verify' },
+        },
+        arguments: [],
+        parent: {
+          type: 'Program',
+          body: [
+            {
+              type: 'ImportDeclaration',
+              source: { value: 'jsonwebtoken' },
+              specifiers: [
+                { type: 'ImportDefaultSpecifier', local: { name: 'jwt' } },
+              ],
+            },
+            // no `specifiers` key at all
+            {
+              type: 'ImportDeclaration',
+              source: { value: 'side-effect-only' },
+            },
+            {
+              type: 'ImportDeclaration',
+              source: { value: 123 },
+              specifiers: [
+                { type: 'ImportDefaultSpecifier', local: { name: 'weird' } },
+              ],
+            },
+          ],
+        },
+      } as unknown as TSESTree.CallExpression;
+      expect(isJwtLibraryCall(call, new Set(['verify']))).toBe(true);
+    });
+
+    it('ignores an unparented node', () => {
+      // No parent chain -> no Program -> no evidence -> no match.
+      const call = {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'verify' },
+        arguments: [],
+      } as unknown as TSESTree.CallExpression;
       expect(isJwtLibraryCall(call, new Set(['verify']))).toBe(false);
     });
 
@@ -136,14 +334,16 @@ describe('JWT Utils', () => {
     it('should extract algorithms from array', () => {
       const obj = {
         type: 'ObjectExpression',
-        properties: [{
-          type: 'Property',
-          key: { type: 'Identifier', name: 'algorithms' },
-          value: {
-            type: 'ArrayExpression',
-            elements: [mockLiteral('RS256'), mockLiteral('ES256')],
+        properties: [
+          {
+            type: 'Property',
+            key: { type: 'Identifier', name: 'algorithms' },
+            value: {
+              type: 'ArrayExpression',
+              elements: [mockLiteral('RS256'), mockLiteral('ES256')],
+            },
           },
-        }],
+        ],
       } as unknown as TSESTree.ObjectExpression;
       expect(extractAlgorithms(obj)).toEqual(['RS256', 'ES256']);
     });
@@ -163,7 +363,10 @@ describe('JWT Utils', () => {
       const obj = {
         type: 'ObjectExpression',
         properties: [
-          { type: 'SpreadElement', argument: { type: 'Identifier', name: 'opts' } },
+          {
+            type: 'SpreadElement',
+            argument: { type: 'Identifier', name: 'opts' },
+          },
           {
             type: 'Property',
             key: { type: 'Identifier', name: 'algorithm' },
@@ -178,11 +381,13 @@ describe('JWT Utils', () => {
       // This also covers line 142 - when key.type !== 'Identifier'
       const obj = {
         type: 'ObjectExpression',
-        properties: [{
-          type: 'Property',
-          key: { type: 'Literal', value: 'algorithm' }, // Literal key, not Identifier
-          value: mockLiteral('RS256'),
-        }],
+        properties: [
+          {
+            type: 'Property',
+            key: { type: 'Literal', value: 'algorithm' }, // Literal key, not Identifier
+            value: mockLiteral('RS256'),
+          },
+        ],
       } as unknown as TSESTree.ObjectExpression;
       expect(extractAlgorithms(obj)).toEqual([]);
     });
@@ -225,7 +430,10 @@ describe('JWT Utils', () => {
     });
 
     it('should return false for non-literals', () => {
-      const node = { type: 'Identifier', name: 'secret' } as TSESTree.Identifier;
+      const node = {
+        type: 'Identifier',
+        name: 'secret',
+      } as TSESTree.Identifier;
       expect(isWeakSecret(node)).toBe(false);
     });
   });
@@ -245,7 +453,10 @@ describe('JWT Utils', () => {
     });
 
     it('should return false for other nodes', () => {
-      const node = { type: 'Identifier', name: 'secret' } as TSESTree.Identifier;
+      const node = {
+        type: 'Identifier',
+        name: 'secret',
+      } as TSESTree.Identifier;
       expect(isEnvVariable(node)).toBe(false);
     });
   });

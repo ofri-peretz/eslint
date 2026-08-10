@@ -126,7 +126,10 @@ function clientContainerOf(node: TSESTree.MemberExpression): string | null {
   if (!container || !CLIENT_CONTAINERS.has(container)) return null;
 
   const root = object.object;
-  if (root.type === AST_NODE_TYPES.Identifier && REQUEST_RECEIVER.test(root.name)) {
+  if (
+    root.type === AST_NODE_TYPES.Identifier &&
+    REQUEST_RECEIVER.test(root.name)
+  ) {
     return container;
   }
   // ctx.req.body.role / this.request.query.role

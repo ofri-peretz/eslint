@@ -13,7 +13,11 @@
  * CWE-287: Improper Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { RequireIssuerValidationOptions } from '../../types';
 
