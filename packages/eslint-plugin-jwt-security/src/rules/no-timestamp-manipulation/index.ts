@@ -15,8 +15,17 @@
  * @see https://securitypattern.com/post/jwt-back-to-the-future
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isSignOperation, getOptionsArgument, hasOption, getOptionValue } from '../../utils';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import {
+  isSignOperation,
+  getOptionsArgument,
+  hasOption,
+  getOptionValue,
+} from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
 type MessageIds = 'timestampDisabled' | 'noTimestampTrue';
@@ -45,7 +54,8 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
           'noTimestamp:true disables iat claim, enabling replay attacks',
         severity: 'HIGH',
         fix: 'Remove noTimestamp option or set to false',
-        documentationLink: 'https://securitypattern.com/post/jwt-back-to-the-future',
+        documentationLink:
+          'https://securitypattern.com/post/jwt-back-to-the-future',
       }),
       noTimestampTrue: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -55,7 +65,8 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
           'Disabling timestamps allows attackers to forge tokens valid in the future',
         severity: 'HIGH',
         fix: 'Always include iat claim for freshness validation',
-        documentationLink: 'https://securitypattern.com/post/jwt-back-to-the-future',
+        documentationLink:
+          'https://securitypattern.com/post/jwt-back-to-the-future',
       }),
     },
     schema: [

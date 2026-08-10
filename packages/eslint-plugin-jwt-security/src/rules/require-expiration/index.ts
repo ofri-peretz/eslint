@@ -15,17 +15,16 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
-  isSignOperation,
-  getOptionsArgument,
-  hasOption,
-} from '../../utils';
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { RequireExpirationOptions } from '../../types';
 
-type MessageIds =
-  | 'missingExpiration'
-  | 'addExpiration';
+type MessageIds = 'missingExpiration' | 'addExpiration';
 
 type RuleOptions = [RequireExpirationOptions?];
 
@@ -68,7 +67,8 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
           maxExpirationSeconds: {
             type: 'integer',
             default: 86400,
-            description: 'Maximum allowed expiration time in seconds (24h default)',
+            description:
+              'Maximum allowed expiration time in seconds (24h default)',
           },
           trustedSanitizers: {
             type: 'array',
@@ -111,7 +111,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         (prop) =>
           prop.type === 'Property' &&
           prop.key.type === 'Identifier' &&
-          prop.key.name === 'exp'
+          prop.key.name === 'exp',
       );
     };
 
@@ -150,14 +150,17 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
               messageId: 'addExpiration',
               fix(fixer) {
                 const sourceCode = context.sourceCode;
-                if (optionsArg3 && optionsArg3.type === AST_NODE_TYPES.ObjectExpression) {
+                if (
+                  optionsArg3 &&
+                  optionsArg3.type === AST_NODE_TYPES.ObjectExpression
+                ) {
                   // Options object exists but lacks expiresIn — insert property
                   const openBrace = sourceCode.getFirstToken(optionsArg3)!;
-                  return fixer.insertTextAfter(openBrace, ' expiresIn: \'1h\',');
+                  return fixer.insertTextAfter(openBrace, " expiresIn: '1h',");
                 }
                 // No options arg — insert { expiresIn: '1h' } as third argument
                 const lastArg = node.arguments[node.arguments.length - 1];
-                return fixer.insertTextAfter(lastArg, ', { expiresIn: \'1h\' }');
+                return fixer.insertTextAfter(lastArg, ", { expiresIn: '1h' }");
               },
             },
           ],

@@ -25,12 +25,24 @@ describe('no-decode-without-verify', () => {
     ruleTester.run('valid - verify operations', noDecodeWithoutVerify, {
       valid: [
         // jwt.verify is safe
-        { code: `const payload = jwt.verify(token, secret);` },
-        { code: `jwt.verify(token, publicKey, { algorithms: ['RS256'] });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+const payload = jwt.verify(token, secret);`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { algorithms: ['RS256'] });`,
+        },
         // jose jwtVerify is safe
-        { code: `const { payload } = await jwtVerify(token, key);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+const { payload } = await jwtVerify(token, key);`,
+        },
         // sign is not flagged
-        { code: `jwt.sign(payload, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        },
       ],
       invalid: [],
     });
@@ -42,32 +54,38 @@ describe('no-decode-without-verify', () => {
       invalid: [
         // Basic jwt.decode()
         {
-          code: `const payload = jwt.decode(token);`,
+          code: `import jwt from 'jsonwebtoken';
+const payload = jwt.decode(token);`,
           errors: [{ messageId: 'decodeWithoutVerify' }],
         },
         // decode with options
         {
-          code: `const decoded = jwt.decode(token, { complete: true });`,
+          code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });`,
           errors: [{ messageId: 'decodeWithoutVerify' }],
         },
         // Using payload directly
         {
-          code: `const userId = jwt.decode(token).sub;`,
+          code: `import jwt from 'jsonwebtoken';
+const userId = jwt.decode(token).sub;`,
           errors: [{ messageId: 'decodeWithoutVerify' }],
         },
         // jwt-decode library - jwtDecode pattern
         {
-          code: `const payload = jwtDecode(accessToken);`,
+          code: `import jwt from 'jsonwebtoken';
+const payload = jwtDecode(accessToken);`,
           errors: [{ messageId: 'decodeWithoutVerify' }],
         },
         // jwt-decode library - jwt_decode pattern (snake_case import)
         {
-          code: `const payload = jwt_decode(accessToken);`,
+          code: `import jwt from 'jsonwebtoken';
+const payload = jwt_decode(accessToken);`,
           errors: [{ messageId: 'jwtDecodeLibrary' }],
         },
         // jose decodeJwt (decode only)
         {
-          code: `const payload = decodeJWT(token);`,
+          code: `import jwt from 'jsonwebtoken';
+const payload = decodeJWT(token);`,
           errors: [{ messageId: 'decodeWithoutVerify' }],
         },
       ],

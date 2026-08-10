@@ -26,11 +26,26 @@ describe('no-timestamp-manipulation', () => {
       valid: [
         'const x = 42;',
         'const flag = true;',
-        { code: `jwt.sign(payload, secret);` },
-        { code: `jwt.sign(payload, secret, {});` },
-        { code: `jwt.sign(payload, secret, { expiresIn: '1h' });` },
-        { code: `jwt.sign(payload, secret, { noTimestamp: false });` },
-        { code: `jwt.verify(token, secret);` }, // verify not checked
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, {});`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { noTimestamp: false });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
+        }, // verify not checked
       ],
       invalid: [],
     });
@@ -41,11 +56,13 @@ describe('no-timestamp-manipulation', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.sign(payload, secret, { noTimestamp: true });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { noTimestamp: true });`,
           errors: [{ messageId: 'noTimestampTrue' }],
         },
         {
-          code: `jwt.sign(payload, secret, { algorithm: 'RS256', noTimestamp: true });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { algorithm: 'RS256', noTimestamp: true });`,
           errors: [{ messageId: 'noTimestampTrue' }],
         },
       ],
