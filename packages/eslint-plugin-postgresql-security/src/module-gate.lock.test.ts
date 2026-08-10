@@ -74,7 +74,10 @@ const NON_POSTGRES_SOURCES: ReadonlyArray<readonly [string, string]> = [
 ];
 
 const lint = (code: string, rule: string): Linter.LintMessage[] => {
-  const linter = new Linter();
+  // The declared ESLint floor for this package is 8.40, where `new Linter()`
+  // still defaults to eslintrc — a flat config would be ignored there and every
+  // rule silently skipped, which is the vacuous pass this lock exists to catch.
+  const linter = new Linter({ configType: "flat" });
   return linter.verify(
     code,
     {

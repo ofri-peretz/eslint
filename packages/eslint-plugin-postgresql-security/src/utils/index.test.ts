@@ -136,4 +136,29 @@ describe('fileUsesPostgres', () => {
       expect(uses(`import x from '${mod}';`)).toBe(true);
     }
   });
+
+  describe('a locally bound `require` is not module loading', () => {
+    // The plugin's own lesson turned on itself: a *name* is not proof of an
+    // *interface*. Without this, the gate opened every rule on a file with no
+    // PostgreSQL in it at all.
+    it.each([
+      "function f(require) { require('pg'); }",
+      "const load = (require) => require('pg');",
+      "const require = (m) => m; require('pg');",
+      "let require; require('pg');",
+    ])('%s → false', (code) => {
+      expect(uses(code)).toBe(false);
+    });
+
+    it('the other arms still apply when `require` is shadowed', () => {
+      expect(uses("import { Pool } from 'pg';\nfunction f(require) { require('pg'); }")).toBe(true);
+      expect(uses("const url = 'postgres://h/db';\nfunction f(require) { require('pg'); }")).toBe(true);
+    });
+  });
+
+  it('the result is cached per Program, so thirteen rules cost one scan', () => {
+    const ast = parse("import { Pool } from 'pg';", { sourceType: 'module', range: true });
+    expect(fileUsesPostgres(ast)).toBe(true);
+    expect(fileUsesPostgres(ast)).toBe(true);
+  });
 });

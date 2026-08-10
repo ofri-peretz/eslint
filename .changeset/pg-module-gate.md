@@ -2,7 +2,7 @@
 'eslint-plugin-postgresql-security': major
 ---
 
-Every rule now abstains in files that use no PostgreSQL
+Every rule now abstains in files without local PostgreSQL evidence
 
 The plugin had no notion of whether a file used PostgreSQL at all.
 `no-missing-client-release` fired on any `.connect()` — mongoose, redis,

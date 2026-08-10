@@ -87,6 +87,74 @@ function isPgConnectionString(node: TSESTree.Node): boolean {
 }
 
 /**
+ * Whether the file declares a binding named `require` anywhere — a parameter,
+ * a variable, a function.
+ *
+ * `function f(require) { require('pg'); }` is not module loading, and treating
+ * it as PostgreSQL evidence would be this plugin committing the exact error it
+ * was just fixed for: taking a *name* as proof of an *interface*. When the name
+ * is bound locally the `require` arm is dropped entirely; imports, DSNs, and
+ * every other arm still apply.
+ */
+function declaresRequireBinding(ast: TSESTree.Program): boolean {
+  let shadowed = false;
+  // As in `visit` below: no top guard, because every recursive call site here
+  // already checks, which would make it unreachable.
+  const scan = (node: TSESTree.Node): void => {
+    if (
+      (node.type === AST_NODE_TYPES.FunctionDeclaration ||
+        node.type === AST_NODE_TYPES.FunctionExpression ||
+        node.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
+      node.params.some(
+        (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
+      )
+    ) {
+      shadowed = true;
+      return;
+    }
+    if (
+      node.type === AST_NODE_TYPES.VariableDeclarator &&
+      node.id.type === AST_NODE_TYPES.Identifier &&
+      node.id.name === 'require'
+    ) {
+      shadowed = true;
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'parent') continue;
+      const value = (node as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof (child as TSESTree.Node).type === 'string') {
+            scan(child as TSESTree.Node);
+            if (shadowed) return;
+          }
+        }
+      } else if (
+        value &&
+        typeof value === 'object' &&
+        typeof (value as TSESTree.Node).type === 'string'
+      ) {
+        scan(value as TSESTree.Node);
+        if (shadowed) return;
+      }
+    }
+  };
+  scan(ast);
+  return shadowed;
+}
+
+/**
+ * One evidence scan per file, not one per rule.
+ *
+ * `create` runs for each of the thirteen rules, so an uncached probe walks the
+ * whole AST thirteen times for every file in the project — and the files that
+ * pay that cost most are the non-PostgreSQL ones the gate exists to skip
+ * cheaply.
+ */
+const cache = new WeakMap<TSESTree.Program, boolean>();
+
+/**
  * Whether this file uses PostgreSQL at all.
  *
  * Every rule in this plugin is gated on it, because none of them had any notion
@@ -104,7 +172,16 @@ function isPgConnectionString(node: TSESTree.Node): boolean {
  * in it at all.
  */
 export function fileUsesPostgres(ast: TSESTree.Program): boolean {
+  const cached = cache.get(ast);
+  if (cached !== undefined) return cached;
+  const result = computeUsesPostgres(ast);
+  cache.set(ast, result);
+  return result;
+}
+
+function computeUsesPostgres(ast: TSESTree.Program): boolean {
   let found = false;
+  const requireIsShadowed = declaresRequireBinding(ast);
 
   // No `if (found) return` guard at the top: every recursive call site below
   // already checks, so it would be unreachable.
@@ -120,7 +197,10 @@ export function fileUsesPostgres(ast: TSESTree.Program): boolean {
       found = true;
       return;
     }
-    if (isPgRequire(node) || isPgConnectionString(node)) {
+    if (
+      (!requireIsShadowed && isPgRequire(node)) ||
+      isPgConnectionString(node)
+    ) {
       found = true;
       return;
     }
