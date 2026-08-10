@@ -57,7 +57,7 @@ const BODY_PARSER_METHODS = new Set(['json', 'urlencoded', 'raw', 'text']);
  * Check if a property has a limit option
  */
 function getLimitOption(
-  properties: TSESTree.ObjectLiteralElement[]
+  properties: TSESTree.ObjectLiteralElement[],
 ): TSESTree.Property | null {
   for (const prop of properties) {
     if (
@@ -76,17 +76,22 @@ function getLimitOption(
  */
 function isExcessiveLimit(
   value: TSESTree.Node,
-  excessiveLimits: string[]
+  excessiveLimits: string[],
 ): boolean {
   if (value.type === 'Literal' && typeof value.value === 'string') {
     return excessiveLimits.some(
-      (limit) => value.value === limit || String(value.value).toLowerCase() === limit.toLowerCase()
+      (limit) =>
+        value.value === limit ||
+        String(value.value).toLowerCase() === limit.toLowerCase(),
     );
   }
   return false;
 }
 
-export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds>({
+export const requireExpressBodyParserLimits = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'require-express-body-parser-limits',
   meta: {
     type: 'problem',
@@ -161,10 +166,8 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const {
-      allowInTests = false,
-      excessiveLimits = DEFAULT_EXCESSIVE_LIMITS,
-    } = options as Options;
+    const { allowInTests = false, excessiveLimits = DEFAULT_EXCESSIVE_LIMITS } =
+      options as Options;
 
     const filename = context.filename;
     const isTestFile =
@@ -211,7 +214,7 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
         if (!firstArg) {
           const sourceCode = context.sourceCode;
           const calleeText = sourceCode.getText(callee);
-          
+
           context.report({
             node,
             messageId: 'missingLimit',
@@ -222,7 +225,7 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
                   // Replace the entire call with options
                   return fixer.replaceText(
                     node,
-                    `${calleeText}({ limit: '100kb' })`
+                    `${calleeText}({ limit: '100kb' })`,
                   );
                 },
               },
@@ -250,7 +253,7 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
                     if (lastProp) {
                       return fixer.insertTextAfter(
                         lastProp,
-                        ", limit: '100kb'"
+                        ", limit: '100kb'",
                       );
                     }
                     return null;

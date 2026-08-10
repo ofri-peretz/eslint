@@ -8,12 +8,16 @@
  * ESLint Rule: no-missing-csrf-protection
  * Detects missing CSRF token validation in POST/PUT/DELETE requests
  * CWE-352: Cross-Site Request Forgery (CSRF)
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/352.html
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
@@ -21,13 +25,13 @@ type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
 export interface Options {
   /** Allow missing CSRF protection in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** CSRF middleware patterns to recognize. Default: ['csrf', 'csurf', 'csrfProtection', 'verifyCsrfToken'] */
   csrfMiddlewarePatterns?: string[];
-  
+
   /** HTTP methods that require CSRF protection. Default: ['post', 'put', 'delete', 'patch'] */
   protectedMethods?: string[];
-  
+
   /** Additional safe patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 }
@@ -57,7 +61,7 @@ const DEFAULT_PROTECTED_METHODS = ['post', 'put', 'delete', 'patch'];
  * Check if a string matches any ignore pattern
  */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
+  return patterns.some((pattern) => {
     try {
       const regex = new RegExp(pattern, 'i');
       return regex.test(text);
@@ -75,7 +79,8 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     replacedBy: ['@see eslint-plugin-express-security/require-csrf-protection'],
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-csrf-protection.md',
-      description: 'Detects missing CSRF token validation in POST/PUT/DELETE requests',
+      description:
+        'Detects missing CSRF token validation in POST/PUT/DELETE requests',
       cwe: 'CWE-352',
       cvss: 8.8,
     },
@@ -139,10 +144,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
     },
   ],
-  create(
-    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]
-  ) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
     const {
       allowInTests = false,
       csrfMiddlewarePatterns,
@@ -150,19 +152,24 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const csrfPatterns = csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0 
-      ? csrfMiddlewarePatterns 
-      : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
-    
-    const protectedMethods = customProtectedMethods && customProtectedMethods.length > 0
-      ? customProtectedMethods
-      : DEFAULT_PROTECTED_METHODS;
+    const csrfPatterns =
+      csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0
+        ? csrfMiddlewarePatterns
+        : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
+
+    const protectedMethods =
+      customProtectedMethods && customProtectedMethods.length > 0
+        ? customProtectedMethods
+        : DEFAULT_PROTECTED_METHODS;
 
     // Pre-compute Set for O(1) lookups (performance optimization)
-    const protectedMethodsSet = new Set(protectedMethods.map(m => m.toLowerCase()));
+    const protectedMethodsSet = new Set(
+      protectedMethods.map((m) => m.toLowerCase()),
+    );
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     const sourceCode = context.sourceCode;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
@@ -172,37 +179,44 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
 
       const callee = node.callee;
       const callText = sourceCode.getText(node);
-      
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(callText, ignorePatterns)) {
         return;
       }
 
       // Check for route handler methods (app.post, router.put, etc.)
-      if (callee.type === AST_NODE_TYPES.MemberExpression && callee.property.type === AST_NODE_TYPES.Identifier) {
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.property.type === AST_NODE_TYPES.Identifier
+      ) {
         const methodName = callee.property.name;
-        
+
         // Only check if it's a route handler that requires CSRF (O(1) Set lookup)
         if (protectedMethodsSet.has(methodName.toLowerCase())) {
           // Must have at least 2 arguments (path and handler)
           if (node.arguments.length < 2) {
             return;
           }
-          
+
           // Check if CSRF middleware is in the route chain arguments
           let hasCsrfInChain = false;
-          
+
           // Check if any argument (after the first path argument) is a CSRF middleware
           // Skip the first argument (path) and check the rest
           for (let i = 1; i < node.arguments.length; i++) {
             const arg = node.arguments[i];
             const argText = sourceCode.getText(arg);
-            if (csrfPatterns.some(pattern => argText.toLowerCase().includes(pattern.toLowerCase()))) {
+            if (
+              csrfPatterns.some((pattern) =>
+                argText.toLowerCase().includes(pattern.toLowerCase()),
+              )
+            ) {
               hasCsrfInChain = true;
               break;
             }
           }
-          
+
           if (!hasCsrfInChain) {
             context.report({
               node,
@@ -233,4 +247,3 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

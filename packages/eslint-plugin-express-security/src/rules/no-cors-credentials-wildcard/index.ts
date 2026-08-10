@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-cors-credentials-wildcard
  * Prevents dangerous CORS configurations with credentials: true and wildcard origin
- * 
+ *
  * CVE-2024-25124 - CVSS 9.1 Critical
  * CWE-942: Permissive Cross-domain Policy with Untrusted Domains
  *
@@ -35,20 +35,20 @@ type RuleOptions = [Options?];
  */
 function hasWildcardOrigin(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
-  
+
   // Check for origin: '*'
   if (/\borigin\s*:\s*['"`]\*['"`]/.test(text)) {
     return true;
   }
-  
+
   // Check for origin: true (reflects request origin - effectively wildcard)
   if (/\borigin\s*:\s*true\b/.test(text)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -57,7 +57,7 @@ function hasWildcardOrigin(
  */
 function hasCredentialsTrue(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
   return /\bcredentials\s*:\s*true\b/.test(text);
@@ -68,7 +68,7 @@ function hasCredentialsTrue(
  * Returns the config node only for the appropriate level to avoid double-triggering
  */
 function getCorsConfigNode(
-  node: TSESTree.CallExpression
+  node: TSESTree.CallExpression,
 ): TSESTree.ObjectExpression | null {
   const callee = node.callee;
 
@@ -86,7 +86,7 @@ function getCorsConfigNode(
       // Skip - let the app.use() case handle this
       return null;
     }
-    
+
     if (node.arguments[0]?.type === 'ObjectExpression') {
       return node.arguments[0];
     }

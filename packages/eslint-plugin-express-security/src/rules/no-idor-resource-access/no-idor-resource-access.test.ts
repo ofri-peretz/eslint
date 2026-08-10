@@ -79,7 +79,9 @@ describe('no-idor-resource-access', () => {
       },
       // Outside any request handler — a script, a seed, a job
       { code: `Invoice.findById(req.params.id);` },
-      { code: `function seed(input) { return Invoice.findById(input.params.id); }` },
+      {
+        code: `function seed(input) { return Invoice.findById(input.params.id); }`,
+      },
       // The lookup vocabulary is configurable
       {
         code: `app.get('/x/:id', (req, res) => Invoice.findById(req.params.id).then(send));`,

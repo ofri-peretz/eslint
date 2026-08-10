@@ -23,15 +23,36 @@ describe('require-algorithm-whitelist', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - with algorithms', requireAlgorithmWhitelist, {
       valid: [
-        { code: `jwt.verify(token, secret, { algorithms: ['RS256'] });` },
-        { code: `jwt.verify(token, secret, { algorithms: ['RS256', 'ES256'] });` },
-        { code: `jwt.verify(token, secret, { algorithm: 'RS256' });` },
-        { code: `jwt.verify(token, secret, { alg: 'RS256' });` },
-        { code: `jwt.sign(payload, secret);` }, // sign not checked
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithms: ['RS256'] });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithms: ['RS256', 'ES256'] });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithm: 'RS256' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { alg: 'RS256' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        }, // sign not checked
         // Only one argument - edge case
-        { code: `jwt.verify(token);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token);`,
+        },
         // jwtVerify with algorithms
-        { code: `jwtVerify(token, key, { algorithms: ['RS256'] });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, { algorithms: ['RS256'] });`,
+        },
       ],
       invalid: [],
     });
@@ -42,28 +63,34 @@ describe('require-algorithm-whitelist', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.verify(token, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
         {
-          code: `jwt.verify(token, secret, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, {});`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
         {
-          code: `jwt.verify(token, secret, { complete: true });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { complete: true });`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
         {
-          code: `jwt.verify(token, secret, { issuer: 'auth.example.com' });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { issuer: 'auth.example.com' });`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
         {
-          code: `jwtVerify(token, key);`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key);`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
         // verifyJWT without algorithms
         {
-          code: `verifyJWT(token, key, { issuer: 'auth.example.com' });`,
+          code: `import jwt from 'jsonwebtoken';
+verifyJWT(token, key, { issuer: 'auth.example.com' });`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],
         },
       ],
