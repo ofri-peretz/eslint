@@ -5,6 +5,10 @@ import { unstable_cache } from 'next/cache';
 
 import type { DevToArticle } from '@/lib/articles.types';
 import {
+  loadEcosystemDownloads,
+  loadPackageDownloads,
+} from '@/lib/impact-source';
+import {
   loadCoverageStats,
   loadPluginStats,
   type PluginStat,
@@ -32,7 +36,22 @@ export interface ImpactStats {
     totalForks: number;
     totalContributions: number;
   };
-  npm: { totalDownloads: number; packageCount: number };
+  /**
+   * Downloads are cumulative across the whole counted ecosystem, read from
+   * Supabase — never recomputed here. `since` is the measured start of that
+   * window; null means unmeasured, and the UI must then omit the qualifier
+   * rather than imply a start date.
+   */
+  npm: {
+    /**
+     * null when the canonical source was unreachable at build time. The UI
+     * omits the metric rather than rendering 0 — this figure is published on
+     * ofriperetz.dev too, and a confident zero is worse than a gap.
+     */
+    totalDownloads: number | null;
+    packageCount: number | null;
+    since: string | null;
+  };
   /**
    * Audience reach — shown as context, never summed into any headline.
    * `null` means the source was unavailable at build; the UI hides the stat
@@ -47,7 +66,8 @@ export interface PluginRow {
   category: PluginStat['category'];
   rules: number;
   version: string;
-  /** Weekly npm downloads, 0 if the registry didn't return a number. */
+  /** Cumulative npm downloads for this package, from the same source as the
+   * ecosystem total above — so the rows always sum to the headline. */
   downloads: number;
   /** Line coverage 0–100, null if the plugin isn't in the coverage report. */
   coverage: number | null;
@@ -103,42 +123,6 @@ async function loadEngagement(): Promise<Engagement> {
       : 0;
   return { ...totals, ratePercent };
 }
-
-/**
- * Fetch last-week npm downloads for every published plugin via the registry's
- * bulk endpoint. Cached for an hour; failures fall through to an empty map
- * so the page still renders (the chart owns the empty-state copy).
- */
-const loadNpmDownloads = unstable_cache(
-  async (packageNames: string[]): Promise<Record<string, number>> => {
-    if (packageNames.length === 0) return {};
-    try {
-      const url = `https://api.npmjs.org/downloads/point/last-week/${packageNames.join(',')}`;
-      const res = await fetch(url, { next: { revalidate: REVALIDATE } });
-      if (!res.ok) return {};
-      const json = (await res.json()) as
-        | Record<string, { downloads: number | null } | null>
-        | { downloads: number | null };
-      const out: Record<string, number> = {};
-      if ('downloads' in json && typeof json.downloads === 'number') {
-        out[packageNames[0]!] = json.downloads;
-        return out;
-      }
-      for (const [name, entry] of Object.entries(
-        json as Record<string, { downloads: number | null } | null>,
-      )) {
-        if (entry && typeof entry.downloads === 'number') {
-          out[name] = entry.downloads;
-        }
-      }
-      return out;
-    } catch {
-      return {};
-    }
-  },
-  ['npm-downloads-weekly'],
-  { revalidate: REVALIDATE, tags: ['stats', 'npm'] },
-);
 
 /**
  * Fetch repo-level GitHub numbers: stars, forks, and the sum of recorded
@@ -284,7 +268,20 @@ export async function getStatsPageData(): Promise<StatsPageData> {
   const publishedPlugins = (pluginStats?.plugins ?? []).filter(
     (p) => p.published,
   );
-  const downloads = await loadNpmDownloads(publishedPlugins.map((p) => p.name));
+  // /stats is prerendered, so an unreachable source must not fail the build —
+  // this repo is public and CI builds without Supabase credentials at all.
+  // Degrade the metric, never the page, and never by substituting a different
+  // metric: that is what this change exists to stop.
+  const [ecosystem, downloads] = await Promise.all([
+    loadEcosystemDownloads().catch((err: unknown) => {
+      console.error('[stats-page] ecosystem downloads unavailable:', err);
+      return null;
+    }),
+    loadPackageDownloads().catch((err: unknown) => {
+      console.error('[stats-page] per-package downloads unavailable:', err);
+      return {} as Record<string, number>;
+    }),
+  ]);
   const coverageMap = buildCoverageMap(coverage);
 
   const plugins: PluginRow[] = publishedPlugins
@@ -298,14 +295,18 @@ export async function getStatsPageData(): Promise<StatsPageData> {
     }))
     .sort((a, b) => b.downloads - a.downloads);
 
-  const totalDownloads = plugins.reduce((sum, p) => sum + p.downloads, 0);
-
+  // The headline is the ecosystem figure as published, NOT a sum of the rows
+  // above: the rows are the plugins this site documents, while the counted
+  // ecosystem also includes packages that have no docs page. Summing the rows
+  // would quietly publish a smaller number than ofriperetz.dev for the same
+  // metric — the divergence this whole change exists to remove.
   const impact: ImpactStats = {
     engagement,
     github,
     npm: {
-      totalDownloads,
-      packageCount: pluginStats?.allPluginsCount ?? publishedPlugins.length,
+      totalDownloads: ecosystem?.total ?? null,
+      packageCount: ecosystem?.packages ?? null,
+      since: ecosystem?.since ?? null,
     },
     audience,
   };
