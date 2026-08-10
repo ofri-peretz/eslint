@@ -11,6 +11,71 @@ import { describe, it, expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { requireOutputFiltering } from './index';
 
+/**
+ * The module gate reads `sourceCode.ast`, so a synthetic context needs a
+ * Program that actually contains the SDK — otherwise the rule correctly
+ * abstains and registers no listeners, and these branch tests would be
+ * asserting against a handler that no longer exists.
+ */
+const AI_PROGRAM = {
+  type: 'Program',
+  body: [
+    {
+      type: 'ImportDeclaration',
+      specifiers: [],
+      source: { type: 'Literal', value: 'ai' },
+    },
+  ],
+  tokens: [],
+  comments: [],
+};
+
+
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -19,7 +84,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-output-filtering (branch coverage)', requireOutputFiltering, {
-  valid: [
+  valid: xai([
     // String-literal 'execute' key — keyName resolves to null, arrow skipped.
     {
       code: `const w = { 'execute': () => db.queryAll() };`,
@@ -28,8 +93,8 @@ ruleTester.run('require-output-filtering (branch coverage)', requireOutputFilter
     {
       code: `const cb = () => db.queryAll();`,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // Full tools nesting: tool name resolved from the tools object property.
     {
       code: `generateText({ tools: { fetchUser: { execute: () => db.queryUsers(id) } } });`,
@@ -62,7 +127,7 @@ ruleTester.run('require-output-filtering (branch coverage)', requireOutputFilter
         },
       ],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +139,7 @@ type Listener = (node: unknown) => void;
 describe('require-output-filtering — synthetic AST', () => {
   it('does not report for an orphan arrow function (parent undefined)', () => {
     const { listeners, reports } = createWithMockContext(requireOutputFiltering, {
+      ast: AI_PROGRAM,
       options: [{}],
       sourceText: 'db.queryAll',
     });
@@ -88,6 +154,7 @@ describe('require-output-filtering — synthetic AST', () => {
 
   it('falls back to "unknown" when the object chain detaches above execute', () => {
     const { listeners, reports } = createWithMockContext(requireOutputFiltering, {
+      ast: AI_PROGRAM,
       options: [{}],
       sourceText: 'db.queryAll',
     });

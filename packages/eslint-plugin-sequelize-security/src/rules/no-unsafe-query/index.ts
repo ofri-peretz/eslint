@@ -32,6 +32,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
   },
   // `sequelize.query()` runs raw SQL; `Sequelize.literal()` splices raw SQL
   // into a builder query (the usual ORDER BY / column-name injection).
+  // Only files importing Sequelize's own query API.
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['sequelize', 'sequelize-typescript', '@nestjs/sequelize'],
   methods: ['query', 'literal'],
   // Both names are unambiguous inside a Sequelize codebase, and this plugin
   // is only installed by Sequelize users — so no keyword gate, which would

@@ -25,27 +25,27 @@ describe('no-unsafe-query', () => {
       valid: [
         {
           name: 'safe idiom',
-          code: "db.prepare('SELECT * FROM users WHERE id = ?').get(userId);",
+          code: "import Database from 'better-sqlite3';\ndb.prepare('SELECT * FROM users WHERE id = ?').get(userId);",
         },
         {
           name: 'static SQL, no interpolation',
-          code: "db.prepare('SELECT * FROM users');",
+          code: "import Database from 'better-sqlite3';\ndb.prepare('SELECT * FROM users');",
         },
         {
           name: 'no arguments',
-          code: 'db.prepare();',
+          code: 'import Database from "better-sqlite3";\ndb.prepare();',
         },
         {
           name: 'unrelated code',
-          code: 'const x = 1;',
+          code: 'import Database from "better-sqlite3";\nconst x = 1;',
         },
         {
           name: 'safe variable passed through',
-          code: "const sql = 'SELECT * FROM users'; db.prepare(sql);",
+          code: "import Database from 'better-sqlite3';\nconst sql = 'SELECT * FROM users'; db.prepare(sql);",
         },
         {
           name: 'non-SQL text into the same sink is not a SQL finding',
-          code: 'task.run(`step ${i}`);',
+          code: 'import Database from "better-sqlite3";\ntask.run(`step ${i}`);',
         },
       ],
       invalid: [],
@@ -58,17 +58,18 @@ describe('no-unsafe-query', () => {
       invalid: [
         {
           name: 'template interpolation',
-          code: 'db.prepare(`SELECT * FROM users WHERE id = ${userId}`);',
+          code: 'import Database from "better-sqlite3";\ndb.prepare(`SELECT * FROM users WHERE id = ${userId}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: "db.prepare('SELECT * FROM users WHERE id = ' + userId);",
+          code: "import Database from 'better-sqlite3';\ndb.prepare('SELECT * FROM users WHERE id = ' + userId);",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable reaches the sink',
           code: [
+            "import Database from 'better-sqlite3';",
             'const sql = `SELECT * FROM users WHERE id = ${id}`;',
             'db.prepare(sql);',
           ].join('\n'),
@@ -76,22 +77,22 @@ describe('no-unsafe-query', () => {
         },
         {
           name: 'exec() sink',
-          code: 'db.exec(`SELECT * FROM audit WHERE id = ${id}`);',
+          code: 'import Database from "better-sqlite3";\ndb.exec(`SELECT * FROM audit WHERE id = ${id}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'run() sink',
-          code: 'db.run(`SELECT * FROM audit WHERE id = ${id}`);',
+          code: 'import Database from "better-sqlite3";\ndb.run(`SELECT * FROM audit WHERE id = ${id}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'all() sink',
-          code: 'db.all(`SELECT * FROM audit WHERE id = ${id}`);',
+          code: 'import Database from "better-sqlite3";\ndb.all(`SELECT * FROM audit WHERE id = ${id}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'get() sink',
-          code: 'db.get(`SELECT * FROM audit WHERE id = ${id}`);',
+          code: 'import Database from "better-sqlite3";\ndb.get(`SELECT * FROM audit WHERE id = ${id}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
       ],

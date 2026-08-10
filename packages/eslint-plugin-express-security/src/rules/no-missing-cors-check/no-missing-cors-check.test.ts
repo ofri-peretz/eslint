@@ -6,6 +6,51 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import * as vitest from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noMissingCorsCheck } from './index';
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = vitest.afterAll;
@@ -30,7 +75,7 @@ const ruleTester = new RuleTester({
 vitest.describe('no-missing-cors-check', () => {
   vitest.describe('Valid Code', () => {
     ruleTester.run('valid - proper CORS validation', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         // CORS with origin validation
         {
           code: `
@@ -64,7 +109,7 @@ vitest.describe('no-missing-cors-check', () => {
           code: 'app.use(cors({ origin: safeOrigin }));',
           options: [{ ignorePatterns: ['safeOrigin'] }],
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -72,7 +117,7 @@ vitest.describe('no-missing-cors-check', () => {
   vitest.describe('Invalid Code - Wildcard Origin', () => {
     ruleTester.run('invalid - wildcard CORS origin', noMissingCorsCheck, {
       valid: [],
-      invalid: [
+      invalid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           errors: [
@@ -91,14 +136,14 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
   });
 
   vitest.describe('Invalid Code - CORS Headers', () => {
     ruleTester.run('invalid - wildcard CORS header', noMissingCorsCheck, {
       valid: [],
-      invalid: [
+      invalid: xp([
         {
           code: 'res.setHeader("Access-Control-Allow-Origin", "*");',
           errors: [
@@ -115,20 +160,20 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
   });
 
   vitest.describe('Options', () => {
     ruleTester.run('options - allowInTests', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           filename: 'test.spec.ts',
           options: [{ allowInTests: true }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           filename: 'server.ts',
@@ -139,33 +184,37 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
 
-    ruleTester.run('options - ignorePatterns with invalid regex', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'app.use(cors({ origin: testOrigin }));',
-          options: [{ ignorePatterns: ['['] }], // Invalid regex should be caught
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'options - ignorePatterns with invalid regex',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'app.use(cors({ origin: testOrigin }));',
+            options: [{ ignorePatterns: ['['] }], // Invalid regex should be caught
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
     ruleTester.run('options - trustedLibraries', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(myCors({ origin: "*" }));',
           options: [{ trustedLibraries: ['myCors'] }],
         },
-      ],
+      ]),
       invalid: [],
     });
   });
 
   vitest.describe('Edge Cases', () => {
     ruleTester.run('edge cases - non-wildcard literal', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(cors({ origin: "https://example.com" }));',
         },
@@ -175,221 +224,280 @@ vitest.describe('no-missing-cors-check', () => {
         {
           code: 'app.use(cors({ origin: true }));',
         },
-      ],
+      ]),
       invalid: [],
     });
 
     ruleTester.run('edge cases - non-CORS context', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'const config = { origin: "*" };',
         },
         {
           code: 'const data = { allowedOrigins: "*" };',
         },
-      ],
+      ]),
       invalid: [],
     });
 
-    ruleTester.run('edge cases - CORS config object validation', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'app.use(cors({ origin: allowedOrigins, credentials: true }));',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - CORS config object validation',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'app.use(cors({ origin: allowedOrigins, credentials: true }));',
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - setHeader with non-wildcard', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'res.setHeader("Access-Control-Allow-Origin", origin);',
-        },
-        {
-          code: 'res.setHeader("Content-Type", "*");',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - setHeader with non-wildcard',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'res.setHeader("Access-Control-Allow-Origin", origin);',
+          },
+          {
+            code: 'res.setHeader("Content-Type", "*");',
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - header with non-Access-Control', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'res.setHeader("Content-Type", "*");',
-        },
-        {
-          code: 'res.header("Content-Type", "*");',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - header with non-Access-Control',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'res.setHeader("Content-Type", "*");',
+          },
+          {
+            code: 'res.header("Content-Type", "*");',
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - callExpression without use method', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'app.get("/api", handler);',
-        },
-        {
-          code: 'router.post("/users", controller);',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - callExpression without use method',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'app.get("/api", handler);',
+          },
+          {
+            code: 'router.post("/users", controller);',
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - literal in CORS context via property', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: 'app.use(cors({ origin: "*", allowedOrigins: ["https://example.com"] }));',
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - literal in CORS context via property',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: 'app.use(cors({ origin: "*", allowedOrigins: ["https://example.com"] }));',
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - literal in isActualCorsContext', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const config = { origin: "*" }; app.use(cors(config));',
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - literal in isActualCorsContext',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: 'const config = { origin: "*" }; app.use(cors(config));',
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - literal with ignorePatterns', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'app.use(cors({ origin: "*" }));',
-          options: [{ ignorePatterns: ['\\*'] }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - literal with ignorePatterns',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'app.use(cors({ origin: "*" }));',
+            options: [{ ignorePatterns: ['\\*'] }],
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - literal in CORS context via first while loop', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: 'cors({ origin: "*" });',
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - literal in CORS context via first while loop',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: 'cors({ origin: "*" });',
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - property in CORS call (allowedOrigins)', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: 'app.use(cors({ allowedOrigins: "*" }));',
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - property in CORS call (allowedOrigins)',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: 'app.use(cors({ allowedOrigins: "*" }));',
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - memberExpression with ignorePatterns', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'safeRes.setHeader("Access-Control-Allow-Origin", "*");',
-          options: [{ ignorePatterns: ['safeRes'] }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - memberExpression with ignorePatterns',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'safeRes.setHeader("Access-Control-Allow-Origin", "*");',
+            options: [{ ignorePatterns: ['safeRes'] }],
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - variable declaration found in scope', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'edge cases - variable declaration found in scope',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: `
             const corsConfig = { origin: "*" };
             app.use(cors(corsConfig));
           `,
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - isActualCorsContext path (direct cors call)', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: 'enable(cors({ origin: "*" }));',
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - isActualCorsContext path (direct cors call)',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: 'enable(cors({ origin: "*" }));',
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - variable in Program scope (line 427)', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'edge cases - variable in Program scope (line 427)',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: `
             const myConfig = { origin: "*" };
             app.use(cors(myConfig));
           `,
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
 
-    ruleTester.run('edge cases - variable not found, traverse to root (line 432)', noMissingCorsCheck, {
-      valid: [
-        {
-          code: 'app.use(cors(unknownVar));',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'edge cases - variable not found, traverse to root (line 432)',
+      noMissingCorsCheck,
+      {
+        valid: xp([
+          {
+            code: 'app.use(cors(unknownVar));',
+          },
+        ]),
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('edge cases - variable in function scope', noMissingCorsCheck, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'edge cases - variable in function scope',
+      noMissingCorsCheck,
+      {
+        valid: [],
+        invalid: xp([
+          {
+            code: `
             function setupCors() {
               const config = { origin: "*" };
               app.use(cors(config));
             }
           `,
-          errors: [
-            {
-              messageId: 'missingCorsCheck',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'missingCorsCheck',
+              },
+            ],
+          },
+        ]),
+      },
+    );
   });
 });
-
 
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
@@ -397,8 +505,10 @@ vitest.describe('no-missing-cors-check', () => {
 import { expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 
+
+
 ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
-  valid: [
+  valid: xp([
     // wildcard in an object with no CORS context at all
     { code: `const config = { origin: '*' };` },
     // config variable declared without an initializer
@@ -406,7 +516,9 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
     // config variable initialized from a call, not an object literal
     { code: `const config = getConfig(); app.use(cors(config));` },
     // config variable with a safe origin
-    { code: `const config = { origin: 'https://ok.example' }; app.use(cors(config));` },
+    {
+      code: `const config = { origin: 'https://ok.example' }; app.use(cors(config));`,
+    },
     // declarators/properties that do not match the config lookup
     {
       code: `const { a } = obj; const other = 1; const config = { ...base, origin: 'https://ok.example' }; app.use(cors(config));`,
@@ -443,16 +555,28 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
       code: `app.use(cors('*'));`,
       options: [{ ignorePatterns: ['\\*'] }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // wildcard literal passed directly to cors() — actual CORS context
-    { code: `app.use(cors('*'));`, errors: [{ messageId: 'missingCorsCheck' }] },
+    {
+      code: `app.use(cors('*'));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
     // string-keyed origin property — key is not an Identifier
-    { code: `app.use(cors({ 'origin': '*' }));`, errors: [{ messageId: 'missingCorsCheck' }] },
+    {
+      code: `app.use(cors({ 'origin': '*' }));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
     // wildcard under a non-origin key inside a cors() call
-    { code: `app.use(cors({ path: '*' }));`, errors: [{ messageId: 'missingCorsCheck' }] },
+    {
+      code: `app.use(cors({ path: '*' }));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
     // allowedOrigins key
-    { code: `app.use(cors({ allowedOrigins: '*' }));`, errors: [{ messageId: 'missingCorsCheck' }] },
+    {
+      code: `app.use(cors({ allowedOrigins: '*' }));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
     // unicode-escaped cors identifier — text regexes miss it, callee name check catches it
     {
       code: 'app.use(co\\u0072s({ origin: "*" }));',
@@ -473,28 +597,46 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
       code: `res.setHeader('Access-Control-Allow-Origin', '*');`,
       errors: [{ messageId: 'missingCorsCheck' }],
     },
-  ],
+  ]),
 });
 
 // Layer 2: synthetic AST — a parser always parents nodes up to Program, so the
 // "ancestor chain ends without a Program" break is only reachable with a
 // hand-built node (parent: null).
 vitest.describe('no-missing-cors-check (layer 2: synthetic AST)', () => {
-  vitest.it('stops the scope walk when the ancestor chain ends without a Program node', () => {
-    const { listeners, reports } = createWithMockContext(noMissingCorsCheck, {
-      sourceText: 'app.use(cors(config))',
-    });
-    const node = {
-      type: 'CallExpression',
-      parent: null,
-      callee: {
-        type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'app' },
-        property: { type: 'Identifier', name: 'use' },
-      },
-      arguments: [{ type: 'Identifier', name: 'config' }],
-    };
-    (listeners.CallExpression as (n: unknown) => void)(node);
-    expect(reports).toHaveLength(0);
-  });
+  vitest.it(
+    'stops the scope walk when the ancestor chain ends without a Program node',
+    () => {
+      const { listeners, reports } = createWithMockContext(noMissingCorsCheck, {
+        sourceText: 'app.use(cors(config))',
+        // This test drives listeners directly, so the file it stands for must
+        // carry the same Express evidence a real one would — otherwise the rule
+        // registers no listeners and the gap under test is never reached.
+        ast: {
+          type: 'Program',
+          body: [
+            {
+              type: 'ImportDeclaration',
+              source: { type: 'Literal', value: 'express' },
+              specifiers: [],
+            },
+          ],
+          tokens: [],
+          comments: [],
+        } as never,
+      });
+      const node = {
+        type: 'CallExpression',
+        parent: null,
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'app' },
+          property: { type: 'Identifier', name: 'use' },
+        },
+        arguments: [{ type: 'Identifier', name: 'config' }],
+      };
+      (listeners.CallExpression as (n: unknown) => void)(node);
+      expect(reports).toHaveLength(0);
+    },
+  );
 });

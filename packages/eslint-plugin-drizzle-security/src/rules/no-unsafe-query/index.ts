@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing Drizzle's sql.raw().
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['drizzle-orm'],
   methods: ['raw'],
   requireSqlKeywords: false,
   fix: 'Use the `sql` tagged template, which parameterizes interpolated values, instead of `sql.raw()`.',

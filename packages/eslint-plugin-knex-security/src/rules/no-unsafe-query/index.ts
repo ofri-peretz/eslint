@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing knex's raw().
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['knex', 'objection'],
   methods: ['raw'],
   requireSqlKeywords: false,
   fix: 'Pass values as knex bindings (`?` placeholders with a bindings array) instead of interpolating them.',

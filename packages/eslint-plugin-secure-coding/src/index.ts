@@ -153,6 +153,22 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Credentials
   'secure-coding/no-hardcoded-credentials': 'error',
 
+  // NOTE: `no-unchecked-loop-condition` is intentionally NOT in `recommended`
+  // (removed 2026-08-09). Measured over express + axios + sequelize it fired
+  // 39 times and 38 of them were bounded loops: 24 `for (const x of coll)`,
+  // 7 classic `for (i = 0; i < len; i++)`, 6 `for (const k in obj)`. The one
+  // structurally-unbounded hit (`for (;;)` in axios trackStream) breaks out on
+  // stream end, so it is not a DoS either.
+  //
+  // Iterating a collection is not a CWE-400 finding, and the rule cannot tell
+  // a bounded loop from an unbounded one — which is the whole job. A precise
+  // version would flag only `while (true)` / `for (;;)` with no reachable
+  // exit, and that is an unreachable-code correctness check, not a security
+  // rule; core and `unicorn` already cover that ground.
+  //
+  // Kept exported and opt-in-able for teams that want to sweep for runaway
+  // loops and will triage the output.
+
   // NOTE: `detect-object-injection` is intentionally NOT in `recommended`
   // (removed 2026-08-04). Measured over express + axios + sequelize it fired
   // 535 times — 85% of everything `recommended` reported on those three
@@ -212,7 +228,6 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // (firing ≥ 100 times on Wild without sufficient fixture coverage to
   // guarantee precision). Rules were also flagged for ≥ 76% Edge ratio.
   'secure-coding/no-unlimited-resource-allocation': 'warn',
-  'secure-coding/no-unchecked-loop-condition': 'warn',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

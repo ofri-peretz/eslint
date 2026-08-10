@@ -31,7 +31,15 @@ interface MetricsOverTimeProps {
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    // Pinned: this is a client component, so the label is built once during
+    // SSR (UTC) and again at hydration (the reader's zone). Unpinned, a
+    // snapshot taken near midnight UTC renders a different day on each pass
+    // and React throws a #418 hydration mismatch.
+    timeZone: "UTC",
+  });
 
 const chartConfig = {
   npm: {

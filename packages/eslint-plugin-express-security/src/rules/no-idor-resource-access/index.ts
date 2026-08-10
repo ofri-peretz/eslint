@@ -45,6 +45,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { isClientRequestMember, readsPrincipal, walk } from '../../utils';
+import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'unscopedResourceLookup';
 
@@ -89,7 +90,8 @@ function isHandlerFunction(
   }
   return node.params.some(
     (param) =>
-      param.type === AST_NODE_TYPES.Identifier && REQUEST_PARAM.test(param.name),
+      param.type === AST_NODE_TYPES.Identifier &&
+      REQUEST_PARAM.test(param.name),
   );
 }
 
@@ -129,7 +131,7 @@ export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
         description:
           '{{method}}() is keyed on {{key}} and nothing in this handler ties the lookup to the caller. Incrementing the id in the URL returns another tenant’s record.',
         severity: 'HIGH',
-        fix: "Scope the query to the principal — {{method}}({ _id: {{key}}, owner: req.user.id }) — or verify ownership on the loaded document before responding.",
+        fix: 'Scope the query to the principal — {{method}}({ _id: {{key}}, owner: req.user.id }) — or verify ownership on the loaded document before responding.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/639.html',
       }),
     },
@@ -149,6 +151,12 @@ export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { lookupMethods } = options as Options;
     const lookups = new Set(lookupMethods ?? DEFAULT_LOOKUP_METHODS);
 

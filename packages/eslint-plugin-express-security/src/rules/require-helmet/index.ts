@@ -14,6 +14,7 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -46,10 +47,7 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
     return false;
   }
 
-  if (
-    callee.property.type !== 'Identifier' ||
-    callee.property.name !== 'use'
-  ) {
+  if (callee.property.type !== 'Identifier' || callee.property.name !== 'use') {
     return false;
   }
 
@@ -87,7 +85,7 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
  */
 function isAlternativeMiddleware(
   node: TSESTree.CallExpression,
-  alternatives: string[]
+  alternatives: string[],
 ): boolean {
   for (const arg of node.arguments) {
     if (arg.type === 'CallExpression' && arg.callee.type === 'Identifier') {
@@ -170,8 +168,17 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { allowInTests = false, alternativeMiddleware = [], assumeHelmetMiddleware = false } =
-      options as Options;
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
+    const {
+      allowInTests = false,
+      alternativeMiddleware = [],
+      assumeHelmetMiddleware = false,
+    } = options as Options;
 
     // Skip entirely if helmet/security headers are assumed to be provided elsewhere
     if (assumeHelmetMiddleware) {
@@ -190,16 +197,46 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     let hasExpressApp = false;
     let hasHelmet = false;
     let expressAppNode: TSESTree.CallExpression | null = null;
+    /** The binding `express()` was assigned to, so we can see where it travels. */
+    let appBinding: string | null = null;
+    /**
+     * The app was handed to another function, which means the middleware stack
+     * is assembled somewhere this rule cannot see.
+     *
+     * Splitting setup into `setAppConfigurations(app)` is the normal shape for
+     * any non-toy Express app. ToniR7/express-typescript-starter creates the app
+     * in `app.ts` and calls `app.use(helmet())` in `utils/appInitialization.ts`,
+     * with `helmet` in `dependencies` — and this rule reported it anyway.
+     *
+     * Absence of evidence is not evidence of absence: once the binding leaves
+     * the file, "no helmet here" says nothing about the application.
+     */
+    let appEscapes = false;
 
     return {
       // Detect express() app creation
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
+        // `setAppConfigurations(app)` — the app leaves this file.
+        if (appBinding !== null) {
+          for (const arg of node.arguments) {
+            if (arg.type === 'Identifier' && arg.name === appBinding) {
+              appEscapes = true;
+            }
+          }
+        }
+
         // Check for express() call
         if (callee.type === 'Identifier' && callee.name === 'express') {
           hasExpressApp = true;
           expressAppNode = node;
+          if (
+            node.parent?.type === 'VariableDeclarator' &&
+            node.parent.id.type === 'Identifier'
+          ) {
+            appBinding = node.parent.id.name;
+          }
           return;
         }
 
@@ -236,7 +273,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
 
       // Report at the end of the file if express app exists but no helmet
       'Program:exit'() {
-        if (hasExpressApp && !hasHelmet && expressAppNode) {
+        if (hasExpressApp && !hasHelmet && !appEscapes && expressAppNode) {
           context.report({
             node: expressAppNode,
             messageId: 'missingHelmet',

@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing Prisma's $queryRawUnsafe/$executeRawUnsafe.
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['@prisma/client', 'prisma'],
   methods: ['$queryRawUnsafe', '$executeRawUnsafe'],
   requireSqlKeywords: false,
   fix: 'Use the `$queryRaw` tagged template (or `Prisma.sql`), which parameterizes interpolated values.',
