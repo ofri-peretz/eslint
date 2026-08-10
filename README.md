@@ -371,6 +371,16 @@ this repo.
 
 ---
 
+## Design system
+
+The UI in this repo's docs site is built on
+**[Interlace](https://github.com/ofri-peretz/interlace)** — components and
+tokens ship from `@interlace/ui`, and the look-and-feel doctrine (layout,
+typography, colour, motion, a11y, keyboard, …) is authored there, not here.
+Browse it at **[storybook.interlace.tools](https://storybook.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo)**
+→ *Philosophy*, or read the sources in
+[`docs/philosophies/`](https://github.com/ofri-peretz/interlace/tree/main/docs/philosophies).
+
 ## Links
 
 |                     |                                                                                                                       |
