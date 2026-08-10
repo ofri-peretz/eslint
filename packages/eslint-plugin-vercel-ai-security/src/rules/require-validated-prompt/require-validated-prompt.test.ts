@@ -4,6 +4,50 @@
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireValidatedPrompt } from './index';
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
 
 const ruleTester = new RuleTester({
   languageOptions: {
@@ -13,7 +57,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
-  valid: [
+  valid: xai([
     // Static prompts are safe
     {
       code: `
@@ -60,9 +104,9 @@ ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
         });
       `,
     },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xai([
     // Direct user input in prompt
     {
       code: `
@@ -145,14 +189,14 @@ ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
       `,
       errors: [{ messageId: 'unsafePrompt' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures (Layer 1): option paths, key shapes, argument shapes
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPrompt, {
-  valid: [
+  valid: xai([
     // allowInTests skips test files entirely
     {
       code: `generateText({ prompt: userInput });`,
@@ -173,8 +217,8 @@ ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPromp
     { code: `generateText({ prompt: \`ctx: \${staticVal}\` });` },
     // static system prompt alongside validated prompt
     { code: `generateText({ system: 'static', prompt: validateInput(userInput) });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // string-literal 'prompt' key still resolves and reports
     {
       code: `generateText({ 'prompt': userInput });`,
@@ -200,7 +244,7 @@ ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPromp
       code: `generateText({ 'system': userInput });`,
       errors: [{ messageId: 'unsafeSystemPrompt' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,6 +255,26 @@ ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPromp
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
 import type { TSESLint } from '@interlace/eslint-devkit';
+
+/**
+ * The module gate reads `sourceCode.ast`, so a synthetic context needs a
+ * Program that actually contains the SDK — otherwise the rule correctly
+ * abstains and registers no listeners, and these branch tests would be
+ * asserting against a handler that no longer exists.
+ */
+const AI_PROGRAM = {
+  type: 'Program',
+  body: [
+    {
+      type: 'ImportDeclaration',
+      specifiers: [],
+      source: { type: 'Literal', value: 'ai' },
+    },
+  ],
+  tokens: [],
+  comments: [],
+};
+
 
 describe('require-validated-prompt — synthetic AST', () => {
   it('falls back to the "user input" label when the matched identifier has an empty name', () => {
@@ -237,6 +301,7 @@ describe('require-validated-prompt — synthetic AST', () => {
       options: [{}],
       filename: 'synthetic.ts',
       sourceCode: {
+        ast: AI_PROGRAM,
         // Node-sensitive stub: callee looks like an AI SDK call, the empty-name
         // identifier looks like user input to the pattern matcher.
         getText: (n?: unknown) => (n === callee ? 'generateText' : 'userInput'),
@@ -262,7 +327,7 @@ describe('require-validated-prompt — synthetic AST', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-validated-prompt (instructions prop)', requireValidatedPrompt, {
   valid: [],
-  invalid: [
+  invalid: xai([
     {
       code: `
         await generateText({
@@ -272,18 +337,18 @@ ruleTester.run('require-validated-prompt (instructions prop)', requireValidatedP
       `,
       errors: [{ messageId: 'unsafeSystemPrompt' }],
     },
-  ],
+  ]),
 });
 
 // Computed key colliding with the property name — see no-dynamic-system-prompt.
 ruleTester.run('require-validated-prompt (computed key collision)', requireValidatedPrompt, {
-  valid: [
+  valid: xai([
     {
       code: `
         const instructions = 'topP';
         generateText({ model, [instructions]: userInput });
       `,
     },
-  ],
+  ]),
   invalid: [],
 });
