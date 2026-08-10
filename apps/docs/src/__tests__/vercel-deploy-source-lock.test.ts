@@ -200,4 +200,33 @@ describe('vercel deploy source', () => {
       'build.inputs must include $TURBO_DEFAULT$ — package configs MERGE with the root task, so omitting `inputs` silently keeps the root\'s src/**-only list',
     ).toContain('$TURBO_DEFAULT$');
   });
+
+  /**
+   * Regression lock — production build failed 2026-08-10 with
+   *
+   *   Running onBuildComplete from Vercel
+   *   > Build error occurred
+   *   Error: ENOENT: no such file or directory, open
+   *     '/vercel/path1/apps/docs/.next/next-server.js.nft.json'
+   *
+   * `output: 'standalone'` makes Next write its traces into .next/standalone
+   * and skip the per-entry .nft.json files Vercel's builder opens in
+   * onBuildComplete. Nothing in this repo consumes .next/standalone — the
+   * Dockerfile ships the ESLint CLI, not this app — so the setting bought
+   * nothing and broke every build that Vercel runs itself.
+   *
+   * CI never caught it: deploy-docs.yml runs `vercel build` with a pinned
+   * older CLI and deploys `--prebuilt`, which tolerates the missing files.
+   */
+  it('docs does not build in standalone mode', () => {
+    const cfg = readFileSync(join(ROOT, 'apps/docs/next.config.mjs'), 'utf8');
+    const active = cfg
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('//') && !line.trim().startsWith('*'));
+
+    expect(
+      active.filter((line) => /output\s*:\s*['"]standalone['"]/.test(line)),
+      "output: 'standalone' has no consumer here and starves Vercel's builder of .next/*.nft.json",
+    ).toEqual([]);
+  });
 });
