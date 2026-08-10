@@ -56,8 +56,9 @@ describe('methodology receipt — emission lock', () => {
     // Exact, not a floor. A floor set below the true count cannot detect a
     // suite *losing* its receipt — at >= 13 the ilb-formatter regression this
     // number was raised for would have slipped through at 14. Ratchet this
-    // when a suite is added; that edit is the point.
-    expect(sources.length).toBe(17);
+    // when a suite is added; that edit is the point. 17 → 18 with
+    // ilb-corpus-truth (2026-08-10).
+    expect(sources.length).toBe(18);
   });
 
   it.each(sources.map((p) => [path.relative(REPO_ROOT, p), p]))(
