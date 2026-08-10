@@ -15,7 +15,10 @@ import { noMissingSecurityHeaders } from './index';
  * and errors[].suggestions[].output are prefixed too, since autofix fixtures
  * assert the whole file back.
  */
-const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
 type Suggestion = { output?: string | null };
 type Case = {
   code: string;
