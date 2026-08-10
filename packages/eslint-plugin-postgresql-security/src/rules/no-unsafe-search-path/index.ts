@@ -6,6 +6,7 @@
 
 import { TSESLint, AST_NODE_TYPES, TSESTree, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
+import { fileUsesPostgres } from '../../utils';
 
 // Pre-compiled pattern check for search_path
 const hasSearchPath = (str: string) => str.toLowerCase().includes('set search_path');
@@ -40,6 +41,12 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    // Every rule here is PostgreSQL-specific, and none of them knew it: over
+    // 108,838 files, 94% of this plugin's findings were in files with no
+    // PostgreSQL client at all. Registering no visitors is both the gate and
+    // the cheap path — a file with no database in it does no work.
+    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (

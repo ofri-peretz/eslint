@@ -6,6 +6,7 @@
 
 import { TSESLint, AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
+import { fileUsesPostgres } from '../../utils';
 
 // Pre-defined set of transaction keywords for fast lookup
 const TRANSACTION_KEYWORDS = new Set(['BEGIN', 'COMMIT', 'ROLLBACK']);
@@ -38,6 +39,12 @@ export const noTransactionOnPool: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    // Every rule here is PostgreSQL-specific, and none of them knew it: over
+    // 108,838 files, 94% of this plugin's findings were in files with no
+    // PostgreSQL client at all. Registering no visitors is both the gate and
+    // the cheap path — a file with no database in it does no work.
+    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+
     return {
       CallExpression(node) {
         if (

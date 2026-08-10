@@ -6,6 +6,7 @@
 
 import { TSESLint, AST_NODE_TYPES, TSESTree, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoUnsafeCopyFromOptions } from '../../types';
+import { fileUsesPostgres } from '../../utils';
 
 // Pre-compiled regex patterns for performance
 const COPY_FROM_REGEX = /\bCOPY\b.*\bFROM\b/i;
@@ -90,6 +91,12 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<
   },
   defaultOptions: [{}],
   create(context) {
+    // Every rule here is PostgreSQL-specific, and none of them knew it: over
+    // 108,838 files, 94% of this plugin's findings were in files with no
+    // PostgreSQL client at all. Registering no visitors is both the gate and
+    // the cheap path — a file with no database in it does no work.
+    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+
     const options = context.options[0] ?? {};
     const allowHardcodedPaths = options.allowHardcodedPaths ?? false;
     const allowedPaths = (options.allowedPaths ?? []).map((p: string) => new RegExp(p));

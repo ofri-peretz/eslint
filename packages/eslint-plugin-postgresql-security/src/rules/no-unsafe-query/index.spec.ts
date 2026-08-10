@@ -3,6 +3,22 @@ import { describe, it, afterAll } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
 import { noUnsafeQuery } from './index';
 
+/**
+ * Every fixture imports a PostgreSQL client, because the rule now abstains in
+ * files that use no PostgreSQL at all. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the import
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const withPg = (code: string): string => `import { Pool } from 'pg';\n${code}`;
+const pg = <T,>(cases: T[]): T[] =>
+  cases.map((c) =>
+    typeof c === 'string'
+      ? (withPg(c) as T)
+      : ({ ...c, code: withPg((c as { code: string }).code) } as T),
+  );
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -19,7 +35,7 @@ const ruleTester = new RuleTester({
 describe('no-unsafe-query', () => {
   describe('Valid - Parameterized Queries', () => {
     ruleTester.run('valid - safe queries', noUnsafeQuery, {
-      valid: [
+      valid: pg([
         // Ignored cases (coverage)
         "client.query()", // Empty args
         "client.other('SELECT ' + 1)", // Not query method
@@ -35,7 +51,7 @@ describe('no-unsafe-query', () => {
         "client.query(format('SELECT * FROM %I', table))",
         // Variable with safe init (no concat/template)
         `const query = 'SELECT * FROM users'; db.query(query);`,
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -43,7 +59,7 @@ describe('no-unsafe-query', () => {
   describe('Invalid - Direct Concatenation/Interpolation', () => {
     ruleTester.run('invalid - direct', noUnsafeQuery, {
       valid: [],
-      invalid: [
+      invalid: pg([
         {
           code: "client.query('SELECT * FROM users WHERE id = ' + id)",
           errors: [{ messageId: 'noUnsafeQuery' }],
@@ -56,14 +72,14 @@ describe('no-unsafe-query', () => {
           code: "client.query('INSERT INTO users VALUES (' + val + ')')",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
-      ],
+      ]),
     });
   });
 
   describe('Invalid - Variable Taint Tracking', () => {
     ruleTester.run('invalid - tainted variables', noUnsafeQuery, {
       valid: [],
-      invalid: [
+      invalid: pg([
         // vuln_sql_string_concat — concat assigned to variable, then passed to .query()
         {
           code: `
@@ -97,7 +113,7 @@ describe('no-unsafe-query', () => {
           `,
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
-      ],
+      ]),
     });
   });
 });
