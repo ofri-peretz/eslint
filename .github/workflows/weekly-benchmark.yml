@@ -126,14 +126,42 @@ jobs:
             echo "::endgroup::"
           }
           : > oos/COMMITS.txt
+          # The six the flagship manifest cites...
           clone next.js   https://github.com/vercel/next.js.git
           clone supabase  https://github.com/supabase/supabase.git
           clone lodash    https://github.com/lodash/lodash.git
           clone shadcn-ui https://github.com/shadcn-ui/ui.git
           clone payload   https://github.com/payloadcms/payload.git
           clone vercel-ai https://github.com/vercel/ai.git
+          # ...plus the headline suite's Node corpus, which no manifest
+          # references. ILB-Headline defaults to --repo=nestjs and this list was
+          # pinned to the flagship manifest alone, so nestjs was never cloned.
+          # It went unnoticed while three.js was here: the headline default was
+          # three.js, #454 removed it as a corpus we must not publish, and the
+          # very next cron died with `Repo not found: oos/nestjs` before
+          # rendering a single badge.
+          clone nestjs    https://github.com/nestjs/nest.git
           echo "--- corpus commits ---"
           cat oos/COMMITS.txt
+
+      # Two lists that must agree — the clones above and the --repo arguments
+      # below — with nothing linking them. Assert here rather than discovering
+      # it 4 minutes into a build: the failure above was loud, but it surfaced
+      # only after cloning six large repos and building 31 packages.
+      - name: Verify every benchmarked repo is in the corpus
+        env:
+          HEADLINE_REPO: ${{ github.event.inputs.headline_repo || 'nestjs' }}
+        run: |
+          set -euo pipefail
+          missing=""
+          for r in "$HEADLINE_REPO" shadcn-ui; do
+            [ -d "oos/$r" ] || missing="$missing $r"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Benchmarked repo(s) not in the corpus:$missing. Add a \`clone\` line for each in the step above — otherwise ILB-Headline exits 2 and no badge is rendered."
+            exit 1
+          fi
+          echo "✅ Every benchmarked repo is present in the corpus."
 
       # Our plugins must be BUILT before benching: the oxlint JS-plugin shims
       # and the per-job configs load from each package's dist/. On a clean
