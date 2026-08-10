@@ -83,7 +83,7 @@
     "eslint-plugin-testing-library": "^7.15.4",
     "eslint-plugin-unicorn": "^73.0.0",
     "eslint-plugin-vue": "^10.10.0",
-    "tsx": "^4.23.9",
+    "tsx": "^4.23.11",
     "typescript": "^6.0.3",
     "vue-eslint-parser": "^10.4.1"
   }
