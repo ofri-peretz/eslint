@@ -160,10 +160,22 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/no-express-unsafe-regex-route': 'error',
   'express-security/no-exposed-debug-endpoints': 'error',
 
-  // Migrated from browser-security
-  'express-security/no-missing-cors-check': 'warn',
-  'express-security/no-missing-csrf-protection': 'warn',
-  'express-security/no-missing-security-headers': 'warn',
+  // Migrated from browser-security — and removed from `recommended`
+  // 2026-08-09. All three carry `deprecated: true` and name a replacement
+  // that is *already in this preset at 'error'*:
+  //
+  //   no-missing-cors-check       → no-permissive-cors        (line ~145)
+  //   no-missing-csrf-protection  → require-csrf-protection   (line ~148)
+  //   no-missing-security-headers → require-helmet            (line ~144)
+  //
+  // So every adopter was running each check twice, getting two findings on
+  // one line, where silencing either leaves the other. Measured on the
+  // 13-repo wild corpus: 43 findings from the deprecated three, and 21 of
+  // the CSRF locations were reported by both rules at once.
+  //
+  // A deprecated rule does not belong in the preset that ships its
+  // replacement. The rules stay exported so anyone enabling them explicitly
+  // keeps working; they are simply no longer on by default.
 
   // Open redirect — structural, CWE-601
   'express-security/no-user-controlled-redirect': 'error',
