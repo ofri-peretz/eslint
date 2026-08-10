@@ -2,7 +2,7 @@
 'eslint-plugin-lambda-security': major
 ---
 
-Every rule now abstains in files that are not Lambda code
+Every rule now abstains in files without local Lambda evidence
 
 The plugin had no notion of whether a file was Lambda code.
 `no-error-swallowing` fired on any `try/catch` anywhere while its own

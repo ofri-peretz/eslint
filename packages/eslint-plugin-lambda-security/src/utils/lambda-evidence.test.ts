@@ -142,4 +142,34 @@ describe('fileIsLambda', () => {
       expect(isLambda('export class handler {}')).toBe(false);
     });
   });
+
+  describe('a locally bound `require` is not module loading', () => {
+    // The plugin's own lesson turned on itself: a *name* is not proof of an
+    // *interface*.
+    it.each([
+      "function f(require) { require('aws-sdk'); }",
+      "const load = (require) => require('aws-lambda');",
+      "const require = (m) => m; require('aws-sdk');",
+    ])('%s → false', (code) => {
+      expect(isLambda(code)).toBe(false);
+    });
+
+    it('the other arms still apply when `require` is shadowed', () => {
+      expect(
+        isLambda("import type { H } from 'aws-lambda';\nfunction f(require) { require('aws-sdk'); }"),
+      ).toBe(true);
+      expect(
+        isLambda("export const handler = async (e) => {};\nfunction f(require) { require('aws-sdk'); }"),
+      ).toBe(true);
+    });
+  });
+
+  it('the result is cached per Program, so fourteen rules cost one scan', () => {
+    const ast = parse("import type { Handler } from 'aws-lambda';", {
+      sourceType: 'module',
+      range: true,
+    });
+    expect(fileIsLambda(ast)).toBe(true);
+    expect(fileIsLambda(ast)).toBe(true);
+  });
 });

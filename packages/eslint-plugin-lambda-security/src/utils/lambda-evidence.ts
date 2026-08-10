@@ -56,11 +56,15 @@ function isAwsSpecifier(specifier: string): boolean {
  * `ImportExpression`, not a `CallExpression`, so the `require` check never sees
  * it.
  */
-function isAwsDynamicLoad(node: TSESTree.Node): boolean {
+function isAwsDynamicLoad(
+  node: TSESTree.Node,
+  requireIsShadowed: boolean,
+): boolean {
   const argument =
     node.type === AST_NODE_TYPES.ImportExpression
       ? node.source
-      : node.type === AST_NODE_TYPES.CallExpression &&
+      : !requireIsShadowed &&
+          node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === 'require'
         ? node.arguments[0]
@@ -157,8 +161,82 @@ function hasHandlerSignature(node: TSESTree.Node): boolean {
  * `serverless.yml`, `template.yaml` or `package.json`, so there is no project
  * state to go stale and no dependency on lint order.
  */
+/**
+ * Whether the file declares a binding named `require` anywhere.
+ *
+ * `function f(require) { require('aws-sdk'); }` is not module loading, and
+ * treating it as Lambda evidence would be this plugin committing the exact
+ * error it was just fixed for: taking a *name* as proof of an *interface*. When
+ * the name is bound locally the `require` arm is dropped; imports, dynamic
+ * `import()`, handler exports and the calling convention all still apply.
+ */
+function declaresRequireBinding(ast: TSESTree.Program): boolean {
+  let shadowed = false;
+  // No top guard: every recursive call site below already checks.
+  const scan = (node: TSESTree.Node): void => {
+    if (
+      (node.type === AST_NODE_TYPES.FunctionDeclaration ||
+        node.type === AST_NODE_TYPES.FunctionExpression ||
+        node.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
+      node.params.some(
+        (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
+      )
+    ) {
+      shadowed = true;
+      return;
+    }
+    if (
+      node.type === AST_NODE_TYPES.VariableDeclarator &&
+      node.id.type === AST_NODE_TYPES.Identifier &&
+      node.id.name === 'require'
+    ) {
+      shadowed = true;
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'parent') continue;
+      const value = (node as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof (child as TSESTree.Node).type === 'string') {
+            scan(child as TSESTree.Node);
+            if (shadowed) return;
+          }
+        }
+      } else if (
+        value &&
+        typeof value === 'object' &&
+        typeof (value as TSESTree.Node).type === 'string'
+      ) {
+        scan(value as TSESTree.Node);
+        if (shadowed) return;
+      }
+    }
+  };
+  scan(ast);
+  return shadowed;
+}
+
+/**
+ * One evidence scan per file, not one per rule.
+ *
+ * `create` runs for each of the fourteen rules, so an uncached probe walks the
+ * whole AST fourteen times for every file — and the files paying that cost are
+ * mostly the non-Lambda ones the gate exists to skip cheaply.
+ */
+const cache = new WeakMap<TSESTree.Program, boolean>();
+
 export function fileIsLambda(ast: TSESTree.Program): boolean {
+  const cached = cache.get(ast);
+  if (cached !== undefined) return cached;
+  const result = computeIsLambda(ast);
+  cache.set(ast, result);
+  return result;
+}
+
+function computeIsLambda(ast: TSESTree.Program): boolean {
   let found = false;
+  const requireIsShadowed = declaresRequireBinding(ast);
 
   const visit = (node: TSESTree.Node): void => {
     if (
@@ -173,7 +251,7 @@ export function fileIsLambda(ast: TSESTree.Program): boolean {
       return;
     }
     if (
-      isAwsDynamicLoad(node) ||
+      isAwsDynamicLoad(node, requireIsShadowed) ||
       declaresHandler(node) ||
       hasHandlerSignature(node)
     ) {
