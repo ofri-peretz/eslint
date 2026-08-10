@@ -14,6 +14,22 @@ import { describe, it, afterAll } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
 import { noUnsafeCopyFrom } from './index';
 
+/**
+ * Every fixture imports a PostgreSQL client, because the rule now abstains in
+ * files that use no PostgreSQL at all. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the import
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const withPg = (code: string): string => `import { Pool } from 'pg';\n${code}`;
+const pg = <T,>(cases: T[]): T[] =>
+  cases.map((c) =>
+    typeof c === 'string'
+      ? (withPg(c) as T)
+      : ({ ...c, code: withPg((c as { code: string }).code) } as T),
+  );
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -28,7 +44,7 @@ const ruleTester = new RuleTester({
 
 describe('no-unsafe-copy-from — coverage gaps', () => {
   ruleTester.run('allowlist and path-extraction branches', noUnsafeCopyFrom, {
-    valid: [
+    valid: pg([
       {
         name: 'template literal (no expressions) with allowlisted path',
         code: 'client.query(`COPY t FROM \'/data/ok.csv\'`);',
@@ -52,8 +68,8 @@ describe('no-unsafe-copy-from — coverage gaps', () => {
         name: 'member-expression query argument falls through all cases',
         code: `client.query(cfg.sql);`,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: pg([
       {
         name: 'COPY FROM PROGRAM has no extractable quoted path (still hardcoded)',
         code: `client.query("COPY t FROM PROGRAM 'gzip -dc backup.gz'");`,
@@ -71,6 +87,6 @@ describe('no-unsafe-copy-from — coverage gaps', () => {
         options: [{ allowedPaths: ['^/data/'] }],
         errors: [{ messageId: 'hardcodedPath' }],
       },
-    ],
+    ]),
   });
 });
