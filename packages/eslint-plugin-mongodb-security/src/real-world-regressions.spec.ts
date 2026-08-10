@@ -21,6 +21,50 @@ import { noSelectSensitiveFields } from './rules/no-select-sensitive-fields/inde
 import { noUnboundedFind } from './rules/no-unbounded-find/index';
 import { requireAuthMechanism } from './rules/require-auth-mechanism/index';
 import { requireTlsConnection } from './rules/require-tls-connection/index';
+/**
+ * Every fixture imports mongoose, because the rules now abstain in files with
+ * no Mongo in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass
+ * vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: satisfies the gate without reserving any binding, so
+// fixtures that already declare `mongoose`/`db` do not redeclare.
+const asMongo = (code: string): string => `import 'mongoose';\n${code}`;
+type MongoSuggestion = { output?: string | null };
+type MongoCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
+};
+const xmo = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asMongo(c) as T;
+    const test = c as MongoCase;
+    return {
+      ...c,
+      code: asMongo(test.code),
+      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !Array.isArray(e.suggestions)
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asMongo(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
 
 const ruleTester = new RuleTester();
 
@@ -30,7 +74,7 @@ const ruleTester = new RuleTester();
 
 describe('real-world FP regressions', () => {
   ruleTester.run('require-auth-mechanism', requireAuthMechanism, {
-    valid: [
+    valid: xmo([
       // src/infra/cache/redis/module.ts:18 — a Redis client.
       `import { createClient, RedisClientType } from 'redis';
        const client = createClient({ url: REDIS_URL }) as RedisClientType;
@@ -53,8 +97,8 @@ describe('real-world FP regressions', () => {
                mongoose.createConnection(container.getConnectionString(), { directConnection: true });`,
         filename: '/repo/src/utils/test/e2e/containers.ts',
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xmo([
       // Still fires on the real thing: a Mongoose connection with no mechanism.
       {
         code: `import mongoose from 'mongoose';
@@ -68,7 +112,7 @@ describe('real-world FP regressions', () => {
                await client.connect();`,
         errors: [{ messageId: 'requireAuthMechanism' }],
       },
-    ],
+    ]),
   });
 
   // -------------------------------------------------------------------------
@@ -76,21 +120,21 @@ describe('real-world FP regressions', () => {
   // -------------------------------------------------------------------------
 
   ruleTester.run('require-tls-connection', requireTlsConnection, {
-    valid: [
+    valid: xmo([
       `await logger.connect(LogLevelEnum[LOG_LEVEL]);`,
       {
         code: `import mongoose from 'mongoose';
                mongoose.createConnection(container.getConnectionString(), { directConnection: true });`,
         filename: '/repo/src/utils/test/e2e/containers.ts',
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xmo([
       {
         code: `import mongoose from 'mongoose';
                await mongoose.connect(MONGO_URL, { authMechanism: 'SCRAM-SHA-256' });`,
         errors: [{ messageId: 'requireTls', suggestions: 1 }],
       },
-    ],
+    ]),
   });
 
   // -------------------------------------------------------------------------
@@ -98,7 +142,7 @@ describe('real-world FP regressions', () => {
   // -------------------------------------------------------------------------
 
   ruleTester.run('no-unbounded-find', noUnboundedFind, {
-    valid: [
+    valid: xmo([
       // src/infra/logger/service.ts:48,82,119 — array literal + `.find(Boolean)`.
       `const level = [logLevel, 'trace']?.find(Boolean)?.toString();`,
       `this.logger.logger.debug([obj, gray(message)].find(Boolean), gray(message));`,
@@ -112,8 +156,8 @@ describe('real-world FP regressions', () => {
       // src/infra/repository/postgres/repository.ts:123 — TypeORM, not Mongo.
       `return this.repository.find();`,
       `return this.repository.find({ where: filter });`,
-    ],
-    invalid: [
+    ]),
+    invalid: xmo([
       // Still fires on a Mongoose model and on the native driver.
       {
         code: `const results = await this.model.find(filter);`,
@@ -134,7 +178,7 @@ describe('real-world FP regressions', () => {
         code: `const cats = await this.catModel.find({ age: 3 });`,
         errors: [{ messageId: 'unboundedFind', suggestions: 1 }],
       },
-    ],
+    ]),
   });
 
   // -------------------------------------------------------------------------
@@ -143,7 +187,7 @@ describe('real-world FP regressions', () => {
   // -------------------------------------------------------------------------
 
   ruleTester.run('no-select-sensitive-fields', noSelectSensitiveFields, {
-    valid: [
+    valid: xmo([
       // src/core/bird/use-cases/* — demo entities with no credential field.
       `const bird = await this.birdRepository.findById(id);`,
       `const cat = await this.catRepository.findById(id);`,
@@ -156,8 +200,8 @@ describe('real-world FP regressions', () => {
       // Array.prototype.find shares the method name.
       `const allowed = sortList.find((s) => s.name === key);`,
       `const status = [error.getStatus(), error['status']].find(Boolean);`,
-    ],
-    invalid: [
+    ]),
+    invalid: xmo([
       // Schema in view names a sensitive field — the claim is now grounded.
       {
         code: `const userSchema = new Schema({ email: String, password: String });
@@ -179,7 +223,7 @@ describe('real-world FP regressions', () => {
         options: [{ requireVisibleSensitiveField: false }],
         errors: [{ messageId: 'selectSensitiveFields' }],
       },
-    ],
+    ]),
   });
 
   // -------------------------------------------------------------------------
@@ -188,14 +232,14 @@ describe('real-world FP regressions', () => {
   // -------------------------------------------------------------------------
 
   ruleTester.run('no-bypass-middleware', noBypassMiddleware, {
-    valid: [
+    valid: xmo([
       // src/core/bird/use-cases/bird-update.ts:30 and siblings.
       `await this.birdRepository.updateOne({ id: entity.id }, entity.toObject());`,
       `await this.permissionRepository.updateOne({ id: entity.id }, entity.toObject());`,
       // TypeORM repository.
       `await this.repository.updateOne({ id }, patch);`,
-    ],
-    invalid: [
+    ]),
+    invalid: xmo([
       // src/infra/repository/mongo/repository.ts:207 — a real Mongoose model.
       {
         code: `const model = await this.model.findOneAndUpdate(filter, updated);`,
@@ -205,6 +249,6 @@ describe('real-world FP regressions', () => {
         code: `await User.updateMany({ active: false }, { $set: { archived: true } });`,
         errors: [{ messageId: 'bypassMiddleware' }],
       },
-    ],
+    ]),
   });
 });
