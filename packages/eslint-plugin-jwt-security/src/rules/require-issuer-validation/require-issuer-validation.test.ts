@@ -23,14 +23,32 @@ describe('require-issuer-validation', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - with issuer', requireIssuerValidation, {
       valid: [
-        { code: `jwt.verify(token, secret, { issuer: 'https://auth.example.com' });` },
-        { code: `jwt.verify(token, secret, { iss: 'auth.example.com' });` },
-        { code: `jwt.verify(token, secret, { issuer: 'auth', algorithms: ['RS256'] });` },
-        { code: `jwt.sign(payload, secret);` }, // sign not checked
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { issuer: 'https://auth.example.com' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { iss: 'auth.example.com' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { issuer: 'auth', algorithms: ['RS256'] });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        }, // sign not checked
         // Only one argument - edge case
-        { code: `jwt.verify(token);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token);`,
+        },
         // jwtVerify with issuer
-        { code: `jwtVerify(token, key, { issuer: 'https://auth.example.com' });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, { issuer: 'https://auth.example.com' });`,
+        },
       ],
       invalid: [],
     });
@@ -41,25 +59,30 @@ describe('require-issuer-validation', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.verify(token, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingIssuerValidation' }],
         },
         {
-          code: `jwt.verify(token, secret, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, {});`,
           errors: [{ messageId: 'missingIssuerValidation' }],
         },
         {
-          code: `jwt.verify(token, secret, { algorithms: ['RS256'] });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithms: ['RS256'] });`,
           errors: [{ messageId: 'missingIssuerValidation' }],
         },
         // jwtVerify without issuer
         {
-          code: `jwtVerify(token, key);`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key);`,
           errors: [{ messageId: 'missingIssuerValidation' }],
         },
         // jwtVerify with empty options
         {
-          code: `jwtVerify(token, key, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, {});`,
           errors: [{ messageId: 'missingIssuerValidation' }],
         },
       ],

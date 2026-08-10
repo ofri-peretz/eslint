@@ -13,7 +13,11 @@
  * CWE-287: Improper Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { RequireAudienceValidationOptions } from '../../types';
 
@@ -106,7 +110,10 @@ export const requireAudienceValidation = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for audience option
-        if (!hasOption(optionsArg, 'audience') && !hasOption(optionsArg, 'aud')) {
+        if (
+          !hasOption(optionsArg, 'audience') &&
+          !hasOption(optionsArg, 'aud')
+        ) {
           context.report({
             node: optionsArg,
             messageId: 'missingAudienceValidation',

@@ -211,9 +211,7 @@ export const requireCaseInsensitivePathGuard = createRule<
             fix(fixer) {
               const fixes = [fixer.insertTextAfter(pathNode, '.toLowerCase()')];
               if (/[A-Z]/.test(value)) {
-                fixes.push(
-                  fixer.replaceText(literalNode, quoteLiteral(value)),
-                );
+                fixes.push(fixer.replaceText(literalNode, quoteLiteral(value)));
               }
               return fixes;
             },

@@ -24,16 +24,34 @@ describe('require-issued-at', () => {
     ruleTester.run('valid - with iat', requireIssuedAt, {
       valid: [
         // iat in payload
-        { code: `jwt.sign({ sub: 'user', iat: Date.now() }, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'user', iat: Date.now() }, secret);`,
+        },
         // Default behavior (jsonwebtoken adds iat automatically)
-        { code: `jwt.sign(payload, secret);` },
-        { code: `jwt.sign(payload, secret, { expiresIn: '1h' });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h' });`,
+        },
         // Verify not checked
-        { code: `jwt.verify(token, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
+        },
         // No arguments - edge case
-        { code: `sign();` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+sign();`,
+        },
         // Variable payload with iat
-        { code: `jwt.sign({ iat: Math.floor(Date.now() / 1000), sub: 'user' }, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ iat: Math.floor(Date.now() / 1000), sub: 'user' }, secret);`,
+        },
       ],
       invalid: [],
     });
@@ -45,17 +63,20 @@ describe('require-issued-at', () => {
       invalid: [
         // noTimestamp: true explicitly disables iat
         {
-          code: `jwt.sign({ sub: 'user' }, secret, { noTimestamp: true });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'user' }, secret, { noTimestamp: true });`,
           errors: [{ messageId: 'missingIssuedAt' }],
         },
         // noTimestamp with other options
         {
-          code: `jwt.sign(payload, secret, { expiresIn: '1h', noTimestamp: true });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h', noTimestamp: true });`,
           errors: [{ messageId: 'missingIssuedAt' }],
         },
         // SignJWT with noTimestamp
         {
-          code: `signJWT(payload, key, { noTimestamp: true });`,
+          code: `import jwt from 'jsonwebtoken';
+signJWT(payload, key, { noTimestamp: true });`,
           errors: [{ messageId: 'missingIssuedAt' }],
         },
       ],

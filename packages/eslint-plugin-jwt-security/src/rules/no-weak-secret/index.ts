@@ -15,18 +15,15 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
-  isSignOperation,
-  isVerifyOperation,
-  isEnvVariable,
-} from '../../utils';
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
 import type { NoWeakSecretOptions } from '../../types';
 
-type MessageIds =
-  | 'weakSecret'
-  | 'shortSecret'
-  | 'useStrongSecret';
+type MessageIds = 'weakSecret' | 'shortSecret' | 'useStrongSecret';
 
 type RuleOptions = [NoWeakSecretOptions?];
 
@@ -60,8 +57,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Weak JWT Secret',
         cwe: 'CWE-326',
-        description:
-          'JWT secret is too weak and can be brute-forced',
+        description: 'JWT secret is too weak and can be brute-forced',
         severity: 'HIGH',
         fix: 'Use crypto.randomBytes(32).toString("hex") for secrets',
         documentationLink: 'https://tools.ietf.org/html/rfc8725',
@@ -136,9 +132,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     /**
      * Check the secret argument for weakness
      */
-    const checkSecret = (
-      secretNode: TSESTree.Node
-    ): void => {
+    const checkSecret = (secretNode: TSESTree.Node): void => {
       // Environment variables are considered safe (configuration)
       if (isEnvVariable(secretNode)) {
         return;
@@ -174,7 +168,10 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
       }
 
       // Template literals with obvious weak values
-      if (secretNode.type === 'TemplateLiteral' && secretNode.quasis.length === 1) {
+      if (
+        secretNode.type === 'TemplateLiteral' &&
+        secretNode.quasis.length === 1
+      ) {
         const rawValue = secretNode.quasis[0].value.raw;
         if (isKnownWeakPattern(rawValue) || rawValue.length < minSecretLength) {
           context.report({

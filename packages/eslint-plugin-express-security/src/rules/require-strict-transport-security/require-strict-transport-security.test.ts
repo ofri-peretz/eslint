@@ -32,7 +32,9 @@ describe('require-strict-transport-security', () => {
         { code: `app.use(helmet({ hsts: { maxAge: 15552000 } }));` },
         // Dedicated factory, strong
         { code: `app.use(helmet.hsts({ maxAge: 31536000 }));` },
-        { code: `app.use(helmet.strictTransportSecurity({ maxAge: 31536000 }));` },
+        {
+          code: `app.use(helmet.strictTransportSecurity({ maxAge: 31536000 }));`,
+        },
         { code: `app.use(helmet.hsts());` },
         { code: `app.use(helmet.hsts(config));` },
         // Subdomain exclusion accepted when the project opts out of the check
@@ -48,7 +50,9 @@ describe('require-strict-transport-security', () => {
         // Non-literal / non-object values are not analysed
         { code: `app.use(helmet({ hsts: hstsConfig }));` },
         { code: `app.use(helmet({ hsts: { maxAge: ONE_YEAR } }));` },
-        { code: `app.use(helmet({ hsts: { includeSubDomains: subdomainFlag } }));` },
+        {
+          code: `app.use(helmet({ hsts: { includeSubDomains: subdomainFlag } }));`,
+        },
         { code: `app.use(helmet({ hsts: true }));` },
         { code: `app.use(helmet({ hsts: { ...base } }));` },
         { code: `app.use(helmet({ hsts: { [key]: false } }));` },

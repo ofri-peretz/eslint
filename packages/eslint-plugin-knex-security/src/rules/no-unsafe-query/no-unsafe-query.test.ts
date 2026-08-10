@@ -25,23 +25,23 @@ describe('no-unsafe-query', () => {
       valid: [
         {
           name: 'safe idiom',
-          code: "knex.raw('SELECT * FROM users WHERE id = ?', [userId]);",
+          code: "import knex from 'knex';\nknex.raw('SELECT * FROM users WHERE id = ?', [userId]);",
         },
         {
           name: 'static SQL, no interpolation',
-          code: "knex.raw('SELECT * FROM users');",
+          code: "import knex from 'knex';\nknex.raw('SELECT * FROM users');",
         },
         {
           name: 'no arguments',
-          code: 'knex.raw();',
+          code: 'import knex from "knex";\nknex.raw();',
         },
         {
           name: 'unrelated code',
-          code: 'const x = 1;',
+          code: 'import knex from "knex";\nconst x = 1;',
         },
         {
           name: 'safe variable passed through',
-          code: "const sql = 'SELECT * FROM users'; knex.raw(sql);",
+          code: "import knex from 'knex';\nconst sql = 'SELECT * FROM users'; knex.raw(sql);",
         },
       ],
       invalid: [],
@@ -54,17 +54,18 @@ describe('no-unsafe-query', () => {
       invalid: [
         {
           name: 'template interpolation',
-          code: 'knex.raw(`SELECT * FROM users WHERE id = ${userId}`);',
+          code: 'import knex from "knex";\nknex.raw(`SELECT * FROM users WHERE id = ${userId}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: "knex.raw('SELECT * FROM users WHERE id = ' + userId);",
+          code: "import knex from 'knex';\nknex.raw('SELECT * FROM users WHERE id = ' + userId);",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable reaches the sink',
           code: [
+            "import knex from 'knex';",
             'const sql = `SELECT * FROM users WHERE id = ${id}`;',
             'knex.raw(sql);',
           ].join('\n'),

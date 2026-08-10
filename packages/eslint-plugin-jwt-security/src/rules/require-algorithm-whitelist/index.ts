@@ -16,17 +16,15 @@
  * @see https://tools.ietf.org/html/rfc8725
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
-  isVerifyOperation,
-  getOptionsArgument,
-  hasOption,
-} from '../../utils';
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
+import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { RequireAlgorithmWhitelistOptions } from '../../types';
 
-type MessageIds =
-  | 'missingAlgorithmWhitelist'
-  | 'addAlgorithmWhitelist';
+type MessageIds = 'missingAlgorithmWhitelist' | 'addAlgorithmWhitelist';
 
 type RuleOptions = [RequireAlgorithmWhitelistOptions?];
 
@@ -101,7 +99,6 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations

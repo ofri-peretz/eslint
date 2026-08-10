@@ -30,6 +30,16 @@ const ruleTester = new RuleTester({
 });
 
 /** Ungated single-sink instance — the pg shape. */
+/**
+ * Every fixture imports the SDK the rules under test declare, because the
+ * factory now abstains in files that import none of its `modules`. Prepending
+ * it here rather than in 51 fixtures keeps each fixture readable and makes it
+ * impossible to leave one behind — a fixture missing the import would pass
+ * vacuously on the gate instead of exercising the detection it was written for.
+ */
+const sdk = <T extends { code: string }>(cases: T[]): T[] =>
+  cases.map((c) => ({ ...c, code: `import db from 'test-sdk';\n${c.code}` }));
+
 const ungated = createSqlInjectionRule({
   meta: {
     type: 'problem',
@@ -42,6 +52,7 @@ const ungated = createSqlInjectionRule({
     },
   },
   methods: ['query'],
+  modules: ['test-sdk'],
   requireSqlKeywords: false,
   fix: 'Use parameterized queries ($1, $2).',
   documentationLink: 'https://example.test/docs',
@@ -60,6 +71,7 @@ const gated = createSqlInjectionRule({
     },
   },
   methods: ['query', 'raw', 'execute'],
+  modules: ['test-sdk'],
   requireSqlKeywords: true,
   fix: 'Use placeholders and pass values separately.',
   documentationLink: 'https://example.test/docs',
@@ -99,7 +111,7 @@ describe('createSqlInjectionRule', () => {
 
   describe('ungated instance (single sink, no keyword gate)', () => {
     ruleTester.run('ungated', ungated, {
-      valid: [
+      valid: sdk([
         { name: 'no arguments', code: `client.query();` },
         { name: 'non-sink method', code: `client.other('SELECT ' + 1);` },
         {
@@ -154,8 +166,8 @@ describe('createSqlInjectionRule', () => {
           name: 'variable-only addition has no static text',
           code: `db.query(a + b);`,
         },
-      ],
-      invalid: [
+      ]),
+      invalid: sdk([
         {
           name: 'direct concatenation',
           code: `client.query('SELECT * FROM users WHERE id = ' + id);`,
@@ -181,7 +193,7 @@ describe('createSqlInjectionRule', () => {
           code: 'let q = "SELECT 1"; q += ` AND id = ${id}`; db.query(q);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
-      ],
+      ]),
     });
   });
 
@@ -193,7 +205,7 @@ describe('createSqlInjectionRule', () => {
   // before this rule learned about wrappers.
   describe('same-file query wrappers', () => {
     ruleTester.run('wrapper-aware (ungated)', ungated, {
-      valid: [
+      valid: sdk([
         // The exact snippet from #261. A wrapper is only a sink for unsafe
         // *construction* — a non-interpolated template stays safe forever.
         {
@@ -279,8 +291,8 @@ describe('createSqlInjectionRule', () => {
             'q(`give me ${everything}`, []);',
           ].join('\n'),
         },
-      ],
-      invalid: [
+      ]),
+      invalid: sdk([
         {
           name: 'interpolation through an arrow wrapper',
           code: [
@@ -364,13 +376,13 @@ describe('createSqlInjectionRule', () => {
           ].join('\n'),
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
-      ],
+      ]),
     });
   });
 
   describe('gated instance (multi sink, keyword gate)', () => {
     ruleTester.run('gated', gated, {
-      valid: [
+      valid: sdk([
         {
           name: 'interpolation without SQL keywords is not a SQL finding',
           code: 'page.execute(`click ${selector}`);',
@@ -391,8 +403,8 @@ describe('createSqlInjectionRule', () => {
           name: '+= onto a non-SQL seed stays gated',
           code: 'let label = "run"; label += ` ${id}`; job.raw(label);',
         },
-      ],
-      invalid: [
+      ]),
+      invalid: sdk([
         {
           name: 'knex raw',
           code: 'db.raw(`SELECT * FROM users WHERE id = ${id}`);',
@@ -416,6 +428,98 @@ describe('createSqlInjectionRule', () => {
             'db.query(sql);',
           ].join('\n'),
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+  });
+
+  /**
+   * The module gate. `.query()` is TypeORM *and* mysql2 *and* pg; `.raw()` is
+   * knex *and* drizzle with byte-identical config. Discriminating on method
+   * name alone made those plugins report each other's findings — 1,142 lines
+   * across the corpus carried the same CWE from two or more plugins.
+   *
+   * A file that does not import the driver is one the rule has nothing to say
+   * about, so the gate is local evidence: no project scan, nothing to go stale.
+   */
+  describe('module gate', () => {
+    const scoped = createSqlInjectionRule({
+      meta: {
+        type: 'problem',
+        docs: {
+          description: 'test rule (scoped)',
+          url: 'https://example.test/scoped',
+          cwe: 'CWE-89',
+          cvss: 9.8,
+          confidence: 'high',
+        },
+      },
+      methods: ['query'],
+      modules: ['@scope/db'],
+      requireSqlKeywords: false,
+      fix: 'Use parameterized queries ($1, $2).',
+      documentationLink: 'https://example.test/docs',
+    });
+
+    const unsafe = "db.query('SELECT * FROM t WHERE id = ' + id);";
+
+    ruleTester.run('gate (unscoped module)', ungated, {
+      valid: [
+        // The same unsafe call every `invalid` case above uses. It reports
+        // there and stays silent here purely on which module is imported.
+        { name: 'no import at all', code: unsafe },
+        {
+          name: "another SDK's driver",
+          code: `import db from 'other-sdk';\n${unsafe}`,
+        },
+        {
+          // Otherwise `'./knex'` would satisfy the knex rule in a repo that
+          // has no knex — a local file named after a package is not a package.
+          name: 'relative specifier that spells the module name',
+          code: `import db from './test-sdk';\n${unsafe}`,
+        },
+        {
+          name: 'absolute specifier that spells the module name',
+          code: `import db from '/test-sdk';\n${unsafe}`,
+        },
+        {
+          // `mysql2-mock` shares a prefix with `mysql2` and is not it.
+          name: 'module name as a prefix of a different package',
+          code: `import db from 'test-sdkx';\n${unsafe}`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'subpath import still counts (mysql2/promise)',
+          code: `import db from 'test-sdk/promise';\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+      ],
+    });
+
+    ruleTester.run('gate (scoped module)', scoped, {
+      valid: [
+        {
+          // Root is the first *two* segments, so `@other/db` is not `@scope/db`
+          // even though the trailing segment matches.
+          name: 'different scope, same trailing segment',
+          code: `import db from '@other/db';\n${unsafe}`,
+        },
+        {
+          name: 'scope alone is not the package',
+          code: `import db from '@scope/other';\n${unsafe}`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'exact scoped package',
+          code: `import db from '@scope/db';\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          name: 'scoped deep import (@prisma/client/edge)',
+          code: `import db from '@scope/db/edge';\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
         },
       ],
     });

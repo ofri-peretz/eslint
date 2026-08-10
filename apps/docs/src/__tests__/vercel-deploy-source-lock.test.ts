@@ -25,7 +25,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, posix, resolve } from 'node:path';
 
@@ -172,4 +172,32 @@ describe('vercel deploy source', () => {
       ).toEqual([]);
     },
   );
+
+  /**
+   * Sibling failure mode: the deployment contains the file, but the build
+   * never reruns because turbo's cache key ignored it.
+   *
+   * The root turbo.json pins `build.inputs` to a package-shaped list
+   * (src/**, tsconfig.json, …) that is right for the plugin packages and
+   * wrong for this app: it left content/** and scripts/** out of the hash
+   * entirely. Measured before the fix — docs#build hashed 170 inputs, 0 from
+   * content/ and 0 from scripts/ — so editing an .mdx rule page produced an
+   * identical hash and turbo could serve the previous build. A docs-only PR
+   * would deploy green and ship nothing.
+   *
+   * `$TURBO_DEFAULT$` restores "every git-tracked file in the package"
+   * (981 inputs, 566 of them content/). Asserted as file content rather than
+   * by invoking turbo, which would add seconds to every CI shard.
+   */
+  it('docs build cache key covers the whole package, not just src/', () => {
+    const cfgPath = join(ROOT, 'apps/docs/turbo.json');
+    expect(existsSync(cfgPath), 'apps/docs/turbo.json is missing — docs#build would inherit the root `inputs`, which omits content/ and scripts/').toBe(true);
+
+    const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+    expect(cfg.extends).toEqual(['//']);
+    expect(
+      cfg.tasks?.build?.inputs,
+      'build.inputs must include $TURBO_DEFAULT$ — package configs MERGE with the root task, so omitting `inputs` silently keeps the root\'s src/**-only list',
+    ).toContain('$TURBO_DEFAULT$');
+  });
 });
