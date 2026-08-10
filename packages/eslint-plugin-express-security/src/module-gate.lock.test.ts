@@ -129,6 +129,31 @@ describe('Express module gate', () => {
       expect(lint(code, 'no-permissive-cors').length).toBeGreaterThan(0);
     });
 
+    it("opens on TypeScript's import-equals form", () => {
+      // `import express = require('express')` is a TSImportEqualsDeclaration,
+      // not a require CallExpression. The false-negative audit found 82 corpus
+      // files written this way with every rule in the plugin silenced.
+      const code = `import express = require('express');
+        import cors from 'cors';
+        const app = express();
+        ${permissive}`;
+      expect(lint(code, 'no-permissive-cors').length).toBeGreaterThan(0);
+    });
+
+    it("opens on Deno's npm: specifier", () => {
+      const code = `import express from 'npm:express';
+        import cors from 'cors';
+        ${permissive}`;
+      expect(lint(code, 'no-permissive-cors').length).toBeGreaterThan(0);
+    });
+
+    it('opens on a deno.land/x URL import', () => {
+      const code = `import express from 'https://deno.land/x/express@v1.0.0/mod.ts';
+        import cors from 'cors';
+        ${permissive}`;
+      expect(lint(code, 'no-permissive-cors').length).toBeGreaterThan(0);
+    });
+
     it('and stays silent on that same call with neither present', () => {
       const code = `import cors from 'cors';
         export function setup(app) { ${permissive} }`;

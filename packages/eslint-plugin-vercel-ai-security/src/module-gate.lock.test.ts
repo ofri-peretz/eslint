@@ -163,6 +163,21 @@ describe('Vercel AI module gate', () => {
       expect(lint(code, 'no-hardcoded-api-keys').length).toBeGreaterThan(0);
     });
 
+    it("opens on TypeScript's import-equals form", () => {
+      const code = `import ai = require('ai');\n${hardcoded}`;
+      expect(lint(code, 'no-hardcoded-api-keys').length).toBeGreaterThan(0);
+    });
+
+    it('opens on a deno.land/x URL import', () => {
+      const code = `import { generateText } from 'https://deno.land/x/ai@v1.0.0/mod.ts';\n${hardcoded}`;
+      expect(lint(code, 'no-hardcoded-api-keys').length).toBeGreaterThan(0);
+    });
+
+    it("opens on Deno's npm: specifier", () => {
+      const code = `import { openai } from 'npm:@ai-sdk/openai';\n${hardcoded}`;
+      expect(lint(code, 'no-hardcoded-api-keys').length).toBeGreaterThan(0);
+    });
+
     it('and stays silent on that same config with no SDK present', () => {
       expect(lint(hardcoded, 'no-hardcoded-api-keys')).toHaveLength(0);
     });

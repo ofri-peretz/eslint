@@ -37,7 +37,26 @@ const AWS_PREFIXES: readonly string[] = [
 /** The Lambda calling convention, in the order the runtime passes them. */
 const HANDLER_PARAMS: readonly string[] = ['event', 'context', 'callback'];
 
+/**
+ * Strip the module-resolution prefixes Deno adds, so a Deno/Supabase Edge
+ * Function is judged on the package it actually loads.
+ *
+ * `npm:@aws-sdk/client-s3` and
+ * `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports
+ * written in Deno's specifier syntax. Both were silenced by every gate in the
+ * ecosystem until the false-negative audit found them in
+ * supabase/examples/**: the prefix made the specifier unrecognisable and the
+ * whole plugin abstained on real SDK code.
+ */
+function normalizeSpecifier(specifier: string): string {
+  if (specifier.startsWith('npm:')) return specifier.slice(4);
+  const deno = /^https?:\/\/deno\.land\/x\/([^@/]+)/.exec(specifier);
+  if (deno) return deno[1];
+  return specifier;
+}
+
 function isAwsSpecifier(specifier: string): boolean {
+  specifier = normalizeSpecifier(specifier);
   if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
   if (AWS_PACKAGES.has(specifier)) return true;
   const parts = specifier.split('/');
@@ -47,6 +66,26 @@ function isAwsSpecifier(specifier: string): boolean {
   if (AWS_PACKAGES.has(root)) return true;
   return AWS_PREFIXES.some((prefix) => specifier.startsWith(prefix));
 }
+
+/**
+ * `import express = require('express')` — TypeScript's import-equals form.
+ *
+ * Not a `CallExpression`: the AST is a `TSImportEqualsDeclaration` whose
+ * `moduleReference` is a `TSExternalModuleReference` wrapping the literal, so
+ * the `require`-call arm never sees it. The false-negative audit found **82
+ * corpus files** written this way for Express alone — DefinitelyTyped uses it
+ * for nearly every CommonJS type test — with every rule in the plugin silenced.
+ */
+function isImportEqualsLoad(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
+    node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference &&
+    node.moduleReference.expression.type === AST_NODE_TYPES.Literal &&
+    typeof node.moduleReference.expression.value === 'string' &&
+    isAwsSpecifier(node.moduleReference.expression.value)
+  );
+}
+
 
 /**
  * `require('aws-sdk')` and `await import('aws-sdk')` — the two dynamic forms.
@@ -235,6 +274,7 @@ function computeIsLambda(ast: TSESTree.Program): boolean {
       return;
     }
     if (
+      isImportEqualsLoad(node) ||
       isAwsDynamicLoad(node, requireIsShadowed) ||
       declaresHandler(node) ||
       hasHandlerSignature(node)

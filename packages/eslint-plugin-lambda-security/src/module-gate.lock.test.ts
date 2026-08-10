@@ -114,6 +114,23 @@ describe('Lambda module gate', () => {
   describe('positive controls — the gate must open for real Lambda code', () => {
     const swallowing = `try { riskyOperation(); } catch (error) {}`;
 
+    it("opens on TypeScript's import-equals form", () => {
+      const code = `import AWS = require('aws-sdk');\nconst run = () => { ${swallowing} };`;
+      expect(lint(code, 'no-error-swallowing').length).toBeGreaterThan(0);
+    });
+
+    it('opens on a deno.land/x URL import', () => {
+      const code = `import { S3 } from 'https://deno.land/x/aws-sdk@v3.0.0/mod.ts';\nconst run = () => { ${swallowing} };`;
+      expect(lint(code, 'no-error-swallowing').length).toBeGreaterThan(0);
+    });
+
+    it("opens on Deno's npm: specifier", () => {
+      // supabase/examples/**/image_gen/index.ts imports
+      // 'npm:@aws-sdk/client-bedrock-runtime'; the prefix silenced the plugin.
+      const code = `import { BedrockRuntimeClient } from 'npm:@aws-sdk/client-bedrock-runtime';\nconst run = () => { ${swallowing} };`;
+      expect(lint(code, 'no-error-swallowing').length).toBeGreaterThan(0);
+    });
+
     it('reports once the file exports a handler, with no AWS import at all', () => {
       const code = `export const handler = async (event) => { ${swallowing} };`;
       expect(lint(code, 'no-error-swallowing').length).toBeGreaterThan(0);
