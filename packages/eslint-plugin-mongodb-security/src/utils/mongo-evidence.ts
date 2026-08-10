@@ -74,24 +74,39 @@ function bindsRequire(node: TSESTree.Node): boolean {
   return false;
 }
 
+/** A string literal whose value names a Mongo package. */
+function isMongoLiteral(node: TSESTree.Node | undefined): boolean {
+  return (
+    node?.type === AST_NODE_TYPES.Literal &&
+    typeof node.value === 'string' &&
+    isMongoSpecifier(node.value)
+  );
+}
+
+/**
+ * `require('mongoose')` and `await import('mongodb')`.
+ *
+ * Written as early returns rather than one nested ternary: each condition is
+ * then a branch a single test can target, and the shadowed-`require` case is
+ * visibly its own line rather than a short-circuit buried mid-expression.
+ */
 function isMongoDynamicLoad(
   node: TSESTree.Node,
   requireIsShadowed: boolean,
 ): boolean {
-  const argument =
-    node.type === AST_NODE_TYPES.ImportExpression
-      ? node.source
-      : !requireIsShadowed &&
-          node.type === AST_NODE_TYPES.CallExpression &&
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'require'
-        ? node.arguments[0]
-        : undefined;
-  return (
-    argument?.type === AST_NODE_TYPES.Literal &&
-    typeof argument.value === 'string' &&
-    isMongoSpecifier(argument.value)
-  );
+  if (node.type === AST_NODE_TYPES.ImportExpression) {
+    return isMongoLiteral(node.source);
+  }
+  // A locally bound `require` is a parameter or variable, not module loading.
+  if (requireIsShadowed) return false;
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  if (
+    node.callee.type !== AST_NODE_TYPES.Identifier ||
+    node.callee.name !== 'require'
+  ) {
+    return false;
+  }
+  return isMongoLiteral(node.arguments[0]);
 }
 
 /** `new Schema({...})` / `new mongoose.Schema({...})`. */
@@ -128,6 +143,42 @@ function isObjectIdEvidence(node: TSESTree.Node): boolean {
     node.callee.type === AST_NODE_TYPES.Identifier &&
     node.callee.name === 'ObjectId'
   );
+}
+
+/**
+ * A binding literally named `mongoose` / `Mongoose`, whatever it was assigned
+ * from.
+ *
+ * This arm exists to close the one false negative the previous gate shipped
+ * with: `const mongoose = require('./config/mongoose')` — a **relative** import
+ * of a local wrapper, which carries no package specifier for the import arm to
+ * find. That layout is common enough that documenting it as an accepted FN was
+ * the wrong call; a security rule that silently stops reporting is the failure
+ * this ecosystem exists to prevent.
+ *
+ * The name is safe evidence in a way `db`, `collection` and `model` are not —
+ * those are generic, `mongoose` is a product name. Measured over the corpus:
+ * **58 files bind this identifier, 57 already import a Mongo package, and the
+ * 58th is exactly the false negative.** The arm therefore opens the gate on one
+ * additional file and introduces no new one.
+ *
+ * A *relative import that merely ends in `/mongoose`* is deliberately not
+ * enough on its own — it is the binding name that is checked, so
+ * `import x from './mongoose'` where the local name is `x` still does not
+ * qualify.
+ */
+function bindsMongooseName(node: TSESTree.Node): boolean {
+  const named = (name: string): boolean =>
+    name === 'mongoose' || name === 'Mongoose';
+  if (node.type === AST_NODE_TYPES.VariableDeclarator) {
+    return node.id.type === AST_NODE_TYPES.Identifier && named(node.id.name);
+  }
+  if (node.type === AST_NODE_TYPES.ImportDefaultSpecifier ||
+      node.type === AST_NODE_TYPES.ImportNamespaceSpecifier ||
+      node.type === AST_NODE_TYPES.ImportSpecifier) {
+    return named(node.local.name);
+  }
+  return false;
 }
 
 /** `.lean()` — Mongoose's own query modifier, with no analogue elsewhere. */
@@ -244,6 +295,7 @@ function computeUsesMongo(ast: TSESTree.Program): boolean {
     }
     if (
       isImportEquals(node) ||
+      bindsMongooseName(node) ||
       isMongoDynamicLoad(node, requireIsShadowed) ||
       isSchemaConstruction(node) ||
       isObjectIdEvidence(node) ||

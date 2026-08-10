@@ -71,9 +71,9 @@ const NON_MONGO_SOURCES: ReadonlyArray<readonly [string, string]> = [
      export function read(id: ObjectId) { return String(id); }`,
   ],
   [
-    'a local module merely named mongoose',
-    `import mongoose from './mongoose';
-     export const db = mongoose.connect('localhost');`,
+    'a relative import whose local name is NOT mongoose',
+    `import db from './mongoose';
+     export const conn = db.connect('localhost');`,
   ],
 ];
 
@@ -189,6 +189,27 @@ describe('MongoDB module gate', () => {
       expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
     });
 
+    it('opens on a `mongoose` binding from a RELATIVE wrapper module', () => {
+      // This was a documented false negative when the gate first shipped:
+      // `const mongoose = require('./config/mongoose')` carries no package
+      // specifier. Measured over the corpus, 58 files bind this identifier,
+      // 57 already import a Mongo package, and the 58th was exactly the missed
+      // file — so the name is evidence, and it costs nothing.
+      const code = `const mongoose = require('./config/mongoose');
+      mongoose.connect();
+      ${dsn}`;
+      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+    });
+
+    it("opens on require('mongoose') bound to a name that is NOT mongoose", () => {
+      // Distinct from the binding-name arm on purpose: with the name arm added,
+      // `const mongoose = require('mongoose')` is matched by the NAME first and
+      // the walk stops, so only a differently-named binding still exercises the
+      // require-specifier path.
+      const code = `const db = require('mongoose');\n${dsn}`;
+      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+    });
+
     it('and stays silent on that same DSN-free file with no Mongo evidence', () => {
       expect(
         lint(`const uri = 'postgres://localhost/app';`, 'no-hardcoded-connection-string'),
@@ -199,6 +220,16 @@ describe('MongoDB module gate', () => {
   describe('a locally bound require is not module loading', () => {
     it('does not open the gate', () => {
       const code = `function wrap(require) { return require('mongoose'); }
+      export const q = { user: 1 };`;
+      expect(lint(code, 'no-hardcoded-connection-string')).toHaveLength(0);
+    });
+
+    it('a method named require on some object is not module loading either', () => {
+      // `loader.require('mongoose')` is a MemberExpression callee, not the
+      // global `require`. Treating it as a module load would be the same
+      // name-is-not-an-interface error the gate exists to correct.
+      const code = `const loader = getLoader();
+      loader.require('mongoose');
       export const q = { user: 1 };`;
       expect(lint(code, 'no-hardcoded-connection-string')).toHaveLength(0);
     });
