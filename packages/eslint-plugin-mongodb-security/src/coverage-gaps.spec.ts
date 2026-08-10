@@ -39,6 +39,78 @@ import { requireLeanQueries } from './rules/require-lean-queries/index';
 import { requireProjection } from './rules/require-projection/index';
 import { requireSchemaValidation } from './rules/require-schema-validation/index';
 import { requireTlsConnection } from './rules/require-tls-connection/index';
+/**
+ * Every fixture imports mongoose, because the rules now abstain in files with
+ * no Mongo in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass
+ * vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: satisfies the gate without reserving any binding, so
+// fixtures that already declare `mongoose`/`db` do not redeclare.
+const asMongo = (code: string): string => `import 'mongoose';\n${code}`;
+type MongoSuggestion = { output?: string | null };
+type MongoCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
+};
+const xmo = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asMongo(c) as T;
+    const test = c as MongoCase;
+    return {
+      ...c,
+      code: asMongo(test.code),
+      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !Array.isArray(e.suggestions)
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asMongo(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+/**
+ * The module gate reads `sourceCode.ast`, so a synthetic context needs a
+ * Program that actually contains Mongo — otherwise the rule correctly abstains
+ * and registers no listeners, and these branch tests would assert against a
+ * handler that no longer exists.
+ */
+/**
+ * The same evidence with NO `tokens` key at all. `TSESTree.Program.tokens` is
+ * typed optional, and the token-less branch below is the whole point of that
+ * test — handing it a `tokens: []` would satisfy the gate while silently
+ * skipping the `?? []` fallback it exists to exercise.
+ */
+const MONGO_PROGRAM_NO_TOKENS = {
+  type: 'Program',
+  body: [
+    { type: 'ImportDeclaration', specifiers: [], source: { type: 'Literal', value: 'mongoose' } },
+  ],
+};
+
+const MONGO_PROGRAM = {
+  type: 'Program',
+  body: [
+    { type: 'ImportDeclaration', specifiers: [], source: { type: 'Literal', value: 'mongoose' } },
+  ],
+  tokens: [],
+  comments: [],
+};
+
 
 const ruleTester = new RuleTester();
 
@@ -47,52 +119,52 @@ const ruleTester = new RuleTester();
 // ---------------------------------------------------------------------------
 
 ruleTester.run('no-bypass-middleware (coverage gaps)', noBypassMiddleware, {
-  valid: [
+  valid: xmo([
     // Computed member access — property is a Literal, not an Identifier,
     // so methodName resolves to null and the call is not flagged.
     `User['updateOne']({ _id: id });`,
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('no-hardcoded-connection-string (coverage gaps)', noHardcodedConnectionString, {
-  valid: [
+  valid: xmo([
     // Template literal whose first quasi does not match the MongoDB URI pattern.
     'const greeting = `hello ${name}`;',
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('no-hardcoded-credentials (coverage gaps)', noHardcodedCredentials, {
-  valid: [
+  valid: xmo([
     // Computed key (BinaryExpression) — keyName resolves to null, no report.
     `const opts = { ['pass' + 'word']: 'secret123' };`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // String-literal key — resolved via the Literal branch and reported.
     {
       code: `const opts = { 'password': 'secret123' };`,
       errors: [{ messageId: 'hardcodedCredentials' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-operator-injection (coverage gaps)', noOperatorInjection, {
-  valid: [
+  valid: xmo([
     // Computed key (BinaryExpression) — keyName is null, early return.
     `const q = { ['$' + op]: req.body.value };`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // String-literal '$ne' key with user input value — Literal key branch.
     {
       code: `User.find({ age: { '$ne': req.body.value } });`,
       errors: [{ messageId: 'operatorInjection' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFields, {
-  valid: [
+  valid: xmo([
     // Native driver: inclusion projection without sensitive fields is safe.
     `db.users.find({}, { projection: { name: 1 } });`,
     // Spread inside the projection object is skipped; inclusion still counts.
@@ -113,8 +185,8 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
     `User.find({}).select(fields);`,
     // `.select('-password')` — sensitive field present but exclusion-prefixed.
     `User.find({}).select('-password');`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Second argument is not an object — projection cannot be proven safe.
     {
       code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
@@ -150,18 +222,18 @@ ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFi
       code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 'x' } });`,
       errors: [{ messageId: 'selectSensitiveFields' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
-  valid: [
+  valid: xmo([
     // find() passed as an argument to a `.limit(...)` call — the chain walk
     // starts at a CallExpression whose callee is a `.limit` member expression.
     `q.limit(User.find({}));`,
     // Computed member access — methodName is null.
     `db.users['find']({});`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Native-driver options object present but without a `limit` property.
     {
       code: `db.users.find({}, { skip: 5 });`,
@@ -170,11 +242,11 @@ ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
         suggestions: [{ messageId: 'suggestionAddLimit', output: `db.users.find({}, { skip: 5 }).limit(100);` }],
       }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-unsafe-populate (coverage gaps)', noUnsafePopulate, {
-  valid: [
+  valid: xmo([
     // Member expression rooted at a call — getNodeSource returns '' for the object.
     `query.populate(getConfig().path);`,
     // Computed property — stringified as '[computed]', no user-input match.
@@ -185,12 +257,12 @@ ruleTester.run('no-unsafe-populate (coverage gaps)', noUnsafePopulate, {
     `query.populate({ ...opts });`,
     // String-literal 'path' key — keyName resolves to null, not inspected.
     `query.populate({ 'path': req.body.field });`,
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
-  valid: [
+  valid: xmo([
     // Plain function call — callee is not a member expression.
     `find({ name: req.body.name });`,
     // Computed member access — methodName is null.
@@ -206,8 +278,8 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     // Concatenation of a literal and a plain identifier — no user input, not
     // an identifier value, so no report.
     `User.find({ name: 'a' + suffix });`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Bare identifier value — reported with an $eq-wrapping suggestion.
     {
       code: `User.findOne({ username: username });`,
@@ -329,11 +401,11 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
         },
       ],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-unsafe-regex-query (coverage gaps)', noUnsafeRegexQuery, {
-  valid: [
+  valid: xmo([
     // Computed member access — methodName is null.
     `User['find']({ name: { $regex: req.body.x } });`,
     // No arguments — query argument missing.
@@ -352,8 +424,8 @@ ruleTester.run('no-unsafe-regex-query (coverage gaps)', noUnsafeRegexQuery, {
     `User.find({ name: { $regex: new RegExp(config.pattern) } });`,
     // $regex member expression rooted at a call — getNodeSource returns ''.
     `User.find({ name: { $regex: getConfig().user.input } });`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // String-literal '$regex' key with user input — Literal key branch.
     {
       code: `User.find({ name: { '$regex': req.body.x } });`,
@@ -364,27 +436,27 @@ ruleTester.run('no-unsafe-regex-query (coverage gaps)', noUnsafeRegexQuery, {
       code: `User.find({ name: { $regex: req.body['x'] } });`,
       errors: [{ messageId: 'unsafeRegex' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('no-unsafe-where (coverage gaps)', noUnsafeWhere, {
-  valid: [
+  valid: xmo([
     // Computed key (BinaryExpression) — keyName resolves to null.
     `const q = { ['$' + 'where']: 'this.a == 1' };`,
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('require-auth-mechanism (coverage gaps)', requireAuthMechanism, {
-  valid: [
+  valid: xmo([
     // Computed member access — methodName is null.
     `mongoose['connect'](uri);`,
     // Options argument is not an object literal — not inspected.
     `mongoose.connect(uri, getOptions());`,
     // String-literal 'authMechanism' key is recognized.
     `mongoose.connect(uri, { 'authMechanism': 'SCRAM-SHA-256' });`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Spread-only options — authMechanism cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
@@ -395,33 +467,33 @@ ruleTester.run('require-auth-mechanism (coverage gaps)', requireAuthMechanism, {
       code: 'mongoose.connect(uri, { [`authMechanism`]: "SCRAM-SHA-256" });',
       errors: [{ messageId: 'requireAuthMechanism' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('require-lean-queries (coverage gaps)', requireLeanQueries, {
-  valid: [
+  valid: xmo([
     // find() as an argument of a `.lean(...)` call — the chain walk starts at
     // a CallExpression whose callee is a `.lean` member expression.
     `helper.lean(User.find({}));`,
     // Computed member access — methodName is null.
     `User['find']({});`,
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('require-projection (coverage gaps)', requireProjection, {
-  valid: [
+  valid: xmo([
     // find() as an argument of a `.select(...)` call — CallExpression branch
     // of hasChainedSelect.
     `helper.select(User.find({}));`,
     // Computed member access — methodName is null.
     `User['find']({});`,
-  ],
+  ]),
   invalid: [],
 });
 
 ruleTester.run('require-schema-validation (coverage gaps)', requireSchemaValidation, {
-  valid: [
+  valid: xmo([
     // No schema argument.
     `new Schema();`,
     // Schema argument is not an object literal.
@@ -430,8 +502,8 @@ ruleTester.run('require-schema-validation (coverage gaps)', requireSchemaValidat
     `new Schema({ ...base });`,
     // Object-style field without a `type` property is skipped.
     `new Schema({ name: { required: true } });`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Spread inside the field definition is skipped by both scans; the field
     // has a type but no validation.
     {
@@ -444,11 +516,11 @@ ruleTester.run('require-schema-validation (coverage gaps)', requireSchemaValidat
       code: `new Schema({ name: { type: String, 'required': true } });`,
       errors: [{ messageId: 'requireSchemaValidation' }],
     },
-  ],
+  ]),
 });
 
 ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
-  valid: [
+  valid: xmo([
     // Computed member access — methodName is null.
     `mongoose['connect'](uri);`,
     // Zero arguments — nothing to report on.
@@ -460,8 +532,8 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     // identifier keys while the repair lookup stripped quotes.
     `mongoose.connect(uri, { 'tls': true });`,
     `mongoose.connect(uri, { "ssl": true });`,
-  ],
-  invalid: [
+  ]),
+  invalid: xmo([
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
@@ -478,7 +550,7 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
         suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { 'tls': true });` }],
       }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -489,6 +561,7 @@ describe('no-hardcoded-connection-string — synthetic AST (Layer 2)', () => {
   it('ignores a TemplateLiteral with zero quasis (parser always emits >= 1)', () => {
     const { listeners, reports } = createWithMockContext(
       noHardcodedConnectionString as unknown as RuleLike,
+      { ast: MONGO_PROGRAM },
     );
     const templateLiteralListener = listeners.TemplateLiteral as (node: unknown) => void;
     templateLiteralListener({ type: 'TemplateLiteral', quasis: [], expressions: [] });
@@ -500,6 +573,7 @@ describe('no-unbounded-find — synthetic AST (Layer 2)', () => {
   it('reports when the chain walk hits a parent-less cursor (parser always roots at Program)', () => {
     const { listeners, reports } = createWithMockContext(
       noUnboundedFind as unknown as RuleLike,
+      { ast: MONGO_PROGRAM },
     );
     const callExpressionListener = listeners.CallExpression as (node: unknown) => void;
     const node = {
@@ -527,7 +601,7 @@ describe('no-select-sensitive-fields — a Program without tokens (Layer 2)', ()
   it('treats a token-less Program as "no sensitive field in view"', () => {
     const { listeners, reports } = createWithMockContext(
       noSelectSensitiveFields as unknown as RuleLike,
-      { ast: { type: 'Program', body: [] } },
+      { ast: MONGO_PROGRAM_NO_TOKENS },
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     listener({
@@ -586,7 +660,7 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
   it('falls back to the DEFAULT list for projections: safe inclusion projection stays silent', () => {
     const { listeners, reports } = createWithMockContext(
       noSelectSensitiveFields as unknown as RuleLike,
-      { options: [{ sensitiveFields: null }] },
+      { ast: MONGO_PROGRAM, options: [{ sensitiveFields: null }] },
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     listener(
@@ -598,7 +672,7 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
   it('falls back to the DEFAULT list for projections: including `password` still reports', () => {
     const { listeners, reports } = createWithMockContext(
       noSelectSensitiveFields as unknown as RuleLike,
-      { options: [{ sensitiveFields: null }] },
+      { ast: MONGO_PROGRAM, options: [{ sensitiveFields: null }] },
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     listener(
@@ -614,7 +688,7 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
   it('falls back to the DEFAULT list in .select() scans: selecting `password` reports on the select call', () => {
     const { listeners, reports } = createWithMockContext(
       noSelectSensitiveFields as unknown as RuleLike,
-      { options: [{ sensitiveFields: null }] },
+      { ast: MONGO_PROGRAM, options: [{ sensitiveFields: null }] },
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     const selectCall = {
@@ -636,7 +710,7 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
   it('falls back to the DEFAULT list in .select() scans: excluding `-password` stays silent', () => {
     const { listeners, reports } = createWithMockContext(
       noSelectSensitiveFields as unknown as RuleLike,
-      { options: [{ sensitiveFields: null }] },
+      { ast: MONGO_PROGRAM, options: [{ sensitiveFields: null }] },
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     const selectCall = {

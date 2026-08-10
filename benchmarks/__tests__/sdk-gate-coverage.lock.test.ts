@@ -74,7 +74,8 @@ const UNGATED: Readonly<Record<string, number>> = {
   // vercel-ai-security (was 1,738) is gated as of #489 and now ships
   // src/module-gate.lock.test.ts; re-measured on the same corpus it reports 0
   // off-SDK findings.
-  'mongodb-security': 1663,
+  // mongodb-security (was 1,663) is gated as of the mongo-evidence PR and now
+  // ships src/module-gate.lock.test.ts.
   'nestjs-security': 219,
   // Effectively gated already: `isJwtLibraryCall` requires the file to import a
   // JWT library, which took it from 702 off-SDK findings to 27. What it still
