@@ -14,6 +14,16 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
   valid: [
+      // Regression: legitimate packages that sit within edit distance 2 of a
+      // popular one. `preact` was reported on okta/okta-signin-widget, which
+      // imports it deliberately; `recast` is the AST library jscodeshift is
+      // built on. Neither is an attack.
+      {
+        code: "import { h, render } from 'preact';",
+      },
+      {
+        code: "import recast from 'recast';",
+      },
         'const x = 42;',
         'const flag = true;',
     // Valid popular package names
@@ -29,6 +39,9 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
   invalid: [
     // Typosquatting-like names (within 2 Levenshtein distance of popular packages)
     { code: "import r from 'reakt'", errors: [{ messageId: 'violationDetected' }] },
+    // Transposition — the most common squat shape. One slip, not two edits.
+    { code: "import r from 'raect'", errors: [{ messageId: 'violationDetected' }] },
+    { code: "import e from 'exprses'", errors: [{ messageId: 'violationDetected' }] },
     { code: "import l from 'lodas'", errors: [{ messageId: 'violationDetected' }] },
   ],
 });
