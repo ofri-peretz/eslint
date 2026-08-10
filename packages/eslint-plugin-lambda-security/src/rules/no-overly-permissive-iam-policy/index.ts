@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-project-serverless-top-10/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileIsLambda } from '../../utils/lambda-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -88,6 +89,11 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+    // files, 98% of this plugin's findings were in files with no AWS anything.
+    // Registering no visitors is both the gate and the cheap path.
+    if (!fileIsLambda(context.sourceCode.ast)) return {};
+
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);

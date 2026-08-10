@@ -2,6 +2,52 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, expect, it } from 'vitest';
 import { noPermissiveCorsResponse } from './index';
 
+/**
+ * Every fixture carries the Lambda handler shape, because the rules now abstain
+ * in files that are not Lambda code. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the shape
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const asLambda = (code: string): string =>
+  `import type { Handler } from 'aws-lambda';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const lambda = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asLambda(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asLambda(test.code),
+      // Autofix and suggestion fixtures assert the WHOLE file back, so every
+      // `output` needs the same prefix or each fixable rule fails on the header
+      // alone — including the ones nested under errors[].suggestions[].
+      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asLambda(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester();
 
 // ========== REGRESSION LOCK: no dead options ==========
@@ -20,7 +66,7 @@ describe('no-permissive-cors-response schema', () => {
 });
 
 ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
-  valid: [
+  valid: lambda([
     // ========== VALID: Specific origin ==========
     {
       code: `
@@ -85,8 +131,8 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
         const config = () => ({ headers: { 'Access-Control-Allow-Origin': '*' } });
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // ========== INVALID: Wildcard origin in return ==========
     {
       code: `
@@ -202,5 +248,5 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
       `,
       errors: [{ messageId: 'permissiveCors' }],
     },
-  ],
+  ]),
 });
