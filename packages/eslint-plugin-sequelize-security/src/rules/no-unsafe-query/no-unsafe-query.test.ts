@@ -41,11 +41,13 @@ describe('no-unsafe-query', () => {
         },
         {
           name: 'literal with a static string',
-          code: `Sequelize.literal('createdAt DESC');`,
+          code: `import { Sequelize } from 'sequelize';
+Sequelize.literal('createdAt DESC');`,
         },
         {
           name: 'query builder, no raw SQL',
-          code: `Product.findAll({ where: { name }, order: [['createdAt', 'DESC']] });`,
+          code: `import { Sequelize } from 'sequelize';
+Product.findAll({ where: { name }, order: [['createdAt', 'DESC']] });`,
         },
         {
           name: 'no arguments',
@@ -53,7 +55,7 @@ describe('no-unsafe-query', () => {
         },
         {
           name: 'unrelated method',
-          code: 'logger.info(`fetched ${count} rows`);',
+          code: 'import { Sequelize } from "sequelize";\nlogger.info(`fetched ${count} rows`);',
         },
         {
           name: 'safe variable passed through',
@@ -72,34 +74,37 @@ describe('no-unsafe-query', () => {
           // OWASP Juice Shop routes/search.ts:23
           name: 'juice shop product search',
           code:
-            'models.sequelize.query(`SELECT * FROM Products WHERE ((name LIKE \'%${criteria}%\' OR description LIKE \'%${criteria}%\') AND deletedAt IS NULL) ORDER BY name`);',
+            'import { Sequelize } from "sequelize";\nmodels.sequelize.query(`SELECT * FROM Products WHERE ((name LIKE \'%${criteria}%\' OR description LIKE \'%${criteria}%\') AND deletedAt IS NULL) ORDER BY name`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           // OWASP Juice Shop routes/login.ts:34
           name: 'juice shop login bypass',
           code:
-            "models.sequelize.query(`SELECT * FROM Users WHERE email = '${req.body.email || ''}' AND password = '${security.hash(req.body.password || '')}' AND deletedAt IS NULL`);",
+            "import { Sequelize } from 'sequelize';\nmodels.sequelize.query(`SELECT * FROM Users WHERE email = '${req.body.email || ''}' AND password = '${security.hash(req.body.password || '')}' AND deletedAt IS NULL`);",
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: `sequelize.query('SELECT * FROM Users WHERE id = ' + userId);`,
+          code: `import { Sequelize } from 'sequelize';
+sequelize.query('SELECT * FROM Users WHERE id = ' + userId);`,
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'Sequelize.literal with interpolation (ORDER BY injection)',
-          code: 'Product.findAll({ order: Sequelize.literal(`${sortColumn} DESC`) });',
+          code: 'import { Sequelize } from "sequelize";\nProduct.findAll({ order: Sequelize.literal(`${sortColumn} DESC`) });',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'literal with concatenation',
-          code: `Product.findAll({ order: Sequelize.literal(sortColumn + ' DESC') });`,
+          code: `import { Sequelize } from 'sequelize';
+Product.findAll({ order: Sequelize.literal(sortColumn + ' DESC') });`,
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable',
           code: [
+            "import { Sequelize } from 'sequelize';",
             'const sql = `SELECT * FROM Users WHERE email = \'${email}\'`;',
             'await models.sequelize.query(sql);',
           ].join('\n'),
@@ -108,6 +113,7 @@ describe('no-unsafe-query', () => {
         {
           name: 'tainted variable reaches the literal sink',
           code: [
+            "import { Sequelize } from 'sequelize';",
             'const order = `${sortColumn} DESC`;',
             'Product.findAll({ order: Sequelize.literal(order) });',
           ].join('\n'),
@@ -116,6 +122,7 @@ describe('no-unsafe-query', () => {
         {
           name: 'query built with +=',
           code: [
+            "import { Sequelize } from 'sequelize';",
             "let sql = 'SELECT * FROM Products WHERE 1=1';",
             'sql += ` AND name = \'${name}\'`;',
             'sequelize.query(sql);',
