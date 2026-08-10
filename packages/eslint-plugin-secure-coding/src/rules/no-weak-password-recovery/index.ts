@@ -327,6 +327,45 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Does this initializer look like a *token* at all?
+     *
+     * `const forgotPassword = catchAsync(async (req, res) => { ... })` is a
+     * route handler, not a token — but its name is recovery-related and its
+     * initializer is a call, which was the entire test. A call whose argument
+     * is a function is a wrapper (catchAsync, asyncHandler, middleware), and
+     * nothing that returns one is a credential.
+     */
+    const looksLikeTokenValue = (callExpression: TSESTree.CallExpression): boolean =>
+      !callExpression.arguments.some(
+        (arg) =>
+          arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression',
+      );
+
+    /**
+     * Evidence that a token is actually predictable.
+     *
+     * The rule previously reported whenever the initializer did *not* textually
+     * contain one of four hardcoded names — so every project-local helper was
+     * "weak" by default:
+     *
+     *   const resetPasswordToken = generateToken(user.id, expires, RESET);
+     *
+     * That claims predictability the rule never established; `generateToken`
+     * may well wrap crypto.randomBytes, and this check cannot see inside it.
+     * Report evidence of weakness instead of absence of a known-good name.
+     */
+    const usesPredictableSource = (callExpression: TSESTree.CallExpression): boolean => {
+      const text = sourceCode.getText(callExpression);
+      return (
+        /\bMath\s*\.\s*random\s*\(/.test(text) ||
+        /\bDate\s*\.\s*now\s*\(/.test(text) ||
+        /new\s+Date\s*\([^)]*\)\s*\.\s*getTime\s*\(/.test(text) ||
+        /\buuid\s*\.\s*v1\s*\(/.test(text) ||
+        /\bv1\s*\(\s*\)/.test(text)
+      );
+    };
+
+    /**
      * Check if token has expiration
      */
     const hasTokenExpiration = (functionNode: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression): boolean => {
@@ -352,7 +391,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
 
           // Check for weak token generation
           if (node.init.type === 'CallExpression') {
-            if (!isSecureTokenGeneration(node.init)) {
+            // Guilty only on evidence: the initializer must look like a token
+            // value at all, must not already use a vetted generator, and must
+            // draw on a source that is genuinely predictable.
+            if (
+              looksLikeTokenValue(node.init) &&
+              !isSecureTokenGeneration(node.init) &&
+              usesPredictableSource(node.init)
+            ) {
               // FALSE POSITIVE REDUCTION
               if (safetyChecker.isSafe(node, context) || (node.parent && safetyChecker.isSafe(node.parent, context))) {
                 return;
