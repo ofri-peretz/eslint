@@ -85,7 +85,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Rename to match `<category>:<object>_<verb>` where verb ∈ {click, submit, view, add, remove, start, end, generate, send, cancel, fail, create, delete, update, invite}. Vendor reserved events ($pageview, $set, …) are exempt.',
         documentationLink:
-          'https://github.com/ofri-peretz/eslint/blob/main/ANALYTICS_PHILOSOPHY.md',
+          'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/ANALYTICS_PHILOSOPHY.md',
       }),
       interpolatedEventName: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -95,7 +95,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Move the dynamic part into an event property: track(\'category:object_view\', { slug }).',
         documentationLink:
-          'https://github.com/ofri-peretz/eslint/blob/main/ANALYTICS_PHILOSOPHY.md',
+          'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/ANALYTICS_PHILOSOPHY.md',
       }),
     },
     schema: [],

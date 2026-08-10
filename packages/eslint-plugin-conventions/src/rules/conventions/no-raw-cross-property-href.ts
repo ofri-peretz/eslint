@@ -58,7 +58,7 @@ export const noRawCrossPropertyHref = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Replace with buildUtmHref(\'{{href}}\', { source, medium, campaign, content }).',
         documentationLink:
-          'https://github.com/ofri-peretz/eslint/blob/main/UTM_PHILOSOPHY.md',
+          'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/UTM_PHILOSOPHY.md',
       }),
     },
     schema: [],
