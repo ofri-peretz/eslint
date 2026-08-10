@@ -6,6 +6,52 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import { noPermissiveCors } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -21,7 +67,7 @@ const ruleTester = new RuleTester({
 describe('no-permissive-cors', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - restricted origins', noPermissiveCors, {
-      valid: [
+      valid: xp([
         // CORS with specific origin whitelist
         {
           code: `
@@ -79,7 +125,7 @@ describe('no-permissive-cors', () => {
             app.use(notCors({ origin: '*' }));
           `,
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -87,7 +133,7 @@ describe('no-permissive-cors', () => {
   describe('Invalid Code', () => {
     ruleTester.run('invalid - permissive origins', noPermissiveCors, {
       valid: [],
-      invalid: [
+      invalid: xp([
         // Wildcard origin
         {
           code: `
@@ -128,7 +174,7 @@ describe('no-permissive-cors', () => {
           code: `const corsMiddleware = cors({ origin: '*' });`,
           errors: [{ messageId: 'permissiveCors' }],
         },
-      ],
+      ]),
     });
   });
 });
@@ -137,7 +183,7 @@ describe('no-permissive-cors', () => {
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
 ruleTester.run('no-permissive-cors (coverage wave)', noPermissiveCors, {
-  valid: [
+  valid: xp([
     // app.use(cors(identifier)) — config is not an inline object
     { code: `app.use(cors(corsOptions));` },
     // standalone cors(identifier)
@@ -149,13 +195,13 @@ ruleTester.run('no-permissive-cors (coverage wave)', noPermissiveCors, {
       code: `cors({ origin: 'https://a.com', credentials: true });`,
       options: [{ allowOriginTrue: true }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // credentials: true + origin: true is still flagged even with allowOriginTrue
     {
       code: `cors({ origin: true, credentials: true });`,
       options: [{ allowOriginTrue: true }],
       errors: [{ messageId: 'permissiveCors' }],
     },
-  ],
+  ]),
 });

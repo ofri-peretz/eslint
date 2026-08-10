@@ -45,6 +45,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { isClientRequestMember, readsPrincipal, walk } from '../../utils';
+import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'unscopedResourceLookup';
 
@@ -150,6 +151,12 @@ export const noIdorResourceAccess = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { lookupMethods } = options as Options;
     const lookups = new Set(lookupMethods ?? DEFAULT_LOOKUP_METHODS);
 
