@@ -152,35 +152,39 @@ import { describe, expect, it } from 'vitest';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { checkCookieOptions } from './index';
 
-ruleTester.run('no-insecure-cookie-options (coverage wave)', noInsecureCookieOptions, {
-  valid: [
-    // requireHttpOnly: false — httpOnly check skipped
-    {
-      code: `res.cookie('a', 'b', { secure: true, sameSite: 'strict' });`,
-      options: [{ requireHttpOnly: false }],
-    },
-    // requireSecure: false — secure check skipped
-    {
-      code: `res.cookie('a', 'b', { httpOnly: true, sameSite: 'strict' });`,
-      options: [{ requireSecure: false }],
-    },
-    // requireSameSite: false — sameSite check skipped
-    {
-      code: `res.cookie('a', 'b', { httpOnly: true, secure: true });`,
-      options: [{ requireSameSite: false }],
-    },
-    // options argument is not an object literal
-    { code: `res.cookie('a', 'b', cookieOptions);` },
-  ],
-  invalid: [
-    // custom acceptableSameSiteValues rejects 'lax'
-    {
-      code: `res.cookie('a', 'b', { httpOnly: true, secure: true, sameSite: 'lax' });`,
-      options: [{ acceptableSameSiteValues: ['strict'] }],
-      errors: [{ messageId: 'insecureCookie' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-insecure-cookie-options (coverage wave)',
+  noInsecureCookieOptions,
+  {
+    valid: [
+      // requireHttpOnly: false — httpOnly check skipped
+      {
+        code: `res.cookie('a', 'b', { secure: true, sameSite: 'strict' });`,
+        options: [{ requireHttpOnly: false }],
+      },
+      // requireSecure: false — secure check skipped
+      {
+        code: `res.cookie('a', 'b', { httpOnly: true, sameSite: 'strict' });`,
+        options: [{ requireSecure: false }],
+      },
+      // requireSameSite: false — sameSite check skipped
+      {
+        code: `res.cookie('a', 'b', { httpOnly: true, secure: true });`,
+        options: [{ requireSameSite: false }],
+      },
+      // options argument is not an object literal
+      { code: `res.cookie('a', 'b', cookieOptions);` },
+    ],
+    invalid: [
+      // custom acceptableSameSiteValues rejects 'lax'
+      {
+        code: `res.cookie('a', 'b', { httpOnly: true, secure: true, sameSite: 'lax' });`,
+        options: [{ acceptableSameSiteValues: ['strict'] }],
+        errors: [{ messageId: 'insecureCookie' }],
+      },
+    ],
+  },
+);
 
 // Layer 2: unit tests for the exported checkCookieOptions helper. The rule
 // pipeline always passes fully-merged options, so the acceptableSameSiteValues
@@ -206,7 +210,9 @@ describe('checkCookieOptions (unit)', () => {
       fakeSourceCode("{ httpOnly: true, secure: true, sameSite: 'none' }"),
       {},
     );
-    expect(result.issues).toEqual(["sameSite should be 'strict' or 'lax', not 'none'"]);
+    expect(result.issues).toEqual([
+      "sameSite should be 'strict' or 'lax', not 'none'",
+    ]);
     expect(result.hasSuggestions).toBe(true);
   });
 });

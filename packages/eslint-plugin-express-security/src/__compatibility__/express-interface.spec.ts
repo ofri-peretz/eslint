@@ -189,7 +189,9 @@ describe('Package Metadata', () => {
   it('express has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('express/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 express version: ${pkg.version}`);
     } catch {
@@ -200,7 +202,9 @@ describe('Package Metadata', () => {
   it('helmet has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('helmet/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 helmet version: ${pkg.version}`);
     } catch {
@@ -211,7 +215,9 @@ describe('Package Metadata', () => {
   it('cors has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('cors/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 cors version: ${pkg.version}`);
     } catch {

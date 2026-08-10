@@ -20,7 +20,9 @@ describe('no-client-controlled-authorization', () => {
       valid: [
         // THE safe pattern — the attribute comes from the verified principal
         { code: `if (req.user.role === 'admin') { grant(); }` },
-        { code: `if (req.auth.permissions.includes('billing:write')) { grant(); }` },
+        {
+          code: `if (req.auth.permissions.includes('billing:write')) { grant(); }`,
+        },
         { code: `if (req.session.isAdmin) { grant(); }` },
         // Request input used for anything other than an access decision
         { code: `const role = req.body.role;` },
@@ -39,7 +41,9 @@ describe('no-client-controlled-authorization', () => {
         { code: `if (req.body.email === admin.email) { notify(); }` },
         { code: `if (req.query.page === '1') { first(); }` },
         { code: `if (req.headers['x-request-id']) { trace(); }` },
-        { code: `if (req.headers['content-type'] === 'application/json') { parse(); }` },
+        {
+          code: `if (req.headers['content-type'] === 'application/json') { parse(); }`,
+        },
         // Not a request container
         { code: `if (req.role === 'admin') { grant(); }` },
         { code: `if (payload.body.role === 'admin') { grant(); }` },

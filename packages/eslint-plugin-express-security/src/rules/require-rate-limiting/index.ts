@@ -52,7 +52,7 @@ const RATE_LIMIT_PACKAGES = [
  */
 function isRateLimitMiddleware(
   node: TSESTree.CallExpression,
-  alternatives: string[]
+  alternatives: string[],
 ): boolean {
   const allPatterns = [...RATE_LIMIT_PACKAGES, ...alternatives];
 
@@ -67,8 +67,11 @@ function isRateLimitMiddleware(
 
     // rateLimit identifier without call
     if (arg.type === 'Identifier') {
-      if (allPatterns.some((p) => 
-          arg.name.toLowerCase().includes(p.toLowerCase()))) {
+      if (
+        allPatterns.some((p) =>
+          arg.name.toLowerCase().includes(p.toLowerCase()),
+        )
+      ) {
         return true;
       }
     }
@@ -97,9 +100,8 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         description:
           'Express app created without rate limiting. Vulnerable to DDoS and brute-force attacks.',
         severity: 'HIGH',
-        fix: "Add rate limiting: npm install express-rate-limit; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))",
-        documentationLink:
-          'https://www.npmjs.com/package/express-rate-limit',
+        fix: 'Add rate limiting: npm install express-rate-limit; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))',
+        documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
       }),
       addRateLimiting: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -107,8 +109,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         description: 'Add rate limiting middleware to protect against abuse',
         severity: 'LOW',
         fix: "import rateLimit from 'express-rate-limit'; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));",
-        documentationLink:
-          'https://www.npmjs.com/package/express-rate-limit',
+        documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
       }),
     },
     schema: [
@@ -122,12 +123,14 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
           alternativeMiddleware: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Extra middleware names that count as rate limiting'
+            default: [],
+            description: 'Extra middleware names that count as rate limiting',
           },
           assumeRateLimiting: {
             type: 'boolean',
             default: false,
-            description: 'Skip if rate limiting is provided by infrastructure (API Gateway, nginx, etc.)',
+            description:
+              'Skip if rate limiting is provided by infrastructure (API Gateway, nginx, etc.)',
           },
         },
         additionalProperties: false,
@@ -142,8 +145,11 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { allowInTests = false, alternativeMiddleware = [], assumeRateLimiting = false } =
-      options as Options;
+    const {
+      allowInTests = false,
+      alternativeMiddleware = [],
+      assumeRateLimiting = false,
+    } = options as Options;
 
     // Skip entirely if rate limiting is assumed (provided by infrastructure)
     if (assumeRateLimiting) {
@@ -161,15 +167,40 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     let hasExpressApp = false;
     let hasRateLimiting = false;
     let expressAppNode: TSESTree.CallExpression | null = null;
+    /** The binding `express()` was assigned to, so we can see where it travels. */
+    let appBinding: string | null = null;
+    /**
+     * The app was handed to another function, so the middleware stack is
+     * assembled somewhere this rule cannot see — see the same guard in
+     * require-helmet. Measured on ToniR7/express-typescript-starter, which
+     * registers its rate limiter in `utils/appInitialization.ts` and was
+     * reported anyway.
+     */
+    let appEscapes = false;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
+        // `setAppConfigurations(app)` — the app leaves this file.
+        if (appBinding !== null) {
+          for (const arg of node.arguments) {
+            if (arg.type === 'Identifier' && arg.name === appBinding) {
+              appEscapes = true;
+            }
+          }
+        }
+
         // Check for express() app creation
         if (callee.type === 'Identifier' && callee.name === 'express') {
           hasExpressApp = true;
           expressAppNode = node;
+          if (
+            node.parent?.type === 'VariableDeclarator' &&
+            node.parent.id.type === 'Identifier'
+          ) {
+            appBinding = node.parent.id.name;
+          }
           return;
         }
 
@@ -186,7 +217,12 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
       },
 
       'Program:exit'() {
-        if (hasExpressApp && !hasRateLimiting && expressAppNode) {
+        if (
+          hasExpressApp &&
+          !hasRateLimiting &&
+          !appEscapes &&
+          expressAppNode
+        ) {
           context.report({
             node: expressAppNode,
             messageId: 'missingRateLimiting',

@@ -42,10 +42,7 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'hstsDisabled'
-  | 'maxAgeTooShort'
-  | 'subdomainsExcluded'
-  | 'raiseMaxAge';
+  'hstsDisabled' | 'maxAgeTooShort' | 'subdomainsExcluded' | 'raiseMaxAge';
 
 export interface Options {
   /**
@@ -91,7 +88,9 @@ function isHelmetHstsFactory(node: TSESTree.CallExpression): boolean {
   if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
   if (callee.computed) return false;
   if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
-  return callee.object.name === 'helmet' && HSTS_NAMES.has(callee.property.name);
+  return (
+    callee.object.name === 'helmet' && HSTS_NAMES.has(callee.property.name)
+  );
 }
 
 /** `helmet(...)` — the top-level middleware factory. */
@@ -195,7 +194,10 @@ export const requireStrictTransportSecurity = createRule<
           context.report({
             node: prop,
             messageId: 'maxAgeTooShort',
-            data: { maxAge: String(maxAgeNode.value), minimum: String(minimum) },
+            data: {
+              maxAge: String(maxAgeNode.value),
+              minimum: String(minimum),
+            },
             suggest: [
               {
                 messageId: 'raiseMaxAge',
@@ -225,10 +227,7 @@ export const requireStrictTransportSecurity = createRule<
       value: TSESTree.Node,
       option: string,
     ): void {
-      if (
-        value.type === AST_NODE_TYPES.Literal &&
-        value.value === false
-      ) {
+      if (value.type === AST_NODE_TYPES.Literal && value.value === false) {
         context.report({ node, messageId: 'hstsDisabled', data: { option } });
         return;
       }

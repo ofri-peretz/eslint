@@ -68,7 +68,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'POST route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -86,12 +87,14 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'POST route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.post("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
                   messageId: 'addCsrfValidation',
-                  output: 'router.post("/api/users", csrf(), (req, res) => {});',
+                  output:
+                    'router.post("/api/users", csrf(), (req, res) => {});',
                 },
               ],
             },
@@ -110,7 +113,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'PUT route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.put("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.put("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -134,7 +138,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'DELETE route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.delete("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.delete("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -158,7 +163,8 @@ describe('no-missing-csrf-protection', () => {
               messageId: 'missingCsrfProtection',
               data: {
                 issue: 'PATCH route handler missing CSRF protection',
-                safeAlternative: 'Add CSRF middleware: app.patch("/path", csrf(), handler) or use app.use(csrf()) globally',
+                safeAlternative:
+                  'Add CSRF middleware: app.patch("/path", csrf(), handler) or use app.use(csrf()) globally',
               },
               suggestions: [
                 {
@@ -200,75 +206,95 @@ describe('no-missing-csrf-protection', () => {
       invalid: [],
     });
 
-    ruleTester.run('options - custom protected methods', noMissingCsrfProtection, {
-      valid: [
-        {
-          code: 'app.options("/api/users", handler);', // OPTIONS not protected by default
-        },
-      ],
-      invalid: [
-        {
-          code: 'app.options("/api/users", handler);',
-          options: [{ protectedMethods: ['options'] }],
-          errors: [{ 
-            messageId: 'missingCsrfProtection',
-            suggestions: [{ messageId: 'addCsrfValidation', output: 'app.options("/api/users", csrf(), handler);' }],
-          }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'options - custom protected methods',
+      noMissingCsrfProtection,
+      {
+        valid: [
+          {
+            code: 'app.options("/api/users", handler);', // OPTIONS not protected by default
+          },
+        ],
+        invalid: [
+          {
+            code: 'app.options("/api/users", handler);',
+            options: [{ protectedMethods: ['options'] }],
+            errors: [
+              {
+                messageId: 'missingCsrfProtection',
+                suggestions: [
+                  {
+                    messageId: 'addCsrfValidation',
+                    output: 'app.options("/api/users", csrf(), handler);',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 });
-
 
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
-ruleTester.run('no-missing-csrf-protection (coverage wave)', noMissingCsrfProtection, {
-  valid: [
-    // fewer than two arguments — not a route registration
-    { code: `app.post('/incomplete');` },
-    // invalid regex ignore pattern falls back to substring matching (matches '(')
-    { code: `app.post('/a', handler);`, options: [{ ignorePatterns: ['('] }] },
-    // custom csrfMiddlewarePatterns recognized in the chain
-    {
-      code: `app.post('/x', mycsrfCheck, handler);`,
-      options: [{ csrfMiddlewarePatterns: ['mycsrf'] }],
-    },
-    // custom protectedMethods — GET not protected
-    { code: `app.get('/read', handler);`, options: [{ protectedMethods: ['post'] }] },
-  ],
-  invalid: [
-    // invalid regex ignore pattern that does not match as a substring either
-    {
-      code: `app.post('/b', handler);`,
-      options: [{ ignorePatterns: ['[zz'] }],
-      errors: [
-        {
-          messageId: 'missingCsrfProtection',
-          suggestions: [
-            {
-              messageId: 'addCsrfValidation',
-              output: `app.post('/b', csrf(), handler);`,
-            },
-          ],
-        },
-      ],
-    },
-    // suggestion inserts csrf() after the path argument
-    {
-      code: `app.post('/transfer', handler);`,
-      errors: [
-        {
-          messageId: 'missingCsrfProtection',
-          suggestions: [
-            {
-              messageId: 'addCsrfValidation',
-              output: `app.post('/transfer', csrf(), handler);`,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-});
+ruleTester.run(
+  'no-missing-csrf-protection (coverage wave)',
+  noMissingCsrfProtection,
+  {
+    valid: [
+      // fewer than two arguments — not a route registration
+      { code: `app.post('/incomplete');` },
+      // invalid regex ignore pattern falls back to substring matching (matches '(')
+      {
+        code: `app.post('/a', handler);`,
+        options: [{ ignorePatterns: ['('] }],
+      },
+      // custom csrfMiddlewarePatterns recognized in the chain
+      {
+        code: `app.post('/x', mycsrfCheck, handler);`,
+        options: [{ csrfMiddlewarePatterns: ['mycsrf'] }],
+      },
+      // custom protectedMethods — GET not protected
+      {
+        code: `app.get('/read', handler);`,
+        options: [{ protectedMethods: ['post'] }],
+      },
+    ],
+    invalid: [
+      // invalid regex ignore pattern that does not match as a substring either
+      {
+        code: `app.post('/b', handler);`,
+        options: [{ ignorePatterns: ['[zz'] }],
+        errors: [
+          {
+            messageId: 'missingCsrfProtection',
+            suggestions: [
+              {
+                messageId: 'addCsrfValidation',
+                output: `app.post('/b', csrf(), handler);`,
+              },
+            ],
+          },
+        ],
+      },
+      // suggestion inserts csrf() after the path argument
+      {
+        code: `app.post('/transfer', handler);`,
+        errors: [
+          {
+            messageId: 'missingCsrfProtection',
+            suggestions: [
+              {
+                messageId: 'addCsrfValidation',
+                output: `app.post('/transfer', csrf(), handler);`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);
