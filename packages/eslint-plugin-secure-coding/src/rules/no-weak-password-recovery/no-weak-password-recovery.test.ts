@@ -345,6 +345,16 @@ describe('no-weak-password-recovery', () => {
       functionDeclaration({
         type: 'FunctionDeclaration',
         id: { type: 'Identifier', name: 'handlePasswordReset' },
+        // A body with real statements: a function whose whole body is a single
+        // `return` is a declaration (a decorator factory, a selector) and is
+        // deliberately skipped, so the mock has to look like a handler.
+        body: {
+          type: 'BlockStatement',
+          body: [
+            { type: 'ExpressionStatement', expression: { type: 'CallExpression', callee: { type: 'Identifier', name: 'resetPassword' }, arguments: [] } },
+            { type: 'ExpressionStatement', expression: { type: 'CallExpression', callee: { type: 'Identifier', name: 'send' }, arguments: [] } },
+          ],
+        },
       });
 
       expect(reports).toHaveLength(2);
@@ -457,6 +467,46 @@ describe('corpus regression — predictability must be shown, not assumed', () =
         name: 'bare v1() import',
         code: `const resetPasswordToken = v1();`,
         errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Wild-corpus regression: a recovery-shaped *name* on a declaration.
+ *
+ * `isRecoveryRelated` was applied to function names alone — a deliberate
+ * narrowing, per the comment above it, to stop every function containing the
+ * word "password" from reporting. It swapped one false positive for another:
+ * ack-nestjs-boilerplate's `UserPublicForgotPasswordDoc()` and
+ * `UserPublicResetPasswordDoc()` are Swagger documentation decorators, and
+ * four findings told a doc generator to add token expiry and rate limiting.
+ *
+ * A function whose entire body is one `return <expression>` produces a value
+ * rather than performing a flow, so there is no recovery step in it to secure.
+ */
+describe('corpus regression — declarations are not recovery flows', () => {
+  ruleTester.run('declaration-only functions', noWeakPasswordRecovery, {
+    valid: [
+      {
+        name: 'swagger doc decorator factory',
+        code: `export function UserPublicForgotPasswordDoc() { return applyDecorators(Doc({ summary: 'forgot' })); }`,
+      },
+      {
+        name: 'reset doc decorator factory',
+        code: `export function UserPublicResetPasswordDoc() { return applyDecorators(Doc({ summary: 'reset' })); }`,
+      },
+
+    ],
+    invalid: [
+      // A real handler still reports both.
+      {
+        name: 'handler with no expiry or rate limit',
+        code: `async function forgotPassword(req, res) { const t = await mint(req.body.email); await mail(t); res.end(); }`,
+        errors: [
+          { messageId: 'missingTokenExpiration' },
+          { messageId: 'missingRateLimit' },
+        ],
       },
     ],
   });

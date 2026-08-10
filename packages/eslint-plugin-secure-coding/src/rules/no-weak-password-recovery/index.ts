@@ -366,6 +366,16 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * A function whose whole body is one `return <expression>` produces a
+     * value rather than performing a flow — a decorator factory, a selector, a
+     * config builder. There is no recovery step in it to secure.
+     */
+    const isDeclarationOnly = (fn: TSESTree.FunctionDeclaration): boolean =>
+      // Only reached from the FunctionDeclaration visitor, whose body is
+      // always a BlockStatement — a concise-body check here would be dead.
+      fn.body.body.length === 1 && fn.body.body[0]?.type === 'ReturnStatement';
+
+    /**
      * Check if token has expiration
      */
     const hasTokenExpiration = (functionNode: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression): boolean => {
@@ -447,7 +457,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
 
         // IMPORTANT: Only check the function NAME, not the entire body
         // This prevents flagging every function that happens to contain "password"
-        if (isRecoveryRelated(functionName)) {
+        //
+        // Name alone is not enough either. `UserPublicForgotPasswordDoc()` and
+        // `UserPublicResetPasswordDoc()` in ack-nestjs-boilerplate are Swagger
+        // *documentation* decorators — four findings between them, telling a
+        // doc generator to add token expiry and rate limiting. A function whose
+        // entire body is a single `return applyDecorators(...)` implements no
+        // recovery flow; a real handler has statements that do work.
+        if (isRecoveryRelated(functionName) && !isDeclarationOnly(node)) {
           // Check for token expiration
           if (!hasTokenExpiration(node)) {
             if (safetyChecker.isSafe(node, context)) {

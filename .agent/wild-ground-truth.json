@@ -4,7 +4,7 @@
   "corpus": "13 repositories, all 1K+ stars, recommended presets only",
   "generatedAt": "2026-08-09",
   "totals": {
-    "findings": 293,
+    "findings": 282,
     "classes": 44,
     "labelled": 14,
     "unlabelled": 30
@@ -111,9 +111,9 @@
     },
     {
       "id": "secure-coding/no-weak-password-recovery::other",
-      "count": 12,
+      "count": 1,
       "verdict": "FP",
-      "reason": "Fires on correct password-recovery implementations, keyed off the function name. node-express-boilerplate/controllers/auth.controller.js:28 is `const forgotPassword = catchAsync(async (req, res) => {...})` whose body generates a single-use token via tokenService and emails it \u2014 the recommended flow. Same name-as-evidence defect fixed in no-unchecked-loop-condition.",
+      "reason": "12 -> 1. Two root causes, both name-as-evidence. (a) Any recovery-named variable whose initializer did not textually contain one of four hardcoded generator names was 'predictable', so `const forgotPassword = catchAsync(...)` (a route handler) and `generateToken(...)` (an opaque project helper) both reported; predictability must now be shown \u2014 Math.random, Date.now, new Date().getTime, time-based uuid v1. (b) Function-level checks matched the function NAME alone, so ack-nestjs-boilerplate's Swagger decorators UserPublicForgotPasswordDoc/UserPublicResetPasswordDoc drew four findings telling a doc generator to add token expiry and rate limiting; a function whose whole body is one `return` performs no recovery flow. One finding remains: weakRecoveryVerification on `if (!resetPasswordEmail)` in a seed template, a null guard.",
       "samples": [
         "node-express-boilerplate/src/controllers/auth.controller.js:28",
         "node-express-boilerplate/src/controllers/auth.controller.js:34",
