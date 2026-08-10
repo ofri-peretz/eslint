@@ -154,6 +154,22 @@ describe('fileIsLambda', () => {
       expect(isLambda(code)).toBe(false);
     });
 
+    // The regression a file-wide flag caused: a real `require('aws-sdk')` at module
+    // scope must survive an unrelated inner binding. Silencing all fourteen rules
+    // there trades a false positive for a false negative — the worse of the two.
+    it('an unshadowed require survives a shadowing binding elsewhere', () => {
+      expect(isLambda("const c = require('aws-sdk');\nfunction wrapper(require) {}")).toBe(true);
+      expect(isLambda("function wrapper(require) {}\nconst c = require('aws-sdk');")).toBe(true);
+      expect(
+        isLambda("function outer() { const c = require('aws-sdk'); }\nfunction w(require) {}"),
+      ).toBe(true);
+    });
+
+    it('shadowing applies only inside the scope that binds it', () => {
+      expect(isLambda("function f(require) { require('aws-sdk'); }")).toBe(false);
+      expect(isLambda("{ const require = (m) => m; require('aws-sdk'); }")).toBe(false);
+    });
+
     it('the other arms still apply when `require` is shadowed', () => {
       expect(
         isLambda("import type { H } from 'aws-lambda';\nfunction f(require) { require('aws-sdk'); }"),
