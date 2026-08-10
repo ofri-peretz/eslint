@@ -75,6 +75,26 @@ jobs:
     # nothing here is rushed into a misleading fast number.
     timeout-minutes: 90
 
+    env:
+      # THE corpus. One list, read by the clone step and by the preflight that
+      # validates what we are about to benchmark — because the defect this
+      # replaced was two lists that had to agree with nothing linking them:
+      # the clones were pinned to the flagship manifest, ILB-Headline
+      # benchmarks nestjs, no manifest cites nestjs, so it was never cloned.
+      # Anything benchmarked must appear here.
+      CORPUS: |
+        next.js   https://github.com/vercel/next.js.git
+        supabase  https://github.com/supabase/supabase.git
+        lodash    https://github.com/lodash/lodash.git
+        shadcn-ui https://github.com/shadcn-ui/ui.git
+        payload   https://github.com/payloadcms/payload.git
+        vercel-ai https://github.com/vercel/ai.git
+        nestjs    https://github.com/nestjs/nest.git
+      # Both headline runs, as one list to validate against CORPUS. The second
+      # is hardcoded to shadcn-ui in its step; keep them in step.
+      HEADLINE_REPO: ${{ github.event.inputs.headline_repo || 'nestjs' }}
+      FRONTEND_REPO: shadcn-ui
+
     steps:
       # Pages is a single production surface and the commit step writes to
       # main, so a dispatch from a feature branch would publish that branch's
@@ -98,14 +118,37 @@ jobs:
       #
       # Pinned to the same repos the manifest references. A cache keeps the
       # weekly run from re-cloning ~5 large repos every Monday.
+      # Cheapest possible failure: no checkout of a corpus, no clone, no build.
+      # Runs BEFORE the cache and clone steps so a workflow_dispatch naming a
+      # repo nobody clones costs seconds rather than six shallow clones of
+      # multi-hundred-MB repositories.
+      - name: Preflight — every benchmarked repo is declared in CORPUS
+        run: |
+          set -euo pipefail
+          missing=""
+          for r in "$HEADLINE_REPO" "$FRONTEND_REPO"; do
+            printf '%s\n' "$CORPUS" | awk '{print $1}' | grep -qx "$r" || missing="$missing $r"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Benchmarked repo(s) not declared in CORPUS:$missing. Add \"<name> <clone-url>\" to the CORPUS env at the top of this job — otherwise ILB-Headline exits 2 and no badge is rendered."
+            exit 1
+          fi
+          echo "✅ Every benchmarked repo is declared in CORPUS."
+
+      # v2: the key must change when CORPUS changes, or an exact-key hit
+      # restores a corpus missing the repo that was just added and Actions
+      # never updates an existing entry — so it would be re-cloned on every
+      # single run, forever. Hashing this workflow file covers that: CORPUS
+      # lives in it. `restore-keys` still gives a warm partial restore, and the
+      # clone step refreshes what it finds.
       - name: Restore OOS corpus cache
         id: oos-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: oos
-          key: oos-corpus-v1-${{ hashFiles('benchmarks/suites/ilb-flagship/manifest.json') }}
+          key: oos-corpus-v2-${{ hashFiles('benchmarks/suites/ilb-flagship/manifest.json', '.github/workflows/weekly-benchmark.yml') }}
           restore-keys: |
-            oos-corpus-v1-
+            oos-corpus-v2-
 
       - name: Shallow-clone OOS corpus
         run: |
@@ -126,42 +169,31 @@ jobs:
             echo "::endgroup::"
           }
           : > oos/COMMITS.txt
-          # The six the flagship manifest cites...
-          clone next.js   https://github.com/vercel/next.js.git
-          clone supabase  https://github.com/supabase/supabase.git
-          clone lodash    https://github.com/lodash/lodash.git
-          clone shadcn-ui https://github.com/shadcn-ui/ui.git
-          clone payload   https://github.com/payloadcms/payload.git
-          clone vercel-ai https://github.com/vercel/ai.git
-          # ...plus the headline suite's Node corpus, which no manifest
-          # references. ILB-Headline defaults to --repo=nestjs and this list was
-          # pinned to the flagship manifest alone, so nestjs was never cloned.
-          # It went unnoticed while three.js was here: the headline default was
-          # three.js, #454 removed it as a corpus we must not publish, and the
-          # very next cron died with `Repo not found: oos/nestjs` before
-          # rendering a single badge.
-          clone nestjs    https://github.com/nestjs/nest.git
+          printf '%s\n' "$CORPUS" | while read -r name url; do
+            [ -n "$name" ] || continue
+            clone "$name" "$url"
+          done
           echo "--- corpus commits ---"
           cat oos/COMMITS.txt
 
-      # Two lists that must agree — the clones above and the --repo arguments
-      # below — with nothing linking them. Assert here rather than discovering
-      # it 4 minutes into a build: the failure above was loud, but it surfaced
-      # only after cloning six large repos and building 31 packages.
-      - name: Verify every benchmarked repo is in the corpus
-        env:
-          HEADLINE_REPO: ${{ github.event.inputs.headline_repo || 'nestjs' }}
+      # A directory is not a checkout. `actions/cache` can restore a truncated
+      # or partially-written `oos/<repo>`, and the clone helper treats any
+      # existing path as cached — so a repo with no resolvable HEAD is scanned
+      # as though it were pinned, and whatever it happens to contain is
+      # published as a measurement. Resolve HEAD rather than test -d.
+      - name: Verify the benchmarked repos are real, pinned checkouts
         run: |
           set -euo pipefail
-          missing=""
-          for r in "$HEADLINE_REPO" shadcn-ui; do
-            [ -d "oos/$r" ] || missing="$missing $r"
+          bad=""
+          for r in "$HEADLINE_REPO" "$FRONTEND_REPO"; do
+            sha=$(git -C "oos/$r" rev-parse HEAD 2>/dev/null || true)
+            if [ -z "$sha" ]; then bad="$bad $r"; else echo "  $r @ $sha"; fi
           done
-          if [ -n "$missing" ]; then
-            echo "::error::Benchmarked repo(s) not in the corpus:$missing. Add a \`clone\` line for each in the step above — otherwise ILB-Headline exits 2 and no badge is rendered."
+          if [ -n "$bad" ]; then
+            echo "::error::Corpus path(s) with no resolvable git HEAD:$bad. A restored-but-broken checkout would be benchmarked as if pinned and published as a real measurement. Refusing to measure."
             exit 1
           fi
-          echo "✅ Every benchmarked repo is present in the corpus."
+          echo "✅ Every benchmarked repo is a pinned checkout."
 
       # Our plugins must be BUILT before benching: the oxlint JS-plugin shims
       # and the per-job configs load from each package's dist/. On a clean
