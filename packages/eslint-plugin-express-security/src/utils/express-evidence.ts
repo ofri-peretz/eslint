@@ -24,7 +24,26 @@ const EXPRESS_PACKAGES: ReadonlySet<string> = new Set([
 const REQ_NAMES: ReadonlySet<string> = new Set(['req', 'request']);
 const RES_NAMES: ReadonlySet<string> = new Set(['res', 'response']);
 
+/**
+ * Strip the module-resolution prefixes Deno adds, so a Deno/Supabase Edge
+ * Function is judged on the package it actually loads.
+ *
+ * `npm:@aws-sdk/client-s3` and
+ * `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports
+ * written in Deno's specifier syntax. Both were silenced by every gate in the
+ * ecosystem until the false-negative audit found them in
+ * supabase/examples/**: the prefix made the specifier unrecognisable and the
+ * whole plugin abstained on real SDK code.
+ */
+function normalizeSpecifier(specifier: string): string {
+  if (specifier.startsWith('npm:')) return specifier.slice(4);
+  const deno = /^https?:\/\/deno\.land\/x\/([^@/]+)/.exec(specifier);
+  if (deno) return deno[1];
+  return specifier;
+}
+
 function isExpressSpecifier(specifier: string): boolean {
+  specifier = normalizeSpecifier(specifier);
   if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
   const parts = specifier.split('/');
   const root = specifier.startsWith('@')
@@ -32,6 +51,26 @@ function isExpressSpecifier(specifier: string): boolean {
     : parts[0];
   return EXPRESS_PACKAGES.has(root);
 }
+
+/**
+ * `import express = require('express')` — TypeScript's import-equals form.
+ *
+ * Not a `CallExpression`: the AST is a `TSImportEqualsDeclaration` whose
+ * `moduleReference` is a `TSExternalModuleReference` wrapping the literal, so
+ * the `require`-call arm never sees it. The false-negative audit found **82
+ * corpus files** written this way for Express alone — DefinitelyTyped uses it
+ * for nearly every CommonJS type test — with every rule in the plugin silenced.
+ */
+function isImportEqualsLoad(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
+    node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference &&
+    node.moduleReference.expression.type === AST_NODE_TYPES.Literal &&
+    typeof node.moduleReference.expression.value === 'string' &&
+    isExpressSpecifier(node.moduleReference.expression.value)
+  );
+}
+
 
 /**
  * Whether a scope-introducing node binds the name `require`.
@@ -179,6 +218,7 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
       return;
     }
     if (
+      isImportEqualsLoad(node) ||
       isExpressDynamicLoad(node, requireIsShadowed) ||
       hasMiddlewareSignature(node)
     ) {
