@@ -5,6 +5,49 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noGraphqlIntrospectionProduction } from './index';
 import * as vitest from 'vitest';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -21,7 +64,7 @@ ruleTester.run(
   'no-graphql-introspection-production',
   noGraphqlIntrospectionProduction,
   {
-    valid: [
+    valid: xp([
       // Introspection disabled
       {
         code: `
@@ -81,8 +124,8 @@ ruleTester.run(
         options: [{ allowInTests: true }],
         filename: 'server.test.ts',
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Introspection explicitly enabled
       {
         code: `
@@ -112,7 +155,7 @@ ruleTester.run(
           },
         ],
       },
-    ],
+    ]),
   },
 );
 
@@ -123,7 +166,7 @@ ruleTester.run(
   'no-graphql-introspection-production (coverage wave)',
   noGraphqlIntrospectionProduction,
   {
-    valid: [
+    valid: xp([
       // graphqlHTTP with no config argument
       { code: `graphqlHTTP();` },
       // graphqlHTTP with a non-object config
@@ -146,8 +189,8 @@ ruleTester.run(
       { code: `new foo.Bar()();` },
       // production guard via isProduction naming
       { code: `new ApolloServer({ introspection: !isProduction });` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // plain createServer() call with introspection enabled
       {
         code: `createServer({ introspection: true });`,
@@ -163,6 +206,6 @@ ruleTester.run(
         code: `graphqlHTTP({ introspection: true });`,
         errors: [{ messageId: 'graphqlIntrospection' }],
       },
-    ],
+    ]),
   },
 );

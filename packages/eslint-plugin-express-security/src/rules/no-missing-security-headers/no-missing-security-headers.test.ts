@@ -7,6 +7,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noMissingSecurityHeaders } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -23,7 +66,7 @@ const ruleTester = new RuleTester({
 describe('no-missing-security-headers', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - security headers set', noMissingSecurityHeaders, {
-      valid: [
+      valid: xp([
         // All required headers
         {
           code: `
@@ -38,7 +81,7 @@ describe('no-missing-security-headers', () => {
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -46,7 +89,7 @@ describe('no-missing-security-headers', () => {
   describe('Invalid Code - Missing Security Headers', () => {
     ruleTester.run('invalid - missing headers', noMissingSecurityHeaders, {
       valid: [],
-      invalid: [
+      invalid: xp([
         {
           code: 'res.setHeader("X-Custom", "value");',
           errors: [{ messageId: 'missingSecurityHeader' }],
@@ -55,43 +98,43 @@ describe('no-missing-security-headers', () => {
           code: 'res.setHeader("Content-Security-Policy", "default-src self");',
           errors: [{ messageId: 'missingSecurityHeader' }], // Missing other headers
         },
-      ],
+      ]),
     });
   });
 
   describe('Options', () => {
     ruleTester.run('options - ignoreInTests', noMissingSecurityHeaders, {
-      valid: [
+      valid: xp([
         {
           code: 'res.setHeader("X-Custom", "value");',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: 'res.setHeader("X-Custom", "value");',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: false }],
           errors: [{ messageId: 'missingSecurityHeader' }],
         },
-      ],
+      ]),
     });
 
     ruleTester.run('options - requiredHeaders', noMissingSecurityHeaders, {
-      valid: [
+      valid: xp([
         {
           code: 'res.setHeader("Custom-Header", "value");',
           options: [{ requiredHeaders: ['Custom-Header'] }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: 'res.setHeader("Other-Header", "value");',
           options: [{ requiredHeaders: ['Custom-Header'] }],
           errors: [{ messageId: 'missingSecurityHeader' }],
         },
-      ],
+      ]),
     });
   });
 });
@@ -103,7 +146,7 @@ ruleTester.run(
   'no-missing-security-headers (coverage wave)',
   noMissingSecurityHeaders,
   {
-    valid: [
+    valid: xp([
       // bare call — callee is not a member expression
       { code: `setHeader('X-Frame-Options', 'DENY');` },
       // member method that is not a header setter
@@ -118,8 +161,8 @@ ruleTester.run(
         }
       `,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // res.set() without arguments — header name is unknown, all headers missing
       { code: `res.set();`, errors: [{ messageId: 'missingSecurityHeader' }] },
       // dynamic header name cannot be tracked
@@ -146,7 +189,7 @@ ruleTester.run(
         code: `app.get('/a', (req, res) => { res.setHeader('X-Frame-Options', 'DENY'); });`,
         errors: [{ messageId: 'missingSecurityHeader' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -159,7 +202,7 @@ ruleTester.run(
   'no-missing-security-headers (callee must be a response)',
   noMissingSecurityHeaders,
   {
-    valid: [
+    valid: xp([
       // the reported false positives
       { code: `url.searchParams.set('page', '2');` },
       { code: `app.set('view engine', 'ejs');` },
@@ -186,8 +229,8 @@ ruleTester.run(
       // a non-header header name collected from a non-response receiver must not
       // satisfy the requirement — no response call here at all, so no report
       { code: `myMap.set('Content-Security-Policy', 'x');` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // response aliases are still checked
       {
         code: `reply.header('X-Frame-Options', 'DENY');`,
@@ -213,6 +256,6 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'missingSecurityHeader' }],
       },
-    ],
+    ]),
   },
 );

@@ -3,6 +3,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noSensitiveDataInQuery } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +57,7 @@ const ruleTester = new RuleTester({
 
 describe('no-sensitive-data-in-query', () => {
   ruleTester.run('no-sensitive-data-in-query', noSensitiveDataInQuery, {
-    valid: [
+    valid: xp([
       // Benchmark corpus: CWE-598/safe/login-via-body-post.js (FP-lock)
       {
         code: `
@@ -85,8 +128,8 @@ module.exports = app;
       // Computed query access is not resolvable (documented false negative)
       { code: `const z = req.query[key];` },
       { code: `const w = req['query'].password;` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Benchmark corpus: CWE-598/vulnerable/login-via-query.js
       {
         code: `
@@ -229,7 +272,7 @@ module.exports = app;
         code: `const t = req.query._token;`,
         errors: [{ messageId: 'sensitiveQueryParam' }],
       },
-    ],
+    ]),
   });
 });
 
@@ -240,7 +283,7 @@ ruleTester.run(
   'no-sensitive-data-in-query (coverage wave)',
   noSensitiveDataInQuery,
   {
-    valid: [
+    valid: xp([
       // VariableDeclarator: id is a plain identifier (not a pattern)
       { code: `const q = req.query;` },
       // VariableDeclarator: array pattern
@@ -269,8 +312,8 @@ ruleTester.run(
       {
         code: `class C { #query = {}; check(req) { return req.#query.password; } }`,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Sensitive read used as a call argument (expression position)
       {
         code: `lookup(req.query.card);`,
@@ -283,6 +326,6 @@ ruleTester.run(
           { messageId: 'sensitiveQueryParam', data: { name: 'serviceApiKey' } },
         ],
       },
-    ],
+    ]),
   },
 );

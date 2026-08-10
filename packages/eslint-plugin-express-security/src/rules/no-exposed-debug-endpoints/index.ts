@@ -14,6 +14,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'violationDetected';
 
@@ -91,6 +92,12 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const options = context.options[0] || {};
     const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
     const ignoreFiles = options.ignoreFiles || [];

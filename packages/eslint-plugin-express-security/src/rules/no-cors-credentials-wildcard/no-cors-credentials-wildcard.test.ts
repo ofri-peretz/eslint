@@ -2,6 +2,49 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import * as vitest from 'vitest';
 import { noCorsCredentialsWildcard } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -15,7 +58,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
-  valid: [
+  valid: xp([
     // Safe: explicit origin with credentials
     {
       code: `
@@ -66,8 +109,8 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
         app.use(helmet());
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // Critical: wildcard origin with credentials: true
     {
       code: `
@@ -118,7 +161,7 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
       `,
       errors: [{ messageId: 'credentialsWildcard' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -128,7 +171,7 @@ ruleTester.run(
   'no-cors-credentials-wildcard (coverage wave)',
   noCorsCredentialsWildcard,
   {
-    valid: [
+    valid: xp([
       // cors() with no arguments — nothing to inspect
       { code: `cors();` },
       // cors(identifier) — config is not an inline object literal
@@ -147,8 +190,8 @@ ruleTester.run(
       {
         code: `app.use(cors({ origin: 'https://a.com', credentials: true }));`,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // allowInTests: true but NON-test filename — still reported
       {
         code: `app.use(cors({ origin: '*', credentials: true }));`,
@@ -161,6 +204,6 @@ ruleTester.run(
         code: `cors({ origin: true, credentials: true });`,
         errors: [{ messageId: 'credentialsWildcard' }],
       },
-    ],
+    ]),
   },
 );

@@ -3,6 +3,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUserControlledRenderLocals } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -17,7 +60,7 @@ describe('no-user-controlled-render-locals', () => {
     'no-user-controlled-render-locals',
     noUserControlledRenderLocals,
     {
-      valid: [
+      valid: xp([
         // Static locals — always safe
         { code: `res.render('home');` },
         { code: `res.render('home', { title: 'Welcome' });` },
@@ -88,8 +131,8 @@ describe('no-user-controlled-render-locals', () => {
         // Static view names
         { code: `res.render('pages/' + page);` },
         { code: 'res.render(`pages/${page}`);' },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         // Corpus fixture (verbatim): CWE-073/vulnerable/render-body-spread.js
         {
           code: `
@@ -306,7 +349,7 @@ describe('no-user-controlled-render-locals', () => {
             { messageId: 'unsafeRenderLocals', data: { source: 'req.query' } },
           ],
         },
-      ],
+      ]),
     },
   );
 });
@@ -318,7 +361,7 @@ ruleTester.run(
   'no-user-controlled-render-locals (coverage wave)',
   noUserControlledRenderLocals,
   {
-    valid: [
+    valid: xp([
       // REGRESSION: a name-keyed tracking map leaked the first handler's origin
       // into the second, flagging a `locals` that was never user-controlled.
       {
@@ -395,8 +438,8 @@ ruleTester.run(
       `,
         options: [{ allowSanitizers: ['pick'] }],
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // sanitizer-callee scan: callee is itself a CallExpression → not a sanitizer
       {
         code: `res.render('v', factory()(req.body));`,
@@ -522,6 +565,6 @@ ruleTester.run(
           { messageId: 'unsafeRenderLocals', data: { source: 'req.query' } },
         ],
       },
-    ],
+    ]),
   },
 );

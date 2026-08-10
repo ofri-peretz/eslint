@@ -10,6 +10,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { requireCaseInsensitivePathGuard } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -24,7 +67,7 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
     'require-case-insensitive-path-guard (branch coverage)',
     requireCaseInsensitivePathGuard,
     {
-      valid: [
+      valid: xp([
         // Bare call — callee is not a member expression
         { code: `startsWith('/admin');` },
         // Computed guard method — property is not an Identifier
@@ -51,8 +94,8 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
         { code: `if (5 === req.path) deny();` },
         // Path on both sides — no string literal to compare against
         { code: `if (req.path === req.url) deny();` },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         // request alias through the equality path (isRequestIdent 'request')
         {
           code: `if (request.url === '/api/private') deny();`,
@@ -68,7 +111,7 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
             },
           ],
         },
-      ],
+      ]),
     },
   );
 });

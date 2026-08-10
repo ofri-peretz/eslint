@@ -3,6 +3,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { requireCaseInsensitivePathGuard } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -17,7 +60,7 @@ describe('require-case-insensitive-path-guard', () => {
     'require-case-insensitive-path-guard',
     requireCaseInsensitivePathGuard,
     {
-      valid: [
+      valid: xp([
         // Normalized before comparing — the canonical safe pattern
         { code: `if (req.path.toLowerCase().startsWith('/admin')) deny();` },
         { code: `if (req.url.toUpperCase() === '/ADMIN') deny();` },
@@ -72,8 +115,8 @@ app.get(/^\\/admin\\/users$/i, async (req, res) => {
 module.exports = app;
         `,
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         // REGRESSION: manual `'...'` quoting emitted invalid JS when the
         // rewritten literal itself contained a quote.
         {
@@ -356,7 +399,7 @@ module.exports = app;
             },
           ],
         },
-      ],
+      ]),
     },
   );
 
@@ -365,14 +408,14 @@ module.exports = app;
     'require-case-insensitive-path-guard (protectedPaths option)',
     requireCaseInsensitivePathGuard,
     {
-      valid: [
+      valid: xp([
         // '/admin' no longer protected once the set is replaced
         {
           code: `if (req.path.startsWith('/admin')) deny();`,
           options: [{ protectedPaths: ['secret'] }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: `if (req.path.startsWith('/secret')) deny();`,
           options: [{ protectedPaths: ['secret'] }],
@@ -388,7 +431,7 @@ module.exports = app;
             },
           ],
         },
-      ],
+      ]),
     },
   );
 
@@ -397,7 +440,7 @@ module.exports = app;
     'require-case-insensitive-path-guard (checkAllPaths option)',
     requireCaseInsensitivePathGuard,
     {
-      valid: [
+      valid: xp([
         // Normalized guards stay valid even with checkAllPaths
         {
           code: `if (req.path.toLowerCase().startsWith('/health')) skip();`,
@@ -407,8 +450,8 @@ module.exports = app;
           code: `if (req.path.match(/^\\/health/i)) skip();`,
           options: [{ checkAllPaths: true }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: `if (req.path.startsWith('/health')) skip();`,
           options: [{ checkAllPaths: true }],
@@ -454,7 +497,7 @@ module.exports = app;
             },
           ],
         },
-      ],
+      ]),
     },
   );
 });

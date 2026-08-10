@@ -5,6 +5,49 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireRateLimiting } from './index';
 import * as vitest from 'vitest';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -18,7 +61,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-rate-limiting', requireRateLimiting, {
-  valid: [
+  valid: xp([
     {
       // ToniR7/express-typescript-starter: the app is created here and the rate limiter
       // is registered in `utils/appInitialization.ts`. Once the binding is handed
@@ -92,8 +135,8 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
       `,
       options: [{ assumeRateLimiting: true }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     {
       // `express()` with no binding at all — there is nothing to follow, so the
       // escape hatch must not engage and the missing middleware is still a
@@ -131,20 +174,20 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
         },
       ],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
 ruleTester.run('require-rate-limiting (coverage wave)', requireRateLimiting, {
-  valid: [
+  valid: xp([
     // rate-limiter referenced as an identifier without a call
     { code: `const app = express(); app.use(rateLimiter);` },
     // rate-limiter factory call
     { code: `const app = express(); app.use(limiter());` },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // identifier middleware that is not a rate limiter
     {
       code: `const app = express(); app.use(logger);`,
@@ -155,5 +198,5 @@ ruleTester.run('require-rate-limiting (coverage wave)', requireRateLimiting, {
       code: `const app = express(); app.use(morgan());`,
       errors: [{ messageId: 'missingRateLimiting' }],
     },
-  ],
+  ]),
 });

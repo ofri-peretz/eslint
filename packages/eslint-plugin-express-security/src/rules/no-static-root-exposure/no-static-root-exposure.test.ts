@@ -3,6 +3,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noStaticRootExposure } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +57,7 @@ const ruleTester = new RuleTester({
 
 describe('no-static-root-exposure', () => {
   ruleTester.run('no-static-root-exposure', noStaticRootExposure, {
-    valid: [
+    valid: xp([
       // THE safe pattern (corpus FP-lock: CWE-548/safe/static-public-dir.js)
       {
         code: `
@@ -62,8 +105,8 @@ describe('no-static-root-exposure', () => {
       { code: `express.json();` },
       { code: `fastify.static('.');` },
       { code: `app.use(express.static(path.join(__dirname, 'public')));` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Corpus fixture (verbatim): CWE-548/vulnerable/static-root-dirname.js
       {
         code: `
@@ -287,7 +330,7 @@ describe('no-static-root-exposure', () => {
         `,
         errors: [{ messageId: 'directoryListing' }],
       },
-    ],
+    ]),
   });
 });
 
@@ -298,7 +341,7 @@ ruleTester.run(
   'no-static-root-exposure (coverage wave)',
   noStaticRootExposure,
   {
-    valid: [
+    valid: xp([
       // express.static with no argument — nothing to analyze
       { code: `express.static();` },
       // non-string literal root
@@ -333,8 +376,8 @@ ruleTester.run(
       { code: `const x = require(moduleName);` }, // non-literal module
       { code: `const morgan = require('morgan');` }, // different module
       { code: `import express from 'express';` }, // different import source
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // empty-string root
       {
         code: `express.static('');`,
@@ -459,6 +502,6 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'directoryListing' }],
       },
-    ],
+    ]),
   },
 );

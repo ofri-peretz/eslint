@@ -10,6 +10,49 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { requireQueryTypeGuard } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -24,7 +67,7 @@ describe('require-query-type-guard (branch coverage)', () => {
     'require-query-type-guard (branch coverage)',
     requireQueryTypeGuard,
     {
-      valid: [
+      valid: xp([
         // --- CallExpression bails ---
         // Bare call — callee is not a member expression
         { code: `trim();` },
@@ -86,8 +129,8 @@ describe('require-query-type-guard (branch coverage)', () => {
           }
         `,
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         // Safe-call check: callee is neither identifier nor member (IIFE)
         {
           code: `let v = req.query.q; v = ((x) => x)(v); v.trim();`,
@@ -163,7 +206,7 @@ describe('require-query-type-guard (branch coverage)', () => {
             },
           ],
         },
-      ],
+      ]),
     },
   );
 });

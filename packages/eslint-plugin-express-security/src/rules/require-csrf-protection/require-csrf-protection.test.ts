@@ -7,6 +7,49 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireCsrfProtection } from './index';
 import * as vitest from 'vitest';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+const asExpress = (code: string): string => `import express from 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -20,7 +63,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-csrf-protection', requireCsrfProtection, {
-  valid: [
+  valid: xp([
     // ============================================
     // GLOBAL CSRF MIDDLEWARE PATTERNS
     // ============================================
@@ -220,9 +263,9 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         app.post('/secure', handler);
       `,
     },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xp([
     // ============================================
     // MISSING CSRF - SHOULD FLAG
     // ============================================
@@ -304,7 +347,7 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'missingCsrf' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -314,7 +357,7 @@ ruleTester.run(
   'require-csrf-protection (coverage wave)',
   requireCsrfProtection,
   {
-    valid: [
+    valid: xp([
       // lusca.csrf() recognized as global CSRF middleware
       { code: `app.use(lusca.csrf()); app.post('/transfer', handler);` },
       // member callee that is not lusca.csrf
@@ -341,8 +384,8 @@ ruleTester.run(
       },
       // csurf-named identifier middleware sets the global flag
       { code: `app.use(csurfMiddleware); app.post('/transfer', handler);` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // non-CSRF middleware identifiers do not set the global flag
       {
         code: `app.use(logger); app.post('/transfer', handler);`,
@@ -364,6 +407,6 @@ ruleTester.run(
         code: `express.Router().post('/t', handler);`,
         errors: [{ messageId: 'missingCsrf' }],
       },
-    ],
+    ]),
   },
 );
