@@ -1,13 +1,59 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireExpressBodyParserLimits } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester();
 
 ruleTester.run(
   'require-express-body-parser-limits',
   requireExpressBodyParserLimits,
   {
-    valid: [
+    valid: xp([
       // With explicit limit
       {
         code: `express.json({ limit: '100kb' })`,
@@ -45,8 +91,8 @@ ruleTester.run(
         filename: 'test.spec.ts',
         options: [{ allowInTests: true }],
       },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // No options - missing limit
       {
         code: `express.json()`,
@@ -177,7 +223,7 @@ ruleTester.run(
           },
         ],
       },
-    ],
+    ]),
   },
 );
 
@@ -188,7 +234,7 @@ ruleTester.run(
   'require-express-body-parser-limits (coverage wave)',
   requireExpressBodyParserLimits,
   {
-    valid: [
+    valid: xp([
       // bare call — callee is not a member expression
       { code: `json({ limit: '1mb' });` },
       // deep member — object is not an identifier
@@ -207,8 +253,8 @@ ruleTester.run(
       { code: `express.json({ limit: MAX_BODY });` },
       // reasonable string limit
       { code: `express.json({ limit: '100kb' });` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // no options at all — suggestion rewrites the whole call
       {
         code: `express.json();`,
@@ -247,6 +293,6 @@ ruleTester.run(
         options: [{ excessiveLimits: ['5gb'] }],
         errors: [{ messageId: 'excessiveLimit' }],
       },
-    ],
+    ]),
   },
 );

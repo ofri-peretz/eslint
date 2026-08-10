@@ -6,6 +6,51 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import * as vitest from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noMissingCorsCheck } from './index';
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = vitest.afterAll;
@@ -30,7 +75,7 @@ const ruleTester = new RuleTester({
 vitest.describe('no-missing-cors-check', () => {
   vitest.describe('Valid Code', () => {
     ruleTester.run('valid - proper CORS validation', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         // CORS with origin validation
         {
           code: `
@@ -64,7 +109,7 @@ vitest.describe('no-missing-cors-check', () => {
           code: 'app.use(cors({ origin: safeOrigin }));',
           options: [{ ignorePatterns: ['safeOrigin'] }],
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -72,7 +117,7 @@ vitest.describe('no-missing-cors-check', () => {
   vitest.describe('Invalid Code - Wildcard Origin', () => {
     ruleTester.run('invalid - wildcard CORS origin', noMissingCorsCheck, {
       valid: [],
-      invalid: [
+      invalid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           errors: [
@@ -91,14 +136,14 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
   });
 
   vitest.describe('Invalid Code - CORS Headers', () => {
     ruleTester.run('invalid - wildcard CORS header', noMissingCorsCheck, {
       valid: [],
-      invalid: [
+      invalid: xp([
         {
           code: 'res.setHeader("Access-Control-Allow-Origin", "*");',
           errors: [
@@ -115,20 +160,20 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
   });
 
   vitest.describe('Options', () => {
     ruleTester.run('options - allowInTests', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           filename: 'test.spec.ts',
           options: [{ allowInTests: true }],
         },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         {
           code: 'app.use(cors({ origin: "*" }));',
           filename: 'server.ts',
@@ -139,37 +184,37 @@ vitest.describe('no-missing-cors-check', () => {
             },
           ],
         },
-      ],
+      ]),
     });
 
     ruleTester.run(
       'options - ignorePatterns with invalid regex',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'app.use(cors({ origin: testOrigin }));',
             options: [{ ignorePatterns: ['['] }], // Invalid regex should be caught
           },
-        ],
+        ]),
         invalid: [],
       },
     );
 
     ruleTester.run('options - trustedLibraries', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(myCors({ origin: "*" }));',
           options: [{ trustedLibraries: ['myCors'] }],
         },
-      ],
+      ]),
       invalid: [],
     });
   });
 
   vitest.describe('Edge Cases', () => {
     ruleTester.run('edge cases - non-wildcard literal', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'app.use(cors({ origin: "https://example.com" }));',
         },
@@ -179,19 +224,19 @@ vitest.describe('no-missing-cors-check', () => {
         {
           code: 'app.use(cors({ origin: true }));',
         },
-      ],
+      ]),
       invalid: [],
     });
 
     ruleTester.run('edge cases - non-CORS context', noMissingCorsCheck, {
-      valid: [
+      valid: xp([
         {
           code: 'const config = { origin: "*" };',
         },
         {
           code: 'const data = { allowedOrigins: "*" };',
         },
-      ],
+      ]),
       invalid: [],
     });
 
@@ -199,11 +244,11 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - CORS config object validation',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'app.use(cors({ origin: allowedOrigins, credentials: true }));',
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -212,14 +257,14 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - setHeader with non-wildcard',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'res.setHeader("Access-Control-Allow-Origin", origin);',
           },
           {
             code: 'res.setHeader("Content-Type", "*");',
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -228,14 +273,14 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - header with non-Access-Control',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'res.setHeader("Content-Type", "*");',
           },
           {
             code: 'res.header("Content-Type", "*");',
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -244,14 +289,14 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - callExpression without use method',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'app.get("/api", handler);',
           },
           {
             code: 'router.post("/users", controller);',
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -261,7 +306,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: 'app.use(cors({ origin: "*", allowedOrigins: ["https://example.com"] }));',
             errors: [
@@ -270,7 +315,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -279,7 +324,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: 'const config = { origin: "*" }; app.use(cors(config));',
             errors: [
@@ -288,7 +333,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -296,12 +341,12 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - literal with ignorePatterns',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'app.use(cors({ origin: "*" }));',
             options: [{ ignorePatterns: ['\\*'] }],
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -311,7 +356,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: 'cors({ origin: "*" });',
             errors: [
@@ -320,7 +365,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -329,7 +374,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: 'app.use(cors({ allowedOrigins: "*" }));',
             errors: [
@@ -338,7 +383,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -346,12 +391,12 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - memberExpression with ignorePatterns',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'safeRes.setHeader("Access-Control-Allow-Origin", "*");',
             options: [{ ignorePatterns: ['safeRes'] }],
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -361,7 +406,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: `
             const corsConfig = { origin: "*" };
@@ -373,7 +418,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -382,7 +427,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: 'enable(cors({ origin: "*" }));',
             errors: [
@@ -391,7 +436,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -400,7 +445,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: `
             const myConfig = { origin: "*" };
@@ -412,7 +457,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
 
@@ -420,11 +465,11 @@ vitest.describe('no-missing-cors-check', () => {
       'edge cases - variable not found, traverse to root (line 432)',
       noMissingCorsCheck,
       {
-        valid: [
+        valid: xp([
           {
             code: 'app.use(cors(unknownVar));',
           },
-        ],
+        ]),
         invalid: [],
       },
     );
@@ -434,7 +479,7 @@ vitest.describe('no-missing-cors-check', () => {
       noMissingCorsCheck,
       {
         valid: [],
-        invalid: [
+        invalid: xp([
           {
             code: `
             function setupCors() {
@@ -448,7 +493,7 @@ vitest.describe('no-missing-cors-check', () => {
               },
             ],
           },
-        ],
+        ]),
       },
     );
   });
@@ -460,8 +505,10 @@ vitest.describe('no-missing-cors-check', () => {
 import { expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 
+
+
 ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
-  valid: [
+  valid: xp([
     // wildcard in an object with no CORS context at all
     { code: `const config = { origin: '*' };` },
     // config variable declared without an initializer
@@ -508,8 +555,8 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
       code: `app.use(cors('*'));`,
       options: [{ ignorePatterns: ['\\*'] }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // wildcard literal passed directly to cors() — actual CORS context
     {
       code: `app.use(cors('*'));`,
@@ -550,7 +597,7 @@ ruleTester.run('no-missing-cors-check (coverage wave)', noMissingCorsCheck, {
       code: `res.setHeader('Access-Control-Allow-Origin', '*');`,
       errors: [{ messageId: 'missingCorsCheck' }],
     },
-  ],
+  ]),
 });
 
 // Layer 2: synthetic AST — a parser always parents nodes up to Program, so the
@@ -562,6 +609,21 @@ vitest.describe('no-missing-cors-check (layer 2: synthetic AST)', () => {
     () => {
       const { listeners, reports } = createWithMockContext(noMissingCorsCheck, {
         sourceText: 'app.use(cors(config))',
+        // This test drives listeners directly, so the file it stands for must
+        // carry the same Express evidence a real one would — otherwise the rule
+        // registers no listeners and the gap under test is never reached.
+        ast: {
+          type: 'Program',
+          body: [
+            {
+              type: 'ImportDeclaration',
+              source: { type: 'Literal', value: 'express' },
+              specifiers: [],
+            },
+          ],
+          tokens: [],
+          comments: [],
+        } as never,
       });
       const node = {
         type: 'CallExpression',

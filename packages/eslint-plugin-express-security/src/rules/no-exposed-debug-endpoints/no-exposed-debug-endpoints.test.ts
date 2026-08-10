@@ -5,6 +5,52 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noExposedDebugEndpoints } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -13,7 +59,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
-  valid: [
+  valid: xp([
     'const x = 42;',
     'const flag = true;',
     'function noop() {}',
@@ -22,9 +68,9 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
     { code: "router.post('/login', authenticate)" },
     // Non-route code
     { code: 'const x = 1' },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xp([
     // Debug endpoints (now caught once)
     {
       code: "app.get('/debug', debugHandler)",
@@ -48,7 +94,7 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
       code: "router.route('/test').get(handler)",
       errors: [{ messageId: 'violationDetected' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
@@ -63,7 +109,7 @@ ruleTester.run(
   'no-exposed-debug-endpoints (bare literals)',
   noExposedDebugEndpoints,
   {
-    valid: [
+    valid: xp([
       // constant declarations
       { code: "const ADMIN_PATH = '/admin';" },
       { code: "const path = '/debug';" },
@@ -82,7 +128,7 @@ ruleTester.run(
       { code: "app.get('/safe', '/debug');" },
       // non-express object with a matching method name
       { code: "fetchClient.get('/admin');" },
-    ],
+    ]),
     invalid: [],
   },
 );
@@ -94,7 +140,7 @@ ruleTester.run(
   'no-exposed-debug-endpoints (coverage wave)',
   noExposedDebugEndpoints,
   {
-    valid: [
+    valid: xp([
       // ignoreFiles matching the current filename disables the rule
       {
         code: `app.get('/debug', handler);`,
@@ -118,8 +164,8 @@ ruleTester.run(
       { code: `handler('/admin');` },
       // literal only *contains* a debug path, in a safe position
       { code: `const x = '/debugging-guide';` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // path containing a debug segment is still a route registration
       {
         code: `app.use('/admin/panel', adminRouter);`,
@@ -138,6 +184,6 @@ ruleTester.run(
         filename: '/project/src/server.ts',
         errors: [{ messageId: 'violationDetected' }],
       },
-    ],
+    ]),
   },
 );

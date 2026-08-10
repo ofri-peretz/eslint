@@ -3,6 +3,52 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUserControlledRedirect } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +60,7 @@ const ruleTester = new RuleTester({
 
 describe('no-user-controlled-redirect', () => {
   ruleTester.run('no-user-controlled-redirect', noUserControlledRedirect, {
-    valid: [
+    valid: xp([
       // Literal redirect — always safe
       { code: `res.redirect('/dashboard');` },
       { code: `res.redirect(301, '/login');` },
@@ -38,8 +84,8 @@ describe('no-user-controlled-redirect', () => {
       { code: `res.json({ url: req.body.url });` },
       // Numeric status code + literal target
       { code: `response.redirect(302, '/logout');` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Direct req.query access
       {
         code: `res.redirect(req.query.returnUrl);`,
@@ -92,7 +138,7 @@ describe('no-user-controlled-redirect', () => {
         options: [{ responseObjects: ['reply'], requestObjects: ['ctx'] }],
         errors: [{ messageId: 'openRedirect', data: { source: 'req.query' } }],
       },
-    ],
+    ]),
   });
 });
 
@@ -103,7 +149,7 @@ ruleTester.run(
   'no-user-controlled-redirect (coverage wave)',
   noUserControlledRedirect,
   {
-    valid: [
+    valid: xp([
       // bare call — callee is not a member expression
       { code: `redirect(req.query.url);` },
       // computed member access on the response object
@@ -126,8 +172,8 @@ ruleTester.run(
       { code: `res.redirect(req['query']);` },
       // safe literal
       { code: `res.redirect('/home');` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       {
         code: `reply.redirect(req.query.url);`,
         errors: [{ messageId: 'openRedirect' }],
@@ -162,6 +208,6 @@ ruleTester.run(
         code: `res.redirect(req.body['to']);`,
         errors: [{ messageId: 'openRedirect' }],
       },
-    ],
+    ]),
   },
 );

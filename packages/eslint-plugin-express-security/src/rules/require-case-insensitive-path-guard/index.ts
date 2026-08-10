@@ -44,6 +44,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -152,6 +153,12 @@ export const requireCaseInsensitivePathGuard = createRule<
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { protectedPaths, checkAllPaths } = options as Options;
     const patterns = (protectedPaths ?? DEFAULT_PROTECTED_PATHS).map((p) =>
       p.toLowerCase(),
