@@ -99,6 +99,31 @@ describe('fileUsesExpress', () => {
       expect(usesExpress(code)).toBe(false);
     });
 
+    // The regression the file-wide flag caused: a real `require('express')` at
+    // module scope must survive an unrelated inner binding. Silencing all 28
+    // rules there trades a false positive for a false negative — the worse of
+    // the two.
+    it('an unshadowed require survives a shadowing binding elsewhere', () => {
+      expect(
+        usesExpress("const express = require('express');\nfunction wrapper(require) {}"),
+      ).toBe(true);
+      expect(
+        usesExpress("function wrapper(require) {}\nconst express = require('express');"),
+      ).toBe(true);
+      expect(
+        usesExpress("function outer() { const express = require('express'); }\nfunction w(require) {}"),
+      ).toBe(true);
+    });
+
+    it('shadowing applies only inside the scope that binds it', () => {
+      // Inner call is shadowed; there is no other evidence, so the file is out.
+      expect(usesExpress("function f(require) { require('express'); }")).toBe(false);
+      // A block-scoped `const require` shadows the rest of that block only.
+      expect(
+        usesExpress("{ const require = (m) => m; require('express'); }"),
+      ).toBe(false);
+    });
+
     it('the other arms still apply when `require` is shadowed', () => {
       expect(
         usesExpress("import express from 'express';\nfunction f(require) { require('express'); }"),

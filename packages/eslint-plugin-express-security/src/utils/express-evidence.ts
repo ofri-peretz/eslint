@@ -34,57 +34,44 @@ function isExpressSpecifier(specifier: string): boolean {
 }
 
 /**
- * Whether the file declares a binding named `require` anywhere.
+ * Whether a scope-introducing node binds the name `require`.
  *
- * `function f(require) { require('express'); }` is not module loading. Taking
- * it as evidence would be this plugin treating a *name* as proof of an
+ * `function f(require) { require('express'); }` is not module loading, and
+ * taking it as evidence would be this plugin treating a *name* as proof of an
  * *interface* — the error the gate exists to correct.
+ *
+ * Shadowing is **lexical**, propagated down the walk rather than computed once
+ * for the file. A file-wide flag reads
+ * `const express = require('express'); function wrapper(require) {}` as fully
+ * shadowed and silences all twenty-eight rules — trading a false positive for a
+ * false negative, which is the worse of the two.
  */
-function declaresRequireBinding(ast: TSESTree.Program): boolean {
-  let shadowed = false;
-  // No top guard: every recursive call site below already checks.
-  const scan = (node: TSESTree.Node): void => {
-    if (
-      (node.type === AST_NODE_TYPES.FunctionDeclaration ||
-        node.type === AST_NODE_TYPES.FunctionExpression ||
-        node.type === AST_NODE_TYPES.ArrowFunctionExpression) &&
-      node.params.some(
-        (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
-      )
-    ) {
-      shadowed = true;
-      return;
-    }
-    if (
-      node.type === AST_NODE_TYPES.VariableDeclarator &&
-      node.id.type === AST_NODE_TYPES.Identifier &&
-      node.id.name === 'require'
-    ) {
-      shadowed = true;
-      return;
-    }
-    for (const key of Object.keys(node)) {
-      if (key === 'parent') continue;
-      const value = (node as unknown as Record<string, unknown>)[key];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (child && typeof (child as TSESTree.Node).type === 'string') {
-            scan(child as TSESTree.Node);
-            if (shadowed) return;
-          }
-        }
-      } else if (
-        value &&
-        typeof value === 'object' &&
-        typeof (value as TSESTree.Node).type === 'string'
-      ) {
-        scan(value as TSESTree.Node);
-        if (shadowed) return;
-      }
-    }
-  };
-  scan(ast);
-  return shadowed;
+function bindsRequire(node: TSESTree.Node): boolean {
+  if (
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return node.params.some(
+      (p) => p.type === AST_NODE_TYPES.Identifier && p.name === 'require',
+    );
+  }
+  // A `const require = …` shadows for the rest of the block it sits in, so the
+  // block — not the declarator — is where the flag is raised.
+  if (
+    node.type === AST_NODE_TYPES.Program ||
+    node.type === AST_NODE_TYPES.BlockStatement
+  ) {
+    return node.body.some(
+      (stmt) =>
+        stmt.type === AST_NODE_TYPES.VariableDeclaration &&
+        stmt.declarations.some(
+          (d) =>
+            d.id.type === AST_NODE_TYPES.Identifier && d.id.name === 'require',
+        ),
+    );
+  }
+  return false;
 }
 
 /** `require('express')` and `await import('express')`. */
@@ -178,9 +165,8 @@ export function fileUsesExpress(ast: TSESTree.Program): boolean {
 
 function computeUsesExpress(ast: TSESTree.Program): boolean {
   let found = false;
-  const requireIsShadowed = declaresRequireBinding(ast);
 
-  const visit = (node: TSESTree.Node): void => {
+  const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
       (node.type === AST_NODE_TYPES.ImportDeclaration ||
         node.type === AST_NODE_TYPES.ExportNamedDeclaration ||
@@ -199,13 +185,15 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
       found = true;
       return;
     }
+    // Everything below this node is inside any scope it introduces.
+    const shadowedHere = requireIsShadowed || bindsRequire(node);
     for (const key of Object.keys(node)) {
       if (key === 'parent') continue;
       const value = (node as unknown as Record<string, unknown>)[key];
       if (Array.isArray(value)) {
         for (const child of value) {
           if (child && typeof (child as TSESTree.Node).type === 'string') {
-            visit(child as TSESTree.Node);
+            visit(child as TSESTree.Node, shadowedHere);
             if (found) return;
           }
         }
@@ -214,12 +202,12 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
         typeof value === 'object' &&
         typeof (value as TSESTree.Node).type === 'string'
       ) {
-        visit(value as TSESTree.Node);
+        visit(value as TSESTree.Node, shadowedHere);
         if (found) return;
       }
     }
   };
 
-  visit(ast);
+  visit(ast, false);
   return found;
 }
