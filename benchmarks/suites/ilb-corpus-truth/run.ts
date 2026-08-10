@@ -20,9 +20,12 @@
  *   findings    total reports across the corpus
  *   offSdk      reports in files with no local evidence of the rule's SDK
  *   sdkFiles    files that DO carry that SDK
- *   hitFiles    files where the rule reported
- *   yield       hitFiles / sdkFiles — how often the rule has something to say
- *               about a file it is actually responsible for
+ *   hitFiles    files where the rule reported, anywhere
+ *   sdkHitFiles files where it reported AND the SDK is present
+ *   yield       sdkHitFiles / sdkFiles — how often the rule has something to
+ *               say about a file it is actually responsible for. Both sides are
+ *               the same population, so it cannot exceed 100%; an earlier
+ *               version divided hitFiles by sdkFiles and recorded 198%.
  *   collisions  lines where another plugin reported the same CWE
  *
  * `offSdk` is an upper bound by construction — see the note in `sdk-map.ts` on
@@ -73,9 +76,21 @@ function statIsDir(p: string): boolean {
   }
 }
 
-function sourceFilesIn(root: string): string[] {
+function sourceFilesIn(root: string, seen: Set<string>): string[] {
   const out: string[] = [];
   const walk = (dir: string): void => {
+    // Symlinks are followed (a staged corpus is made of them), so a
+    // self-referential or mutually referential link inside any of the 107
+    // third-party repos would recurse until the stack blows and take the whole
+    // sweep with it. Real paths, not the link paths, are what identify a cycle.
+    let real: string;
+    try {
+      real = fs.realpathSync(dir);
+    } catch {
+      return;
+    }
+    if (seen.has(real)) return;
+    seen.add(real);
     let entries: fs.Dirent[];
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -102,6 +117,7 @@ type RuleStat = {
   findings: number;
   offSdk: number;
   hitFiles: number;
+  sdkHitFiles: number;
   sdkFiles: number;
   collisions: number;
 };
@@ -144,7 +160,8 @@ async function main(): Promise<void> {
     }
   }
 
-  const files = roots.flatMap(sourceFilesIn);
+  const visited = new Set<string>();
+  const files = roots.flatMap((r) => sourceFilesIn(r, visited));
   log(`\n🔍 ${files.length} source files\n`);
 
   // A sweep that scanned nothing reports zero findings and reads exactly like a
@@ -183,6 +200,7 @@ async function main(): Promise<void> {
         findings: 0,
         offSdk: 0,
         hitFiles: 0,
+        sdkHitFiles: 0,
         sdkFiles: 0,
         collisions: 0,
       });
@@ -217,12 +235,24 @@ async function main(): Promise<void> {
 
   let scanned = 0;
   let errors = 0;
+  let batchFailures = 0;
+  let filesLostToBatchFailures = 0;
 
   for (let i = 0; i < files.length; i += BATCH) {
+    const batch = files.slice(i, i + BATCH);
     let results;
     try {
-      results = await eslint.lintFiles(files.slice(i, i + BATCH));
-    } catch {
+      results = await eslint.lintFiles(batch);
+    } catch (e) {
+      // A thrown batch used to be skipped silently: up to 300 files that never
+      // incremented `scanned` and never incremented `errors`, so the
+      // harness-health guard below could not see the loss — the exact failure
+      // mode that guard exists to catch.
+      batchFailures++;
+      filesLostToBatchFailures += batch.length;
+      console.error(
+        `   ⚠️  batch ${i}-${i + batch.length} threw: ${(e as Error).message.slice(0, 120)}`,
+      );
       continue;
     }
     for (const res of results) {
@@ -268,7 +298,17 @@ async function main(): Promise<void> {
         }
       }
 
-      for (const id of hitRules) stats.get(id)!.hitFiles++;
+      for (const id of hitRules) {
+        const stat = stats.get(id)!;
+        stat.hitFiles++;
+        // `yield` divides by sdkFiles, so its numerator has to come from the
+        // same population. Counting every hit file against an SDK-only
+        // denominator produced a yield of 198% for
+        // vercel-ai-security/no-training-data-exposure in the first committed
+        // result — a ratio above 100% is the tell that two populations were
+        // mixed.
+        if (hasSdk(stat.plugin)) stat.sdkHitFiles++;
+      }
 
       for (const [, cwes] of byLine) {
         for (const [cwe, owners] of cwes) {
@@ -286,9 +326,10 @@ async function main(): Promise<void> {
 
   // Same reasoning as the empty-corpus guard: if essentially every file errored,
   // the zeroes below describe the harness, not the rules.
-  if (scanned === 0 || errors > scanned) {
+  if (scanned === 0 || errors > scanned || filesLostToBatchFailures > files.length / 10) {
     console.error(
-      `\n❌ ${scanned} files scanned with ${errors} parse/config errors — ` +
+      `\n❌ ${scanned}/${files.length} files scanned, ${errors} parse/config errors, ` +
+        `${filesLostToBatchFailures} files lost to ${batchFailures} failed batches — ` +
         'the run describes the harness, not the rules. Refusing to report.',
     );
     process.exitCode = 1;
@@ -305,8 +346,11 @@ async function main(): Promise<void> {
         offSdk: s.offSdk,
         offSdkPct: s.findings ? +((s.offSdk / s.findings) * 100).toFixed(1) : 0,
         hitFiles: s.hitFiles,
+        sdkHitFiles: s.sdkHitFiles,
         sdkFiles: s.sdkFiles,
-        yield: s.sdkFiles ? +((s.hitFiles / s.sdkFiles) * 100).toFixed(2) : 0,
+        // Of the files that carry this SDK, the share this rule reported on.
+        // Both sides are the SDK population, so it cannot exceed 100%.
+        yield: s.sdkFiles ? +((s.sdkHitFiles / s.sdkFiles) * 100).toFixed(2) : 0,
         collisions: s.collisions,
         dead: s.findings === 0,
       },
@@ -352,6 +396,10 @@ async function main(): Promise<void> {
       // reports zero findings and looks exactly like a clean sweep; this number
       // is the only thing that distinguishes them.
       parseOrConfigErrors: errors,
+      // Reported even at zero: a silent batch failure is indistinguishable from
+      // a smaller corpus unless the number is always present.
+      batchFailures,
+      filesLostToBatchFailures,
     },
     totals,
     rules: perRule,

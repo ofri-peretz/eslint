@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-10T12:57:57.894Z",
-  "methodologyHash": "sha256:4ad4a7910d7d3f8192e08337d26685a3f9838410920c793d7755f8eb8fe694db",
+  "generatedAt": "2026-08-10T13:28:34.372Z",
+  "methodologyHash": "sha256:c7f88c641ef6f8b6a66ebfff1893489c02be4d2c3d748b541d7d2194fdc3228c",
   "note": "Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.",
   "rules": {
     "express-security/require-helmet": 0,
