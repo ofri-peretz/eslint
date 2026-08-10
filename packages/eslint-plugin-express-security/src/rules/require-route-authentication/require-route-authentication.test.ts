@@ -18,7 +18,9 @@ describe('require-route-authentication', () => {
       // THE safe pattern — auth middleware in the chain
       { code: `app.post('/account/password', requireAuth, changePassword);` },
       { code: `router.delete('/users/:id', authenticate, removeUser);` },
-      { code: `app.put('/billing/card', passport.authenticate('jwt'), saveCard);` },
+      {
+        code: `app.put('/billing/card', passport.authenticate('jwt'), saveCard);`,
+      },
       // Router-wide guard, mounted after the routes
       {
         code: `
@@ -37,7 +39,9 @@ describe('require-route-authentication', () => {
       // Handler resolves the principal itself
       { code: `app.post('/orders', (req, res) => save(req.session.cart));` },
       { code: `app.get('/profile', (req, res) => res.json(res.locals.user));` },
-      { code: `app.get('/profile', function (req, res) { return req.auth.sub; });` },
+      {
+        code: `app.get('/profile', function (req, res) { return req.auth.sub; });`,
+      },
       // Public-by-design endpoints
       { code: `app.post('/login', doLogin);` },
       { code: `app.post('/password/reset', resetPassword);` },

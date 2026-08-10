@@ -99,7 +99,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
         fix: "Set the number of proxies you actually run behind — app.set('trust proxy', {{hops}}) — or a subnet/'loopback'/predicate that names them.",
         documentationLink: 'https://expressjs.com/en/guide/behind-proxies.html',
       }),
-      useHopCount: "Trust exactly {{hops}} proxy hop(s) instead",
+      useHopCount: 'Trust exactly {{hops}} proxy hop(s) instead',
     },
     schema: [
       {

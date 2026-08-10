@@ -140,9 +140,8 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       function resolveVariable(
         node: TSESTree.Identifier,
       ): TSESLint.Scope.Variable | null {
-        let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(
-          node,
-        );
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(node);
         while (scope) {
           const found = scope.variables.find((v) => v.name === node.name);
           if (found) return found;
@@ -152,7 +151,9 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       }
 
       /** Tracked origin for an identifier, resolved through scope. */
-      function getTracked(node: TSESTree.Identifier): TrackedSource | undefined {
+      function getTracked(
+        node: TSESTree.Identifier,
+      ): TrackedSource | undefined {
         const variable = resolveVariable(node);
         return variable ? trackedVars.get(variable) : undefined;
       }

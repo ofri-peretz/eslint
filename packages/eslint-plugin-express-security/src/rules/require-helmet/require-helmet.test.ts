@@ -19,6 +19,29 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-helmet', requireHelmet, {
   valid: [
+    {
+      // ToniR7/express-typescript-starter: the app is created here and helmet
+      // is registered in `utils/appInitialization.ts`. Once the binding is handed
+      // to another function the middleware stack is assembled out of view, so
+      // "not here" says nothing about the application.
+      code: `
+        import express from 'express';
+        import { setAppConfigurations, setAppRoutes } from './utils/index.ts';
+        const app = express();
+        setAppConfigurations(app);
+        setAppRoutes(app);
+      `,
+    },
+    {
+      // A call that takes the app but is not the escape hatch's target still
+      // counts — we cannot tell `configure(app)` from `log(app)`, and guessing
+      // is what produced the false positive in the first place.
+      code: `
+        import express from 'express';
+        const app = express();
+        registerEverything(app);
+      `,
+    },
     // Express with helmet middleware
     {
       code: `
@@ -83,6 +106,16 @@ ruleTester.run('require-helmet', requireHelmet, {
     },
   ],
   invalid: [
+    {
+      // `express()` with no binding at all — there is nothing to follow, so the
+      // escape hatch must not engage and the missing middleware is still a
+      // finding. Guards the abstain path against over-reaching.
+      code: `
+        import express from 'express';
+        express().listen(3000);
+      `,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
     // Express without helmet
     {
       code: `

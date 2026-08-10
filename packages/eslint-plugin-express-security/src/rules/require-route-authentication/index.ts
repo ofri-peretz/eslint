@@ -128,14 +128,7 @@ const DEFAULT_PUBLIC_PATHS = [
 ];
 
 /** Route-registration methods that mount a handler on a path. */
-const ROUTE_METHODS = new Set([
-  'get',
-  'post',
-  'put',
-  'patch',
-  'delete',
-  'all',
-]);
+const ROUTE_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all']);
 
 /** Receivers that are an Express application/router in practice. */
 const APP_RECEIVER = /^(app|router|express|api)$/i;
@@ -295,7 +288,8 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
 
         const path = pathArg.value.toLowerCase();
         if (publics.some((fragment) => matchesFragment(path, fragment))) return;
-        if (!critical.some((fragment) => matchesFragment(path, fragment))) return;
+        if (!critical.some((fragment) => matchesFragment(path, fragment)))
+          return;
 
         // Any middleware before the final handler that reads as auth
         const chain = rest.slice(0, -1);

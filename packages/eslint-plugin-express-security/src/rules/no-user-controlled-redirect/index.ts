@@ -52,7 +52,13 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /** Property names on the request object that carry user-controlled values. */
-const USER_SOURCE_PROPS = new Set(['query', 'body', 'params', 'headers', 'cookies']);
+const USER_SOURCE_PROPS = new Set([
+  'query',
+  'body',
+  'params',
+  'headers',
+  'cookies',
+]);
 
 /** Method names that perform HTTP redirects. */
 const REDIRECT_METHODS = new Set(['redirect', 'location']);
@@ -88,7 +94,8 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
           responseObjects: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Additional response object names (e.g. ["reply"] for Fastify)',
+            description:
+              'Additional response object names (e.g. ["reply"] for Fastify)',
           },
           requestObjects: {
             type: 'array',
