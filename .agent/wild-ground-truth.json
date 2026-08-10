@@ -4,7 +4,7 @@
   "corpus": "13 repositories, all 1K+ stars, recommended presets only",
   "generatedAt": "2026-08-09",
   "totals": {
-    "findings": 303,
+    "findings": 293,
     "classes": 44,
     "labelled": 14,
     "unlabelled": 30
@@ -133,9 +133,9 @@
     },
     {
       "id": "secure-coding/no-sensitive-data-exposure::other",
-      "count": 10,
-      "verdict": "FP",
-      "reason": "Fires on generic error messages that contain no sensitive data at all: `throw new Error('Token not found')` (token.service.js:58), `throw new Error('Invalid token type')` (passport.js:14), `throw new Error('Password must contain at least one letter and one number')` (user.model.js:33). The last is a validation message quoting a policy, not a secret. The rule appears to key off words like token/password appearing in a thrown string.",
+      "count": 0,
+      "verdict": "FP-FIXED",
+      "reason": "CLOSED. The rule reported any string containing the WORD password/token/secret, so prose was a finding: `throw new Error('Token not found')`, `throw new Error('Invalid token type')`, and a message quoting a password policy back to the user. A standalone literal must now carry a value (`<word><separator><value>`), while the identifier path keeps the plain word match because a variable named `password` is sensitive for what it holds. 10 -> 0, no TP lost. The fix also closed a pre-existing false negative: the logging path handled Literal and Identifier arguments but not a concatenation of the two, so `console.log('password: ' + password)` \u2014 the case this rule most exists for \u2014 was silent.",
       "samples": [
         "express/lib/response.js:751",
         "node-express-boilerplate/src/config/passport.js:14",

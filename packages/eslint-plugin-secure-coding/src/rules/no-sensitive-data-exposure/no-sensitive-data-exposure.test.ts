@@ -99,7 +99,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // String literal with key
         {
-          code: `console.log('secret key value');`,
+          code: `console.log('secret key: sk_live_9f2a');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // String literal with SSN
@@ -109,7 +109,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // String literal with credit
         {
-          code: `console.log('credit card number');`,
+          code: `console.log('credit card: 4111111111111111');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // Identifier with password in name
@@ -137,7 +137,7 @@ describe('no-sensitive-data-exposure', () => {
       invalid: [
         // logger.info
         {
-          code: `logger.info('password exposed');`,
+          code: `logger.info('password: ' + password);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // logger.warn
@@ -147,7 +147,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // logger.error
         {
-          code: `logger.error('token invalid');`,
+          code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // logger.debug with identifier
@@ -157,12 +157,12 @@ describe('no-sensitive-data-exposure', () => {
         },
         // console.warn
         {
-          code: `console.warn('secret exposed');`,
+          code: `console.warn('secret: ' + apiSecret);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // console.error
         {
-          code: `console.error('apikey error');`,
+          code: `console.error('apikey=AKIA1234567890');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // console.debug
@@ -172,7 +172,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // console.trace
         {
-          code: `console.trace('token trace');`,
+          code: `console.trace('token: eyJhbGciOi');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
       ],
@@ -190,7 +190,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // customLogger() function
         {
-          code: `customLogger('token exposed');`,
+          code: `customLogger('token: ' + accessToken);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
       ],
@@ -203,17 +203,17 @@ describe('no-sensitive-data-exposure', () => {
       invalid: [
         // String literal with password
         {
-          code: `throw new Error('password is invalid');`,
+          code: `throw new Error('password: ' + password);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // String literal with token
         {
-          code: `new Error('token expired');`,
+          code: `new Error('token=' + refreshToken);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // String literal with secret
         {
-          code: `throw new Error('secret not found');`,
+          code: `throw new Error('secret: ' + clientSecret);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // BinaryExpression with sensitive left side
@@ -252,7 +252,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // Custom pattern: phone
         {
-          code: `logger.info('phone number logged');`,
+          code: `logger.info('phone number: 555-0142');`,
           options: [{ sensitivePatterns: ['phone'] }],
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
@@ -460,5 +460,81 @@ describe('no-sensitive-data-exposure', () => {
       ],
       invalid: [],
     });
+  });
+});
+
+/**
+ * Wild-corpus regression: naming a credential is not leaking one.
+ *
+ * The rule reported any string containing the *word* password/token/secret,
+ * so ordinary prose was a finding — ten across the 13-repo corpus:
+ *
+ *   throw new Error('Token not found')                    token.service.js:58
+ *   throw new Error('Invalid token type')                 passport.js:14
+ *   throw new Error('Password must contain at least one   user.model.js:33
+ *                   letter and one number')
+ *
+ * The last quotes a password policy back to the user, which is the opposite
+ * of a leak. A standalone literal must now carry a value, not mention a
+ * concept. The identifier path deliberately keeps the plain word match: a
+ * variable named `password` is sensitive because of what it holds — which is
+ * why the two checks are separate functions.
+ *
+ * Twelve tests above were rewritten rather than deleted: each asserted that
+ * *mentioning* a credential is a leak, so each now carries an actual value,
+ * which is the behaviour the rule is for.
+ */
+describe('corpus regression — mentioning a credential is not leaking it', () => {
+  ruleTester.run('prose vs value', noSensitiveDataExposure, {
+    valid: [
+      { name: 'Token not found', code: `throw new Error('Token not found');` },
+      { name: 'Invalid token type', code: `throw new Error('Invalid token type');` },
+      {
+        name: 'password policy quoted back to the user',
+        code: `throw new Error('Password must contain at least one letter and one number');`,
+      },
+      { name: 'prose log line', code: `console.log('User token refreshed');` },
+      { name: 'prose about a secret', code: `logger.info('Rotating secret for tenant');` },
+      { name: 'neutral concatenation', code: `console.log('count is ' + total);` },
+      { name: 'concatenation of two neutral literals', code: `console.log('a' + 'b');` },
+    ],
+    invalid: [
+      {
+        name: 'literal carrying a value',
+        code: `console.log('password: hunter2');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'literal with = separator',
+        code: `console.log('api_key=abc123');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // Pre-existing false negative, closed here: the logging path handled
+      // Literal and Identifier arguments but not a concatenation of the two,
+      // so the classic credential-to-logs leak was silent.
+      {
+        name: 'concatenated credential in a log call',
+        code: `console.log('password: ' + password);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'neutral label, sensitive identifier',
+        code: `console.log('value is ' + password);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'concatenated credential in an error',
+        code: `throw new Error('secret: ' + apiSecret);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // A standalone literal that carries the value, inside an Error — the
+      // counterpart to 'Token not found' above, and the reason the check is
+      // about the shape of the string rather than the words in it.
+      {
+        name: 'error literal carrying a value',
+        code: `throw new Error('password: hunter2');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
   });
 });
