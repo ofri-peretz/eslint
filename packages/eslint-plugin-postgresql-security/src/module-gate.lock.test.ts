@@ -120,6 +120,32 @@ describe('PostgreSQL module gate', () => {
     expect(lint(code, 'no-unsafe-query').length).toBeGreaterThan(0);
   });
 
+  it("opens on TypeScript's import-equals form", () => {
+    const code = `import pg = require('pg');
+      client.query('SELECT * FROM users WHERE id = ' + id);`;
+    expect(lint(code, 'no-unsafe-query').length).toBeGreaterThan(0);
+  });
+
+  it('opens on a dynamic import() of the driver', () => {
+    // This gate had no ImportExpression arm at all, alone among the five.
+    const code = `const { Pool } = await import('pg');
+      client.query('SELECT * FROM users WHERE id = ' + id);`;
+    expect(lint(code, 'no-unsafe-query').length).toBeGreaterThan(0);
+  });
+
+  it("opens on Deno's npm: specifier", () => {
+    const code = `import pg from 'npm:pg';
+      client.query('SELECT * FROM users WHERE id = ' + id);`;
+    expect(lint(code, 'no-unsafe-query').length).toBeGreaterThan(0);
+  });
+
+  it("opens on a Deno deno.land/x URL import", () => {
+    // supabase/examples/edge-functions/**/DenoPostgresDriver.ts
+    const code = `import { Pool } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';
+      client.query('SELECT * FROM users WHERE id = ' + id);`;
+    expect(lint(code, 'no-unsafe-query').length).toBeGreaterThan(0);
+  });
+
   it('and stays silent on that same query with the import removed', () => {
     const code = `client.query('SELECT * FROM users WHERE id = ' + id);`;
     expect(lint(code, 'no-unsafe-query')).toHaveLength(0);
