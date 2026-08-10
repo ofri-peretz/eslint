@@ -11,6 +11,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["SUPABASE_URL", "SUPABASE_ANON_KEY"],
       "inputs": [
         "src/**",
         "tsconfig.json",
