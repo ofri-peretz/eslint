@@ -13,6 +13,21 @@ interface ImpactCardProps {
   stats: ImpactStats;
 }
 
+/**
+ * "2025-12-08" → "December 2025". Day precision would imply the total is
+ * pinned to a launch event; the month is the honest resolution for a window
+ * that simply began when the first package shipped.
+ */
+const formatMonthYear = (iso: string): string => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+};
+
 const formatCompact = (n: number): string => {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -26,12 +41,24 @@ interface SupportMetric {
 }
 
 function buildSupportMetrics(stats: ImpactStats): SupportMetric[] {
+  const downloads = stats.npm.totalDownloads;
   return [
-    {
-      label: 'Weekly npm downloads',
-      value: stats.npm.totalDownloads,
-      display: formatCompact(stats.npm.totalDownloads),
-    },
+    // Omitted entirely when the canonical source was unreachable. A card
+    // reading "0 downloads" is a claim; a missing card is a gap.
+    ...(downloads === null
+      ? []
+      : [
+          {
+            // Cumulative, not weekly — and it says which. The same figure is
+            // published on ofriperetz.dev, and an unqualified number invites
+            // the reader to assume a different window than it covers.
+            label: stats.npm.since
+              ? `npm downloads since ${formatMonthYear(stats.npm.since)}`
+              : 'npm downloads (all-time)',
+            value: downloads,
+            display: formatCompact(downloads),
+          },
+        ]),
     {
       label: 'GitHub stars',
       value: stats.github.totalStars,
@@ -50,7 +77,11 @@ function buildSupportMetrics(stats: ImpactStats): SupportMetric[] {
   ];
 }
 
-function EngagementHero({ engagement }: { engagement: ImpactStats['engagement'] }) {
+function EngagementHero({
+  engagement,
+}: {
+  engagement: ImpactStats['engagement'];
+}) {
   return (
     <Card className="border-primary/40">
       <CardHeader>
@@ -66,7 +97,11 @@ function EngagementHero({ engagement }: { engagement: ImpactStats['engagement'] 
               Reach
             </dt>
             <dd className="mt-1 text-5xl font-bold tabular-nums sm:text-6xl">
-              <NumberTicker value={engagement.reach} startValue={0} delay={0.1} />
+              <NumberTicker
+                value={engagement.reach}
+                startValue={0}
+                delay={0.1}
+              />
             </dd>
             <p className="mt-1 text-xs text-fd-muted-foreground">
               People who read an article.
@@ -97,21 +132,28 @@ function EngagementHero({ engagement }: { engagement: ImpactStats['engagement'] 
           <div className="flex items-baseline justify-between">
             <dt className="text-fd-muted-foreground">Reactions</dt>
             <dd className="tabular-nums font-medium">
-              <NumberTicker value={engagement.reactions} startValue={0} delay={0.2} />
+              <NumberTicker
+                value={engagement.reactions}
+                startValue={0}
+                delay={0.2}
+              />
             </dd>
           </div>
           <div className="flex items-baseline justify-between">
             <dt className="text-fd-muted-foreground">Comments</dt>
             <dd className="tabular-nums font-medium">
-              <NumberTicker value={engagement.comments} startValue={0} delay={0.2} />
+              <NumberTicker
+                value={engagement.comments}
+                startValue={0}
+                delay={0.2}
+              />
             </dd>
           </div>
         </dl>
 
         <p className="sr-only">
-          Engagement: reach{' '}
-          {engagement.reach.toLocaleString('en-US')} (views), engagement rate{' '}
-          {engagement.ratePercent}%, reactions{' '}
+          Engagement: reach {engagement.reach.toLocaleString('en-US')} (views),
+          engagement rate {engagement.ratePercent}%, reactions{' '}
           {engagement.reactions.toLocaleString('en-US')}, comments{' '}
           {engagement.comments.toLocaleString('en-US')}.
         </p>
@@ -132,8 +174,8 @@ export function ImpactCard({ stats }: ImpactCardProps) {
             Code adoption
           </CardTitle>
           <CardDescription>
-            Engagement explains the audience; these show whether the audience
-            is actually shipping the rules.
+            Engagement explains the audience; these show whether the audience is
+            actually shipping the rules.
           </CardDescription>
         </CardHeader>
         <CardContent>
