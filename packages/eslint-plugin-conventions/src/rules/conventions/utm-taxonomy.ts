@@ -78,7 +78,7 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Use one of the allowed values, or extend the taxonomy in UTM_PHILOSOPHY.md and this rule together.',
         documentationLink:
-          'https://github.com/ofri-peretz/eslint/blob/main/UTM_PHILOSOPHY.md',
+          'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/UTM_PHILOSOPHY.md',
       }),
       invalidUtmMedium: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -88,7 +88,7 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Use one of the allowed values, or extend the taxonomy in UTM_PHILOSOPHY.md and this rule together.',
         documentationLink:
-          'https://github.com/ofri-peretz/eslint/blob/main/UTM_PHILOSOPHY.md',
+          'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/UTM_PHILOSOPHY.md',
       }),
     },
     schema: [],

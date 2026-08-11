@@ -1,5 +1,16 @@
 # Documentation Philosophy
 
+> **Scope (2026-08-10).** This is the **ESLint-product half** of a document
+> that was split. It governs how *this* docs site works: projecting rule
+> metadata, rendering `meta.schema` options, the 272-rule page tree, and the
+> agent-readable rule data (llms.txt / RuleSpec JSON).
+>
+> The vendor-neutral docs-craft doctrine it used to be tangled with — and every
+> other design-system philosophy — now lives in the Interlace repo at
+> [`docs/philosophies/`](https://github.com/ofri-peretz/interlace/tree/main/docs/philosophies).
+> Design-system doctrine is authored there and consumed here. See
+> [`DESIGN_PRINCIPLES.md`](./DESIGN_PRINCIPLES.md).
+>
 > Holistic philosophy for `apps/docs` — vendor-neutral concepts, industry best practices, and our concrete decision per topic. This document supersedes `~/.claude/plans/what-is-our-philosophy-abundant-noodle.md` (the original Fumadocs-specific rubric) by widening it to industry context.
 
 ## Why this document exists
