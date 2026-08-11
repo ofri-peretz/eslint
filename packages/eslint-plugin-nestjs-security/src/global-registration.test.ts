@@ -56,6 +56,10 @@ beforeEach(() => {
 });
 
 function run(rule: string, code: string, options?: unknown): number {
+  // The rules abstain in files that use no NestJS, so every fixture here is
+  // linted as the NestJS file it stands for. A side-effect import adds no
+  // binding, and prefixing once here means no fixture can be left behind.
+  code = `import '@nestjs/common';\n${code}`;
   return linter
     .verify(
       code,

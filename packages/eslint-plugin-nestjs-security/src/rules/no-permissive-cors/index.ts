@@ -32,6 +32,7 @@
  * @see https://docs.nestjs.com/security/cors
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -298,6 +299,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const { allowInTests = true } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 

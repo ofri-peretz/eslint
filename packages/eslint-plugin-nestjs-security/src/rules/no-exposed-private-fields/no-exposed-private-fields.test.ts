@@ -16,6 +16,50 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noExposedPrivateFields } from './index';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -32,7 +76,7 @@ const ruleTester = new RuleTester({
 describe('no-exposed-private-fields', () => {
   describe('Valid Code - Properly Excluded Fields', () => {
     ruleTester.run('valid - excluded fields', noExposedPrivateFields, {
-      valid: [
+      valid: nest([
         // prisma-starter/src/user/models/user.model.ts:36 — @HideField() is
         // @nestjs/graphql's @Exclude(): the property never reaches the schema.
         `
@@ -175,8 +219,8 @@ describe('no-exposed-private-fields', () => {
             }
           `,
         },
-      ],
-      invalid: [
+      ]),
+      invalid: nest([
         // Persistence still outranks the name: a stored credential is serialized
         // outward whatever the class is called.
         {
@@ -235,13 +279,13 @@ describe('no-exposed-private-fields', () => {
       `,
           errors: [{ messageId: 'exposedField' }],
         },
-      ],
+      ]),
     });
   });
 
   describe('Valid Code - Non-Sensitive Classes', () => {
     ruleTester.run('valid - non-entity classes', noExposedPrivateFields, {
-      valid: [
+      valid: nest([
         // Regular class (not entity/dto)
         {
           code: `
@@ -279,7 +323,7 @@ describe('no-exposed-private-fields', () => {
             }
           `,
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -287,7 +331,7 @@ describe('no-exposed-private-fields', () => {
   describe('Invalid Code - Exposed Sensitive Fields', () => {
     ruleTester.run('invalid - exposed passwords', noExposedPrivateFields, {
       valid: [],
-      invalid: [
+      invalid: nest([
         // Entity with exposed password
         {
           code: `
@@ -359,14 +403,14 @@ describe('no-exposed-private-fields', () => {
             { messageId: 'exposedField' },
           ],
         },
-      ],
+      ]),
     });
   });
 
   describe('Invalid Code - Decorated Classes', () => {
     ruleTester.run('invalid - decorated classes', noExposedPrivateFields, {
       valid: [],
-      invalid: [
+      invalid: nest([
         // @Schema (Mongoose)
         {
           code: `
@@ -387,13 +431,13 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-      ],
+      ]),
     });
   });
 
   describe('Edge Cases', () => {
     ruleTester.run('edge cases', noExposedPrivateFields, {
-      valid: [
+      valid: nest([
         // Partially excluded - only sensitive fields excluded
         {
           code: `
@@ -406,8 +450,8 @@ describe('no-exposed-private-fields', () => {
             }
           `,
         },
-      ],
-      invalid: [
+      ]),
+      invalid: nest([
         // Mixed - some excluded, some exposed
         {
           code: `
@@ -430,14 +474,14 @@ describe('no-exposed-private-fields', () => {
           `,
           errors: [{ messageId: 'exposedField' }],
         },
-      ],
+      ]),
     });
   });
 });
 
 // Regression locks for the token-aligned matcher and the skip rules.
 ruleTester.run('no-exposed-private-fields (matching)', noExposedPrivateFields, {
-  valid: [
+  valid: nest([
     // A boolean flag says *whether* something is secret; it is not the secret.
     `
       class EnvironmentVariableResponseDto {
@@ -517,8 +561,8 @@ ruleTester.run('no-exposed-private-fields (matching)', noExposedPrivateFields, {
         [dynamicKey]: string;
       }
     `,
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // Qualifier-prefixed credentials still match.
     {
       code: `
@@ -556,5 +600,5 @@ ruleTester.run('no-exposed-private-fields (matching)', noExposedPrivateFields, {
       options: [{ sensitivePatterns: ['internalNote'] }],
       errors: [{ messageId: 'exposedField' }],
     },
-  ],
+  ]),
 });
