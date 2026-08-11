@@ -1,6 +1,6 @@
 ---
 title: no-transaction-on-pool
-description: Prevents running transaction commands directly on pool (must use dedicated client).
+description: "Prevents running transaction commands directly on pool (must use dedicated client)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

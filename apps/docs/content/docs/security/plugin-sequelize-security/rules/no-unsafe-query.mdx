@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-query
-description: Detects SQL injection in raw Sequelize queries built with string concatenation or template literals
+description: "Detects SQL injection in raw Sequelize queries built with string concatenation or template literals"
 tags: ['security', 'sequelize', 'orm']
 category: security
 severity: critical
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Sequelize, sequelize.query, Sequelize.literal, replacements, bind, ORM
 
 **CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
 **OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
@@ -134,6 +132,6 @@ you get exactly one finding per line.
 
 ## Further Reading
 
-- [Sequelize — Raw queries and replacements](https://sequelize.org/docs/v6/core-concepts/raw-queries/#replacements)
+- [Sequelize — Raw queries and replacements](https://sequelize.org/docs/v7/querying/raw-queries/)
 - [OWASP — SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
 - [CWE-89](https://cwe.mitre.org/data/definitions/89.html)

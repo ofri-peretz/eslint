@@ -1,6 +1,6 @@
 ---
 title: no-lonely-if
-description: Disallow if statements as the only statement in else blocks
+description: "Disallow if statements as the only statement in else blocks"
 tags: ['quality', 'maintainability']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** if, else, refactoring, readability, ESLint rule, code quality, LLM-optimized
 
 Disallow `if` statements as the only statement in `else` blocks. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 

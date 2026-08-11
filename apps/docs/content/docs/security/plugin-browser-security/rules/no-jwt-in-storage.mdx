@@ -1,6 +1,6 @@
 ---
 title: no-jwt-in-storage
-description: This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)
+description: "This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -88,6 +88,10 @@ let token = response.jwt; // Not persisted
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```json
 {

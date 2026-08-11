@@ -1,6 +1,6 @@
 ---
 title: no-express-unsafe-regex-route
-description: This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns
+description: "This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns"
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -62,9 +62,9 @@ app.get(/^\/api\/\w+$/, handler);
 
 ## Options
 
-| Option         | Type      | Default | Description                      |
-| -------------- | --------- | ------- | -------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow unsafe regex in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |
 
 ```json
 {

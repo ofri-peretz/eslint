@@ -1,6 +1,6 @@
 ---
 title: no-unguarded-swagger
-description: "Detect SwaggerModule.setup running unconditionally in an application bootstrap"
+description: "This rule detects SwaggerModule.setup() running unconditionally in an application bootstrap, which publishes every route, DTO shape and declared auth scheme to anonymous callers in production."
 tags: ['security', 'nestjs']
 category: security
 severity: medium
@@ -65,6 +65,10 @@ async function bootstrap() {
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```typescript
 {

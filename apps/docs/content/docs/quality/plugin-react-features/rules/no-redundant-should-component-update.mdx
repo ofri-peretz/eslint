@@ -1,6 +1,6 @@
 ---
 title: no-redundant-should-component-update
-description: no-redundant-should-component-update rule
+description: "no-redundant-should-component-update rule"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** React, shouldComponentUpdate, performance, PureComponent, optimization, ESLint rule, LLM-optimized
 
 Prevent redundant `shouldComponentUpdate` implementations that just return `true`. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 

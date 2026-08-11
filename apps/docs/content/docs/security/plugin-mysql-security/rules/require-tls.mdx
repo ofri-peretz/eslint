@@ -1,6 +1,6 @@
 ---
 title: require-tls
-description: Require TLS on mysql2 / mysql connections, so queries and credentials are not sent in cleartext and the server is authenticated.
+description: "Require TLS on mysql2 / mysql connections, so queries and credentials are not sent in cleartext and the server is authenticated."
 tags: ['security', 'mysql']
 category: security
 severity: high
@@ -46,7 +46,8 @@ for the first is "turn TLS on", and the fix for the second is "supply the CA",
 never "switch the check off".
 
 mysql2 configures TLS through `ssl` — an object, or the string name of a
-bundled CA — and its URL form takes `?ssl=false`. Both shapes are checked. `ssl: "Amazon RDS"` selects a bundled CA and is correct, not a finding.
+bundled CA — and its URL form takes `?ssl=false`. Both shapes are checked.
+`ssl: "Amazon RDS"` selects a bundled CA and is correct, not a finding.
 
 ## ❌ Incorrect
 

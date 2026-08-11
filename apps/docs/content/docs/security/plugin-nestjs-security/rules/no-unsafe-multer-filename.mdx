@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-multer-filename
-description: "Disallows storing an uploaded file under a client-controlled name"
+description: "Flags a multer diskStorage filename callback that stores an upload under the name the client chose."
 tags: ['security', 'nestjs']
 category: security
 severity: high
@@ -122,6 +122,10 @@ The practical consequence: a finding from this rule is never a judgement call.
 The value went from the wire to the filesystem untouched.
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```ts
 {

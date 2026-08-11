@@ -1,6 +1,6 @@
 ---
 title: require-projection
-description: Requires field projection on queries to minimize data exposure.
+description: "Requires field projection on queries to minimize data exposure."
 tags: ['security', 'mongodb']
 category: security
 severity: medium
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
 
 ⚠️ This rule is **off** by default in the `recommended` config.
 
@@ -131,3 +129,9 @@ const users = await db.collection('users').find({}).toArray(); // Missing projec
 
 - [MongoDB Projections](https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/)
 - [CWE-200](https://cwe.mitre.org/data/definitions/200.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

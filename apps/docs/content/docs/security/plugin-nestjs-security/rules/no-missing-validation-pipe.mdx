@@ -1,23 +1,21 @@
 ---
 title: no-missing-validation-pipe
-description: "Requires ValidationPipe for DTO input parameters"
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-20
 owasp: 'A03:2021'
 autofix: false
-type_aware: false
-type_aware_status: unaware
+type_aware: true
+type_aware_status: optional
 ---
 
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+<RuleBadges typeAware={true} typeAwareStatus="optional" />
 
 > Require ValidationPipe for DTO input parameters
-
-The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 
 ## Error Message Format
 
@@ -85,6 +83,13 @@ app.useGlobalPipes(
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalPipes` | `boolean` | `true` | Look for a globally registered ValidationPipe before reporting |
+| `assumeGlobalPipes` | `boolean` | `false` | Assume a global ValidationPipe exists even if none is found |
+| `requireExplicitPipe` | `boolean` | `false` | Require a per-handler pipe even when a global one is registered |
+
 ```typescript
 {
   // Skip rule in test files (default: true)
@@ -120,10 +125,6 @@ new ValidationPipe({
 
 - If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Cross-File Detection
 
 ### Registered app-wide
@@ -140,10 +141,13 @@ Turn the scan off with `detectGlobalPipes: false` if you want the routes reporte
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalPipes: true` covers those.
 
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
 
 ### Conditional Pipe Application
 

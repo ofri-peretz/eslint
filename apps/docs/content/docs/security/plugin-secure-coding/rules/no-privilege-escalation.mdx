@@ -1,6 +1,6 @@
 ---
 title: no-privilege-escalation
-description: Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions withou...
+description: "Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions withou..."
 tags: ['security', 'core']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -124,13 +122,13 @@ if (hasRole(user, "admin")) { user.role = req.body.role; }
 
 ### Options
 
-| Option              | Type       | Default                                   | Description                         |
-| ------------------- | ---------- | ----------------------------------------- | ----------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                                   | Allow privilege escalation in tests |
-| `testFilePattern`   | `string`   | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex             |
-| `roleCheckPatterns` | `string[]` | `['hasRole', 'checkRole', ...]`           | Role check patterns to recognize    |
-| `userInputPatterns` | `string[]` | `[]`                                      | Additional user input patterns      |
-| `ignorePatterns`    | `string[]` | `[]`                                      | Additional patterns to ignore       |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow privilege escalation patterns in test files |
+| `testFilePattern` | `string` | `"\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$"` | Test file pattern regex string |
+| `roleCheckPatterns` | `string[]` | `["hasRole","checkRole","isAdmin","isAuthorized","hasPermission","checkPermission","verifyRole","requireRole"]` | Role check patterns to recognize |
+| `userInputPatterns` | `string[]` | `[]` | Additional user input patterns to check (regex strings) |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
 
 ### Example Configuration
 

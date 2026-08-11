@@ -1,6 +1,6 @@
 ---
 title: prevent-double-release
-description: Prevents calling client.release() multiple times on the same client.
+description: "Prevents calling client.release() multiple times on the same client."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** double release, connection pool, CWE-415, pg, node-postgres, pool corruption
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
