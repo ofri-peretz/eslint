@@ -1,5 +1,101 @@
 ## [1.4.3] - 2026-02-08
 
+## 2.0.0
+
+### Major Changes
+
+- [#479](https://github.com/ofri-peretz/eslint/pull/479) [`73807cb`](https://github.com/ofri-peretz/eslint/commit/73807cbfc9bab90f67a1328c680d69a0034fca64) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now abstains in files without local PostgreSQL evidence
+
+  The plugin had no notion of whether a file used PostgreSQL at all.
+  `no-missing-client-release` fired on any `.connect()` — mongoose, redis,
+  socket.io. `no-unsafe-query` fired on any `.query()`. `no-select-all` fired on
+  `SELECT *` in any string anywhere.
+
+  Measured over **108,838 files across 108 repositories**: 1,305 findings, of
+  which **1,222 (94%) were in files with no PostgreSQL client**. Two rules were
+  wrong 100% of the time — `no-missing-client-release` (49 findings, 0 in a
+  PostgreSQL file) and `prevent-double-release`.
+
+  All thirteen rules now require local evidence that the file uses PostgreSQL: an
+  import or `require` of a PostgreSQL client, or a `postgres://` / `postgresql://`
+  connection string in the file. Nothing is read from `package.json` and nothing
+  is resolved across files, so there is no project state to go stale.
+
+  After the change the same corpus yields 100 findings instead of 1,305.
+
+  This is a **major** bump: any rule may now stay silent where it previously
+  reported. A file that reaches PostgreSQL only through a wrapper module is a
+  deliberate miss — the trade against reporting on code with no database in it.
+
+### Patch Changes
+
+- [#494](https://github.com/ofri-peretz/eslint/pull/494) [`4c4af8d`](https://github.com/ofri-peretz/eslint/commit/4c4af8d62b64eabe5be1636345f7a56f63372b43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Close two false-negative classes across every SDK-evidence gate
+
+  A full false-negative audit ran every gated plugin twice over the 107-repository
+  corpus — once with the gates forced open, once as shipped — and compared the
+  **6,686 findings the gates silence across 5,235 files**. Of those files, 134 were
+  flagged as suspect (the SDK _is_ imported but the gate closed anyway), and two
+  real defect classes came out of verifying them one by one.
+
+  **1. TypeScript's import-equals form was invisible to four of the five gates.**
+  `import express = require('express')` is a `TSImportEqualsDeclaration` whose
+  module reference is a `TSExternalModuleReference` — not a `require`
+  `CallExpression` — so the dynamic-load arm never saw it. **82 corpus files
+  written this way for Express alone had every rule in the plugin silenced.** Only
+  `mongodb-security` handled it, and only because an earlier audit forced the
+  issue. Now handled by express, lambda, postgresql and vercel-ai too.
+
+  **2. Deno's module specifiers were unrecognisable to all five.**
+  `npm:@aws-sdk/client-bedrock-runtime` and
+  `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports in Deno
+  and Supabase Edge Functions; the prefix made the specifier unmatchable and the
+  whole plugin abstained on real SDK code. Both forms are now normalised before
+  the package test.
+
+  **`postgresql-security` also had no dynamic `import()` arm at all** — alone
+  among the five — so a file that lazily loads its driver was silenced entirely.
+  Every other gate has carried that arm since [#481](https://github.com/ofri-peretz/eslint/issues/481).
+
+  **Measured, not assumed.** Re-sweeping the same 119,271 files with the fixes:
+  **198 findings recovered across 88 files** (196 express, 1 postgres, 1 lambda)
+  and **zero regressions** — nothing that reported before is silenced now.
+
+  The two non-Express recoveries are the clearest illustration of what was broken:
+  `no-missing-authorization-check` on a Supabase Edge Function calling Bedrock, and
+  `no-missing-client-release` on a Deno postgres pool driver. Both are real
+  serverless code that the ecosystem was blind to.
+
+  Verification also **ruled out** four groups the generous probe flagged, rather
+  than widening the gates to swallow them: `@serverless/*` and
+  `@aws-lambda-powertools/*` hits were the frameworks' own source (one specifier
+  was inside a JSDoc `@example` block), and `@payloadcms/db-mongodb` /
+  `@medusajs/deps/pg` were type-only imports of adapter packages in files that
+  never touch the driver.
+
+  Each new arm ships a positive control in the plugin's `module-gate.lock.test.ts`
+  — import-equals, `npm:`, and `deno.land/x` for every gate, plus the dynamic
+  `import()` case for postgres — so none of them can regress silently. All four
+  packages remain at 100% statements / branches / functions / lines.
+
+- [#483](https://github.com/ofri-peretz/eslint/pull/483) [`de0c475`](https://github.com/ofri-peretz/eslint/commit/de0c475ddc76d0a27d5744be5fa0aafcf1333fb5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix a false negative: `require` shadowing is now lexical, not file-wide
+
+  Both module gates raised a single "this file shadows `require`" flag for the
+  whole file. So `const client = require('pg'); function wrapper(require) {}` was
+  read as fully shadowed: the real module load at module scope was ignored and
+  every rule in the plugin abstained.
+
+  That trades a false positive for a false negative, which is the worse trade —
+  a security rule that silently stops reporting is the defect class that matters
+  most.
+
+  Shadowing now propagates down the walk and applies only inside the scope that
+  binds the name: a function whose parameters include `require`, or a
+  Program/BlockStatement whose direct body declares one. A `require()` outside
+  that scope is module loading again.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
 ## 1.5.3
 
 ### Patch Changes

@@ -1,3 +1,118 @@
+## 2.0.0
+
+### Major Changes
+
+- [#489](https://github.com/ofri-peretz/eslint/pull/489) [`17ca941`](https://github.com/ofri-peretz/eslint/commit/17ca94142e1e18f09f798b5ab86ad1f57ea10a56) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now abstains in files without local Vercel AI SDK evidence
+
+  The plugin had no notion of whether a file used the AI SDK. Measured over
+  **107,384 files across 107 pinned repositories**: 1,909 findings, of which
+  **1,738 (91%) were in files with no `ai` / `@ai-sdk` import** — the highest
+  off-SDK rate in the ecosystem. `no-hardcoded-api-keys` alone contributed 782,
+  `no-training-data-exposure` 410, `require-output-validation` 314.
+
+  Every rule now requires local evidence: an `import`, `require`, or dynamic
+  `import()` of `ai` or any `@ai-sdk/*` package, matched on the package root and
+  never on a relative specifier. The `@ai-sdk` scope is matched whole rather than
+  as an enumerated provider list, so a consumer on `@ai-sdk/mistral` or a provider
+  that ships next month is covered on arrival — an allow-list would silently stop
+  opening the gate, and a security rule that quietly stops reporting is the worse
+  failure direction.
+
+  **The evidence is imports only, and that is a deliberate departure from the
+  Express gate.** Express needed a second, signature-based arm because 60% of
+  files holding a real `(req, res)` handler import no `express` — route modules
+  receive `app`/`router` from a caller. The same measurement here says the
+  opposite. Of the 29 non-`.d.ts` corpus files that call `generateText`,
+  `streamText`, `streamObject`, `generateObject` or `useChat` without importing
+  the SDK, **zero are the Vercel AI SDK**:
+
+  - 16 import that same name from a different vendor — both `@kapaai/react-sdk`
+    and `@orama/ui/hooks/useChat` export a `useChat`
+  - `stream-json` exposes `StreamObject.streamObject()`
+  - `swig-email-templates` has `generateText(path, ctx, html, cb)`
+  - LangChain's IBM provider calls `this.service.generateText(...)`
+  - the last two are a `streamText` inside a JSDoc code fence and a `generateText`
+    inside a JSON string literal of CMS seed content
+
+  A call-signature arm would therefore re-admit exactly the false positives this
+  gate removes — detecting a _word_ rather than an _SDK_, which is the root defect
+  behind every gate in this ecosystem.
+
+  A locally bound `require` is not module loading: `function f(require) {
+require('ai') }` does not open the gate. Shadowing is **lexical**, propagated
+  down the walk, so `const ai = require('ai'); function wrap(require) {}` still
+  reports — the file-wide flag that regressed express/postgres in [#483](https://github.com/ofri-peretz/eslint/issues/483) is not
+  repeated here. The probe is cached per `Program`, so nineteen rules cost one AST
+  walk rather than nineteen.
+
+  **Recall cost measured, not assumed.** Every finding over all 3,386 corpus files
+  that import the SDK was diffed before and after: **8,157 → 8,143**. The 14
+  removed are all in one file, `vercel-ai/content/tools-registry/registry.ts`,
+  whose only `import … from 'ai'` occurrences are inside `codeExample:` template
+  literals — the file imports nothing. All 14 were `no-hardcoded-api-keys` firing
+  on `apiKeyUrl: 'https://vercel.com/docs/…'`, public documentation URLs matched
+  because the property name contains `apiKey`. **Zero real findings lost, and the
+  one file affected demonstrates the defect rather than a cost.**
+
+  Locked by `src/module-gate.lock.test.ts` over the whole rule registry, so a rule
+  added later fails until it is gated too. The negatives are the measured
+  vendor-collision shapes above; five positive controls (static import, scoped
+  provider, an un-enumerated provider, `require`, and a dynamic `await import`)
+  prevent the suite passing with the gate shut on everything.
+
+### Patch Changes
+
+- [#494](https://github.com/ofri-peretz/eslint/pull/494) [`4c4af8d`](https://github.com/ofri-peretz/eslint/commit/4c4af8d62b64eabe5be1636345f7a56f63372b43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Close two false-negative classes across every SDK-evidence gate
+
+  A full false-negative audit ran every gated plugin twice over the 107-repository
+  corpus — once with the gates forced open, once as shipped — and compared the
+  **6,686 findings the gates silence across 5,235 files**. Of those files, 134 were
+  flagged as suspect (the SDK _is_ imported but the gate closed anyway), and two
+  real defect classes came out of verifying them one by one.
+
+  **1. TypeScript's import-equals form was invisible to four of the five gates.**
+  `import express = require('express')` is a `TSImportEqualsDeclaration` whose
+  module reference is a `TSExternalModuleReference` — not a `require`
+  `CallExpression` — so the dynamic-load arm never saw it. **82 corpus files
+  written this way for Express alone had every rule in the plugin silenced.** Only
+  `mongodb-security` handled it, and only because an earlier audit forced the
+  issue. Now handled by express, lambda, postgresql and vercel-ai too.
+
+  **2. Deno's module specifiers were unrecognisable to all five.**
+  `npm:@aws-sdk/client-bedrock-runtime` and
+  `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports in Deno
+  and Supabase Edge Functions; the prefix made the specifier unmatchable and the
+  whole plugin abstained on real SDK code. Both forms are now normalised before
+  the package test.
+
+  **`postgresql-security` also had no dynamic `import()` arm at all** — alone
+  among the five — so a file that lazily loads its driver was silenced entirely.
+  Every other gate has carried that arm since [#481](https://github.com/ofri-peretz/eslint/issues/481).
+
+  **Measured, not assumed.** Re-sweeping the same 119,271 files with the fixes:
+  **198 findings recovered across 88 files** (196 express, 1 postgres, 1 lambda)
+  and **zero regressions** — nothing that reported before is silenced now.
+
+  The two non-Express recoveries are the clearest illustration of what was broken:
+  `no-missing-authorization-check` on a Supabase Edge Function calling Bedrock, and
+  `no-missing-client-release` on a Deno postgres pool driver. Both are real
+  serverless code that the ecosystem was blind to.
+
+  Verification also **ruled out** four groups the generous probe flagged, rather
+  than widening the gates to swallow them: `@serverless/*` and
+  `@aws-lambda-powertools/*` hits were the frameworks' own source (one specifier
+  was inside a JSDoc `@example` block), and `@payloadcms/db-mongodb` /
+  `@medusajs/deps/pg` were type-only imports of adapter packages in files that
+  never touch the driver.
+
+  Each new arm ships a positive control in the plugin's `module-gate.lock.test.ts`
+  — import-equals, `npm:`, and `deno.land/x` for every gate, plus the dynamic
+  `import()` case for postgres — so none of them can regress silently. All four
+  packages remain at 100% statements / branches / functions / lines.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
 ## 1.5.4
 
 ### Patch Changes
