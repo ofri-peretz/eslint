@@ -77,11 +77,20 @@ describe('SDK peer dependencies', () => {
         // starts. `">=0.1.0 <1.0.0"` is bounded and correct for a 0.x SDK —
         // an earlier version of this check read only the first characters and
         // flagged three such ranges, which is the same mistake the rules make.
-        const bounded =
-          /[\^~]/.test(range) || /<\s*\d/.test(range) || range.trim() === '*'
-            ? range.trim() !== '*'
-            : false;
-        if (!bounded || /^\s*latest\s*$/.test(range)) {
+        // Every `||` alternative must be bounded on its own. Testing the
+        // whole string lets `"^4.8.4 || >=5.0.0"` pass on the caret in the
+        // first alternative while the second still admits any future major.
+        const bounded = range
+          .split('||')
+          .map((part) => part.trim())
+          .every(
+            (part) =>
+              part.length > 0 &&
+              part !== '*' &&
+              part !== 'latest' &&
+              (/[\^~]/.test(part) || /<\s*\d/.test(part)),
+          );
+        if (!bounded) {
           unbounded.push(`${name} → ${dep}: "${range}"`);
         }
       }
