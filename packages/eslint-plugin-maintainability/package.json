@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-maintainability",
   "version": "3.0.15",
-  "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
+  "description": "ESLint plugin for maintainable code \u2014 limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -57,7 +57,7 @@
   },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
-    "typescript": ">=4.8.4"
+    "typescript": "^4.8.4 || ^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {
