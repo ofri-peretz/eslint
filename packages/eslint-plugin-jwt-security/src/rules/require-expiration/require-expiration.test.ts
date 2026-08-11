@@ -24,17 +24,38 @@ describe('require-expiration', () => {
     ruleTester.run('valid - with expiration', requireExpiration, {
       valid: [
         // expiresIn option
-        { code: `jwt.sign(payload, secret, { expiresIn: '1h' });` },
-        { code: `jwt.sign(payload, secret, { expiresIn: 3600 });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: 3600 });`,
+        },
         // exp in payload
-        { code: `jwt.sign({ sub: 'user', exp: 1234567890 }, secret);` },
-        { code: `jwt.sign({ exp: Math.floor(Date.now()/1000) + 3600 }, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'user', exp: 1234567890 }, secret);`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ exp: Math.floor(Date.now()/1000) + 3600 }, secret);`,
+        },
         // verify not checked
-        { code: `jwt.verify(token, secret);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
+        },
         // signJWT with expiresIn
-        { code: `signJWT(payload, key, { expiresIn: '1h' });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+signJWT(payload, key, { expiresIn: '1h' });`,
+        },
         // Zero arguments - edge case (line 118 coverage)
-        { code: `jwt.sign();` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign();`,
+        },
       ],
       invalid: [],
     });
@@ -45,70 +66,80 @@ describe('require-expiration', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.sign(payload, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `jwt.sign(payload, secret, { expiresIn: '1h' });`,
+                  output: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h' });`,
                 },
               ],
             },
           ],
         },
         {
-          code: `jwt.sign(payload, secret, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, {});`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `jwt.sign(payload, secret, { expiresIn: '1h',});`,
+                  output: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h',});`,
                 },
               ],
             },
           ],
         },
         {
-          code: `jwt.sign(payload, secret, { algorithm: 'RS256' });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { algorithm: 'RS256' });`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `jwt.sign(payload, secret, { expiresIn: '1h', algorithm: 'RS256' });`,
+                  output: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { expiresIn: '1h', algorithm: 'RS256' });`,
                 },
               ],
             },
           ],
         },
         {
-          code: `jwt.sign({ sub: 'user', iat: Date.now() }, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'user', iat: Date.now() }, secret);`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `jwt.sign({ sub: 'user', iat: Date.now() }, secret, { expiresIn: '1h' });`,
+                  output: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'user', iat: Date.now() }, secret, { expiresIn: '1h' });`,
                 },
               ],
             },
           ],
         },
         {
-          code: `sign(payload, key);`,
+          code: `import jwt from 'jsonwebtoken';
+sign(payload, key);`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `sign(payload, key, { expiresIn: '1h' });`,
+                  output: `import jwt from 'jsonwebtoken';
+sign(payload, key, { expiresIn: '1h' });`,
                 },
               ],
             },
@@ -116,14 +147,16 @@ describe('require-expiration', () => {
         },
         // signJWT without expiration
         {
-          code: `signJWT({ sub: 'user' }, key, { algorithm: 'RS256' });`,
+          code: `import jwt from 'jsonwebtoken';
+signJWT({ sub: 'user' }, key, { algorithm: 'RS256' });`,
           errors: [
             {
               messageId: 'missingExpiration',
               suggestions: [
                 {
                   messageId: 'addExpiration',
-                  output: `signJWT({ sub: 'user' }, key, { expiresIn: '1h', algorithm: 'RS256' });`,
+                  output: `import jwt from 'jsonwebtoken';
+signJWT({ sub: 'user' }, key, { expiresIn: '1h', algorithm: 'RS256' });`,
                 },
               ],
             },

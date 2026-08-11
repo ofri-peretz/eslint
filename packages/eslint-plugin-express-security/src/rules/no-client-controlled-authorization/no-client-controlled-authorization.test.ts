@@ -3,6 +3,52 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noClientControlledAuthorization } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -17,10 +63,12 @@ describe('no-client-controlled-authorization', () => {
     'no-client-controlled-authorization',
     noClientControlledAuthorization,
     {
-      valid: [
+      valid: xp([
         // THE safe pattern — the attribute comes from the verified principal
         { code: `if (req.user.role === 'admin') { grant(); }` },
-        { code: `if (req.auth.permissions.includes('billing:write')) { grant(); }` },
+        {
+          code: `if (req.auth.permissions.includes('billing:write')) { grant(); }`,
+        },
         { code: `if (req.session.isAdmin) { grant(); }` },
         // Request input used for anything other than an access decision
         { code: `const role = req.body.role;` },
@@ -39,7 +87,9 @@ describe('no-client-controlled-authorization', () => {
         { code: `if (req.body.email === admin.email) { notify(); }` },
         { code: `if (req.query.page === '1') { first(); }` },
         { code: `if (req.headers['x-request-id']) { trace(); }` },
-        { code: `if (req.headers['content-type'] === 'application/json') { parse(); }` },
+        {
+          code: `if (req.headers['content-type'] === 'application/json') { parse(); }`,
+        },
         // Not a request container
         { code: `if (req.role === 'admin') { grant(); }` },
         { code: `if (payload.body.role === 'admin') { grant(); }` },
@@ -48,8 +98,8 @@ describe('no-client-controlled-authorization', () => {
         // Dynamic property name — not analysed
         { code: `if (req.body[field] === 'admin') { grant(); }` },
         { code: `if (req.body[0] === 'admin') { grant(); }` },
-      ],
-      invalid: [
+      ]),
+      invalid: xp([
         // Role straight off the request body
         {
           code: `if (req.body.role === 'admin') { deleteEverything(); }`,
@@ -118,7 +168,7 @@ describe('no-client-controlled-authorization', () => {
           options: [{ extraProperties: ['plan'] }],
           errors: [{ messageId: 'clientControlledAuthorization' as const }],
         },
-      ],
+      ]),
     },
   );
 });

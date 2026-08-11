@@ -24,14 +24,32 @@ describe('require-max-age', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - with maxAge', requireMaxAge, {
       valid: [
-        { code: `jwt.verify(token, secret, { maxAge: '1h' });` },
-        { code: `jwt.verify(token, secret, { maxAge: 3600 });` },
-        { code: `jwt.verify(token, secret, { clockTolerance: 30 });` },
-        { code: `jwt.sign(payload, secret);` }, // sign not checked
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { maxAge: '1h' });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { maxAge: 3600 });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { clockTolerance: 30 });`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret);`,
+        }, // sign not checked
         // Only one argument - edge case
-        { code: `jwt.verify(token);` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token);`,
+        },
         // jwtVerify with maxAge
-        { code: `jwtVerify(token, key, { maxAge: '24h' });` },
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key, { maxAge: '24h' });`,
+        },
       ],
       invalid: [],
     });
@@ -42,25 +60,30 @@ describe('require-max-age', () => {
       valid: [],
       invalid: [
         {
-          code: `jwt.verify(token, secret);`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingMaxAge' }],
         },
         {
-          code: `jwt.verify(token, secret, {});`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, {});`,
           errors: [{ messageId: 'missingMaxAge' }],
         },
         {
-          code: `jwt.verify(token, secret, { algorithms: ['RS256'] });`,
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithms: ['RS256'] });`,
           errors: [{ messageId: 'missingMaxAge' }],
         },
         // jwtVerify without maxAge
         {
-          code: `jwtVerify(token, key);`,
+          code: `import jwt from 'jsonwebtoken';
+jwtVerify(token, key);`,
           errors: [{ messageId: 'missingMaxAge' }],
         },
         // verifyJWT without maxAge
         {
-          code: `verifyJWT(token, key, { algorithms: ['RS256'] });`,
+          code: `import jwt from 'jsonwebtoken';
+verifyJWT(token, key, { algorithms: ['RS256'] });`,
           errors: [{ messageId: 'missingMaxAge' }],
         },
       ],

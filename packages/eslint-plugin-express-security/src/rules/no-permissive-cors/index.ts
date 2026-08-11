@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -40,7 +41,7 @@ type RuleOptions = [Options?];
 function isPermissiveCorsConfig(
   node: TSESTree.ObjectExpression,
   sourceCode: TSESLint.SourceCode,
-  options: Options
+  options: Options,
 ): { isPermissive: boolean; reason: string } {
   const text = sourceCode.getText(node);
 
@@ -193,10 +194,14 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const {
-      allowInTests = false,
-      allowOriginTrue = false,
-    } = options as Options;
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
+    const { allowInTests = false, allowOriginTrue = false } =
+      options as Options;
 
     const filename = context.filename;
     const isTestFile =
@@ -215,7 +220,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           let corsConfigNode: TSESTree.ObjectExpression | null = null;
 
           // Get the config object
-          if (isStandaloneCorsCall(node) && node.arguments[0]?.type === 'ObjectExpression') {
+          if (
+            isStandaloneCorsCall(node) &&
+            node.arguments[0]?.type === 'ObjectExpression'
+          ) {
             corsConfigNode = node.arguments[0];
           } else if (isAppUseCors(node)) {
             const corsCall = node.arguments[0] as TSESTree.CallExpression;
@@ -227,14 +235,14 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           // Check for cors() with no arguments - defaults to permissive
           // Handle both standalone cors() and app.use(cors())
           let corsCallNode: TSESTree.CallExpression | null = null;
-          
+
           if (isStandaloneCorsCall(node)) {
             corsCallNode = node;
           } else {
             // Guaranteed app.use(cors(...)) by the isAppUseCors guard above
             corsCallNode = node.arguments[0] as TSESTree.CallExpression;
           }
-          
+
           if (corsCallNode && corsCallNode.arguments.length === 0) {
             context.report({
               node: corsCallNode,
@@ -256,7 +264,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
             const { isPermissive, reason } = isPermissiveCorsConfig(
               corsConfigNode,
               sourceCode,
-              { allowOriginTrue } as Options
+              { allowOriginTrue } as Options,
             );
 
             if (isPermissive) {

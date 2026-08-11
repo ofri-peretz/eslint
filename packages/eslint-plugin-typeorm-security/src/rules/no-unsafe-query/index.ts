@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing TypeORM's DataSource/EntityManager/Repository.query().
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['typeorm', '@nestjs/typeorm'],
   methods: ['query'],
   requireSqlKeywords: false,
   fix: 'Pass values as the second-argument parameters array, or use query-builder parameters (`:name`), instead of interpolating them.',

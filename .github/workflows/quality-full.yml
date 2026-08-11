@@ -74,6 +74,7 @@ jobs:
       heavy: ${{ steps.matrix.outputs.heavy }}
       build_shards: ${{ steps.build_matrix.outputs.build_shards }}
       build_any: ${{ steps.build_matrix.outputs.build_any }}
+      bench_configs: ${{ steps.bench_configs.outputs.run }}
     steps:
       - id: decide
         env:
@@ -171,6 +172,33 @@ jobs:
           fi
           echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
 
+      # The benchmark-config load check needs every plugin BUILT, so it cannot
+      # ride along in a lock job. A build is ~4 minutes of a scarce runner, so
+      # it fires only on a diff that can actually break a config: the config
+      # files themselves, the benchmark workspace's dependency list, or any
+      # package manifest (which is what a rename/removal shows up as — #414
+      # renamed eslint-plugin-pg/-jwt and every arena number silently went to
+      # zero for two days).
+      - id: bench_configs
+        if: steps.decide.outputs.run == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_SHA:-}" ]; then
+            # Not a PR (main / cron / dispatch): always run, same backstop
+            # posture as the test shards.
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BASE_SHA"...HEAD)
+          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|\.github/workflows/quality-full\.yml)$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No benchmark config, benchmark dependency or package manifest touched — skipping the config-load check."
+          fi
+
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
   # tools/*, benchmarks), so turbo has no task for it and `turbo run test` never
   # reaches scripts/__tests__. CI only ever executed the files pinned by name:
@@ -193,6 +221,28 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Run scripts/__tests__
         run: npm run --silent test:scripts
+
+  # Executes every benchmark ESLint config on a built tree. A config that
+  # throws is scored as "found nothing" by four suites, so this is the gate
+  # between a package rename and a published F1 of 0%. Gated by the diff (see
+  # the `bench_configs` step) because it has to build to mean anything.
+  bench-configs:
+    name: Benchmark configs load
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.bench_configs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # Same filter the weekly benchmark uses, for the same reason: the configs
+      # import plugins by package name and resolve through `exports` to dist/.
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+      - name: Load every benchmark config
+        run: npm run --silent -w @interlace/benchmarks test:configs-load
 
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of

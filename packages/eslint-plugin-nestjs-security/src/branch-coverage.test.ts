@@ -25,13 +25,57 @@ import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
 import { requireThrottler } from './rules/require-throttler';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester();
 
 // ===========================================================================
 // require-guards
 // ===========================================================================
 ruleTester.run('require-guards (branch edges)', requireGuards, {
-  valid: [
+  valid: nest([
     // Bare @Public identifier decorator on the method (Identifier arm)
     {
       code: `
@@ -65,8 +109,8 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
         }
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // Member-expression decorator on the class: hits the '' fallback in
     // hasControllerDecorator / return-false tail of hasUseGuardsDecorator
     {
@@ -142,7 +186,7 @@ ruleTester.run('require-guards (branch edges)', requireGuards, {
       `,
       errors: [{ messageId: 'missingGuards', data: { name: '<anonymous>' } }],
     },
-  ],
+  ]),
 });
 
 // ===========================================================================
@@ -152,7 +196,7 @@ ruleTester.run(
   'no-missing-validation-pipe (branch edges)',
   noMissingValidationPipe,
   {
-    valid: [
+    valid: nest([
       {
         code: `
         @Controller('u')
@@ -213,8 +257,8 @@ ruleTester.run(
       `,
       },
       // Member-expression param decorator: '' fallback → not an input decorator
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       {
         code: `
         @Controller('u')
@@ -302,7 +346,7 @@ ruleTester.run(
         options: [{ requireExplicitPipe: true }],
         errors: [{ messageId: 'missingValidation' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -310,7 +354,7 @@ ruleTester.run(
 // require-throttler
 // ===========================================================================
 ruleTester.run('require-throttler (branch edges)', requireThrottler, {
-  valid: [
+  valid: nest([
     // Bare @SkipThrottle identifier decorator (Identifier arm of hasThrottleDecorator)
     {
       code: `
@@ -332,8 +376,8 @@ ruleTester.run('require-throttler (branch edges)', requireThrottler, {
         }
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // Bare @Controller identifier decorator (Identifier arm)
     {
       code: `
@@ -386,7 +430,7 @@ ruleTester.run('require-throttler (branch edges)', requireThrottler, {
         { messageId: 'missingThrottler', data: { name: '<anonymous>' } },
       ],
     },
-  ],
+  ]),
 });
 
 // ===========================================================================
@@ -400,7 +444,7 @@ ruleTester.run(
   'no-exposed-private-fields (branch edges)',
   noExposedPrivateFields,
   {
-    valid: [
+    valid: nest([
       {
         code: `
         class UserEntity {
@@ -432,8 +476,8 @@ ruleTester.run(
         }
       `,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       {
         code: `
         @orm.Entity()
@@ -454,7 +498,7 @@ ruleTester.run(
         errors: [{ messageId: 'exposedField', data: { field: 'password' } }],
       },
       // Member-expression decorator on the field is not @Exclude ('' fallback)
-    ],
+    ]),
   },
 );
 

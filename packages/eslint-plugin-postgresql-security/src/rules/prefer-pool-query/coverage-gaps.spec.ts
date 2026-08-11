@@ -19,6 +19,42 @@ import * as parser from '@typescript-eslint/parser';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { preferPoolQuery } from './index';
 
+/**
+ * The synthetic Program the module gate reads. These tests drive listeners
+ * directly, so the file they stand for has to carry the same PostgreSQL
+ * evidence a real one would — otherwise the rule registers no listeners and
+ * the gap under test is never reached.
+ */
+const PG_AST = {
+  type: 'Program',
+  body: [
+    {
+      type: 'ImportDeclaration',
+      source: { type: 'Literal', value: 'pg' },
+      specifiers: [],
+    },
+  ],
+  tokens: [],
+  comments: [],
+} as never;
+
+
+/**
+ * Every fixture imports a PostgreSQL client, because the rule now abstains in
+ * files that use no PostgreSQL at all. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the import
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const withPg = (code: string): string => `import { Pool } from 'pg';\n${code}`;
+const pg = <T,>(cases: T[]): T[] =>
+  cases.map((c) =>
+    typeof c === 'string'
+      ? (withPg(c) as T)
+      : ({ ...c, code: withPg((c as { code: string }).code) } as T),
+  );
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -34,7 +70,7 @@ const ruleTester = new RuleTester({
 describe('prefer-pool-query — coverage gaps (Layer 1)', () => {
   ruleTester.run('uninvoked query member access', preferPoolQuery, {
     valid: [],
-    invalid: [
+    invalid: pg([
       {
         name: 'client.query referenced without a call still counts as single-query usage',
         code: `
@@ -46,13 +82,13 @@ describe('prefer-pool-query — coverage gaps (Layer 1)', () => {
         `,
         errors: [{ messageId: 'preferPoolQuery' }],
       },
-    ],
+    ]),
   });
 });
 
 describe('prefer-pool-query — coverage gaps (Layer 2, synthetic AST)', () => {
   it('returns silently when the declarator resolves to no variable', () => {
-    const { listeners, reports } = createWithMockContext(preferPoolQuery);
+    const { listeners, reports } = createWithMockContext(preferPoolQuery, { ast: PG_AST });
     const node = {
       type: 'VariableDeclarator',
       id: { type: 'Identifier', name: 'client' },

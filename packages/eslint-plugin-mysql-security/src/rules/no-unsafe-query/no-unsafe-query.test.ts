@@ -25,27 +25,27 @@ describe('no-unsafe-query', () => {
       valid: [
         {
           name: 'safe idiom',
-          code: "conn.execute('SELECT * FROM users WHERE id = ?', [userId]);",
+          code: "import mysql from 'mysql2';\nconn.execute('SELECT * FROM users WHERE id = ?', [userId]);",
         },
         {
           name: 'static SQL, no interpolation',
-          code: "conn.query('SELECT * FROM users');",
+          code: "import mysql from 'mysql2';\nconn.query('SELECT * FROM users');",
         },
         {
           name: 'no arguments',
-          code: 'conn.query();',
+          code: 'import mysql from "mysql2";\nconn.query();',
         },
         {
           name: 'unrelated code',
-          code: 'const x = 1;',
+          code: 'import mysql from "mysql2";\nconst x = 1;',
         },
         {
           name: 'safe variable passed through',
-          code: "const sql = 'SELECT * FROM users'; conn.query(sql);",
+          code: "import mysql from 'mysql2';\nconst sql = 'SELECT * FROM users'; conn.query(sql);",
         },
         {
           name: 'non-SQL text into the same sink is not a SQL finding',
-          code: 'job.execute(`retry ${attempt}`);',
+          code: 'import mysql from "mysql2";\njob.execute(`retry ${attempt}`);',
         },
       ],
       invalid: [],
@@ -58,17 +58,18 @@ describe('no-unsafe-query', () => {
       invalid: [
         {
           name: 'template interpolation',
-          code: 'conn.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          code: 'import mysql from "mysql2";\nconn.query(`SELECT * FROM users WHERE id = ${userId}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: "conn.query('SELECT * FROM users WHERE id = ' + userId);",
+          code: "import mysql from 'mysql2';\nconn.query('SELECT * FROM users WHERE id = ' + userId);",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable reaches the sink',
           code: [
+            "import mysql from 'mysql2';",
             'const sql = `SELECT * FROM users WHERE id = ${id}`;',
             'conn.query(sql);',
           ].join('\n'),
@@ -76,7 +77,7 @@ describe('no-unsafe-query', () => {
         },
         {
           name: 'execute() sink',
-          code: 'conn.execute(`SELECT * FROM audit WHERE id = ${id}`);',
+          code: 'import mysql from "mysql2";\nconn.execute(`SELECT * FROM audit WHERE id = ${id}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
       ],

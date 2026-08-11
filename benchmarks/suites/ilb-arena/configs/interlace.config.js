@@ -5,8 +5,8 @@
 
 import secureCoding from "eslint-plugin-secure-coding";
 import nodeSecurity from "eslint-plugin-node-security";
-import pg from "eslint-plugin-pg";
-import jwt from "eslint-plugin-jwt";
+import pg from "eslint-plugin-postgresql-security";
+import jwt from "eslint-plugin-jwt-security";
 import browserSecurity from "eslint-plugin-browser-security";
 import mongodbSecurity from "eslint-plugin-mongodb-security";
 import expressSecurity from "eslint-plugin-express-security";

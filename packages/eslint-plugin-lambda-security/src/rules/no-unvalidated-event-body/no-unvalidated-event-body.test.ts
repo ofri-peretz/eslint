@@ -2,6 +2,52 @@ import { describe, it, afterAll } from 'vitest';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noUnvalidatedEventBody } from './index';
 
+/**
+ * Every fixture carries the Lambda handler shape, because the rules now abstain
+ * in files that are not Lambda code. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the shape
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const asLambda = (code: string): string =>
+  `import type { Handler } from 'aws-lambda';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const lambda = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asLambda(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asLambda(test.code),
+      // Autofix and suggestion fixtures assert the WHOLE file back, so every
+      // `output` needs the same prefix or each fixable rule fails on the header
+      // alone — including the ones nested under errors[].suggestions[].
+      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asLambda(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -10,7 +56,7 @@ RuleTester.describe = describe;
 const ruleTester = new RuleTester();
 
 ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
-  valid: [
+  valid: lambda([
     // Validation with Zod
     {
       code: `
@@ -127,8 +173,8 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
       `,
       filename: 'handler.test.ts',
     },
-  ],
-  invalid: [
+  ]),
+  invalid: lambda([
     // Direct use of event.body in variable assignment
     {
       code: `
@@ -167,6 +213,49 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
           return { statusCode: 200 };
         };
       `,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
+  ]),
+});
+
+/**
+ * The `fileImportsLambda` probe is an OR chain over every import in the file,
+ * and `.some()` stops at the first match — so once the shared `lambda()` helper
+ * prepends `aws-lambda`, the later arms (`@aws-sdk/`, `@middy/`,
+ * `@aws-cdk/aws-lambda`) are never reached by any wrapped fixture.
+ *
+ * These cases are deliberately NOT wrapped: each names exactly one AWS import,
+ * which is both the file's Lambda evidence for the plugin-wide gate and the arm
+ * of the chain under test.
+ *
+ * The probe is narrower than the gate on purpose. It answers "may a *single*
+ * `event` argument count as a handler?", where the gate answers "is this file
+ * Lambda code at all?" — a handler export must not be allowed to promote every
+ * one-arg `event` function in the file.
+ */
+ruleTester.run('single-arg event, per import source', noUnvalidatedEventBody, {
+  valid: [],
+  invalid: [
+    {
+      name: '@aws-sdk/ subpath import',
+      code: `import { S3Client } from '@aws-sdk/client-s3';
+        const run = async (event) => { const data = event.body; return data; };`,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
+    {
+      name: '@middy/ subpath import',
+      code: `import middy from '@middy/core';
+        const run = async (event) => { const data = event.body; return data; };`,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
+    {
+      name: '@aws-cdk/aws-lambda arm (gate satisfied separately)',
+      // `@aws-cdk/aws-lambda` must be the ONLY import: `.some()` stops at the
+      // first arm that matches, so any earlier AWS import hides this one. The
+      // plugin-wide gate is satisfied by the (event, context) function instead.
+      code: `import * as cdk from '@aws-cdk/aws-lambda';
+        const boot = async (event, context) => cdk.Runtime;
+        const run = async (event) => { const data = event.body; return data; };`,
       errors: [{ messageId: 'unvalidatedInput' }],
     },
   ],

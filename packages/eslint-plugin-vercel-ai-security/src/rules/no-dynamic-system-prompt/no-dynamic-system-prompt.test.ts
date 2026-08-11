@@ -5,6 +5,51 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noDynamicSystemPrompt } from './index';
 
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -13,7 +58,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
-  valid: [
+  valid: xai([
     // Static string literal
     {
       code: `
@@ -61,9 +106,9 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
         });
       `,
     },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xai([
     // Template literal with expression
     {
       code: `
@@ -114,14 +159,14 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
       `,
       errors: [{ messageId: 'dynamicSystemPrompt' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Coverage-gap fixtures: argument shapes and non-Identifier keys
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt, {
-  valid: [
+  valid: xai([
     // no arguments at all
     { code: `generateText();` },
     // non-object first argument
@@ -130,15 +175,15 @@ ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt
     { code: `generateText({ ...cfg });` },
     // computed key — the name genuinely isn't statically known
     { code: `generateText({ [k]: buildPrompt() });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // Quoted keys are the same property as bare ones. This used to sit in
     // `valid` with the note "keyName resolves to null", which recorded the gap
     // as if it were intended: a rule that stops firing because someone put
     // quotes round the key is a silent miss, not a design decision.
     { code: `generateText({ 'system': buildPrompt() });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
     { code: `streamText({ "instructions": \`\${userInput}\` });`, errors: [{ messageId: 'dynamicSystemPrompt' }] },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,7 +192,7 @@ ruleTester.run('no-dynamic-system-prompt (coverage gaps)', noDynamicSystemPrompt
 // was inert on any code written against current AI SDK docs.
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPrompt, {
-  valid: [
+  valid: xai([
     {
       code: `
         await streamText({
@@ -157,8 +202,8 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
         });
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     {
       code: `
         await streamText({
@@ -194,7 +239,7 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
       `,
       errors: [{ messageId: 'dynamicSystemPrompt' }, { messageId: 'dynamicSystemPrompt' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -205,7 +250,7 @@ ruleTester.run('no-dynamic-system-prompt (instructions prop)', noDynamicSystemPr
 // prompt. The collision case is the only one that was broken.
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSystemPrompt, {
-  valid: [
+  valid: xai([
     {
       code: `
         const instructions = 'temperature';
@@ -220,6 +265,6 @@ ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSys
     },
     // Numeric literal key — not a string, so not a statically known name.
     { code: 'generateText({ model, 0: buildValue() });' },
-  ],
-  invalid: [],
+  ]),
+  invalid: xai([]),
 });

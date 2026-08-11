@@ -878,3 +878,81 @@ describe('no-unlimited-resource-allocation', () => {
     });
   });
 });
+
+/**
+ * Wild-corpus regression: `calleeText.includes('Extract')`.
+ *
+ * The ZIP-bomb branch matched the callee's *printed text* for the bare
+ * substring 'Extract' and then reported unconditionally, so passport-jwt's
+ * standard configuration —
+ *
+ *   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
+ *
+ * — was reported as an unbounded decompression in four separate repositories.
+ * Nine findings on the 13-repo corpus, none of them touching an archive.
+ *
+ * Matching is now structural: a known archive receiver plus one of its
+ * decompression methods.
+ */
+describe('corpus regression — ZIP bomb detection', () => {
+  ruleTester.run('decompression is matched structurally', noUnlimitedResourceAllocation, {
+    valid: [
+      { name: 'passport-jwt extractor', code: `const o = { jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken() };` },
+      { name: 'passport-jwt with scheme', code: `const o = { jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('Bearer') };` },
+      { name: 'any other Extract-named helper', code: `const x = ExtractColors.fromImage(img);` },
+      // A receiver that is not bound to an archive module, however it reads.
+      { name: 'unbound receiver named unzipper', code: `unzipper.Extract({ path: 'out' });` },
+      // Namespace import — the other specifier kind the collector accepts.
+      {
+        name: 'namespace import of an archive module, non-decompression method',
+        code: `import * as unzipper from 'unzipper';\nunzipper.version();`,
+      },
+      // A named import binds a member, not the module, so it is not a receiver.
+      {
+        name: 'named import specifier is not a module binding',
+        code: `import { Extract } from 'unzipper';\nExtract({ path: 'out' });`,
+      },
+      // A string-keyed member on an archive binding yields no Identifier
+      // property, so there is no method name to match. Not reported rather
+      // than reported on an empty name.
+      {
+        name: 'string-keyed member on an archive binding',
+        code: `const tar = require('tar');\ntar['extract']();`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'unzipper.Extract still reports',
+        code: `const unzipper = require('unzipper');\nstream.pipe(unzipper.Extract({ path: 'out' }));`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'unzipper.Parse still reports',
+        code: `const unzipper = require('unzipper');\nstream.pipe(unzipper.Parse());`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      // The aliased spelling real code uses, and the reason receiver names
+      // are resolved to their import source rather than matched by name.
+      {
+        name: 'aliased require still reports',
+        code: `const unzip = require('unzipper');\nconst s = unzip.Extract({ path: '/tmp' });`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'default import alias still reports',
+        code: `import zip from 'unzipper';\nstream.pipe(zip.Extract({ path: 'out' }));`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'zlib.createGunzip still reports',
+        code: `req.pipe(zlib.createGunzip());`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'tar.extract still reports',
+        code: `const tar = require('tar');\ntar.extract({ cwd: 'out' });`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+    ],
+  });
+});

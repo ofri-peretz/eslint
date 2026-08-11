@@ -24,6 +24,50 @@ import parser from '@typescript-eslint/parser';
 import * as path from 'node:path';
 import { noMissingValidationPipe } from './rules/no-missing-validation-pipe';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
 RuleTester.it = it;
@@ -49,7 +93,7 @@ ruleTester.run(
   'no-missing-validation-pipe (type-aware)',
   noMissingValidationPipe,
   {
-    valid: [
+    valid: nest([
       // The DTO declares a real class-validator rule, so a pipe has something to
       // enforce. This is the case the name-based predecessor could not tell apart
       // from the one below.
@@ -169,8 +213,8 @@ ruleTester.run(
         }
       `,
       },
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       // No annotation at all: nothing for this half to resolve, so it falls
       // through to the syntax-only finding rather than double-reporting.
       {
@@ -270,6 +314,6 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'undecoratedDto' }],
       },
-    ],
+    ]),
   },
 );

@@ -37,3 +37,4 @@ export * from './message-source';
 // Shared CWE-89 detector for the *other* half of SQL injection: identifiers
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';
+export * from './module-evidence';

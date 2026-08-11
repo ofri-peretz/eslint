@@ -5,6 +5,51 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireMaxSteps } from './index';
 
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -13,7 +58,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-max-steps', requireMaxSteps, {
-  valid: [
+  valid: xai([
     // Has maxSteps
     {
       code: `
@@ -129,9 +174,9 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
         });
       `,
     },
-  ],
+  ]),
 
-  invalid: [
+  invalid: xai([
     // generateText with tools but no maxSteps
     {
       code: `
@@ -169,7 +214,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
       `,
       errors: [{ messageId: 'missingMaxSteps' }],
     },
-  ],
+  ]),
 });
 
 
@@ -177,7 +222,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
 // Coverage-gap fixtures: key shapes for tools/maxSteps detection
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
-  valid: [
+  valid: xai([
     // string-literal 'tools' key is NOT recognized — rule bails before maxSteps check
     { code: `generateText({ 'tools': myTools, prompt: 'x' });` },
     // spread-only options object
@@ -186,14 +231,14 @@ ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
     { code: `generateText({ tools: myTools, 'maxSteps': 3 });` },
     // snake_case max_steps also accepted
     { code: `generateText({ tools: myTools, max_steps: 3 });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // computed key resolves to null — maxSteps not found
     {
       code: `generateText({ tools: myTools, [getKey()]: 3 });`,
       errors: [{ messageId: 'missingMaxSteps' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +249,7 @@ ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
 // false positive.
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxSteps, {
-  valid: [
+  valid: xai([
     // v5+: the canonical replacement
     {
       code: `
@@ -242,8 +287,8 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
     { code: `generateText({ tools: myTools, 'stopWhen': stepCountIs(3) });` },
     // v4 spelling still accepted
     { code: `generateText({ tools: myTools, maxSteps: 3 });` },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // v5+ call with tools and no bound at all is still reported
     {
       code: `
@@ -261,5 +306,5 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
       code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });`,
       errors: [{ messageId: 'missingMaxSteps' }],
     },
-  ],
+  ]),
 });

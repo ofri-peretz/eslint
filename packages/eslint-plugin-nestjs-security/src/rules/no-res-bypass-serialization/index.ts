@@ -31,6 +31,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 import {
   callReceiver,
   decoratorCall,
@@ -159,6 +160,10 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context, [options = {}]) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const { allowInTests = true, assumeGlobalSerializer = false } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 

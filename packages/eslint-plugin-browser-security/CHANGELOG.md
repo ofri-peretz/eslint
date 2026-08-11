@@ -1,5 +1,151 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.3.0
+
+### Minor Changes
+
+- [#409](https://github.com/ofri-peretz/eslint/pull/409) [`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Stop the source-specific sink rules double-reporting with the generic ones, and
+  make each one actually check its own source.
+
+  Measured on the shipped tarball, with `browser-security/recommended` and nothing
+  else enabled, every source shape reported more than once at the **identical
+  range**:
+
+  | code                        | rules that fired                                                          |
+  | --------------------------- | ------------------------------------------------------------------------- |
+  | WebSocket → `innerHTML`     | `no-innerhtml` + `no-websocket-innerhtml`                                 |
+  | WebSocket → `eval`          | `no-eval` + `no-websocket-eval`                                           |
+  | `postMessage` → `innerHTML` | `no-innerhtml` + `no-postmessage-innerhtml` + `no-websocket-innerhtml`    |
+  | FileReader → `innerHTML`    | `no-innerhtml` + `no-filereader-innerhtml`                                |
+  | Worker → `innerHTML`        | `no-innerhtml` + `no-websocket-innerhtml` + `no-worker-message-innerhtml` |
+
+  Two separate defects produced that table. The source rules gated on the _handler
+  shape_ — `X.onmessage = fn` — and never on what `X` was, so they fired alongside
+  the generic rule on the same value, and `no-websocket-innerhtml` fired on
+  `postMessage` and Worker handlers too: a finding that said "WebSocket message
+  data" and linked the WebSocket MDN page for code containing no WebSocket.
+
+  New `@interlace/eslint-devkit` export `createPayloadResolver` resolves a
+  handler's receiver back to its construction (`new WebSocket` / `new Worker` /
+  `new SharedWorker` / `new FileReader`, plus the global receivers for
+  `postMessage`). The ownership rule it enforces: **a source rule reports only what
+  it can positively attribute; the generic rule reports everything else.** The two
+  tests are complements, so exactly one rule reports any given value.
+
+  An unresolvable receiver now falls to `no-innerhtml` / `no-eval` rather than
+  being reported as a WebSocket. Nothing goes unreported — the finding moves rules,
+  and its message stops claiming a provenance it cannot prove.
+
+### Patch Changes
+
+- [#427](https://github.com/ofri-peretz/eslint/pull/427) [`7d819f2`](https://github.com/ofri-peretz/eslint/commit/7d819f22b8c3e3f0457227eeea76eadc71fbb48e) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-clickjacking` no longer reports frame-busting as frame manipulation.
+
+  The rule flagged its own recommended remediation. `requireFrameBusting` asks you
+  to write a frame-buster; writing one then reported `frameManipulation`:
+
+  ```js
+  if (top != self) {
+    top.location = self.location; // ← reported as clickjacking
+  }
+  ```
+
+  The assignment is detected as manipulation with no check for the guard that
+  encloses it. It now walks the AST for an enclosing `if` whose test compares two
+  frame references (`top`, `self`, `parent`, `window.top`, `window.self`) and
+  treats the assignment inside as the remediation it is.
+
+  The old frame-busting detector matched printed source against fixed strings like
+  `'top != self'`, so `top !=  self` and `top!==self` — the same program — did not
+  match, and a comment containing the phrase did. That check is now structural;
+  see the ratchet in `scripts/audit-gettext-classification.ts`.
+
+  Naked redirects still report: `top.location = 'https://evil.test'`, and the same
+  assignment gated on an unrelated flag or a call result rather than a frame
+  comparison.
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#309](https://github.com/ofri-peretz/eslint/pull/309) [`237a6b0`](https://github.com/ofri-peretz/eslint/commit/237a6b03313e2ea935999ee84b2a6c8af33e50bc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `meta.hasSuggestions` now matches what each rule actually emits.
+
+  ILB-Remediation measured 27 rules where the declaration and the implementation
+  disagreed: 22 declared `hasSuggestions: true` without ever passing `suggest:`
+  to `context.report()` (IDE quick-fix menus advertising remediation that never
+  arrives), and 5 emitted `suggest:` without the declaration (latent — ESLint
+  throws on that combination as soon as one of those suggestions carries a real
+  fixer).
+
+  `eslint-plugin-mongodb-security` gains four real suggestions where the rewrite
+  is mechanical:
+
+  - `require-lean-queries` — appends `.lean()`
+  - `no-unbounded-find` — appends `.limit(100)`
+  - `no-debug-mode-production` — rewrites the flag to `process.env.NODE_ENV !== 'production'`
+  - `require-tls-connection` — adds (or flips) `tls: true` in the connection options
+
+  Every other dead declaration was removed rather than faked. A workspace lock
+  (`scripts/__tests__/suggestions-meta-lock.test.ts`) now fails CI on either
+  direction of the drift.
+
+- [#416](https://github.com/ofri-peretz/eslint/pull/416) [`fc69481`](https://github.com/ofri-peretz/eslint/commit/fc69481d690fc2b7f36f41acd025c0bda4f25fe7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unencrypted-transmission` no longer flags protocol strings that are being
+  inspected, or XML namespace identifiers.
+
+  The rule reported **every** string literal containing `http://`, regardless of
+  what the code did with it. Two false-positive classes followed, both measured by
+  running the published ruleset over the Interlace monorepo:
+
+  **The security check reported as the vulnerability.** The rule's own finding
+  landed on this line:
+
+  ```js
+  // Skip external links, anchors, and absolute paths
+  if (url.startsWith('http://') || url.startsWith('https://') || …)
+  ```
+
+  A protocol string passed to `startsWith` / `includes` / `match`, passed as the
+  **first** argument to `replace` / `replaceAll`, or compared with `===`, is the
+  thing being _looked for_ — not an endpoint being called. The second argument to
+  `replace` / `replaceAll` is content being written, so
+  `url.replace(p, 'http://evil.test')` still reports.
+
+  **XML namespaces.** `xmlns="http://www.w3.org/2000/svg"` is the most common
+  `http://` string in any React codebase — every inline SVG carries one. It is
+  never fetched; namespaces are opaque identifiers and rewriting one to `https`
+  breaks the document. Also covers the XSD/XSL/RDF and Inkscape/Adobe namespaces.
+
+  Both are locked as `valid` cases, verified by reverting each guard and watching
+  the rule report again. True positives are unaffected: `fetch('http://api…')`,
+  `new WebSocket('ws://…')` and connection strings still report.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 1.2.14
 
 ### Patch Changes

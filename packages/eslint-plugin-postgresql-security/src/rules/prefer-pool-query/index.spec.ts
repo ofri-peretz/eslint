@@ -2,6 +2,22 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import * as parser from '@typescript-eslint/parser';
 import { preferPoolQuery } from './index';
 
+/**
+ * Every fixture imports a PostgreSQL client, because the rule now abstains in
+ * files that use no PostgreSQL at all. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the import
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const withPg = (code: string): string => `import { Pool } from 'pg';\n${code}`;
+const pg = <T,>(cases: T[]): T[] =>
+  cases.map((c) =>
+    typeof c === 'string'
+      ? (withPg(c) as T)
+      : ({ ...c, code: withPg((c as { code: string }).code) } as T),
+  );
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     parser,
@@ -9,7 +25,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('prefer-pool-query', preferPoolQuery, {
-  valid: [
+  valid: pg([
     `
     async function valid() {
       const client = await pool.connect();
@@ -68,8 +84,8 @@ ruleTester.run('prefer-pool-query', preferPoolQuery, {
       client.release();
     }
     `,
-  ],
-  invalid: [
+  ]),
+  invalid: pg([
     {
       code: `
       async function invalid() {
@@ -93,5 +109,5 @@ ruleTester.run('prefer-pool-query', preferPoolQuery, {
        `,
        errors: [{ messageId: 'preferPoolQuery' }],
     }
-  ],
+  ]),
 });

@@ -12,6 +12,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { PreventDoubleReleaseOptions } from '../../types';
+import { fileUsesPostgres } from '../../utils';
 
 /**
  * Finds the nearest ancestor of a given type.
@@ -258,6 +259,12 @@ export const preventDoubleRelease: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    // Every rule here is PostgreSQL-specific, and none of them knew it: over
+    // 108,838 files, 94% of this plugin's findings were in files with no
+    // PostgreSQL client at all. Registering no visitors is both the gate and
+    // the cheap path — a file with no database in it does no work.
+    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+
     return {
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         const declaredVariables = context.sourceCode.getDeclaredVariables(node);

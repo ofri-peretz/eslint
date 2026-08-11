@@ -8,8 +8,13 @@
  * @fileoverview Detect debug endpoints without auth in Express applications
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'violationDetected';
 
@@ -20,7 +25,14 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-const DEFAULT_DEBUG_PATHS = ['/debug', '/__debug__', '/admin', '/_admin', '/test', '/health'];
+const DEFAULT_DEBUG_PATHS = [
+  '/debug',
+  '/__debug__',
+  '/admin',
+  '/_admin',
+  '/test',
+  '/health',
+];
 
 // Express route-registration methods, incl. `use` for mounted sub-routers and
 // `route` for the chained builder (`app.route('/admin').delete(handler)`).
@@ -43,7 +55,8 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-exposed-debug-endpoints.md',
-      description: 'Detect debug endpoints without auth in Express applications',
+      description:
+        'Detect debug endpoints without auth in Express applications',
       cwe: 'CWE-489',
       cvss: 7.5,
     },
@@ -56,7 +69,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Remove debug endpoints from production or add authentication',
         documentationLink: 'https://cwe.mitre.org/data/definitions/489.html',
-      })
+      }),
     },
     schema: [
       {
@@ -65,27 +78,33 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           endpoints: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Custom list of debug/admin endpoints to flag'
+            description: 'Custom list of debug/admin endpoints to flag',
           },
           ignoreFiles: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of files or patterns to ignore'
-          }
+            description: 'List of files or patterns to ignore',
+          },
         },
-        additionalProperties: false
-      }
+        additionalProperties: false,
+      },
     ],
   },
   defaultOptions: [{}],
   create(context) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const options = context.options[0] || {};
     const debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
     const ignoreFiles = options.ignoreFiles || [];
     const filename = context.filename;
 
     // Check if current file should be ignored
-    if (ignoreFiles.some(pattern => filename.includes(pattern))) {
+    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
       return {};
     }
 
@@ -121,9 +140,13 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           return;
         }
         const pathArg = node.arguments[0];
-        if (pathArg && pathArg.type === 'Literal' && typeof pathArg.value === 'string') {
+        if (
+          pathArg &&
+          pathArg.type === 'Literal' &&
+          typeof pathArg.value === 'string'
+        ) {
           const path = pathArg.value.toLowerCase();
-          if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
+          if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
             context.report({ node: pathArg, messageId: 'violationDetected' });
           }
         }

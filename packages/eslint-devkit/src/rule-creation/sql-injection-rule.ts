@@ -58,6 +58,26 @@ export interface SqlInjectionRuleConfig {
   /** Method names treated as raw-SQL sinks, e.g. `['query']` or `['query', 'raw', 'execute']`. */
   readonly methods: readonly string[];
   /**
+   * Modules whose API these sinks belong to. **The rule stays silent in a file
+   * that imports none of them.**
+   *
+   * Method names are not evidence of an SDK. `['raw']` is knex *and* drizzle;
+   * `['query']` is typeorm *and* pg *and* mysql2; `['get','all','run']` is
+   * better-sqlite3 *and* an Express router *and* `Promise.all`. Measured over
+   * 73,364 files, that produced 1,142 lines where two or more plugins reported
+   * the *same* CWE — 616 for postgres×typeorm, 503 for mysql×typeorm, 347 for
+   * drizzle×knex, all from this one factory.
+   *
+   * Requiring the import makes the collision impossible by construction rather
+   * than deduplicated after the fact, and it is *local* evidence: no project
+   * scan, nothing to go stale, and a file that does not import the driver is
+   * one this rule genuinely has nothing to say about.
+   *
+   * Matched against the import specifier's package root, so `'mysql2/promise'`
+   * matches `'mysql2'` and `'@prisma/client/edge'` matches `'@prisma/client'`.
+   */
+  readonly modules: readonly string[];
+  /**
    * Require SQL keywords in the *static* part of the string before reporting.
    * Precision guard for broad sink lists (`.raw()`, `.execute()` are not
    * SQL-only names). `false` keeps the historical pg behaviour: any
@@ -174,6 +194,24 @@ export function createSqlInjectionRule(
   config: SqlInjectionRuleConfig,
 ): TSESLint.RuleModule<SqlInjectionMessageIds, []> {
   const sinks = new Set(config.methods);
+  const owned = new Set(config.modules);
+
+  /**
+   * Whether an import specifier is one of this rule's own modules.
+   *
+   * Compared on the package root so subpath and deep imports count:
+   * `mysql2/promise` → `mysql2`, `@prisma/client/edge` → `@prisma/client`.
+   * A relative import is never a package and is rejected outright — otherwise
+   * `'./knex'` would satisfy the knex rule in a repo that has no knex.
+   */
+  const owns = (specifier: string): boolean => {
+    if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
+    const parts = specifier.split('/');
+    const root = specifier.startsWith('@')
+      ? parts.slice(0, 2).join('/')
+      : parts[0];
+    return owned.has(root);
+  };
 
   return {
     meta: {
@@ -254,7 +292,18 @@ export function createSqlInjectionRule(
         kind: UnsafeKind | undefined;
       }[] = [];
 
+      /**
+       * Whether this file imports the SDK these sinks belong to.
+       *
+       * Set once from the Program node — which ESLint visits before any of its
+       * children — so every visitor below can read it. Gating inside `report`
+       * rather than at each call site covers the deferred wrapper findings
+       * flushed at `Program:exit` too.
+       */
+      let ownsFile = false;
+
       const report = (node: TSESTree.Node, kind: UnsafeKind): void => {
+        if (!ownsFile) return;
         context.report({
           node,
           messageId:
@@ -263,6 +312,14 @@ export function createSqlInjectionRule(
       };
 
       return {
+        Program(program: TSESTree.Program) {
+          ownsFile = program.body.some(
+            (stmt) =>
+              stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+              owns(stmt.source.value),
+          );
+        },
+
         // Count every named callable so Program:exit can tell a name with one
         // meaning from a name shared by a wrapper and a non-wrapper.
         'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression'(

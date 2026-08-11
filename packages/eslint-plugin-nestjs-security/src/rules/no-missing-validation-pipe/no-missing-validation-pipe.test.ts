@@ -1,10 +1,54 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noMissingValidationPipe } from './index';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester();
 
 ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
-  valid: [
+  valid: nest([
     // nest-framework/.../hello.controller.ts:29 — a custom pipe resolves the id
     // to an entity and throws when it cannot. Matching the literal name
     // `ValidationPipe` reported every one of NestJS's own samples.
@@ -139,8 +183,8 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
         }
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // A global ValidationPipe cannot validate what carries no runtime class.
     // The early return that used to skip the whole file on a global
     // registration hid exactly these.
@@ -201,7 +245,7 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
       options: [{ requireExplicitPipe: true, allowInTests: false }],
       errors: [{ messageId: 'missingValidation' }],
     },
-  ],
+  ]),
 });
 
 // Locks for the parameter-scoped pipe and the untyped-@Body false negative.
@@ -209,7 +253,7 @@ ruleTester.run(
   'no-missing-validation-pipe (parameter scope)',
   noMissingValidationPipe,
   {
-    valid: [
+    valid: nest([
       // A pipe applied directly to the parameter validates it.
       `
       @Controller('u')
@@ -225,8 +269,8 @@ ruleTester.run(
         create(@Body(ValidationPipe) dto: CreateDto) {}
       }
     `,
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       // FN-5: an untyped @Body is the most dangerous shape and was silent.
       {
         code: `
@@ -251,7 +295,7 @@ ruleTester.run(
         options: [{ requireExplicitPipe: true }],
         errors: [{ messageId: 'missingValidation' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -262,7 +306,7 @@ ruleTester.run(
   'no-missing-validation-pipe (unvalidatable shapes)',
   noMissingValidationPipe,
   {
-    valid: [
+    valid: nest([
       // A typed DTO IS validated by a global ValidationPipe.
       `
       @Controller('u')
@@ -278,8 +322,8 @@ ruleTester.run(
         find(@Query() dto: SearchRequestDto) {}
       }
     `,
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       // No annotation: the pipe has no metatype, so nothing is checked.
       {
         code: `
@@ -327,6 +371,6 @@ ruleTester.run(
           { messageId: 'missingValidation' },
         ],
       },
-    ],
+    ]),
   },
 );

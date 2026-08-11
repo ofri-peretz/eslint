@@ -16,7 +16,11 @@
  * @see https://portswigger.net/web-security/jwt/algorithm-confusion
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import {
   isVerifyOperation,
   getOptionsArgument,
@@ -25,9 +29,7 @@ import {
 import type { NoAlgorithmConfusionOptions } from '../../types';
 
 type MessageIds =
-  | 'algorithmConfusion'
-  | 'symmetricWithPublicKey'
-  | 'useAsymmetricAlgorithm';
+  'algorithmConfusion' | 'symmetricWithPublicKey' | 'useAsymmetricAlgorithm';
 
 type RuleOptions = [NoAlgorithmConfusionOptions?];
 
@@ -129,7 +131,7 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
     const symmetricAlgSet = new Set(
-      options.symmetricAlgorithms ?? ['HS256', 'HS384', 'HS512']
+      options.symmetricAlgorithms ?? ['HS256', 'HS384', 'HS512'],
     );
     const sourceCode = context.sourceCode;
 

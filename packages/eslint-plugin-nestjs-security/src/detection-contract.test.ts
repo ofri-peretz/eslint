@@ -26,6 +26,10 @@ const linter = new Linter({ configType: 'flat' });
 
 /** Run one rule over a snippet and return its message ids. */
 function run(rule: string, code: string, options?: unknown): string[] {
+  // The rules abstain in files that use no NestJS, so every fixture here is
+  // linted as the NestJS file it stands for. Prefixing once here means no
+  // fixture can be left behind and pass vacuously on the gate.
+  code = `import '@nestjs/common';\n${code}`;
   const messages = linter.verify(
     code,
     {

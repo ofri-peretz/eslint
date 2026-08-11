@@ -79,8 +79,9 @@ Each is single-dimension, versioned, with a frozen corpus.
 | 10 | **ILB-Formatter** | Whole-run formatter cost vs ESLint stylish + signal preservation | `interlace-compact` ≤ 0% vs stylish | structured formats = 4.0/4 | ≤ 50 ms (large), ≤ 250 ms (extreme) |
 | 11 | **ILB-Remediation** | Do remediation claims (fixable/suggestions) actually emit fixes — ours AND competitors'? | n/a | declared == implemented (0 dead declarations) | n/a |
 | 12 | **ILB-Landscape** | License-freedom + maintenance-velocity facts for the tool landscape (ours AND competitors', same queries) | $0, public APIs only | every judgment cell carries a verbatim citation | n/a |
+| 13 | **ILB-Corpus-Truth** | On 107 repos we did not write, how many findings are about an SDK the file never imports — and which rules never fire? | n/a | no rule above its recorded off-SDK baseline | n/a |
 
-Cadence: per-PR (Arena, Juliet, Quality, Formatter) · nightly (Wild + Edge + Cov + Perf) · weekly (Coverage, LLM-Tokens, LLM-Fix) · quarterly (AI, CWE expansion review) · annually (re-baseline FP weights).
+Cadence: per-PR (Arena, Juliet, Quality, Formatter, plus the seconds-long `sdk-gate-coverage` lock that stands in for Corpus-Truth) · weekly Tue (Corpus-Truth — 107 repos, too heavy for a PR) · nightly (Wild + Edge + Cov + Perf) · weekly (Coverage, LLM-Tokens, LLM-Fix) · quarterly (AI, CWE expansion review) · annually (re-baseline FP weights).
 
 ## 5. Severity classification policy (the contract)
 
