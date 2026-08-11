@@ -5,7 +5,11 @@
  */
 
 import type { TSESTree } from '@typescript-eslint/utils';
-import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+// AST_NODE_TYPES comes from the local shim, not upstream: it is an enum, so a
+// value import of it would emit a runtime `require('@typescript-eslint/utils')`
+// into the published output — an optional peer npm does not install. The type
+// import above is erased at compile time and is fine.
+import { AST_NODE_TYPES } from '../ast-node-types';
 
 /**
  * Extra evidence a plugin accepts beyond an import.
