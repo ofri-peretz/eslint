@@ -8,13 +8,26 @@
 import { describe, it, expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { lockFile } from './index';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+/** A project with a manifest and deliberately no lock file. */
+const coverageProject = mkdtempSync(join(tmpdir(), 'lock-file-coverage-'));
+mkdirSync(join(coverageProject, 'src'), { recursive: true });
+writeFileSync(
+  join(coverageProject, 'package.json'),
+  JSON.stringify({ name: 'coverage-fixture', version: '1.0.0' }),
+);
 
 describe('lock-file coverage gaps (Layer 2)', () => {
   it('reports a missing lock file once and skips subsequent Program visits', () => {
     const { listeners, reports } = createWithMockContext(lockFile as never, {
-      // A directory that cannot contain any lock file; dirname('/definitely-
-      // missing-lockdir') walks straight to '/' and stops.
-      filename: '/definitely-missing-lockdir-e2e/src/mock.ts',
+      // A real project with a manifest and no lock file. A bare virtual path
+      // no longer works: the rule keys its once-per-project report on the
+      // nearest package.json, and treats a directory without one as not a JS
+      // project at all.
+      filename: join(coverageProject, 'src', 'mock.ts'),
     });
     const program = { type: 'Program', body: [], sourceType: 'module' };
 
