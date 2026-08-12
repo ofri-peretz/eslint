@@ -166,7 +166,16 @@ export default [
               // Shopify ships a speedscope build under \`assets/\`, and both
               // vendor libraries wholesale. Counting findings there measures the
               // corpus's vendoring habits, not our precision.
-              "**/vendor/**", "**/*-dist/**", "**/assets/**"],
+              "**/vendor/**", "**/*-dist/**", "**/assets/**",
+              // Same category as the `test/`, `examples/` and `fixtures/`
+              // entries above, under the names these repos actually use:
+              // `e2e/` is test infrastructure, `playground/` is a dev server,
+              // and `samples/` is `examples/` (okta ships its demo apps as
+              // `samples/generated/`). Precision is measured on code people
+              // ship. Findings here are still real — okta's sample app really
+              // does assign server data to innerHTML — they are just not a
+              // measure of whether the rules are right.
+              "**/e2e/**", "**/playground/**", "**/samples/**"],
     languageOptions: { parser, ecmaVersion: 2022, sourceType: "module" },
     plugins,
     rules,
