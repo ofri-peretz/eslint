@@ -21,7 +21,7 @@
       "rules": 28,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "3.7.0",
+      "version": "3.7.1",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 6,
       "description": "ESLint plugin for module architecture — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation",
       "category": "quality",
-      "version": "2.1.8",
+      "version": "2.1.9",
       "published": true
     },
     {
