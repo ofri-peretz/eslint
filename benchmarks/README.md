@@ -133,7 +133,7 @@ Every fixture under [`corpus/`](./corpus/) carries:
 
 ---
 
-## 2. The 14 benches at a glance
+## 2. The 15 benches at a glance
 
 Each bench is **single-dimension** (one bench, one number), **versioned** (corpus changes bump the version), and has **a frozen corpus** (pinned commits / fixed prompts / deterministic seeds). The Cost / Effectiveness / Latency columns are the triad — `n/a` means the aspect is genuinely not applicable to that bench, not that we forgot.
 
@@ -153,6 +153,7 @@ Each bench is **single-dimension** (one bench, one number), **versioned** (corpu
 | 11 | **ILB-Remediation** | Of the rules that *claim* to fix or suggest, how many actually do — for us and for every free ESLint-native competitor? | n/a | implemented ÷ declared, plus dead declarations named on both sides · SLO: 0 dead declarations of our own | n/a (source-level scan) | `npm run ilb:remediation` |
 | 12 | **ILB-Landscape** | For every tool in the panel (ours included), what does its license actually permit, and how alive is it? | n/a | verbatim-cited license terms + releases/12mo + median issue first-response · SLO: every judgment cell carries a primary-source quote | n/a (public-API harvest) | `npm run ilb:landscape` |
 | 13 | **ILB-Corpus-Truth** | On 107 repositories we did not write, how many findings are about an SDK the file never imports — and which rules never fire at all? | n/a | `offSdkRate` (% of findings with no local SDK evidence) + `deadRules` · SLO: no rule above its recorded off-SDK baseline | n/a (measurement sweep) | `npm run ilb:corpus-truth` |
+| 14 | **ILB-Preset-Budget** | On a repository we did not write, how many findings does each plugin's `recommended` print — i.e. will a developer keep it installed? | n/a | `medianFindingsPerRepo` per plugin · SLO: no plugin above its recorded ceiling | n/a (measurement sweep) | `npm run ilb:preset-budget` |
 
 For live numbers see [`benchmark-results/scorecard.md`](../benchmark-results/scorecard.md). Don't paste numbers into this README — they go stale.
 

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://benchmarks.interlace.dev/schemas/result-envelope-v1.json",
   "title": "ILB Result Envelope v1",
-  "description": "Vocabulary contract for every Interlace bench result. Operationalizes roadmap item 1.11. Standard field names enforced; synonyms (`tokens`, `accuracy`, `time`) fail validation. See benchmarks/README.md §1 'The three measurement aspects'.",
+  "description": "Vocabulary contract for every Interlace bench result. Operationalizes roadmap item 1.11. Standard field names enforced; synonyms (`tokens`, `accuracy`, `time`) fail validation. See benchmarks/README.md \u00a71 'The three measurement aspects'.",
   "type": "object",
   "required": [
     "bench",
@@ -43,7 +43,8 @@
         "ILB-Public-Submission",
         "ILB-Landscape",
         "ILB-Remediation",
-        "ILB-Corpus-Truth"
+        "ILB-Corpus-Truth",
+        "ILB-Preset-Budget"
       ],
       "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
     },
@@ -59,7 +60,7 @@
     "methodologyCommit": {
       "type": "string",
       "pattern": "^[a-f0-9]{7,40}$",
-      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. NOT squash-proof — this repo squash-merges, so a branch SHA never enters main's history and is unreachable from a fresh clone. Useful provenance while the PR ref lives; `methodologyHash` is the durable receipt."
+      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. NOT squash-proof \u2014 this repo squash-merges, so a branch SHA never enters main's history and is unreachable from a fresh clone. Useful provenance while the PR ref lives; `methodologyHash` is the durable receipt."
     },
     "methodologyHash": {
       "type": "string",
@@ -72,7 +73,7 @@
         "type": "string"
       },
       "minItems": 1,
-      "description": "Repo-relative files covered by `methodologyHash`, in hash order: the suite entrypoint first, then its transitive repo-local imports (sorted). Recorded so the hash is self-describing — an unversioned 'hash of some files' is no better than a dead SHA."
+      "description": "Repo-relative files covered by `methodologyHash`, in hash order: the suite entrypoint first, then its transitive repo-local imports (sorted). Recorded so the hash is self-describing \u2014 an unversioned 'hash of some files' is no better than a dead SHA."
     },
     "toolchain": {
       "type": "object",
@@ -122,7 +123,7 @@
     },
     "cost": {
       "type": "object",
-      "description": "Token-cost aspect. Use these exact field names — synonyms (`tokens`, `cost`, `len`) fail validation.",
+      "description": "Token-cost aspect. Use these exact field names \u2014 synonyms (`tokens`, `cost`, `len`) fail validation.",
       "additionalProperties": false,
       "properties": {
         "tokensO200k": {
@@ -150,7 +151,7 @@
     },
     "effectiveness": {
       "type": "object",
-      "description": "Effectiveness aspect. Concrete fields per bench type — F1 family for rule benches, signalScore for formatter, passRate for LLM-Fix, vulnDetectionRate for AI.",
+      "description": "Effectiveness aspect. Concrete fields per bench type \u2014 F1 family for rule benches, signalScore for formatter, passRate for LLM-Fix, vulnDetectionRate for AI.",
       "additionalProperties": false,
       "properties": {
         "f1": {
@@ -279,7 +280,7 @@
         },
         "offSdkRate": {
           "type": "number",
-          "description": "Percent of findings landing in files with no local evidence of the rule’s SDK. Scope, not accuracy: a rule can be perfectly precise inside its SDK and still be 98% off-SDK."
+          "description": "Percent of findings landing in files with no local evidence of the rule\u2019s SDK. Scope, not accuracy: a rule can be perfectly precise inside its SDK and still be 98% off-SDK."
         },
         "deadRules": {
           "type": "integer",
@@ -288,12 +289,20 @@
         "ruleCount": {
           "type": "integer",
           "description": "Rules measured, so deadRules has a denominator."
+        },
+        "medianFindingsPerRepo": {
+          "type": "number",
+          "description": "Median findings a plugin\u2019s recommended preset prints on one repository \u2014 what a developer sees on install."
+        },
+        "pluginsOverBudget": {
+          "type": "integer",
+          "description": "Plugins whose median exceeded their recorded ceiling."
         }
       }
     },
     "latency": {
       "type": "object",
-      "description": "Latency aspect. Standard field names — synonyms (`time`, `duration`, `speed`) fail validation.",
+      "description": "Latency aspect. Standard field names \u2014 synonyms (`time`, `duration`, `speed`) fail validation.",
       "additionalProperties": false,
       "properties": {
         "latencyMsP50": {
