@@ -31,35 +31,58 @@
  * Wired into `npm run quality`.
  */
 
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
 const REPO_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
-/** Directories whose immediate children are npm-workspace members. */
-const WORKSPACE_PARENTS = ['packages', 'apps', 'tools'] as const;
+/**
+ * Workspace members are read from the root manifest rather than hardcoded.
+ *
+ * A hardcoded `['packages', 'apps', 'tools']` silently missed `benchmarks`,
+ * which the manifest declares as a bare (non-glob) workspace — so
+ * `benchmarks/package-lock.json` would have sailed through the gate that
+ * exists to catch exactly that file. Deriving the list means the gate cannot
+ * drift from `package.json` again.
+ *
+ * Supports both forms npm allows: `dir/*` globs and bare directory entries.
+ */
+function workspaceMemberDirs(): string[] {
+  const manifest = JSON.parse(
+    readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'),
+  ) as { workspaces?: string[] | { packages?: string[] } };
 
+  const patterns = Array.isArray(manifest.workspaces)
+    ? manifest.workspaces
+    : (manifest.workspaces?.packages ?? []);
+
+  const dirs: string[] = [];
+  for (const pattern of patterns) {
+    if (pattern.endsWith('/*')) {
+      const parent = pattern.slice(0, -2);
+      try {
+        for (const entry of readdirSync(join(REPO_ROOT, parent), { withFileTypes: true })) {
+          if (entry.isDirectory()) dirs.push(join(parent, entry.name));
+        }
+      } catch {
+        // A checkout without this directory is not this gate's failure mode.
+      }
+    } else if (!pattern.includes('*')) {
+      dirs.push(pattern);
+    }
+  }
+  return dirs;
+}
+
+const memberDirs = workspaceMemberDirs();
 const offenders: string[] = [];
 
-for (const parent of WORKSPACE_PARENTS) {
-  const parentDir = join(REPO_ROOT, parent);
-  let members: string[];
-  try {
-    members = readdirSync(parentDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name);
-  } catch {
-    // A checkout without this directory is not this gate's failure mode.
-    continue;
-  }
-
-  for (const member of members) {
-    const lockfile = join(parentDir, member, 'package-lock.json');
-    if (existsSync(lockfile)) {
-      offenders.push(relative(REPO_ROOT, lockfile));
-    }
+for (const member of memberDirs) {
+  const lockfile = join(REPO_ROOT, member, 'package-lock.json');
+  if (existsSync(lockfile)) {
+    offenders.push(relative(REPO_ROOT, lockfile));
   }
 }
 
@@ -84,6 +107,4 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
-console.log(
-  `✓ No orphan lockfiles in ${WORKSPACE_PARENTS.map((p) => `${p}/*`).join(', ')}`,
-);
+console.log(`✓ No orphan lockfiles across ${memberDirs.length} workspace members`);
