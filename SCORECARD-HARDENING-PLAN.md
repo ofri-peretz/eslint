@@ -114,14 +114,51 @@ hash, so this is the last mile: pin the loose `npm install <pkg>` calls in
 `sdk-compatibility.yml`, `daily-impact-ingest.yml`, `supply-chain-attestation.yml`
 and the `Dockerfile`, and pin the `pip` install in `codecov.yml`.
 
+**Status — done except one, which is deliberately left open.**
+
+Closed: `weekly-benchmark.yml` (`npm install` → `npm ci` against its committed
+workspace lockfile), the `Dockerfile` (manifest + lockfile moved to `docker/image/`,
+installed with `npm ci`; verified by building both `linux/arm64` and `linux/amd64`
+and by the image's own in-container selftest), and `codecov.yml` (`pip3 install
+codecov-cli` → `--require-hashes -r .github/requirements/codecov-cli.txt`, verified
+to install and run `codecovcli 11.3.1` under Python 3.12).
+
+**Open and won't-fix: `npm install -g @lhci/cli@0.14.0` in `lighthouse.yml`.**
+Pinning it means committing a lockfile, and OSV reads committed lockfiles whether
+the tree is dev or prod. Measured: `@lhci/cli@0.14.0` resolves 9 advisories —
+`tmp` (high), `uuid` and `@lhci/cli` (moderate), plus 6 low. They are inherent to
+the current release, so there is no version that avoids them.
+
+That trades one **medium** Pinned-Dependencies alert for 9 findings on
+**Vulnerabilities**, a higher-weighted check we just took from 0 → clean. The
+exposure is identical either way — the global install runs the same code — so
+pinning would move vulnerabilities into view without removing any. Revisit when
+lighthouse-ci ships a release that resolves them.
+
 ### 7. SAST: 9 → 10 · **+0.06** · a judgement call
 
 CodeQL runs on the T3 promote gate and a weekly cron, deliberately — it costs ~4
 min/run in a repo where roughly 82% of CI wall-clock is already queue,
 not compute. Scorecard wants it on every commit.
 
-**Recommendation: don't.** 0.06 points is not worth adding a 4-minute job to every
-push in a repo that is already queue-bound. Revisit if the runner budget changes.
+**Superseded — this is now done.** The original recommendation was *don't*: 0.06
+points is not worth adding a 4-minute job to every push in a repo that is already
+queue-bound.
+
+Two things changed it. First, scope: the trigger added is `push: branches: [main]`,
+not every push on every branch — it fires once per merge, not once per commit on a
+feature branch, so the cost is a few runs a day rather than one per push. Second,
+the gap was never only about frequency. CodeQL fired solely on `pull_request`, so a
+commit that reached `main` outside that path — automation commits, changeset
+releases, anything merged while the PR was still a draft without `run-full-ci` —
+was never analysed at all. That is not a tuning choice, it is a hole: the last
+Scorecard run measured 25 of 30 commits analysed.
+
+The `concurrency` block had to change with it. It was keyed on `github.ref` with
+`cancel-in-progress: true`, so two merges landing close together would cancel the
+first commit's analysis and leave it permanently unscanned — recreating the gap.
+Push events are now keyed on `github.sha` and never cancelled; PR pushes still
+supersede each other as before.
 
 ---
 

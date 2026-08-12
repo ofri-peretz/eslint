@@ -63,27 +63,22 @@ RUN apk add --no-cache git
 # `WORKDIR /  # note` sets the directory to the literal string `/  # note`.
 # Verified — that is not a style preference.)
 WORKDIR /
-RUN printf '{"name":"interlace-image","private":true}' > /package.json
-# Pinned, not `@latest`: an unpinned install makes the image non-reproducible
-# (two builds of the same Dockerfile ship different rules) and is what
-# Scorecard's PinnedDependenciesID flags. Bump these deliberately.
+# The manifest and its lockfile live in docker/image/ rather than inline here.
+# Naming exact versions on an `npm install` line pins the DIRECT dependencies
+# and nothing beneath them: every transitive dep still re-resolves against the
+# registry at build time, so two builds of this Dockerfile can ship different
+# code. `npm ci` against a committed lockfile installs the whole tree by
+# integrity hash, which is what Scorecard's PinnedDependenciesID asks for.
+#
+# To bump a plugin: edit docker/image/package.json, then regenerate with
+#   npm install --package-lock-only --prefix docker/image
 #
 # `eslint-plugin-jwt` and `eslint-plugin-pg` used to be listed here. Both were
 # renamed to their `-security` names and their sources removed from the
 # monorepo, so the image was shipping two superseded packages and omitting
 # their replacements.
-RUN npm install --no-fund --no-audit --omit=dev \
-      eslint@10.8.1 \
-      eslint-plugin-secure-coding@3.4.4 \
-      eslint-plugin-browser-security@1.2.14 \
-      eslint-plugin-node-security@4.8.1 \
-      eslint-plugin-jwt-security@2.3.2 \
-      eslint-plugin-express-security@1.5.5 \
-      eslint-plugin-lambda-security@1.3.3 \
-      eslint-plugin-mongodb-security@8.3.5 \
-      eslint-plugin-nestjs-security@2.2.0 \
-      eslint-plugin-vercel-ai-security@1.5.3 \
-      eslint-plugin-postgresql-security@1.5.2
+COPY docker/image/package.json docker/image/package-lock.json /
+RUN npm ci --no-fund --no-audit --omit=dev
 
 # ─── runtime ────────────────────────────────────────────────────────────────
 FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14

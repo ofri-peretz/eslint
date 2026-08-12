@@ -13,6 +13,13 @@ name: CodeQL
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  # Every commit that lands on main is analysed. The PR triggers below are a
+  # fast-feedback convenience and cannot stand alone: they skip draft PRs
+  # without `run-full-ci`, and they never see a commit pushed straight to main
+  # (automation commits, changeset releases). Those gaps are exactly what
+  # Scorecard's SAST check measures — it reported 25 of 30 commits analysed.
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
     types: [ready_for_review, labeled, synchronize]
@@ -24,8 +31,13 @@ on:
     - cron: "17 3 * * 1"
 
 concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  # Keyed on the SHA for push, the ref for everything else. Two merges landing
+  # close together share a ref, so a ref-keyed group would cancel the first
+  # commit's analysis and leave it permanently unscanned — reintroducing the
+  # SAST gap this workflow's push trigger exists to close. Superseding a PR
+  # push is fine; superseding a commit already on main is not.
+  group: codeql-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 permissions:
   contents: read

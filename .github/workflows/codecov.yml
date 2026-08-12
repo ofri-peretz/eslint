@@ -109,7 +109,12 @@ jobs:
         run: |
           # Each package gets its own flag so per-plugin badge URLs work:
           # https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<flag>
-          pip3 install --quiet codecov-cli==11.3.1
+          #
+          # `--require-hashes` against a committed set, not a bare version pin:
+          # `codecov-cli==11.3.1` pins the CLI but lets every transitive dep
+          # re-resolve from PyPI at run time, which is what Scorecard's
+          # PinnedDependenciesID flags. See the regenerate command in that file.
+          pip3 install --quiet --require-hashes -r .github/requirements/codecov-cli.txt
           for lcov in packages/*/coverage/lcov.info; do
             [ -f "$lcov" ] || continue
             pkg=$(basename "$(dirname "$(dirname "$lcov")")")

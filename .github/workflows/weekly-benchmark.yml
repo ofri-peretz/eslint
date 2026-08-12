@@ -213,9 +213,13 @@ jobs:
       - name: Clear stale headline snapshots
         run: rm -rf benchmarks/results/ilb-headline
 
+      # `npm ci` not `npm install`: the workspace ships a committed lockfile, and a
+      # benchmark that silently resolves a different dependency tree than the one
+      # recorded is measuring something other than what it reports. Also what
+      # Scorecard's PinnedDependenciesID asks for — the tree is pinned by hash.
       - name: Install benchmark workspace (eslint + oxlint + plugins)
         working-directory: benchmarks/suites/ilb-flagship/workspace
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       # Fail BEFORE measuring if the matchup table cites a rule that no longer
       # exists. A renamed or deleted rule turns the published comparison into
