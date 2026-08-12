@@ -101,18 +101,51 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
     /**
      * Check if payload contains exp claim
      */
-    // oxlint-disable-next-line consistent-function-scoping
     const payloadHasExp = (payloadNode: TSESTree.Node): boolean => {
-      if (payloadNode.type !== 'ObjectExpression') {
+      // `jwt.sign(payload, secret)` where the payload was built a few lines
+      // up is the ordinary way to write this — twilio's ClientCapability does
+      // exactly that, setting `exp: Math.floor(Date.now()/1000) + this.ttl`
+      // before signing. Looking only at an inline object literal reported a
+      // token whose expiration was right there, spelled the other legal way.
+      const resolved =
+        payloadNode.type === 'Identifier'
+          ? resolveObjectLiteral(payloadNode)
+          : payloadNode;
+
+      if (resolved === null || resolved.type !== 'ObjectExpression') {
         return false;
       }
 
-      return payloadNode.properties.some(
+      return resolved.properties.some(
         (prop) =>
           prop.type === 'Property' &&
-          prop.key.type === 'Identifier' &&
-          prop.key.name === 'exp',
+          !prop.computed &&
+          ((prop.key.type === 'Identifier' && prop.key.name === 'exp') ||
+            (prop.key.type === 'Literal' && prop.key.value === 'exp')),
       );
+    };
+
+    /** Follow an identifier to the object literal it was initialised with. */
+    const resolveObjectLiteral = (
+      node: TSESTree.Identifier,
+    ): TSESTree.Node | null => {
+      let variable: TSESLint.Scope.Variable | null = null;
+      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      while (scope !== null && variable === null) {
+        variable =
+          scope.variables.find((candidate) => candidate.name === node.name) ??
+          null;
+        scope = scope.upper;
+      }
+      // One declaration only: a re-declared or shadowed binding is not worth
+      // reasoning about, and an unresolved one stays a finding.
+      if (variable === null || variable.defs.length !== 1) {
+        return null;
+      }
+      const definition = variable.defs[0]!;
+      return definition.type === 'Variable'
+        ? (definition.node.init ?? null)
+        : null;
     };
 
     return {

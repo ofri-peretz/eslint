@@ -166,3 +166,46 @@ signJWT({ sub: 'user' }, key, { expiresIn: '1h', algorithm: 'RS256' });`,
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Corpus regression: an `exp` claim set on a payload BUILT ABOVE THE CALL
+// ---------------------------------------------------------------------------
+// twilio's ClientCapability.toJwt() (src/jwt/ClientCapability.ts:159) assigns
+// the payload to a variable and sets `exp: now + this.ttl` on it before
+// signing. Checking only an inline object literal reported a token whose
+// expiration was right there, spelled the other legal way.
+ruleTester.run('require-expiration (corpus)', requireExpiration, {
+  valid: [
+    `import jwt from 'jsonwebtoken';
+     const payload = { scope, iss: sid, exp: Math.floor(Date.now() / 1000) + ttl };
+     jwt.sign(payload, secret);`,
+    // Quoted claim key is the same claim.
+    `import jwt from 'jsonwebtoken';
+     const payload = { 'exp': 123 };
+     jwt.sign(payload, secret);`,
+  ],
+  invalid: [
+    // A payload arriving as a PARAMETER cannot be resolved, so it stays a
+    // finding — the rule must not treat "unresolvable" as "has an exp".
+    {
+      code: `import jwt from 'jsonwebtoken';
+     function issue(payload) { return jwt.sign(payload, secret); }`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // Declared without an initialiser: nothing to read a claim from.
+    {
+      code: `import jwt from 'jsonwebtoken';
+     let payload;
+     payload = build();
+     jwt.sign(payload, secret);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // Resolvable, and genuinely missing the claim.
+    {
+      code: `import jwt from 'jsonwebtoken';
+     const payload = { sub: id };
+     jwt.sign(payload, secret);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+  ],
+});
