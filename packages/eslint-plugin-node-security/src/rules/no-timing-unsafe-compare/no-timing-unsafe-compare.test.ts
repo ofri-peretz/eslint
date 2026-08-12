@@ -57,6 +57,87 @@ describe('no-timing-unsafe-compare', () => {
     });
   });
 
+  // Every fixture below is a verbatim shape from the 8-repo corpus scan, kept
+  // as a lock so the two guards that suppress them cannot be removed silently.
+  // See the issue: "no-timing-unsafe-compare fires on string-literal and
+  // boolean comparisons".
+  describe('Valid Code - Comparisons Against Source Constants', () => {
+    ruleTester.run('valid - constant operand cannot leak a secret', noTimingUnsafeCompare, {
+      valid: [
+        // okta/okta-auth-js lib/oidc/dpop.ts:185. `revokedToken` is a
+        // `'access' | 'refresh'` union tag; it matched only because the name
+        // contains `token`. Nothing on the right an attacker wants to learn.
+        `if (revokedToken === 'access') { shouldClear = true; }`,
+        `if (revokedToken === 'refresh' && refreshToken && !accessToken) { shouldClear = true; }`,
+        // Same file, same line: a discriminant check on a member expression.
+        `if (accessToken.tokenType === 'DPoP') { use(accessToken); }`,
+        // A hardcoded credential compared to a literal is CWE-798, reported by
+        // secure-coding/no-hardcoded-credentials. It is not a timing attack —
+        // constant-time comparison against a secret printed in the source
+        // protects nothing.
+        `if (password === 'default_password') { warn(); }`,
+        // A template literal with no interpolation is the same string constant
+        // written longhand.
+        'if (token === `access`) { done(); }',
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Valid Code - Named Constants', () => {
+    ruleTester.run('valid - enum members are source constants', noTimingUnsafeCompare, {
+      valid: [
+        // 73 of the 88 findings still standing after the constant-operand and
+        // boolean-predicate guards were this one shape, all from
+        // okta/okta-signin-widget and okta/okta-auth-js.
+        `if (name === IDX_STEP.SELECT_AUTHENTICATOR_AUTHENTICATE) return;`,
+        `if (authenticatorKey === AUTHENTICATOR_KEY.WEBAUTHN) enroll();`,
+        `if (err.name === Enums.AUTH_STOP_POLL_INITIATION_ERROR) return;`,
+        `if (err.errorCode === ErrorCodes.INVALID_TOKEN_EXCEPTION) retry();`,
+        `if (relatesTo?.key === AuthenticatorKey.OKTA_PASSWORD) select();`,
+        `if (this.auth !== this.ANY) deny();`,
+      ],
+      invalid: [
+        // A BARE SCREAMING_SNAKE identifier stays a finding. `API_KEY` is both
+        // constant-cased and a real secret — the casing alone is not evidence,
+        // the namespace is. Locked so the guard is never widened to identifiers.
+        { code: 'if (API_KEY === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
+        // process.env is the one SCREAMING_SNAKE member that holds a live
+        // secret rather than a constant. Suppressing it would drop the
+        // archetypal true positive this rule exists for.
+        {
+          code: 'if (userToken === process.env.API_TOKEN) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+      ],
+    });
+  });
+
+  describe('Valid Code - Boolean Predicates', () => {
+    ruleTester.run('valid - boolean predicate names are not secrets', noTimingUnsafeCompare, {
+      valid: [
+        // okta/okta-auth-js lib/core/AuthStateManager.ts:44 — matched because
+        // `isAuthenticated` contains `auth`. Comparing two booleans leaks one
+        // bit the caller already holds.
+        `if (prevState.isAuthenticated === state.isAuthenticated) return true;`,
+        `if (hasToken === cached.hasToken) {}`,
+        `if (shouldRefreshToken === cached.shouldRefreshToken) {}`,
+        // Same function, two lines down. Neither operand is an identifier or a
+        // member expression, so this never reported — locked so it stays that
+        // way if isSecretIdentifier ever learns to look through calls.
+        `if (JSON.stringify(prevState.idToken) === JSON.stringify(state.idToken)) return true;`,
+      ],
+      invalid: [
+        // A boolean-predicate name on ONE side does not excuse the other. The
+        // guard drops name-based evidence for that operand only.
+        {
+          code: 'if (isAuthenticated === storedToken) {}',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - All Comparison Operators', () => {
     ruleTester.run('invalid - strict equality', noTimingUnsafeCompare, {
       valid: [],
