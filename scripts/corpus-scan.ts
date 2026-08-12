@@ -34,9 +34,9 @@
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
 /** Plugins whose rules apply to server and library code. */
 const PLUGINS = [
@@ -85,7 +85,28 @@ const WORKSPACE_TYPESCRIPT_RANGE: string = (() => {
   return range;
 })();
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
-const WORK = path.join(os.tmpdir(), 'interlace-corpus-scan');
+
+/**
+ * Scratch space for the clone cache and the scan rig.
+ *
+ * NOT `os.tmpdir()`. This directory is reused across runs — clones are kept so
+ * a scan does not re-fetch eight large repositories every time — which means a
+ * fixed, predictable name. On a multi-user machine `/tmp/interlace-corpus-scan`
+ * is a world-writable path an attacker can pre-create as a symlink, and we then
+ * write a package.json, an npm install and a generated ESLint config through it
+ * (CWE-377/CWE-379; CodeQL `js/insecure-temporary-file`).
+ *
+ * `mkdtemp` is the usual answer but is wrong here: a fresh directory per run
+ * discards the clone cache, which is the whole reason this path is stable.
+ * The user cache directory keeps the caching and removes the shared-namespace
+ * problem, since it is not writable by other users.
+ *
+ * The guarantee is enforced rather than assumed — see `ensurePrivateDir`, which
+ * fails closed on a symlinked, foreign-owned or group-writable component, and
+ * rejects an `XDG_CACHE_HOME` that is relative or points back into the temp dir.
+ */
+const CACHE_HOME = resolveCacheHome();
+const WORK = path.join(CACHE_HOME, 'interlace-corpus-scan');
 const RIG = path.join(WORK, '_rig');
 
 interface Budget {
@@ -200,12 +221,12 @@ function main(): number {
     if (!asJson) console.log(line);
   };
 
-  mkdirSync(WORK, { recursive: true });
+  ensurePrivateDir(WORK, CACHE_HOME);
 
   // One shared install reused for every target; an install per repo dominates
   // the runtime. The plugins are taken from this checkout, so the scan
   // measures the code in the PR rather than the last published release.
-  mkdirSync(RIG, { recursive: true });
+  ensurePrivateDir(RIG, CACHE_HOME);
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
   log('Installing scan rig…');
   sh(
