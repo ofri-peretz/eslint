@@ -57,8 +57,8 @@ describe('methodology receipt — emission lock', () => {
     // suite *losing* its receipt — at >= 13 the ilb-formatter regression this
     // number was raised for would have slipped through at 14. Ratchet this
     // when a suite is added; that edit is the point. 17 → 18 with
-    // ilb-corpus-truth (2026-08-10).
-    expect(sources.length).toBe(18);
+    // ilb-corpus-truth (2026-08-10), ilb-preset-budget (2026-08-12).
+    expect(sources.length).toBe(19);
   });
 
   it.each(sources.map((p) => [path.relative(REPO_ROOT, p), p]))(

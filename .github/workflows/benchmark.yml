@@ -176,6 +176,48 @@ jobs:
           name: ilb-corpus-truth-${{ github.run_number }}
           path: benchmarks/results/ilb-corpus-truth/
 
+  ilb-preset-budget:
+    # The other half of the corpus story: Corpus-Truth asks whether a rule is
+    # about the right SDK, this asks whether a plugin's `recommended` is
+    # something a developer keeps. It covers the 224 rules Corpus-Truth cannot
+    # — the platform and quality plugins, which have no SDK to gate on and hold
+    # roughly three-quarters of consumer downloads.
+    #
+    # Scheduled only, for the same reason as Corpus-Truth: 107 clones.
+    name: ILB-Preset-Budget (recommended-preset noise gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Clones and lints 107 third-party repositories and never pushes.
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache the pinned corpus
+        uses: actions/cache@v4
+        with:
+          path: .bench-repos
+          key: corpus-truth-${{ hashFiles('benchmarks/suites/ilb-corpus-truth/repos.json') }}
+      - name: Run ILB-Preset-Budget
+        # 30 plugins over 107 repositories needs more than the default heap.
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: npm run ilb:preset-budget
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Upload preset-budget result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ilb-preset-budget-${{ github.run_number }}
+          path: benchmarks/results/ilb-preset-budget/
+
   audit-meta:
     name: Plugin rule-meta hygiene audit (strict)
     needs: gate
