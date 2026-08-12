@@ -599,6 +599,22 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                   property.type === 'Property' && isSafeText(property.value),
               );
             }
+            // `.length` is a number in every JavaScript engine, and a number
+            // cannot carry markup. `res.send('<p>Users online: ' + ids.length +
+            // '</p>')` (express `examples/online/index.js:53`) was reported as
+            // an unescaped interpolation; there is nothing to escape.
+            //
+            // Non-computed only: `obj['length']` is the same property, but
+            // `obj[length]` reads a variable, and this guard must not be a way
+            // to smuggle an attacker-controlled key past the check.
+            if (
+              expr.type === 'MemberExpression' &&
+              !expr.computed &&
+              expr.property.type === 'Identifier' &&
+              expr.property.name === 'length'
+            ) {
+              return true;
+            }
             if (expr.type === 'CallExpression') {
               const callee = expr.callee;
               // ['<h1>', '<li>…'].join('\n') — express/examples/resource
