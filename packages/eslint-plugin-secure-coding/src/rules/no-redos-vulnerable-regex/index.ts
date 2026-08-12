@@ -263,17 +263,35 @@ allowCommonPatterns = false, maxPatternLength = 500
 }: Options = options || {};
 
     /**
-     * NFA-based ReDoS detection via scslre — the same library used by
-     * eslint-plugin-regexp. Catches patterns that the heuristic regex
-     * pattern matching can't see (cross-quantifier "trade" issues, deep
-     * nested loops, etc.). Heuristic detection runs as a fallback for
-     * cases where parsing fails or the pattern is exotic.
+     * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
+     * uses. It builds the automaton and looks for genuine ambiguity, so it sees
+     * what character-level heuristics cannot (cross-quantifier trades, deep
+     * nested loops) and, just as importantly, sees what they only think they
+     * see.
+     *
+     * The three outcomes are distinct and the caller must not collapse them:
+     *
+     * - `reported`     — scslre found real ambiguity and has already reported.
+     * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
+     *                    This is a VERDICT, not an absence of one.
+     * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
+     *
+     * `clean` used to be conflated with `unanalysable` (both returned `false`),
+     * so every pattern scslre cleared was handed to the heuristic matcher,
+     * which then overruled it. That is how
+     * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
+     * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
+     * backtracking | CRITICAL". It is anchored at both ends, has two independent
+     * optional groups, no nesting, and is linear. The heuristic
+     * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
+     * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
+     * quantifier nesting.
      */
     function checkWithScslre(
       node: TSESTree.Node,
       pattern: string,
       flags: string
-    ): boolean {
+    ): 'reported' | 'clean' | 'unanalysable' {
       try {
         const ast = REGEXPP_PARSER.parsePattern(
           pattern,
@@ -285,7 +303,7 @@ allowCommonPatterns = false, maxPatternLength = 500
           { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
           { reportTypes: { Move: false } }
         );
-        if (result.reports.length === 0) return false;
+        if (result.reports.length === 0) return 'clean';
 
         for (const report of result.reports) {
           const isExp = report.exponential;
@@ -304,10 +322,10 @@ allowCommonPatterns = false, maxPatternLength = 500
             },
           });
         }
-        return true;
+        return 'reported';
       } catch {
         // Fall through to heuristic check
-        return false;
+        return 'unanalysable';
       }
     }
 
@@ -327,8 +345,8 @@ allowCommonPatterns = false, maxPatternLength = 500
         return;
       }
 
-      // NFA-based detection first — catches what heuristics miss.
-      if (checkWithScslre(node, pattern, flags)) {
+      // NFA analysis is the authority. Heuristics only speak when it cannot.
+      if (checkWithScslre(node, pattern, flags) !== 'unanalysable') {
         return;
       }
 
@@ -435,6 +453,17 @@ allowCommonPatterns = false, maxPatternLength = 500
 
       // Skip if pattern is too long (performance)
       if (pattern.length > maxPatternLength) {
+        return;
+      }
+
+      // `new RegExp("…")` with a string literal is exactly as analysable as the
+      // `/…/` form, and used to go straight to the heuristics — so the Stripe
+      // shape written as `new RegExp("^https://…/v3/?(\\?.*)?$")` produced the
+      // same false positive that `/…/` did. Second argument carries the flags.
+      const flagsArg = node.arguments[1];
+      const flags =
+        flagsArg?.type === 'Literal' && typeof flagsArg.value === 'string' ? flagsArg.value : '';
+      if (checkWithScslre(node, pattern, flags) !== 'unanalysable') {
         return;
       }
 
