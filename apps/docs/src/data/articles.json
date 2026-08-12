@@ -677,7 +677,7 @@
       "page_views_count": 0,
       "public_reactions_count": 7,
       "positive_reactions_count": 7,
-      "comments_count": 16,
+      "comments_count": 19,
       "tag_list": [
         "ai",
         "security",
@@ -1644,6 +1644,6 @@
     }
   ],
   "total": 80,
-  "lastUpdated": "2026-08-11T20:06:13.349Z",
+  "lastUpdated": "2026-08-12T05:20:19.798Z",
   "source": "public"
 }
