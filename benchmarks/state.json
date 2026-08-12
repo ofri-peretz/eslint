@@ -11,7 +11,7 @@
     "doc": "benchmarks/README.md#1-philosophy"
   },
   "benches": {
-    "count": 14,
+    "count": 15,
     "list": [
       "ILB-Arena",
       "ILB-Arena-Quality",
@@ -26,9 +26,10 @@
       "ILB-Formatter",
       "ILB-Landscape",
       "ILB-Remediation",
-      "ILB-Corpus-Truth"
+      "ILB-Corpus-Truth",
+      "ILB-Preset-Budget"
     ],
-    "doc": "benchmarks/README.md#2-the-14-benches-at-a-glance"
+    "doc": "benchmarks/README.md#2-the-15-benches-at-a-glance"
   },
   "vocabularyContract": {
     "aspects": [
