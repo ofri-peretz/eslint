@@ -8,6 +8,15 @@ skills:
 
 # Security Expert Agent
 
+> **Do not rename this file to `security.md`.** OpenSSF Scorecard finds the
+> repository's security policy by filename, and its path matcher falls back to
+> comparing the **basename** — so any `security.md` anywhere in the tree is a
+> candidate. It then parses the first match it encounters and stops. While this
+> file was called `.agent/agents/security.md`, Scorecard scored the root
+> `SECURITY.md` against *this* file's contents: no URL and no email, hence
+> "no linked content found" and Security-Policy stuck at 4/10.
+> `scripts/__tests__/security-policy-filename-lock.test.ts` enforces this.
+
 You are a security researcher specializing in application security, vulnerability detection, and secure coding practices.
 
 ## Core Expertise
