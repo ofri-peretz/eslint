@@ -78,6 +78,45 @@ describe('no-sensitive-data-exposure', () => {
           code: `throw new Error('password error');`,
           options: [{ checkErrorMessages: false }],
         },
+        // Prose naming a secret without carrying one. Real site:
+        // redis/ioredis lib/redis/event_handler.ts:271. The word `password`
+        // appears twice in an English sentence and no value is logged.
+        {
+          code: `console.warn("[WARN] Redis server does not require a password, but a password was supplied.");`,
+        },
+        // A template with no interpolation is a constant string — the same
+        // prose case, and it must not become reportable just for being a
+        // template.
+        {
+          code: 'console.log(`no password is configured for this connection`);',
+        },
+        // A property access naming nothing sensitive.
+        {
+          code: `console.log(res.statusCode);`,
+        },
+        // Dynamic key: `obj[k]` names nothing, so there is nothing to match.
+        // The property node is an Identifier here exactly as it is in
+        // `user.password`, and only `computed` tells them apart — read the
+        // wrong one and `creds[password]` reports on a lookup whose key is
+        // not visible in the source.
+        {
+          code: `console.log(config[password]);`,
+        },
+        // Nested member whose leaf names nothing: the object is itself a
+        // member expression, not an identifier, so there is no name to fall
+        // back to.
+        {
+          code: `console.log(res.body.statusCode);`,
+        },
+        // Interpolating a call result names nothing on either side.
+        {
+          code: 'console.log(`elapsed ${now()}`);',
+        },
+        // A private field is not an Identifier property, so there is no name
+        // to read off it.
+        {
+          code: `class A { #count = 0; m() { console.log(this.#count); } }`,
+        },
       ],
       invalid: [],
     });
@@ -90,6 +129,32 @@ describe('no-sensitive-data-exposure', () => {
         // String literal with password
         {
           code: `console.log('password: 123456');`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        // Property access — the shape this rule most exists for, and it was
+        // silent: the logging path read Literal, `+` and Identifier arguments
+        // only, so every `user.password` walked straight through.
+        {
+          code: `console.log(user.password);`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          code: `logger.info(config['apiKey']);`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        // Interpolation is the evidence: unlike a constant, a template splices
+        // a runtime value into the log line. Named by the surrounding text…
+        {
+          code: 'console.log(`token=${t}`);',
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        // …and named by the interpolated expression itself.
+        {
+          code: 'console.log(`value is ${apiKey}`);',
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          code: 'console.log(`got ${user.password} back`);',
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },
         // String literal with token
