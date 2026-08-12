@@ -5,6 +5,8 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
+import { expect } from 'vitest';
 import { noUnlimitedResourceAllocation } from './index';
 
 // Configure RuleTester for Vitest
@@ -758,6 +760,21 @@ describe('no-unlimited-resource-allocation', () => {
   describe('Loop Allocation Exceptions', () => {
     ruleTester.run('valid - loop allocation exceptions', noUnlimitedResourceAllocation, {
       valid: [
+        // The allocation is in the for-INIT, so it runs once however dynamic
+        // its size is. `isInsideLoop` alone cannot tell init from body — this
+        // is `underscore-min.js`'s `for (var e = Array(t), u = 0; u < t; u++)`,
+        // which reported 7 times across the corpus.
+        'for (var e = Array(t), u = 0; u < t; u++) { e[u] = u; }',
+        // A read-only size probe allocates nothing; it matched only because
+        // the printed callee text contained 'Buffer'.
+        'for (const x of xs) { Buffer.byteLength(x); }',
+        // Zero-arg constructors allocate a constant, so the numeric-literal
+        // escape could never apply to them — every `new Set()` in any loop
+        // used to report.
+        'for (const x of xs) { const s = new Set(); }',
+        // Not an allocation at all.
+        'for (let i = 0; i < 10; i++) { if (Array.isArray(v)) { use(v); } }',
+
         // Assignment to array element in loop (pre-allocated pattern)
         {
           code: `
@@ -954,5 +971,42 @@ describe('corpus regression — ZIP bomb detection', () => {
         errors: [{ messageId: 'unlimitedFileOperations' }],
       },
     ],
+  });
+});
+
+/**
+ * Layer 2 — the `node.loc?.start.line ?? 0` fallbacks on both
+ * resourceAllocationInLoop reports. A real parser always attaches `loc`, so
+ * these arms need a synthetic node.
+ */
+describe('resourceAllocationInLoop line fallback', () => {
+  const loopedCall = (type: 'CallExpression' | 'NewExpression') => ({
+    type,
+    callee: { type: 'Identifier', name: 'Array' },
+    arguments: [{ type: 'Identifier', name: 'n' }],
+    parent: {
+      type: 'WhileStatement',
+      parent: undefined,
+    },
+  });
+
+  it('CallExpression falls back to line 0 when loc is missing', () => {
+    const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
+      sourceText: 'while (c) { Array(n); }',
+    });
+    (listeners.CallExpression as (n: unknown) => void)(loopedCall('CallExpression'));
+    const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
+    expect(inLoop).toHaveLength(1);
+    expect(inLoop[0].data?.line).toBe('0');
+  });
+
+  it('NewExpression falls back to line 0 when loc is missing', () => {
+    const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
+      sourceText: 'while (c) { new Array(n); }',
+    });
+    (listeners.NewExpression as (n: unknown) => void)(loopedCall('NewExpression'));
+    const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
+    expect(inLoop).toHaveLength(1);
+    expect(inLoop[0].data?.line).toBe('0');
   });
 });

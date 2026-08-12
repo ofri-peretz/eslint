@@ -342,6 +342,72 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       if (ARCHIVE_MODULES.test(source)) archiveBindings.add(local);
     };
 
+
+    /**
+     * A call that actually allocates, sized by something non-constant, inside a
+     * loop BODY.
+     *
+     * Three separate requirements, each of which the old substring heuristic
+     * lacked:
+     *
+     * 1. The callee is an allocation, matched exactly — not text that contains
+     *    'Array'. `Buffer.byteLength` and `Array.isArray` are not allocations.
+     * 2. There is a size argument and it is not a numeric literal. A zero-arg
+     *    `new Set()` allocates a constant, and `Buffer.alloc(512)` is bounded.
+     * 3. It is in the loop's BODY, not its init. `for (var e = Array(t), u = 0; …)`
+     *    runs once, however dynamic `t` is.
+     */
+    const ALLOCATORS: ReadonlySet<string> = new Set([
+      'Buffer.alloc', 'Buffer.allocUnsafe', 'Buffer.allocUnsafeSlow',
+      'Buffer', 'Array', 'Map', 'Set', 'WeakMap', 'WeakSet',
+    ]);
+
+    const isAllocationInLoopBody = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const callee = node.callee;
+      let name: string | undefined;
+      if (callee.type === 'Identifier') {
+        name = callee.name;
+      } else if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.property.type === 'Identifier'
+      ) {
+        name = `${callee.object.name}.${callee.property.name}`;
+      }
+      if (name === undefined || !ALLOCATORS.has(name)) return false;
+
+      const sizeArg = node.arguments[0];
+      if (sizeArg === undefined) return false;
+      if (sizeArg.type === 'Literal' && typeof sizeArg.value === 'number') return false;
+
+      if (!isInsideLoop(node)) return false;
+
+      // `buffers[i] = Buffer.alloc(n)` fills a container the caller already
+      // sized; the loop bound is the allocation bound. Preserved from the
+      // predicate this replaced.
+      const parent = node.parent;
+      if (
+        parent?.type === 'AssignmentExpression' &&
+        parent.left.type === 'MemberExpression'
+      ) {
+        return false;
+      }
+
+      // Walk out to the loop and reject anything reached through its init.
+      let current: TSESTree.Node | undefined = node;
+      let child: TSESTree.Node | undefined;
+      while (current != null) {
+        if (current.type === 'ForStatement' && child !== undefined && current.init === child) {
+          return false;
+        }
+        child = current;
+        current = current.parent;
+      }
+      return true;
+    };
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         for (const spec of node.specifiers) {
@@ -652,50 +718,38 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           }
         }
 
-        // Check for resource allocation inside loops
-        if (isInsideLoop(node)) {
-          // Check if this allocates resources
-          if (calleeText.includes('alloc') ||
-              calleeText.includes('Array') ||
-              calleeText.includes('Buffer') ||
-              calleeText.includes('readFile') ||
-              calleeText.includes('writeFile')) {
-
-            // SAFE: Array.isArray / Array.from / Array.of are not allocation hazards.
-            if (calleeText === 'Array.isArray' ||
-                calleeText === 'Array.from' ||
-                calleeText === 'Array.of') {
-              // Array.from / Array.of are fine; allocation comes from their args, not size
-            } else {
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              // SAFE: first arg is a numeric literal — size is statically bounded.
-              const firstArg = node.arguments[0];
-              if (firstArg?.type === 'Literal' && typeof firstArg.value === 'number') {
-                return;
-              }
-
-              // Skip if this is an assignment to an array element (pre-allocated pattern)
-              const parent = node.parent;
-              if (parent && parent.type === 'AssignmentExpression' &&
-                  parent.left.type === 'MemberExpression' &&
-                  parent.left.object.type === 'Identifier') {
-                return;
-              }
-
-              // Report resourceAllocationInLoop - this can be in addition to user input errors
-              context.report({
-                node,
-                messageId: 'resourceAllocationInLoop',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
-              });
-            }
+        // Allocation in a loop, judged by WHAT is allocated rather than by
+        // whether the printed callee text happens to contain 'Buffer'.
+        //
+        // The previous form asked: is this inside any loop, and does
+        // `sourceCode.getText(callee)` contain 'alloc' / 'Array' / 'Buffer' /
+        // 'Map' / 'Set' / 'readFile' / 'writeFile'? On an 8-repo corpus that was
+        // 37 of this rule's 43 findings, every one false:
+        //
+        //   Buffer.byteLength(arg)         a read-only size PROBE, allocates nothing
+        //   this.#decodeArrayItems.bind()  matched via '.bind' containing 'Array'
+        //   new Set()                      zero args, so the numeric-literal escape
+        //                                  could never apply — every `new Set()` in
+        //                                  any loop reported
+        //   stringArray.push(x)            matched on the VARIABLE name
+        //   for (var e = Array(t), u = 0; …)   the allocation is in the for-INIT and
+        //                                  runs once
+        //
+        // The sharpest one: `system.ts:437` flagged the size cap itself — the next
+        // lines throw `Stdin input exceeded the maximum allowed size`. The rule
+        // reported the mitigation for its own finding.
+        if (isAllocationInLoopBody(node)) {
+          if (safetyChecker.isSafe(node, context)) {
+            return;
           }
+          context.report({
+            node,
+            messageId: 'resourceAllocationInLoop',
+            data: {
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+            },
+          });
         }
       },
 
@@ -780,33 +834,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           }
         }
 
-        // Check for resource allocation inside loops
-        if (isInsideLoop(node)) {
-          const newCalleeText = sourceCode.getText(callee);
-          if (newCalleeText.includes('Buffer') ||
-              newCalleeText.includes('Array') ||
-              newCalleeText.includes('Map') ||
-              newCalleeText.includes('Set')) {
 
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            // SAFE: first arg is a numeric literal — size is statically bounded.
-            const firstArg = node.arguments[0];
-            if (firstArg?.type === 'Literal' && typeof firstArg.value === 'number') {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: 'resourceAllocationInLoop',
-              data: {
-                filePath: filename,
-                line: String(node.loc.start.line),
-              },
-            });
+        // Same allocation-in-loop check as the CallExpression path — `new
+        // Array(n)` and `new Set(x)` are the constructor spellings of it.
+        if (isAllocationInLoopBody(node)) {
+          if (safetyChecker.isSafe(node, context)) {
+            return;
           }
+          context.report({
+            node,
+            messageId: 'resourceAllocationInLoop',
+            data: {
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+            },
+          });
         }
       }
     };
