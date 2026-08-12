@@ -68,46 +68,38 @@ describe('detect-non-literal-fs-filename coverage gaps', () => {
     ],
     invalid: [
       // Zero-argument fs call → pathNode null / empty path fallbacks
-      { code: 'fs.readFile();', errors: [{ messageId: 'fsPathTraversal' }] },
+      { options: [{ reportUnresolvedPaths: true }],  code: 'fs.readFile();', errors: [{ messageId: 'fsPathTraversal' }] },
       // Non-path call expression as path → safe-construction callee guard
-      {
-        code: 'fs.readFile(buildPath());',
+      { options: [{ reportUnresolvedPaths: true }],         code: 'fs.readFile(buildPath());',
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // path.basename(...) as path → join/resolve method guard
-      {
-        code: 'fs.readFile(path.basename(userPath));',
+      { options: [{ reportUnresolvedPaths: true }],         code: 'fs.readFile(path.basename(userPath));',
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // path.join() with zero args → args-length guard
-      {
-        code: 'fs.readFile(path.join());',
+      { options: [{ reportUnresolvedPaths: true }],         code: 'fs.readFile(path.join());',
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // path.join with a non-safe first arg → first-arg guard
-      {
-        code: "fs.readFile(path.join(userDir, 'a.txt'));",
+      { options: [{ reportUnresolvedPaths: true }],         code: "fs.readFile(path.join(userDir, 'a.txt'));",
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // path.join(__dirname, traversal literal) → traversal guard on rest args
-      {
-        code: "fs.readFile(path.join(__dirname, '../etc/passwd'));",
+      { options: [{ reportUnresolvedPaths: true }],         code: "fs.readFile(path.join(__dirname, '../etc/passwd'));",
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // Allowlist includes() naming a DIFFERENT variable → arg-match miss
-      {
-        code: 'if (ALLOWED.includes(other)) { fs.readFile(userPath); }',
+      { options: [{ reportUnresolvedPaths: true }],         code: 'if (ALLOWED.includes(other)) { fs.readFile(userPath); }',
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // Regex test() on a DIFFERENT variable → arg-match miss
-      {
-        code: 'if (re.test(other)) { fs.readFile(userPath); }',
+      { options: [{ reportUnresolvedPaths: true }],         code: 'if (re.test(other)) { fs.readFile(userPath); }',
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // Enclosing if whose test is a bare Identifier (not a call, not a
       // negated call) → isValidationCall non-CallExpression early return
-      {
-        code: [
+      { options: [{ reportUnresolvedPaths: true }],         code: [
           'function read(userPath, flag) {',
           '  if (flag) { fs.readFile(userPath); }',
           '}',
@@ -115,8 +107,7 @@ describe('detect-non-literal-fs-filename coverage gaps', () => {
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       // Guard clause whose direct consequent is NOT an early exit
-      {
-        code: [
+      { options: [{ reportUnresolvedPaths: true }],         code: [
           'function read(userPath, base) {',
           '  if (!userPath.startsWith(base)) log();',
           '  fs.readFile(userPath);',
