@@ -85,7 +85,25 @@ const WORKSPACE_TYPESCRIPT_RANGE: string = (() => {
   return range;
 })();
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
-const WORK = path.join(os.tmpdir(), 'interlace-corpus-scan');
+
+/**
+ * Scratch space for the clone cache and the scan rig.
+ *
+ * NOT `os.tmpdir()`. This directory is reused across runs — clones are kept so
+ * a scan does not re-fetch eight large repositories every time — which means a
+ * fixed, predictable name. On a multi-user machine `/tmp/interlace-corpus-scan`
+ * is a world-writable path an attacker can pre-create as a symlink, and we then
+ * write a package.json, an npm install and a generated ESLint config through it
+ * (CWE-377/CWE-379; CodeQL `js/insecure-temporary-file`).
+ *
+ * `mkdtemp` is the usual answer but is wrong here: a fresh directory per run
+ * discards the clone cache, which is the whole reason this path is stable.
+ * The user cache directory keeps the caching and removes the shared-namespace
+ * problem, since it is not writable by other users. `XDG_CACHE_HOME` is honoured
+ * where set; `mode: 0o700` is belt-and-braces for an unusual umask.
+ */
+const CACHE_HOME = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+const WORK = path.join(CACHE_HOME, 'interlace-corpus-scan');
 const RIG = path.join(WORK, '_rig');
 
 interface Budget {
@@ -200,12 +218,12 @@ function main(): number {
     if (!asJson) console.log(line);
   };
 
-  mkdirSync(WORK, { recursive: true });
+  mkdirSync(WORK, { recursive: true, mode: 0o700 });
 
   // One shared install reused for every target; an install per repo dominates
   // the runtime. The plugins are taken from this checkout, so the scan
   // measures the code in the PR rather than the last published release.
-  mkdirSync(RIG, { recursive: true });
+  mkdirSync(RIG, { recursive: true, mode: 0o700 });
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
   log('Installing scan rig…');
   sh(
