@@ -1,3 +1,24 @@
+## 3.7.1
+
+### Patch Changes
+
+- [#534](https://github.com/ofri-peretz/eslint/pull/534) [`a9b0b14`](https://github.com/ofri-peretz/eslint/commit/a9b0b146e191c4ec1d2608a67019f0f670f1d581) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-improper-sanitization` no longer reports `.length` interpolated into markup.
+
+  ```js
+  res.send('<p>' + arr.length + '</p>'); // was reported, twice
+  ```
+
+  `.length` is a number in every JavaScript engine, so there is nothing to
+  escape. Found while measuring `express/examples/online/index.js:53` for [#398](https://github.com/ofri-peretz/eslint/issues/398).
+
+  Non-computed access only. `data[length]` reads a _variable_ named `length`,
+  which carries whatever that variable holds, so it still reports — the exemption
+  must not become a way to smuggle an attacker-controlled key past the check.
+
+  Note this does **not** change the Express finding count: that line is
+  `'<p>Users online: ' + ids.length + '</p>' + list(ids)`, and `list(ids)` is an
+  unsanitized call reaching an HTML sink, which is a legitimate finding.
+
 ## 3.7.0
 
 ### Minor Changes
