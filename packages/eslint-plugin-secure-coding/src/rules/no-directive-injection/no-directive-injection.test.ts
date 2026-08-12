@@ -57,6 +57,80 @@ describe('no-directive-injection', () => {
     });
   });
 
+  describe('DOMPurify configuration', () => {
+    ruleTester.run('valid - correctly configured sanitizer', noDirectiveInjection, {
+      valid: [
+        // The exact call the issue reported as a false positive. This is the
+        // recommended safe pattern — the answer the rule steers people toward
+        // — and reporting it told developers who did the right thing that they
+        // had done the wrong thing.
+        'DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });',
+        // Spelled out, still safe: an allow-list naming no dangerous element.
+        `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'i', 'em'], ALLOWED_ATTR: ['href'] });`,
+        // Defaults are safe.
+        'DOMPurify.sanitize(html);',
+        // A non-array option is not something this check can read.
+        'DOMPurify.sanitize(html, { ALLOWED_TAGS: computeTags() });',
+        // Not a sanitizer. `validator.sanitize` has nothing to do with this.
+        `validator.sanitize(input, { ADD_TAGS: ['script'] });`,
+        // A non-Identifier receiver is not matched.
+        `lib.dom.sanitize(html, { ADD_TAGS: ['script'] });`,
+        // Computed and spread config entries carry no readable option name.
+        `DOMPurify.sanitize(html, { [key]: ['script'] });`,
+        `DOMPurify.sanitize(html, { ...base });`,
+        // A numeric key is not an option name.
+        `DOMPurify.sanitize(html, { 1: ['script'] });`,
+        // Non-string array elements are not tag names.
+        'DOMPurify.sanitize(html, { ADD_TAGS: [null, 1, ...rest] });',
+        // A second argument that is not an object literal.
+        'DOMPurify.sanitize(html, config);',
+      ],
+      invalid: [],
+    });
+
+    // The issue's other acceptance criterion — "a genuinely unsafe directive
+    // still reports" — was failing. Each of these re-enables exactly what
+    // DOMPurify exists to strip, so the call returns markup that can execute
+    // while still reading as sanitized at the call site.
+    ruleTester.run('invalid - sanitizer configured to allow script', noDirectiveInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        {
+          code: `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'iframe'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        {
+          code: `DOMPurify.sanitize(html, { ADD_ATTR: ['onerror'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        {
+          code: `DOMPurify.sanitize(html, { ALLOWED_ATTR: ['srcdoc'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        // A quoted option name is the same option.
+        {
+          code: `DOMPurify.sanitize(html, { 'ADD_TAGS': ['script'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        // Case is not a defence.
+        {
+          code: `purify.sanitize(html, { ADD_TAGS: ['SCRIPT'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+        // Only the first offending entry is reported, so one call yields one
+        // finding rather than one per dangerous value.
+        {
+          code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script', 'iframe'], ADD_ATTR: ['onload'] });`,
+          errors: [{ messageId: 'unsafeSanitizerConfig' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - dangerouslySetInnerHTML', () => {
     ruleTester.run('invalid - dangerous innerHTML usage', noDirectiveInjection, {
       valid: [],
