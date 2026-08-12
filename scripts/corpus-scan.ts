@@ -34,9 +34,9 @@
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
 /** Plugins whose rules apply to server and library code. */
 const PLUGINS = [
@@ -99,10 +99,13 @@ const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
  * `mkdtemp` is the usual answer but is wrong here: a fresh directory per run
  * discards the clone cache, which is the whole reason this path is stable.
  * The user cache directory keeps the caching and removes the shared-namespace
- * problem, since it is not writable by other users. `XDG_CACHE_HOME` is honoured
- * where set; `mode: 0o700` is belt-and-braces for an unusual umask.
+ * problem, since it is not writable by other users.
+ *
+ * The guarantee is enforced rather than assumed — see `ensurePrivateDir`, which
+ * fails closed on a symlinked, foreign-owned or group-writable component, and
+ * rejects an `XDG_CACHE_HOME` that is relative or points back into the temp dir.
  */
-const CACHE_HOME = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+const CACHE_HOME = resolveCacheHome();
 const WORK = path.join(CACHE_HOME, 'interlace-corpus-scan');
 const RIG = path.join(WORK, '_rig');
 
@@ -218,12 +221,12 @@ function main(): number {
     if (!asJson) console.log(line);
   };
 
-  mkdirSync(WORK, { recursive: true, mode: 0o700 });
+  ensurePrivateDir(WORK, CACHE_HOME);
 
   // One shared install reused for every target; an install per repo dominates
   // the runtime. The plugins are taken from this checkout, so the scan
   // measures the code in the PR rather than the last published release.
-  mkdirSync(RIG, { recursive: true, mode: 0o700 });
+  ensurePrivateDir(RIG, CACHE_HOME);
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
   log('Installing scan rig…');
   sh(
