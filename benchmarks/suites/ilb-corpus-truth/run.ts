@@ -47,6 +47,12 @@ import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
 import { appendHistory } from '../../lib/history.ts';
 import { SDK_PACKAGES, specifiersIn, fileHasSdk } from './sdk-map.ts';
+import {
+  corpusHash,
+  driftedRoots,
+  headOf,
+  type CorpusRoot,
+} from './corpus-identity.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = path.resolve(HERE, '../..');
@@ -111,6 +117,7 @@ function sourceFilesIn(root: string, seen: Set<string>): string[] {
   return out;
 }
 
+
 type RuleStat = {
   plugin: string;
   cwe: string | null;
@@ -138,7 +145,7 @@ async function main(): Promise<void> {
   // minutes of network time and the pinned commits make the two paths
   // equivalent, so the override exists to keep iteration cheap.
   const override = process.env.ILB_CORPUS_TRUTH_DIR;
-  const roots: string[] = [];
+  const corpusRoots: CorpusRoot[] = [];
   if (override) {
     log(`   Using ILB_CORPUS_TRUTH_DIR=${override}`);
     for (const entry of fs.readdirSync(override)) {
@@ -147,18 +154,37 @@ async function main(): Promise<void> {
       // isDirectory() === false on the link itself, which silently yields an
       // empty corpus.
       try {
-        if (fs.statSync(full).isDirectory()) roots.push(full);
+        if (!fs.statSync(full).isDirectory()) continue;
       } catch {
-        /* dangling link */
+        continue; // dangling link
       }
+      corpusRoots.push({ name: entry, dir: full, head: headOf(full) });
     }
   } else {
     const benchDir = resolveBenchDir(REPO_ROOT);
     for (const repo of repos) {
       log(`   ${repo.name}`);
-      roots.push(cloneRepo(repo, benchDir));
+      const dir = cloneRepo(repo, benchDir);
+      corpusRoots.push({ name: repo.name, dir, head: headOf(dir) });
     }
   }
+
+  // Roots not at the commit `repos.json` pins — counted and carried into the
+  // result rather than left as a stdout warning nobody reads.
+  const pinned = new Map(repos.map((r) => [r.name, r.commit]));
+  const drifted = driftedRoots(corpusRoots, pinned);
+  if (drifted.length > 0) {
+    log(
+      `\n⚠️  ${drifted.length}/${corpusRoots.length} roots are not at their pinned commit:`,
+    );
+    for (const r of drifted.slice(0, 5)) {
+      log(`     ${r.name}: ${r.head?.slice(0, 8) ?? 'no git'} ≠ ${pinned.get(r.name)?.slice(0, 8)}`);
+    }
+    if (drifted.length > 5) log(`     …and ${drifted.length - 5} more`);
+  }
+
+  const hash = corpusHash(corpusRoots);
+  const roots = corpusRoots.map((r) => r.dir);
 
   const visited = new Set<string>();
   const files = roots.flatMap((r) => sourceFilesIn(r, visited));
@@ -391,6 +417,12 @@ async function main(): Promise<void> {
     },
     corpus: {
       repos: repos.length,
+      // The identity of what was measured. Two results are only comparable when
+      // these match; see `corpusHash`.
+      hash,
+      rootsAtPinnedCommit: corpusRoots.length - drifted.length,
+      rootsDrifted: drifted.length,
+      driftedRoots: drifted.map((r) => r.name),
       filesScanned: scanned,
       // Printed beside the findings on purpose. A sweep where every file errored
       // reports zero findings and looks exactly like a clean sweep; this number
@@ -417,10 +449,24 @@ async function main(): Promise<void> {
     console.log(`\n✅ Results: ${path.relative(REPO_ROOT, outPath)}`);
   }
 
+  if (UPDATE_BASELINE && drifted.length > 0) {
+    console.error(
+      `\n❌ ${drifted.length} corpus roots are not at their pinned commit. ` +
+        'A baseline recorded from a drifted corpus is a ceiling for code nobody ' +
+        'else will measure. Re-clone (unset ILB_CORPUS_TRUTH_DIR) and retry.',
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   if (UPDATE_BASELINE) {
     const baseline = {
       generatedAt: result.timestamp,
       methodologyHash: result.methodologyHash,
+      // The per-rule ceilings below are only meaningful against this exact
+      // corpus, so it is recorded with them and checked before any comparison.
+      corpusHash: hash,
+      filesScanned: scanned,
       note: 'Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.',
       rules: Object.fromEntries(
         Object.entries(perRule).map(([id, r]) => [id, r.offSdk]),
@@ -442,7 +488,57 @@ async function main(): Promise<void> {
 
   const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8')) as {
     rules: Record<string, number>;
+    corpusHash?: string;
+    filesScanned?: number;
   };
+
+  // Comparing across corpora is the failure this check exists to prevent: the
+  // two runs that motivated it saw 107,384 and 119,415 files of the "same" 107
+  // repositories, and every per-rule delta between them was corpus drift
+  // wearing a regression's clothes.
+  if (baseline.corpusHash !== undefined && baseline.corpusHash !== hash) {
+    console.error(
+      `\n❌ Corpus mismatch — refusing to compare.\n` +
+        `   baseline: ${baseline.corpusHash} (${baseline.filesScanned ?? '?'} files)\n` +
+        `   this run: ${hash} (${scanned} files)\n` +
+        '   Every per-rule delta would be drift, not signal. Re-clone the pinned ' +
+        'corpus, or re-record the baseline deliberately with --update-baseline.',
+    );
+    process.exitCode = 1;
+    return;
+  }
+  // The hash covers name@commit, which is necessary and NOT sufficient. The two
+  // runs that motivated all of this reported 107,384 and 119,415 files with no
+  // commit drift between them, so a commit-only identity would have called them
+  // the same corpus and compared them anyway. Whatever differed — clone depth, a
+  // dirty working tree, untracked files — changed how much code was measured,
+  // and a per-rule count is meaningless across that.
+  //
+  // 0.5% is wide enough for incidental noise and far tighter than the 11% that
+  // went unnoticed.
+  const FILE_COUNT_TOLERANCE = 0.005;
+  if (baseline.filesScanned !== undefined && baseline.filesScanned > 0) {
+    const delta = Math.abs(scanned - baseline.filesScanned) / baseline.filesScanned;
+    if (delta > FILE_COUNT_TOLERANCE) {
+      console.error(
+        `\n❌ Corpus size mismatch — refusing to compare.\n` +
+          `   baseline: ${baseline.filesScanned} files\n` +
+          `   this run: ${scanned} files (${(delta * 100).toFixed(1)}% difference)\n` +
+          '   The commits match, so something outside them changed what was measured ' +
+          '— clone depth, a dirty tree, untracked files. Per-rule counts do not ' +
+          'survive that.',
+      );
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  if (baseline.corpusHash === undefined) {
+    log(
+      '\n⚠️  Baseline predates corpus pinning and carries no hash, so this ' +
+        'comparison cannot be trusted. Re-record it with --update-baseline.',
+    );
+  }
   const regressions = Object.entries(perRule)
     .map(([id, r]) => ({ id, now: r.offSdk, was: baseline.rules[id] }))
     .filter((r) => r.was !== undefined && r.now > r.was);

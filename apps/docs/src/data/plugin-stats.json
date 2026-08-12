@@ -13,7 +13,7 @@
       "rules": 37,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "4.9.0",
+      "version": "4.9.1",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 28,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "3.6.0",
+      "version": "3.6.1",
       "published": true
     },
     {
@@ -165,7 +165,7 @@
       "rules": 10,
       "description": "ESLint plugin for NestJS security — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "2.3.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.3.17",
+      "version": "2.3.18",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 12,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.0.15",
+      "version": "3.0.16",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.2.11",
+      "version": "1.2.12",
       "published": true
     },
     {
@@ -237,12 +237,12 @@
       "rules": 37,
       "description": "ESLint plugin for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "2.1.14",
+      "version": "2.1.15",
       "published": true
     }
   ],
   "totalRules": 466,
   "totalPlugins": 30,
   "allPluginsCount": 30,
-  "generatedAt": "2026-08-11"
+  "generatedAt": "2026-08-12"
 }
