@@ -45,7 +45,6 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode;
     const sensitiveParams = ['password=', 'token=', 'apikey=', 'secret=', 'auth='];
     
     function report(node: TSESTree.Node) {
@@ -67,9 +66,37 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
       },
       
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const text = sourceCode.getText(node).toLowerCase();
-        
-        if (sensitiveParams.some(param => text.includes(param))) {
+        // Read the STATIC text, not `sourceCode.getText(node)`.
+        //
+        // getText returns the template's source, interpolations included, so
+        // `${maskToken(session.accessToken)}` contributed the characters of its
+        // own source code to the match. Combined with the missing `?`/`&`
+        // prefix below, that made this branch fire on
+        //
+        //   outputDebug(`Loaded session for ${store}: token=${maskToken(t)}`)
+        //
+        // — a debug log, not a URL, whose value is explicitly MASKED. Reporting
+        // it was wrong twice over. (Repo doctrine: match the AST, never printed
+        // source.)
+        //
+        // A placeholder marks each interpolation so `?` + `token=` cannot be
+        // formed by accident across a boundary.
+        const INTERPOLATION = '\u0001';
+        const text = node.quasis
+          // `raw` is always populated; `cooked` is null only for an invalid
+          // escape in a TAGGED template, which a URL string never is.
+          .map((q) => q.value.raw)
+          .join(INTERPOLATION)
+          .toLowerCase();
+
+        // Same test the Literal branch uses. The asymmetry was the bug: a
+        // literal needed `?token=` or `&token=`, a template matched a bare
+        // `token=` anywhere — including the `: token=` of a log line.
+        if (
+          sensitiveParams.some(
+            (param) => text.includes(`?${param}`) || text.includes(`&${param}`),
+          )
+        ) {
           report(node);
         }
       },
