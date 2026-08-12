@@ -72,17 +72,29 @@ This document catalogs known limitations in modularity rules.
 
 ### `no-external-api-calls-in-utils`
 
+The rule reports a call only when its callee resolves to an HTTP client:
+`fetch` (or `window.fetch`), a binding imported/required from one of
+`httpModules`, an alias of one (`const api = axios.create()`), or an explicit
+`object.method` pair listed in `networkMethods`. Matching a bare method name
+is deliberately **not** enough — `get`, `set`, `post` and `delete` are also
+`Map` / `Set` / `Headers` / `URLSearchParams` / `Cache` methods.
+
 **Known False Negatives (Not Detected)**
 
 - API calls through dependency-injected clients
 - Indirect calls through imported service modules
 - API calls using wrapper functions
+- Clients reached through more than one alias hop, or through an unresolved
+  receiver (`getClient().get(url)`) — add an `object.method` entry to
+  `networkMethods` to cover an in-house client
 
 **Known False Positives (Incorrectly Flagged)**
 
 - HTTP utilities that wrap fetch for error handling
 - API client configuration utilities
 - Mocking utilities for testing
+- A local variable named after an HTTP module (`http`, `axios`, …) that holds
+  something else — those names seed the client set without an import
 
 ---
 
