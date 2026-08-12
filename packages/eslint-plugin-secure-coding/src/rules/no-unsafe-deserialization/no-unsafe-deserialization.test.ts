@@ -181,18 +181,43 @@ describe('no-unsafe-deserialization', () => {
     });
   });
 
-  describe('Invalid Code - Untrusted Input', () => {
-    ruleTester.run('invalid - untrusted deserialization input', noUnsafeDeserialization, {
-      valid: [],
+  // A SAFE deserializer receiving untrusted input is not a finding — it IS the
+  // remediation this rule's own message recommends. This block used to assert
+  // the opposite, and that assertion was 31 of the rule's 33 corpus findings,
+  // every one a false positive, mostly on plain `parseJSON(jsonString)`
+  // utilities. JSON.parse cannot instantiate objects, invoke constructors or
+  // execute code.
+  describe('Safe deserializers are not CWE-502 sinks', () => {
+    ruleTester.run('safe parsers on untrusted input', noUnsafeDeserialization, {
+      valid: [
+        'function parseJSON(jsonString) { return JSON.parse(jsonString); }',
+        'app.post("/x", (req, res) => { JSON.parse(req.body); });',
+        // js-yaml's safeLoad is the safe variant by construction, and stays
+        // exempt even though `load` is on the dangerous list — the guard reads
+        // the member name, not just the receiver.
+        'const yaml = require("js-yaml"); const obj = yaml.safeLoad(req.query.data);',
+        // Computed and non-Identifier shapes must not crash the guard.
+        'const yaml = require("js-yaml"); yaml["safeLoad"](req.query.data);',
+        // A nested receiver has no bare Identifier object to read.
+        'const lib = require("x"); lib.yaml.safeLoad(req.query.data);',
+      ],
       invalid: [
+        // The eval-family sinks this rule exists for still report — including
+        // the awaited form, which used to be SILENT while the plainer
+        // `eval(param)` reported. Reading a response body is remote bytes.
         {
-          code: 'const yaml = require("js-yaml"); const obj = yaml.safeLoad(req.query.data);',
-          errors: [
-            {
-              messageId: 'untrustedDeserializationInput',
-            },
-          ],
+          code: 'function run(code) { eval(code); }',
+          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
         },
+        {
+          code: 'async function f(res) { eval(await res.text()); }',
+          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+        },
+        {
+          code: 'app.post("/x", (req, res) => { new Function(req.body); });',
+          errors: [{ messageId: 'dangerousFunctionConstructor' }],
+        },
+
       ],
     });
   });
@@ -432,13 +457,6 @@ describe('no-unsafe-deserialization', () => {
       invalid: [],
     });
 
-    // newly-exposed TRUE arm (was c8-ignored): @safe bypasses untrustedDeserializationInput in safe-library path
-    ruleTester.run('coverage - @safe bypasses safe-library untrusted-input report (c8-ignore removal)', noUnsafeDeserialization, {
-      valid: [{
-        code: 'const yaml = require("js-yaml");\n/** @safe */\nconst obj = yaml.safeLoad(req.query.data);',
-      }],
-      invalid: [],
-    });
   });
 
   // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback branches
@@ -479,28 +497,6 @@ describe('no-unsafe-deserialization', () => {
       expect(reports[0].data?.line).toBe('0');
     });
 
-    it('CallExpression untrustedDeserializationInput falls back to line 0 when loc missing (id 63)', () => {
-      const { listeners, reports } = createWithMockContext(noUnsafeDeserialization, {
-        sourceText: 'JSON.parse(req.body.data)',
-      });
-      (listeners.CallExpression as (n: unknown) => void)({
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          object: { type: 'Identifier', name: 'JSON' },
-          property: { type: 'Identifier', name: 'parse' },
-          computed: false,
-        },
-        arguments: [{
-          type: 'MemberExpression',
-          object: { type: 'Identifier', name: 'req' },
-          property: { type: 'Identifier', name: 'body' },
-        }],
-      });
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('untrustedDeserializationInput');
-      expect(reports[0].data?.line).toBe('0');
-    });
 
     it('VariableDeclarator reference tracking falls back to line 0 when callExpr has no loc (id 90)', () => {
       // Build a fake AST: const s = require('node-serialize'); s.unserialize(data)
