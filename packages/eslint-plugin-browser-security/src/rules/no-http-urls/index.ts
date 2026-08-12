@@ -11,6 +11,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isXmlNamespaceUri } from '../../utils/namespace-uris';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -110,9 +111,41 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * The attribute or property this string was written under, when there is
+     * one. `xmlns="…"` settles the question on its own.
+     */
+    function declarationName(node: TSESTree.Node): string | undefined {
+      // Every node the visitors hand us is reached from Program, so it always
+      // has a parent — only Program itself does not, and Program is never a
+      // Literal or TemplateElement. Asserting beats an unreachable branch.
+      const parent = node.parent as TSESTree.Node;
+      if (parent.type === 'JSXAttribute') {
+        // JSXAttribute.name is exactly JSXIdentifier | JSXNamespacedName, so
+        // the ternary is exhaustive and needs no unreachable fallback.
+        const name = parent.name;
+        return name.type === 'JSXIdentifier'
+          ? name.name
+          : `${name.namespace.name}:${name.name.name}`;
+      }
+      if (parent.type === 'Property' && parent.value === node && !parent.computed) {
+        if (parent.key.type === 'Identifier') return parent.key.name;
+        if (parent.key.type === 'Literal' && typeof parent.key.value === 'string') {
+          return parent.key.value;
+        }
+      }
+      return undefined;
+    }
+
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
-      
+
+      // An XML namespace URI is an opaque identifier, never fetched. Rewriting
+      // it to https breaks the document, so reporting it is worse than noise.
+      if (isXmlNamespaceUri(value, declarationName(node))) {
+        return;
+      }
+
       if (httpPattern.test(value) && !isAllowedException(value)) {
         context.report({
           node,

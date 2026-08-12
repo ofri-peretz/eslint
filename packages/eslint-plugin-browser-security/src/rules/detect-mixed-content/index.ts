@@ -11,6 +11,7 @@
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isXmlNamespaceUri, isTrustworthyLocalUrl } from '../../utils/namespace-uris';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -48,9 +49,27 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
     return {
       
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string' && node.value.startsWith('http://')) {
-          context.report({ node, messageId: 'violationDetected' });
+        if (typeof node.value !== 'string' || !node.value.startsWith('http://')) {
+          return;
         }
+        // `xmlns="http://www.w3.org/2000/svg"` is an identifier compared
+        // byte-for-byte, never a request. It cannot be mixed content, and
+        // rewriting it to https breaks the document.
+        const parent = node.parent;
+        const declaredAs =
+          parent?.type === 'JSXAttribute' && parent.name.type === 'JSXIdentifier'
+            ? parent.name.name
+            : undefined;
+        if (isXmlNamespaceUri(node.value, declaredAs)) {
+          return;
+        }
+        // A loopback origin is potentially trustworthy per the Secure Contexts
+        // spec, so no browser blocks or flags it from an HTTPS page. Calling it
+        // mixed content describes behaviour that does not happen.
+        if (isTrustworthyLocalUrl(node.value)) {
+          return;
+        }
+        context.report({ node, messageId: 'violationDetected' });
       },
     };
   },
