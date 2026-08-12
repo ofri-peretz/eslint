@@ -230,6 +230,23 @@ describe('no-external-api-calls-in-utils', () => {
           options: [{ networkMethods: ['httpClient.get'] }],
           errors: [{ messageId: 'externalApiCallInUtils' }],
         },
+        // A namespace import is handled by the ImportDeclaration listener —
+        // `specifier.type !== 'ImportSpecifier'` is true for
+        // ImportNamespaceSpecifier — but nothing pinned it.
+        {
+          code: "import * as http from 'node:http';\nhttp.request(url);",
+          filename: '/src/utils/api.ts',
+          errors: [{ messageId: 'externalApiCallInUtils' }],
+        },
+        // Alias DEPTH is not the limitation; opacity is. The Program:exit
+        // fixpoint propagates client-ness until nothing new is added, so a
+        // second hop still resolves. KNOWN-LIMITATIONS.md claimed otherwise
+        // until this test was written to check.
+        {
+          code: "import axios from 'axios';\nconst api = axios.create();\nconst api2 = api.create();\napi2.get(url);",
+          filename: '/src/utils/api.ts',
+          errors: [{ messageId: 'externalApiCallInUtils' }],
+        },
       ],
     });
   });

@@ -176,6 +176,8 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
             default: true,
           },
           networkMethods: {
+            description:
+              'HTTP method names to flag. A bare name ("get") applies only when the receiver resolves to a known HTTP client. A dotted entry ("httpClient.get") is an exact object.method escape hatch that bypasses client resolution entirely — use it for an in-house client this rule cannot trace.',
             type: 'array',
             items: { type: 'string' },
             default: DEFAULT_NETWORK_METHODS,

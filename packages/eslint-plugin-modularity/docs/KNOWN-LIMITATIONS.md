@@ -84,9 +84,15 @@ is deliberately **not** enough — `get`, `set`, `post` and `delete` are also
 - API calls through dependency-injected clients
 - Indirect calls through imported service modules
 - API calls using wrapper functions
-- Clients reached through more than one alias hop, or through an unresolved
-  receiver (`getClient().get(url)`) — add an `object.method` entry to
-  `networkMethods` to cover an in-house client
+- Clients bound through a call whose callee is not itself a known client —
+  `const c = getClient(); c.get(url)`. `rootName()` resolves the callee to
+  `getClient`, which is not in the client set, so `c` never joins it. Add an
+  `object.method` entry to `networkMethods` to cover an in-house client.
+
+  Note this is *not* a limit on alias depth: the `Program:exit` fixpoint
+  propagates until no new client is added, so
+  `const api = axios.create(); const api2 = api.create(); api2.get(url)` is
+  reported. The gap is opacity, not distance.
 
 **Known False Positives (Incorrectly Flagged)**
 
