@@ -59,6 +59,71 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     const fsReadMethods = ['readFile', 'readFileSync', 'readdir', 'readdirSync', 'stat', 'statSync'];
     const fsWriteMethods = ['writeFile', 'writeFileSync', 'appendFile', 'appendFileSync'];
     const userInputSources = new Set(['req', 'request', 'params', 'query', 'body']);
+
+    /**
+     * Does this expression read from a request?
+     *
+     * `req.query.file`, `request.params.id`, `body.path` — the shapes this
+     * rule's own message describes.
+     */
+    function readsUserInput(node: TSESTree.Node): boolean {
+      let current: TSESTree.Node = node;
+      // Walk to the root of `req.query.file` and check the base object.
+      while (current.type === 'MemberExpression') current = current.object;
+      return (
+        current.type === 'Identifier' && userInputSources.has(current.name.toLowerCase())
+      );
+    }
+
+    /**
+     * Does this variable trace back to a request?
+     *
+     * This rule reports "File path from user input — path traversal
+     * vulnerability". It was firing on any unsanitized identifier, so it said
+     * that about build scripts and config loaders where no request exists —
+     * and it duplicated `detect-non-literal-fs-filename` on 25 corpus sites,
+     * telling the reader twice, at two severities, about one line.
+     *
+     * The two rules now partition: this one reports what it can attribute to a
+     * request, the generic one reports the rest. Exactly one rule owns a site.
+     */
+    function variableTracesToUserInput(varName: string, from: TSESTree.Node): boolean {
+      // `Program.parent` is null, not undefined — `!= null` catches both, and
+      // an `!== undefined` loop walked straight off the top of the tree.
+      let scope: TSESTree.Node | undefined | null = from;
+      while (scope != null) {
+        // A function PARAMETER is an untrusted input by definition: the callee
+        // cannot see what any caller passes. `function read(p) { fs.readFile(p) }`
+        // is the shape a path-traversal advisory is actually written about.
+        if (
+          scope.type === 'FunctionDeclaration' ||
+          scope.type === 'FunctionExpression' ||
+          scope.type === 'ArrowFunctionExpression'
+        ) {
+          const named = scope.params.some(
+            (param) => param.type === 'Identifier' && param.name === varName,
+          );
+          if (named) return true;
+        }
+        const body =
+          scope.type === 'Program' || scope.type === 'BlockStatement' ? scope.body : undefined;
+        if (body !== undefined) {
+          for (const stmt of body) {
+            if (stmt.type !== 'VariableDeclaration') continue;
+            for (const decl of stmt.declarations) {
+              if (decl.id.type !== 'Identifier' || decl.id.name !== varName) continue;
+              // A local bound to something we CAN see, and it is not a
+              // request: that is the generic rule's territory, not ours.
+              return decl.init != null && readsUserInput(decl.init);
+            }
+          }
+        }
+        scope = scope.parent;
+      }
+      // Unresolvable in this file — an import, a global. Not attributable to a
+      // request, so the generic rule owns it.
+      return false;
+    }
     
     // Track variables that have been sanitized with path.basename()
     const sanitizedVariables = new Set<string>();
@@ -227,18 +292,24 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
             if (isVariableSafe(varName, node)) {
               return;
             }
-            
+
+            // This rule's message names user input as the cause. Without
+            // evidence of a request it is both wrong and a duplicate of
+            // detect-non-literal-fs-filename, which owns unattributable paths.
+            if (!variableTracesToUserInput(varName, node)) {
+              return;
+            }
+
             report(node);
             return;
           }
           
           // Flag if path is from a member expression (user input sources)
-          if (pathArg?.type === 'MemberExpression' &&
-              pathArg.object.type === 'Identifier') {
-            const objName = pathArg.object.name.toLowerCase();
-            if (userInputSources.has(objName)) {
-              report(node);
-            }
+          // `fs.readFile(req.query.file)` — the direct shape. Now walks the
+          // whole chain, so `req.body.upload.path` is caught too; the old
+          // check read only the immediate object and missed anything deeper.
+          if (pathArg !== undefined && readsUserInput(pathArg)) {
+            report(node);
           }
         }
       },
