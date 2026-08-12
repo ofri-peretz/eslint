@@ -49,35 +49,7 @@ describe('no-unsafe-regex-construction', () => {
       valid: [],
       invalid: [
         // Identifier user input
-        {
-          code: 'const regex = new RegExp(userInput);',
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp((userInput).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
-        },
         // Template literal with expressions
-        {
-          code: 'const pattern = new RegExp(`^${userPattern}$`);',
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const pattern = new RegExp((`^${userPattern}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
-        },
         // Member expression (e.g., req.query.pattern)
         {
           code: 'const regex = new RegExp(req.query.pattern);',
@@ -94,20 +66,6 @@ describe('no-unsafe-regex-construction', () => {
           ],
         },
         // Function call with untrusted function
-        {
-          code: 'const regex = new RegExp(getPattern());',
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp((getPattern()).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
-        },
       ],
     });
   });
@@ -191,21 +149,6 @@ describe('no-unsafe-regex-construction', () => {
       ],
       invalid: [
         // Untrusted function not in list
-        {
-          code: 'const regex = new RegExp(unknownEscape(userInput));',
-          options: [{ trustedEscapingFunctions: ['myCustomEscape'] }],
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp((unknownEscape(userInput)).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
-        },
       ],
     });
   });
@@ -221,45 +164,74 @@ describe('no-unsafe-regex-construction', () => {
       ],
       invalid: [
         // Template literal with expressions is unsafe
-        {
-          code: 'const regex = new RegExp(`^${input}$`);',
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp((`^${input}$`).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
-        },
       ],
     });
 
     // `isUserInput` treats a bare Identifier argument as unsafe user input
     // regardless of its name — including the "safe-looking" names
-    // (`pattern`, `regex`, `regExp`, `regexp`) that the function explicitly
-    // special-cases (the special case still resolves to `true`, same as
-    // the general Identifier fallthrough, but it's a distinct statement
-    // that needs its own exercise for coverage).
-    ruleTester.run('bare identifier argument named like a safe pattern var is still flagged', noUnsafeRegexConstruction, {
-      valid: [],
-      invalid: [
+    // A bare identifier is UNATTRIBUTED, not safe: this rule owns sites where
+    // a request-shaped source is visible, and `detect-non-literal-regexp`
+    // (a `warn`) owns everything else. Before the partition both fired on the
+    // same 40 corpus sites, so a user fixing one line was told twice at two
+    // severities — the defect this repo already named once in `no-innerhtml`.
+    ruleTester.run('rule partition: attributed taint reports, bare identifiers do not', noUnsafeRegexConstruction, {
+      valid: [
+        // Unknown provenance. Owned by detect-non-literal-regexp, not here.
+        { code: 'const regex = new RegExp(pattern);' },
+        { code: 'const regex = new RegExp(userInput);' },
+        { code: 'const regex = new RegExp(getPattern());' },
+        { code: 'const pattern = new RegExp(`^${userPattern}$`);' },
+        // A pre-escaped request value is neutralised at the point of use.
+        { code: 'const r = new RegExp(escapeRegExp(req.query.q));' },
+        { code: 'const r = new RegExp(escapeStringRegexp(req.query.q));' },
+        // A member expression rooted somewhere that is not a request: config
+        // read from disk at boot is operator-controlled, not attacker-steered.
+        { code: 'const r = new RegExp(config.pattern);' },
+        // Same for the environment — whoever sets it already runs the process.
+        { code: 'const r = new RegExp(process.env.PATTERN);' },
+        // Interpolation is not itself taint: every hole has to be attributed.
+        { code: 'const r = new RegExp(`^${config.prefix}$`);' },
+        // A member expression rooted at a call has no name to attribute.
+        { code: 'const r = new RegExp(getConfig().pattern);' },
+        // Spread arguments are skipped rather than treated as tainted.
+        { code: 'const r = new RegExp(buildPattern(...parts));' },
+        // Known ceiling: the taint walk gives up past 6 levels of nesting, so
+        // a request value buried deeper than that goes unattributed here and
+        // falls to `detect-non-literal-regexp`. Raise the bound if real code
+        // ever nests this far — no corpus repo does.
         {
-          code: 'const regex = new RegExp(pattern);',
-          errors: [
-            {
-              messageId: 'unsafeRegexConstruction',
-              suggestions: [
-                {
-                  messageId: 'escapeUserInput',
-                  output: 'const regex = new RegExp((pattern).replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));',
-                },
-              ],
-            },
-          ],
+          code: "const r = new RegExp('a' + ('b' + ('c' + ('d' + ('e' + ('f' + ('g' + ('h' + req.query.q))))))));",
+        },
+      ],
+      invalid: [
+        // Attributed: the taint root is a request object in scope.
+        {
+          code: 'const r = new RegExp(req.query.q);',
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+        },
+        {
+          code: 'const r = new RegExp(`^${req.params.id}$`);',
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+        },
+        // Reader methods carry taint across the await boundary.
+        {
+          code: 'const r = new RegExp(await res.text());',
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+        },
+        // Concatenation: the literal prefix is clean, the taint is on the right.
+        {
+          code: "const r = new RegExp('^' + req.query.q);",
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+        },
+        // argv is attacker-controlled for any CLI invoked by another program.
+        {
+          code: 'const r = new RegExp(process.argv[2]);',
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+        },
+        // A bare (unqualified) reader call still yields bytes from outside.
+        {
+          code: 'const r = new RegExp(readFileSync(f, "utf8"));',
+          errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
         },
       ],
     });
