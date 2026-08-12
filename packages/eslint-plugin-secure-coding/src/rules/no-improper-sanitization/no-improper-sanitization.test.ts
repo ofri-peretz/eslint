@@ -60,8 +60,25 @@ describe('no-improper-sanitization', () => {
 
   describe('#398 regression: static output stays silent, real sinks do not', () => {
     ruleTester.run('static vs tainted response output', noImproperSanitization, {
-      valid: [],
+      valid: [
+        // express/examples/online/index.js:53. `.length` is a number in every
+        // JavaScript engine, so there is nothing to escape — but the
+        // concatenation was reported as an unescaped interpolation, twice.
+        `res.send('<p>Users online: ' + ids.length + '</p>');`,
+        `res.send('<ul>' + items.length + '</ul>');`,
+      ],
       invalid: [
+        // `obj[length]` reads a VARIABLE named length, not the array property,
+        // so it carries whatever that variable holds. The `.length` exemption
+        // is non-computed only and must never become a way to smuggle an
+        // attacker-controlled key past the check.
+        {
+          code: `res.send('<p>' + data[length] + '</p>');`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
         // Hardcoded but genuinely dangerous: the literal IS the vector, so
         // author-controlled is not a defence. Must still report.
         {
