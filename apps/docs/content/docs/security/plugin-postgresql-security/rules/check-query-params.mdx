@@ -1,6 +1,6 @@
 ---
 title: check-query-params
-description: Ensures the number of placeholders in SQL queries matches the provided parameters.
+description: "Ensures the number of placeholders in SQL queries matches the provided parameters."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

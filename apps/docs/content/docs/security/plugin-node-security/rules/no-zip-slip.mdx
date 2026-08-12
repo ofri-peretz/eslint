@@ -1,6 +1,6 @@
 ---
 title: no-zip-slip
-description: Detects zip slip/archive extraction vulnerabilities
+description: "Detects zip slip/archive extraction vulnerabilities"
 tags: ['security', 'node']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -96,11 +94,11 @@ const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
 
 ## Options
 
-| Option                    | Type       | Default                     | Description                           |
-| ------------------------- | ---------- | --------------------------- | ------------------------------------- |
-| `archiveFunctions`        | `string[]` | `['extract', 'extractAll']` | Archive extraction functions to check |
-| `pathValidationFunctions` | `string[]` | `['validatePath']`          | Path validation functions             |
-| `safeLibraries`           | `string[]` | `[]`                        | Libraries with safe extraction        |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `archiveFunctions` | `string[]` | `["extract","extractAll","extractAllTo","unzip","untar","extractArchive"]` | Archive extraction functions to check |
+| `pathValidationFunctions` | `string[]` | `["validatePath","sanitizePath","checkPath","safePath"]` | Path validation functions |
+| `safeLibraries` | `string[]` | `["yauzl","safe-archive-extract","tar-stream","unzipper"]` | Libraries with safe extraction |
 
 ## Error Message Format
 

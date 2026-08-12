@@ -1,6 +1,6 @@
 ---
 title: no-math-random-crypto
-description: Disallow Math.random() for cryptographic purposes (tokens, keys, secrets, salts, IVs)
+description: "Disallow Math.random() for cryptographic purposes (tokens, keys, secrets, salts, IVs)"
 tags: ['security', 'cryptography', 'cwe-338', 'nodejs']
 category: security
 severity: critical
@@ -14,10 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** Math.random, insecure randomness, CSPRNG, token generation, session id, CWE-338, security, ESLint rule, LLM-optimized
-> **CWE:** [CWE-338](https://cwe.mitre.org/data/definitions/338.html)
-> **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
 Detects `Math.random()` used in a cryptographic context in Node.js code. `Math.random()` is a non-cryptographic PRNG: its output is predictable and must never seed tokens, keys, passwords, salts, IVs, nonces, or session identifiers. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 
@@ -58,6 +54,10 @@ const j = Math.floor(Math.random() * deck.length);
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow Math.random() in test files |
 
 ```js
 {

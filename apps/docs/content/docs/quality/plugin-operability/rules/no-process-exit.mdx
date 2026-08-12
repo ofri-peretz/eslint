@@ -1,6 +1,6 @@
 ---
 title: no-process-exit
-description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
+description: "Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability."
 tags: ['quality', 'operability', 'production']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** process.exit, Node.js, graceful shutdown, ESLint rule, server, LLM-optimized
 
 Prevents direct `process.exit()` calls to encourage graceful shutdown patterns. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability).
 

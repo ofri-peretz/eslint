@@ -64,6 +64,13 @@ jwt.sign({ sub: 'user', exp: Math.floor(Date.now() / 1000) + 3600 }, secret);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `maxExpirationSeconds` | `integer` | `86400` | Maximum allowed expiration time in seconds (24h default) |
+| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
+| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+
 ```javascript
 {
   "jwt/require-expiration": ["error", {

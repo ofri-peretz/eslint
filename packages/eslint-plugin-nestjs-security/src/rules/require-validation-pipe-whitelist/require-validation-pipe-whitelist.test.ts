@@ -5,6 +5,50 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireValidationPipeWhitelist } from './index';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
 });
@@ -13,7 +57,7 @@ ruleTester.run(
   'require-validation-pipe-whitelist',
   requireValidationPipeWhitelist,
   {
-    valid: [
+    valid: nest([
       { code: `app.useGlobalPipes(new ValidationPipe({ whitelist: true }));` },
       {
         code: `app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));`,
@@ -38,8 +82,8 @@ ruleTester.run(
       { code: `new ParseIntPipe();` },
       // Test files exempt by default.
       { code: `new ValidationPipe();`, filename: 'app.e2e-spec.ts' },
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       // The shape in notiz-dev/nestjs-prisma-starter and squareboat/nestjs-boilerplate.
       {
         code: `app.useGlobalPipes(new ValidationPipe());`,
@@ -87,7 +131,7 @@ ruleTester.run(
         options: [{ allowInTests: false }],
         errors: [{ messageId: 'missingWhitelist' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -99,7 +143,7 @@ ruleTester.run(
   'require-validation-pipe-whitelist (coverage gaps)',
   requireValidationPipeWhitelist,
   {
-    valid: [
+    valid: nest([
       // Namespaced constructor — callee is a member expression, not an Identifier.
       { code: `new nest.ValidationPipe();` },
       // Identifier never declared — scope walk exhausts.
@@ -124,8 +168,8 @@ ruleTester.run(
       // Computed key — cannot be read as `whitelist`, and a spread-free object
       // with an unknown key is still unknown, so stay quiet is wrong here…
       // (see invalid below: this one DOES report, kept out of valid deliberately)
-    ],
-    invalid: [
+    ]),
+    invalid: nest([
       // Computed key: `whitelist` is not provably set, and there is no spread to
       // explain it away, so the rule reports.
       {
@@ -147,7 +191,7 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'missingWhitelist' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -162,7 +206,7 @@ ruleTester.run(
   requireValidationPipeWhitelist,
   {
     valid: [],
-    invalid: [
+    invalid: nest([
       {
         code: `
         const whitelist = 'transform';
@@ -178,7 +222,7 @@ ruleTester.run(
         options: [{ requireForbidNonWhitelisted: true }],
         errors: [{ messageId: 'missingWhitelist' }],
       },
-    ],
+    ]),
   },
 );
 
@@ -187,12 +231,12 @@ ruleTester.run(
   'require-validation-pipe-whitelist (strict satisfied)',
   requireValidationPipeWhitelist,
   {
-    valid: [
+    valid: nest([
       {
         code: `new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true });`,
         options: [{ requireForbidNonWhitelisted: true }],
       },
-    ],
+    ]),
     invalid: [],
   },
 );

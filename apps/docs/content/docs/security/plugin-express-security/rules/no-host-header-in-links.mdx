@@ -1,6 +1,6 @@
 ---
 title: no-host-header-in-links
-description: "Disallow building absolute URLs (reset/verification links) from the Host or X-Forwarded-Host request header"
+description: "Disallow building absolute URLs (password-reset and verification links) from the Host or X-Forwarded-Host request header."
 tags: ['security', 'express']
 category: security
 severity: high
@@ -14,10 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** host header poisoning, password reset poisoning, X-Forwarded-Host, CWE-640, account takeover, reset link, verification link, express security, nodemailer, sendMail
-
-Disallow building absolute URLs (password-reset and verification links) from the Host or X-Forwarded-Host request header.
 
 **CWE:** [CWE-640](https://cwe.mitre.org/data/definitions/640.html)  
 **OWASP:** [A07:2021 – Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
@@ -211,3 +207,10 @@ const url = new URL(path, 'https://' + req.headers.host);
 - **[CWE-640: Weak Password Recovery Mechanism](https://cwe.mitre.org/data/definitions/640.html)**
 - **[OWASP: Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)**
 - **[PortSwigger: Password reset poisoning](https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedHosts` | `string[]` | — | Trusted literal hosts — an if-guard comparing against one of these suppresses the report |
+| `checkMailCallees` | `string[]` | — | Callee names treated as mail-send sinks (default: ["sendMail", "send"]) |

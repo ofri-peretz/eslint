@@ -23,7 +23,8 @@
     "test:css": "vitest run src/__tests__/tailwind-classes.test.ts",
     "test:a11y": "playwright test e2e/a11y.spec.ts e2e/a11y-tree.spec.ts --project=chromium --reporter=list",
     "a11y:report": "tsx scripts/a11y-summary.ts",
-    "a11y:gradients": "tsx scripts/a11y-gradient-sweep.ts"
+    "a11y:gradients": "tsx scripts/a11y-gradient-sweep.ts",
+    "sync:rules": "tsx scripts/sync-rules-docs.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

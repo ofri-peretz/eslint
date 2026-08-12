@@ -1,5 +1,106 @@
 ## [1.2.3] - 2026-02-08
 
+## 2.0.0
+
+### Major Changes
+
+- [#481](https://github.com/ofri-peretz/eslint/pull/481) [`7907d1c`](https://github.com/ofri-peretz/eslint/commit/7907d1c6135ceb86f4dd8b8d7fd489cc1921c18f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now abstains in files without local Lambda evidence
+
+  The plugin had no notion of whether a file was Lambda code.
+  `no-error-swallowing` fired on any `try/catch` anywhere while its own
+  description claimed to detect "empty catch blocks in Lambda handlers", and four
+  rules contained no Lambda reference at all, not even in prose.
+
+  Measured over **107,382 files across 108 repositories**: 9,473 findings, of
+  which **9,244 (98%) were in files with no AWS anything in them**. A plain
+  `JSON.parse` helper was being told it had an AWS Lambda defect.
+
+  Every rule now requires local evidence that the file is Lambda code. The
+  evidence is a **union**, because an import gate alone is the wrong gate here:
+  measured over the 12-repo Lambda corpus, 413 files export a handler and **184
+  of them (45%) import nothing AWS** — `aws-lambda` is a types package and a
+  plain JS handler imports nothing. So the gate accepts a handler export, or the
+  `(event, context)` calling convention, or an AWS import / require / dynamic
+  import. All three are read from the file itself.
+
+  After the change the same corpus yields 723 findings instead of 9,473.
+
+  This is a **major** bump: any rule may now stay silent where it previously
+  reported. Verified cost: exactly **4** in-SDK findings across the corpus, all in
+  one `@aws-lambda-powertools/batch` library file that carries no in-file Lambda
+  evidence — it imports only relative paths and takes
+  `(event, recordHandler, processor, options)`. Library code reached only through
+  a wrapper is the deliberate miss.
+
+### Patch Changes
+
+- [#494](https://github.com/ofri-peretz/eslint/pull/494) [`4c4af8d`](https://github.com/ofri-peretz/eslint/commit/4c4af8d62b64eabe5be1636345f7a56f63372b43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Close two false-negative classes across every SDK-evidence gate
+
+  A full false-negative audit ran every gated plugin twice over the 107-repository
+  corpus — once with the gates forced open, once as shipped — and compared the
+  **6,686 findings the gates silence across 5,235 files**. Of those files, 134 were
+  flagged as suspect (the SDK _is_ imported but the gate closed anyway), and two
+  real defect classes came out of verifying them one by one.
+
+  **1. TypeScript's import-equals form was invisible to four of the five gates.**
+  `import express = require('express')` is a `TSImportEqualsDeclaration` whose
+  module reference is a `TSExternalModuleReference` — not a `require`
+  `CallExpression` — so the dynamic-load arm never saw it. **82 corpus files
+  written this way for Express alone had every rule in the plugin silenced.** Only
+  `mongodb-security` handled it, and only because an earlier audit forced the
+  issue. Now handled by express, lambda, postgresql and vercel-ai too.
+
+  **2. Deno's module specifiers were unrecognisable to all five.**
+  `npm:@aws-sdk/client-bedrock-runtime` and
+  `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports in Deno
+  and Supabase Edge Functions; the prefix made the specifier unmatchable and the
+  whole plugin abstained on real SDK code. Both forms are now normalised before
+  the package test.
+
+  **`postgresql-security` also had no dynamic `import()` arm at all** — alone
+  among the five — so a file that lazily loads its driver was silenced entirely.
+  Every other gate has carried that arm since [#481](https://github.com/ofri-peretz/eslint/issues/481).
+
+  **Measured, not assumed.** Re-sweeping the same 119,271 files with the fixes:
+  **198 findings recovered across 88 files** (196 express, 1 postgres, 1 lambda)
+  and **zero regressions** — nothing that reported before is silenced now.
+
+  The two non-Express recoveries are the clearest illustration of what was broken:
+  `no-missing-authorization-check` on a Supabase Edge Function calling Bedrock, and
+  `no-missing-client-release` on a Deno postgres pool driver. Both are real
+  serverless code that the ecosystem was blind to.
+
+  Verification also **ruled out** four groups the generous probe flagged, rather
+  than widening the gates to swallow them: `@serverless/*` and
+  `@aws-lambda-powertools/*` hits were the frameworks' own source (one specifier
+  was inside a JSDoc `@example` block), and `@payloadcms/db-mongodb` /
+  `@medusajs/deps/pg` were type-only imports of adapter packages in files that
+  never touch the driver.
+
+  Each new arm ships a positive control in the plugin's `module-gate.lock.test.ts`
+  — import-equals, `npm:`, and `deno.land/x` for every gate, plus the dynamic
+  `import()` case for postgres — so none of them can regress silently. All four
+  packages remain at 100% statements / branches / functions / lines.
+
+- [#483](https://github.com/ofri-peretz/eslint/pull/483) [`de0c475`](https://github.com/ofri-peretz/eslint/commit/de0c475ddc76d0a27d5744be5fa0aafcf1333fb5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix a false negative: `require` shadowing is now lexical, not file-wide
+
+  Both module gates raised a single "this file shadows `require`" flag for the
+  whole file. So `const client = require('pg'); function wrapper(require) {}` was
+  read as fully shadowed: the real module load at module scope was ignored and
+  every rule in the plugin abstained.
+
+  That trades a false positive for a false negative, which is the worse trade —
+  a security rule that silently stops reporting is the defect class that matters
+  most.
+
+  Shadowing now propagates down the walk and applies only inside the scope that
+  binds the name: a function whose parameters include `require`, or a
+  Program/BlockStatement whose direct body declares one. A `require()` outside
+  that scope is module loading again.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
 ## 1.3.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 ---
 title: no-overly-permissive-iam-policy
-description: Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+description: "Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages."
 tags: ['security', 'aws', 'serverless']
 category: security
 severity: medium
@@ -12,8 +12,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** lambda-security, security, ESLint rule, LLM-optimized
 
 This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 
@@ -77,3 +75,9 @@ const policy = {
   }
 }
 ```
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -1,6 +1,6 @@
 ---
 title: no-insecure-comparison
-description: Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities
+description: "Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities"
 tags: ['security', 'core']
 category: security
 severity: medium
@@ -14,14 +14,35 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-> **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
-
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects insecure comparison operators (`==`, `!=`) that can lead to type coercion vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
-⚠️ This rule **_warns_** by default in the `recommended` config.
+> [!WARNING]
+> **Deprecated, and no longer in `recommended` (removed 2026-07-31).**
+>
+> Two reasons, both measured on a 1,470-file corpus (webpack, lodash,
+> eslint-plugin-import, two NestJS boilerplates):
+>
+> 1. **The loose-equality half is a duplicate.** Every one of its 433 `==` / `!=`
+>    findings is also reported by core [`eqeqeq`](https://eslint.org/docs/latest/rules/eqeqeq).
+>    Re-reporting another rule's findings under a CWE-697 security banner is
+>    noise, and no amount of narrowing changes that — it is a style check
+>    wearing a security hat.
+> 2. **The timing-attack half belongs elsewhere.** Use
+>    [`node-security/no-timing-unsafe-compare`](../../../eslint-plugin-node-security/docs/rules/no-timing-unsafe-compare.md),
+>    which is what `meta.replacedBy` points at.
+>
+> The rule is still exported and still works. Enable it explicitly, or via the
+> `strict` preset, if you want it. It is simply not switched on for you.
+
+As of 2026-07-31 the timing-attack detection matches secret keywords against
+**identifier word segments** rather than as substrings of the whole expression's
+source text. Previously `if (key === "__non_webpack_require__")` was reported as
+a timing attack because the keyword list contained the bare word `key`; the same
+relaxation also matched `monkey`, `keyword`, `machine` and `author`. That change
+alone removed half the rule's corpus findings (443 → 221).
 
 ## Quick Summary
 
@@ -131,10 +152,10 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 
 ### Options
 
-| Option           | Type       | Default | Description                        |
-| ---------------- | ---------- | ------- | ---------------------------------- |
-| `allowInTests`   | `boolean`  | `false` | Allow insecure comparison in tests |
-| `ignorePatterns` | `string[]` | `[]`    | Additional patterns to ignore      |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow insecure comparison in test files |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
 
 ### Example Configuration
 

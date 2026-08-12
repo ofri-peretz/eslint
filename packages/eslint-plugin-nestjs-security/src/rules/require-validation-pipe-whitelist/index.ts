@@ -46,6 +46,7 @@ import {
 } from '@interlace/eslint-devkit';
 
 import { isTestFile } from '../../utils/nest-ast';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'missingWhitelist';
 
@@ -166,6 +167,10 @@ export const requireValidationPipeWhitelist = createRule<
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const { allowInTests = true, requireForbidNonWhitelisted = false } =
       options;
     if (allowInTests && isTestFile(context.filename)) return {};

@@ -87,13 +87,13 @@ res.cookie('session', token, {
 
 ## Options
 
-| Option                     | Type       | Default             | Description                          |
-| -------------------------- | ---------- | ------------------- | ------------------------------------ |
-| `allowInTests`             | `boolean`  | `false`             | Allow insecure cookies in test files |
-| `requireHttpOnly`          | `boolean`  | `true`              | Require httpOnly flag                |
-| `requireSecure`            | `boolean`  | `true`              | Require secure flag                  |
-| `requireSameSite`          | `boolean`  | `true`              | Require sameSite flag                |
-| `acceptableSameSiteValues` | `string[]` | `['strict', 'lax']` | Acceptable sameSite values           |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `requireHttpOnly` | `boolean` | `true` | Require httpOnly flag |
+| `requireSecure` | `boolean` | `true` | Require secure flag |
+| `requireSameSite` | `boolean` | `true` | Require sameSite flag |
+| `acceptableSameSiteValues` | `string[]` | `["strict","lax"]` | Acceptable sameSite values |
 
 ```json
 {

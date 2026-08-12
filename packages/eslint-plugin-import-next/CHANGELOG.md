@@ -1,5 +1,21 @@
 ## [2.3.6] - 2026-05-03
 
+## 2.3.18
+
+### Patch Changes
+
+- [#499](https://github.com/ofri-peretz/eslint/pull/499) [`47070de`](https://github.com/ofri-peretz/eslint/commit/47070de2ccb391252891c72633191709a9bdd03c) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Bound the TypeScript peer range and declare the React peer
+
+  `maintainability`, `react-features` and `import-next` shipped
+  `"typescript": ">=4.8.4"`, which claims support for every future major —
+  including ones the repo has already pinned Dependabot away from. The range is
+  now the majors actually tested: `^4.8.4 || ^5.0.0 || ^6.0.0`.
+
+  `react-a11y` and `react-features` lint `JSXElement`, `JSXAttribute` and
+  `JSXOpeningElement` and named no React peer, so nothing recorded which React
+  majors their rules were written against. Both now declare
+  `react: ^17 || ^18 || ^19`, optional, so no adopter is forced to install it.
+
 ## 2.3.17
 
 ### Patch Changes

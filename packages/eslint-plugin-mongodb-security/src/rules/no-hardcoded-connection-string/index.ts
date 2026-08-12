@@ -12,6 +12,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isTestFile } from '../../utils/paths';
+import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'hardcodedConnectionString';
 export interface Options { allowInTests?: boolean; }
@@ -44,6 +45,14 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // Every rule here is MongoDB-specific, and none of them could ask the
+    // file-level question: over the corpus, 47% of this plugin's findings were
+    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+    // well as in a Mongoose one. Registering no visitors is both the gate and
+    // the cheap path.
+    if (!fileUsesMongo(context.sourceCode.ast)) return {};
+
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;

@@ -63,7 +63,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-nestjs-security',
-    version: '2.3.0',
+    version: '3.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

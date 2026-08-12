@@ -1,6 +1,6 @@
 ---
 title: no-access-state-in-setstate
-description: no-access-state-in-setstate rule
+description: "no-access-state-in-setstate rule"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** React, setState, this.state, functional updates, race conditions, class components, ESLint rule, LLM-optimized
 
 Disallows accessing `this.state` inside `setState` calls to prevent race conditions. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 

@@ -9,6 +9,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PLUGINS, type PluginEntry } from '../src/lib/plugins';
+// The generator must emit exactly what the format validator accepts, so both
+// share one definition of "duplicated lead" and "boilerplate lead" rather than
+// each carrying its own copy (which is how they drifted apart before).
+import {
+  BOILERPLATE_PATTERNS,
+  findDuplicatedDescriptionParagraph,
+  findFirstProseParagraphBeforeHeading,
+} from '../src/lib/eslint-validators/rule-mdx-format';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../../../');
@@ -95,54 +103,127 @@ function stripHtmlComments(input: string): string {
   return out;
 }
 
-export function convertMdToMdx(mdContent, fileName, opts: ConvertOptions = {}) {
-  // Extract Title (usually first # header)
-  const titleMatch = mdContent.match(/^#\s+(.+)$/m);
-  const title = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
+/**
+ * Split a source `.md` into its own frontmatter block and the body below it.
+ *
+ * Rule `.md` sources already carry canonical frontmatter (`title`,
+ * `description`, `tags`, `category`, `severity`, `cwe`, `autofix`). The
+ * generator's job is to pass that through and append the two type-awareness
+ * fields — NOT to invent a second block. Emitting a fresh frontmatter while
+ * leaving the source block in the body is what produced the dual-frontmatter
+ * regression (`body-orphan-frontmatter`), which MDX parsed as a giant setext
+ * heading and which crashed the compiler on some pages.
+ */
+function splitFrontmatter(md: string): { frontmatter: string | null; body: string } {
+  const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!m) return { frontmatter: null, body: md };
+  return { frontmatter: m[1], body: md.slice(m[0].length) };
+}
 
-  // Extract Description (first paragraph after title)
-  let description = "";
-  // Strip comments, icons, and keyword markers before extracting description
-  // (sanitization detected as incomplete by CodeQL when single-pass — see
-  // stripHtmlComments).
-  const contentFiltered = stripHtmlComments(mdContent)
-    .replace(ICON_HEADER_LINE_RE, '') // Strip icon header lines and formatting
-    .replace(/^>\s+\*\*Keywords:\*\*.*$\n?/gm, '') // Strip keyword lines
+function readFrontmatterScalar(frontmatter: string, key: string): string | null {
+  const m = frontmatter.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, 'm'));
+  if (!m) return null;
+  const v = m[1].trim();
+  // A double-quoted scalar must be *unescaped*, not merely unwrapped. Slicing
+  // the outer quotes off `"a \"b\" c"` leaves the backslashes in the value, and
+  // re-emitting it through JSON.stringify then doubles them on every pass —
+  // descriptions containing quotes grew a new layer of `\\` each time.
+  if (v.startsWith('"') && v.endsWith('"') && v.length >= 2) {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v.slice(1, -1);
+    }
+  }
+  if (v.startsWith("'") && v.endsWith("'") && v.length >= 2) {
+    // YAML single-quoted scalars escape a quote by doubling it.
+    return v.slice(1, -1).replace(/''/g, "'");
+  }
+  return v;
+}
+
+/**
+ * `description` lands in `<meta>` tags and the page lead, both of which render
+ * markdown as literal characters. Strip link syntax and bare-URL wrappers, drop
+ * a leading `CWE: ` prefix (it duplicates the Quick Summary badge), and
+ * collapse whitespace. Mirrors the `frontmatter-description-markdown` surface
+ * in `rule-mdx-format.ts`.
+ */
+function cleanDescription(raw: string): string {
+  return raw
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/<(https?:\/\/[^>]+)>/g, '$1')
+    .replace(/^CWE:\s*/i, '')
+    .replace(ICON_INLINE_RE, '')
+    .replace(/\s+/g, ' ')
     .trim();
+}
 
-  // Extract first meaningful paragraph after title
-  // We look for the first block of text that isn't a header or special marker
-  const descRows = contentFiltered.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  // Find the first row that doesn't start with # and isn't a table/list
-  const firstParagraph = descRows.find(row =>
-    !row.startsWith('#') &&
-    !row.startsWith('|') &&
-    !row.startsWith('-') &&
-    !row.startsWith('>') &&
-    row.length > 20
-  );
+export function convertMdToMdx(
+  mdContent: string,
+  fileName: string,
+  opts: ConvertOptions = {},
+): string {
+  const slug = fileName.replace(/\.md$/, '');
+  const { frontmatter: sourceFm, body: sourceBody } = splitFrontmatter(mdContent);
 
-  if (firstParagraph) {
-    description = firstParagraph
-      .replace(ICON_INLINE_RE, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 160);
+  // `title` keys the page H1, breadcrumbs and the sidebar, and the format lock
+  // requires it to equal the file slug — so derive it from the filename rather
+  // than the H1, which is free to drift.
+  const title = slug;
+
+  // Prefer the source frontmatter's description. The old heuristic — "first
+  // paragraph longer than 20 chars that isn't a heading/table/list" — picked up
+  // whatever the .md happened to open with, which for many rules was a
+  // `CWE: [CWE-598](…)` line. That is the `body-boilerplate-lead` /
+  // `frontmatter-description-markdown` regression the repair scripts existed to
+  // undo. Fall back to the heuristic only when the source has no frontmatter.
+  let description = '';
+  const fmDescription = sourceFm ? readFrontmatterScalar(sourceFm, 'description') : null;
+  if (fmDescription) {
+    description = cleanDescription(fmDescription);
+  } else {
+    const contentFiltered = stripHtmlComments(sourceBody)
+      .replace(ICON_HEADER_LINE_RE, '')
+      .replace(/^>\s+\*\*Keywords:\*\*.*$\n?/gm, '')
+      .trim();
+    const descRows = contentFiltered.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const firstParagraph = descRows.find(row =>
+      !row.startsWith('#') &&
+      !row.startsWith('|') &&
+      !row.startsWith('-') &&
+      !row.startsWith('>') &&
+      row.length > 20
+    );
+    if (firstParagraph) description = cleanDescription(firstParagraph).slice(0, 160);
   }
 
-  // Build Frontmatter with safe escaping. The `type_aware` field is the
+  // Build ONE frontmatter: the source's own fields (minus title/description,
+  // which we normalise above) plus the type-awareness pair. `type_aware` is the
   // structured form of the badge (true when the rule needs the TS program in
-  // any mode); the `type_aware_status` keeps the finer-grained classification
-  // for tests/validators that want to distinguish refining vs graceful.
+  // any mode); `type_aware_status` keeps the finer-grained classification for
+  // tests/validators that want to distinguish refining vs graceful.
   const isTypeAware = opts.typeStatus === 'optional' || opts.typeStatus === 'aware';
   const typeStatusForFm = opts.typeStatus ?? 'unaware';
-  let mdx = `---
-title: ${JSON.stringify(title)}
-description: ${JSON.stringify(description)}
-type_aware: ${isTypeAware}
-type_aware_status: ${typeStatusForFm}
----
-`;
+
+  const passthrough = (sourceFm ?? '')
+    .split('\n')
+    .filter((line) => {
+      const key = line.match(/^([A-Za-z_][\w-]*)\s*:/)?.[1];
+      // Drop the keys we own; keep everything else (tags, category, severity,
+      // cwe, autofix, …) verbatim so the .md stays the source of truth.
+      return !key || !['title', 'description', 'type_aware', 'type_aware_status'].includes(key);
+    })
+    .filter((line) => line.trim().length > 0);
+
+  // Always emit the description as a JSON-quoted scalar. Passing it through
+  // bare is not safe: plenty of rule descriptions contain `: ` (e.g.
+  // "ESLint Rule: no-commented-code with …") or open with a YAML indicator
+  // character, either of which makes the frontmatter unparseable and takes the
+  // whole page down. JSON string syntax is a valid YAML double-quoted scalar.
+  let mdx = `---\ntitle: ${title}\ndescription: ${JSON.stringify(description)}\n`;
+  if (passthrough.length) mdx += passthrough.join('\n') + '\n';
+  mdx += `type_aware: ${isTypeAware}\ntype_aware_status: ${typeStatusForFm}\n---\n`;
 
   // Add Imports
   mdx += MDX_TEMPLATE_IMPORTS + '\n';
@@ -153,8 +234,9 @@ type_aware_status: ${typeStatusForFm}
   // is reachable via fumadocs frontmatter when rendering elsewhere.
   mdx += `<RuleBadges typeAware={${isTypeAware}} typeAwareStatus=${JSON.stringify(typeStatusForFm)} />\n\n`;
 
-  // Process Content
-  let finalContent = mdContent;
+  // Process Content — the body BELOW the source frontmatter. Passing the whole
+  // file here is what left the source block embedded in the output.
+  let finalContent = sourceBody;
 
   // Remove the main title (handled by frontmatter)
   finalContent = finalContent.replace(/^#\s+.+$/m, '');
@@ -163,6 +245,44 @@ type_aware_status: ${typeStatusForFm}
   // stable — single-pass replace leaves nested `<!-- a <!-- b --> c -->`
   // partially intact (CodeQL: "Incomplete multi-character sanitization").
   finalContent = stripHtmlComments(finalContent);
+
+  // ── Emit final form, not a draft the repair scripts have to clean up ──────
+  // Each transform below corresponds 1:1 to a surface in
+  // `src/lib/eslint-validators/rule-mdx-format.ts`. They used to live in
+  // one-shot scripts (clean-rule-page-chrome / dedupe-body-description /
+  // strip-markdown-from-description / refresh-rule-descriptions) that had to be
+  // run in an undocumented order after this generator — so in practice nobody
+  // ran them and the published pages drifted.
+
+  // SEO-keyword chrome duplicating the Quick Summary table.
+  finalContent = finalContent
+    .replace(/^>\s+\*\*Keywords:\*\*.*$\n?/gm, '')
+    .replace(/^>\s+\*\*CWE:\*\*.*$\n?/gm, '')
+    .replace(/^>\s+\*\*OWASP[^:]*:\*\*.*$\n?/gm, '');
+
+  finalContent = finalContent.replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '');
+
+  // `body-boilerplate-lead`: metadata-as-prose opening the page. Loop, because
+  // removing one boilerplate lead can expose another behind it (several rule
+  // docs open with an `ESLint Rule: …` blurb *and* a `CWE: […]` line).
+  for (let guard = 0; guard < 10; guard++) {
+    const lead = findFirstProseParagraphBeforeHeading(finalContent);
+    if (!lead || !BOILERPLATE_PATTERNS.some((bp) => bp.re.test(lead))) break;
+    finalContent = finalContent.replace(lead, '').replace(/^\n+/, '').replace(/\n{3,}/g, '\n\n');
+  }
+
+  // `body-duplicated-description`: fumadocs already renders the description
+  // under the H1, so repeating it in the lead shows the same sentence twice.
+  // Loop as well — a good number of rule docs carry the summary sentence twice
+  // in the lead (once as the `@rule-summary` block, once as the intro
+  // paragraph), and removing only the first leaves the page still duplicated.
+  for (let guard = 0; guard < 10; guard++) {
+    const dup = findDuplicatedDescriptionParagraph(finalContent, description);
+    if (!dup) break;
+    const lines = finalContent.split('\n');
+    lines.splice(dup.start, dup.end - dup.start);
+    finalContent = lines.join('\n').replace(/^\n+/, '').replace(/\n{3,}/g, '\n\n');
+  }
 
   // Inject WhenNotToUse before Known False Negatives
   if (finalContent.includes('## Known False Negatives')) {
@@ -180,12 +300,12 @@ type_aware_status: ${typeStatusForFm}
   // Fix Mermaid charts: quote labels with special characters (like emojis)
   // Example: A[📝 Detect eval() Call] -> A["📝 Detect eval() Call"]
   // This prevents Mermaid parsing errors in MDX/Turbopack
-  finalContent = finalContent.replace(/```mermaid\n([\s\S]*?)```/g, (match, chart) => {
+  finalContent = finalContent.replace(/```mermaid\n([\s\S]*?)```/g, (_match: string, chart: string) => {
     const lines = chart.split('\n');
     // Each character class lists the closer it must reject *and* a quote so we
     // don't double-quote already-quoted labels. The quote appeared twice in the
     // earlier form (CodeQL: "Duplicate character in character class").
-    const fixedLines = lines.map(line => {
+    const fixedLines = lines.map((line: string) => {
       // Handle nodes: A[label], A{label}, A(label), A((label)), A[[label]], A>label]
       // Replace with A["label"], A{"label"}, etc.
       return line.replace(/([A-Z0-9_-]+)\[([^\]"]+)\]/g, '$1["$2"]')
@@ -207,7 +327,7 @@ type_aware_status: ${typeStatusForFm}
   return mdx + finalContent;
 }
 
-export function updateMetaJson(pluginRulesDir, ruleSlugs) {
+export function updateMetaJson(pluginRulesDir: string, ruleSlugs: string[]) {
   const metaPath = path.join(pluginRulesDir, 'meta.json');
   let meta: { title?: string; icon?: string; defaultOpen?: boolean; pages?: string[]; [k: string]: unknown } = {
     title: 'Rules',

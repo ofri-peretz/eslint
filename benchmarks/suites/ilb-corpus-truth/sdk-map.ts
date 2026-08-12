@@ -88,13 +88,15 @@ export const SDK_PACKAGES: Readonly<Record<string, readonly string[]>> = {
     '@google/genai',
     '@google-cloud/vertexai',
   ],
-  'vercel-ai-security': [
-    'ai',
-    '@ai-sdk/openai',
-    '@ai-sdk/anthropic',
-    '@ai-sdk/google',
-    '@ai-sdk/react',
-  ],
+  // The whole `@ai-sdk` scope, not an enumerated provider list. Enumerating
+  // four of them measured this plugin against a corpus it does not describe:
+  // across the 107 repositories the scope appears as at least fourteen
+  // packages, and the two most common — `@ai-sdk/provider-utils` (639 files)
+  // and `@ai-sdk/provider` (607) — were both absent, so every file importing
+  // them was scored "no SDK" while plainly being the SDK. That inflates
+  // `offSdk` for this plugin and would let the ratchet fire on a corpus
+  // refresh that merely added a provider.
+  'vercel-ai-security': ['ai', '@ai-sdk/*'],
   'mcp-sdk-security': ['@modelcontextprotocol/sdk'],
 };
 
@@ -151,4 +153,28 @@ export function specifiersIn(source: string): ReadonlySet<string> {
     }
   }
   return found;
+}
+
+/**
+ * Whether a file's import specifiers show evidence of a plugin's SDK.
+ *
+ * An entry of the form `@scope/*` matches any package in that scope. It exists
+ * because some SDKs ship as an open-ended family — `@ai-sdk` was fourteen
+ * packages across this corpus and grows every release — and an enumerated list
+ * silently scores real SDK files as off-SDK. Exact package names are still the
+ * default: a scope wildcard is only correct where the whole scope belongs to
+ * the one SDK.
+ */
+export function fileHasSdk(
+  specifiers: ReadonlySet<string>,
+  plugin: string,
+): boolean {
+  return SDK_PACKAGES[plugin].some((pkg) => {
+    if (pkg.endsWith('/*')) {
+      const scope = pkg.slice(0, -2);
+      for (const s of specifiers) if (s === scope || s.startsWith(`${scope}/`)) return true;
+      return false;
+    }
+    return specifiers.has(pkg);
+  });
 }

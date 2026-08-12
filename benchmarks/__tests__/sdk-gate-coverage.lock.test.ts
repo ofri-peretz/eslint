@@ -69,30 +69,24 @@ const REPO_ROOT = path.resolve(HERE, '../..');
  *
  * @see NEXT-LEVEL-PLAN.md items 4 and 6
  */
-const UNGATED: Readonly<Record<string, number>> = {
-  // No gate at all — ordered by measured blast radius.
-  'vercel-ai-security': 1738,
-  'mongodb-security': 1663,
-  'nestjs-security': 219,
-  // Effectively gated already: `isJwtLibraryCall` requires the file to import a
-  // JWT library, which took it from 702 off-SDK findings to 27. What it still
-  // owes is the registry-wide lock, so the property cannot be lost by a rule
-  // that skips the helper.
-  'jwt-security': 27,
-  'openai-security': 0,
-  'anthropic-security': 0,
-  'gemini-security': 0,
-  'mcp-sdk-security': 0,
-  // Gated by the devkit SQL factory; measured 0 off-SDK. Owed a registry lock so
-  // the property survives the next hand-written rule.
-  'typeorm-security': 0,
-  'mysql-security': 0,
-  'knex-security': 0,
-  'drizzle-security': 0,
-  'sqlite-security': 0,
-  'prisma-security': 0,
-  'sequelize-security': 0,
-};
+/**
+ * SDK plugins that do not yet ship `src/module-gate.lock.test.ts`.
+ *
+ * **Empty, as of 2026-08-11.** Every SDK-specific plugin now ships a
+ * registry-wide lock proving that none of its rules reports in a file that does
+ * not use its SDK. Getting here took five plugins gated outright
+ * (postgresql, lambda, express, vercel-ai, mongodb) and eight more that were
+ * already gated inside a devkit factory — the seven SQL plugins via
+ * `createSqlInjectionRule`, the AI-key plugins via `createSdkApiKeyRule` —
+ * finally proving it at the registry level, where a hand-written rule added
+ * tomorrow cannot slip past.
+ *
+ * Keep this mechanism even while empty: a **new** SDK plugin lands on neither
+ * list and turns this suite red until it is gated too. Adding an entry here to
+ * silence a failure is the one thing it must never be used for — an entry is a
+ * debt with a number attached, and the fix is the gate.
+ */
+const UNGATED: Readonly<Record<string, number>> = {};
 
 /**
  * Files that use no SDK from any of these plugins. Each is a real

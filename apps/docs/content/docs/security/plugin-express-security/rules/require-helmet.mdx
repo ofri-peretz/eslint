@@ -1,6 +1,6 @@
 ---
 title: require-helmet
-description: This rule detects Express.js applications that are missing the helmet middleware
+description: "This rule detects Express.js applications that are missing the helmet middleware"
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -76,10 +76,11 @@ app.listen(3000);
 
 ## Options
 
-| Option                  | Type       | Default | Description                                             |
-| ----------------------- | ---------- | ------- | ------------------------------------------------------- |
-| `allowInTests`          | `boolean`  | `false` | Allow missing helmet in test files                      |
-| `alternativeMiddleware` | `string[]` | `[]`    | Alternative security headers middleware names to accept |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing helmet in test files |
+| `alternativeMiddleware` | `string[]` | `[]` | Alternative security headers middleware names to accept |
+| `assumeHelmetMiddleware` | `boolean` | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
 
 ```json
 {

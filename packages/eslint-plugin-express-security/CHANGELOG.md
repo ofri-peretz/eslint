@@ -1,3 +1,134 @@
+## 2.0.0
+
+### Major Changes
+
+- [#482](https://github.com/ofri-peretz/eslint/pull/482) [`56f5d71`](https://github.com/ofri-peretz/eslint/commit/56f5d71efe293747566a30732489ce40980be097) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now abstains in files without local Express evidence
+
+  The plugin had no notion of whether a file had Express in it. Measured over
+  **107,382 files across 108 repositories**: 5,921 findings, of which **4,450
+  (75%) were in files with no Express import** — `no-missing-csrf-protection`
+  alone contributed 3,556.
+
+  Every rule now requires local evidence: an import / `require` / dynamic
+  `import()` of `express`, **or** a `(req, res, next)` middleware signature.
+
+  The signature arm is deliberately the **three-argument** form only. Two-argument
+  `(req, res)` is shared with `node:http`, Next.js API routes and other servers,
+  so accepting it would re-import the false positives this change removes. The
+  three-argument form with a trailing `next` is the Connect/Express middleware
+  contract and essentially nothing else. Error-handling middleware
+  `(err, req, res, next)` matches on the tail.
+
+  The import arm alone was not enough: over the 12-repo Express corpus, 68 of 114
+  files containing a `(req, res)`-shaped function (60%) import no `express` —
+  route modules routinely receive `app` or `router` from their caller.
+
+  After the change the same corpus yields 1,480 findings instead of 5,921, and
+  **no recall is lost**: diffed across all 1,003 files that import `express`,
+  findings are identical before and after (1,554 → 1,554, zero lost). The 44
+  remaining findings outside an `express` import are, by construction, files the
+  gate opened on the middleware signature.
+
+  This is a **major** bump: any rule may now stay silent where it previously
+  reported.
+
+### Minor Changes
+
+- [#468](https://github.com/ofri-peretz/eslint/pull/468) [`f5a9d0d`](https://github.com/ofri-peretz/eslint/commit/f5a9d0daa384520837dfe619bab9e19cfefec92a) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Three deprecated rules are no longer part of the `recommended` preset:
+  `no-missing-cors-check`, `no-missing-csrf-protection` and
+  `no-missing-security-headers`.
+
+  All three carry `deprecated: true` and name a replacement that is _already in
+  the same preset at `'error'`_ — `no-permissive-cors`, `require-csrf-protection`
+  and `require-helmet` respectively. Every adopter was running each check twice
+  and getting two findings on one line, where silencing either leaves the other.
+
+  Measured on the 13-repo wild corpus (~1,900 files of real Express and NestJS
+  code): 43 findings removed, 355 → 312, and 21 CSRF locations were being
+  reported by both rules at once.
+
+  The rules remain exported, so anyone enabling them explicitly is unaffected.
+  They are simply no longer on by default.
+
+### Patch Changes
+
+- [#475](https://github.com/ofri-peretz/eslint/pull/475) [`db73308`](https://github.com/ofri-peretz/eslint/commit/db7330857b4669b4ed325dc561f46f82905c56ba) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Stop reporting on evidence that lives in another file, or on no LDAP evidence at all
+
+  **express-security — `require-helmet`, `require-rate-limiting`.** Both required
+  `express()` and the middleware registration to be in the _same file_. Splitting
+  setup into `setAppConfigurations(app)` is the normal shape for any non-toy
+  Express app, so both reported ToniR7/express-typescript-starter, which registers
+  `helmet()` and its rate limiter in `utils/appInitialization.ts` and has both
+  packages in `dependencies`.
+
+  They now abstain once the app binding is passed to another function: the
+  middleware stack is assembled somewhere the rule cannot see, and "no helmet
+  here" says nothing about the application.
+
+  **secure-coding — `no-ldap-injection`.** One branch reported any variable whose
+  initializer _printed_ containing `req.`, with no LDAP evidence required. It
+  flagged `var header = req.headers[field.toLowerCase()]` in **expressjs/morgan**
+  — an HTTP logger with no LDAP anywhere — as CWE-90 at CVSS 9.8. The "looks like
+  a filter" guard was satisfied by the parentheses of `toLowerCase()`.
+
+  That branch now requires the file to touch LDAP: an `ldapjs`/`ldapts`/
+  `activedirectory`/`passport-ldapauth` import (ESM _or_ `require()`, since LDAP
+  code in the wild is largely CommonJS), or a call to one of the LDAP sink methods
+  the rule already recognises. The rule's other branches each carry their own
+  evidence — an LDAP method call, or a literal that parses as a dangerous filter —
+  and are unchanged.
+
+- [#494](https://github.com/ofri-peretz/eslint/pull/494) [`4c4af8d`](https://github.com/ofri-peretz/eslint/commit/4c4af8d62b64eabe5be1636345f7a56f63372b43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Close two false-negative classes across every SDK-evidence gate
+
+  A full false-negative audit ran every gated plugin twice over the 107-repository
+  corpus — once with the gates forced open, once as shipped — and compared the
+  **6,686 findings the gates silence across 5,235 files**. Of those files, 134 were
+  flagged as suspect (the SDK _is_ imported but the gate closed anyway), and two
+  real defect classes came out of verifying them one by one.
+
+  **1. TypeScript's import-equals form was invisible to four of the five gates.**
+  `import express = require('express')` is a `TSImportEqualsDeclaration` whose
+  module reference is a `TSExternalModuleReference` — not a `require`
+  `CallExpression` — so the dynamic-load arm never saw it. **82 corpus files
+  written this way for Express alone had every rule in the plugin silenced.** Only
+  `mongodb-security` handled it, and only because an earlier audit forced the
+  issue. Now handled by express, lambda, postgresql and vercel-ai too.
+
+  **2. Deno's module specifiers were unrecognisable to all five.**
+  `npm:@aws-sdk/client-bedrock-runtime` and
+  `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports in Deno
+  and Supabase Edge Functions; the prefix made the specifier unmatchable and the
+  whole plugin abstained on real SDK code. Both forms are now normalised before
+  the package test.
+
+  **`postgresql-security` also had no dynamic `import()` arm at all** — alone
+  among the five — so a file that lazily loads its driver was silenced entirely.
+  Every other gate has carried that arm since [#481](https://github.com/ofri-peretz/eslint/issues/481).
+
+  **Measured, not assumed.** Re-sweeping the same 119,271 files with the fixes:
+  **198 findings recovered across 88 files** (196 express, 1 postgres, 1 lambda)
+  and **zero regressions** — nothing that reported before is silenced now.
+
+  The two non-Express recoveries are the clearest illustration of what was broken:
+  `no-missing-authorization-check` on a Supabase Edge Function calling Bedrock, and
+  `no-missing-client-release` on a Deno postgres pool driver. Both are real
+  serverless code that the ecosystem was blind to.
+
+  Verification also **ruled out** four groups the generous probe flagged, rather
+  than widening the gates to swallow them: `@serverless/*` and
+  `@aws-lambda-powertools/*` hits were the frameworks' own source (one specifier
+  was inside a JSDoc `@example` block), and `@payloadcms/db-mongodb` /
+  `@medusajs/deps/pg` were type-only imports of adapter packages in files that
+  never touch the driver.
+
+  Each new arm ships a positive control in the plugin's `module-gate.lock.test.ts`
+  — import-equals, `npm:`, and `deno.land/x` for every gate, plus the dynamic
+  `import()` case for postgres — so none of them can regress silently. All four
+  packages remain at 100% statements / branches / functions / lines.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
 ## 1.5.6
 
 ### Patch Changes

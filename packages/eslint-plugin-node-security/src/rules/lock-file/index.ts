@@ -21,6 +21,15 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Project roots already reported in this process, so the finding is emitted
+ * once per project rather than once per file. Module scope is deliberate:
+ * ESLint builds a fresh rule context for every file, so state inside
+ * `create()` cannot deduplicate across them — which is exactly how the
+ * original per-file guard failed.
+ */
+const reportedRoots = new Set<string>();
+
 export const lockFile = createRule<RuleOptions, MessageIds>({
   name: 'lock-file',
   meta: {
@@ -60,8 +69,6 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     const fs = require('node:fs');
     const path = require('node:path');
 
-    // Check once per file
-    let checked = false;
     const options = context.options[0] || {};
     const userPackageManager = options.packageManager;
 
@@ -85,9 +92,6 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
 
     return {
       Program(node: TSESTree.Program) {
-        if (checked) return;
-        checked = true;
-
         // Find project root (simplified)
         let dir = path.dirname(context.filename);
         let found = false;
@@ -107,6 +111,32 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
         }
 
         if (!found) {
+          // A missing lock file is one fact about the project. The guard that
+          // used to sit at the top of this visitor was `let checked = false`
+          // inside create(), which ESLint calls per file — so it reset every
+          // time and reported once per source file. auth0/express-openid-connect
+          // produced 135 identical findings, at arbitrary lines.
+          //
+          // The project is where package.json lives. `dir` cannot serve as the
+          // key: when the search fails it has walked to the filesystem root,
+          // collapsing every project onto one entry.
+          let root = path.dirname(context.filename);
+          let manifest = false;
+          for (let i = 0; i < 10; i++) {
+            if (fs.existsSync(path.join(root, 'package.json'))) {
+              manifest = true;
+              break;
+            }
+            const parent = path.dirname(root);
+            if (parent === root) break;
+            root = parent;
+          }
+          // No manifest anywhere above the file: not a JS project, so there is
+          // no lock file to be missing.
+          if (!manifest) return;
+          if (reportedRoots.has(root)) return;
+          reportedRoots.add(root);
+
           context.report({
             node,
             messageId: 'violationDetected',

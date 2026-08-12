@@ -152,7 +152,7 @@ if (secretInput.length >= 4) {
 
 ## Related Rules
 
-- [no-hardcoded-credentials](./no-hardcoded-credentials.md) (in eslint-plugin-pg)
+- [no-hardcoded-credentials](./no-hardcoded-credentials.md) (in eslint-plugin-postgresql-security)
 - no-client-side-auth-logic (planned)
 
 ---

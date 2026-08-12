@@ -1,6 +1,6 @@
 ---
 title: require-validation-pipe-whitelist
-description: "Requires whitelist: true on ValidationPipe so unknown properties are stripped"
+description: "Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of reaching the service layer."
 tags: ['security', 'nestjs']
 category: security
 severity: high
@@ -95,6 +95,11 @@ app.useGlobalPipes(new ValidationPipe(validationOptions));
   what reaches the call.
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `requireForbidNonWhitelisted` | `boolean` | `false` | Also require `forbidNonWhitelisted: true`, rejecting rather than stripping |
 
 ```ts
 'nestjs-security/require-validation-pipe-whitelist': ['error', {

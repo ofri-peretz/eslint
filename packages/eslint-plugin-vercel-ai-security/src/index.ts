@@ -164,7 +164,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-vercel-ai-security',
-    version: '1.5.4',
+    version: '2.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

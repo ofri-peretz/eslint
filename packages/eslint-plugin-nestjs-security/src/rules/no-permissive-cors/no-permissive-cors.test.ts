@@ -5,12 +5,56 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noPermissiveCors } from './index';
 
+/**
+ * Every fixture imports from NestJS, because the rules now abstain in files
+ * that use no NestJS at all. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. A SIDE-EFFECT import, so it reserves no binding a fixture might declare.
+ * `output` and errors[].suggestions[].output are prefixed too, because autofix
+ * fixtures assert the whole file back.
+ */
+const asNest = (code: string): string => `import '@nestjs/common';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const nest = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asNest(c) as T;
+    const t = c as Case;
+    return {
+      ...c,
+      code: asNest(t.code),
+      ...(typeof t.output === 'string' ? { output: asNest(t.output) } : {}),
+      ...(t.errors
+        ? {
+            errors: t.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asNest(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
 });
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
-  valid: [
+  valid: nest([
     // nest-framework/packages/core/nest-application.ts:130 — NestJS's own
     // implementation of the API this rule watches. An application holds the
     // app in a binding; a `this` receiver means the class *is* the app.
@@ -139,8 +183,8 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
       code: `app.enableCors();`,
       filename: 'app.e2e-spec.ts',
     },
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // The documented Fastify spelling puts the options object third, so
     // reading `arguments[1]` found the adapter and gave up.
     {
@@ -282,7 +326,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'defaultOrigin' }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -291,7 +335,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
 // helper returning null is the safe answer, not a missed finding.
 // ─────────────────────────────────────────────────────────────────────────────
 ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
-  valid: [
+  valid: nest([
     // Callee is a member expression whose property is computed, not `enableCors`.
     { code: `app['enableCors']();` },
     // Callee is not a member expression at all.
@@ -332,8 +376,8 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
         app.enableCors(corsOptions);
       `,
     },
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // Computed key: `origin` is not provably set and there is no spread to
     // explain it, so the CORS default of '*' applies either way.
     {
@@ -351,7 +395,7 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
       `,
       errors: [{ messageId: 'wildcardOrigin' }],
     },
-  ],
+  ]),
 });
 
 /**
@@ -363,7 +407,7 @@ ruleTester.run('no-permissive-cors (coverage gaps)', noPermissiveCors, {
  * the file — the name is not evidence, the import it resolves to is.
  */
 ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
-  valid: [
+  valid: nest([
     // The allowlist form. This is the fix ultimate-backend should apply, and it
     // is already written 7 lines below the defect in their own file.
     `
@@ -414,8 +458,8 @@ ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
         const corsOptions: CorsOptions = { origin: true };
       }
     `,
-  ],
-  invalid: [
+  ]),
+  invalid: nest([
     // The ultimate-backend shape, reduced. Reflected origin + credentials.
     {
       code: `
@@ -479,7 +523,7 @@ ruleTester.run('no-permissive-cors (annotated declaration)', noPermissiveCors, {
       `,
       errors: [{ messageId: 'reflectedOrigin' }],
     },
-  ],
+  ]),
 });
 
 // A computed key named `origin` is a variable reference, not the property.
@@ -490,7 +534,7 @@ ruleTester.run(
   noPermissiveCors,
   {
     valid: [],
-    invalid: [
+    invalid: nest([
       {
         code: `
         const origin = 'credentials';
@@ -498,6 +542,6 @@ ruleTester.run(
       `,
         errors: [{ messageId: 'defaultOrigin' }],
       },
-    ],
+    ]),
   },
 );

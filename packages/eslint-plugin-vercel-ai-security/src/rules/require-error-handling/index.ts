@@ -12,6 +12,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'missingErrorHandling';
 
@@ -65,6 +66,12 @@ export const requireErrorHandling = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context) {
+    // Every rule in this plugin is Vercel-AI-specific, and none of them knew
+    // it: over 107,384 files, 91% of this plugin's findings were in files with
+    // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
+    // the cheap path — a file without the SDK does no work.
+    if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
+
     const [options = {}] = context.options;
     const allowInTests = options.allowInTests ?? true;
 

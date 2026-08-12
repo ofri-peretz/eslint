@@ -1,6 +1,6 @@
 ---
 title: checked-requires-onchange-or-readonly
-description: checked-requires-onchange-or-readonly rule
+description: "checked-requires-onchange-or-readonly rule"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** React, controlled input, checkbox, radio, onChange, readOnly, form handling, ESLint rule, LLM-optimized
 
 Ensures controlled inputs with `checked` or `value` props have an `onChange` handler or `readOnly` attribute. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 

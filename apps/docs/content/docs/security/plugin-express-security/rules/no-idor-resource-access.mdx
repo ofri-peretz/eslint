@@ -6,7 +6,6 @@ category: security
 severity: high
 cwe: CWE-639
 autofix: false
-owasp: 'A01:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -99,9 +98,9 @@ app.get('/invoices', (req, res) =>
 
 ## Options
 
-| Option          | Type       | Default                                          | Description                                              |
-| --------------- | ---------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `lookupMethods` | `string[]` | `['findById', 'findByPk', 'findOne', 'findUnique', …]` | Lookup methods treated as a fetch-by-key (replaces the default set) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `lookupMethods` | `string[]` | — | Lookup methods treated as a fetch-by-key |
 
 ```json
 {
@@ -131,6 +130,10 @@ app.get('/invoices/:id', (req, res) => {
 ```
 
 Mitigation: read the principal in the handler (`assertOwnership(req.user, req.params.id)`), which is clearer at the call site anyway, or disable the rule inline with a comment naming where the check lives.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

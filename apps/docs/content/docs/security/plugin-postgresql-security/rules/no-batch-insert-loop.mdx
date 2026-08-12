@@ -1,6 +1,6 @@
 ---
 title: no-batch-insert-loop
-description: Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
+description: "Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

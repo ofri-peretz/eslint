@@ -1,6 +1,6 @@
 ---
 title: no-permissive-cors-middy
-description: Detects permissive CORS configurations in Middy middleware
+description: "Detects permissive CORS configurations in Middy middleware"
 tags: ['security', 'lambda']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
 
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
@@ -95,9 +93,9 @@ export const handler = middy(baseHandler).use(
 
 ## Options
 
-| Option         | Type      | Default | Description                         |
-| -------------- | --------- | ------- | ----------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow permissive CORS in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```json
 {

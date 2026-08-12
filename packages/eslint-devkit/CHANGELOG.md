@@ -1,5 +1,56 @@
 ## [1.4.0] - 2026-05-03
 
+## 1.13.0
+
+### Minor Changes
+
+- [#502](https://github.com/ofri-peretz/eslint/pull/502) [`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Share one SDK-evidence probe, and gate the last plugin that had none
+
+  `createModuleEvidence` moves the probe into the devkit. Five plugins each
+  carried their own copy, so the two false-negative classes the audit found —
+  TypeScript's `import =` form and Deno's `npm:` / `deno.land` specifiers — had to
+  be fixed five times. One implementation now carries package-root matching,
+  rejection of relative specifiers, both dynamic forms, lexically-scoped `require`
+  shadowing, an optional non-import evidence arm, and a per-`Program` cache.
+
+  `nestjs-security` is gated on it. Measured over 107,382 files across 107
+  repositories, **22% of everything it reported (219 of 999 findings) was in a
+  file importing no NestJS package** — its rules key on decorator and method names
+  that Angular, TypeORM and plain TypeScript classes share. This is a **major**:
+  any rule may now stay silent where it previously reported.
+
+  Every other SDK plugin already abstained, but eight of them proved it only
+  inside a devkit factory. They now ship a registry-wide lock as well, so the
+  guarantee survives a hand-written rule added tomorrow.
+
+## 1.12.0
+
+### Minor Changes
+
+- [#478](https://github.com/ofri-peretz/eslint/pull/478) [`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Each SQL plugin now reports only in files that import its own driver
+
+  `createSqlInjectionRule` discriminated on **method name alone**. That is not an
+  SDK: `.query()` is TypeORM _and_ mysql2 _and_ pg; `.raw()` is knex _and_ drizzle
+  with byte-identical config; and sqlite claimed `get`, `all`, `run` and `exec`,
+  which belong to Express routers and `Promise.all` as much as to a database.
+
+  Measured over 73,364 files, that produced **1,142 lines where two or more
+  plugins reported the same CWE** — 616 postgres×typeorm, 503 mysql×typeorm, 503
+  mysql×postgres, 347 drizzle×knex. One defect, billed up to three times.
+
+  The factory now takes a `modules` list and stays silent in files importing none
+  of them, compared on the package root so `mysql2/promise` and
+  `@prisma/client/edge` still match. Relative specifiers never count — otherwise
+  `'./knex'` would satisfy the knex rule in a repo with no knex.
+
+  This makes the collision impossible by construction rather than deduplicated
+  after the fact, and it is local evidence: no project scan, nothing to go stale,
+  and a file that does not import the driver is one the rule has nothing to say
+  about.
+
+  Every fixture across the seven suites now carries its driver's import, so the
+  suites still exercise the detection logic instead of passing on the new gate.
+
 ## 1.11.0
 
 ### Minor Changes

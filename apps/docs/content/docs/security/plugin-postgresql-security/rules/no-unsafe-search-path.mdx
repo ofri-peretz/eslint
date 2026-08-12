@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-search-path
-description: Prevents dynamic SET searchpath queries that could enable schema hijacking.
+description: "Prevents dynamic SET searchpath queries that could enable schema hijacking."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** search_path, schema hijacking, CWE-426, pg, node-postgres, security
 
 **CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)
 
