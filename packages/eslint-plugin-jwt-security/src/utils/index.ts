@@ -10,6 +10,7 @@
  * Library detection, pattern matching, and common helpers.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
 /**
  * Supported JWT libraries
@@ -211,8 +212,8 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
   // Identifier and gave up before ever checking where `sdk` came from — the
   // gate simply did not apply to any call more than one member deep.
   let object: TSESTree.Node = node.callee.object;
-  while (object.type === 'MemberExpression') object = object.object;
-  if (object.type !== 'Identifier') return false;
+  while (object.type === AST_NODE_TYPES.MemberExpression) object = object.object;
+  if (object.type !== AST_NODE_TYPES.Identifier) return false;
 
   // Reached only after `fileImportsJwtLibrary` returned true, which already
   // proved the root is a Program — so no type guard here would be reachable.

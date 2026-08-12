@@ -314,7 +314,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               });
               return; // Only report once per call
             }
-          } else if (arg.type === 'MemberExpression') {
+          } else if (arg.type === AST_NODE_TYPES.MemberExpression) {
             // `console.log(user.password)` — the shape the rule most exists
             // for, and it was silent. The logging path read Literal, `+` and
             // Identifier arguments only, so every property access carrying a
@@ -330,7 +330,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               });
               return; // Only report once per call
             }
-          } else if (arg.type === 'TemplateLiteral') {
+          } else if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
             // `` console.log(`token=${t}`) `` — an interpolation is exactly the
             // evidence the static-string guard looks for: unlike a constant,
             // a template splices a runtime value into the log line.
@@ -341,9 +341,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             // only the label says what is being logged.
             const fromExpression = arg.expressions
               .map((e) =>
-                e.type === 'Identifier'
+                e.type === AST_NODE_TYPES.Identifier
                   ? containsSensitiveData(e.name, sensitivePatterns)
-                  : e.type === 'MemberExpression'
+                  : e.type === AST_NODE_TYPES.MemberExpression
                     ? memberCarriesSecret(e, sensitivePatterns)
                     : null,
               )
@@ -380,7 +380,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               });
               return; // Only report once per call
             }
-          } else if (arg.type === 'Identifier' && arg.name) {
+          } else if (arg.type === AST_NODE_TYPES.Identifier && arg.name) {
             const matchedPattern2 = containsSensitiveData(arg.name, sensitivePatterns);
             if (matchedPattern2) {
               context.report({

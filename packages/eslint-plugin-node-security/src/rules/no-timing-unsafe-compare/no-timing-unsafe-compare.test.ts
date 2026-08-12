@@ -95,18 +95,45 @@ describe('no-timing-unsafe-compare', () => {
         `if (err.name === Enums.AUTH_STOP_POLL_INITIATION_ERROR) return;`,
         `if (err.errorCode === ErrorCodes.INVALID_TOKEN_EXCEPTION) retry();`,
         `if (relatesTo?.key === AuthenticatorKey.OKTA_PASSWORD) select();`,
-        `if (this.auth !== this.ANY) deny();`,
       ],
       invalid: [
+        // BOTH halves must carry the convention: a namespace-cased object AND
+        // a constant-cased property. Everything below has the property and is
+        // still a finding, which is what stops the guard from swallowing live
+        // secrets that happen to sit behind an upper-case key.
+        //
+        // A camelCase object is an ordinary runtime value, not a namespace.
+        {
+          code: 'if (userToken === credentials.API_TOKEN) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // process.env in both spellings. The bracket form used to slip past an
+        // explicit `process.env` check that only understood dot notation.
+        {
+          code: 'if (userToken === process.env.API_TOKEN) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        {
+          code: "if (userToken === process['env'].API_TOKEN) grant();",
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // Computed: `API_TOKEN` is a variable HOLDING the key, so the property
+        // name is unknowable here and nothing has been proven constant.
+        {
+          code: 'if (userToken === secrets[API_TOKEN]) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
         // A BARE SCREAMING_SNAKE identifier stays a finding. `API_KEY` is both
         // constant-cased and a real secret — the casing alone is not evidence,
         // the namespace is. Locked so the guard is never widened to identifiers.
         { code: 'if (API_KEY === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
-        // process.env is the one SCREAMING_SNAKE member that holds a live
-        // secret rather than a constant. Suppressing it would drop the
-        // archetypal true positive this rule exists for.
+        // `this.ANY` has no namespace-cased Identifier object, so it is no
+        // longer exempt — one corpus finding, traded for the three above.
+        { code: 'if (this.auth !== this.ANY) deny();', errors: [{ messageId: 'timingUnsafeCompare' }] },
+        // A private name is not an Identifier property, so there is no name to
+        // match even though the object is namespace-cased.
         {
-          code: 'if (userToken === process.env.API_TOKEN) grant();',
+          code: 'class Vault { static #TOKEN = 1; static check(V, userToken) { if (userToken === V.#TOKEN) return; } }',
           errors: [{ messageId: 'timingUnsafeCompare' }],
         },
       ],

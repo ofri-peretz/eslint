@@ -117,41 +117,46 @@ const BOOLEAN_PREDICATE_NAME = /^(?:is|has|should|can|did|was|will|does)[A-Z]/;
  */
 const NAMED_CONSTANT = /^[A-Z][A-Z0-9_]*$/;
 
-/** `process.env.API_KEY` is SCREAMING_SNAKE but is emphatically NOT a constant. */
-function isProcessEnv(node: TSESTree.Node): boolean {
-  return (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    node.object.type === AST_NODE_TYPES.Identifier &&
-    node.object.name === 'process' &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'env'
-  );
-}
+/**
+ * Names that read as a namespace rather than a runtime value: `Enums`,
+ * `ErrorCodes`, `AuthenticatorKey`, `IDX_STEP`, `AUTHENTICATOR_KEY`.
+ *
+ * PascalCase or SCREAMING_SNAKE_CASE. A camelCase object — `credentials`,
+ * `secrets`, `config` — is an ordinary value that happens to be holding
+ * something, and its properties prove nothing about constness.
+ */
+const NAMESPACE_NAME = /^(?:[A-Z][A-Z0-9_]*|[A-Z][a-zA-Z0-9]*)$/;
 
 /**
  * Is this operand a member of a constant object — `AUTHENTICATOR_KEY.WEBAUTHN`,
  * `Enums.INVALID_TOKEN`, `ErrorCodes.INVALID_TOKEN_EXCEPTION`?
  *
- * Either half carries the convention: `AUTHENTICATOR_KEY.WEBAUTHN` announces
- * itself through the object, `Enums.AUTH_STOP_POLL` through the property.
+ * BOTH halves must carry the convention: a namespace-cased object AND a
+ * constant-cased property. Every one of the 73 corpus findings this guard
+ * exists for satisfies both, and requiring both is what keeps it from
+ * swallowing real secrets:
+ *
+ * - `userToken === credentials.API_TOKEN` — `credentials` is a camelCase
+ *   runtime value, so `API_TOKEN` is a live secret, not an enum member.
+ * - `userToken === secrets[API_TOKEN]` — computed, so `API_TOKEN` is a
+ *   *variable holding* the key, and the property name is unknowable here.
+ * - `userToken === process.env.API_TOKEN` and its `process['env']` spelling —
+ *   the object is lowercase (or not an Identifier at all), so neither form is
+ *   a namespace. This replaces an explicit `process.env` special case that
+ *   only recognised dot notation and missed the bracket form.
  *
  * Deliberately MEMBER EXPRESSIONS ONLY. A bare SCREAMING_SNAKE identifier is
  * ambiguous in exactly the wrong direction: `API_KEY === expected` is a module
  * constant holding a real secret, and the existing fixture for it went green
- * the moment bare identifiers were accepted here. Every corpus finding but one
- * was namespaced, so the namespace is the evidence — not the casing alone.
+ * the moment bare identifiers were accepted here.
  */
 function isNamedConstant(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
-  // The one member expression whose SCREAMING_SNAKE property is a live secret
-  // rather than a constant. Suppressing `userToken === process.env.API_TOKEN`
-  // would drop the archetypal true positive this rule exists for.
-  if (isProcessEnv(node.object)) return false;
-  const viaProperty =
-    node.property.type === AST_NODE_TYPES.Identifier && NAMED_CONSTANT.test(node.property.name);
-  const viaObject =
-    node.object.type === AST_NODE_TYPES.Identifier && NAMED_CONSTANT.test(node.object.name);
-  return viaProperty || viaObject;
+  // An identifier key under `[]` is a variable, not a property name.
+  if (node.computed) return false;
+  if (node.object.type !== AST_NODE_TYPES.Identifier) return false;
+  if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
+  return NAMESPACE_NAME.test(node.object.name) && NAMED_CONSTANT.test(node.property.name);
 }
 
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({

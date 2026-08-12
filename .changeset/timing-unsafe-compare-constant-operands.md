@@ -26,8 +26,16 @@ Three guards, each keyed to evidence rather than to a name:
 - **Namespaced constants.** `name === IDX_STEP.SELECT_AUTHENTICATOR_AUTHENTICATE`,
   `authenticatorKey === AUTHENTICATOR_KEY.WEBAUTHN`,
   `err.name === Enums.AUTH_STOP_POLL_INITIATION_ERROR` — 73 of the 88 findings
-  left after the first two guards. `process.env.API_TOKEN` is excluded from
-  this guard: it is SCREAMING_SNAKE but holds a live secret.
+  left after the first two guards.
+
+  This guard requires **both** halves to carry the convention: a
+  namespace-cased object (PascalCase or SCREAMING_SNAKE) *and* a constant-cased
+  property, on a non-computed member. Every one of those 73 findings satisfies
+  both, and requiring both is what keeps it from swallowing real secrets:
+  `userToken === credentials.API_TOKEN` still reports (`credentials` is an
+  ordinary runtime value), as do `secrets[API_TOKEN]` (computed — the property
+  name is unknowable) and `process.env.API_TOKEN` in both its dot and
+  `process['env']` spellings.
 
 A *bare* `API_KEY === expected` still reports. Constant casing alone is not
 evidence — the namespace is.
