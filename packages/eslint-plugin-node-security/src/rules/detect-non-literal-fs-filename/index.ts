@@ -405,7 +405,7 @@ allowLiterals = false,
       }
 
       // SAFE: path.join(__dirname, 'literal', 'path') with all literal args
-      if (pathNode && isSafePathConstruction(pathNode)) {
+      if (pathNode && isBuildTimeConstant(pathNode)) {
         return false;
       }
 
@@ -444,53 +444,71 @@ allowLiterals = false,
      * - path.join(__dirname, 'data', 'file.json')
      * - path.resolve(__dirname, 'uploads')
      */
-    const isSafePathConstruction = (pathNode: TSESTree.Node): boolean => {
-      if (pathNode.type !== AST_NODE_TYPES.CallExpression) {
-        return false;
+    /**
+     * Is every part of this expression fixed at build time?
+     *
+     * Recurses through the three ways a constant path gets assembled:
+     * a literal, a `const` identifier bound to one, and a template literal
+     * whose every interpolation is itself constant. `__dirname` and
+     * `process.cwd()` are module-location constants, not input.
+     *
+     * `depth` stops `const a = b; const b = a;` from recursing forever.
+     */
+    const isBuildTimeConstant = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 4) return false;
+      if (isLiteralString(node)) {
+        // A path can be fixed at build time and still be an attack:
+        // `path.join(__dirname, '../etc/passwd')` is constant AND traversal.
+        // Constant means "not attacker-steerable", not "harmless".
+        // isLiteralString already proved `value` is a string, so no fallback.
+        return !hasTraversalPatterns((node as TSESTree.Literal).value as string);
       }
-      
-      const callee = pathNode.callee;
-      if (callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.object.type !== AST_NODE_TYPES.Identifier ||
-          callee.object.name !== 'path' ||
-          callee.property.type !== AST_NODE_TYPES.Identifier) {
-        return false;
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        if (node.name === '__dirname' || node.name === '__filename') return true;
+        const bound = constBindings.get(node.name);
+        return bound !== undefined && isBuildTimeConstant(bound, depth + 1);
       }
-      
-      const method = callee.property.name;
-      if (!['join', 'resolve'].includes(method)) {
-        return false;
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `raw` is always populated; `cooked` is null only for an invalid
+        // escape in a TAGGED template, which an fs path argument never is.
+        // Traversal detection reads the same `..` either way.
+        const literalText = node.quasis.map((q) => q.value.raw).join('');
+        if (hasTraversalPatterns(literalText)) return false;
+        return node.expressions.every((e) => isBuildTimeConstant(e, depth + 1));
       }
-      
-      const args = pathNode.arguments;
-      if (args.length === 0) {
-        return false;
-      }
-      
-      // First arg should be __dirname or a literal
-      const firstArg = args[0];
-      const isFirstArgSafe = 
-        (firstArg.type === AST_NODE_TYPES.Identifier && firstArg.name === '__dirname') ||
-        (firstArg.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string');
-      
-      if (!isFirstArgSafe) {
-        return false;
-      }
-      
-      // All remaining args should be literals
-      for (let i = 1; i < args.length; i++) {
-        const arg = args[i];
-        if (arg.type !== AST_NODE_TYPES.Literal || typeof arg.value !== 'string') {
-          return false;
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        // `process.cwd()` — where the build was launched, not user input.
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'process' &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          callee.property.name === 'cwd'
+        ) {
+          return true;
         }
-        // Also check for traversal patterns in literals
-        if (hasTraversalPatterns(String(arg.value))) {
-          return false;
+        // `path.join`/`path.resolve` is constant exactly when its parts are.
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'path' &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          ['join', 'resolve'].includes(callee.property.name)
+        ) {
+          return (
+            node.arguments.length > 0 &&
+            node.arguments.every((arg) => isBuildTimeConstant(arg, depth + 1))
+          );
         }
+        return false;
       }
-      
-      return true;
+      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+        return isBuildTimeConstant(node.left, depth + 1) && isBuildTimeConstant(node.right, depth + 1);
+      }
+      return false;
     };
+
 
     /**
      * Check if the path variable has been validated with startsWith()
@@ -628,6 +646,22 @@ allowLiterals = false,
     const fsNamedMethods = new Map<string, string>();
     /** Calls to judge at Program:exit, once every binding in the file is known. */
     const pendingCalls: TSESTree.CallExpression[] = [];
+    /**
+     * `const NAME = <expr>` bindings, so a path passed as a bare identifier can
+     * be traced to what it was built from.
+     *
+     * Without this, `const BUILD_DIR = path.resolve(__dirname, '..', 'build')`
+     * followed by `fs.readFileSync(\`${BUILD_DIR}/package.json\`)` reported —
+     * the safe-construction check existed but only ever saw the *direct*
+     * argument, never one hop back. Measured on the 8-repo corpus, that single
+     * hop is the difference between "flags every build script" and "flags
+     * paths that are actually assembled at runtime".
+     *
+     * `const` only: a `let` can be reassigned to anything after the point we
+     * read it, so proving its initializer safe proves nothing about the value
+     * at the call.
+     */
+    const constBindings = new Map<string, TSESTree.Node>();
 
     /**
      * Record what a destructured / named binding refers to.
@@ -727,6 +761,14 @@ allowLiterals = false,
       },
 
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.init !== null &&
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          node.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+          node.parent.kind === 'const'
+        ) {
+          constBindings.set(node.id.name, node.init);
+        }
         if (node.init === null || !isFsRequire(node.init)) return;
         if (node.id.type === AST_NODE_TYPES.Identifier) {
           fsNamespaces.add(node.id.name);

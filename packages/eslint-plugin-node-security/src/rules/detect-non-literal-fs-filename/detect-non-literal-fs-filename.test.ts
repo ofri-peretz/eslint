@@ -71,6 +71,62 @@ describe('detect-non-literal-fs-filename', () => {
     });
   });
 
+  // A path assembled entirely from literals, `__dirname` and `const` bindings
+  // of the same cannot be steered by an attacker. The safe-construction check
+  // already knew this shape but only ever saw the DIRECT argument — one hop
+  // through a `const` was enough to lose it, which is why every build script,
+  // rollup config and gulpfile in the corpus reported.
+  describe('Valid Code - paths fixed at build time', () => {
+    ruleTester.run('valid - build-time constant paths', detectNonLiteralFsFilename, {
+      valid: [
+        // The okta/okta-auth-js build.js shape, minus the `..` segments — the
+        // rule's pre-existing doctrine treats ANY hardcoded `..` as traversal
+        // (see the invalid cases below), so `path.resolve(__dirname, '../..')`
+        // still reports. That is a separate, older judgement call about
+        // relative navigation; this change is only about not losing the
+        // safe-construction verdict across a `const` hop.
+        "const BUILD_DIR = path.resolve(__dirname, 'build');\nfs.readFileSync(`${BUILD_DIR}/package.json`);",
+        "const OUT = path.join(__dirname, 'dist');\nfs.writeFileSync(OUT, data);",
+        // A const chain, not just one hop.
+        "const ROOT = path.resolve(__dirname, '..');\nconst SRC = path.join(ROOT, 'src');\nfs.readFileSync(SRC);",
+        // process.cwd() is where the build was launched, not user input.
+        "const HERE = process.cwd();\nfs.readFileSync(path.join(HERE, 'package.json'));",
+        "fs.readFileSync(__filename);",
+        // String concatenation of constants is the same thing spelled longhand.
+        "const DIR = path.join(__dirname, 'data');\nfs.readFileSync(DIR + '/config.json');",
+      ],
+      invalid: [
+        // Constant does NOT mean harmless: this one is fixed at build time and
+        // is still a traversal. "Not attacker-steerable" and "safe" are
+        // different claims.
+        {
+          code: "const ESCAPE = path.join(__dirname, '../../etc/passwd');\nfs.readFileSync(ESCAPE);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: "const DIR = path.join(__dirname, 'x');\nfs.readFileSync(`${DIR}/../../../etc/passwd`);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // `let` can be reassigned between the binding and the call, so proving
+        // its initializer constant proves nothing about the value read.
+        {
+          code: "let DIR = path.join(__dirname, 'data');\nDIR = req.query.dir;\nfs.readFileSync(DIR);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // A const bound to a call we cannot see through is not constant.
+        {
+          code: "const P = getPath(name);\nfs.readFileSync(P);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Mutually-referential consts must terminate, not hang.
+        {
+          code: "const A = B;\nconst B = A;\nfs.readFileSync(A);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - readFile', () => {
     ruleTester.run('invalid - dynamic filename in readFile', detectNonLiteralFsFilename, {
       valid: [],
