@@ -31,6 +31,9 @@ const ALLOWED_THIRD_PARTY = [
   'eslint-plugin-jsx-a11y',
   'eslint-plugin-prettier',
   'eslint-plugin-security',
+  // Cited by no-redos-vulnerable-regex as the prior art for using scslre:
+  // it is the plugin whose NFA analysis approach that rule follows.
+  'eslint-plugin-regexp',
   'eslint-plugin-no-secrets',
   'eslint-plugin-sonarjs',
   'eslint-plugin-unicorn',
