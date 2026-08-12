@@ -51,6 +51,7 @@ import {
   corpusHash,
   driftedRoots,
   headOf,
+  manifestDelta,
   type CorpusRoot,
 } from './corpus-identity.ts';
 
@@ -173,6 +174,15 @@ async function main(): Promise<void> {
   // result rather than left as a stdout warning nobody reads.
   const pinned = new Map(repos.map((r) => [r.name, r.commit]));
   const drifted = driftedRoots(corpusRoots, pinned);
+  const delta = manifestDelta(corpusRoots, repos.map((r) => r.name));
+  if (delta.missing.length > 0 || delta.extra.length > 0) {
+    log(
+      `\n⚠️  Corpus does not match the manifest: ${delta.missing.length} missing, ` +
+        `${delta.extra.length} unexpected.`,
+    );
+    if (delta.missing.length > 0) log(`     missing: ${delta.missing.slice(0, 5).join(', ')}`);
+    if (delta.extra.length > 0) log(`     extra:   ${delta.extra.slice(0, 5).join(', ')}`);
+  }
   if (drifted.length > 0) {
     log(
       `\n⚠️  ${drifted.length}/${corpusRoots.length} roots are not at their pinned commit:`,
@@ -422,6 +432,8 @@ async function main(): Promise<void> {
       hash,
       rootsAtPinnedCommit: corpusRoots.length - drifted.length,
       rootsDrifted: drifted.length,
+      rootsMissing: delta.missing.length,
+      rootsUnexpected: delta.extra.length,
       driftedRoots: drifted.map((r) => r.name),
       filesScanned: scanned,
       // Printed beside the findings on purpose. A sweep where every file errored
@@ -449,6 +461,19 @@ async function main(): Promise<void> {
     console.log(`\n✅ Results: ${path.relative(REPO_ROOT, outPath)}`);
   }
 
+  if (UPDATE_BASELINE && delta.missing.length > 0) {
+    console.error(
+      `\n❌ ${delta.missing.length} of ${repos.length} pinned repositories are not in the ` +
+        'corpus. A baseline recorded from an incomplete corpus is a set of ' +
+        'ceilings for code that was never measured — and it hashes cleanly, so ' +
+        'nothing downstream would notice.\n' +
+        `   missing: ${delta.missing.slice(0, 10).join(', ')}` +
+        (delta.missing.length > 10 ? `, …and ${delta.missing.length - 10} more` : ''),
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   if (UPDATE_BASELINE && drifted.length > 0) {
     console.error(
       `\n❌ ${drifted.length} corpus roots are not at their pinned commit. ` +
@@ -462,9 +487,14 @@ async function main(): Promise<void> {
   if (UPDATE_BASELINE) {
     const baseline = {
       generatedAt: result.timestamp,
-      methodologyHash: result.methodologyHash,
-      // The per-rule ceilings below are only meaningful against this exact
-      // corpus, so it is recorded with them and checked before any comparison.
+      // Deliberately no `methodologyHash`. A receipt is only worth recording if
+      // it can be reproduced, and a baseline is usually written from a working
+      // tree mid-change — the hash would cover content that exists at no
+      // commit. Pre-registration belongs on the per-run *result*, which records
+      // its own dirty paths. What the gate actually reads is below.
+      //
+      // The per-rule ceilings are only meaningful against this exact corpus, so
+      // its identity is recorded with them and checked before any comparison.
       corpusHash: hash,
       filesScanned: scanned,
       note: 'Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.',

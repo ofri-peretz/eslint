@@ -1,6 +1,5 @@
 {
   "generatedAt": "2026-08-12T00:27:34.766Z",
-  "methodologyHash": "sha256:50b48228ba0b4e7947bbbca73d4c14155e0bfc70cd21bb8f890e04c52901f495",
   "corpusHash": "sha256:ff73f5f0b7b51d00444e9f0fb3827072b722bffbc83ecfe0a05b720d540d3740",
   "filesScanned": 107384,
   "note": "Per-rule off-SDK ceiling. Regenerate with --update-baseline only when the increase is understood and explained in the PR body.",

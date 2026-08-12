@@ -20,6 +20,7 @@ import {
   corpusHash,
   driftedRoots,
   headOf,
+  manifestDelta,
   type CorpusRoot,
 } from '../suites/ilb-corpus-truth/corpus-identity.ts';
 
@@ -132,5 +133,46 @@ describe('headOf', () => {
 
   it('returns null for a path that does not exist', () => {
     expect(headOf('/no/such/directory/anywhere')).toBeNull();
+  });
+});
+
+describe('manifestDelta', () => {
+  const manifest = ['express', 'nest', 'lambda'];
+
+  it('names the repositories the corpus is missing', () => {
+    // The hole `driftedRoots` cannot see: an absent repository drifts nothing
+    // and hashes cleanly, so a baseline from it is a set of ceilings for code
+    // that was never measured.
+    const { missing, extra } = manifestDelta([root('express', SHA_A)], manifest);
+    expect(missing).toEqual(['lambda', 'nest']);
+    expect(extra).toEqual([]);
+  });
+
+  it('names repositories present but not in the manifest', () => {
+    const roots = [...manifest.map((n) => root(n, SHA_A)), root('stray', SHA_A)];
+    expect(manifestDelta(roots, manifest).extra).toEqual(['stray']);
+  });
+
+  it('is empty when the corpus matches exactly', () => {
+    const roots = manifest.map((n) => root(n, SHA_A));
+    expect(manifestDelta(roots, manifest)).toEqual({ missing: [], extra: [] });
+  });
+
+  it('reports a rename as one missing and one extra, not as drift', () => {
+    // A renamed directory looks like a healthy root to every commit-based
+    // check; only the name comparison catches it.
+    const roots = [root('express', SHA_A), root('nest', SHA_A), root('lambda-fn', SHA_A)];
+    const { missing, extra } = manifestDelta(roots, manifest);
+    expect(missing).toEqual(['lambda']);
+    expect(extra).toEqual(['lambda-fn']);
+  });
+
+  it('sorts both lists so the message is stable run to run', () => {
+    const { missing } = manifestDelta([], ['zeta', 'alpha', 'mid']);
+    expect(missing).toEqual(['alpha', 'mid', 'zeta']);
+  });
+
+  it('an empty manifest reports every root as unexpected', () => {
+    expect(manifestDelta([root('express', SHA_A)], []).extra).toEqual(['express']);
   });
 });

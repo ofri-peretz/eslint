@@ -78,3 +78,25 @@ export function driftedRoots(
     return root.head !== want;
   });
 }
+
+/**
+ * How the corpus on disk differs from the manifest, by name.
+ *
+ * `driftedRoots` only inspects the roots it is handed, so it cannot see a
+ * repository that is *absent*: a corpus missing twenty repositories drifts
+ * nothing and hashes cleanly, and a baseline recorded from it would be a set of
+ * ceilings for code that was never measured. The file-count tripwire catches
+ * that only once a baseline already exists — recording one has to be guarded
+ * separately.
+ */
+export function manifestDelta(
+  roots: readonly CorpusRoot[],
+  manifestNames: readonly string[],
+): { readonly missing: readonly string[]; readonly extra: readonly string[] } {
+  const onDisk = new Set(roots.map((r) => r.name));
+  const expected = new Set(manifestNames);
+  return {
+    missing: manifestNames.filter((n) => !onDisk.has(n)).sort(),
+    extra: [...onDisk].filter((n) => !expected.has(n)).sort(),
+  };
+}
