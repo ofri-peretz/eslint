@@ -62,15 +62,20 @@ concurrency:
   group: pages-deploy
   cancel-in-progress: false
 
+# Read-only by default. The one job below re-declares the writes it actually
+# needs, so anything added to this workflow later starts with no write access
+# rather than inheriting a token that can push to `main` and publish Pages.
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 jobs:
   benchmark:
     name: Refresh published benchmark numbers
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # pushes the refreshed numbers to main (see the commit step)
+      pages: write # deploy-pages
+      id-token: write # OIDC for deploy-pages
     # Cold multi-repo lint runs are slow by nature; the whole point is that
     # nothing here is rushed into a misleading fast number.
     timeout-minutes: 90
@@ -143,7 +148,7 @@ jobs:
       # clone step refreshes what it finds.
       - name: Restore OOS corpus cache
         id: oos-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: oos
           key: oos-corpus-v2-${{ hashFiles('benchmarks/suites/ilb-flagship/manifest.json', '.github/workflows/weekly-benchmark.yml') }}
