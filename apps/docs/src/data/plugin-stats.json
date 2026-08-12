@@ -13,7 +13,7 @@
       "rules": 37,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "4.9.1",
+      "version": "4.10.0",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 28,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "3.6.1",
+      "version": "3.7.0",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "2.3.4",
+      "version": "2.4.0",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 28,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "published": true
     },
     {
