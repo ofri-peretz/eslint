@@ -41,6 +41,22 @@ export function safeGit(args: string[], opts: { allowFail?: boolean } = {}): str
  * `fetch --depth 1 origin <sha>` asks the server for that object directly,
  * which GitHub supports, and works regardless of how far behind the pin is.
  */
+/**
+ * Whether the working tree is actually at `commit`.
+ *
+ * `rev-parse HEAD` is the only trustworthy answer: a fetch can fail while
+ * leaving a usable `FETCH_HEAD` from an earlier one, and a checkout can fail
+ * without a non-zero exit through `allowFail`. A tag or branch pin is resolved
+ * through `rev-parse <ref>` so it compares like for like.
+ */
+function isPinnedTo(dir: string, commit: string): boolean {
+  const head = safeGit(['-C', dir, 'rev-parse', 'HEAD'], { allowFail: true }).trim();
+  if (!head) return false;
+  if (head === commit) return true;
+  const resolved = safeGit(['-C', dir, 'rev-parse', commit], { allowFail: true }).trim();
+  return resolved !== '' && resolved === head;
+}
+
 function fetchCommit(dir: string, repo: RepoSpec): boolean {
   fs.mkdirSync(dir, { recursive: true });
   try {
@@ -48,7 +64,7 @@ function fetchCommit(dir: string, repo: RepoSpec): boolean {
     execFileSync('git', ['-C', dir, 'remote', 'add', 'origin', repo.repo], { stdio: 'pipe' });
     execFileSync('git', ['-C', dir, 'fetch', '--depth', '1', '--quiet', 'origin', repo.commit], { stdio: 'pipe' });
     execFileSync('git', ['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD'], { stdio: 'pipe' });
-    return true;
+    return isPinnedTo(dir, repo.commit);
   } catch {
     return false;
   }
@@ -62,19 +78,20 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
     const head = safeGit(['-C', dir, 'rev-parse', 'HEAD'], { allowFail: true }).trim();
     const expected = safeGit(['-C', dir, 'rev-parse', repo.commit], { allowFail: true }).trim();
     if (expected && head && head === expected) {
-      console.log(`   📂 Cached at ${repo.commit} (${head.slice(0, 7)})`);
+      console.log(`   📂 Cached at ${repo.commit.slice(0, 7)}`);
       return dir;
     }
-    const fetched = safeGit(['-C', dir, 'fetch', '--depth', '1', 'origin', repo.commit], { allowFail: true });
-    if (safeGit(['-C', dir, 'rev-parse', 'FETCH_HEAD'], { allowFail: true }).trim()) {
-      safeGit(['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD'], { allowFail: true });
+    safeGit(['-C', dir, 'fetch', '--depth', '1', 'origin', repo.commit], { allowFail: true });
+    safeGit(['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD'], { allowFail: true });
+    // Verify the RESULT, not the attempt. `FETCH_HEAD` survives an earlier
+    // fetch, so a failed one leaves the previous ref in place and checking it
+    // out silently pins the repository to whatever was fetched last — the same
+    // "looks pinned, isn't" defect this function is being fixed for. Only the
+    // commit now checked out is evidence.
+    if (isPinnedTo(dir, repo.commit)) {
       console.log(`   📥 Re-pinned cached clone to ${repo.commit.slice(0, 7)}`);
       return dir;
     }
-    void fetched;
-    // A cached clone that cannot be re-pinned is a corpus that silently
-    // measures different code every run. Replacing it is cheap; trusting it is
-    // not.
     console.log(`   🧹 Cached clone cannot reach ${repo.commit.slice(0, 7)} — re-cloning`);
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -87,7 +104,7 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
   fs.rmSync(dir, { recursive: true, force: true });
   try {
     execFileSync('git', ['clone', '--depth', '1', '--branch', repo.commit, '--single-branch', repo.repo, dir], { stdio: 'pipe' });
-    return dir;
+    if (isPinnedTo(dir, repo.commit)) return dir;
   } catch {
     /* not a branch or tag */
   }
