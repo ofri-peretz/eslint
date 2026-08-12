@@ -63,12 +63,36 @@ with anything else makes the blast radius unreadable.
 
 ### 2. Security-Policy: 4 → 10 · **+0.33** · 15 minutes
 
-Scorecard already sees the file, the disclosure language, and the timelines. It
-reports `no linked content found` even though `SECURITY.md` contains both a URL and
-an email — the one unusual thing about them is that **every link is an angle-bracket
-autolink** (`<https://…>`, `<ofriperetzdev@gmail.com>`). Rewrite them as plain
-Markdown links and bare text, then re-scan. Cheap to try, and if the warning
-survives the next scan we file it upstream with a reproducer.
+**Root cause found — it was never about the link syntax.** The autolink theory was
+wrong: the links had already been rewritten as bare URLs on `main`, and the warning
+survived. Reproduced against live `main` with the official container
+(`gcr.io/openssf/scorecard:stable`), so it was not a stale alert either.
+
+Scorecard resolves the policy file in two independent steps, and they disagreed:
+
+1. `isSecurityPolicyFilename` matches the **full path** against a fixed list
+   (`security.md`, `.github/security.md`, `docs/security.md`, …). Only the root
+   `SECURITY.md` qualified — which is why the report *named* the right file.
+2. The **content** is then fetched via `OnMatchingFileContentDo` using that path as
+   a glob. `isMatchingPath` tries the full path and, failing that, retries against
+   `path.Base(fullpath)` — so the pattern `security.md` matches *any* `security.md`
+   at *any* depth. `checkSecurityPolicyFileContent` parses the first non-empty match
+   and returns `false` ("stop looking").
+
+The repo contained `.agent/agents/security.md`, an agent persona doc. It sorted
+ahead of the root file, so Scorecard scored `SECURITY.md` against *that* file's
+text: **0 URLs, 0 emails, 8 occurrences of "vuln"/"disclos"** — precisely the
+finding set reported (text and disclosure hits, no linked content).
+
+Fixed by renaming it to `.agent/agents/security-expert.md`. Locked by
+`scripts/__tests__/security-policy-filename-lock.test.ts`, which asserts that
+exactly one tracked file carries a Scorecard policy basename and that the root
+`SECURITY.md` still satisfies Scorecard's own URL and email regexes. Verified to
+fail on the pre-fix tree, naming the offending path.
+
+Worth noting for our own rules: this is a **silent** scoring failure. Nothing
+errored, no file was missing, and the reported filename was correct — only the
+parsed bytes came from somewhere else.
 
 ### 3. Fuzzing: 0 → 10 · **+0.56** · one day
 
