@@ -43,7 +43,12 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
  * rejects anything inside `os.tmpdir()` outright, which would make every case
  * below pass for the wrong reason.
  */
-const SANDBOX = mkdtempSync(path.join(resolveCacheHome(), 'interlace-cachedir-test-'));
+const CACHE_HOME = resolveCacheHome();
+// A CI runner has a home directory but not necessarily a `~/.cache` in it —
+// `mkdtemp` does not create parents, so without this the suite dies at import
+// with ENOENT before a single assertion runs.
+mkdirSync(CACHE_HOME, { recursive: true, mode: 0o700 });
+const SANDBOX = mkdtempSync(path.join(CACHE_HOME, 'interlace-cachedir-test-'));
 
 afterAll(() => rmSync(SANDBOX, { recursive: true, force: true }));
 
