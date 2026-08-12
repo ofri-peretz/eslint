@@ -13,9 +13,16 @@
 # slsa-verifier CLIs — see CONTRIBUTING.md "Verifying supply chain" section.
 #
 # Triggers:
-#   - On any tag matching `v*.*.*`           (production releases)
+#   - On any release tag                       (production releases)
 #   - Manual dispatch                          (testing)
-#   - On push to `main` that touches packages/ (preview attestations)
+#
+# Tag patterns: changesets tags every package independently as
+# `<package-name>@<semver>` (e.g. `eslint-plugin-secure-coding@3.7.1`) and never
+# produces a bare `v*.*.*`. Matching only `v*.*.*` meant this workflow had never
+# once fired on a real release — so despite building SBOMs, SLSA provenance and
+# cosign signatures, no GitHub Release has ever actually carried one, and
+# OpenSSF Scorecard's Signed-Releases check reports "no releases found".
+# Both patterns are listed so a manual `v1.2.3` tag still works.
 
 name: Supply-chain attestation
 
@@ -23,6 +30,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - '*@*.*.*'
   workflow_dispatch:
     inputs:
       packages:
@@ -72,10 +80,16 @@ jobs:
                    express-security-mcp lambda-security-mcp mongodb-security-mcp nestjs-security-mcp \
                    vercel-ai-security-mcp pg-mcp"
           REQ="${{ inputs.packages || 'all' }}"
-          if [ "$REQ" = "all" ]; then
-            echo "list=$DEFAULT" >> "$GITHUB_OUTPUT"
-          else
+          REF="${{ github.ref_name }}"
+          if [ "$REQ" != "all" ]; then
             echo "list=$(echo "$REQ" | tr ',' ' ')" >> "$GITHUB_OUTPUT"
+          elif printf '%s' "$REF" | grep -q '@'; then
+            # changesets tag `<package-dir>@<semver>` — attest exactly the
+            # package this release is for. Attaching the whole default fleet to
+            # a single package's release would ship 13 unrelated tarballs.
+            echo "list=${REF%@*}" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=$DEFAULT" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Pack tarballs (one per package)
@@ -149,7 +163,7 @@ jobs:
             artifacts/osv-report.json
 
       - name: Attach attestation bundle to release (when tag-triggered)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
