@@ -157,7 +157,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Cache the pinned corpus
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           # Keyed on the manifest: a repo or commit change is a corpus version
           # bump and must re-clone rather than silently measure the old tree.
@@ -171,7 +171,7 @@ jobs:
         run: npm run ilb:validate-results
       - name: Upload corpus-truth result artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ilb-corpus-truth-${{ github.run_number }}
           path: benchmarks/results/ilb-corpus-truth/

@@ -11,9 +11,9 @@
       "readable_publish_date": "Aug 8",
       "reading_time_minutes": 5,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
-      "comments_count": 0,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
+      "comments_count": 3,
       "tag_list": [
         "ai",
         "webdev",
@@ -283,7 +283,7 @@
       "page_views_count": 0,
       "public_reactions_count": 1,
       "positive_reactions_count": 1,
-      "comments_count": 1,
+      "comments_count": 2,
       "tag_list": [
         "security",
         "devsecops",
@@ -614,9 +614,9 @@
       "readable_publish_date": "Jul 4",
       "reading_time_minutes": 11,
       "page_views_count": 0,
-      "public_reactions_count": 8,
-      "positive_reactions_count": 8,
-      "comments_count": 3,
+      "public_reactions_count": 12,
+      "positive_reactions_count": 12,
+      "comments_count": 7,
       "tag_list": [
         "security",
         "node",
@@ -675,9 +675,9 @@
       "readable_publish_date": "May 31",
       "reading_time_minutes": 9,
       "page_views_count": 0,
-      "public_reactions_count": 6,
-      "positive_reactions_count": 6,
-      "comments_count": 7,
+      "public_reactions_count": 7,
+      "positive_reactions_count": 7,
+      "comments_count": 16,
       "tag_list": [
         "ai",
         "security",
@@ -695,9 +695,9 @@
       "readable_publish_date": "May 30",
       "reading_time_minutes": 8,
       "page_views_count": 0,
-      "public_reactions_count": 3,
-      "positive_reactions_count": 3,
-      "comments_count": 4,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
+      "comments_count": 5,
       "tag_list": [
         "javascript",
         "typescript",
@@ -819,7 +819,7 @@
       "page_views_count": 0,
       "public_reactions_count": 5,
       "positive_reactions_count": 5,
-      "comments_count": 7,
+      "comments_count": 8,
       "tag_list": [
         "ai",
         "security",
@@ -1307,7 +1307,7 @@
       "page_views_count": 0,
       "public_reactions_count": 0,
       "positive_reactions_count": 0,
-      "comments_count": 1,
+      "comments_count": 2,
       "tag_list": [
         "ai",
         "security",
@@ -1592,7 +1592,7 @@
       "page_views_count": 0,
       "public_reactions_count": 0,
       "positive_reactions_count": 0,
-      "comments_count": 1,
+      "comments_count": 2,
       "tag_list": [
         "ai",
         "security",
@@ -1644,6 +1644,6 @@
     }
   ],
   "total": 80,
-  "lastUpdated": "2026-08-09T03:05:48.456Z",
+  "lastUpdated": "2026-08-11T20:06:13.349Z",
   "source": "public"
 }
