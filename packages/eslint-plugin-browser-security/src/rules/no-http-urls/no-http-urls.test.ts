@@ -47,9 +47,55 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // Non-URL strings
     { code: "const protocol = 'http'" },
     { code: "const x = 1" },
+
+    // --- Interpolated authority: not a HARDCODED URL ------------------------
+    // 5 of the 8 remaining corpus findings. Each reports on the old code with
+    // the message `Hardcoded HTTP URL detected: "http://"` — a claim that is
+    // false about the code and impossible to act on, because the host that
+    // `allowedHosts` exists to check is not written down anywhere.
+
+    // okta-signin-widget src/v3/webpack.dev.config.ts:158 — dev-server proxy.
+    { code: 'const proxy = { target: `http://${HOST}:${MOCK_SERVER_PORT}` };' },
+    // Shopify/cli theme dev server — services/dev.ts:121-122.
+    { code: 'const urls = { local: `http://${host}:${port}` };' },
+    { code: 'const p = `http://${host}:${port}/gift_cards/[store_id]/preview`;' },
+    // theme-environment/proxy.ts:196 and theme-environment.ts:136.
+    { code: 'const newBaseUrl = `http://${ctx.options.host}:${ctx.options.port}`;' },
+
+    // --- Loopback, via the helper detect-mixed-content already uses ---------
+    // Potentially trustworthy per the Secure Contexts spec; the allowedHosts
+    // default (`localhost`, `127.0.0.1`) misses every one of these spellings.
+    { code: "const u = 'http://[::1]:8080/health'" },
+    { code: "const u = 'http://app.localhost:3000/'" },
+    { code: "const u = 'http://0.0.0.0:8080/'" },
   ],
 
   invalid: [
+    // --- FN locks for the interpolated-authority narrowing ------------------
+    // A host that IS written down is still judged, however much of the rest of
+    // the URL is interpolated.
+    {
+      code: 'const u = `http://api.example.com/${path}`;',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // Only a FULLY interpolated authority is unknowable — `api.` already
+    // proves the host is not loopback.
+    {
+      code: 'const u = `http://api.${env}.example.com/x`;',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A lone `http://` with no chunk after it is not an interpolation.
+    {
+      code: 'const u = `http://`;',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A trailing chunk that merely *contains* an interpolation before the path
+    // delimiter is still the authority — the exemption is not contagious.
+    {
+      code: 'const u = `http://evil.example.com?next=${target}`;',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+
     // The namespace allowlist is by HOST, not substring: a real request to a
     // host whose PATH mentions w3.org is still a request.
     {

@@ -42,6 +42,42 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
       code: `sessionStorage.setItem('token', jwt);`,
       options: [{ checkSessionStorage: false }],
     },
+
+    // --- Judge the key that is WRITTEN, not the constant that holds it ------
+    // All six corpus findings, from okta-signin-widget's sessionStorageHelper.
+    // Every one reports on the old code, which matched the IDENTIFIER
+    // `…_SESSION_STORAGE_KEY` — whose "session" and "key" are the name of the
+    // storage API, not of anything secret. The strings they resolve to match
+    // no sensitive pattern at all, and two of them hold a page URL and a
+    // timestamp.
+    {
+      code: `
+        const STATE_HANDLE_SESSION_STORAGE_KEY = 'osw-oie-state-handle';
+        sessionStorage.setItem(STATE_HANDLE_SESSION_STORAGE_KEY, stateHandle);
+      `,
+    },
+    {
+      code: `
+        const LAST_INITIATED_LOGIN_URL_SESSION_STORAGE_KEY = 'osw-oie-last-initiated-login-url';
+        sessionStorage.setItem(LAST_INITIATED_LOGIN_URL_SESSION_STORAGE_KEY, window.location.href);
+      `,
+    },
+    {
+      code: `
+        const RESEND_TIMESTAMP_SESSION_STORAGE_KEY = 'osw-oie-resend-timestamp';
+        sessionStorage.setItem(RESEND_TIMESTAMP_SESSION_STORAGE_KEY, timestampStr);
+      `,
+    },
+    // Same resolution through the bracket-assignment path.
+    {
+      code: `
+        const PREFS_LOCAL_STORAGE_KEY = 'ui-prefs';
+        localStorage[PREFS_LOCAL_STORAGE_KEY] = JSON.stringify(prefs);
+      `,
+    },
+    // A key expression we cannot resolve to a string at all says nothing.
+    { code: `localStorage.setItem(makeKey(id), value);` },
+    { code: `localStorage[computeKey()] = value;` },
   ],
   invalid: [
     // Token in localStorage
@@ -144,6 +180,37 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
           messageId: 'sensitiveLocalStorage',
         },
       ],
+    },
+
+    // --- FN locks for the resolution change --------------------------------
+    // Resolution CATCHES a sensitive key an unremarkable constant name hides —
+    // the old code judged `K` and saw nothing.
+    {
+      code: `
+        const K = 'refresh_token';
+        localStorage.setItem(K, value);
+      `,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    {
+      code: `
+        const K = 'apiKey';
+        localStorage[K] = value;
+      `,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    // A binding that cannot be resolved falls back to the spelling, which is
+    // the only evidence left. `let` reassignment makes it unknowable.
+    {
+      code: `
+        function save(accessToken, value) { localStorage.setItem(accessToken, value); }
+      `,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    // Non-computed member access IS the key name, not a variable to resolve.
+    {
+      code: `localStorage.authToken = value;`,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
   ],
 });

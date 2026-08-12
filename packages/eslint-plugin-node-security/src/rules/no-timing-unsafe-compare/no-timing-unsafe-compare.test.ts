@@ -15,6 +15,24 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
+/**
+ * The pre-inversion contract: report on a secret-looking NAME alone.
+ *
+ * Measured on the 8-repo corpus, that produced 27 findings and zero timing
+ * oracles — every one was a CLI comparing two config values, an SDK comparing
+ * two records, or a check against an enum. So by default the rule now also
+ * requires an attacker-controlled operand (see the "Untrusted Operand" block
+ * below), and the name-matching logic these cases exist to pin is exercised
+ * through the option that restores the old behaviour.
+ */
+const NAME_ONLY = [{ reportUnverifiedComparisons: true }];
+
+type InvalidCase = { code: string; errors: { messageId: string }[]; options?: unknown[] };
+
+/** Run these cases under the name-only contract. */
+const nameOnly = (cases: InvalidCase[]) =>
+  cases.map((testCase) => ({ ...testCase, options: NAME_ONLY }));
+
 describe('no-timing-unsafe-compare', () => {
   describe('Valid Code - Non-Secret Comparisons', () => {
     ruleTester.run('valid - false positive prevention', noTimingUnsafeCompare, {
@@ -96,7 +114,7 @@ describe('no-timing-unsafe-compare', () => {
         `if (err.errorCode === ErrorCodes.INVALID_TOKEN_EXCEPTION) retry();`,
         `if (relatesTo?.key === AuthenticatorKey.OKTA_PASSWORD) select();`,
       ],
-      invalid: [
+      invalid: nameOnly([
         // BOTH halves must carry the convention: a namespace-cased object AND
         // a constant-cased property. Everything below has the property and is
         // still a finding, which is what stops the guard from swallowing live
@@ -136,7 +154,7 @@ describe('no-timing-unsafe-compare', () => {
           code: 'class Vault { static #TOKEN = 1; static check(V, userToken) { if (userToken === V.#TOKEN) return; } }',
           errors: [{ messageId: 'timingUnsafeCompare' }],
         },
-      ],
+      ]),
     });
   });
 
@@ -154,21 +172,21 @@ describe('no-timing-unsafe-compare', () => {
         // way if isSecretIdentifier ever learns to look through calls.
         `if (JSON.stringify(prevState.idToken) === JSON.stringify(state.idToken)) return true;`,
       ],
-      invalid: [
+      invalid: nameOnly([
         // A boolean-predicate name on ONE side does not excuse the other. The
         // guard drops name-based evidence for that operand only.
         {
           code: 'if (isAuthenticated === storedToken) {}',
           errors: [{ messageId: 'timingUnsafeCompare' }],
         },
-      ],
+      ]),
     });
   });
 
   describe('Invalid Code - All Comparison Operators', () => {
     ruleTester.run('invalid - strict equality', noTimingUnsafeCompare, {
       valid: [],
-      invalid: [
+      invalid: nameOnly([
         // === operator
         { code: 'if (token === storedToken) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         // == operator
@@ -177,14 +195,14 @@ describe('no-timing-unsafe-compare', () => {
         { code: 'if (apiKey !== expectedKey) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         // != operator
         { code: 'if (password != userPassword) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
-      ],
+      ]),
     });
   });
 
   describe('Invalid Code - All Secret Patterns', () => {
     ruleTester.run('invalid - comprehensive secret patterns', noTimingUnsafeCompare, {
       valid: [],
-      invalid: [
+      invalid: nameOnly([
         // Tokens
         { code: 'if (token === storedToken) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         { code: 'if (accessToken === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
@@ -217,34 +235,158 @@ describe('no-timing-unsafe-compare', () => {
         // Credentials
         { code: 'if (credential === valid) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         { code: 'if (bearer === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
-      ],
+      ]),
     });
   });
 
   describe('Invalid Code - Naming Conventions', () => {
     ruleTester.run('invalid - all naming conventions', noTimingUnsafeCompare, {
       valid: [],
-      invalid: [
+      invalid: nameOnly([
         // camelCase
         { code: 'if (accessToken === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         // snake_case
         { code: 'if (access_token === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         // UPPER_CASE
         { code: 'if (API_KEY === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
-      ],
+      ]),
     });
   });
 
   describe('Invalid Code - Member Expressions', () => {
     ruleTester.run('invalid - member expressions', noTimingUnsafeCompare, {
       valid: [],
-      invalid: [
+      invalid: nameOnly([
         // Property access
         { code: 'if (user.password === inputPassword) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         { code: 'if (req.headers.authorization === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         { code: 'if (config.secret === stored) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
         // Deep nesting
         { code: 'if (app.config.auth.token === valid) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
+      ]),
+    });
+  });
+
+  // ── The inversion ────────────────────────────────────────────────────────
+  // A timing oracle needs an attacker on ONE side of the comparison and a
+  // secret on the other. The rule used to check only the second. Every `valid`
+  // case below is a verbatim shape from the 8-repo corpus scan and reported
+  // before this change; every `invalid` case reported before it too, so the
+  // block as a whole pins the trade in both directions.
+  describe('Untrusted Operand Required', () => {
+    ruleTester.run('secret name alone is not a timing oracle', noTimingUnsafeCompare, {
+      valid: [
+        // Shopify/cli packages/app/src/cli/services/app-context.ts:148 — two
+        // config values a CLI compares on the developer's own machine.
+        `const rightApp = remoteApp.apiKey === localApp.configuration.client_id;`,
+        // Shopify/cli packages/app/src/cli/services/dev.ts:168.
+        `const changed = remoteApp.apiKey !== previousAppId;`,
+        // Shopify/cli .../websocket/handlers.ts:116.
+        `if (payloadStoreApiKey !== eventAppApiKey) return;`,
+        // okta/okta-auth-js lib/oidc/util/refreshToken.ts:5 — record equality.
+        `function isEqual(a, b) { return (a.refreshToken === b.refreshToken); }`,
+        // okta/okta-signin-widget src/v3/src/util/idxUtils.ts:233,240.
+        `if (tx1AuthKey !== tx2AuthKey) return false;`,
+        // okta/okta-auth-js lib/oidc/util/validateClaims.ts:29 and
+        // lib/oidc/verifyToken.ts:62 — a browser SDK validating its own
+        // response. There is no server here whose response time an attacker
+        // could measure.
+        `if (nonce && claims.nonce !== nonce) throw new Error('nonce');`,
+        `if (hash !== token.claims.at_hash) throw new Error('at_hash');`,
+
+        // auth0/express-openid-connect lib/context.js:616,634. The constant is
+        // declared in-file as a plain string, so the comparison is against a
+        // value that is already in the source — resolved through the binding,
+        // NOT guessed from the SCREAMING_SNAKE name.
+        `const SESSION_TRANSFER_TOKEN_IDENTIFIER = 'urn:x:session_transfer';
+         if (exchanged.issued_token_type !== SESSION_TRANSFER_TOKEN_IDENTIFIER) throw new Error('x');`,
+        // okta/okta-signin-widget ChallengeWebauthnFooter.js:62.
+        `const OKTA_AUTHENTICATOR = 'Okta_Authenticator';
+         if (app.name === OKTA_AUTHENTICATOR) return true;`,
+
+        // auth0/express-openid-connect lib/context.js:155 — one value compared
+        // against a reading of itself. No second value exists to be revealed.
+        `function validate(token) { if (token !== token.trim()) throw new Error('ws'); }`,
+
+        // okta/okta-signin-widget src/v1/LoginRouter.ts:165 — `hash` here is the
+        // URL fragment the browser puts in the address bar, not a digest.
+        'if (window.location.hash === `#${id}`) scroll();',
+        // The same false friend with the receiver written as a bare identifier.
+        'if (location.hash === wanted) scroll();',
+        // Self-comparison where the derived side is a plain member read rather
+        // than a call — memberRoot has to unwrap both shapes.
+        'function f(token) { if (token !== token.raw) throw new Error("x"); }',
+        // …and one whose chain bottoms out at something that is not an
+        // identifier, so there is no root to match and the guard declines.
+        'function f(token) { if (token !== this.token) throw new Error("x"); }',
+
+        // okta/okta-auth-js .../routes/authenticator.js:187 — both operands are
+        // the same user's own input. Exactly one side must be untrusted.
+        `router.post('/x', (req, res) => {
+           const { password, confirmPassword } = req.body;
+           if (password !== confirmPassword) return;
+         });`,
+      ],
+      invalid: [
+        // The canonical CWE-208: attacker-supplied signature verified against a
+        // server-held secret. Untrusted on the left, secret on the right.
+        {
+          code: `app.post('/hook', (req, res) => {
+                   if (req.headers['x-signature'] === computedHmac) accept();
+                 });`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // The secret side may be the env read — `process` is deliberately NOT
+        // an untrusted root, so this stays a finding rather than becoming a
+        // both-sides-tainted no-op.
+        {
+          code: `function check(req) { return req.query.token === process.env.ADMIN_TOKEN; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // Untrusted reached through a binding, not written inline.
+        {
+          code: `function check(req, stored) {
+                   const supplied = req.body.apiKey;
+                   return supplied === stored.apiKey;
+                 }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // A constant NAME is not enough — `API_KEY` here holds an env read, so
+        // the binding does not resolve to a literal and the comparison stands.
+        {
+          code: `const API_KEY = process.env.API_KEY;
+                 function check(req) { return req.headers.authorization === API_KEY; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // Self-comparison needs the SAME root. Two different properties of one
+        // receiver are two values, and the guard must not swallow them.
+        {
+          code: `function check(req, vault) { return req.body.token === vault.token; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // A computed member is not a name at all, so the false-friend list
+        // cannot apply and the comparison is judged on its operands.
+        {
+          code: `function f(req, o) { return req.body.sig === o[kind].hash; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // A `hash` read off something that is NOT a location is a digest again.
+        {
+          code: `function f(req, file) { return req.body.sig === file.hash; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // A receiver that is neither an identifier nor a member expression.
+        {
+          code: `function f(req) { return req.body.sig === get().hash; }`,
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // `untrustedSources` is configurable; a project whose handler argument
+        // is named something else can say so.
+        {
+          code: `function handler(incoming, stored) { return incoming.token === stored.token; }`,
+          options: [{ untrustedSources: ['incoming'] }],
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
       ],
     });
   });

@@ -22,6 +22,17 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: any dynamic argument is a finding.
+ *
+ * Measured on the 8-repo corpus that produced 14 findings and zero command
+ * injections — every one a build script running a command it assembled from
+ * its own literals and paths. The default now requires evidence that an
+ * attacker steers the command; these cases keep pinning the callee resolution,
+ * import/require tracking and message plumbing through the restoring option.
+ */
+const UNRESOLVED = [{ reportUnresolvedCommands: true }];
+
 describe('detect-child-process', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe child process usage', detectChildProcess, {
@@ -46,14 +57,17 @@ describe('detect-child-process', () => {
       invalid: [
         {
           code: 'child_process.exec(`git clone ${repoUrl}`);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.exec("git clone " + repoUrl);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.execSync(`npm install ${packageName}`);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
@@ -61,6 +75,7 @@ describe('detect-child-process', () => {
             const command = getUserInput();
             child_process.exec(command);
           `,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -77,15 +92,27 @@ describe('detect-child-process', () => {
         {
           code: 'child_process.spawnSync("ls", ["-la"], { shell: false });',
         },
-      ],
-      invalid: [
-        // execFile with dynamic args is still dangerous
+        // A LITERAL command with no shell is safe even when the argv array is
+        // dynamic. `execFile` never uses a shell, so ["clone", repoUrl] reaches
+        // execve as two argv entries — there is no interpreter to inject into.
+        // Shopify/cli tree-kill.ts had three of these, in a file whose comment
+        // says it uses spawn precisely to avoid shell injection.
         {
           code: 'child_process.execFile("git", ["clone", repoUrl], { shell: false });',
-          errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.execFileSync("npm", ["install", packageName], { shell: false });',
+        },
+        // Same, with no options object at all — no shell is the default.
+        { code: "child_process.spawn('pgrep', ['-lfP', parentPid]);" },
+        { code: "child_process.spawn('taskkill', ['/pid', rootPid, '/T', '/F']);" },
+      ],
+      invalid: [
+        // A literal command with a shell is a different matter: the argv array
+        // is a script again, so a dynamic element can start a second process.
+        {
+          code: 'child_process.execFile("git", ["clone", repoUrl], { shell: true });',
+          options: [{ reportUnresolvedCommands: true }],
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -98,14 +125,17 @@ describe('detect-child-process', () => {
       invalid: [
         {
           code: 'child_process.spawn("bash", ["-c", userCommand]);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.spawn(userCommand, args);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.spawnSync("sh", ["-c", userInput]);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -118,6 +148,7 @@ describe('detect-child-process', () => {
       invalid: [
         {
           code: 'child_process.exec(`git clone ${repoUrl}`);',
+          options: UNRESOLVED,
           errors: [
             {
               messageId: 'childProcessCommandInjection',
@@ -161,7 +192,7 @@ describe('detect-child-process', () => {
       invalid: [
         {
           code: 'child_process.exec(userCommand);',
-          options: [{ allowLiteralStrings: true }],
+          options: [{ allowLiteralStrings: true, reportUnresolvedCommands: true }],
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -175,16 +206,19 @@ describe('detect-child-process', () => {
         // Test with execFileSync to trigger default case in generateRefactoringSteps (line 251)
         {
           code: 'child_process.execFileSync(userCommand, args);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // Test with fork to trigger default case
         {
           code: 'child_process.fork(userScript);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // Test with forkSync to trigger forkSync case in generateRefactoringSteps (lines 429-438)
         {
           code: 'child_process.forkSync(userScript);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -268,13 +302,15 @@ describe('detect-child-process', () => {
             const { execFile } = require('child_process');
             execFile(userCommand, ['--version'], callback);
           `,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: `
             const { execFile } = require('child_process');
-            execFile('node', [userScript], callback);
+            execFile('node', ['-e', userScript], callback);
           `,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -318,6 +354,11 @@ describe('detect-child-process — coverage completion', () => {
   describe('argument-shape edge cases', () => {
     ruleTester.run('zero-arg and non-literal second-arg calls', detectChildProcess, {
       valid: [
+        // execFile with an options object (non-array, non-literal) as the
+        // second argument: exercises the `hasOnlyLiteralArgs` branch that
+        // rejects a non-array second argument, and is then exempt because the
+        // command is a literal and execFile never opens a shell.
+        { code: `const cp = require('child_process'); cp.execFile('ls', { cwd: '/' }, cb);` },
         // Second arg is a plain Literal (not an array) — hasOnlyLiteralArgs=true, execFile has no shell
         {
           code: `const cp = require('child_process'); cp.execFile('ls', '-l');`,
@@ -343,21 +384,19 @@ describe('detect-child-process — coverage completion', () => {
         // exec() with zero arguments — hasOnlyLiteralArgs returns false on empty args
         {
           code: `const cp = require('child_process'); cp.exec();`,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        // execFile with object (non-array, non-literal) second arg — dynamic
-        {
-          code: `const cp = require('child_process'); cp.execFile('ls', { cwd: '/' });`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // exec with literal command + callback — not "only literal args", allowLiteralStrings off
         {
           code: `const cp = require('child_process'); cp.exec('ls -l', function (err, out) {});`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // spawn all-literal but shell: true — unsafe
         {
           code: `const cp = require('child_process'); cp.spawn('ls', ['-l'], { shell: true });`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -384,7 +423,7 @@ describe('detect-child-process — coverage completion', () => {
         // 'doExec' has no COMMAND_PATTERNS entry: exercises the pattern=null fallbacks
         {
           code: `const { doExec } = require('child_process'); doExec(userInput);`,
-          options: [{ additionalMethods: ['doExec'] }],
+          options: [{ additionalMethods: ['doExec'], reportUnresolvedCommands: true }],
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -444,16 +483,19 @@ describe('detect-child-process — coverage completion', () => {
         // Named import
         {
           code: `import { exec } from 'child_process'; exec(cmd);`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // Default import alias
         {
           code: `import cp from 'child_process'; cp.exec(cmd);`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // Namespace import alias
         {
           code: `import * as child from 'child_process'; child.execSync(cmd);`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -488,11 +530,13 @@ describe('detect-child-process — coverage completion', () => {
         // Alias tracked from require('child_process')
         {
           code: `const cp = require('child_process'); cp.exec(userCmd);`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // Destructured with default value (AssignmentPattern) — falls back to key name
         {
           code: `const { exec = fallbackExec } = require('child_process'); exec(cmd);`,
+          options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -524,6 +568,91 @@ describe('detect-child-process — coverage completion', () => {
       const steps = generateRefactoringSteps(pattern('customExec'));
       expect(steps).toContain('Identify the specific command execution need');
       expect(steps).toContain('Test with malicious inputs');
+    });
+  });
+
+  // ── The inversion ──────────────────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change.
+  describe('Build Commands Are Not Command Injection', () => {
+    ruleTester.run('taint and a shell are both required', detectChildProcess, {
+      valid: [
+        // Shopify/cli packages/cli-kit/src/public/node/tree-kill.ts:73,89,102 —
+        // three findings in a file that uses spawn precisely to avoid a shell.
+        `const { spawn } = require('child_process');
+         spawn('taskkill', ['/pid', rootPid, '/T', '/F']);`,
+        `const { spawn } = require('child_process');
+         spawn('ps', ['-o', 'pid command', '--no-headers', '--ppid', parentPid]);`,
+        // Shopify/cli packages/plugin-cloudflare/src/install-cloudflared.ts:85.
+        `const { execFileSync } = require('child_process');
+         function check(binTarget) { return execFileSync(binTarget, ['--version'], {encoding: 'utf8'}); }`,
+        // okta/okta-signin-widget packages/@okta/pseudo-loc/pseudo-loc.js:12 —
+        // a shell command, but assembled entirely from the script's own
+        // literals and cwd.
+        `const { execSync } = require('child_process');
+         const pkg = process.cwd();
+         const fromDir = '../i18n/src/properties/translations';
+         const toDir = '../i18n/src/properties/';
+         const copyCmd = \`mv \${fromDir}/** \${toDir} && rm -rf \${fromDir}\`;
+         execSync(copyCmd, { cwd: pkg });`,
+        // The guard's actual claim, isolated: a LITERAL command with no shell
+        // is safe even when the argv entry IS attacker-controlled. With
+        // `shell: false` the vector reaches execve verbatim, so `req.body.url`
+        // is one argv entry to `git` and can never start a second process.
+        // The `{ shell: true }` counterpart in `invalid` below is the same code
+        // with the shell put back, and it reports.
+        `const { spawn } = require('child_process');
+         app.post('/clone', (req) => spawn('git', ['clone', req.body.url]));`,
+        // Shopify/cli bin/run-command.js:10 — a wrapper forwarding its own
+        // parameters. Whether that is safe is the caller's fact, not this
+        // file's.
+        `import {spawn} from 'child_process';
+         export function runCommand(command, args) { return spawn(command, args, {stdio: 'inherit'}); }`,
+      ],
+      invalid: [
+        // The shape CWE-78 is actually about: a shell, and a request steering
+        // what it runs.
+        {
+          code: `const { exec } = require('child_process');
+                 app.get('/ping', (req, res) => exec('ping -c 1 ' + req.query.host));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // Interpolation into a shell command, traced one hop through a binding.
+        {
+          code: `const { execSync } = require('child_process');
+                 function run(req) {
+                   const branch = req.body.branch;
+                   return execSync(\`git checkout \${branch}\`);
+                 }`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // FN GUARD: a literal command is NOT enough when the command is itself
+        // a shell. Without the SHELL_BINARIES check the exemption above would
+        // silence the most direct command injection in Node.
+        {
+          code: `const { spawn } = require('child_process');
+                 app.post('/run', (req) => spawn('bash', ['-c', req.body.script]));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // FN GUARD: same for an eval flag under a non-shell binary.
+        {
+          code: `const { execFile } = require('child_process');
+                 app.post('/run', (req) => execFile('node', ['-e', req.body.src], cb));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // FN GUARD: `shell: true` re-opens the shell on an otherwise safe call.
+        {
+          code: `const { spawn } = require('child_process');
+                 app.post('/run', (req) => spawn('git', ['clone', req.body.url], { shell: true }));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // argv is attacker-namable input for a CLI.
+        {
+          code: `const { execSync } = require('child_process');
+                 execSync('rm -rf ' + process.argv[2]);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
     });
   });
 });

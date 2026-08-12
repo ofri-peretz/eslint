@@ -21,12 +21,23 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { bindingInit } from '../../utils/provenance';
 
 type MessageIds = 'ssrfVulnerability';
 
 export interface Options {
   /** Ignore in test files. Default: true */
   allowInTests?: boolean;
+
+  /**
+   * Report a URL argument that is a bare user-input-*named* identifier whose
+   * value cannot be traced to a request. Default: `false`.
+   *
+   * `true` restores the naming heuristic this rule shipped with. Measured on an
+   * 8-repo corpus it produced 16 findings and no SSRF — see the note on
+   * {@link carriesUntrustedUrl}.
+   */
+  reportUnresolvedUrls?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -102,61 +113,88 @@ function isRequestSourced(node: TSESTree.Node): boolean {
  * Does the URL argument carry untrusted data into the request?
  *
  * The rule reports on evidence of flow, never on the mere presence of a
- * dynamic argument. Three shapes qualify:
+ * dynamic argument. Two shapes qualify:
  *
- *   1. The whole argument is a user-input-named identifier — `fetch(userUrl)`.
- *      This is the rule's documented naming heuristic: a bare identifier in
- *      URL position *is* the URL.
- *   2. Any part of the expression reads from a request object —
- *      `fetch(req.query.url)`, `https.request({ host: req.query.h })`.
- *   3. A template literal URL interpolates either of the above —
- *      `fetch(\`https://\${userHost}/x\`)`.
+ *   1. Any part of the expression reads from a request object —
+ *      `fetch(req.query.url)`, `https.request({ host: req.query.h })`, or an
+ *      identifier whose single binding traces back to one.
+ *   2. A template literal URL interpolates either of the above —
+ *      `fetch(\`https://\${req.params.host}/x\`)`.
  *
  * Everything else is not evidence. In particular an options object whose
  * fields are plain locals — `https.request({ host, path, method: 'GET' })`,
  * benchmarks/corpus/CWE-444/safe/request-default-parser.js — used to be
  * reported unconditionally because a non-Identifier argument bypassed the
  * name gate entirely.
+ *
+ * A THIRD shape used to qualify: a bare user-input-*named* identifier —
+ * `fetch(url)` reported because the parameter is called `url`. That was the
+ * rule's entire remaining output on the 8-repo corpus: 16 of 16 findings, every
+ * one of them an HTTP wrapper whose URL parameter is, unavoidably, named `url`.
+ *
+ * A name in URL position is not evidence of anything. Every HTTP client ever
+ * written has `function get(url)` in it, so the heuristic fires on the *shape
+ * of an HTTP library* rather than on a flow from an attacker. It is retained
+ * behind `reportUnresolvedUrls` for projects that want the prompt.
+ *
+ * What replaces it is a hop through the binding: `const target = req.body.url;
+ * fetch(target)` is now reported *because the value comes from the request*,
+ * which the old name check caught only by coincidence and missed entirely when
+ * the local was called something else.
  */
-function carriesUntrustedUrl(node: TSESTree.Node): boolean {
-  switch (node.type) {
-    case AST_NODE_TYPES.Identifier:
-      return isUserInputParamName(node.name);
+function makeCarriesUntrustedUrl(
+  sourceCode: TSESLint.SourceCode,
+  reportUnresolvedUrls: boolean,
+): (node: TSESTree.Node) => boolean {
+  const carries = (node: TSESTree.Node, depth: number): boolean => {
+    if (depth > 6) return false;
+    switch (node.type) {
+      case AST_NODE_TYPES.Identifier: {
+        const init = bindingInit(sourceCode, node);
+        if (init !== undefined) return carries(init, depth + 1);
+        return reportUnresolvedUrls && isUserInputParamName(node.name);
+      }
 
-    case AST_NODE_TYPES.MemberExpression:
-      return isRequestSourced(node);
+      case AST_NODE_TYPES.MemberExpression:
+        // `req.query.url` directly, or a chain whose ROOT is a local that was
+        // itself read off the request (`const raw = req.body; raw.callbackUrl`).
+        return isRequestSourced(node) || carries(node.object, depth + 1);
 
-    case AST_NODE_TYPES.TemplateLiteral:
-      return node.expressions.some(carriesUntrustedUrl);
+      case AST_NODE_TYPES.TemplateLiteral:
+        return node.expressions.some((expression) => carries(expression, depth + 1));
 
-    // `new URL(userUrl)` / `String(req.query.url)` — inspect the arguments.
-    case AST_NODE_TYPES.CallExpression:
-    case AST_NODE_TYPES.NewExpression:
-      return node.arguments.some(carriesUntrustedUrl);
+      // `new URL(userUrl)` / `String(req.query.url)` — inspect the arguments.
+      case AST_NODE_TYPES.CallExpression:
+      case AST_NODE_TYPES.NewExpression:
+        return node.arguments.some((argument) => carries(argument, depth + 1));
 
-    // `'https://host' + userPath`
-    case AST_NODE_TYPES.BinaryExpression:
-      return carriesUntrustedUrl(node.left as TSESTree.Node) || carriesUntrustedUrl(node.right);
+      // `'https://host' + userPath`
+      case AST_NODE_TYPES.BinaryExpression:
+        return (
+          carries(node.left as TSESTree.Node, depth + 1) || carries(node.right, depth + 1)
+        );
 
-    // `http.request({ url: x, host: y })` — only URL-naming keys count by
-    // name; every other key still counts if its value is request-sourced.
-    case AST_NODE_TYPES.ObjectExpression:
-      return node.properties.some(property => {
-        if (property.type !== AST_NODE_TYPES.Property) return false;
-        const value = property.value as TSESTree.Node;
-        if (isRequestSourced(value)) return true;
-        const key =
-          property.key.type === AST_NODE_TYPES.Identifier
-            ? property.key.name
-            : property.key.type === AST_NODE_TYPES.Literal
-              ? String(property.key.value)
-              : '';
-        return URL_OPTION_KEYS.has(key.toLowerCase()) && carriesUntrustedUrl(value);
-      });
+      // `http.request({ url: x, host: y })` — only URL-naming keys count by
+      // name; every other key still counts if its value is request-sourced.
+      case AST_NODE_TYPES.ObjectExpression:
+        return node.properties.some(property => {
+          if (property.type !== AST_NODE_TYPES.Property) return false;
+          const value = property.value as TSESTree.Node;
+          if (isRequestSourced(value)) return true;
+          const key =
+            property.key.type === AST_NODE_TYPES.Identifier
+              ? property.key.name
+              : property.key.type === AST_NODE_TYPES.Literal
+                ? String(property.key.value)
+                : '';
+          return URL_OPTION_KEYS.has(key.toLowerCase()) && carries(value, depth + 1);
+        });
 
-    default:
-      return false;
-  }
+      default:
+        return false;
+    }
+  };
+  return (node: TSESTree.Node) => carries(node, 0);
 }
 
 /**
@@ -304,6 +342,12 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: true,
           },
+          reportUnresolvedUrls: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report a URL argument that is a user-input-named identifier with no traceable request source. Restores the pre-inversion naming heuristic.',
+          },
         },
         additionalProperties: false,
       },
@@ -314,7 +358,11 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true }: Options = options || {};
+    const { allowInTests = true, reportUnresolvedUrls = false }: Options = options || {};
+    const carriesUntrustedUrl = makeCarriesUntrustedUrl(
+      context.sourceCode,
+      reportUnresolvedUrls,
+    );
 
     const filename = context.filename;
     const isTestFile =

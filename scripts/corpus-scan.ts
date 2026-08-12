@@ -159,7 +159,14 @@ export default [
     files: ["**/*.js", "**/*.mjs", "**/*.cjs", "**/*.ts", "**/*.tsx"],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/*.min.js",
               "**/test/**", "**/tests/**", "**/__tests__/**", "**/*.test.*", "**/*.spec.*",
-              "**/fixtures/**", "**/examples/**", "**/docs/**", "**/.next/**"],
+              "**/fixtures/**", "**/examples/**", "**/docs/**", "**/.next/**",
+              // Checked-in third-party bundles. Not \`*.min.js\` and not under
+              // \`dist/\`, so the globs above miss them, but nobody edits them and
+              // no real project lints them: okta ships \`@okta/courage-dist/\`,
+              // Shopify ships a speedscope build under \`assets/\`, and both
+              // vendor libraries wholesale. Counting findings there measures the
+              // corpus's vendoring habits, not our precision.
+              "**/vendor/**", "**/*-dist/**", "**/assets/**"],
     languageOptions: { parser, ecmaVersion: 2022, sourceType: "module" },
     plugins,
     rules,

@@ -51,14 +51,19 @@ type MessageIds =
 export interface Options {
   /**
    * Directory names accepted as the first path segment of a static root.
-   * Default: ['public', 'static', 'dist', 'build', 'assets']
+   * Default: `[]` — no allowlist enforced. Set it to opt in.
    */
   allowedRoots?: string[];
 }
 
 type RuleOptions = [Options?];
 
-const DEFAULT_ALLOWED_ROOTS = ['public', 'static', 'dist', 'build', 'assets'];
+/**
+ * Empty by default: no allowlist is enforced unless the consumer asks for one.
+ * The previous default (`public|static|dist|build|assets`) treated every other
+ * asset-directory name as a vulnerability.
+ */
+const DEFAULT_ALLOWED_ROOTS: string[] = [];
 
 /** path methods that assemble a root directory from segments. */
 const JOIN_METHODS = new Set(['join', 'resolve']);
@@ -256,7 +261,16 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
         context.report({ node: call, messageId: 'traversalSegments' });
         return;
       }
-      if (hasNonLiteral) {
+      // A non-literal segment is UNKNOWN, not dangerous. It only exposes the
+      // application root if nothing else bounds the path, so it is a finding
+      // exactly when no literal subdirectory scopes it.
+      //
+      // `app.use('/js', express.static(path.join(TARGET, 'js')))` was all 5 of
+      // this rule's corpus findings (okta-signin-widget's prod-server script).
+      // `TARGET` is a build constant and `'js'` bounds the served tree to a
+      // subdirectory of it, whatever it resolves to. Reporting that said the
+      // application root was published, which is false about the code.
+      if (hasNonLiteral && literalSegments.length === 0) {
         context.report({ node: call, messageId: 'nonLiteralPath' });
         return;
       }
@@ -265,7 +279,12 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
         reportRoot(call, context.sourceCode.getText(call));
         return;
       }
-      if (!roots.has(literalSegments[0])) {
+      // The allowlist is opt-in. Enforcing `public|static|dist|build|assets`
+      // by default made every other asset directory a security finding —
+      // `js`, `css`, `img`, `fonts` are ordinary names, and a directory's name
+      // says nothing about whether serving it exposes anything. Configure
+      // `allowedRoots` to restore the stricter posture.
+      if (roots.size > 0 && !roots.has(literalSegments[0])) {
         context.report({
           node: call,
           messageId: 'unknownRoot',
@@ -296,7 +315,8 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
           reportRoot(node, `'${node.value}'`);
           return;
         }
-        if (!roots.has(segments[0])) {
+        // Same opt-in allowlist as the path.join() branch above.
+        if (roots.size > 0 && !roots.has(segments[0])) {
           context.report({
             node,
             messageId: 'unknownRoot',

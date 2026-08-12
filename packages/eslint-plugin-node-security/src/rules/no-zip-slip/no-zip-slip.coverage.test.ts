@@ -51,6 +51,9 @@ describe('no-zip-slip coverage gaps', () => {
       },
       // VariableDeclarator without init — early return
       { code: 'let entryName;' },
+      // An ESM import of a module that is NOT an archive library opens no
+      // archive context.
+      { code: "import fs from 'fs'; const p = path.join(dest, entry.name);" },
       // Traversal literal assigned to a variable with no archive-ish name
       { code: "const dest = '../up/x';" },
       // entry-named variable assigned from entry.name (tracked, no report)
@@ -87,32 +90,32 @@ describe('no-zip-slip coverage gaps', () => {
       },
       // Wrapper call that is not a validation function
       {
-        code: 'doStuff(path.join(dest, entry.name));',
+        code: "const AdmZip = require('adm-zip'); doStuff(path.join(dest, entry.name));",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // Member wrapper on a non-path object
       {
-        code: 'helper.wrap(path.join(dest, entry.name));',
+        code: "const AdmZip = require('adm-zip'); helper.wrap(path.join(dest, entry.name));",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // path method that is not basename
       {
-        code: 'path.dirname(path.join(dest, entry.name));',
+        code: "const AdmZip = require('adm-zip'); path.dirname(path.join(dest, entry.name));",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // Enclosing if whose test is a bare identifier
       {
-        code: 'if (flag) { fs.cp(path.join(dest, entry.name)); }',
+        code: "const AdmZip = require('adm-zip'); if (flag) { fs.cp(path.join(dest, entry.name)); }",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // Negated includes() is not treated as startsWith validation
       {
-        code: "if (!entryPath.includes('..')) { fs.cp(path.join(dest, entry.name)); }",
+        code: "const AdmZip = require('adm-zip'); if (!entryPath.includes('..')) { fs.cp(path.join(dest, entry.name)); }",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
       // Negated plain function call (callee not a MemberExpression)
       {
-        code: 'if (!checkIt(p)) { fs.cp(path.join(dest, entry.name)); }',
+        code: "const AdmZip = require('adm-zip'); if (!checkIt(p)) { fs.cp(path.join(dest, entry.name)); }",
         errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
     ],
@@ -121,8 +124,11 @@ describe('no-zip-slip coverage gaps', () => {
   describe('Layer 2: synthetic loc-less nodes', () => {
     type Listener = (n: unknown) => void;
 
-    function setup() {
-      const result = createWithMockContext(noZipSlip);
+    function setup(options?: unknown[]) {
+      const result = createWithMockContext(
+        noZipSlip,
+        options ? ({ options } as never) : undefined,
+      );
       // The shared mock does not stub getAllComments; the CallExpression
       // handler needs it for the @safe-annotation scan.
       Object.assign(
@@ -191,7 +197,9 @@ describe('no-zip-slip coverage gaps', () => {
     });
 
     it('reports unvalidated archive path with line 0 when loc is absent', () => {
-      const { listeners, reports } = setup();
+      // The mock node has no archive in view, so the context gate is opened
+      // explicitly; this case is about the loc fallback, not classification.
+      const { listeners, reports } = setup([{ reportWithoutArchiveContext: true }]);
       const entryName: Record<string, unknown> = {
         type: 'MemberExpression',
         object: { type: 'Identifier', name: 'entry' },
@@ -210,6 +218,9 @@ describe('no-zip-slip coverage gaps', () => {
       };
       entryName.parent = joinCall;
       (listeners.CallExpression as Listener)(joinCall);
+      // Reports are collected and flushed at Program:exit, so that a
+      // `require('adm-zip')` below the join still counts as archive context.
+      (listeners['Program:exit'] as () => void)();
       expect(reports).toHaveLength(1);
       expect(reports[0]).toMatchObject({
         messageId: 'unvalidatedArchivePath',
@@ -219,15 +230,22 @@ describe('no-zip-slip coverage gaps', () => {
 
     it('reports path traversal literal with line 0 when loc is absent', () => {
       const { listeners, reports } = setup();
-      const declarator = {
-        type: 'VariableDeclarator',
-        id: { type: 'Identifier', name: 'zipEntryPath' },
+      // A traversal literal reports only INSIDE an archive-extraction call now,
+      // so the synthetic parent is the extraction rather than a declarator.
+      const extraction = {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'zip' },
+          property: { type: 'Identifier', name: 'extractAllTo' },
+        },
+        arguments: [],
         parent: undefined,
       };
       (listeners.Literal as Listener)({
         type: 'Literal',
-        value: '../../etc/x',
-        parent: declarator,
+        value: '../../up/x',
+        parent: extraction,
       });
       expect(reports).toHaveLength(1);
       expect(reports[0]).toMatchObject({

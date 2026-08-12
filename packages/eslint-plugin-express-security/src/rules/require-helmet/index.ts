@@ -16,6 +16,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  nodeReleasesBinding,
+  RELEASE_SELECTOR,
+  servesBrowserDocuments,
+} from '../../utils/app-composition';
+import {
   formatLLMMessage,
   MessageIcons,
   createRule,
@@ -119,7 +124,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         issueName: 'Missing Security Headers',
         cwe: 'CWE-693',
         description:
-          'Express app created without helmet middleware. Missing security headers: X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, etc.',
+          'This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framable and unconstrained.',
         severity: 'HIGH',
         fix: "Add helmet middleware: app.use(helmet()). Install with 'npm install helmet'.",
         documentationLink: 'https://helmetjs.github.io/',
@@ -174,6 +179,25 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     // path — a file with no Express in it does no work.
     if (!fileUsesExpress(context.sourceCode.ast)) return {};
 
+    // Rule partition — exactly one rule owns any given site.
+    //
+    // `require-rate-limiting` used to report the identical `express()` node
+    // this rule reports: all six of its corpus findings were at the same
+    // file:line:column as all six of this rule's. Two problem-severity
+    // findings on one character, with two unrelated fixes, is the shape the
+    // deprecated `no-missing-security-headers` was removed from `recommended`
+    // for (see src/index.ts). The partition is now by *meaning*:
+    //
+    //   this rule            → the app renders documents to a browser, and the
+    //                          document-directed header set is absent.
+    //   require-rate-limiting → a specific credential-accepting endpoint is
+    //                          unthrottled; it reports at that route, never at
+    //                          `express()`.
+    //
+    // Helmet is inert on a response nothing renders, so document evidence is
+    // this rule's precondition rather than a heuristic filter.
+    if (!servesBrowserDocuments(context.sourceCode.ast)) return {};
+
     const {
       allowInTests = false,
       alternativeMiddleware = [],
@@ -214,17 +238,22 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     let appEscapes = false;
 
     return {
+      // `module.exports = app`, `export default app`, `return app` — the three
+      // non-call ways the app leaves the file. Two of the six corpus findings
+      // were `const app = express(); module.exports = app;`.
+      [RELEASE_SELECTOR](node: TSESTree.Node) {
+        if (appBinding !== null && nodeReleasesBinding(node, appBinding)) {
+          appEscapes = true;
+        }
+      },
+
       // Detect express() app creation
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
         // `setAppConfigurations(app)` — the app leaves this file.
-        if (appBinding !== null) {
-          for (const arg of node.arguments) {
-            if (arg.type === 'Identifier' && arg.name === appBinding) {
-              appEscapes = true;
-            }
-          }
+        if (appBinding !== null && nodeReleasesBinding(node, appBinding)) {
+          appEscapes = true;
         }
 
         // Check for express() call

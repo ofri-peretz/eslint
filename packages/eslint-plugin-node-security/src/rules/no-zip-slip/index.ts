@@ -39,6 +39,21 @@ export interface Options {
   /** Archive extraction functions to check */
   archiveFunctions?: string[];
 
+  /**
+   * Module specifiers that mean this file works with archives.
+   * Default: see DEFAULT_ARCHIVE_MODULES.
+   */
+  archiveModules?: string[];
+
+  /**
+   * Report entry-name and traversal shapes in files that never touch an
+   * archive. Default: `false`.
+   *
+   * `true` restores the pre-inversion behaviour. Measured on an 8-repo corpus
+   * that produced 8 findings, none of which involved an archive at all.
+   */
+  reportWithoutArchiveContext?: boolean;
+
   /** Functions that safely validate archive paths */
   pathValidationFunctions?: string[];
 
@@ -48,6 +63,34 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+
+/**
+ * Modules whose presence means this file actually handles archives.
+ *
+ * Zip slip needs an ARCHIVE: an attacker-authored entry name, joined to a
+ * destination, and written out. Without one there is no attacker-authored
+ * name, and the two name-shaped handlers below degenerate into "this file
+ * mentions `entry.name`" and "this string contains `../`" — which is precisely
+ * what they produced on the corpus. All 8 findings were archive-free:
+ *
+ *   - `Shopify/cli` `packages/cli/bin/bundle.js:28` —
+ *     `glob.sync('../../node_modules/.pnpm/**\/yoga.wasm')[0]`, a literal
+ *     containing `../` in a variable whose name contains `file`.
+ *   - `okta/okta-auth-js` `samples/gulpfile.js:37` —
+ *     `const OKTA_ENV_SCRIPT_PATH = '../env/index.js'`, likewise.
+ *   - `Shopify/cli` `packages/e2e/setup/app.ts:75,78` —
+ *     `path.join(parentDir, entry.name)` where `entry` is an `fs.readdirSync`
+ *     Dirent, a name the local filesystem authored.
+ *
+ * A hardcoded `'../env/index.js'` is never zip slip; it is a relative import
+ * path the author wrote. Requiring an archive in the file is what separates
+ * the mechanism from its silhouette.
+ */
+const DEFAULT_ARCHIVE_MODULES = [
+  'adm-zip', 'unzipper', 'yauzl', 'yazl', 'tar', 'tar-fs', 'tar-stream',
+  'extract-zip', 'node-stream-zip', 'jszip', 'archiver', 'decompress',
+  'unzip-stream', 'zip-stream', 'gunzip-maybe', '7zip-min', 'node-7z',
+];
 
 /**
  * Check if path contains dangerous traversal sequences
@@ -205,6 +248,18 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
           },
+          archiveModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_ARCHIVE_MODULES,
+            description: 'Module specifiers that mean this file works with archives',
+          },
+          reportWithoutArchiveContext: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report entry-name and traversal shapes in files with no archive. Restores the pre-inversion behaviour.',
+          },
         },
         additionalProperties: false,
       },
@@ -223,9 +278,52 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       archiveFunctions = ['extract', 'extractAll', 'extractAllTo', 'unzip', 'untar', 'extractArchive'],
       pathValidationFunctions = ['validatePath', 'sanitizePath', 'checkPath', 'safePath'],
       safeLibraries = ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
+      archiveModules = DEFAULT_ARCHIVE_MODULES,
+      reportWithoutArchiveContext = false,
     }: Options = options;
 
     const filename = context.filename;
+    const archiveModuleSet = new Set(archiveModules.map((name) => name.toLowerCase()));
+
+    /**
+     * Does this file work with archives at all?
+     *
+     * True when it imports or requires an archive module, or when it contains
+     * an archive-extraction call. Collected across the whole file before any
+     * judgement is made, so a `require('adm-zip')` below the extraction still
+     * counts — a rule that depended on statement order would be reporting on
+     * formatting.
+     */
+    let hasArchiveContext = reportWithoutArchiveContext;
+    const isArchiveModule = (specifier: unknown): boolean =>
+      typeof specifier === 'string' && archiveModuleSet.has(specifier.toLowerCase());
+
+    /**
+     * Names that only appear when archives are in play: `new AdmZip(file)`,
+     * `zipfile.readEntry()`, `tarStream.extract()`.
+     *
+     * A name heuristic, deliberately — but it gates CONTEXT, never a finding.
+     * The report still requires the entry-name or traversal evidence below; all
+     * this decides is whether that evidence is about an archive. Checked
+     * against the two corpus files that produced `unvalidatedArchivePath`
+     * (`Shopify/cli` `packages/e2e/setup/app.ts` and
+     * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
+     * substring `zip`, `tar` or `archive` anywhere.
+     */
+    const ARCHIVE_NAME = /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
+    const namesArchive = (node: TSESTree.Node): boolean => {
+      if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
+      if (node.type === 'MemberExpression') {
+        return (
+          namesArchive(node.object) ||
+          (node.property.type === 'Identifier' && ARCHIVE_NAME.test(node.property.name))
+        );
+      }
+      return false;
+    };
+
+    /** Shapes deferred to Program:exit, once archive context is known. */
+    const pending: (() => void)[] = [];
 
     // Safety checks are implemented directly in the handlers
 
@@ -340,8 +438,29 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (isArchiveModule(node.source.value)) hasArchiveContext = true;
+      },
+
+      NewExpression(node: TSESTree.NewExpression) {
+        if (namesArchive(node.callee)) hasArchiveContext = true;
+      },
+
+      'Program:exit'() {
+        for (const report of pending) report();
+      },
+
       // Check archive extraction calls
       CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments[0]?.type === 'Literal' &&
+          isArchiveModule(node.arguments[0].value)
+        ) {
+          hasArchiveContext = true;
+        }
+        if (isArchiveExtraction(node) || namesArchive(node.callee)) hasArchiveContext = true;
         if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
           // Check for @safe annotations in the source
           const sourceCode = context.sourceCode;
@@ -465,15 +584,22 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
                 arg.property.type === 'Identifier' &&
                 ['name', 'path', 'fileName', 'entryName', 'relativePath', 'filename', 'pathname'].includes(arg.property.name)) {
 
-              // This looks like path.join(dest, entry.name) - check if validated
+              // This looks like path.join(dest, entry.name) — but only if an
+              // archive is involved. `entry` is just as often an
+              // `fs.readdirSync` Dirent, whose name the local filesystem
+              // authored, and `require.resolve(args.path)` is not an archive
+              // at all.
               if (!isPathValidated(arg)) {
-                context.report({
-                  node: arg,
-                  messageId: 'unvalidatedArchivePath',
-                  data: {
-                    filePath: filename,
-                    line: String(node.loc?.start.line ?? 0),
-                  },
+                pending.push(() => {
+                  if (!hasArchiveContext) return;
+                  context.report({
+                    node: arg,
+                    messageId: 'unvalidatedArchivePath',
+                    data: {
+                      filePath: filename,
+                      line: String(node.loc?.start.line ?? 0),
+                    },
+                  });
                 });
               }
             }
@@ -481,53 +607,30 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Check string literals for dangerous paths
+      /**
+       * A `../` inside a string literal.
+       *
+       * Narrowed to literals that sit INSIDE an archive-extraction call. The
+       * handler used to also fire on any literal in a declarator whose name
+       * contained `path`, `file`, `entry`, `archive`, `zip` or `tar` — which is
+       * every relative import path and every glob in a build script, and was
+       * five of the eight corpus findings. A traversal sequence an author typed
+       * into their own source is not an attacker-authored archive entry; it is
+       * a relative path.
+       */
       Literal(node: TSESTree.Literal) {
         if (typeof node.value !== 'string') {
           return;
         }
 
         const text = node.value;
+        if (!(text.includes('/') || text.includes('\\')) || !containsPathTraversal(text)) {
+          return;
+        }
 
-        // Check for path traversal in strings that look like file paths
-        if ((text.includes('/') || text.includes('\\')) && containsPathTraversal(text)) {
-          // Check if this is in an archive-related context
-          let current: TSESTree.Node | undefined = node;
-          let isArchiveContext = false;
-
-          // Every assignment of `isArchiveContext = true` is followed by `break`,
-          // so the negation is dead (CodeQL: `js/useless-conditional`).
-          while (current) {
-            if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
-              isArchiveContext = true;
-              break;
-            }
-            if (current.type === 'VariableDeclarator' &&
-                current.id.type === 'Identifier' &&
-                (current.id.name.includes('archive') ||
-                 current.id.name.includes('zip') ||
-                 current.id.name.includes('tar') ||
-                 current.id.name.includes('path') ||
-                 current.id.name.includes('file') ||
-                 current.id.name.includes('entry'))) {
-              isArchiveContext = true;
-              break;
-            }
-            current = current.parent as TSESTree.Node;
-          }
-
-          // Also check if the variable name suggests archive usage
-          const parent = node.parent;
-          if (parent && parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
-            const varName = parent.id.name.toLowerCase();
-            if (varName.includes('archive') || varName.includes('zip') || varName.includes('tar') ||
-                varName.includes('path') || varName.includes('file') || varName.includes('extract') ||
-                varName.includes('entry')) {
-              isArchiveContext = true;
-            }
-          }
-
-          if (isArchiveContext) {
+        let current: TSESTree.Node | undefined = node;
+        while (current) {
+          if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
             context.report({
               node,
               messageId: 'pathTraversalInArchive',
@@ -536,15 +639,14 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
                 line: String(node.loc?.start.line ?? 0),
               },
             });
+            return;
           }
+          current = current.parent as TSESTree.Node;
         }
 
-        // Dangerous-destination check moved to the CallExpression handler
-        // (see lines 407-427). It already fires `dangerousArchiveDestination`
-        // for archive-extraction calls; firing again here would duplicate.
-        // The previous "fire on any /etc or /home literal" logic produced
-        // false positives on unrelated calls (fs.readFileSync, exec, etc.)
-        // and is no longer needed now that the call-site check is precise.
+        // Dangerous-destination check lives in the CallExpression handler; the
+        // previous "fire on any /etc or /home literal" logic produced false
+        // positives on unrelated calls (fs.readFileSync, exec, …).
       },
 
       // Check variable assignments

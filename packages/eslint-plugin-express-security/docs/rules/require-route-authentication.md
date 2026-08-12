@@ -25,10 +25,11 @@ CWE-306 is the case where the check was never written, not the case where it is 
 The rule reports a route when **all** of the following hold:
 
 1. It is a route registration on an Express app/router (`app.post`, `router.delete`, …) with a string-literal path.
-2. The path matches the critical-function vocabulary (`password`, `credential`, `account`, `payment`, `billing`, `config`, `role`, `user`, …) and does **not** match the public-by-design vocabulary (`login`, `signup`, `reset`, `webhook`, `health`, `oauth`, `callback`, …). Fragments match on **word boundaries with an optional plural `s`**, not as raw substrings: `/users` and `/orders/:id` match, `/reorder-items` and `/border-crossing` do not.
+2. The path matches the critical-function vocabulary (`password`, `credential`, `account`, `payment`, `billing`, `config`, `role`, `user`, …) and does **not** match the public-by-design vocabulary (`login`, `signup`, `reset`, `webhook`, `health`, `oauth`, `callback`, and the credential-recovery / factor-enrolment steps `recover`, `unlock`, `challenge`, `enroll`, `activate`, `resend`, `consent`, …). Fragments match on **word boundaries with an optional plural `s`**, not as raw substrings: `/users` and `/orders/:id` match, `/reorder-items` and `/border-crossing` do not.
 3. No argument before the final handler reads as authentication middleware (`requireAuth`, `authenticate`, `passport.authenticate('jwt')`, `verifyToken`, `ensureLoggedIn`, …).
 4. The handler body never reads an authenticated principal — `req.user`, `req.auth`, `req.session`, `res.locals.user`, …
-5. The file has no router-wide guard (`app.use(requireAuth)`), wherever it appears — the check is deferred to the end of the file so a guard mounted after the routes still counts.
+5. The final handler _answers_ the request. A handler that calls `next(…)` and never touches `res` is a rewriter handing off to the next layer — a single-page-app shell being pointed at `express.static`, not a function this route exposes.
+6. The file has no router-wide guard (`app.use(requireAuth)`), wherever it appears — the check is deferred to the end of the file so a guard mounted after the routes still counts.
 
 Because step 2 is a **naming heuristic**, the rule ships as `warn` in the `recommended` config and never at enforcement severity (plugin scope-audit invariant I3). It is a review prompt: every finding is a route worth a second look, not a proven vulnerability.
 
@@ -69,6 +70,19 @@ app.get('/account/profile', (req, res) => res.json(req.user));
 app.post('/reorder-items', reorder);
 app.post('/border-crossing', cross);
 
+// The steps that *establish* authentication cannot require it
+router.post('/recover-password', startRecovery);
+router.get('/unlock-account', showUnlockForm);
+router.post('/challenge-authenticator/okta_password', proceed);
+router.get('/enroll-authenticator/google_otp', showEnroll);
+
+// A handler that hands the request on is not the exposed function
+function redirectToOrigin(req, res, next) {
+  req.url = '/';
+  next();
+}
+app.get('/profile', redirectToOrigin);
+
 // Public by design — never reported
 app.post('/login', doLogin);
 app.post('/password/reset', resetPassword);
@@ -78,11 +92,11 @@ app.get('/health', healthCheck);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `criticalPaths` | `string[]` | — | Path fragments that mark a route as critical |
-| `publicPaths` | `string[]` | — | Path fragments that are public by design |
-| `authMiddleware` | `string[]` | — | Extra middleware names accepted as authentication |
+| Option           | Type       | Default | Description                                       |
+| ---------------- | ---------- | ------- | ------------------------------------------------- |
+| `criticalPaths`  | `string[]` | —       | Path fragments that mark a route as critical      |
+| `publicPaths`    | `string[]` | —       | Path fragments that are public by design          |
+| `authMiddleware` | `string[]` | —       | Extra middleware names accepted as authentication |
 
 ```json
 {
@@ -100,7 +114,7 @@ app.get('/health', healthCheck);
 
 ## When Not To Use It
 
-If authentication is enforced entirely outside the application — an API gateway or service mesh that rejects unauthenticated requests before Express sees them — the rule reports routes that are in fact protected. Prefer configuring `publicPaths` over disabling it, so the routes that gateway does *not* cover still get flagged.
+If authentication is enforced entirely outside the application — an API gateway or service mesh that rejects unauthenticated requests before Express sees them — the rule reports routes that are in fact protected. Prefer configuring `publicPaths` over disabling it, so the routes that gateway does _not_ cover still get flagged.
 
 ## Known False Negatives
 

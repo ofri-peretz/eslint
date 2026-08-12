@@ -265,23 +265,112 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       return safeSanitizers.some(sanitizer => callText.includes(sanitizer));
     };
 
+    /** `x.replace(…)` — the same predicate the CallExpression handler uses. */
+    const isReplaceCall = (
+      node: TSESTree.Node | undefined,
+    ): node is TSESTree.CallExpression =>
+      node?.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      node.callee.property.type === 'Identifier' &&
+      node.callee.property.name === 'replace';
+
     /**
-     * Check if replace sanitization is incomplete
+     * True when another `.replace()` consumes this call's result, i.e. this is
+     * not the end of the chain.
+     *
+     * `a.replace(x).replace(y).replace(z)` is ONE escaping decision, not three.
+     * The previous implementation read `sourceCode.getText(node)` at every link
+     * and judged the prefix it happened to see, so a chain that is complete at
+     * its end still reported once for every link that was incomplete so far.
+     * Shopify CLI's `renderAuthCallbackPage` (`&`→`<`→`>`→`"`) reported twice
+     * per escaper and its own `escapeHtml` (all five characters) reported twice
+     * more — 8 of this rule's 14 wild-corpus findings were the rule reading its
+     * own subject halfway through.
+     */
+    const isMidChain = (node: TSESTree.CallExpression): boolean => {
+      const parent = node.parent as TSESTree.Node | undefined;
+      const grandparent = parent?.parent as TSESTree.Node | undefined;
+      // If the grandparent is a `.replace()` whose callee is this node's
+      // parent, then that parent is the `…​.replace` member access and this
+      // node is its receiver: another link follows.
+      return isReplaceCall(grandparent) && grandparent.callee === parent;
+    };
+
+    /**
+     * The literal search pattern of a `.replace()` first argument: the source
+     * of a regex literal, or the text of a string literal. Anything computed
+     * (a variable, a `new RegExp`, a concatenation) yields undefined — the rule
+     * cannot say which character it targets, so it must not guess.
+     */
+    const staticPattern = (node: TSESTree.Node | undefined): string | undefined => {
+      if (node?.type !== 'Literal') return undefined;
+      const withRegex = node as TSESTree.Literal & { regex?: { pattern: string } };
+      if (withRegex.regex) return withRegex.regex.pattern;
+      return typeof node.value === 'string' ? node.value : undefined;
+    };
+
+    /** The literal replacement text of a `.replace()` second argument. */
+    const staticReplacement = (node: TSESTree.Node | undefined): string | undefined => {
+      if (node?.type === 'Literal') {
+        return typeof node.value === 'string' ? node.value : undefined;
+      }
+      if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
+        return node.quasis.map((quasi) => quasi.value.cooked).join('');
+      }
+      return undefined;
+    };
+
+    /** Walk a terminal `.replace()` back down its receiver chain. */
+    const replaceChain = (
+      terminal: TSESTree.CallExpression,
+    ): { pattern?: string; replacement?: string }[] => {
+      const pairs: { pattern?: string; replacement?: string }[] = [];
+      let current: TSESTree.Node | undefined = terminal;
+      while (isReplaceCall(current)) {
+        pairs.push({
+          pattern: staticPattern(current.arguments[0]),
+          replacement: staticReplacement(current.arguments[1]),
+        });
+        current = (current.callee as TSESTree.MemberExpression).object;
+      }
+      return pairs;
+    };
+
+    /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
+    const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
+
+    /**
+     * Check whether a `.replace()` chain is an INCOMPLETE HTML escaper.
+     *
+     * Two conditions, both about meaning rather than shape:
+     *
+     * 1. The chain must actually escape a tag character — a pair whose pattern
+     *    IS `<` or `>` and whose replacement is an HTML entity. Stripping or
+     *    rewriting markup is not escaping: `template.replace(/>\s+/g, '>')`
+     *    (whitespace trimming), `otherContent.replace(/<!--[\s\S]*?-->/g, '')`
+     *    (comment removal) and `html.replace(/<\/head>/, '<script …></head>')`
+     *    (tag injection) all matched the old `/replace\(\s*\/[<>]/` text probe
+     *    and none of them is trying to escape anything. That probe accounted
+     *    for the other 6 wild-corpus findings.
+     * 2. Given that it IS escaping, the chain is incomplete unless it also
+     *    produces an ampersand entity and a quote entity somewhere.
      */
     const isIncompleteReplaceSanitization = (callExpression: TSESTree.CallExpression): boolean => {
-      const callText = sourceCode.getText(callExpression);
+      const pairs = replaceChain(callExpression);
 
-      // Check for incomplete HTML escaping (any quote style)
-      const escapesOnlyTags = /replace\(\s*\/[<>]/.test(callText);
-      if (escapesOnlyTags) {
-        // If only escaping < or > but not other dangerous chars, it's incomplete
-        const hasQuoteEscaping = /&quot;|&#x27;|&#039;/.test(callText);
-        const hasAmpersandEscaping = /&amp;/.test(callText);
+      const escapesTagChar = pairs.some(
+        (pair) =>
+          (pair.pattern === '<' || pair.pattern === '>') &&
+          pair.replacement !== undefined &&
+          ENTITY.test(pair.replacement),
+      );
+      if (!escapesTagChar) return false;
 
-        return !(hasQuoteEscaping && hasAmpersandEscaping);
-      }
+      const replacements = pairs.map((pair) => pair.replacement ?? '').join('');
+      const hasQuoteEscaping = /&quot;|&#x27;|&#0?39;|&apos;/i.test(replacements);
+      const hasAmpersandEscaping = /&amp;/.test(replacements);
 
-      return false;
+      return !(hasQuoteEscaping && hasAmpersandEscaping);
     };
 
     /**
@@ -322,6 +411,11 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         if (callee.type === 'MemberExpression' &&
             callee.property.type === 'Identifier' &&
             callee.property.name === 'replace') {
+
+          // One decision per chain — see isMidChain.
+          if (isMidChain(node)) {
+            return;
+          }
 
           if (isIncompleteReplaceSanitization(node)) {
             if (safetyChecker.isSafe(node, context)) {

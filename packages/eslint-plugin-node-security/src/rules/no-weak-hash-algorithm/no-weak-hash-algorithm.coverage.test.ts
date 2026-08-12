@@ -26,6 +26,17 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: any MD5/SHA-1/MD4/RIPEMD call is a finding.
+ *
+ * Measured on the 8-repo corpus that produced 6 findings, all content digests —
+ * `fileHash(buff)`, `hashString(str)`, `calculateChecksum`. The default now
+ * requires a visible security use; these cases keep pinning the algorithm
+ * detection, the suggestion fixers and the assignment-target plumbing. The
+ * restoring option is applied per-test where it is needed, since the mock-node
+ * suites below have no parent chain for a security use to be visible in.
+ */
+
 describe('no-weak-hash-algorithm coverage gaps', () => {
   ruleTester.run('no-weak-hash-algorithm', noWeakHashAlgorithm, {
     valid: [
@@ -50,7 +61,10 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
   describe('Layer 2: suggestion fix defensive re-check', () => {
     it('replaces the callee with sha256 while it is an Identifier, and returns null once it is not', () => {
       const { listeners, reports } = createWithMockContext(
-        noWeakHashAlgorithm as never
+        noWeakHashAlgorithm as never,
+        // The mock node has no parent chain, so no security use is visible;
+        // this suite is about the fixer, not the classification.
+        { options: [{ reportUnclassifiedHashes: true }] } as never
       );
       const callee = {
         type: 'Identifier',

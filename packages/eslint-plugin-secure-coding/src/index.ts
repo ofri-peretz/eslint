@@ -145,7 +145,31 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-unsafe-deserialization': 'warn',
 
   // High - Regex vulnerabilities
-  'secure-coding/detect-non-literal-regexp': 'warn',
+  // NOTE: `detect-non-literal-regexp` is intentionally NOT in `recommended`
+  // (removed 2026-08-12). Measured over an 8-repo corpus of published code
+  // (okta, auth0, stripe, twilio, ioredis, paypal, shopify) it fired 49 times.
+  // Fixing two outright defects took that to 34: it was reporting regex
+  // *literals* — in a rule whose name is "non-literal" — and it treated every
+  // built pattern as attacker-controlled, including `'\\{' + i + '\\}'` over a
+  // loop counter and `` `${SUPPORTED_EXTS.join('|')}$` `` over a module constant.
+  //
+  // The 34 that remain are patterns whose provenance the rule cannot resolve:
+  // a function parameter named `pattern`, a `route` from the app's own route
+  // table, minified library internals. "I could not prove this is safe" is not
+  // a finding — for a library whose API accepts a pattern, it is a description
+  // of the API.
+  //
+  // The decisive number is that the one genuine true positive in that output —
+  // `new RegExp(item.value.pattern, item.value.flags)` over a remotely-supplied
+  // schema — is already reported at `error` by
+  // `secure-coding/no-unsafe-regex-construction`, which attributes the taint
+  // rather than guessing. So this rule contributed 33 non-findings and zero
+  // unique findings. The two now partition cleanly: the `error` rule reports
+  // what it can attribute, and this one reports the rest — which is only worth
+  // hearing if you asked for it.
+  //
+  // Kept exported and opt-in-able for teams that want the paranoid sweep and
+  // will triage it.
   // Demoted 2026-05-09 — 91% Edge ratio.
   'secure-coding/no-redos-vulnerable-regex': 'error',
   'secure-coding/no-unsafe-regex-construction': 'error',

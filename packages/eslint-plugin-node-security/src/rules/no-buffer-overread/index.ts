@@ -21,6 +21,7 @@
  */
 import type { TSESLint, TSESTree, SecurityRuleOptions } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, createSafetyChecker } from '@interlace/eslint-devkit';
+import { findVariable } from '../../utils/provenance';
 
 type MessageIds =
   | 'bufferOverread'
@@ -52,9 +53,27 @@ export interface Options extends SecurityRuleOptions {
 
   /** Additional JSDoc annotations to consider as safe markers */
   strictMode?: boolean;
+
+  /**
+   * Report every buffer index this rule cannot prove validated, not only those
+   * traceable to input. Default: `false`.
+   *
+   * `true` restores the pre-inversion behaviour. Measured on an 8-repo corpus
+   * it produced 15 findings: two argument parsers, four loop counters in a
+   * vendored keystroke recorder, one buffer WRITE, and eight in minified
+   * bundles where one-letter names collide across closures.
+   */
+  reportUnvalidatedIndices?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Methods that return a VIEW over the same memory rather than reading a value.
+ * Owned by the slice handler; the generic read/write handler must skip them so
+ * one site yields one finding.
+ */
+const VIEW_METHODS: ReadonlySet<string> = new Set(['slice', 'subarray']);
 
 
 export const noBufferOverread = createRule<RuleOptions, MessageIds>({
@@ -186,7 +205,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           bufferMethods: {
             type: 'array',
             items: { type: 'string' },
-            default: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'copy'], description: 'Buffer read/write methods checked for bounds'
+            default: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'], description: 'Buffer read/write methods checked for bounds'
           },
           boundsCheckFunctions: {
             type: 'array',
@@ -215,6 +234,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          reportUnvalidatedIndices: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report every index that cannot be proven validated. Restores the pre-inversion behaviour.',
+          },
         },
         additionalProperties: false,
       },
@@ -222,7 +247,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      bufferMethods: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'copy'],
+      bufferMethods: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'],
       boundsCheckFunctions: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
       bufferTypes: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers: [],
@@ -233,12 +258,13 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      bufferMethods = ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'copy'],
+      bufferMethods = ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'],
       boundsCheckFunctions = ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
       bufferTypes = ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
+      reportUnvalidatedIndices = false,
     }: Options = options;
 
     const sourceCode = context.sourceCode;
@@ -256,16 +282,34 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     const bufferTypesSet = new Set(bufferTypes.map(t => t.toLowerCase()));
     const userControlledKeywords = new Set(['req', 'request', 'query', 'params', 'input', 'user', 'offset', 'index', 'body']);
 
-    // Track buffer variables
-    const bufferVars = new Set<string>();
+    /**
+     * Variables known to hold a buffer.
+     *
+     * Keyed by the resolved SCOPE VARIABLE, not by name. The set used to hold
+     * bare strings, so one `const buf = Buffer.alloc(8)` anywhere in a file made
+     * every unrelated `buf` in every other function a buffer — and in minified
+     * bundles, where the same one-letter names are reused in dozens of
+     * closures, that is most of the file. Shopify/cli's vendored speedscope
+     * bundles produced 8 of the rule's 15 corpus findings that way.
+     */
+    const bufferVars = new Set<TSESLint.Scope.Variable>();
+
+    /** Register a declarator's binding as a buffer, resolved through scope. */
+    const addBufferVar = (id: TSESTree.Identifier): void => {
+      const variable = findVariable(sourceCode, id);
+      if (variable) bufferVars.add(variable);
+    };
 
     /**
-     * Check if variable is a buffer type
-     * Uses Set-based lookup for O(1) performance
+     * Check if this identifier refers to a buffer.
+     *
+     * Takes the NODE rather than the name so the binding can be resolved
+     * through the scope chain — shadowing included.
      */
-    const isBufferType = (varName: string): boolean => {
-      if (bufferVars.has(varName)) return true;
-      const lowerName = varName.toLowerCase();
+    const isBufferType = (node: TSESTree.Identifier): boolean => {
+      const variable = findVariable(sourceCode, node);
+      if (variable && bufferVars.has(variable)) return true;
+      const lowerName = node.name.toLowerCase();
       for (const type of bufferTypesSet) {
         if (lowerName.includes(type)) return true;
       }
@@ -274,6 +318,62 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // and `chunk` are intentionally excluded — single-char names and
       // stream-chunk array variables produce too many FPs in real code.
       if (lowerName === 'buf' || lowerName === 'bytes') return true;
+      return false;
+    };
+
+    /**
+     * Is this member expression being WRITTEN to rather than read?
+     *
+     * `buffer[i] = str.charCodeAt(i)` (`okta/okta-auth-js`
+     * `lib/crypto/base64.ts:57`) is a buffer *overwrite* if it is anything —
+     * CWE-787, a different weakness with a different fix. CWE-126 is about
+     * reading past the end, and a rule that reports both under one id tells the
+     * reader the wrong thing about what is wrong.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isWriteTarget = (node: TSESTree.Node): boolean => {
+      const parent = node.parent;
+      if (!parent) return false;
+      if (parent.type === AST_NODE_TYPES.AssignmentExpression) return parent.left === node;
+      return parent.type === AST_NODE_TYPES.UpdateExpression;
+    };
+
+    /**
+     * Is this index the counter of a loop that already bounds it?
+     *
+     * `for (let c = 0, cl = charset.length; c < cl; ++c) charset[c]` cannot
+     * overread: the loop condition IS the bounds check. The rule reported four
+     * of these in `okta/okta-signin-widget`'s vendored TypingDNA recorder
+     * (`typingdna.js:1206-1229`), where every access is `revs[i]` inside
+     * `for (i = 0; i < revs.length; i++)`.
+     *
+     * Any `<`/`<=` comparison with the counter on the left counts. Proving the
+     * right-hand side is the buffer's own length would be stricter, but a loop
+     * bounded by *some* limit is not the unbounded read this rule is for, and
+     * the stricter form would still miss `i < len` where `len` was hoisted.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isLoopBounded = (indexNode: TSESTree.Node): boolean => {
+      if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
+      const name = indexNode.name;
+      let current: TSESTree.Node | undefined = indexNode.parent;
+      while (current) {
+        const test =
+          current.type === AST_NODE_TYPES.ForStatement ||
+          current.type === AST_NODE_TYPES.WhileStatement
+            ? current.test
+            : null;
+        if (
+          test &&
+          test.type === AST_NODE_TYPES.BinaryExpression &&
+          (test.operator === '<' || test.operator === '<=') &&
+          test.left.type === AST_NODE_TYPES.Identifier &&
+          test.left.name === name
+        ) {
+          return true;
+        }
+        current = current.parent;
+      }
       return false;
     };
 
@@ -577,7 +677,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           if (node.init.type === AST_NODE_TYPES.NewExpression &&
               node.init.callee.type === AST_NODE_TYPES.Identifier &&
               bufferTypes.includes(node.init.callee.name)) {
-            bufferVars.add(varName);
+            addBufferVar(node.id);
           }
 
           // Check if assigned from Buffer.from() or Buffer.alloc()
@@ -587,22 +687,30 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               node.init.callee.object.name === 'Buffer' &&
               node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
               ['from', 'alloc', 'allocUnsafe'].includes(node.init.callee.property.name)) {
-             bufferVars.add(varName);
+            addBufferVar(node.id);
           }
 
-          // Check if assigned a buffer method result
+          // Check if assigned a buffer method result.
+          //
+          // The RECEIVER has to be a buffer too. Without that check any
+          // `.slice()` or `.copy()` made its result a buffer, so
+          // `const args = process.argv.slice(2)` registered `args` — which is
+          // how `const nextArg = args[patternIdx + 1]` came to be a buffer
+          // overread in two Shopify/cli argument parsers.
           if (node.init.type === AST_NODE_TYPES.CallExpression) {
             const callee = node.init.callee;
             if (callee.type === AST_NODE_TYPES.MemberExpression &&
                 callee.property.type === AST_NODE_TYPES.Identifier &&
-                bufferMethods.includes(callee.property.name)) {
-              bufferVars.add(varName);
+                bufferMethods.includes(callee.property.name) &&
+                callee.object.type === AST_NODE_TYPES.Identifier &&
+                isBufferType(callee.object)) {
+              addBufferVar(node.id);
             }
           }
 
           // Check variable name patterns
           if (bufferTypes.some(type => varName.toLowerCase().includes(type.toLowerCase()))) {
-            bufferVars.add(varName);
+            addBufferVar(node.id);
           }
         }
       },
@@ -614,7 +722,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           const bufferName = node.object.name;
           const indexNode = node.property;
 
-          if (isBufferType(bufferName)) {
+          // A write is CWE-787, not CWE-126 — a different rule's site.
+          if (isWriteTarget(node)) return;
+          // A loop counter is already bounded by the loop condition.
+          if (isLoopBounded(indexNode)) return;
+
+          if (isBufferType(node.object)) {
             // Check for negative indices
             if (couldBeNegative(indexNode)) {
               context.report({
@@ -648,11 +761,27 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               }
             }
 
-            // Check if there's any bounds validation
-            if (!hasBoundsCheck(bufferName, indexNode) && !isIndexValidated(indexNode)) {
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
+            // The third arm used to report `unsafeBufferAccess` for ANY index
+            // this rule could not prove validated. That is the "can I prove it
+            // safe?" question, and it made the finding a property of the
+            // rule's own analysis depth rather than of the code: on the corpus
+            // it produced `const nextArg = args[patternIdx + 1]` in two
+            // argument parsers and every access in two minified vendor
+            // bundles.
+            //
+            // It now requires the same evidence the arm above does — an index
+            // that can be traced to input — and differs only in that a bounds
+            // check somewhere in scope was found, which downgrades the report
+            // rather than silencing it. `reportUnvalidatedIndices` restores
+            // the sweep.
+            if (
+              reportUnvalidatedIndices &&
+              !hasBoundsCheck(bufferName, indexNode) &&
+              !isIndexValidated(indexNode)
+            ) {
+              if (safetyChecker.isSafe(node, context)) {
+                return;
+              }
 
               context.report({
                 node,
@@ -670,7 +799,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         if (node.property.type === 'Identifier' &&
             bufferMethods.includes(node.property.name) &&
             node.object.type === 'Identifier' &&
-            isBufferType(node.object.name)) {
+            isBufferType(node.object)) {
 
           // This is a parent of a CallExpression, we'll check it there
         }
@@ -680,12 +809,18 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // Check for buffer.slice() calls
+        // Check for buffer.slice() / buffer.subarray() calls.
+        //
+        // `subarray` is the non-deprecated spelling of `slice` on a Buffer and
+        // returns a view over the SAME memory, so an unvalidated offset reads
+        // exactly as far past the end. It was absent from the rule entirely,
+        // which meant a codebase that had followed Node's own advice to migrate
+        // off `slice` silently lost the check.
         if (callee.type === 'MemberExpression' &&
             callee.property.type === 'Identifier' &&
-            callee.property.name === 'slice' &&
+            VIEW_METHODS.has(callee.property.name) &&
             callee.object.type === 'Identifier' &&
-            isBufferType(callee.object.name)) {
+            isBufferType(callee.object)) {
 
           const args = node.arguments;
 
@@ -708,12 +843,17 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check for buffer read/write methods
+        // Check for buffer read/write methods.
+        //
+        // The view methods are excluded: the handler above already owns them,
+        // and reporting both left `buf.slice(req.query.start)` with two
+        // findings — one line, two message ids, one underlying fact.
         if (callee.type === AST_NODE_TYPES.MemberExpression &&
             callee.property.type === AST_NODE_TYPES.Identifier &&
             bufferMethods.includes(callee.property.name) &&
+            !VIEW_METHODS.has(callee.property.name) &&
             callee.object.type === AST_NODE_TYPES.Identifier &&
-            isBufferType(callee.object.name)) {
+            isBufferType(callee.object)) {
 
           const args = node.arguments;
 

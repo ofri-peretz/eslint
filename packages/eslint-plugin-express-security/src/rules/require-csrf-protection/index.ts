@@ -6,14 +6,38 @@
 
 /**
  * ESLint Rule: require-csrf-protection
- * Detects Express.js routes handling state-changing requests without CSRF protection
+ *
+ * Detects an Express route that mutates state on behalf of a browser-held
+ * credential without a CSRF token.
+ *
  * CWE-352: Cross-Site Request Forgery (CSRF)
+ *
+ * ## The two preconditions, and why a POST alone is neither
+ *
+ * CSRF is not "a state-changing method without a token". It is *the browser
+ * attaching a credential the attacker cannot read but can cause to be sent*.
+ * Two things have to be true before the control means anything:
+ *
+ * 1. **Ambient credential material exists.** With no cookie and no session
+ *    anywhere in the file — a bearer-token API, an OAuth callback, a
+ *    form-post demo — a cross-site request carries no authority and a token
+ *    would protect nothing. Measured on the 8-repo corpus: 36 of 38 findings
+ *    were in files with no cookie or session in them at all.
+ *
+ * 2. **The route is authenticated.** An endpoint that requires no principal
+ *    has nothing for a forged request to ride, and adding a CSRF token to it
+ *    fixes no vulnerability. That case belongs to
+ *    `require-route-authentication` (CWE-306), whose test is the exact
+ *    complement of this one — see `routeIsAuthenticated`. Before this, both
+ *    rules reported the same seven routes.
  *
  * @see https://cwe.mitre.org/data/definitions/352.html
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { fileHasAmbientCredentials } from '../../utils/app-composition';
+import { routeIsAuthenticated } from '../../utils/auth-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -36,6 +60,9 @@ export interface Options {
 type RuleOptions = [Options?];
 
 const DEFAULT_PROTECTED_METHODS = ['post', 'put', 'patch', 'delete'];
+
+/** This rule exposes no `authMiddleware` option; the shared helper takes a set. */
+const EMPTY: ReadonlySet<string> = new Set();
 
 /**
  * Check if a call is a CSRF middleware usage
@@ -63,16 +90,29 @@ function isCsrfMiddleware(node: TSESTree.CallExpression): boolean {
   return false;
 }
 
+/** Does any name in this middleware reference say "CSRF token"? */
+function isCsrfReference(node: TSESTree.Node): boolean {
+  if (node.type === 'Identifier') return /csrf|csurf/i.test(node.name);
+  if (node.type === 'MemberExpression') {
+    return (
+      isCsrfReference(node.object) ||
+      (node.property.type === 'Identifier' && isCsrfReference(node.property))
+    );
+  }
+  if (node.type === 'CallExpression') return isCsrfReference(node.callee);
+  return false;
+}
+
 /**
- * Check if route handler has CSRF middleware in its chain
+ * Check if the route's own middleware chain mounts CSRF protection.
+ *
+ * The chain only — never the handler. This used to regex over
+ * `sourceCode.getText(node)`, which is the *entire* registration including the
+ * handler body, so a route whose handler merely mentioned `csrfToken` when
+ * rendering a form counted as protected.
  */
-function hasCsrfInMiddlewareChain(
-  node: TSESTree.CallExpression,
-  sourceCode: TSESLint.SourceCode,
-): boolean {
-  const text = sourceCode.getText(node);
-  // Check for csrf/csurf in the middleware chain
-  return /\b(csrf|csurf|csrfProtection|csrfMiddleware)\s*\(?\)?/.test(text);
+function hasCsrfInMiddlewareChain(chain: readonly TSESTree.Node[]): boolean {
+  return chain.some(isCsrfReference);
 }
 
 /**
@@ -206,6 +246,10 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     // path — a file with no Express in it does no work.
     if (!fileUsesExpress(context.sourceCode.ast)) return {};
 
+    // Precondition 1 — see the header comment. No cookie, no session, no
+    // CSRF: a cross-site request to this file's routes carries no authority.
+    if (!fileHasAmbientCredentials(context.sourceCode.ast)) return {};
+
     const {
       allowInTests = false,
       protectedMethods = DEFAULT_PROTECTED_METHODS,
@@ -220,8 +264,25 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode;
     let hasGlobalCsrf = false;
+    /**
+     * Reports are deferred to `Program:exit` so that an `app.use(csrf())`
+     * written *below* a route still suppresses it. Reporting inline made the
+     * finding depend on statement order, which no adopter would guess.
+     */
+    const candidates: {
+      node: TSESTree.CallExpression;
+      method: string;
+      chain: TSESTree.Node[];
+      handler: TSESTree.Node | undefined;
+    }[] = [];
+    /**
+     * `app.use(requireAuth)` — a router-wide guard authenticates every route
+     * below it, which is precisely the configuration where CSRF *does* apply.
+     * A path-scoped mount (`app.use('/public', …)`) is not global; treating it
+     * as one is the mistake require-route-authentication documents.
+     */
+    let hasGlobalAuth = false;
 
     /**
      * Check if route matches ignore patterns
@@ -265,6 +326,15 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
               }
             }
           }
+          const [first] = node.arguments;
+          const pathScoped =
+            first?.type === 'Literal' && typeof first.value === 'string';
+          if (
+            !pathScoped &&
+            routeIsAuthenticated(node.arguments, undefined, EMPTY)
+          ) {
+            hasGlobalAuth = true;
+          }
         }
 
         // Check for route handlers: app.post(), router.put(), etc.
@@ -284,29 +354,43 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          // Skip if global CSRF is already set up
-          if (hasGlobalCsrf) {
-            return;
-          }
-
           // Check if route should be ignored
-          const routeArg = node.arguments[0];
+          const [routeArg, ...rest] = node.arguments;
           if (routeArg && shouldIgnoreRoute(routeArg)) {
             return;
           }
 
-          // Check if CSRF middleware is in the handler chain
-          if (hasCsrfInMiddlewareChain(node, sourceCode)) {
+          // Check if CSRF middleware is in the route's own chain
+          if (hasCsrfInMiddlewareChain(rest.slice(0, -1))) {
             return;
           }
 
-          // Report missing CSRF
-          context.report({
+          candidates.push({
             node,
+            method: method.toUpperCase(),
+            chain: rest.slice(0, -1),
+            handler: rest[rest.length - 1],
+          });
+        }
+      },
+
+      'Program:exit'() {
+        if (hasGlobalCsrf) return;
+        for (const candidate of candidates) {
+          // Precondition 2 — the partition with require-route-authentication.
+          // An unauthenticated route has no ambient authority to forge, so a
+          // CSRF token there fixes nothing; CWE-306 is the finding and that
+          // rule owns it. Exactly one of the two tests holds at any site.
+          if (
+            !hasGlobalAuth &&
+            !routeIsAuthenticated(candidate.chain, candidate.handler, EMPTY)
+          ) {
+            continue;
+          }
+          context.report({
+            node: candidate.node,
             messageId: 'missingCsrf',
-            data: {
-              method: method.toUpperCase(),
-            },
+            data: { method: candidate.method },
             suggest: [
               {
                 messageId: 'addCsrf',

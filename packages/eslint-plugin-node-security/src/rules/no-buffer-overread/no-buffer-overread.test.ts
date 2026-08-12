@@ -22,6 +22,18 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: every index the rule cannot prove validated is a
+ * finding.
+ *
+ * Measured on the 8-repo corpus that produced 15 findings: two argument
+ * parsers, four loop counters, one buffer WRITE, and eight inside minified
+ * vendor bundles. The default now requires an index traceable to input; these
+ * cases keep pinning the index-tracing and bounds-check plumbing through the
+ * restoring option.
+ */
+const UNVALIDATED = [{ reportUnvalidatedIndices: true }];
+
 describe('no-buffer-overread', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe buffer operations', noBufferOverread, {
@@ -140,13 +152,11 @@ describe('no-buffer-overread', () => {
         },
         // slice with single user-controlled argument reports 2 errors
         {
+          // One site, one finding — the slice handler owns the view methods.
           code: 'buffer.slice(userOffset);',
           errors: [
             {
               messageId: 'unsafeBufferSlice',
-            },
-            {
-              messageId: 'missingBoundsCheck',
             },
           ],
         },
@@ -229,12 +239,13 @@ describe('no-buffer-overread', () => {
         // Known Limitation: Variable tracking through function calls not fully supported
         {
           code: 'const idx = validateIndex(userIndex); const val = buffer[idx];',
-          options: [{ boundsCheckFunctions: ['validateIndex'] }],
+          options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
           errors: [{ messageId: 'unsafeBufferAccess' }],
         },
         // Known Limitation: Math.min expressions not fully tracked via variables
         {
           code: 'const safeIdx = Math.min(buffer.length - 1, userIndex); const val = buffer[safeIdx];',
+          options: UNVALIDATED,
           errors: [{ messageId: 'unsafeBufferAccess' }],
         },
       ],
@@ -263,11 +274,13 @@ describe('no-buffer-overread', () => {
         // Variable assigned negative literal
         {
           code: 'const neg = -5; buffer[neg];',
+          options: UNVALIDATED,
           errors: [{ messageId: 'unsafeBufferAccess' }], // Variable tracking limitation
         },
         // Variable assigned unary negative
         {
           code: 'const n = -1; buffer[n];',
+          options: UNVALIDATED,
           errors: [{ messageId: 'unsafeBufferAccess' }], // Variable tracking limitation
         },
       ],
@@ -306,6 +319,97 @@ describe('no-buffer-overread', () => {
               messageId: 'missingBoundsCheck',
             },
           ],
+        },
+      ],
+    });
+  });
+
+  // ── The inversion + the FN fix ─────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change.
+  describe('Shape Is Not An Overread', () => {
+    ruleTester.run('scope, writes, loop bounds and subarray', noBufferOverread, {
+      valid: [
+        // okta/okta-auth-js lib/crypto/base64.ts:57 — a buffer WRITE. If this
+        // is anything it is CWE-787, not the overread this rule reports.
+        `const buffer = new Uint8Array(str.length);
+         for (var i = 0; i < str.length; i++) { buffer[i] = str.charCodeAt(i); }`,
+        // okta/okta-signin-widget .../typingdna.js:1206-1229 — four findings,
+        // every one a loop counter the loop condition already bounds.
+        `function score(revs) {
+           let rec = 0;
+           for (let i = 0; i < revs.length; i++) { rec += Number(revs[i] > 0); }
+           return rec;
+         }`,
+        // The same, bounded by a hoisted limit and by a while loop.
+        `function walk(bytes, len) {
+           let out = 0;
+           for (let i = 0; i < len; i++) { out += bytes[i]; }
+           return out;
+         }`,
+        `function scan(bytes, len) {
+           let i = 0, out = 0;
+           while (i < len) { out += bytes[i]; i++; }
+           return out;
+         }`,
+        // Shopify/cli packages/e2e/scripts/cleanup-apps.ts:566 — `args` became
+        // a "buffer" only because `process.argv.slice(2)` calls a method that
+        // is also a Buffer method. The receiver has to be a buffer too.
+        `const args = process.argv.slice(2);
+         const patternIdx = args.indexOf('--pattern');
+         const nextArg = args[patternIdx + 1];`,
+        // The third arm's inversion, isolated: a real buffer, a real read, an
+        // index this rule cannot prove validated — and no evidence anyone
+        // untrusted chose it. Reported before the change, silent now.
+        `function readAt(buf, n) { return buf[n + 1]; }`,
+        // The write guard, isolated: the index IS user-controlled, so the
+        // user-controlled arm would fire — but this is a WRITE, which is
+        // CWE-787 and a different rule's site.
+        `function store(req) { const buf = Buffer.alloc(8); buf[req.query.i] = 1; }`,
+        // The loop-bound guard, isolated: `index` matches the user-controlled
+        // keyword list, so the arm fires on the old code — but the loop
+        // condition bounds it.
+        `function sum(buf) { let t = 0; for (let index = 0; index < buf.length; index++) { t += buf[index]; } return t; }`,
+        // The scoping fix, isolated: `store` is a Buffer in one function and an
+        // unrelated parameter in another. The file-wide name set made the
+        // second one a buffer too.
+        `function a() { const store = Buffer.alloc(8); return store[0]; }
+         function b(req, store) { return store[req.query.i]; }`,
+        // Scoping: a buffer in one function must not make an unrelated
+        // same-named local in another function a buffer. This is the shape that
+        // produced 8 findings across two minified vendor bundles.
+        `function a() { const buf = Buffer.alloc(8); return buf[0]; }
+         function b(buf, n) { return buf.length + n; }`,
+      ],
+      invalid: [
+        // Still reported: the index really does trace to the request.
+        {
+          code: `app.get('/b', (req, res) => { const buf = Buffer.alloc(64); res.end(buf[req.query.i]); });`,
+          errors: [{ messageId: 'userControlledBufferIndex' }],
+        },
+        // Still reported: a negative literal index is an overread whatever else
+        // is true, and the write/loop guards must not swallow it.
+        {
+          code: `const buf = Buffer.alloc(8); const x = buf[-1];`,
+          errors: [{ messageId: 'negativeBufferIndex' }],
+        },
+        // FALSE NEGATIVE CLOSED: `subarray` is the non-deprecated spelling of
+        // `slice` on a Buffer and returns a view over the SAME memory, so an
+        // unvalidated offset reads exactly as far past the end. It was missing
+        // from bufferMethods entirely, which meant a codebase that had followed
+        // Node's own advice to migrate off `slice` lost the check.
+        {
+          code: `function read(buf, req) { return buf.subarray(req.query.start, req.query.end); }`,
+          errors: [
+            { messageId: 'unsafeBufferSlice' },
+            { messageId: 'unsafeBufferSlice' },
+          ],
+        },
+        // The deprecated spelling still reports, so the fix added a case rather
+        // than moving one.
+        {
+          code: `function read(buf, req) { return buf.slice(req.query.start); }`,
+          errors: [{ messageId: 'unsafeBufferSlice' }],
         },
       ],
     });

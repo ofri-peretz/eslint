@@ -1529,3 +1529,43 @@ describe('Layer 2 - mock context', () => {
   });
 });
 
+describe('Corpus false positives — word-shaped identifiers and enum labels', () => {
+  // 18 of this rule's 21 findings over an 8-repo corpus were one twilio
+  // compliance field name, reported at CVSS 9.8 as a hardcoded credential.
+  // `authorizedRepresentative1FirstName` is 34 characters, mixed case,
+  // alphanumeric, with no ascending run — it cleared every shape test
+  // `looksRandom` had. The ordinal that distinguishes representative 1 from
+  // representative 2 was doing the work of "contains digits, therefore
+  // entropy". Identifiers are numbered; secrets are dense.
+  ruleTester.run('word-shaped identifiers are not random blobs', noHardcodedCredentials, {
+    valid: [
+      'if (params["authorizedRepresentative1FirstName"] !== undefined) { use(); }',
+      'data["AuthorizedRepresentative1FirstName"] = params["authorizedRepresentative1FirstName"];',
+      'const field = "businessRegistrationAuthority2Identifier";',
+      // An enum whose value restates a word of its own key is a label for a
+      // kind of thing, not an instance of one. A secret never spells out the
+      // name of its slot.
+      "const Enums = { RECOVERY_TYPE_PASSWORD: 'PASSWORD' };",
+      "const Enums = { 'RECOVERY_TYPE_PASSWORD': 'PASSWORD' };",
+      "const Enums = { recoveryTypePassword: 'PASSWORD' };",
+      // A key that is neither an identifier nor a string has no tokens to
+      // compare against, so the enum-label escape does not apply.
+      "const o = { 1: 'password' };",
+    ],
+    invalid: [
+      // Still caught: a genuine committed key. Dense, unpronounceable, and it
+      // says nothing about the slot it sits in. Both corpus survivors are this
+      // exact value, in Shopify/cli.
+      {
+        code: "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // The enum-label escape needs the value to match a token of the KEY.
+      // An unrelated value in a credential-named slot is still a finding.
+      {
+        code: "const config = { RECOVERY_TYPE_PASSWORD: '9e1e6889176fd0c795d5c659225e0fae' };",
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+    ],
+  });
+});

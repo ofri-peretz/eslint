@@ -196,11 +196,25 @@ function isPronounceable(token: string): boolean {
  * `incorrectPassword` → true   (the corpus false positive)
  * `SessionCacheProvider` → true
  * `experimental_onToolExecutionStart` → true
- * `aaAA@123` → false  (symbols + digits)
- * `qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP` → false (digits)
+ * `authorizedRepresentative1FirstName` → true  (numbered form field)
+ * `aaAA@123` → false  (symbols)
+ * `qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP` → false
+ *
+ * Digits used to disqualify a string outright, which cost 18 of this rule's
+ * 21 corpus findings: twilio's compliance API declares form fields like
+ * `authorizedRepresentative1FirstName`, and the ordinal that distinguishes
+ * representative 1 from representative 2 pushed a 34-character English
+ * identifier into the high-entropy tier — reported at CVSS 9.8 as a
+ * hardcoded credential. Identifiers are numbered (`address2`, `sha256Hash`,
+ * `oauth2Token`); secrets are not numbered, they are dense. So digits are
+ * allowed but kept sparse, and every alphabetic token must still read as a
+ * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
 export function isNaturalWordString(value: string): boolean {
-  if (!/^[A-Za-z][A-Za-z_\-. ]*$/.test(value)) return false;
+  if (!/^[A-Za-z][A-Za-z0-9_\-. ]*$/.test(value)) return false;
+  const digits = value.replace(/[^0-9]/g, '').length;
+  // Sparse: an ordinal or a well-known numeric suffix, not encoded entropy.
+  if (digits > 0 && (digits / value.length > 0.2 || /[0-9]{4,}/.test(value))) return false;
   const tokens = value
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .split(/[^A-Za-z]+/)
@@ -245,6 +259,13 @@ export function looksRandom(value: string): boolean {
   const classes = charClasses(value);
   if (!classes.lower || !classes.upper || !classes.digit) return false;
   if (hasSequentialRun(value)) return false;
+  // A string made of English words is not random, whatever its entropy.
+  // camelCase identifiers clear every test above — mixed case by construction,
+  // alphanumeric, no ascending run — and a long one clears the entropy bar too.
+  // `authorizedRepresentative1FirstName` (34 chars, twilio's compliance API)
+  // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
+  // corpus findings, all one field name.
+  if (isNaturalWordString(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
@@ -707,6 +728,23 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // { type: 'password', name: 'foo' } — direct property key is label-typed
       if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
         const key = (parent as TSESTree.Property).key;
+        // `RECOVERY_TYPE_PASSWORD: 'PASSWORD'` — an enum whose value restates a
+        // word of its own key is a label for a kind of thing, not an instance
+        // of one. A real secret never spells out the name of its slot.
+        const keyText =
+          key.type === 'Identifier'
+            ? key.name
+            : key.type === 'Literal' && typeof key.value === 'string'
+              ? key.value
+              : null;
+        if (keyText !== null && node.type === 'Literal' && typeof node.value === 'string') {
+          const keyTokens = keyText
+            .replace(/([a-z])([A-Z])/g, '$1_$2')
+            .toUpperCase()
+            .split(/[^A-Z0-9]+/)
+            .filter(Boolean);
+          if (keyTokens.includes(node.value.toUpperCase())) return true;
+        }
         if (key.type === 'Identifier' && LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)) return true;
         if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
           if (LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)) return true;

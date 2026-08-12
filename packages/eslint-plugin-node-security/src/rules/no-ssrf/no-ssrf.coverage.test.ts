@@ -94,6 +94,12 @@ describe('no-ssrf coverage gaps', () => {
       { code: 'fetch(getReq().query.url);' },
       // Member chain rooted at a non-request identifier
       { code: 'fetch(config.query.url);' },
+      // Depth cap: seven identifier hops exhaust the walk before any answer.
+      {
+        code: `const h1 = unknown; const h2 = h1; const h3 = h2; const h4 = h3;
+               const h5 = h4; const h6 = h5; const h7 = h6; const h8 = h7;
+               fetch(h8);`,
+      },
     ],
     invalid: [
       // Preceding member call whose method is not a validation method
@@ -104,6 +110,7 @@ describe('no-ssrf coverage gaps', () => {
           '  return fetch(targetUrl);',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // Preceding NewExpression that is not the URL constructor
@@ -114,6 +121,7 @@ describe('no-ssrf coverage gaps', () => {
           '  return fetch(targetUrl);',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // if-test binary expression with non-equality operator
@@ -123,6 +131,7 @@ describe('no-ssrf coverage gaps', () => {
           '  if (a !== b) { return fetch(targetUrl); }',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // if-test equality on a member that is not hostname/host (left side)
@@ -132,6 +141,7 @@ describe('no-ssrf coverage gaps', () => {
           '  if (cfg.port === 80) { return fetch(targetUrl); }',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // if-test equality on a member that is not hostname/host (right side)
@@ -141,6 +151,7 @@ describe('no-ssrf coverage gaps', () => {
           '  if (80 === cfg.port) { return fetch(targetUrl); }',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // Sparse array in a preceding statement — null items are skipped
@@ -151,11 +162,13 @@ describe('no-ssrf coverage gaps', () => {
           '  return fetch(targetUrl);',
           '}',
         ].join('\n'),
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
       // CallExpression argument that wraps a user-input-named identifier
       {
         code: 'fetch(String(userUrl));',
+        options: [{ reportUnresolvedUrls: true }],
         errors: [{ messageId: 'ssrfVulnerability' }],
       },
     ],
@@ -177,7 +190,21 @@ describe('no-ssrf coverage gaps', () => {
       });
       expect(reports).toHaveLength(0);
 
-      // User-input-sounding identifier with no parent chain: reported
+      // A user-input-sounding identifier is no longer evidence on its own.
+      call({
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'fetch' },
+        arguments: [{ type: 'Identifier', name: 'targetUrl' }],
+      });
+      expect(reports).toHaveLength(0);
+    });
+
+    it('reports the same identifier once reportUnresolvedUrls restores the naming heuristic', () => {
+      const { listeners, reports } = createWithMockContext(noSsrf, {
+        options: [{ reportUnresolvedUrls: true }],
+      });
+      const call = listeners.CallExpression as (n: unknown) => void;
+
       call({
         type: 'CallExpression',
         callee: { type: 'Identifier', name: 'fetch' },

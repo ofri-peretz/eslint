@@ -38,12 +38,59 @@ type RuleOptions = [Options?];
 /**
  * Check if node is a CORS configuration with wildcard or overly permissive origin
  */
+/**
+ * Read a boolean-literal property off a CORS options object.
+ *
+ * The surrounding predicates match the PRINTED text of the whole object, which
+ * cannot tell `credentials: true` from the same words inside a nested object,
+ * a comment, or a string. Partitioning on a regex would be guesswork, so the
+ * partition reads the property.
+ */
+function readsBooleanTrue(
+  node: TSESTree.ObjectExpression,
+  name: string,
+): boolean {
+  return node.properties.some(
+    (property) =>
+      property.type === 'Property' &&
+      !property.computed &&
+      ((property.key.type === 'Identifier' && property.key.name === name) ||
+        (property.key.type === 'Literal' && property.key.value === name)) &&
+      property.value.type === 'Literal' &&
+      property.value.value === true,
+  );
+}
+
+/** `origin: true` or `origin: '*'` — the two shapes that accept any site. */
+function isPermissiveOrigin(node: TSESTree.ObjectExpression): boolean {
+  return node.properties.some(
+    (property) =>
+      property.type === 'Property' &&
+      !property.computed &&
+      ((property.key.type === 'Identifier' && property.key.name === 'origin') ||
+        (property.key.type === 'Literal' && property.key.value === 'origin')) &&
+      property.value.type === 'Literal' &&
+      (property.value.value === true || property.value.value === '*'),
+  );
+}
+
 function isPermissiveCorsConfig(
   node: TSESTree.ObjectExpression,
   sourceCode: TSESLint.SourceCode,
   options: Options,
 ): { isPermissive: boolean; reason: string } {
   const text = sourceCode.getText(node);
+
+  // RULE PARTITION: `origin` permissive AND `credentials: true` is the specific
+  // finding, and `no-cors-credentials-wildcard` owns it — it names the credential
+  // leak and prescribes an explicit-origin allowlist, which is strictly more
+  // than this rule can say. Both fired on the same two corpus sites
+  // (okta-signin-widget playground/mocks/server.js:73 and :79), so one fix was
+  // reported twice at two severities. This rule reports the rest: a permissive
+  // origin with no credentials attached.
+  if (readsBooleanTrue(node, 'credentials') && isPermissiveOrigin(node)) {
+    return { isPermissive: false, reason: '' };
+  }
 
   // Check for origin: '*'
   if (/\borigin\s*:\s*['"`]\*['"`]/.test(text)) {
@@ -61,18 +108,9 @@ function isPermissiveCorsConfig(
     };
   }
 
-  // Check for credentials: true with permissive origin
-  if (/\bcredentials\s*:\s*true\b/.test(text)) {
-    // If credentials are enabled, origin cannot be '*' (browser blocks this)
-    // but origin: true with credentials is dangerous
-    if (/\borigin\s*:\s*true\b/.test(text)) {
-      return {
-        isPermissive: true,
-        reason:
-          'origin: true with credentials: true allows credential leakage to any domain',
-      };
-    }
-  }
+  // The `origin: true` + `credentials: true` case used to be handled here. It
+  // is unreachable now: the partition above returns before it, because
+  // no-cors-credentials-wildcard owns exactly that combination.
 
   return { isPermissive: false, reason: '' };
 }

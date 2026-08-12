@@ -112,7 +112,10 @@ describe('Express module gate', () => {
 
   describe('positive controls — the gate must open for real Express code', () => {
     // `app.use(cors({ origin: '*' }))` is the shape no-permissive-cors keys on.
-    const permissive = `app.use(cors({ origin: '*', credentials: true }));`;
+    // No `credentials: true`: that combination is owned by
+    // no-cors-credentials-wildcard under the rule partition, and this lock is
+    // about the module gate, not about which CORS rule reports.
+    const permissive = `app.use(cors({ origin: '*' }));`;
 
     it('reports once the file imports express', () => {
       const code = `import express from 'express';

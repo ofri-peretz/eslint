@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -88,6 +89,31 @@ describe('require-route-authentication', () => {
       {
         code: `app.get('/profile', function (req, res) { return req.auth.sub; });`,
       },
+      // -------------------------------------------------------------
+      // LOCK: the steps that *establish* authentication cannot require it.
+      //
+      // All fifteen corpus findings were this class — okta-auth-js's IdX
+      // sample router registers credential-recovery and factor-enrolment
+      // steps whose paths contain "password" or "otp", and the vocabulary
+      // had no word for the flow they belong to. Each of these reported
+      // `missingAuthentication` before 2026-08-12.
+      // -------------------------------------------------------------
+      { code: `router.get('/recover-password', showRecoverForm);` },
+      { code: `router.post('/recover-password', startRecovery);` },
+      { code: `router.get('/unlock-account', showUnlockForm);` },
+      { code: `router.post('/select-authenticator-unlock-account', unlock);` },
+      {
+        code: `router.post('/challenge-authenticator/okta_password', proceed);`,
+      },
+      { code: `router.get('/enroll-authenticator/google_otp', showEnroll);` },
+      { code: `router.post('/enroll-authenticator/okta_password', setPass);` },
+      { code: `router.post('/account/activate', activate);` },
+      { code: `router.post('/otp/resend', resend);` },
+      { code: `router.post('/consent/permissions', grantConsent);` },
+      { code: `router.get('/recovery/password', showQuestions);` },
+      { code: `router.post('/enrollment/password', enrolPassword);` },
+      // …but the vocabulary is whole-word, so an ordinary route that merely
+      // shares letters with one of them is still judged on its own merits.
       // Public-by-design endpoints
       { code: `app.post('/login', doLogin);` },
       { code: `app.post('/password/reset', resetPassword);` },
@@ -125,6 +151,28 @@ describe('require-route-authentication', () => {
         code: `app.post('/users', withTenantContext, createUser);`,
         options: [{ authMiddleware: ['withTenantContext'] }],
       },
+      // -------------------------------------------------------------
+      // LOCK: a handler that hands the request on is not the exposed
+      // function. okta-auth-js's SPA sample points three routes at one URL
+      // rewriter so `express.static` can serve the shell.
+      // -------------------------------------------------------------
+      {
+        code: `
+          function redirectToOrigin(req, res, next) { req.url = '/'; next(); }
+          app.get('/login', redirectToOrigin);
+          app.get('/profile', redirectToOrigin);
+        `,
+      },
+      {
+        code: `
+          const rewrite = (req, res, next) => { req.url = '/'; next(); };
+          app.get('/account/settings', rewrite);
+        `,
+      },
+      // inline delegating handler
+      {
+        code: `app.get('/profile', (req, res, next) => { req.url = '/'; next(); });`,
+      },
       // Global guard via a bare app.use
       {
         code: `
@@ -134,6 +182,87 @@ describe('require-route-authentication', () => {
       },
     ]),
     invalid: xp([
+      // LOCK COMPLEMENT: the new public vocabulary is whole-word anchored, so
+      // a route that merely *contains* one of its words is still judged.
+      // `unlocked` is not `unlock`; this route stays reported.
+      {
+        code: `app.post('/unlocked-items/config', saveConfig);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // A session store is credential plumbing, not an auth assertion — it
+      // must not switch the rule off file-wide.
+      {
+        code: `
+          app.use(session({ secret: s }));
+          app.post('/account/password', changePassword);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // COMPLEMENT: a handler that bails with `next()` on one branch but
+      // answers on another IS the endpoint, and stays reported.
+      {
+        code: `
+          function showProfile(req, res, next) { if (!ok) return next(); res.json(profile); }
+          app.get('/profile', showProfile);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a handler that neither calls next nor is resolvable
+      {
+        code: `
+          function showProfile(req, res) { render(profile); }
+          app.get('/profile', showProfile);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a member-expression handler is neither a function nor a name we index
+      {
+        code: `app.get('/profile', controllers.showProfile);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a bare identifier that resolves to nothing in this file
+      {
+        code: `app.get('/profile', importedHandler);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a top-level declaration that is not a function
+      {
+        code: `
+          const showProfile = 42;
+          app.get('/profile', showProfile);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a destructured top-level declaration is not indexed
+      {
+        code: `
+          const { showProfile } = handlers;
+          app.get('/profile', showProfile);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // a declaration with no initialiser
+      {
+        code: `
+          let showProfile;
+          app.get('/profile', showProfile);
+        `,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // A computed member reference contributes only its receiver's name:
+      // `registry['auth']` names the map, not the middleware inside it.
+      {
+        code: `app.post('/account/password', registry['auth'], changePassword);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // LOCK: the auth test reads the middleware *reference*, not the printed
+      // source of the whole registration. An inline middleware whose body
+      // merely mentions `requireAuth` used to match the AUTH_MIDDLEWARE regex
+      // through `sourceCode.getText(arg)` and suppress the finding.
+      {
+        code: `app.post('/account/password', function (req, res, next) { log('requireAuth was removed'); next(); }, changePassword);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
       // REGRESSION: a path-scoped mount is not global auth. `app.use('/public', ...)`
       // guards /public only — before this lock it switched the rule off file-wide.
       {

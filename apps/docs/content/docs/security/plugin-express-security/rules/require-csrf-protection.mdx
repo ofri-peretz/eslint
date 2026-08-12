@@ -30,17 +30,42 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected`                                                                                                                                                                                                                  |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
-This rule detects Express.js routes handling state-changing requests (POST, PUT, PATCH, DELETE) without CSRF protection. CSRF attacks trick authenticated users into performing unwanted actions.
+This rule detects an Express route that mutates state on behalf of a
+browser-held credential without a CSRF token.
+
+### The two preconditions
+
+CSRF is not "a state-changing method without a token". It is _the browser
+attaching a credential the attacker cannot read but can cause to be sent_. Two
+things must hold before the control means anything, and the rule abstains
+unless both do:
+
+1. **Ambient credential material exists in the file.** A cookie, a session, a
+   `cookie-parser` / `express-session` / `passport` import, `req.session`,
+   `req.cookies`, `res.cookie(…)`. With none of them — a bearer-token API, an
+   OAuth callback, a form-post demo — a cross-site request carries no authority
+   and a token would protect nothing.
+2. **The route is authenticated.** Auth middleware in its own chain, a handler
+   that reads a principal, or a router-wide `app.use(requireAuth)`. An endpoint
+   that requires no principal has nothing for a forged request to ride.
+
+### Partition with `require-route-authentication`
+
+Precondition 2 is the exact complement of `require-route-authentication`'s
+test, so the two rules never report the same route. An unauthenticated critical
+route is CWE-306 and that rule owns it; adding a CSRF token there fixes no
+vulnerability. Before 2026-08-12 both rules reported the same seven routes on
+the 8-repo corpus.
 
 ## Examples
 
@@ -48,9 +73,13 @@ This rule detects Express.js routes handling state-changing requests (POST, PUT,
 
 ```javascript
 import express from 'express';
-const app = express();
+import session from 'express-session';
 
-// POST without CSRF protection - VULNERABLE
+const app = express();
+app.use(session({ secret }));
+app.use(requireAuth);
+
+// A session cookie, an authenticated route, no token - VULNERABLE
 app.post('/transfer', (req, res) => {
   transferFunds(req.body);
 });
@@ -78,13 +107,24 @@ app.post('/transfer', csrfProtection, (req, res) => {
 });
 ```
 
+```javascript
+// No cookie and no session anywhere in the file: nothing to forge with.
+// Not reported.
+const router = express.Router();
+router.post('/select-authenticator', (req, res, next) => proceed(req.body));
+
+// Unauthenticated route: require-route-authentication owns this site.
+// Not reported here.
+app.post('/signup', createAccount);
+```
+
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow missing CSRF in test files |
+| Option             | Type       | Default                           | Description                               |
+| ------------------ | ---------- | --------------------------------- | ----------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                           | Allow missing CSRF in test files          |
 | `protectedMethods` | `string[]` | `["post","put","patch","delete"]` | HTTP methods that require CSRF protection |
-| `ignorePatterns` | `string[]` | `[]` | Route patterns to ignore |
+| `ignorePatterns`   | `string[]` | `[]`                              | Route patterns to ignore                  |
 
 ```json
 {

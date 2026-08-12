@@ -15,6 +15,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isAttackerSteerableUrl, isLocationObject } from '../../utils/url-taint';
 
 type MessageIds =
   | 'insecureRedirect'
@@ -33,44 +34,34 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Resolve an identifier to the text of its initialization expression.
- * Scans backward through sibling statements in the same block scope.
+ * Is this call a *navigation*, as opposed to something that merely shares a
+ * method name with one?
+ *
+ * `assign` and `replace` are two of the most overloaded names in JavaScript —
+ * `Object.assign`, `String.prototype.replace`, `Array.prototype.replace` — and
+ * matching them bare turned `Object.assign(parseFromUrlFn, {…})` into an open
+ * redirect. They navigate only when the receiver is a `Location`.
+ *
+ * `redirect` carries no such ambiguity (`res.redirect`, `Response.redirect`),
+ * so it is accepted on any receiver.
  */
-function resolveVariableInit(
-  ident: TSESTree.Identifier,
-  sourceCode: TSESLint.SourceCode
-): string | null {
-  const name = ident.name;
-  let current: TSESTree.Node | undefined = (ident as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-  
-  while (current) {
-    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-    if (!parent) break;
-
-    if (parent.type === 'BlockStatement' || parent.type === 'Program') {
-      const body = parent.type === 'BlockStatement' ? parent.body : parent.body;
-      const idx = body.indexOf(current as TSESTree.Statement);
-      
-      for (let i = idx - 1; i >= 0 && i >= idx - 10; i--) {
-        const stmt = body[i];
-        if (stmt.type === 'VariableDeclaration') {
-          for (const decl of stmt.declarations) {
-            if (
-              decl.id.type === 'Identifier' &&
-              decl.id.name === name &&
-              decl.init
-            ) {
-              return sourceCode.getText(decl.init);
-            }
-          }
-        }
-      }
-    }
-    
-    current = parent;
+function isNavigationSink(node: TSESTree.CallExpression): boolean {
+  const callee = node.callee;
+  if (
+    callee.type !== 'MemberExpression' ||
+    callee.computed ||
+    callee.property.type !== 'Identifier'
+  ) {
+    return false;
   }
-  
-  return null;
+  const method = callee.property.name;
+  if (method === 'redirect') {
+    return true;
+  }
+  return (
+    (method === 'assign' || method === 'replace') &&
+    isLocationObject(callee.object)
+  );
 }
 
 /**
@@ -80,25 +71,12 @@ function isRedirectValidated(
   node: TSESTree.CallExpression,
   sourceCode: TSESLint.SourceCode
 ): boolean {
-  const callText = sourceCode.getText(node);
-
-  // Check if URL is from user input (req.query, req.body, req.params)
-  const userInputPattern = /\b(req\.(query|body|params)|window\.location|document\.location)\b/;
-
-  // Direct check: res.redirect(req.query.returnTo)
-  let hasUserInput = userInputPattern.test(callText);
-
-  // Indirect check: resolve variable references to their init expressions
-  // e.g., const returnUrl = req.query.returnTo; res.redirect(returnUrl);
-  if (!hasUserInput && node.arguments.length > 0) {
-    const arg = node.arguments[0];
-    if (arg.type === 'Identifier') {
-      const resolved = resolveVariableInit(arg, sourceCode);
-      if (resolved && userInputPattern.test(resolved)) {
-        hasUserInput = true;
-      }
-    }
-  }
+  // Taint is decided from the ARGUMENT alone — see utils/url-taint.ts for why
+  // reading the whole call text made every `window.location.assign(…)` a
+  // finding regardless of what was passed to it.
+  const target = node.arguments[0];
+  const hasUserInput =
+    target !== undefined && isAttackerSteerableUrl(target, sourceCode);
 
   if (!hasUserInput) {
     // Not from user input, assume safe
@@ -258,34 +236,30 @@ ignoreInTests = true
      * Check redirect calls and assignments
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
-      // Check for res.redirect, window.location, etc.
-      if (node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier') {
-        const methodName = node.callee.property.name;
-        
-        if (['redirect', 'replace', 'assign'].includes(methodName)) {
-          // Check if redirect URL is validated
-          if (!isRedirectValidated(node, sourceCode)) {
-            context.report({
-              node,
-              messageId: 'insecureRedirect',
-              suggest: [
-                {
-                  messageId: 'whitelistDomains',
-                  fix: () => null,
-                },
-                {
-                  messageId: 'validateRedirect',
-                  fix: () => null,
-                },
-                {
-                  messageId: 'useRelativeUrl',
-                  fix: () => null,
-                },
-              ],
-            });
-          }
-        }
+      // Check for res.redirect, location.assign/replace, etc.
+      if (!isNavigationSink(node)) {
+        return;
+      }
+      // Check if redirect URL is validated
+      if (!isRedirectValidated(node, sourceCode)) {
+        context.report({
+          node,
+          messageId: 'insecureRedirect',
+          suggest: [
+            {
+              messageId: 'whitelistDomains',
+              fix: () => null,
+            },
+            {
+              messageId: 'validateRedirect',
+              fix: () => null,
+            },
+            {
+              messageId: 'useRelativeUrl',
+              fix: () => null,
+            },
+          ],
+        });
       }
     }
 
@@ -303,11 +277,10 @@ ignoreInTests = true
           node.left.property.type === 'Identifier' &&
           ['href', 'replace', 'assign'].includes(node.left.property.name)) {
 
-        // Check if assignment value comes from user input
-        const rightText = sourceCode.getText(node.right);
-        const userInputPattern = /\b(req\.(query|body|params)|window\.location|document\.location)\b/;
-
-        if (userInputPattern.test(rightText)) {
+        // Check if assignment value comes from user input. Same AST test as
+        // the call path — a `window.location` mentioned on the LEFT of the
+        // assignment is the sink, and says nothing about the value.
+        if (isAttackerSteerableUrl(node.right, sourceCode)) {
           context.report({
             node,
             messageId: 'insecureRedirect',

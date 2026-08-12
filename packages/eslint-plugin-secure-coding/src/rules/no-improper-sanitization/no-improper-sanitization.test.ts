@@ -141,14 +141,165 @@ describe('no-improper-sanitization', () => {
           ],
         },
 
-        // Chained replacement flagged individually (Known Limitation)
+        // A chain that never becomes complete still reports — once.
         {
-          code: 'element.innerHTML = userInput.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/&/g, "&amp;");',
-          errors: [
-            { messageId: 'incompleteHtmlEscaping' },
-            { messageId: 'incompleteHtmlEscaping' },
-            { messageId: 'incompleteHtmlEscaping' },
-          ],
+          code: 'element.innerHTML = userInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");',
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * Wild-corpus regressions — 14 findings, 0 true positives.
+   *
+   * Two defects, both "shape is not meaning":
+   *
+   * 1. `sourceCode.getText(node)` was read at EVERY link of a `.replace()`
+   *    chain, so a chain that completes at its end reported once per link that
+   *    was still incomplete halfway through. A complete five-character escaper
+   *    reported twice.
+   * 2. The trigger was the text probe `/replace\(\s*\/[<>]/` — a regex literal
+   *    that merely STARTS with `<` or `>`. Whitespace trimming, comment
+   *    stripping and `</head>` script injection all matched, and none of them
+   *    is escaping anything.
+   */
+  describe('corpus regressions - replace() chains', () => {
+    ruleTester.run('complete escapers and non-escapers', noImproperSanitization, {
+      valid: [
+        // Shopify CLI packages/store/.../auth/callback.ts:18-19 — a complete
+        // escaper reported twice, once at `.replace(/</…)` and once at
+        // `.replace(/>/…)`, because the text read at those links did not yet
+        // contain `&quot;`. Judged at the end of the chain it is complete.
+        {
+          code: `const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')`,
+        },
+        // Shopify CLI theme-environment/hot-reload/error-page.ts:9 — all five
+        // characters, still reported twice.
+        {
+          code: `function escapeHtml(unsafe) {
+            return unsafe
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;')
+          }`,
+        },
+        // okta-signin-widget babel-plugin-handlebars-inline-precompile/
+        // handlebars/patch-precompile.js:6 — whitespace normalisation. Three
+        // findings, because `/>\s+/` starts with `>`.
+        {
+          code: `template = template
+            .replace(/\\s+</g, '<')
+            .replace(/>\\s+/g, '>')
+            .replace(/}}\\s+{{/g, '}}{{')
+            .replace(/\\s+/g, ' ')
+            .trim();`,
+        },
+        // Shopify CLI hot-reload/server.ts:468 — comment stripping. Three findings.
+        {
+          code: `otherContent = normalizeContent(
+            otherContent
+              .replace(/<!--[\\s\\S]*?-->/g, '')
+              .replace(/{%\\s*comment\\s*%}[\\s\\S]*?{%\\s*endcomment\\s*%}/g, '')
+              .replace(/{%\\s*doc\\s*%}[\\s\\S]*?{%\\s*enddoc\\s*%}/g, ''),
+          )`,
+        },
+        // Shopify CLI hot-reload/server.ts:397 and :411 — injecting a <script>
+        // tag before </head>. The rule called tag injection "incomplete HTML
+        // escaping".
+        {
+          code: `return html.replace(/<\\/head>/, '<script src="x" defer></script></head>')`,
+        },
+        // Removing markup is not escaping it either.
+        { code: `return html.replace(scriptRE, '')` },
+        // The pattern must BE the tag character, not merely start with it.
+        { code: `const s = html.replace(/<b>/g, '&lt;b&gt;')` },
+        // A non-entity replacement is a rewrite, not an escape.
+        { code: `const s = html.replace(/</g, '[')` },
+        // A computed pattern yields no character the rule can name.
+        { code: `const s = html.replace(tagRE, '&lt;')` },
+        { code: `const s = html.replace(new RegExp(ch, 'g'), '&lt;')` },
+        // A computed replacement yields no entity the rule can name.
+        { code: `const s = html.replace(/</g, entityFor('<'))` },
+        // A non-string literal on either side is not a pattern or an entity.
+        { code: `const s = html.replace(/</g, 0)` },
+        { code: `const s = html.replace(1, '&lt;')` },
+        // A template replacement with an expression is not statically known.
+        { code: 'const s = html.replace(/</g, `${entity}`)' },
+        // Something other than `.replace` consuming the result ends the chain
+        // at the replace, and the chain is complete.
+        {
+          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').trim()`,
+        },
+      ],
+      invalid: [
+        // The genuine shape must still report: tags escaped, quotes and
+        // ampersand left alone. If this ever goes quiet the narrowing above
+        // has become a false negative.
+        {
+          code: `const s = html.replace(/</g, '&lt;').replace(/>/g, '&gt;')`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A template-literal replacement with no expressions is static text
+        // and counts as an entity.
+        {
+          code: 'const s = html.replace(/</g, `&lt;`)',
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A string-literal pattern (not a regex) still names the character.
+        {
+          code: `const s = html.replace('<', '&lt;')`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // Escaping continues after a non-escaping link — the chain is walked
+        // whole, so the trailing `.trim`-style link does not hide it.
+        {
+          code: `const s = html.replace(/</g, '&lt;').replace(/\\s+/g, ' ')`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // `&amp;` present, quotes missing.
+        {
+          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;')`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // Quotes present, `&amp;` missing — the classic double-escape hole.
+        {
+          code: `const s = html.replace(/</g, '&lt;').replace(/"/g, '&quot;')`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A non-static replacement contributes nothing to the entity set, so
+        // the chain stays incomplete rather than being skipped.
+        {
+          code: `const s = html.replace(/</g, '&lt;').replace(/x/g, fn)`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // --- isMidChain / isReplaceCall shapes that do NOT continue a chain.
+        // The result is consumed by a computed member call.
+        {
+          code: `const s = html.replace(/</g, '&lt;')[key](x)`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A `.replace()` grandparent whose callee is NOT this node's parent.
+        {
+          code: `foo.replace(bar[html.replace(/</g, '&lt;')], z)`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A grandparent call with a plain-identifier callee.
+        {
+          code: `foo(bar[html.replace(/</g, '&lt;')])`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A grandparent call whose callee property is a Literal, not an Identifier.
+        {
+          code: `foo['bar'](baz[html.replace(/</g, '&lt;')])`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
+        },
+        // A grandparent call to a method that is not `replace`.
+        {
+          code: `foo.bar(baz[html.replace(/</g, '&lt;')])`,
+          errors: [{ messageId: 'incompleteHtmlEscaping' }],
         },
       ],
     });
@@ -316,7 +467,10 @@ describe('no-improper-sanitization', () => {
           property: { type: 'Identifier', name: 'replace' },
           computed: false,
         },
-        arguments: [],
+        arguments: [
+          { type: 'Literal', value: null, regex: { pattern: '<', flags: 'g' } },
+          { type: 'Literal', value: '&lt;' },
+        ],
       });
       expect(reports).toHaveLength(1);
       expect(reports[0].data?.line).toBe('0');

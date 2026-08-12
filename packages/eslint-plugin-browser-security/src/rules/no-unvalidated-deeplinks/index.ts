@@ -10,6 +10,7 @@
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { isAttackerSteerableUrl } from '../../utils/url-taint';
 
 type MessageIds = 'violationDetected';
 
@@ -66,13 +67,26 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
           }
         }
         
-        // Detect navigation.navigate with external URLs
+        // Detect navigation.navigate with an EXTERNALLY STEERABLE target.
+        //
+        // `.navigate(someVariable)` on its own is not a deep link. Backbone's
+        // `router.navigate(fragment)` sets an in-app history fragment and
+        // React Navigation's `navigation.navigate(routeName)` takes a screen
+        // name — neither can leave the origin, and neither is CWE-939. All
+        // seven corpus findings for this rule were Backbone fragments like
+        // `router.navigate('signin/poll')` held in a local const.
+        //
+        // The sink only becomes a deep link when the target is a URL somebody
+        // outside the app chose, so that is what we test — see
+        // utils/url-taint.ts. `Linking.openURL` above needs no such test: it
+        // hands the string to the OS URL-scheme handler, which is the sink
+        // CWE-939 is about.
         if (node.callee.type === 'MemberExpression' &&
             node.callee.property.type === 'Identifier' &&
             node.callee.property.name === 'navigate') {
-          
+
           const urlArg = node.arguments[0];
-          if (urlArg && urlArg.type === 'Identifier') {
+          if (urlArg && isAttackerSteerableUrl(urlArg, context.sourceCode)) {
             report(node);
           }
         }

@@ -77,13 +77,45 @@ function literalTextOf(node: TSESTree.Node): string {
  * Syntax that only appears in an XPath expression.
  *
  * A lone `/` is a path separator in every language; these are not. Covered:
- * the descendant axis (`//`), an attribute predicate (`[@id=`), any explicit
+ * the descendant axis (`//`), an attribute predicate (`[@id=`), an explicit
  * axis (`child::`), the XPath node tests and functions (`text()`, `node()`,
  * `contains(`, `starts-with(`, `local-name(`, `position()`), and a location
  * step carrying a predicate (`/user[`), which is the form that has no `//`.
+ *
+ * The axis alternative names the thirteen XPath axes rather than matching a
+ * bare `::`. Shopify CLI builds a cache key as
+ * `` `${topic}::${uri}::${filter}` `` and `::` alone called it XPath. An axis
+ * is `axisname::nodetest`; two colons on their own are a separator in a dozen
+ * unrelated conventions.
  */
-const XPATH_SYNTAX =
-  /\/\/|\[@|::|\btext\(\)|\bnode\(\)|\bcontains\(|\bstarts-with\(|\blocal-name\(|\bposition\(\)|\/[A-Za-z_*][\w.-]*\[/;
+const XPATH_AXIS =
+  'ancestor-or-self|ancestor|attribute|child|descendant-or-self|descendant|following-sibling|following|namespace|parent|preceding-sibling|preceding|self';
+const XPATH_SYNTAX = new RegExp(
+  // `/*` is the XPath wildcard node test — a whole location step, so nothing
+  // follows it but the next step. `**/*.graphql`, `${dir}/*.extension.toml`
+  // and `/** … */` are globs and comments; they continue past the `*`.
+  `\\/\\/|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+);
+
+/**
+ * Is this literal text an XPath expression?
+ *
+ * URI separators are removed first. `://` cannot occur in XPath — an axis
+ * `::` must be followed by a node test, never by `/` — but it is exactly the
+ * `//` the descendant-axis alternative looks for, so every URI, GID and
+ * scheme-prefixed identifier in the corpus read as XPath:
+ *
+ *   return `gid://shopify/BulkOperation/${id}`     Shopify CLI, ×4
+ *   return encodeGid(`gid://organization/ShopifyShop/${id}`)
+ *   new URL(req.protocol + '://' + req.get('host') + req.originalUrl)   ×2
+ *
+ * The last is why the check cannot be "strip a known scheme": the scheme is
+ * `req.protocol`, an interpolation, so the literal text is bare `://`.
+ * 7 of this rule's 9 wild-corpus findings were the `://` in a URL.
+ */
+function looksLikeXpath(text: string): boolean {
+  return XPATH_SYNTAX.test(text.replace(/:\/\//g, ' '));
+}
 
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xpath-injection',
@@ -646,7 +678,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // disagree: this handler required `//`, so a location step carrying a
         // predicate — `/root/node[${input}]` — was XPath injection to one path
         // and invisible to the other.
-        if (!XPATH_SYNTAX.test(staticText)) {
+        if (!looksLikeXpath(staticText)) {
           return;
         }
 
@@ -719,7 +751,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // so `render.text() + input` and a `/* //user[@id] */` comment both
         // matched. Only the string literals actually being concatenated say
         // anything about the string being built.
-        if (!XPATH_SYNTAX.test(literalTextOf(node))) {
+        if (!looksLikeXpath(literalTextOf(node))) {
           return;
         }
 
@@ -802,7 +834,20 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           node.init.type === 'Literal' &&
           typeof node.init.value === 'string'
         ) {
-          if (containsDangerousXpath(node.init.value)) {
+          // `containsDangerousXpath` alone treats `..` as parent-axis
+          // traversal, which is also every relative filesystem path:
+          //
+          //   const OKTA_ENV_SCRIPT_PATH = '../env/index.js';
+          //       okta-auth-js samples/gulpfile.js:37
+          //
+          // The name matched on `path` and the value matched on `..`, and
+          // neither says the string is XPath. The literal has to look like an
+          // XPath expression before its contents can be dangerous XPath — the
+          // same gate the template path applies via reachesXpathSink.
+          if (
+            looksLikeXpath(node.init.value) &&
+            containsDangerousXpath(node.init.value)
+          ) {
             // FALSE POSITIVE REDUCTION
             if (
               safetyChecker.isSafe(node.init, context) ||

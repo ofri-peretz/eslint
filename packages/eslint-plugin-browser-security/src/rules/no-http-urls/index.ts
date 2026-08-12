@@ -11,7 +11,7 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isXmlNamespaceUri } from '../../utils/namespace-uris';
+import { isXmlNamespaceUri, isTrustworthyLocalUrl } from '../../utils/namespace-uris';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -137,12 +137,48 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       return undefined;
     }
 
+    /**
+     * Is the *authority* of this `http://` template chunk supplied by an
+     * interpolation rather than written down?
+     *
+     * ``` `http://${host}:${port}` ``` is not a hardcoded HTTP URL — it is a
+     * configured endpoint, and this rule has no host to judge. Five of the
+     * eight corpus findings were exactly this shape (webpack dev-server proxy
+     * targets and the Shopify CLI's local theme server), each reported with
+     * the message `Hardcoded HTTP URL detected: "http://"`, which is not true
+     * of the code and not actionable.
+     *
+     * Deliberately narrow: only a *fully* interpolated authority is unknowable.
+     * ``` `http://api.${env}.com/x` ``` still reports, because `api.` is
+     * already enough to know the host is not loopback.
+     */
+    function hasInterpolatedAuthority(node: TSESTree.TemplateElement, cooked: string): boolean {
+      const rest = /^http:\/\/(.*)$/is.exec(cooked)?.[1];
+      if (rest === undefined) return false;
+      // The authority runs to the first path / query / fragment delimiter.
+      const authority = rest.split(/[/?#]/)[0];
+      // Something was written down — judge it normally.
+      if (authority !== '') return false;
+      // Nothing written down, and another chunk follows: the next `${…}` IS
+      // the authority.
+      return !node.tail;
+    }
+
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
 
       // An XML namespace URI is an opaque identifier, never fetched. Rewriting
       // it to https breaks the document, so reporting it is worse than noise.
       if (isXmlNamespaceUri(value, declarationName(node))) {
+        return;
+      }
+
+      // Loopback origins are potentially trustworthy per the Secure Contexts
+      // spec — no browser treats them as cleartext-transmission risk, and no
+      // packet leaves the machine. Shared with `detect-mixed-content` so the
+      // two rules cannot disagree about what "local" means; it covers `::1`,
+      // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
+      if (isTrustworthyLocalUrl(value)) {
         return;
       }
 
@@ -164,8 +200,9 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         }
       },
       TemplateElement(node) {
-        if (node.value.cooked) {
-          checkStringValue(node, node.value.cooked);
+        const cooked = node.value.cooked;
+        if (cooked && !hasInterpolatedAuthority(node, cooked)) {
+          checkStringValue(node, cooked);
         }
       },
     };
