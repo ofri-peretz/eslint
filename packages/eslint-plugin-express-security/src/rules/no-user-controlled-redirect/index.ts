@@ -240,9 +240,10 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
       const visit = (n: unknown): void => {
         if (found || n === null || typeof n !== 'object') return;
         const candidate = n as TSESTree.Node & Record<string, unknown>;
-        // Not an AST node: `loc`, `range`, and friends. Arrays never arrive
-        // here — the property walk below spreads them into their elements.
-        if (typeof candidate.type !== 'string') return;
+        if (typeof candidate.type !== 'string') {
+          if (Array.isArray(n)) (n as unknown[]).forEach(visit);
+          return;
+        }
         if (hit(candidate)) {
           found = true;
           return;
@@ -311,27 +312,47 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
      * implementation.
      */
     function hasOriginGuard(source: TSESTree.Node, from: TSESTree.Node): boolean {
-      let scope: TSESTree.Node | undefined = from;
-      while (
-        scope &&
-        scope.type !== AST_NODE_TYPES.FunctionExpression &&
-        scope.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
-        scope.type !== AST_NODE_TYPES.FunctionDeclaration &&
-        scope.type !== AST_NODE_TYPES.Program
+      // Every node in an ESLint AST has a Program root, and Program terminates this
+      // walk — so `scope` is always defined on exit. Seeding from the source file's
+      // Program says that in code rather than with an unreachable null check.
+      let scope: TSESTree.Node = context.sourceCode.ast;
+      for (
+        let candidate: TSESTree.Node | undefined = from;
+        candidate;
+        candidate = candidate.parent as TSESTree.Node | undefined
       ) {
-        scope = scope.parent as TSESTree.Node | undefined;
+        if (
+          candidate.type === AST_NODE_TYPES.FunctionExpression ||
+          candidate.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          candidate.type === AST_NODE_TYPES.FunctionDeclaration ||
+          candidate.type === AST_NODE_TYPES.Program
+        ) {
+          scope = candidate;
+          break;
+        }
       }
 
-      // The walk always terminates on a function or on `Program`, so there is
-      // no undefined case to guard; `search` treats a non-object root as a
-      // miss regardless.
+      // stopAtFn: the guard has to bail out of THIS handler. A check nested inside
+      // another function returns from that function, so the redirect below still
+      // runs unguarded — descending into it would let
+      //   const check = () => { if (badOrigin) return res.sendStatus(400); };
+      //   check();
+      //   res.redirect(req.query.url);
+      // silence the rule while validating nothing.
+      // Search the handler's BODY, not the handler node itself: with stopAtFn set,
+      // starting at the function would halt on that very node and find nothing.
+      const body: unknown =
+        scope.type === AST_NODE_TYPES.Program
+          ? scope.body
+          : (scope as { body?: unknown }).body;
+
       return search(
-        scope,
+        body,
         (n) =>
           n.type === AST_NODE_TYPES.IfStatement &&
           containsOriginCheck(n.test, source) &&
           exitsHandler(n.consequent),
-        false,
+        true,
       );
     }
 
