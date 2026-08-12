@@ -94,15 +94,44 @@ Worth noting for our own rules: this is a **silent** scoring failure. Nothing
 errored, no file was missing, and the reported filename was correct — only the
 parsed bytes came from somewhere else.
 
-### 3. Fuzzing: 0 → 10 · **+0.56** · one day
+### 3. Fuzzing: 0 → 10 · **+0.56** · ~~one day~~ **done, in an afternoon**
 
-Scorecard detects OSS-Fuzz membership or a `.clusterfuzzlite/` directory.
+The one-day estimate assumed ClusterFuzzLite. It was wrong about what Scorecard
+detects: alongside OSS-Fuzz and `.clusterfuzzlite/`, the check recognises
+**property-based testing**, and for TypeScript that means a direct import of
+`fast-check`. Confirmed in `checks/raw/fuzzing.go` and then verified end-to-end
+against the official container:
 
-An ESLint rule is close to an ideal fuzz target: feed it arbitrary parseable
-JavaScript and assert it neither throws nor hangs. We already have
-`scripts/ilb-fuzz.ts` — the work is wiring a ClusterFuzzLite harness around it
-so the detection fires, and it buys real robustness, not just a number. Rules that
-crash on exotic-but-valid syntax are a live risk with 465 of them.
+```text
+score: 10 | project is fuzzed
+  Info: TypeScriptPropertyBasedTesting integration found
+```
+
+`scripts/ilb-fuzz.ts` was the wrong base to build on: it is an LLM-driven
+FP/FN candidate generator that needs `ANTHROPIC_API_KEY` and costs ~$10 a
+fleet run. Useful, but it is not a fuzzer and cannot run in CI.
+
+`scripts/__tests__/rule-fuzz.test.ts` is. It asserts one deliberately weak
+property — **for any parseable program, linting terminates without throwing** —
+across all 30 plugins with every rule enabled. Generation is biased toward
+security-relevant shapes (sinks, optional chaining, spreads, computed members,
+template literals) because uniform noise mostly produces syntax errors that
+never reach rule code; the inputs that break rules are *valid* programs with an
+unusual AST.
+
+This earns its place independently of the score. A rule that throws takes the
+whole ESLint run down — the user stops linting altogether, which is issue #514's
+failure mode, and we ship 409 rules.
+
+Two guards keep the harness from going quietly vacuous, both asserted in the
+file itself: a deliberately throwing rule must propagate out of `linter.verify`
+(so the harness can fail at all), and the generator must produce findings
+against a real plugin (so it cannot drift into emitting inert code). Runs in
+~3s, inside `npm run test:scripts`, which `quality.yml` already executes.
+
+**Not a substitute for ClusterFuzzLite**, which would fuzz continuously with
+coverage guidance and corpus retention rather than 25 fresh draws per plugin per
+run. Revisit if crashes start appearing that this depth misses.
 
 ### 4. Branch-Protection: -1 → 10 · **+0.25** · 30 minutes
 
