@@ -72,7 +72,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt-security',
-    version: '2.3.4',
+    version: '2.4.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -83,19 +83,19 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // CRITICAL - Algorithm attacks
-  'jwt/no-algorithm-none': 'error',
-  'jwt/no-algorithm-confusion': 'error',
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
 
   // HIGH - Verification and secrets
-  'jwt/require-algorithm-whitelist': 'error',
-  'jwt/no-decode-without-verify': 'error',
-  'jwt/no-weak-secret': 'error',
-  'jwt/no-hardcoded-secret': 'error',
-  'jwt/no-timestamp-manipulation': 'error', // LightSEC 2025
+  'jwt-security/require-algorithm-whitelist': 'error',
+  'jwt-security/no-decode-without-verify': 'error',
+  'jwt-security/no-weak-secret': 'error',
+  'jwt-security/no-hardcoded-secret': 'error',
+  'jwt-security/no-timestamp-manipulation': 'error', // LightSEC 2025
 
   // MEDIUM - Best practices
-  'jwt/require-expiration': 'error',
-  'jwt/no-sensitive-payload': 'warn',
+  'jwt-security/require-expiration': 'error',
+  'jwt-security/no-sensitive-payload': 'warn',
 };
 
 /**
@@ -104,21 +104,21 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  */
 const strictRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // All core rules as errors
-  'jwt/no-algorithm-none': 'error',
-  'jwt/no-algorithm-confusion': 'error',
-  'jwt/require-algorithm-whitelist': 'error',
-  'jwt/no-decode-without-verify': 'error',
-  'jwt/no-weak-secret': 'error',
-  'jwt/no-hardcoded-secret': 'error',
-  'jwt/require-expiration': 'error',
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
+  'jwt-security/require-algorithm-whitelist': 'error',
+  'jwt-security/no-decode-without-verify': 'error',
+  'jwt-security/no-weak-secret': 'error',
+  'jwt-security/no-hardcoded-secret': 'error',
+  'jwt-security/require-expiration': 'error',
 
   // 2025 Research - Full replay attack prevention
-  'jwt/require-issued-at': 'error',
-  'jwt/require-issuer-validation': 'error',
-  'jwt/require-audience-validation': 'error',
-  'jwt/no-timestamp-manipulation': 'error',
-  'jwt/require-max-age': 'error',
-  'jwt/no-sensitive-payload': 'error',
+  'jwt-security/require-issued-at': 'error',
+  'jwt-security/require-issuer-validation': 'error',
+  'jwt-security/require-audience-validation': 'error',
+  'jwt-security/no-timestamp-manipulation': 'error',
+  'jwt-security/require-max-age': 'error',
+  'jwt-security/no-sensitive-payload': 'error',
 };
 
 /**
@@ -127,9 +127,9 @@ const strictRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  */
 const legacyRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Only most critical rules
-  'jwt/no-algorithm-none': 'error',
-  'jwt/no-algorithm-confusion': 'error',
-  'jwt/no-hardcoded-secret': 'warn',
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
+  'jwt-security/no-hardcoded-secret': 'warn',
 };
 
 /**
@@ -143,10 +143,16 @@ export const configs = {
    */
   flagship: {
     plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
       jwt: plugin,
     },
     rules: {
-      'jwt/no-algorithm-none': 'error',
+      'jwt-security/no-algorithm-none': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -155,6 +161,12 @@ export const configs = {
    */
   recommended: {
     plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
       jwt: plugin,
     },
     rules: recommendedRules,
@@ -165,6 +177,12 @@ export const configs = {
    */
   strict: {
     plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
       jwt: plugin,
     },
     rules: strictRules,
@@ -175,6 +193,12 @@ export const configs = {
    */
   legacy: {
     plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
       jwt: plugin,
     },
     rules: legacyRules,
@@ -185,6 +209,12 @@ export const configs = {
    */
   all: {
     plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
       jwt: plugin,
     },
     rules: strictRules,

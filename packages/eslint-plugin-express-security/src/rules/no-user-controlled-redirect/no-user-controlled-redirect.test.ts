@@ -79,13 +79,146 @@ describe('no-user-controlled-redirect', () => {
           res.redirect(next);
         `,
       },
+      // The pattern in Express's own "Production Best Practices: Security"
+      // page and the OWASP Unvalidated Redirects cheat sheet. Reporting this
+      // told readers their documented mitigation was the vulnerability.
+      {
+        code: `
+          app.use((req, res) => {
+            try {
+              if (new URL(req.query.url).host !== 'example.com') {
+                return res.status(400).end('Unsupported redirect');
+              }
+            } catch (e) {
+              return res.status(400).end('Invalid url');
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+      },
+      // Same guard via hostname
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.next).hostname !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.next);
+          });
+        `,
+      },
+      // Same guard via origin, throwing instead of returning
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.next).origin !== 'https://example.com') {
+              throw new Error('bad redirect');
+            }
+            res.redirect(req.query.next);
+          });
+        `,
+      },
       // Not a redirect call
       { code: `res.send(req.query.message);` },
       { code: `res.json({ url: req.body.url });` },
       // Numeric status code + literal target
       { code: `response.redirect(302, '/logout');` },
+      // Guard at module top level: the enclosing scope walk terminates at Program.
+      {
+        code: `
+          if (new URL(req.query.url).host !== 'example.com') throw new Error('bad');
+          res.redirect(req.query.url);
+        `,
+      },
+      // Computed access with a literal key: the guard and the redirect name the
+      // same property, so the paths must compare equal.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query['url']).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query['url']);
+          });
+        `,
+      },
     ]),
     invalid: xp([
+      // Computed access with DIFFERENT literal keys is a different source.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query['a']).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query['b']);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // Dotted vs computed access of the same key compare as different node types.
+      // Reporting is the conservative direction: a guard the rule cannot prove
+      // applies to this exact source should not silence it.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.url).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query['url']);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // Both accesses are computed, but the keys are different NODE TYPES
+      // (numeric literal vs identifier), so the paths cannot be proven equal.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query[0]).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query[idx]);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // A computed key that is not statically comparable cannot establish sameness.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query[key()]).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query[key()]);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // The bail-out lives in a NESTED function, so it never exits this handler.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            const check = () => {
+              if (new URL(req.query.url).host !== 'example.com') return res.sendStatus(400);
+            };
+            check();
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // A guard on a DIFFERENT source must not launder this redirect.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.other).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // An origin check that does not bail out is not a guard.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.url).host !== 'example.com') {
+              log('suspicious');
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+
       // Direct req.query access
       {
         code: `res.redirect(req.query.returnUrl);`,

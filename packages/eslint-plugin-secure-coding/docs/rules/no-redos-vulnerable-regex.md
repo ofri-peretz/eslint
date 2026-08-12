@@ -28,7 +28,7 @@ ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-sec
 | **Category**   | Security |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration         |
 | **Best For**    | Production applications handling user input     |
-| **Suggestions** | ✅ Advice on using atomic groups/safe libraries |
+| **Suggestions** | ❌ None — the message names the ambiguity and the fix |
 
 ## Vulnerability and Risk
 
@@ -113,7 +113,8 @@ This rule accepts an options object:
 {
   "rules": {
     "secure-coding/no-redos-vulnerable-regex": ["error", {
-      "allowCommonPatterns": false, // Default: false. Allow some common but potentially risky patterns if safe in context.
+      // Deprecated and ignored; gated the removed heuristic layer.
+      "allowCommonPatterns": false,
       "maxPatternLength": 500       // Default: 500. Maximum length of regex string to analyze.
     }]
   }
@@ -155,13 +156,25 @@ import isEmail from 'validator/lib/isEmail';
 const valid = isEmail(input);
 ```
 
-## LLM-Based Suggestions
+## How detection works
 
-The rule provides guidance on how to fix detected patterns:
+Every pattern goes to [`scslre`](https://github.com/RunDevelopment/scslre), the
+NFA analyser `eslint-plugin-regexp` uses. It builds the automaton and looks for
+genuine ambiguity, and its verdict is **final**:
 
-- **"Use Atomic Groups"**: Suggests simulating atomic groups or using `re2`.
-- **"Restructure Regex"**: Recommends removing nesting or overlaps.
-- **"Use Safe Library"**: Suggests using `validator` or `zod` for common patterns like emails.
+- **Reports** — a self-loop or cross-quantifier trade was found. The message
+  names which, and whether backtracking is exponential or polynomial.
+- **Clean** — analysed and not vulnerable. Nothing else gets to overrule this.
+- **Unparseable** — the pattern is not a regex at all. `new RegExp("(a+")`
+  throws at construction and can never backtrack, so it is *not* reported here.
+  It is a real bug, but a different one.
+
+There is deliberately no pattern-matching fallback. An earlier version kept a
+table of regexes matched against the pattern *text*, which reported every
+pattern the analyser had already cleared — including
+`/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/`, which is anchored at both
+ends and linear — and reported invalid syntax as `CRITICAL` ReDoS. Counting
+quantifier characters is not the same as finding quantifier nesting.
 
 ## Known False Negatives
 
@@ -211,5 +224,5 @@ obj[method](userInput);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowCommonPatterns` | `boolean` | `false` | Allow certain common patterns |
+| `allowCommonPatterns` | `boolean` | `false` | **Deprecated and ignored.** Gated the removed heuristic layer; still accepted so existing configs load. Removed in the next major. |
 | `maxPatternLength` | `number` | `500` | Maximum pattern length to analyze |

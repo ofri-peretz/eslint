@@ -21,7 +21,20 @@ export interface Options {
   /** Patterns to ignore (regex strings). Default: [] */
   ignorePatterns?: string[];
 
-  /** Allow credentials in test files. Default: false */
+  /**
+   * Allow credentials in test files. Default: true
+   *
+   * Defaulted to `false` until a corpus scan showed 17 of 18 findings on a real
+   * repository were fixtures in `integration/auth.test.js`. The exemption
+   * existed and worked; nothing ever turned it on, because `configs.recommended`
+   * registers this rule as bare `'error'` with no options. The default
+   * configuration therefore reported ~94% noise on any repository with tests.
+   *
+   * A credential in a test fixture is not an exploitable finding for this rule.
+   * Committed real secrets are a secret-scanning concern (gitleaks, trufflehog),
+   * which scans history and rotates keys — things a linter cannot do. Set
+   * `allowInTests: false` to restore the old behaviour.
+   */
   allowInTests?: boolean;
 
   /** Minimum length for credential detection. Default: 8 */
@@ -500,7 +513,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           },
           allowInTests: {
             type: 'boolean',
-            default: false,
+            default: true,
             description: 'Allow credentials in test files',
           },
           minLength: {
@@ -568,7 +581,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       ignorePatterns: [],
-      allowInTests: false,
+      allowInTests: true,
       minLength: 8,
       detectApiKeys: true,
       detectPasswords: true,
@@ -583,7 +596,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       ignorePatterns = [],
-      allowInTests = false,
+      allowInTests = true,
       minLength = 8,
       detectApiKeys = true,
       detectPasswords = true,

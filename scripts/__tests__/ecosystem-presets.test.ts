@@ -52,23 +52,31 @@ describe('flagship preset', () => {
   // `react/hooks-exhaustive-deps` form. Spec + code are now in lockstep.
   const EXPECTED_FLAGSHIP_RULES = [
     'import-next/no-cycle',
-    'pg/no-unsafe-query',
+    'postgresql-security/no-unsafe-query',
     'secure-coding/no-hardcoded-credentials',
     'secure-coding/no-redos-vulnerable-regex',
     'mongodb-security/no-unsafe-query',
-    'jwt/no-algorithm-none',
+    'jwt-security/no-algorithm-none',
     'browser-security/no-postmessage-wildcard-origin',
     'react-features/hooks-exhaustive-deps',
     'react-a11y/alt-text',
     'vercel-ai-security/no-unsafe-output-handling',
   ] as const;
 
+  // Eleven keys for nine plugins. `eslint-plugin-jwt-security` and
+  // `eslint-plugin-postgresql-security` each register their own name AND the
+  // pre-rename key (`jwt`, `pg`) for a deprecation window, so a config that
+  // already writes the old rule ids alongside these presets keeps resolving.
+  // Both aliases are removed in the next major, which will take this list back
+  // to nine. See the plugin-prefix-identity lock in benchmarks/__tests__.
   const EXPECTED_FLAGSHIP_PLUGIN_KEYS = [
     'import-next',
-    'pg',
+    'postgresql-security',
+    'pg', // deprecated alias
     'secure-coding',
     'mongodb-security',
-    'jwt',
+    'jwt-security',
+    'jwt', // deprecated alias
     'browser-security',
     'react-features',
     'react-a11y',
@@ -93,7 +101,7 @@ describe('flagship preset', () => {
     expect(ruleNames).toEqual([...EXPECTED_FLAGSHIP_RULES].sort());
   });
 
-  it('wires up exactly the 9 expected plugin keys (no missing, no extras)', () => {
+  it('wires up exactly the 11 expected plugin keys (no missing, no extras)', () => {
     const keys = allPluginKeysOf(flagship).sort();
     expect(keys).toEqual([...EXPECTED_FLAGSHIP_PLUGIN_KEYS].sort());
   });
@@ -114,12 +122,16 @@ describe('flagship preset', () => {
 // ---------------------------------------------------------------------------
 
 describe('security preset', () => {
+  // Twelve keys for ten plugins — see the deprecation note on
+  // EXPECTED_FLAGSHIP_PLUGIN_KEYS above.
   const EXPECTED_SECURITY_PLUGINS = [
     'secure-coding',
     'node-security',
     'browser-security',
-    'jwt',
-    'pg',
+    'jwt-security',
+    'jwt', // deprecated alias
+    'postgresql-security',
+    'pg', // deprecated alias
     'mongodb-security',
     'express-security',
     'lambda-security',
@@ -127,7 +139,7 @@ describe('security preset', () => {
     'vercel-ai-security',
   ] as const;
 
-  it('composes recommended preset from all 10 security plugins', () => {
+  it('composes recommended preset from all 10 security plugins (12 keys)', () => {
     const keys = allPluginKeysOf(security).sort();
     expect(keys).toEqual([...EXPECTED_SECURITY_PLUGINS].sort());
   });
@@ -190,13 +202,14 @@ describe('react preset', () => {
 // ---------------------------------------------------------------------------
 
 describe('recommended preset', () => {
-  it('is the concatenation of security + quality + react (19 plugins, no duplicates)', () => {
+  it('is the concatenation of security + quality + react (21 keys, no duplicates)', () => {
     expect(recommended).toHaveLength(security.length + quality.length + react.length);
 
     const keys = allPluginKeysOf(recommended);
     const unique = new Set(keys);
     expect(unique.size, 'a plugin appears twice in recommended').toBe(keys.length);
-    expect(unique.size).toBe(19);
+    // 19 plugins + the `jwt` and `pg` deprecated aliases.
+    expect(unique.size).toBe(21);
   });
 });
 

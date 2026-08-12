@@ -23,15 +23,14 @@ import { analyse } from 'scslre';
 // Module-level parser; cheap to reuse.
 const REGEXPP_PARSER = new RegExpParser();
 
-type MessageIds =
-  | 'redosVulnerable'
-  | 'useAtomicGroups'
-  | 'usePossessiveQuantifiers'
-  | 'restructureRegex'
-  | 'useSafeLibrary';
+type MessageIds = 'redosVulnerable';
 
 export interface Options {
-  /** Allow certain common patterns. Default: false */
+  /**
+   * @deprecated No longer has any effect, and accepted only so existing configs
+   * keep loading. It gated the heuristic layer, which reported patterns the NFA
+   * analyser had already cleared; that layer is gone. Removed in the next major.
+   */
   allowCommonPatterns?: boolean;
   
   /** Maximum pattern length to analyze. Default: 500 */
@@ -47,137 +46,6 @@ const isRegExpLiteral = (
   return node.type === 'Literal' && Object.prototype.hasOwnProperty.call(node, 'regex');
 };
 
-/**
- * ReDoS vulnerability patterns
- */
-interface ReDoSPattern {
-  pattern: RegExp;
-  name: string;
-  description: string;
-  example: { bad: string; good: string };
-  fix: string;
-  severity: 'critical' | 'high' | 'medium';
-}
-
-const REDOS_PATTERNS: ReDoSPattern[] = [
-  {
-    pattern: /\([^)]*\+\)\+|\([^)]*\*\)\*|\([^)]*\?\)\?/,
-    name: 'Nested Quantifiers',
-    description: 'Nested quantifiers like (a+)+, (a*)*, (a?)? cause exponential backtracking',
-    example: {
-      bad: '/(a+)+b/',
-      good: '/(?>a+)b/ or /a+b/'
-    },
-    fix: 'Use atomic groups (?>...) or restructure to avoid nesting',
-    severity: 'critical'
-  },
-  {
-    pattern: /\([^)]*\+[^)]*\)\+|\([^)]*\*[^)]*\)\*/,
-    name: 'Nested Repetition',
-    description: 'Quantifiers nested within groups with quantifiers',
-    example: {
-      bad: '/(x+)+y/',
-      good: '/x+y/'
-    },
-    fix: 'Flatten nested quantifiers',
-    severity: 'critical'
-  },
-  {
-    pattern: /\([^)]*\|[^)]*\)\+|\([^)]*\|[^)]*\)\*/,
-    name: 'Alternation with Quantifier',
-    description: 'Alternation groups with quantifiers can cause backtracking',
-    example: {
-      bad: '/(a|b)+c/',
-      good: '/[ab]+c/'
-    },
-    fix: 'Use character classes instead of alternation when possible',
-    severity: 'high'
-  },
-  {
-    pattern: /\.\*\.\*|\.\+\+\.\+/,
-    name: 'Nested Wildcards',
-    description: 'Nested wildcard quantifiers cause catastrophic backtracking',
-    example: {
-      bad: '/.*.*/',
-      good: '/.*/ or be more specific'
-    },
-    fix: 'Remove redundant wildcards or be more specific',
-    severity: 'critical'
-  },
-  {
-    pattern: /\([^)]*\)\{[0-9]+,\}[^)]*\([^)]*\)\{[0-9]+,\}/,
-    name: 'Multiple Repetition Groups',
-    description: 'Multiple repetition groups can cause exponential backtracking',
-    example: {
-      bad: '/(a{2,})+(b{2,})+/',
-      good: 'Restructure to avoid nested repetitions'
-    },
-    fix: 'Restructure regex to avoid nested repetitions',
-    severity: 'high'
-  }
-];
-
-/**
- * Check if a regex pattern contains ReDoS vulnerabilities
- */
-function hasReDoSVulnerability(pattern: string): ReDoSPattern | null {
-  for (const redosPattern of REDOS_PATTERNS) {
-    if (redosPattern.pattern.test(pattern)) {
-      return redosPattern;
-    }
-  }
-  
-  // Additional checks for common ReDoS patterns
-  // Nested quantifiers: (a+)+, (a*)*, (a?)?
-  if (/(\([^)]*[+*?][^)]*\)[+*?])/.test(pattern)) {
-    return {
-      pattern: /\([^)]*[+*?][^)]*\)[+*?]/,
-      name: 'Nested Quantifier Pattern',
-      description: 'Pattern contains nested quantifiers that can cause exponential backtracking',
-      example: {
-        bad: pattern.substring(0, 30),
-        good: 'Restructure to avoid nested quantifiers'
-      },
-      fix: 'Use atomic groups or restructure regex',
-      severity: 'critical'
-    };
-  }
-  
-  return null;
-}
-
-/**
- * Generate fix suggestions based on the vulnerability
- */
-function generateFixSuggestions(vulnerability: ReDoSPattern): { messageId: MessageIds; description: string }[] {
-  const suggestions: { messageId: MessageIds; description: string }[] = [];
-  
-  if (vulnerability.severity === 'critical' || vulnerability.name.includes('Nested')) {
-    suggestions.push({
-      messageId: 'useAtomicGroups',
-      description: vulnerability.fix
-    });
-    suggestions.push({
-      messageId: 'restructureRegex',
-      description: 'Restructure the regex to avoid nested quantifiers'
-    });
-  }
-  
-  if (vulnerability.name.includes('Quantifier')) {
-    suggestions.push({
-      messageId: 'usePossessiveQuantifiers',
-      description: 'Use possessive quantifiers (*+, ++, ?+) if supported'
-    });
-  }
-  
-  suggestions.push({
-    messageId: 'useSafeLibrary',
-    description: 'Consider using safe-regex library to validate patterns'
-  });
-  
-  return suggestions;
-}
-
 export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
   name: 'no-redos-vulnerable-regex',
   meta: {
@@ -187,7 +55,6 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       description: 'Detects ReDoS-vulnerable regex patterns in literal regex patterns',
       cwe: 'CWE-400',
     },
-    hasSuggestions: true,
     messages: {
       redosVulnerable: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -198,38 +65,6 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         fix: '{{fix}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
-      useAtomicGroups: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Atomic Groups',
-        description: 'Use atomic groups to prevent backtracking',
-        severity: 'LOW',
-        fix: '(?>...) to prevent backtracking',
-        documentationLink: 'https://www.regular-expressions.info/atomic.html',
-      }),
-      usePossessiveQuantifiers: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Possessive Quantifiers',
-        description: 'Use possessive quantifiers',
-        severity: 'LOW',
-        fix: '*+, ++, ?+ (if supported)',
-        documentationLink: 'https://www.regular-expressions.info/possessive.html',
-      }),
-      restructureRegex: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Restructure Regex',
-        description: 'Restructure to avoid nested quantifiers',
-        severity: 'LOW',
-        fix: 'Avoid (a+)+ patterns',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
-      }),
-      useSafeLibrary: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use safe-regex',
-        description: 'Validate with safe-regex library',
-        severity: 'LOW',
-        fix: 'if (safeRegex(pattern)) { new RegExp(pattern) }',
-        documentationLink: 'https://github.com/substack/safe-regex',
-      }),
     },
     schema: [
       {
@@ -238,7 +73,8 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           allowCommonPatterns: {
             type: 'boolean',
             default: false,
-            description: 'Allow certain common patterns',
+            description:
+              'Deprecated and ignored. Gated the removed heuristic layer; kept so existing configs still load.',
           },
           maxPatternLength: {
             type: 'number',
@@ -258,22 +94,38 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-allowCommonPatterns = false, maxPatternLength = 500 
-}: Options = options || {};
+    const { maxPatternLength = 500 }: Options = options || {};
 
     /**
-     * NFA-based ReDoS detection via scslre — the same library used by
-     * eslint-plugin-regexp. Catches patterns that the heuristic regex
-     * pattern matching can't see (cross-quantifier "trade" issues, deep
-     * nested loops, etc.). Heuristic detection runs as a fallback for
-     * cases where parsing fails or the pattern is exotic.
+     * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
+     * uses. It builds the automaton and looks for genuine ambiguity, so it sees
+     * what character-level heuristics cannot (cross-quantifier trades, deep
+     * nested loops) and, just as importantly, sees what they only think they
+     * see.
+     *
+     * The three outcomes are distinct and the caller must not collapse them:
+     *
+     * - `reported`     — scslre found real ambiguity and has already reported.
+     * - `clean`        — scslre analysed the pattern and it is NOT vulnerable.
+     *                    This is a VERDICT, not an absence of one.
+     * - `unanalysable` — parsing or analysis threw. Only here do heuristics run.
+     *
+     * `clean` used to be conflated with `unanalysable` (both returned `false`),
+     * so every pattern scslre cleared was handed to the heuristic matcher,
+     * which then overruled it. That is how
+     * `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` (stripe/stripe-js
+     * `src/shared.ts:23`) was reported as "Nested Quantifier Pattern: exponential
+     * backtracking | CRITICAL". It is anchored at both ends, has two independent
+     * optional groups, no nesting, and is linear. The heuristic
+     * `\([^)]*[+*?][^)]*\)[+*?]` matched it only because `(\?.*)?` contains a
+     * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
+     * quantifier nesting.
      */
     function checkWithScslre(
       node: TSESTree.Node,
       pattern: string,
       flags: string
-    ): boolean {
+    ): void {
       try {
         const ast = REGEXPP_PARSER.parsePattern(
           pattern,
@@ -285,7 +137,6 @@ allowCommonPatterns = false, maxPatternLength = 500
           { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
           { reportTypes: { Move: false } }
         );
-        if (result.reports.length === 0) return false;
 
         for (const report of result.reports) {
           const isExp = report.exponential;
@@ -304,10 +155,20 @@ allowCommonPatterns = false, maxPatternLength = 500
             },
           });
         }
-        return true;
       } catch {
-        // Fall through to heuristic check
-        return false;
+        // Two ways to land here, and neither is a ReDoS finding:
+        //
+        //  - The pattern is not a valid regex. `new RegExp("(a+")` throws at
+        //    construction; it can never backtrack because it never compiles.
+        //  - scslre failed on a pattern that did parse. Defensive only; no
+        //    input is known to reach it, and it must not take the lint run
+        //    down if a library bug ever does.
+        //
+        // Silence is the honest answer to both. The layer that used to run
+        // here matched the pattern TEXT against a table of quantifier shapes,
+        // which is how `(a+` — invalid syntax — got reported as
+        // "CRITICAL ReDoS", and how every pattern the analyser had already
+        // cleared got reported anyway.
       }
     }
 
@@ -327,39 +188,7 @@ allowCommonPatterns = false, maxPatternLength = 500
         return;
       }
 
-      // NFA-based detection first — catches what heuristics miss.
-      if (checkWithScslre(node, pattern, flags)) {
-        return;
-      }
-
-      const vulnerability = hasReDoSVulnerability(pattern);
-
-      if (!vulnerability) {
-        return;
-      }
-
-      // Allow common patterns if configured
-      if (allowCommonPatterns && (vulnerability.severity === 'medium' || vulnerability.name === 'Alternation with Quantifier')) {
-        return;
-      }
-
-      const suggestions = generateFixSuggestions(vulnerability);
-      const severity = vulnerability.severity.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM';
-
-      context.report({
-        node,
-        messageId: 'redosVulnerable',
-        data: {
-          vulnerabilityName: vulnerability.name,
-          description: vulnerability.description,
-          severity,
-          fix: vulnerability.fix,
-        },
-        suggest: suggestions.map(suggestion => ({
-          messageId: suggestion.messageId,
-          fix: () => null, // Complex refactoring, cannot auto-fix
-        })),
-      });
+      checkWithScslre(node, pattern, flags);
     }
 
     /**
@@ -438,34 +267,14 @@ allowCommonPatterns = false, maxPatternLength = 500
         return;
       }
 
-      const vulnerability = hasReDoSVulnerability(pattern);
-
-      if (!vulnerability) {
-        return;
-      }
-
-      // Allow common patterns if configured
-      if (allowCommonPatterns && (vulnerability.severity === 'medium' || vulnerability.name === 'Alternation with Quantifier')) {
-        return;
-      }
-
-      const suggestions = generateFixSuggestions(vulnerability);
-      const severity = vulnerability.severity.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM';
-
-      context.report({
-        node,
-        messageId: 'redosVulnerable',
-        data: {
-          vulnerabilityName: vulnerability.name,
-          description: vulnerability.description,
-          severity,
-          fix: vulnerability.fix,
-        },
-        suggest: suggestions.map(suggestion => ({
-          messageId: suggestion.messageId,
-          fix: () => null, // Complex refactoring, cannot auto-fix
-        })),
-      });
+      // `new RegExp("…")` with a string literal is exactly as analysable as the
+      // `/…/` form, and used to go straight to the heuristics — so the Stripe
+      // shape written as `new RegExp("^https://…/v3/?(\\?.*)?$")` produced the
+      // same false positive that `/…/` did. Second argument carries the flags.
+      const flagsArg = node.arguments[1];
+      const flags =
+        flagsArg?.type === 'Literal' && typeof flagsArg.value === 'string' ? flagsArg.value : '';
+      checkWithScslre(node, pattern, flags);
     }
 
     return {

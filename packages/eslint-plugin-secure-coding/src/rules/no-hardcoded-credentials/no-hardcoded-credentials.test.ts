@@ -78,6 +78,72 @@ describe('no-hardcoded-credentials', () => {
     });
   });
 
+  // The corpus scan found 17 of 18 findings on a real repository were fixtures
+  // in `integration/auth.test.js`. `allowInTests` was read correctly and its
+  // filename patterns matched that path — it just defaulted to `false`, and
+  // `configs.recommended` registers this rule as bare `'error'` with no
+  // options, so nothing ever turned the exemption on.
+  describe('Test-file credentials are exempt by DEFAULT', () => {
+    ruleTester.run('default allowInTests', noHardcodedCredentials, {
+      valid: [
+        // NO `options` — this is the whole point. Adding options here would
+        // make the fixture pass regardless of what the default is.
+        {
+          code: 'const password = "supersecret123";',
+          filename: 'integration/auth.test.js',
+        },
+        {
+          code: 'const apiKey = "sk_live_FAKE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890";',
+          filename: 'integration/auth.test.js',
+        },
+      ],
+      invalid: [
+        // A production path is untouched by the default change.
+        {
+          code: 'const password = "supersecret123";',
+          filename: 'src/app.js',
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  output: "const password = process.env.PASSWORD || 'supersecret123';",
+                },
+                {
+                  messageId: 'useSecretManager',
+                  output: "const password = await getSecret('password');",
+                },
+              ],
+            },
+          ],
+        },
+        // The escape hatch still works in the strict direction: a project that
+        // wants test fixtures reported can still ask for it.
+        {
+          code: 'const password = "supersecret123";',
+          filename: 'integration/auth.test.js',
+          options: [{ allowInTests: false }],
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  output: "const password = process.env.PASSWORD || 'supersecret123';",
+                },
+                {
+                  messageId: 'useSecretManager',
+                  output: "const password = await getSecret('password');",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - API Keys', () => {
     ruleTester.run('invalid - API keys', noHardcodedCredentials, {
       valid: [],

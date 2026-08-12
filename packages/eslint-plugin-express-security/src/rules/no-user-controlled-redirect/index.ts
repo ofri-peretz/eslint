@@ -64,6 +64,13 @@ const USER_SOURCE_PROPS = new Set([
 /** Method names that perform HTTP redirects. */
 const REDIRECT_METHODS = new Set(['redirect', 'location']);
 
+/**
+ * Properties that expose a parsed URL's origin. Reading one of these off
+ * `new URL(target)` and comparing it is how both the Express security docs and
+ * the OWASP Unvalidated Redirects cheat sheet write a safe redirect.
+ */
+const ORIGIN_PROPS = new Set(['host', 'hostname', 'origin']);
+
 export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
   name: 'no-user-controlled-redirect',
   meta: {
@@ -187,6 +194,168 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
+
+    /**
+     * Structural equality for the member path behind a user source, so
+     * `req.query.url` in the guard is recognised as the same expression as
+     * `req.query.url` in the redirect. Compared node-by-node rather than by
+     * printed text — identifier names and comments make text comparison
+     * unreliable.
+     */
+    function sameMemberPath(a: TSESTree.Node, b: TSESTree.Node): boolean {
+      if (a.type !== b.type) return false;
+      if (a.type === AST_NODE_TYPES.Identifier && b.type === AST_NODE_TYPES.Identifier) {
+        return a.name === b.name;
+      }
+      if (a.type === AST_NODE_TYPES.Literal && b.type === AST_NODE_TYPES.Literal) {
+        return a.value === b.value;
+      }
+      if (
+        a.type === AST_NODE_TYPES.MemberExpression &&
+        b.type === AST_NODE_TYPES.MemberExpression
+      ) {
+        return (
+          a.computed === b.computed &&
+          sameMemberPath(a.object, b.object) &&
+          sameMemberPath(a.property, b.property)
+        );
+      }
+      return false;
+    }
+
+    /** `new URL(<source>)` — the parse step of the documented guard. */
+    function isUrlParseOf(node: TSESTree.Node, source: TSESTree.Node): boolean {
+      return (
+        node.type === AST_NODE_TYPES.NewExpression &&
+        node.callee.type === AST_NODE_TYPES.Identifier &&
+        node.callee.name === 'URL' &&
+        node.arguments.length > 0 &&
+        sameMemberPath(node.arguments[0] as TSESTree.Node, source)
+      );
+    }
+
+    /** Walk a subtree, skipping `parent` back-edges. */
+    function search(root: unknown, hit: (n: TSESTree.Node) => boolean, stopAtFn: boolean): boolean {
+      let found = false;
+      const visit = (n: unknown): void => {
+        if (found || n === null || typeof n !== 'object') return;
+        const candidate = n as TSESTree.Node & Record<string, unknown>;
+        if (typeof candidate.type !== 'string') {
+          if (Array.isArray(n)) (n as unknown[]).forEach(visit);
+          return;
+        }
+        if (hit(candidate)) {
+          found = true;
+          return;
+        }
+        if (
+          stopAtFn &&
+          (candidate.type === AST_NODE_TYPES.FunctionExpression ||
+            candidate.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            candidate.type === AST_NODE_TYPES.FunctionDeclaration)
+        ) {
+          return; // a nested function's return does not exit this handler
+        }
+        for (const key of Object.keys(candidate)) {
+          if (key === 'parent') continue;
+          const value = candidate[key];
+          if (Array.isArray(value)) value.forEach(visit);
+          else if (value && typeof value === 'object') visit(value);
+        }
+      };
+      visit(root);
+      return found;
+    }
+
+    /**
+     * True if the subtree reads `.host` / `.hostname` / `.origin` off
+     * `new URL(<source>)` — the redirect target's origin is being checked.
+     */
+    function containsOriginCheck(node: TSESTree.Node, source: TSESTree.Node): boolean {
+      return search(
+        node,
+        (n) =>
+          n.type === AST_NODE_TYPES.MemberExpression &&
+          n.property.type === AST_NODE_TYPES.Identifier &&
+          ORIGIN_PROPS.has(n.property.name) &&
+          isUrlParseOf(n.object, source),
+        false,
+      );
+    }
+
+    /** Does this statement subtree exit the handler (return or throw)? */
+    function exitsHandler(node: TSESTree.Node): boolean {
+      return search(
+        node,
+        (n) =>
+          n.type === AST_NODE_TYPES.ReturnStatement ||
+          n.type === AST_NODE_TYPES.ThrowStatement,
+        true,
+      );
+    }
+
+    /**
+     * True if the enclosing handler validates this exact user source with an
+     * origin allowlist that bails out when it fails:
+     *
+     *   if (new URL(req.query.url).host !== 'example.com') return res.sendStatus(400);
+     *   res.redirect(req.query.url);
+     *
+     * That is the pattern on Express's "Production Best Practices: Security"
+     * page and in the OWASP Unvalidated Redirects cheat sheet. Reporting it
+     * told readers their documented mitigation was the vulnerability.
+     *
+     * Deliberate limitation: the whole enclosing handler is searched rather
+     * than only the statements before the redirect, so a guard written after
+     * the redirect would also suppress. Over-widening a guard is the safe
+     * direction for a rule whose alternative is flagging every correct
+     * implementation.
+     */
+    function hasOriginGuard(source: TSESTree.Node, from: TSESTree.Node): boolean {
+      // Every node in an ESLint AST has a Program root, and Program terminates this
+      // walk — so `scope` is always defined on exit. Seeding from the source file's
+      // Program says that in code rather than with an unreachable null check.
+      let scope: TSESTree.Node = context.sourceCode.ast;
+      for (
+        let candidate: TSESTree.Node | undefined = from;
+        candidate;
+        candidate = candidate.parent as TSESTree.Node | undefined
+      ) {
+        if (
+          candidate.type === AST_NODE_TYPES.FunctionExpression ||
+          candidate.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          candidate.type === AST_NODE_TYPES.FunctionDeclaration ||
+          candidate.type === AST_NODE_TYPES.Program
+        ) {
+          scope = candidate;
+          break;
+        }
+      }
+
+      // stopAtFn: the guard has to bail out of THIS handler. A check nested inside
+      // another function returns from that function, so the redirect below still
+      // runs unguarded — descending into it would let
+      //   const check = () => { if (badOrigin) return res.sendStatus(400); };
+      //   check();
+      //   res.redirect(req.query.url);
+      // silence the rule while validating nothing.
+      // Search the handler's BODY, not the handler node itself: with stopAtFn set,
+      // starting at the function would halt on that very node and find nothing.
+      const body: unknown =
+        scope.type === AST_NODE_TYPES.Program
+          ? scope.body
+          : (scope as { body?: unknown }).body;
+
+      return search(
+        body,
+        (n) =>
+          n.type === AST_NODE_TYPES.IfStatement &&
+          containsOriginCheck(n.test, source) &&
+          exitsHandler(n.consequent),
+        true,
+      );
+    }
+
     function isRequestIdent(name: string): boolean {
       const lower = name.toLowerCase();
       return (
@@ -206,6 +375,10 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
 
         const source = getUserSourceDescription(firstArg);
         if (!source) return;
+
+        // Validated against an origin allowlist upstream — the documented
+        // safe pattern, not a finding.
+        if (hasOriginGuard(firstArg, node)) return;
 
         context.report({
           node: firstArg,

@@ -35,6 +35,7 @@ type MessageIds =
   | 'unsafeComponentBinding'
   | 'userControlledTemplate'
   | 'dangerousInnerHTML'
+  | 'unsafeSanitizerConfig'
   | 'untrustedDirectiveSource'
   | 'useTrustedDirectives'
   | 'sanitizeTemplateInput'
@@ -58,6 +59,94 @@ export interface Options extends SecurityRuleOptions {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Elements DOMPurify strips because allowing them defeats sanitization
+ * outright: each can execute script or retarget every relative URL on the page.
+ */
+const DANGEROUS_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'base']);
+
+/**
+ * Attributes that carry executable or navigable content. Every `on*` handler is
+ * covered separately by prefix, since the list of DOM events is open-ended.
+ */
+const DANGEROUS_ATTRS = new Set(['srcdoc', 'formaction', 'xlink:href']);
+
+/** DOMPurify options that widen what survives sanitization. */
+const TAG_OPTIONS = new Set(['ADD_TAGS', 'ALLOWED_TAGS']);
+const ATTR_OPTIONS = new Set(['ADD_ATTR', 'ALLOWED_ATTR']);
+
+/** The string values of an array literal; `null` when it is not a literal array. */
+function staticStringArray(node: TSESTree.Node): string[] | null {
+  if (node.type !== 'ArrayExpression') return null;
+  const out: string[] = [];
+  for (const element of node.elements) {
+    if (element?.type === 'Literal' && typeof element.value === 'string') {
+      out.push(element.value);
+    }
+  }
+  return out;
+}
+
+/**
+ * Is this a `…sanitize(html, { … })` call whose options re-enable something the
+ * sanitizer removes by default?
+ *
+ * Returns the offending option and value so the message can name both — a
+ * reader needs to know *which* entry is the problem, not just that one exists.
+ *
+ * Only a receiver whose name mentions "purify" qualifies, so an unrelated
+ * `validator.sanitize(input, opts)` is never considered.
+ */
+function findUnsafeSanitizerConfig(
+  node: TSESTree.CallExpression,
+): { node: TSESTree.Node; option: string; allowed: string } | null {
+  const callee = node.callee;
+  if (callee.type !== 'MemberExpression') return null;
+  if (callee.property.type !== 'Identifier' || callee.property.name !== 'sanitize') return null;
+  if (callee.object.type !== 'Identifier') return null;
+  if (!callee.object.name.toLowerCase().includes('purify')) return null;
+
+  const config = node.arguments[1];
+  if (!config || config.type !== 'ObjectExpression') return null;
+
+  for (const property of config.properties) {
+    if (property.type !== 'Property') continue;
+    // A computed key is a variable, so its text is not the option name.
+    if (property.computed) continue;
+    // `{ 'ADD_TAGS': … }` names the same option as `{ ADD_TAGS: … }`; reading
+    // only Identifier keys would have let quoting slip past the check.
+    const option =
+      property.key.type === 'Identifier'
+        ? property.key.name
+        : property.key.type === 'Literal' && typeof property.key.value === 'string'
+          ? property.key.value
+          : null;
+    if (option === null) continue;
+
+    // `{ ALLOWED_TAGS }` shorthand names a constant defined elsewhere. Its
+    // contents are unknowable here, and assuming the worst is what produced
+    // the reported false positive — so shorthand is left alone.
+    if (property.shorthand) continue;
+
+    const values = staticStringArray(property.value);
+    if (!values) continue;
+
+    if (TAG_OPTIONS.has(option)) {
+      const bad = values.find((v) => DANGEROUS_TAGS.has(v.toLowerCase()));
+      if (bad) return { node: property, option, allowed: `<${bad}>` };
+    }
+
+    if (ATTR_OPTIONS.has(option)) {
+      const bad = values.find(
+        (v) => v.toLowerCase().startsWith('on') || DANGEROUS_ATTRS.has(v.toLowerCase()),
+      );
+      if (bad) return { node: property, option, allowed: `the "${bad}" attribute` };
+    }
+  }
+
+  return null;
+}
 
 export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-directive-injection',
@@ -148,6 +237,16 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Maintain whitelist of allowed directives',
         documentationLink: 'https://cwe.mitre.org/data/definitions/96.html',
+      }),
+      unsafeSanitizerConfig: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Sanitizer configured to allow {{allowed}}',
+        cwe: 'CWE-96',
+        description:
+          'DOMPurify was configured with {{option}} re-enabling {{allowed}}, which is exactly what the sanitizer removes by default. The call returns markup that can execute script, so the sanitization provides no protection.',
+        severity: 'HIGH',
+        fix: 'Drop {{allowed}} from {{option}}. If the markup genuinely needs it, render it outside the sanitized region rather than widening the allow-list.',
+        documentationLink: 'https://github.com/cure53/DOMPurify#can-i-configure-dompurify',
       }),
       sanitizeTemplateInput: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -395,6 +494,25 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       // Check for template compilation with user input
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+
+        // A DOMPurify config that re-adds what DOMPurify exists to strip.
+        //
+        // `DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })` — the
+        // configured allow-list the issue reported as a false positive — is
+        // correct and is NOT reported: an allow-list naming no dangerous
+        // element is the answer the rule steers people toward. What is
+        // reported is an allow-list that puts `script`, `iframe`, `object`,
+        // `embed` or `base` back, or that re-enables an `on*` handler or a
+        // URL-bearing attribute. Those turn the call into a no-op that still
+        // reads as sanitized at the call site.
+        const unsafeConfig = findUnsafeSanitizerConfig(node);
+        if (unsafeConfig) {
+          context.report({
+            node: unsafeConfig.node,
+            messageId: 'unsafeSanitizerConfig',
+            data: { option: unsafeConfig.option, allowed: unsafeConfig.allowed },
+          });
+        }
 
         // Check for template compilation functions
         if (callee.type === 'MemberExpression' &&

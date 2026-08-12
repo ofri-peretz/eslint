@@ -25,10 +25,10 @@ describe('eslint-plugin-jwt-security plugin interface', () => {
 
       const recommendedRules = configs.recommended.rules || {};
       Object.keys(recommendedRules).forEach((ruleName) => {
-        expect(ruleName).toMatch(/^jwt\//);
+        expect(ruleName).toMatch(/^jwt-security\//);
       });
 
-      expect(recommendedRules['jwt/no-algorithm-none']).toBe('error');
+      expect(recommendedRules['jwt-security/no-algorithm-none']).toBe('error');
     });
 
     it('should provide strict configuration', () => {
@@ -37,10 +37,10 @@ describe('eslint-plugin-jwt-security plugin interface', () => {
 
       const strictRules = configs.strict.rules || {};
       Object.keys(strictRules).forEach((ruleName) => {
-        expect(ruleName).toMatch(/^jwt\//);
+        expect(ruleName).toMatch(/^jwt-security\//);
       });
 
-      expect(strictRules['jwt/no-algorithm-none']).toBe('error');
+      expect(strictRules['jwt-security/no-algorithm-none']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
   });
