@@ -43,6 +43,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { readsPrincipal } from '../../utils';
+import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'missingAuthentication';
 
@@ -128,14 +129,7 @@ const DEFAULT_PUBLIC_PATHS = [
 ];
 
 /** Route-registration methods that mount a handler on a path. */
-const ROUTE_METHODS = new Set([
-  'get',
-  'post',
-  'put',
-  'patch',
-  'delete',
-  'all',
-]);
+const ROUTE_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all']);
 
 /** Receivers that are an Express application/router in practice. */
 const APP_RECEIVER = /^(app|router|express|api)$/i;
@@ -209,6 +203,12 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { criticalPaths, publicPaths, authMiddleware } = options as Options;
     const critical = (criticalPaths ?? DEFAULT_CRITICAL_PATHS).map((p) =>
       p.toLowerCase(),
@@ -295,7 +295,8 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
 
         const path = pathArg.value.toLowerCase();
         if (publics.some((fragment) => matchesFragment(path, fragment))) return;
-        if (!critical.some((fragment) => matchesFragment(path, fragment))) return;
+        if (!critical.some((fragment) => matchesFragment(path, fragment)))
+          return;
 
         // Any middleware before the final handler that reads as auth
         const chain = rest.slice(0, -1);

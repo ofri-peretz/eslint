@@ -1,6 +1,6 @@
 ---
 title: require-max-tokens
-description: "This rule identifies AI SDK calls that don't specify a maxTokens limit"
+description: "This rule identifies AI SDK calls that don't specify a token limit (maxTokens or maxOutputTokens)"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -29,7 +29,12 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## 🔍 What This Rule Detects
 
-This rule identifies AI SDK calls that don't specify a `maxTokens` limit. Without limits, AI responses can consume excessive tokens, leading to high costs and potential denial of service.
+This rule identifies AI SDK calls that don't specify a token limit. Without limits, AI responses can consume excessive tokens, leading to high costs and potential denial of service.
+
+Both idioms satisfy the rule:
+
+- **AI SDK v4**: `maxTokens: 4096`
+- **AI SDK v5+**: `maxOutputTokens: 4096` (v5 renamed `maxTokens`)
 
 ## ❌ Incorrect Code
 
@@ -63,14 +68,21 @@ await streamText({
   prompt: 'Explain quantum physics',
   maxTokens: 2048,
 });
+
+// AI SDK v5+: maxOutputTokens replaces maxTokens
+await generateText({
+  model: 'openai/gpt-5',
+  prompt: 'Write a story',
+  maxOutputTokens: 4096,
+});
 ```
 
 ## ⚙️ Options
 
-| Option             | Type       | Default     | Description                            |
-| ------------------ | ---------- | ----------- | -------------------------------------- |
-| `allowedFunctions` | `string[]` | `[]`        | Functions that don't require maxTokens |
-| `maxRecommended`   | `number`   | `undefined` | Warn if maxTokens exceeds this value   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `suggestedLimit` | `number` | `4096` | Default max tokens limit to suggest |
+| `targetFunctions` | `string[]` | `["generateText","streamText","generateObject","streamObject"]` | Function names that require max tokens |
 
 ## 🛡️ Why This Matters
 

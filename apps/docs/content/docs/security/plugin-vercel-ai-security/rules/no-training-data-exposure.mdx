@@ -1,6 +1,6 @@
 ---
 title: no-training-data-exposure
-description: This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data coll...
+description: "This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data coll..."
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -65,9 +65,9 @@ await generateText({
 
 ## ⚙️ Options
 
-| Option             | Type       | Default                                         | Description                  |
-| ------------------ | ---------- | ----------------------------------------------- | ---------------------------- |
-| `trainingPatterns` | `string[]` | `['train', 'training', 'finetune', 'feedback']` | Patterns suggesting training |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `trainingPatterns` | `string[]` | `["train","training","finetune","fine-tune","fine_tune","feedback","improve","learn"]` | Patterns suggesting training endpoints |
 
 ## 🛡️ Why This Matters
 

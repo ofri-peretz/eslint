@@ -1,6 +1,6 @@
 ---
 title: no-http-urls
-description: "CWE: CWE-319"
+description: "CWE-319"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -13,10 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** no-http-urls, HTTPS, cleartext transmission, security, ESLint rule, CWE-319, man-in-the-middle, MITM
-> **CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
-> **OWASP Mobile:** [OWASP Mobile Top 10 M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Quick Summary
 
@@ -150,3 +146,10 @@ const url = protocol + '://' + domain;
 
 - [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
 - [OWASP Transport Layer Protection Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedHosts` | `string[]` | `["localhost","127.0.0.1"]` | List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1) |
+| `allowedPorts` | `number[]` | `[]` | List of ports allowed for HTTP (e.g., 3000, 8080 for development) |

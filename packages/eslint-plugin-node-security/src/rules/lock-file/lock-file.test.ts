@@ -7,6 +7,8 @@
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { lockFile } from './index';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 
 const ruleTester = new RuleTester({
@@ -18,7 +20,19 @@ const ruleTester = new RuleTester({
 
 // Use a file path that is outside of this project repository to test invalid cases.
 // This ensures the search (up to 10 levels) doesn't find the repo's pnpm-lock.yaml or accidental lock files in home.
-const virtualFileOutsideRepo = path.join(path.parse(process.cwd()).root, 'non-existent-project', 'src', 'test.js');
+// Each invalid case is its own project on disk. The rule reports a missing
+// lock file once per project root, and only where a package.json exists — a
+// directory with no manifest is not a JS project, so nothing is missing. A
+// bare virtual path can no longer stand in for one.
+function projectWithoutLockFile(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lock-file-fixture-'));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'package.json'),
+    JSON.stringify({ name: 'fixture', version: '1.0.0' }),
+  );
+  return path.join(dir, 'src', 'test.js');
+}
 
 ruleTester.run('lock-file', lockFile, {
   valid: [
@@ -40,7 +54,7 @@ ruleTester.run('lock-file', lockFile, {
   invalid: [
     {
       code: "const invalidPnpm = 1",
-      filename: virtualFileOutsideRepo,
+      filename: projectWithoutLockFile(),
       options: [{ packageManager: 'pnpm' }],
       errors: [{ 
         messageId: 'violationDetected',
@@ -49,7 +63,7 @@ ruleTester.run('lock-file', lockFile, {
     },
     {
       code: "const invalidYarn = 1",
-      filename: virtualFileOutsideRepo,
+      filename: projectWithoutLockFile(),
       options: [{ packageManager: 'yarn' }],
       errors: [{ 
         messageId: 'violationDetected',
@@ -58,7 +72,7 @@ ruleTester.run('lock-file', lockFile, {
     },
     {
       code: "const invalidOutside = 1",
-      filename: virtualFileOutsideRepo,
+      filename: projectWithoutLockFile(),
       options: [{ packageManager: 'npm' }],
       errors: [{ 
         messageId: 'violationDetected',

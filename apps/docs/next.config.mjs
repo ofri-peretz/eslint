@@ -16,7 +16,10 @@ const config = {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
   reactStrictMode: true,
-  output: 'standalone',
+  // No `output: 'standalone'`. Nothing consumes .next/standalone (the repo's
+  // Dockerfile ships the ESLint CLI, not this app), and under Vercel's
+  // current builder a standalone build never emits
+  // .next/next-server.js.nft.json, so onBuildComplete dies with ENOENT.
   poweredByHeader: false,
   compress: true,
   devIndicators: {
@@ -24,7 +27,7 @@ const config = {
     appIsrStatus: false,
   },
 
-  // Required for monorepo standalone output tracing
+  // Required so file tracing resolves workspace deps from the monorepo root
   outputFileTracingRoot: monorepoRoot,
   transpilePackages: ['motion', 'motion/react'],
 

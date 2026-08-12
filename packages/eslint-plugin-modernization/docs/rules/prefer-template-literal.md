@@ -35,7 +35,7 @@ Pure string-literal concatenation (`"foo" + "bar"`) and numeric addition (`1 + 2
 
 | Issue                    | Impact                                     | Solution                       |
 | ------------------------ | ------------------------------------------ | ------------------------------ |
-| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use `\`...\${expr}...\``       |
+| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use a `${expr}` placeholder    |
 | 🐛 **Implicit coercion** | `+` coerces operands unpredictably         | Interpolation is unambiguous   |
 | 🔄 **Consistency**       | Multiple string-building styles in codebase | Standardize on template literals |
 

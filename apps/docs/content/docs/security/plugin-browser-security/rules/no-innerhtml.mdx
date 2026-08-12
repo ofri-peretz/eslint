@@ -1,6 +1,6 @@
 ---
 title: no-innerhtml
-description: Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)
+description: "Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)"
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -114,11 +112,11 @@ container.appendChild(div);
 
 ## Options
 
-| Option                | Type       | Default                                                               | Description                          |
-| --------------------- | ---------- | --------------------------------------------------------------------- | ------------------------------------ |
-| `allowInTests`        | `boolean`  | `false`                                                               | Allow innerHTML in test files        |
-| `trustedSanitizers`   | `string[]` | `['DOMPurify.sanitize', 'sanitize', 'sanitizeHtml', 'xss', 'purify']` | Trusted sanitizer function names     |
-| `allowLiteralStrings` | `boolean`  | `true`                                                                | Allow innerHTML with literal strings |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `trustedSanitizers` | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify"]` | Extra function names to treat as sanitizers |
+| `allowLiteralStrings` | `boolean` | `true` | Allow innerHTML with literal strings |
 
 ```json
 {

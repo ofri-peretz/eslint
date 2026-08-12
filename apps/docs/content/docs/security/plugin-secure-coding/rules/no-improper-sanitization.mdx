@@ -1,6 +1,6 @@
 ---
 title: no-improper-sanitization
-description: Detects improper sanitization of user input
+description: "Detects improper sanitization of user input"
 tags: ['security', 'core']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
 
 **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
 **OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
@@ -113,12 +111,15 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 
 ## Options
 
-| Option             | Type       | Default                        | Description                       |
-| ------------------ | ---------- | ------------------------------ | --------------------------------- |
-| `safeSanitizers`   | `string[]` | `['DOMPurify.sanitize']`       | Safe sanitization functions       |
-| `dangerousChars`   | `string[]` | `['<', '>', '"', "'"]`         | Characters that should be escaped |
-| `contexts`         | `string[]` | `['html', 'js', 'url', 'css']` | Encoding contexts to check        |
-| `trustedLibraries` | `string[]` | `['dompurify']`                | Trusted sanitization libraries    |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `safeSanitizers` | `string[]` | `["DOMPurify.sanitize","he.encode","encodeURIComponent","encodeURI","escape"]` | Sanitizer calls treated as sufficient |
+| `dangerousChars` | `string[]` | `` ["<",">","\"","'","&","`","$","{","}","\|",";","(",")"] `` | Characters a sanitizer is expected to handle |
+| `contexts` | `string[]` | `["html","url","sql","command","javascript","css"]` | Output contexts checked for a context-appropriate sanitizer |
+| `trustedLibraries` | `string[]` | `["DOMPurify","he","validator","express-validator"]` | Libraries whose sanitizers are trusted |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

@@ -35,6 +35,7 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { expressionName, isTestFile } from '../../utils/nest-ast';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'unguardedSwagger';
 
@@ -98,6 +99,10 @@ export const noUnguardedSwagger = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context, [options = {}]) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const { allowInTests = true } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 

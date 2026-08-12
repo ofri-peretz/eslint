@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -67,7 +68,7 @@ function isCsrfMiddleware(node: TSESTree.CallExpression): boolean {
  */
 function hasCsrfInMiddlewareChain(
   node: TSESTree.CallExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
   // Check for csrf/csurf in the middleware chain
@@ -107,12 +108,12 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
   // Call expression: express().post(), express.Router().post()
   if (obj.type === 'CallExpression') {
     const objCallee = obj.callee;
-    
+
     // express()
     if (objCallee.type === 'Identifier' && objCallee.name === 'express') {
       return true;
     }
-    
+
     // express.Router()
     if (
       objCallee.type === 'MemberExpression' &&
@@ -153,7 +154,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         description:
           'Route handler for {{method}} request lacks CSRF protection. Attackers can forge requests from malicious sites.',
         severity: 'HIGH',
-        fix: "Add CSRF middleware: app.use(csrf()) or use csurf package. Include csrfToken in forms.",
+        fix: 'Add CSRF middleware: app.use(csrf()) or use csurf package. Include csrfToken in forms.',
         documentationLink: 'https://owasp.org/www-community/attacks/csrf',
       }),
       addCsrf: formatLLMMessage({
@@ -161,7 +162,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         issueName: 'Add CSRF Protection',
         description: 'Add CSRF middleware to protect state-changing requests',
         severity: 'LOW',
-        fix: "npm install csurf; app.use(csurf({ cookie: true }))",
+        fix: 'npm install csurf; app.use(csurf({ cookie: true }))',
         documentationLink: 'https://www.npmjs.com/package/csurf',
       }),
     },
@@ -199,6 +200,12 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const {
       allowInTests = false,
       protectedMethods = DEFAULT_PROTECTED_METHODS,

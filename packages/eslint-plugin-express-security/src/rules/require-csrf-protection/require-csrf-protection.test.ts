@@ -1,11 +1,57 @@
 /**
  * Tests for require-csrf-protection rule
- * 
+ *
  * Zero FP tolerance - comprehensive edge case coverage
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { requireCsrfProtection } from './index';
 import * as vitest from 'vitest';
+
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
 
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
@@ -20,11 +66,11 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-csrf-protection', requireCsrfProtection, {
-  valid: [
+  valid: xp([
     // ============================================
     // GLOBAL CSRF MIDDLEWARE PATTERNS
     // ============================================
-    
+
     // Global CSRF via app.use(csrf())
     {
       code: `
@@ -71,11 +117,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         app.post('/form', handler);
       `,
     },
-    
+
     // ============================================
     // ROUTE-LEVEL CSRF PATTERNS
     // ============================================
-    
+
     // CSRF in route middleware chain
     {
       code: `
@@ -102,11 +148,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         router.post('/create', handler);
       `,
     },
-    
+
     // ============================================
     // SAFE HTTP METHODS (no CSRF needed)
     // ============================================
-    
+
     // GET request
     {
       code: `
@@ -125,11 +171,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         app.options('/cors', handler);
       `,
     },
-    
+
     // ============================================
     // IGNORED PATTERNS (webhooks, APIs, etc.)
     // ============================================
-    
+
     // Webhook route (explicitly ignored)
     {
       code: `
@@ -166,11 +212,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       `,
       options: [{ ignorePatterns: ['/api/.*'] }],
     },
-    
+
     // ============================================
     // TEST FILE HANDLING
     // ============================================
-    
+
     // Test file with allowInTests
     {
       code: `
@@ -187,11 +233,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       options: [{ allowInTests: true }],
       filename: 'routes.spec.js',
     },
-    
+
     // ============================================
     // FALSE POSITIVE PREVENTION
     // ============================================
-    
+
     // Not Express - different framework (Fastify-like)
     {
       code: `
@@ -220,13 +266,13 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         app.post('/secure', handler);
       `,
     },
-  ],
-  
-  invalid: [
+  ]),
+
+  invalid: xp([
     // ============================================
     // MISSING CSRF - SHOULD FLAG
     // ============================================
-    
+
     // POST without CSRF
     {
       code: `
@@ -261,10 +307,7 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
         app.post('/login', loginHandler);
         app.put('/settings', settingsHandler);
       `,
-      errors: [
-        { messageId: 'missingCsrf' },
-        { messageId: 'missingCsrf' },
-      ],
+      errors: [{ messageId: 'missingCsrf' }, { messageId: 'missingCsrf' }],
     },
     // Express app with other middleware but no CSRF
     {
@@ -307,53 +350,66 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'missingCsrf' }],
     },
-  ],
+  ]),
 });
 
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
-ruleTester.run('require-csrf-protection (coverage wave)', requireCsrfProtection, {
-  valid: [
-    // lusca.csrf() recognized as global CSRF middleware
-    { code: `app.use(lusca.csrf()); app.post('/transfer', handler);` },
-    // member callee that is not lusca.csrf
-    { code: `app.use(other.csrf());` },
-    // lusca method that is not csrf
-    { code: `app.use(lusca.xframe());` },
-    // deep member callee — object is not an identifier
-    { code: `app.use(ns.security.csrf());` },
-    // unknown factory call — not an Express object
-    { code: `getApp().post('/x', handler);` },
-    // Router() on a non-express namespace
-    { code: `foo.Router().post('/x', handler);` },
-    // this.app member — skipped to avoid false positives
-    { code: `this.app.post('/x', handler);` },
-    // ignorePatterns regex match
-    {
-      code: `app.post('/webhook/stripe', handler);`,
-      options: [{ ignorePatterns: ['^/webhook'] }],
-    },
-    // invalid regex ignore pattern falls back to substring inclusion
-    { code: `app.post('/a[b', handler);`, options: [{ ignorePatterns: ['['] }] },
-    // csurf-named identifier middleware sets the global flag
-    { code: `app.use(csurfMiddleware); app.post('/transfer', handler);` },
-  ],
-  invalid: [
-    // non-CSRF middleware identifiers do not set the global flag
-    {
-      code: `app.use(logger); app.post('/transfer', handler);`,
-      errors: [{ messageId: 'missingCsrf' }],
-    },
-    // non-literal route argument cannot match ignore patterns
-    {
-      code: `app.post(routeVar, handler);`,
-      options: [{ ignorePatterns: ['^/x'] }],
-      errors: [{ messageId: 'missingCsrf' }],
-    },
-    // express() result used directly
-    { code: `express().post('/t', handler);`, errors: [{ messageId: 'missingCsrf' }] },
-    // express.Router() result used directly
-    { code: `express.Router().post('/t', handler);`, errors: [{ messageId: 'missingCsrf' }] },
-  ],
-});
+ruleTester.run(
+  'require-csrf-protection (coverage wave)',
+  requireCsrfProtection,
+  {
+    valid: xp([
+      // lusca.csrf() recognized as global CSRF middleware
+      { code: `app.use(lusca.csrf()); app.post('/transfer', handler);` },
+      // member callee that is not lusca.csrf
+      { code: `app.use(other.csrf());` },
+      // lusca method that is not csrf
+      { code: `app.use(lusca.xframe());` },
+      // deep member callee — object is not an identifier
+      { code: `app.use(ns.security.csrf());` },
+      // unknown factory call — not an Express object
+      { code: `getApp().post('/x', handler);` },
+      // Router() on a non-express namespace
+      { code: `foo.Router().post('/x', handler);` },
+      // this.app member — skipped to avoid false positives
+      { code: `this.app.post('/x', handler);` },
+      // ignorePatterns regex match
+      {
+        code: `app.post('/webhook/stripe', handler);`,
+        options: [{ ignorePatterns: ['^/webhook'] }],
+      },
+      // invalid regex ignore pattern falls back to substring inclusion
+      {
+        code: `app.post('/a[b', handler);`,
+        options: [{ ignorePatterns: ['['] }],
+      },
+      // csurf-named identifier middleware sets the global flag
+      { code: `app.use(csurfMiddleware); app.post('/transfer', handler);` },
+    ]),
+    invalid: xp([
+      // non-CSRF middleware identifiers do not set the global flag
+      {
+        code: `app.use(logger); app.post('/transfer', handler);`,
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      // non-literal route argument cannot match ignore patterns
+      {
+        code: `app.post(routeVar, handler);`,
+        options: [{ ignorePatterns: ['^/x'] }],
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      // express() result used directly
+      {
+        code: `express().post('/t', handler);`,
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+      // express.Router() result used directly
+      {
+        code: `express.Router().post('/t', handler);`,
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+    ]),
+  },
+);

@@ -6,7 +6,6 @@ category: security
 severity: high
 cwe: CWE-319
 autofix: false
-owasp: 'A02:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -72,10 +71,10 @@ The `max-age` finding offers one editor suggestion (no auto-fix): **raise `maxAg
 
 ## Options
 
-| Option              | Type      | Default    | Description                                       |
-| ------------------- | --------- | ---------- | ------------------------------------------------- |
-| `minMaxAge`         | `number`  | `15552000` | Minimum accepted `max-age`, in seconds (six months; use `31536000` for preload eligibility) |
-| `requireSubDomains` | `boolean` | `true`     | Report `includeSubDomains: false`                 |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `minMaxAge` | `number` | — | Minimum accepted max-age in seconds |
+| `requireSubDomains` | `boolean` | — | Require includeSubDomains |
 
 ```json
 {
@@ -91,6 +90,10 @@ The `max-age` finding offers one editor suggestion (no auto-fix): **raise `maxAg
 ## When Not To Use It
 
 While migrating subdomains to HTTPS, set `requireSubDomains: false` rather than disabling the rule — you keep the `max-age` and disable checks. An app served only over a private network with no TLS at all has no use for the rule.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

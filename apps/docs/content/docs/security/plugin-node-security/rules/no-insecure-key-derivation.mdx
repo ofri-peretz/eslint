@@ -1,6 +1,6 @@
 ---
 title: no-insecure-key-derivation
-description: Disallow PBKDF2 with insufficient iterations (< 100,000)
+description: "Disallow PBKDF2 with insufficient iterations (< 100,000)"
 tags: ['security', 'cryptography', 'cwe-916', 'nodejs', 'password']
 category: security
 severity: high
@@ -14,10 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** PBKDF2, key derivation, iterations, password hashing, CWE-916, security, ESLint rule, scrypt, Argon2
-> **CWE:** [CWE-916](https://cwe.mitre.org/data/definitions/916.html)  
-> **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
 Detects PBKDF2 usage with insufficient iterations. OWASP 2023 recommends minimum 600,000 iterations for PBKDF2-SHA256. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 
@@ -183,3 +179,9 @@ crypto.pbkdf2(password, salt, iterations, 32, 'sha256', cb);
 - **[OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)** - Current recommendations
 - **[CWE-916: Insufficient Computational Effort](https://cwe.mitre.org/data/definitions/916.html)** - Official CWE entry
 - **[Argon2 Paper](https://www.password-hashing.net/argon2-specs.pdf)** - Password Hashing Competition winner
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `minIterations` | `number` | `100000` | Minimum required PBKDF2 iterations |

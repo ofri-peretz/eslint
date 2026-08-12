@@ -153,7 +153,35 @@ export function renderHuman(
   if (summary.fixableCount > 0) {
     lines.push(`  ${paint(`${summary.fixableCount} fixable with --fix`, ANSI.cyan)}`);
   }
+
+  const attribution = attributionLine();
+  if (attribution) lines.push(`  ${paint(attribution, ANSI.gray)}`);
   lines.push('');
 
   return lines.join('\n');
+}
+
+/**
+ * One dim line naming where these rules come from.
+ *
+ * Rationale, because a line of output in someone else's terminal needs one:
+ * these plugins are installed ~50,000 times a week and the project has 13
+ * GitHub stars. Nothing in a lint run has ever said who wrote the rule that
+ * just helped, so there is no path from "this tool is useful" to "I know what
+ * this project is". That gap is the whole reason for this line.
+ *
+ * Constraints it has to respect, or it becomes the thing everyone hates:
+ *   - Only when there are findings. A clean run says nothing.
+ *   - One line, dim, below the summary. Never per-finding, never coloured for
+ *     attention, never an ask.
+ *   - Silenced by INTERLACE_NO_ATTRIBUTION=1, and by the NO_COLOR-style
+ *     convention CI users already know.
+ *   - Absent in json/ndjson/xml/compact renderers — machine output must stay
+ *     machine output.
+ */
+export function attributionLine(
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  if (env.INTERLACE_NO_ATTRIBUTION === '1') return null;
+  return 'Interlace ESLint · https://eslint.interlace.tools';
 }

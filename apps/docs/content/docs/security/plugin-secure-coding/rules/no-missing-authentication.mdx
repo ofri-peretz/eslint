@@ -1,6 +1,6 @@
 ---
 title: no-missing-authentication
-description: "CWE: CWE-287"
+description: "CWE-287"
 tags: ['security', 'core']
 category: security
 severity: high
@@ -13,10 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** no-missing-authentication, Express, Fastify, route handler, middleware, JWT, security, ESLint rule, CWE-287, broken authentication
-> **CWE:** [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)  
-> **OWASP Mobile:** [OWASP Mobile Top 10 M3: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Quick Summary
 
@@ -174,3 +170,13 @@ app.get('/data', (req, res) => {
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [Express Guide - Using Middleware](https://expressjs.com/en/guide/using-middleware.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing authentication in test files |
+| `authMiddlewarePatterns` | `string[]` | `["authenticate","auth","requireAuth","isAuthenticated","verifyToken","checkAuth","ensureAuthenticated","passport.authenticate","jwt","session"]` | Authentication middleware patterns to recognize |
+| `routeHandlerPatterns` | `string[]` | `["get","post","put","delete","patch","all","use"]` | Route handler patterns to check |
+| `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
+| `testFilePattern` | `string` | `"\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$"` | Test file pattern regex string |

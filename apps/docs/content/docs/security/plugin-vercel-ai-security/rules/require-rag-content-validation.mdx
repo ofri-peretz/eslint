@@ -1,6 +1,6 @@
 ---
 title: require-rag-content-validation
-description: This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used d...
+description: "This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used d..."
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -76,10 +76,10 @@ await generateObject({
 
 ## ⚙️ Options
 
-| Option               | Type       | Default                                                                            | Description                         |
-| -------------------- | ---------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
-| `ragPatterns`        | `string[]` | `['search', 'retrieve', 'query', 'vectorStore', 'embeddings', 'similaritySearch']` | Patterns suggesting RAG operations  |
-| `validatorFunctions` | `string[]` | `['validate', 'sanitize', 'filter', 'clean', 'verify']`                            | Functions that validate RAG content |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ragPatterns` | `string[]` | `["search","retrieve","query","vectorStore","embeddings","similaritySearch","findSimilar","getDocuments","fetchDocs","documents","chunks","passages","context"]` | Patterns suggesting RAG operations |
+| `validatorFunctions` | `string[]` | `["validate","sanitize","filter","clean","verify","validateRag","sanitizeContent","filterDocs"]` | Functions that validate RAG content |
 
 ## 🛡️ Why This Matters
 

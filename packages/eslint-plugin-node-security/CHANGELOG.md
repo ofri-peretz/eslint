@@ -1,3 +1,39 @@
+## 4.9.1
+
+### Patch Changes
+
+- [#500](https://github.com/ofri-peretz/eslint/pull/500) [`40be6ea`](https://github.com/ofri-peretz/eslint/commit/40be6ea87b958a597b870fb006701cf4fd00f7ff) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - lock-file: report once per project, not once per file
+
+  The rule carried `let checked = false` inside `create()`, which reads as a
+  once-only guard but is not one — ESLint calls `create()` per file, so the flag
+  reset every time. Linting auth0/express-openid-connect produced 135 identical
+  findings, at arbitrary lines such as `end-to-end/fixture/jwk.js:34`, for a
+  single fact about the repository.
+
+  The report is now keyed on the nearest `package.json`, at module scope so it
+  survives across files. A directory with no manifest anywhere above it is not a
+  JS project and is no longer reported at all.
+
+- [#496](https://github.com/ofri-peretz/eslint/pull/496) [`4fc9b6a`](https://github.com/ofri-peretz/eslint/commit/4fc9b6abd3d5dbb1f6b21141bbb50a1eb488ddd7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - detect-suspicious-dependencies: stop reporting real packages as typosquats
+
+  Edit distance alone cannot separate a typosquat from a package that merely has
+  a similar name. At distance ≤ 2 the rule reported `preact` (one edit from
+  `react`, and a deliberate dependency of okta/okta-signin-widget) and `recast`
+  (two edits, the AST library jscodeshift is built on).
+
+  Two changes. The threshold drops to a single edit, and the distance function
+  now counts a transposition as one edit (Damerau) rather than two — so `raect`
+  and `exprses`, the most common squat shape, are caught rather than lost to the
+  tighter threshold. A short allow-list covers real packages that sit one edit
+  from a popular name.
+
+  Accusing a legitimate dependency of being an attack costs a great deal more
+  than missing one squat, so a name now has to clear both gates before it is
+  reported.
+
+- Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:
+  - @interlace/eslint-devkit@1.13.0
+
 ## 4.9.0
 
 ### Minor Changes

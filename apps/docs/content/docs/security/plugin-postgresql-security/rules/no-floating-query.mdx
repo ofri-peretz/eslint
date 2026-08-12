@@ -1,6 +1,6 @@
 ---
 title: no-floating-query
-description: Ensures query promises are awaited or handled.
+description: "Ensures query promises are awaited or handled."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

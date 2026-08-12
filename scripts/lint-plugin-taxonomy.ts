@@ -152,8 +152,9 @@ const GRANDFATHERED: Grandfathered[] = [
   },
   {
     file: 'eslint-plugin-node-security/src/rules/detect-suspicious-dependencies/index.ts',
-    tokens: ['react', 'express', 'axios'],
-    reason: 'Sanctioned exception — typosquat reference names for dependency hygiene, not an SDK integration.',
+    tokens: ['react', 'express', 'axios', 'preact'],
+    reason:
+      'Sanctioned exception — typosquat reference names for dependency hygiene, not an SDK integration. The added names are the allow-list of real packages that sit one edit from a popular one, so a genuine dependency is not reported as an attack.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/prefer-native-crypto/index.ts',

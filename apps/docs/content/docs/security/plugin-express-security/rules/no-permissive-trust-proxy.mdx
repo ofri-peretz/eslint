@@ -6,7 +6,6 @@ category: security
 severity: medium
 cwe: CWE-348
 autofix: false
-owasp: 'A05:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -69,9 +68,9 @@ The rule offers one editor suggestion (no auto-fix): **trust exactly `hopCount` 
 
 ## Options
 
-| Option     | Type     | Default | Description                                                    |
-| ---------- | -------- | ------- | -------------------------------------------------------------- |
-| `hopCount` | `number` | `1`     | Number of reverse proxies in front of the app, used in the suggested fix |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `hopCount` | `number` | — | Number of reverse proxies used in the suggested fix |
 
 ```json
 {
@@ -84,6 +83,10 @@ The rule offers one editor suggestion (no auto-fix): **trust exactly `hopCount` 
 ## When Not To Use It
 
 If nothing keyed on `req.ip` has a security consequence in your app — no rate limiting, no allowlists, no IP in the audit trail — the setting is only a logging-accuracy question and the rule can be disabled.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

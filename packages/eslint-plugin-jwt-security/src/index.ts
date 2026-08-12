@@ -44,7 +44,10 @@ import { noSensitivePayload } from './rules/no-sensitive-payload';
 /**
  * Collection of all JWT security ESLint rules (13 rules)
  */
-export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+export const rules: Record<
+  string,
+  TSESLint.RuleModule<string, readonly unknown[]>
+> = {
   // Core Security Rules
   'no-algorithm-none': noAlgorithmNone,
   'no-algorithm-confusion': noAlgorithmConfusion,
@@ -69,7 +72,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt-security',
-    version: '2.3.3',
+    version: '2.3.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

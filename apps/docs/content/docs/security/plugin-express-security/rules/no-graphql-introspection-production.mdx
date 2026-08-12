@@ -1,6 +1,6 @@
 ---
 title: no-graphql-introspection-production
-description: This rule detects GraphQL servers with introspection enabled in production
+description: "This rule detects GraphQL servers with introspection enabled in production"
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -64,9 +64,10 @@ const server = new ApolloServer({
 
 ## Options
 
-| Option         | Type      | Default | Description                       |
-| -------------- | --------- | ------- | --------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow introspection in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowInDevelopment` | `boolean` | `true` | Allow introspection when the code is guarded by a development check |
 
 ```json
 {

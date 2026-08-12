@@ -34,6 +34,7 @@ import { getProjectContext } from '../../utils/project-context';
 import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'missingValidation' | 'addValidationPipe' | 'undecoratedDto';
 
@@ -154,6 +155,10 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const {
       allowInTests = true,
       assumeGlobalPipes = false,

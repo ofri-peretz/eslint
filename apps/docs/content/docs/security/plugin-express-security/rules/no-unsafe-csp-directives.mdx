@@ -6,7 +6,6 @@ category: security
 severity: high
 cwe: CWE-79
 autofix: false
-owasp: 'A03:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -142,9 +141,9 @@ The source-level findings (`'unsafe-inline'`, `'unsafe-eval'`, wildcards) offer 
 
 ## Options
 
-| Option          | Type      | Default | Description                                                        |
-| --------------- | --------- | ------- | ------------------------------------------------------------------ |
-| `checkStyleSrc` | `boolean` | `true`  | Also report unsafe sources in `style-src` / `style-src-elem` / `style-src-attr` |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `checkStyleSrc` | `boolean` | — | Also report unsafe sources in style-executing directives |
 
 ```json
 {
@@ -160,6 +159,10 @@ The source-level findings (`'unsafe-inline'`, `'unsafe-eval'`, wildcards) offer 
 ## When Not To Use It
 
 Apps that build the CSP in a reverse proxy or a CSP-specific library rather than helmet get nothing from this rule. If a CSS-in-JS runtime forces `'unsafe-inline'` in `style-src` and moving to nonces is not yet scheduled, set `checkStyleSrc: false` instead of turning the rule off.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

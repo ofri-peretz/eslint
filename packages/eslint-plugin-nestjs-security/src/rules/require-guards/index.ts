@@ -40,6 +40,7 @@ import {
 } from '../../utils/nest-ast';
 import { tokenize } from '../../utils/sensitive-names';
 import { getProjectContext } from '../../utils/project-context';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds =
   'missingGuards' | 'emptyGuards' | 'missingRequiredGuard' | 'addGuards';
@@ -358,6 +359,10 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const {
       allowInTests = true,
       allowPublicDecorator = true,

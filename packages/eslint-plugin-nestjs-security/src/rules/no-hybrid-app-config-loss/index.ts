@@ -59,6 +59,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 import {
   expressionName,
   isTestFile,
@@ -113,6 +114,10 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context, [options = {}]) {
+    // Registering no visitors is both the gate and the cheap path: a file
+    // that does not use this SDK does no work at all.
+    if (!fileUsesNestjs(context.sourceCode.ast)) return {};
+
     const { allowInTests = true } = options;
     if (allowInTests && isTestFile(context.filename)) return {};
 

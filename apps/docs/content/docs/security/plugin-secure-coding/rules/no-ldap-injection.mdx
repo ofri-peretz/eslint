@@ -1,6 +1,6 @@
 ---
 title: no-ldap-injection
-description: Detects LDAP injection vulnerabilities
+description: "Detects LDAP injection vulnerabilities"
 tags: ['security', 'core']
 category: security
 severity: critical
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
 
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -93,11 +91,14 @@ const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 
 ## Options
 
-| Option                    | Type       | Default                        | Description             |
-| ------------------------- | ---------- | ------------------------------ | ----------------------- |
-| `ldapFunctions`           | `string[]` | `['search', 'bind', 'modify']` | LDAP functions to check |
-| `ldapEscapeFunctions`     | `string[]` | `['escape.filterValue']`       | LDAP escape functions   |
-| `ldapValidationFunctions` | `string[]` | `['validateLdapInput']`        | Validation functions    |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ldapFunctions` | `string[]` | `["search","bind","modify","add","delete","compare","searchAsync"]` | LDAP client methods treated as query sinks |
+| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
+| `ldapValidationFunctions` | `string[]` | `["validateLdapInput","sanitizeLdapFilter","cleanLdapValue","checkLdapFilter"]` | Function names that count as LDAP input validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as LDAP sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

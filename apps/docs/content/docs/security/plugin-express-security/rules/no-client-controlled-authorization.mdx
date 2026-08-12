@@ -6,7 +6,6 @@ category: security
 severity: high
 cwe: CWE-863
 autofix: false
-owasp: 'A01:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -100,9 +99,9 @@ If a proxy really is the only writer of an identity header, terminate it: strip 
 
 ## Options
 
-| Option            | Type       | Default | Description                                               |
-| ----------------- | ---------- | ------- | --------------------------------------------------------- |
-| `extraProperties` | `string[]` | `[]`    | Extra property names treated as authorization attributes   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `extraProperties` | `string[]` | — | Extra property names treated as authorization attributes |
 
 ```json
 {
@@ -118,6 +117,10 @@ If a proxy really is the only writer of an identity header, terminate it: strip 
 ## When Not To Use It
 
 An app whose only "authorization" is a per-request tenant id supplied by a trusted internal caller (service-to-service, mTLS-terminated) will see findings that are accepted risk. Prefer an inline disable with a comment naming the trust boundary over turning the rule off.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

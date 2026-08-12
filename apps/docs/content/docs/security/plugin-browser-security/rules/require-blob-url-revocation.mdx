@@ -1,6 +1,6 @@
 ---
 title: require-blob-url-revocation
-description: Require revoking Blob URLs after use to prevent memory leaks.
+description: "Require revoking Blob URLs after use to prevent memory leaks."
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -63,10 +63,14 @@ useEffect(() => {
 
 ## 🛠️ Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
 ```json
 {
   "rules": {
-    "@interlace/browser-security/require-blob-url-revocation": [
+    "browser-security/require-blob-url-revocation": [
       "error",
       {
         "allowInTests": true

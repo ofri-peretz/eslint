@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing better-sqlite3 / node:sqlite statements.
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['sqlite3', 'better-sqlite3', 'node:sqlite', 'bun:sqlite'],
   methods: ['prepare', 'exec', 'run', 'all', 'get'],
   requireSqlKeywords: true,
   fix: 'Use bound parameters (`?` or `:name`) and pass values to `.run()` / `.get()` / `.all()` instead of interpolating them.',

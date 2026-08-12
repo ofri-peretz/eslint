@@ -6,7 +6,6 @@ category: security
 severity: high
 cwe: CWE-693
 autofix: false
-owasp: 'A05:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -89,9 +88,9 @@ The rule offers one editor suggestion (no auto-fix): **remove the `<option>: fal
 
 ## Options
 
-| Option           | Type       | Default | Description                                                                      |
-| ---------------- | ---------- | ------- | -------------------------------------------------------------------------------- |
-| `allowDisabled`  | `string[]` | `[]`    | Helmet option names that may be disabled without a report (e.g. a CSP set at the CDN edge) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowDisabled` | `string[]` | — | Helmet option names that may be disabled without a report |
 
 ```json
 {
@@ -107,6 +106,10 @@ The rule offers one editor suggestion (no auto-fix): **remove the `<option>: fal
 ## When Not To Use It
 
 If the security headers are set by a reverse proxy or CDN in front of every environment (and that config is itself reviewed), list the options in `allowDisabled` rather than disabling the rule wholesale.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

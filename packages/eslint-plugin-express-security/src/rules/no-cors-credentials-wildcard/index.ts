@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-cors-credentials-wildcard
  * Prevents dangerous CORS configurations with credentials: true and wildcard origin
- * 
+ *
  * CVE-2024-25124 - CVSS 9.1 Critical
  * CWE-942: Permissive Cross-domain Policy with Untrusted Domains
  *
@@ -15,6 +15,7 @@
  * @see https://cwe.mitre.org/data/definitions/942.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -35,20 +36,20 @@ type RuleOptions = [Options?];
  */
 function hasWildcardOrigin(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
-  
+
   // Check for origin: '*'
   if (/\borigin\s*:\s*['"`]\*['"`]/.test(text)) {
     return true;
   }
-  
+
   // Check for origin: true (reflects request origin - effectively wildcard)
   if (/\borigin\s*:\s*true\b/.test(text)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -57,7 +58,7 @@ function hasWildcardOrigin(
  */
 function hasCredentialsTrue(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
   return /\bcredentials\s*:\s*true\b/.test(text);
@@ -68,7 +69,7 @@ function hasCredentialsTrue(
  * Returns the config node only for the appropriate level to avoid double-triggering
  */
 function getCorsConfigNode(
-  node: TSESTree.CallExpression
+  node: TSESTree.CallExpression,
 ): TSESTree.ObjectExpression | null {
   const callee = node.callee;
 
@@ -86,7 +87,7 @@ function getCorsConfigNode(
       // Skip - let the app.use() case handle this
       return null;
     }
-    
+
     if (node.arguments[0]?.type === 'ObjectExpression') {
       return node.arguments[0];
     }
@@ -167,6 +168,12 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;

@@ -16,7 +16,11 @@
  * @see https://securitypattern.com/post/jwt-back-to-the-future
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
@@ -46,7 +50,8 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
           'JWT without iat claim cannot be validated for freshness, enabling replay attacks',
         severity: 'MEDIUM',
         fix: 'Add iat claim to payload or use library option that adds it automatically',
-        documentationLink: 'https://securitypattern.com/post/jwt-back-to-the-future',
+        documentationLink:
+          'https://securitypattern.com/post/jwt-back-to-the-future',
       }),
     },
     schema: [
@@ -93,7 +98,7 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
         (prop) =>
           prop.type === 'Property' &&
           prop.key.type === 'Identifier' &&
-          prop.key.name === 'iat'
+          prop.key.name === 'iat',
       );
     };
 

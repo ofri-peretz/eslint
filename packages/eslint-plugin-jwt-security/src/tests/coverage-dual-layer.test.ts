@@ -44,18 +44,23 @@ const ruleTester = new RuleTester({
 // key before the `algorithms` entry) still land the report on the right node.
 // ---------------------------------------------------------------------------
 describe('coverage: no-algorithm-confusion property-loop guards', () => {
-  ruleTester.run('spread and computed props before algorithms', noAlgorithmConfusion, {
-    valid: [],
-    invalid: [
-      {
-        // SpreadElement (prop.type !== 'Property') and computed key
-        // (prop.key.type !== 'Identifier') are skipped; the report fires on
-        // the `algorithms` property value.
-        code: `jwt.verify(token, publicKey, { ...baseOpts, ['audit']: true, algorithms: ['HS256'] });`,
-        errors: [{ messageId: 'algorithmConfusion' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'spread and computed props before algorithms',
+    noAlgorithmConfusion,
+    {
+      valid: [],
+      invalid: [
+        {
+          // SpreadElement (prop.type !== 'Property') and computed key
+          // (prop.key.type !== 'Identifier') are skipped; the report fires on
+          // the `algorithms` property value.
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { ...baseOpts, ['audit']: true, algorithms: ['HS256'] });`,
+          errors: [{ messageId: 'algorithmConfusion' }],
+        },
+      ],
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -65,21 +70,32 @@ describe('coverage: no-algorithm-none decode detection', () => {
   ruleTester.run('isDecodeCall branches', noAlgorithmNone, {
     valid: [
       // object name is neither `jwt` nor `jsonwebtoken` -> not a decode call
-      { code: `myParser.decode(data);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+myParser.decode(data);`,
+      },
       // callee object is itself a MemberExpression -> returns false
-      { code: `api.jwt.decode(token);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+api.jwt.decode(token);`,
+      },
       // computed property (Literal, not Identifier) -> returns false
-      { code: `jwt["decode"](token);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+jwt["decode"](token);`,
+      },
     ],
     invalid: [
       // jwt.decode() is flagged as equivalent to algorithm:"none"
       {
-        code: `jwt.decode(token);`,
+        code: `import jwt from 'jsonwebtoken';
+jwt.decode(token);`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },
       // jsonwebtoken.decode() — second operand of the name check
       {
-        code: `jsonwebtoken.decode(token);`,
+        code: `import jwt from 'jsonwebtoken';
+jsonwebtoken.decode(token);`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },
     ],
@@ -92,35 +108,43 @@ describe('coverage: no-algorithm-none decode detection', () => {
 // exercises hasSafeAnnotation for both the jwt.decode and jwt_decode paths).
 // ---------------------------------------------------------------------------
 describe('coverage: no-decode-without-verify safe annotations', () => {
-  ruleTester.run('trusted annotations suppress the report', noDecodeWithoutVerify, {
-    valid: [
-      {
-        // custom trustedAnnotations option suppresses the jwt.decode report
-        code: `// @decoded-header-only
+  ruleTester.run(
+    'trusted annotations suppress the report',
+    noDecodeWithoutVerify,
+    {
+      valid: [
+        {
+          // custom trustedAnnotations option suppresses the jwt.decode report
+          code: `import jwt from 'jsonwebtoken';
+// @decoded-header-only
 const header = jwt.decode(token);`,
-        options: [{ trustedAnnotations: ['@decoded-header-only'] }],
-      },
-      {
-        // built-in devkit SAFE_ANNOTATIONS ('@verified') suppresses jwt_decode
-        code: `/* @verified-separately */
+          options: [{ trustedAnnotations: ['@decoded-header-only'] }],
+        },
+        {
+          // built-in devkit SAFE_ANNOTATIONS ('@verified') suppresses jwt_decode
+          code: `import jwt from 'jsonwebtoken';
+/* @verified-separately */
 const payload = jwt_decode(token);`,
-      },
-    ],
-    invalid: [
-      // Unrelated leading comment does NOT suppress — annotation walk runs
-      // and falls through to the report.
-      {
-        code: `// TODO: refactor later
+        },
+      ],
+      invalid: [
+        // Unrelated leading comment does NOT suppress — annotation walk runs
+        // and falls through to the report.
+        {
+          code: `import jwt from 'jsonwebtoken';
+// TODO: refactor later
 const payload = jwt.decode(token);`,
-        errors: [{ messageId: 'decodeWithoutVerify' }],
-      },
-      {
-        code: `// just a note
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
+// just a note
 const payload = jwt_decode(token);`,
-        errors: [{ messageId: 'jwtDecodeLibrary' }],
-      },
-    ],
-  });
+          errors: [{ messageId: 'jwtDecodeLibrary' }],
+        },
+      ],
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -131,28 +155,47 @@ describe('coverage: no-hardcoded-secret const-literal resolution', () => {
   ruleTester.run('single-frame const indirection', noHardcodedSecret, {
     valid: [
       // `let` binding is never resolved (kind !== 'const') -> treated safe
-      { code: `let MUTABLE_SECRET = 'abc'; jwt.sign(payload, MUTABLE_SECRET);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+let MUTABLE_SECRET = 'abc'; jwt.sign(payload, MUTABLE_SECRET);`,
+      },
       // function parameter: def.type is 'Parameter', not 'Variable' -> safe
-      { code: `function issue(SECRET) { return jwt.sign(payload, SECRET); }` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+function issue(SECRET) { return jwt.sign(payload, SECRET); }`,
+      },
       // unresolved global identifier: no def at all -> safe
-      { code: `jwt.sign(payload, GLOBAL_SECRET);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, GLOBAL_SECRET);`,
+      },
       // for-of const has no initializer: `def.node.init ?? null` -> null -> safe
-      { code: `for (const SECRET of secretList) { jwt.sign(payload, SECRET); }` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+for (const SECRET of secretList) { jwt.sign(payload, SECRET); }`,
+      },
       // const resolved to a non-literal initializer (call) -> safe
-      { code: `const KEY = loadKey(); jwt.sign(payload, KEY);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+const KEY = loadKey(); jwt.sign(payload, KEY);`,
+      },
       // non-identifier, non-literal secret arg: resolveConstLiteralValue()
       // gets a non-Identifier node via isHardcodedStringOrResolvedConst -> null
-      { code: `jwt.sign(payload, [42]);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, [42]);`,
+      },
     ],
     invalid: [
       // const-hidden string literal is resolved and flagged
       {
-        code: `const SECRET = 'my-hardcoded-secret'; jwt.sign(payload, SECRET);`,
+        code: `import jwt from 'jsonwebtoken';
+const SECRET = 'my-hardcoded-secret'; jwt.sign(payload, SECRET);`,
         errors: [{ messageId: 'hardcodedSecret' }],
       },
       // const-hidden expressionless template literal is resolved and flagged
       {
-        code: 'const SECRET = `template-secret`; jwt.sign(payload, SECRET);',
+        code: 'import jwt from "jsonwebtoken";\nconst SECRET = `template-secret`; jwt.sign(payload, SECRET);',
         errors: [{ messageId: 'hardcodedSecret' }],
       },
     ],
@@ -163,16 +206,21 @@ describe('coverage: no-hardcoded-secret const-literal resolution', () => {
 // Layer 1 — no-sensitive-payload: property-loop guards.
 // ---------------------------------------------------------------------------
 describe('coverage: no-sensitive-payload property-loop guards', () => {
-  ruleTester.run('spread and non-identifier keys are skipped', noSensitivePayload, {
-    valid: [
-      // SpreadElement (prop.type !== 'Property') and string-literal key
-      // (prop.key.type !== 'Identifier') are both skipped without reporting.
-      {
-        code: `jwt.sign({ ...claims, 'display-name': name, role: 'admin' }, process.env.JWT_SECRET);`,
-      },
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'spread and non-identifier keys are skipped',
+    noSensitivePayload,
+    {
+      valid: [
+        // SpreadElement (prop.type !== 'Property') and string-literal key
+        // (prop.key.type !== 'Identifier') are both skipped without reporting.
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ ...claims, 'display-name': name, role: 'admin' }, process.env.JWT_SECRET);`,
+        },
+      ],
+      invalid: [],
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -182,19 +230,24 @@ describe('coverage: no-weak-secret template literals and arg guard', () => {
   ruleTester.run('template secret arms', noWeakSecret, {
     valid: [
       // sign() with a single argument: secret check is skipped entirely
-      { code: `jwt.sign(payload);` },
+      {
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload);`,
+      },
       // strong 34-char template literal: neither weak pattern nor short
-      { code: 'jwt.sign(payload, `ThisIsAVeryStrongSecretThatIs32Ch+`);' },
+      {
+        code: 'import jwt from "jsonwebtoken";\njwt.sign(payload, `ThisIsAVeryStrongSecretThatIs32Ch+`);',
+      },
     ],
     invalid: [
       // known weak pattern in a template literal (left arm true)
       {
-        code: 'jwt.sign(payload, `secret`);',
+        code: 'import jwt from "jsonwebtoken";\njwt.sign(payload, `secret`);',
         errors: [{ messageId: 'weakSecret' }],
       },
       // short but not a known pattern (left arm false, right arm true)
       {
-        code: 'jwt.sign(payload, `xy9z`);',
+        code: 'import jwt from "jsonwebtoken";\njwt.sign(payload, `xy9z`);',
         errors: [{ messageId: 'weakSecret' }],
       },
     ],
@@ -252,7 +305,8 @@ describe('coverage (unit): no-hardcoded-secret defensive scope guards', () => {
     }) as unknown as TSESTree.CallExpression;
 
   it('treats the secret as unresolvable when sourceCode.getScope is absent', () => {
-    const { listeners, reports, context } = createWithMockContext(noHardcodedSecret);
+    const { listeners, reports, context } =
+      createWithMockContext(noHardcodedSecret);
     (context.sourceCode as { getScope?: unknown }).getScope = undefined;
 
     const secretId = { type: 'Identifier', name: 'SECRET' };
@@ -266,7 +320,8 @@ describe('coverage (unit): no-hardcoded-secret defensive scope guards', () => {
   });
 
   it('returns null when the resolved def has no parent declaration', () => {
-    const { listeners, reports, context } = createWithMockContext(noHardcodedSecret);
+    const { listeners, reports, context } =
+      createWithMockContext(noHardcodedSecret);
     const secretId = { type: 'Identifier', name: 'SECRET' };
     const scope = {
       variables: [],
@@ -291,7 +346,8 @@ describe('coverage (unit): no-hardcoded-secret defensive scope guards', () => {
   });
 
   it('returns null when the def parent is not a VariableDeclaration', () => {
-    const { listeners, reports, context } = createWithMockContext(noHardcodedSecret);
+    const { listeners, reports, context } =
+      createWithMockContext(noHardcodedSecret);
     const secretId = { type: 'Identifier', name: 'SECRET' };
     const scope = {
       variables: [],

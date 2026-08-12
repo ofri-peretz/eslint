@@ -139,7 +139,7 @@ const baseUrl = `${config.protocol}://api.example.com`;
 ## Related Rules
 
 - [no-disabled-certificate-validation](./no-disabled-certificate-validation.md)
-- no-insecure-ssl (planned) (in eslint-plugin-pg)
+- no-insecure-ssl (planned) (in eslint-plugin-postgresql-security)
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: no-operator-injection
-description: Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to...
+description: "Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to..."
 tags: ['security', 'mongodb']
 category: security
 severity: critical
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
 
 Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` to bypass authentication or exfiltrate data.
 
@@ -126,3 +124,9 @@ User.aggregate([{ $match: req.body.filter }]);
 
 - [OWASP NoSQL Injection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)
 - [CWE-943: Improper Neutralization of Special Elements in Data Query Logic](https://cwe.mitre.org/data/definitions/943.html)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
