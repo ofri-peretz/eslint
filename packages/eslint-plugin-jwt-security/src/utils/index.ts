@@ -143,7 +143,17 @@ export const SENSITIVE_PAYLOAD_FIELDS = new Set([
 export const JWT_METHODS = {
   SIGN: new Set(['sign', 'signJWT', 'SignJWT']),
   VERIFY: new Set(['verify', 'verifyJWT', 'jwtVerify']),
-  DECODE: new Set(['decode', 'jwtDecode', 'decodeJWT']),
+  // `decodeJwt` is jose's actual export. The set listed `decodeJWT` — an
+  // all-caps spelling no JWT library ships — so every `decodeJwt(token)` call
+  // in a file importing jose went unreported, despite jose being a listed
+  // library in JWT_LIBRARIES. Verified against the installed package:
+  // `Object.keys(require('jose')).filter(k => /decode/i.test(k))` is
+  // `['decodeJwt', 'decodeProtectedHeader']`.
+  //
+  // `decodeProtectedHeader` is deliberately NOT here: reading the header to
+  // pick a key before verifying is the documented jose flow, and the rule
+  // already carries `allowHeaderInspection` for that case.
+  DECODE: new Set(['decode', 'jwtDecode', 'decodeJWT', 'decodeJwt']),
 } as const;
 
 /** Package roots whose API these method names belong to. */
@@ -196,7 +206,12 @@ function fileImportsJwtLibrary(node: TSESTree.Node): boolean {
  */
 function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
   if (node.callee.type !== 'MemberExpression') return false;
-  const object = node.callee.object;
+  // Walk to the root of the receiver chain. `sdk.token.decode(t)` has a
+  // MemberExpression receiver, so reading `callee.object` alone found no
+  // Identifier and gave up before ever checking where `sdk` came from — the
+  // gate simply did not apply to any call more than one member deep.
+  let object: TSESTree.Node = node.callee.object;
+  while (object.type === 'MemberExpression') object = object.object;
   if (object.type !== 'Identifier') return false;
 
   // Reached only after `fileImportsJwtLibrary` returned true, which already
