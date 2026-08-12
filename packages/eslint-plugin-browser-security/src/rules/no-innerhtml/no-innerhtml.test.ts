@@ -19,6 +19,22 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-innerhtml', noInnerhtml, {
   valid: [
+    // --- `write`/`writeln` are DOM sinks only on a document ----------------
+    // The method name alone is one of the most overloaded in JavaScript. 23 of
+    // this rule's 73 corpus findings were Node streams — mostly Shopify/cli
+    // printing progress to stdout, reported as XSS.
+    { code: 'process.stdout.write(`Preview URL: ${previewUrl}`)' },
+    { code: 'process.stderr.write(`${message}\n`)' },
+    { code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)' },
+    { code: 'options.stdout.write(`done ${name}`)' },
+    { code: 'socket.write(payload)' },
+    { code: 'res.write(chunk)' },
+    { code: 'post.write(postData)' },
+    { code: 'result.write(item, offset, length)' },
+    // A receiver we cannot name at all — a call result, or a computed index —
+    // is not a document, so it confers no sink.
+    { code: 'getStream().write(data)' },
+    { code: 'streams[0].write(data)' },
     // Owned by no-websocket-innerhtml. The generic rule must stay silent here
     // or the same range carries two findings in `recommended` — which is what
     // it did before the ownership gate, measured on the shipped tarball.
@@ -62,6 +78,39 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
   ],
   invalid: [
+    // A document receiver is the real sink, in each spelling.
+    {
+      code: 'document.write(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'document.writeln(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'window.document.write(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'iframe.contentDocument.write(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'el.ownerDocument.write(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // A local named `doc` is the conventional binding for a document.
+    {
+      code: 'doc.write(userInput)',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // insertAdjacentHTML needs no receiver gate — nothing outside the DOM is
+    // called that — so it still reports on any object.
+    {
+      code: "el.insertAdjacentHTML('beforeend', userInput)",
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+
     // Variable assignment
     {
       code: `element.innerHTML = userInput;`,

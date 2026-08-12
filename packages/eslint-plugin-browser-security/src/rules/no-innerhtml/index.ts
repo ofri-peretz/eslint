@@ -160,6 +160,31 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       'writeln',
     ]);
 
+    /**
+     * `write` and `writeln` are DOM sinks only on a *document*.
+     *
+     * The method name alone is one of the most overloaded in JavaScript:
+     * `process.stdout.write`, `stderr.write`, `socket.write`, `res.write`,
+     * `stream.write`, `buffer.write`. Matching on it made every CLI progress
+     * message an XSS finding — 23 of the 73 corpus findings for this rule were
+     * Node streams, mostly `Shopify/cli` writing to stdout.
+     *
+     * `insertAdjacentHTML` needs no such gate: nothing outside the DOM is
+     * called that.
+     */
+    function isDocumentReceiver(object: TSESTree.Node): boolean {
+      // `document.write(...)`
+      if (object.type === 'Identifier') {
+        return object.name === 'document' || /^(?:.*[a-z])?[Dd]oc(?:ument)?$/.test(object.name);
+      }
+      // `window.document.write(...)`, `iframe.contentDocument.write(...)`,
+      // `el.ownerDocument.write(...)`
+      if (object.type === 'MemberExpression' && object.property.type === 'Identifier') {
+        return /^(?:content|owner)?[Dd]ocument$/.test(object.property.name);
+      }
+      return false;
+    }
+
     function reportSink(
       reportNode: TSESTree.Node,
       sinkName: string,
@@ -221,6 +246,15 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         const property = node.callee.property;
         if (property.type !== 'Identifier') return;
         if (!dangerousSinkMethods.has(property.name)) return;
+        // `write`/`writeln` are only DOM sinks on a document — see
+        // isDocumentReceiver. Without this, every `process.stdout.write` in a
+        // CLI was reported as XSS.
+        if (
+          (property.name === 'write' || property.name === 'writeln') &&
+          !isDocumentReceiver(node.callee.object)
+        ) {
+          return;
+        }
         // The HTML payload is the LAST argument for insertAdjacentHTML
         // (`(position, html)`) and the only argument for write/writeln.
         const tainted = node.arguments[node.arguments.length - 1];
