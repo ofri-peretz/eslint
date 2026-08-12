@@ -98,6 +98,7 @@ describe('null first option falls back to defaults (options || {})', () => {
       callee: { type: 'Identifier', name: 'fetch' },
       arguments: [],
     });
+    (listeners['Program:exit'] as Listener)({ type: 'Program' });
 
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ messageId: 'externalApiCallInUtils' });
