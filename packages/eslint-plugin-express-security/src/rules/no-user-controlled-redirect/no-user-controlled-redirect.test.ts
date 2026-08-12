@@ -79,6 +79,55 @@ describe('no-user-controlled-redirect', () => {
           res.redirect(next);
         `,
       },
+      // The pattern in Express's own "Production Best Practices: Security"
+      // page and the OWASP Unvalidated Redirects cheat sheet. Reporting this
+      // told readers their documented mitigation was the vulnerability.
+      {
+        code: `
+          app.use((req, res) => {
+            try {
+              if (new URL(req.query.url).host !== 'example.com') {
+                return res.status(400).end('Unsupported redirect');
+              }
+            } catch (e) {
+              return res.status(400).end('Invalid url');
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+      },
+      // Same guard via hostname
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.next).hostname !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.next);
+          });
+        `,
+      },
+      // Same guard via origin, throwing instead of returning
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.next).origin !== 'https://example.com') {
+              throw new Error('bad redirect');
+            }
+            res.redirect(req.query.next);
+          });
+        `,
+      },
+      // Guard and redirect reach the source through a computed *literal*
+      // property. `req.body['to']` is the same expression written both times,
+      // so the path comparison has to match on the literal key, not just on
+      // identifiers.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.body['to']).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.body['to']);
+          });
+        `,
+      },
       // Not a redirect call
       { code: `res.send(req.query.message);` },
       { code: `res.json({ url: req.body.url });` },
@@ -86,6 +135,65 @@ describe('no-user-controlled-redirect', () => {
       { code: `response.redirect(302, '/logout');` },
     ]),
     invalid: xp([
+      // A guard on a DIFFERENT source must not launder this redirect.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.other).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // An origin check that does not bail out is not a guard.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.url).host !== 'example.com') {
+              log('suspicious');
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // The origin check reads an unrelated variable, not the redirect target.
+      // Validating one value proves nothing about a different one.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(fallback).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // A computed key that is a *call* is not a stable path: the two
+      // `getKey()` calls can return different keys, so checking one says
+      // nothing about the value the other one reads.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query[getKey()]).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query[getKey()]);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // The only `return` sits inside a nested callback, so the handler never
+      // bails out — the request falls through to the redirect either way.
+      // Counting that return would let any origin check launder any redirect.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.url).host !== 'example.com') {
+              onFail(function () { return 1; });
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
       // Direct req.query access
       {
         code: `res.redirect(req.query.returnUrl);`,
