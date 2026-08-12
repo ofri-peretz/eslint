@@ -107,7 +107,19 @@ pre-push:
       # lefthook-turbo-cache-race lock, which pins exactly that shape so
       # `oxlint:shims:verify` can never read a half-written dist.
       # `set -f` stops the unquoted $FILTER from glob-expanding `[origin/main]`.
-      run: perl -e 'alarm 420; exec @ARGV' -- bash -c 'set -f; FILTER=; git rev-parse --verify --quiet origin/main >/dev/null && FILTER=--filter=...[origin/main]; npx --no turbo run build test $FILTER --output-logs=errors-only && npm run --silent oxlint:shims:verify'
+      # `build` is deliberately UNFILTERED while `test` is filtered.
+      #
+      # `oxlint:shims:verify` require()s `<pkg>/dist/src/index.js` for EVERY
+      # plugin, not just the affected ones. Under `--filter=...[origin/main]`
+      # the build produced dist for the 7 affected packages and the verify then
+      # failed on the other 9 with `Cannot find module …/dist/src/index.js` —
+      # a red gate that says nothing about the change. It reproduced 100% of
+      # the time in a fresh worktree, for any push not touching all 30 plugins.
+      #
+      # Filtering `test` is where the time actually goes (74 tasks → 21), and
+      # build is cache-hit in seconds once warm, so scoping only `test` keeps
+      # the speed win without handing the verify a half-built tree.
+      run: perl -e 'alarm 420; exec @ARGV' -- bash -c 'set -f; FILTER=; git rev-parse --verify --quiet origin/main >/dev/null && FILTER=--filter=...[origin/main]; npx --no turbo run build --output-logs=errors-only && npx --no turbo run test $FILTER --output-logs=errors-only && npm run --silent oxlint:shims:verify'
     # Only the markdown this push actually changes. `lint:md` walks 832 files
     # every time; a push that touches one .md paid for all of them.
     #

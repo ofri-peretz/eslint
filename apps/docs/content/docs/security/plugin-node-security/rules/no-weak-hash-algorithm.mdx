@@ -54,6 +54,7 @@ This rule detects usage of weak hash algorithms in `crypto.createHash()` calls a
 | -------------------------- | ---------- | ------- | ---------------------------------- |
 | `additionalWeakAlgorithms` | `string[]` | `[]`    | Additional weak algorithms to flag |
 | `allowInTests`             | `boolean`  | `false` | Allow weak hashes in test files    |
+| `nonCryptographicNames`    | `string[]` | `['sha', 'etag', 'cachekey', 'cachebuster']` | Assignment-target names that mark a hash as an identifier, not a security control |
 
 ```javascript
 {
@@ -185,9 +186,33 @@ crypto.createHash(algo);
 - **[CWE-327: Broken Crypto Algorithm](https://cwe.mitre.org/data/definitions/327.html)** - Official CWE entry
 - **[Node.js Crypto Documentation](https://nodejs.org/api/crypto.html)** - Node.js crypto module
 
+## Non-cryptographic hashing
+
+Not every hash is a security control. `redis/ioredis` computes the EVALSHA
+script identifier the Redis wire protocol mandates:
+
+```ts
+this.sha = createHash('sha1').update(lua).digest('hex');
+```
+
+SHA-1 is genuinely used here, but the algorithm is not the author's choice and
+breaking its collision resistance buys nothing — the value indexes a script the
+server already holds. The same shape covers HTTP ETags, content-addressed
+caches, and cache busting.
+
+A hash **assigned to** a name in `nonCryptographicNames` is not reported. The
+test is where the value lands, not which API produced it: the rule walks out
+through the `.update(...).digest(...)` receiver chain and reads the assignment
+target. A hash that is returned, passed as an argument, compared, or stored
+under a computed key is still reported — so renaming a variable to `sha` cannot
+silence the rule on a real security control.
+
+Set `nonCryptographicNames: []` to switch the exemption off.
+
 ## ⚙️ Options
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `additionalWeakAlgorithms` | `string[]` | `[]` | Additional weak algorithms to detect |
 | `allowInTests` | `boolean` | `false` | Allow weak hashes in test files |
+| `nonCryptographicNames` | `string[]` | `['sha', 'etag', 'cachekey', 'cachebuster']` | Assignment-target names that mark a hash as an identifier, not a security control |

@@ -76,39 +76,79 @@ describe('no-redos-vulnerable-regex', () => {
       ],
     });
 
-    // Patterns that scslre's NFA analysis considers safe (no reports) but
-    // that the heuristic REDOS_PATTERNS fallback still flags — exercises
-    // the `checkWithScslre` catch-all `false` return path plus the
-    // heuristic-only report/suggestions block (lines 346-362) that the
-    // scslre-caught cases above never reach.
-    ruleTester.run('invalid - heuristic-only match: alternation with quantifier', noRedosVulnerableRegex, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const regex = /(a|b)+c/;',
-          errors: [{ messageId: 'redosVulnerable' }],
-        },
+    // These three were `invalid` in order to reach the heuristic fallback for
+    // coverage, and in doing so they pinned three false positives: each is a
+    // pattern scslre's NFA analysis clears, reported anyway because the
+    // heuristic layer was allowed to overrule a clean verdict.
+    //
+    //   /(a|b)+c/  — disjoint single-character alternation, unambiguous.
+    //                The heuristic's own suggested "fix" is /[ab]+c/, a style
+    //                preference with no security content.
+    //   /.*.*/     — unanchored with nothing after it, so it always matches
+    //                immediately and there is nothing to backtrack into.
+    //                Clean under scslre even with Move reporting enabled.
+    //   /(a+)?/    — an optional group, not a nested loop. Linear.
+    //
+    // They are locks now: a pattern the NFA clears must not be re-reported by
+    // a character-counting heuristic.
+    ruleTester.run('valid - NFA verdict is not overruled by heuristics', noRedosVulnerableRegex, {
+      valid: [
+        'const regex = /(a|b)+c/;',
+        'const regex = /.*.*/;',
+        'const regex = /(a+)?/;',
+        // stripe/stripe-js src/shared.ts:23-24 — the reported false positive.
+        // Anchored both ends, two independent optional groups, no nesting.
+        String.raw`const V3_URL_REGEX = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;`,
+        // Same shape via the constructor, which used to skip NFA analysis
+        // altogether and go straight to the heuristics.
+        String.raw`const re = new RegExp("^https://js\\.stripe\\.com/v3/?(\\?.*)?$");`,
       ],
+      invalid: [],
     });
 
-    ruleTester.run('invalid - heuristic-only match: nested wildcards', noRedosVulnerableRegex, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const regex = /.*.*/;',
-          errors: [{ messageId: 'redosVulnerable' }],
-        },
+    // `new RegExp("…")` takes a STRING, so unlike a `/…/` literal it can carry
+    // a pattern the engine would reject. An invalid regex is a real bug, but it
+    // is not THIS bug: it throws at construction and can never backtrack, so
+    // reporting it as "CRITICAL ReDoS" is the wrong diagnosis. The heuristic
+    // layer used to match `(a+)+` inside the malformed text and do exactly that.
+    ruleTester.run('valid - constructor pattern the engine would reject', noRedosVulnerableRegex, {
+      valid: [
+        'const re = new RegExp("(a+)+[a-");',
+        'const re = new RegExp("[a-");',
       ],
+      invalid: [],
     });
 
-    // `(a+)?` matches only the secondary fallback regex inside
-    // hasReDoSVulnerability (none of the 5 REDOS_PATTERNS entries), and is
-    // scslre-safe, so it exercises that fallback branch specifically.
-    ruleTester.run('invalid - heuristic fallback-only nested quantifier', noRedosVulnerableRegex, {
+    ruleTester.run('valid - constructor patterns that reach no verdict', noRedosVulnerableRegex, {
+      valid: [
+        // `allowCommonPatterns` is accepted and ignored — it gated the removed
+        // heuristic layer. Kept as a fixture so a config still setting it does
+        // not start erroring on an unknown option.
+        {
+          code: 'const re = new RegExp("(a|b)+c");',
+          options: [{ allowCommonPatterns: true }],
+        },
+        // Flags arrive as a second string argument and must reach the NFA —
+        // the `i` flag changes which characters a quantifier can consume, so
+        // dropping it would analyse a different regex than the one written.
+        String.raw`const re = new RegExp("^https://js\\.stripe\\.com/v3/?(\\?.*)?$", "i");`,
+        // A non-literal flags argument falls back to no flags rather than
+        // throwing on `.value`.
+        String.raw`const re = new RegExp("^[a-z]+$", flags);`,
+      ],
+      invalid: [],
+    });
+
+    // The genuinely catastrophic patterns the issue requires to keep reporting.
+    ruleTester.run('invalid - catastrophic patterns still report', noRedosVulnerableRegex, {
       valid: [],
       invalid: [
         {
-          code: 'const regex = /(a+)?/;',
+          code: 'const regex = /(a+)+$/;',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        {
+          code: String.raw`const regex = /(\w+\s?)*$/;`,
           errors: [{ messageId: 'redosVulnerable' }],
         },
       ],
@@ -116,7 +156,7 @@ describe('no-redos-vulnerable-regex', () => {
   });
 
   describe('Options Coverage', () => {
-    ruleTester.run('options - allowCommonPatterns bypasses alternation', noRedosVulnerableRegex, {
+    ruleTester.run('options - allowCommonPatterns is accepted and ignored', noRedosVulnerableRegex, {
       valid: [
         {
           code: 'const regex = /(a|b)+c/;',
@@ -303,36 +343,44 @@ describe('no-redos-vulnerable-regex', () => {
 
       // hasReDoSVulnerability finds no match in '[a-' either, so the
       // fallthrough resolves to "no vulnerability" and nothing is reported —
-      // proving checkWithScslre returned false (didn't crash the rule) and
-      // control passed to the heuristic path instead of propagating the
-      // parser error.
+      // proving checkWithScslre returned 'unanalysable' (didn't crash the
+      // rule) and control passed to the heuristic path instead of propagating
+      // the parser error.
       expect(reports).toHaveLength(0);
     });
 
     // The `[options = {}]` parameter default only applies when
-    // `context.options[0]` is `undefined`; an explicit `null` bypasses the
-    // default, so `options` stays `null` and only the redundant
-    // `options || {}` fallback on the next line prevents a destructuring
-    // crash. A real ESLint config array can't produce a literal `null`
-    // options entry (the schema/defaultOptions machinery always supplies
-    // an object or omits the entry), so this is exercised via a mock
-    // context with `options: [null]`.
+    // `context.options[0]` is `undefined`; an explicit `null` bypasses it, so
+    // `options` stays `null` and only the redundant `options || {}` fallback on
+    // the next line prevents a destructuring crash. A real ESLint config array
+    // cannot produce a literal `null` options entry, so this goes through a
+    // mock context.
     it('falls back to defaults when context.options[0] is explicitly null', () => {
       const { listeners, reports } = createWithMockContext(noRedosVulnerableRegex, {
         options: [null],
       });
-      const literal = listeners.Literal as (node: unknown) => void;
-
-      literal({
+      (listeners.Literal as (node: unknown) => void)({
         type: 'Literal',
-        regex: { pattern: '(a|b)+c', flags: '' },
+        regex: { pattern: '(a+)+b', flags: '' },
       });
 
-      // Reaches the heuristic path with maxPatternLength defaulting to 500
-      // and allowCommonPatterns defaulting to false — proving the `|| {}`
-      // fallback produced a usable options object rather than throwing.
+      // Proves the `|| {}` fallback produced a usable options object rather
+      // than throwing on destructure, with maxPatternLength defaulting to 500.
       expect(reports).toHaveLength(1);
       expect(reports[0].messageId).toBe('redosVulnerable');
+    });
+
+    // An unparseable pattern is terminal: no report, no fallback, no guess.
+    it('reports nothing when the pattern is not a valid regex', () => {
+      const { listeners, reports } = createWithMockContext(noRedosVulnerableRegex);
+      (listeners.Literal as (node: unknown) => void)({
+        type: 'Literal',
+        // Unterminated character class — regexpp throws, and the nested
+        // quantifier in front of it is exactly what the removed heuristic
+        // layer would have latched onto.
+        regex: { pattern: '(a+)+[a-', flags: '' },
+      });
+      expect(reports).toHaveLength(0);
     });
 
     // checkNewRegExp: template-literal `quasis[].value.cooked` is always

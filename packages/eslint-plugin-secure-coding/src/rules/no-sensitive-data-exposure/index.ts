@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -75,6 +75,37 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // at least one letter and one number' stay silent.
     return new RegExp(`\\b${flexPattern}\\b[^:=\\n]{0,24}[:=]\\s*\\S`, 'i').test(normalized);
   });
+}
+
+/**
+ * Does this property access name a secret? `user.password`, `cfg['apiKey']`.
+ *
+ * The property is what carries the value, so it is checked first. The object
+ * is checked too, because `credentials.value` names the secret on the left.
+ * Computed access is read only when the key is a string literal — `obj[k]`
+ * names nothing, and guessing would report on every dynamic lookup.
+ */
+function memberCarriesSecret(
+  node: TSESTree.MemberExpression,
+  patterns: string[]
+): string | null {
+  const prop = node.property;
+  // `node.computed` is the whole distinction. In `user.password` the property
+  // Identifier IS the name; in `user[password]` the identically-shaped node is
+  // a *variable holding* the name, and reading it would report `obj[password]`
+  // for a lookup whose key nobody can see statically.
+  const propName = node.computed
+    ? prop.type === AST_NODE_TYPES.Literal && typeof prop.value === 'string'
+      ? prop.value
+      : null
+    : prop.type === AST_NODE_TYPES.Identifier
+      ? prop.name
+      : null;
+  const fromProp = propName ? containsSensitiveData(propName, patterns) : null;
+  if (fromProp) return fromProp;
+  return node.object.type === AST_NODE_TYPES.Identifier
+    ? containsSensitiveData(node.object.name, patterns)
+    : null;
 }
 
 function containsSensitiveData(
@@ -283,7 +314,73 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               });
               return; // Only report once per call
             }
-          } else if (arg.type === 'Identifier' && arg.name) {
+          } else if (arg.type === AST_NODE_TYPES.MemberExpression) {
+            // `console.log(user.password)` — the shape the rule most exists
+            // for, and it was silent. The logging path read Literal, `+` and
+            // Identifier arguments only, so every property access carrying a
+            // secret walked straight through. The `+` arm above was added for
+            // the same class of gap; this is the other half of it.
+            const matchedMember = memberCarriesSecret(arg, sensitivePatterns);
+            if (matchedMember) {
+              context.report({
+                node: arg,
+                messageId: 'sensitiveDataExposure',
+                data: { context: 'logs', dataType: matchedMember },
+                suggest: REDACTION_SUGGESTIONS,
+              });
+              return; // Only report once per call
+            }
+          } else if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
+            // `` console.log(`token=${t}`) `` — an interpolation is exactly the
+            // evidence the static-string guard looks for: unlike a constant,
+            // a template splices a runtime value into the log line.
+            //
+            // Both halves are read. The interpolated expression names the
+            // secret in `${apiKey}`; the surrounding text names it in
+            // `` `password: ${value}` ``, where the expression is anonymous and
+            // only the label says what is being logged.
+            const fromExpression = arg.expressions
+              .map((e) =>
+                e.type === AST_NODE_TYPES.Identifier
+                  ? containsSensitiveData(e.name, sensitivePatterns)
+                  : e.type === AST_NODE_TYPES.MemberExpression
+                    ? memberCarriesSecret(e, sensitivePatterns)
+                    : null,
+              )
+              .find((m): m is string => Boolean(m));
+            // Only when something is actually interpolated: a template with no
+            // expressions is a constant string, and reporting it would be the
+            // prose false positive this guard exists to prevent.
+            //
+            // The quasis are joined with a placeholder standing in for each
+            // interpolation, rather than tested one by one. `` `token=${t}` ``
+            // splits into `token=` and ``, and neither half satisfies
+            // "label, separator, then a value" — the value is the hole between
+            // them. Substituting a non-space character for that hole makes the
+            // same guard read the template the way a person does.
+            const INTERPOLATION = '\u0001'; // cannot occur in source text
+            const joined = arg.quasis
+              .map((q) => q.value.cooked)
+              .join(INTERPOLATION);
+            // Only when something is actually interpolated: a template with no
+            // expressions is a constant string, and reporting it would be the
+            // prose false positive this guard exists to prevent.
+            const fromText =
+              arg.expressions.length > 0 &&
+              literalCarriesSecret(joined, sensitivePatterns)
+                ? containsSensitiveData(joined, sensitivePatterns)
+                : null;
+            const matchedTemplate = fromExpression ?? fromText;
+            if (matchedTemplate) {
+              context.report({
+                node: arg,
+                messageId: 'sensitiveDataExposure',
+                data: { context: 'logs', dataType: matchedTemplate },
+                suggest: REDACTION_SUGGESTIONS,
+              });
+              return; // Only report once per call
+            }
+          } else if (arg.type === AST_NODE_TYPES.Identifier && arg.name) {
             const matchedPattern2 = containsSensitiveData(arg.name, sensitivePatterns);
             if (matchedPattern2) {
               context.report({

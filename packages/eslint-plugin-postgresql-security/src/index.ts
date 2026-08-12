@@ -69,9 +69,9 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * the noise of `recommended`.
    */
   flagship: {
-    plugins: { 'pg': plugin },
+    plugins: { 'postgresql-security': plugin, 'pg': plugin },
     rules: {
-      'pg/no-unsafe-query': 'error',
+      'postgresql-security/no-unsafe-query': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -80,25 +80,30 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    */
   recommended: {
     plugins: {
+      'postgresql-security': plugin,
+      // Deprecated alias — see the note in eslint-plugin-jwt-security. This
+      // package publishes as `eslint-plugin-postgresql-security` but emitted
+      // `pg/` prefixes, so registering under the package name failed.
+      // Removed in the next major.
       'pg': plugin,
     },
     rules: {
       // Security rules (errors)
-      'pg/no-unsafe-query': 'error',
-      'pg/no-insecure-ssl': 'error',
-      'pg/no-hardcoded-credentials': 'error',
-      'pg/no-unsafe-search-path': 'error',
-      'pg/no-unsafe-copy-from': 'error',
-      'pg/no-transaction-on-pool': 'error',
+      'postgresql-security/no-unsafe-query': 'error',
+      'postgresql-security/no-insecure-ssl': 'error',
+      'postgresql-security/no-hardcoded-credentials': 'error',
+      'postgresql-security/no-unsafe-search-path': 'error',
+      'postgresql-security/no-unsafe-copy-from': 'error',
+      'postgresql-security/no-transaction-on-pool': 'error',
       // Resource management (errors)
-      'pg/no-missing-client-release': 'error',
-      'pg/prevent-double-release': 'error',
-      'pg/no-floating-query': 'error',
+      'postgresql-security/no-missing-client-release': 'error',
+      'postgresql-security/prevent-double-release': 'error',
+      'postgresql-security/no-floating-query': 'error',
       // Quality (warnings)
-      'pg/check-query-params': 'warn',
-      'pg/no-select-all': 'warn',
-      'pg/prefer-pool-query': 'warn',
-      'pg/no-batch-insert-loop': 'warn',
+      'postgresql-security/check-query-params': 'warn',
+      'postgresql-security/no-select-all': 'warn',
+      'postgresql-security/prefer-pool-query': 'warn',
+      'postgresql-security/no-batch-insert-loop': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -107,22 +112,27 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    */
   strict: {
     plugins: {
+      'postgresql-security': plugin,
+      // Deprecated alias — see the note in eslint-plugin-jwt-security. This
+      // package publishes as `eslint-plugin-postgresql-security` but emitted
+      // `pg/` prefixes, so registering under the package name failed.
+      // Removed in the next major.
       'pg': plugin,
     },
     rules: {
-      'pg/no-unsafe-query': 'error',
-      'pg/no-insecure-ssl': 'error',
-      'pg/no-hardcoded-credentials': 'error',
-      'pg/no-unsafe-search-path': 'error',
-      'pg/no-unsafe-copy-from': 'error',
-      'pg/no-transaction-on-pool': 'error',
-      'pg/no-missing-client-release': 'error',
-      'pg/prevent-double-release': 'error',
-      'pg/no-floating-query': 'error',
-      'pg/check-query-params': 'error',
-      'pg/no-select-all': 'error',
-      'pg/prefer-pool-query': 'error',
-      'pg/no-batch-insert-loop': 'error',
+      'postgresql-security/no-unsafe-query': 'error',
+      'postgresql-security/no-insecure-ssl': 'error',
+      'postgresql-security/no-hardcoded-credentials': 'error',
+      'postgresql-security/no-unsafe-search-path': 'error',
+      'postgresql-security/no-unsafe-copy-from': 'error',
+      'postgresql-security/no-transaction-on-pool': 'error',
+      'postgresql-security/no-missing-client-release': 'error',
+      'postgresql-security/prevent-double-release': 'error',
+      'postgresql-security/no-floating-query': 'error',
+      'postgresql-security/check-query-params': 'error',
+      'postgresql-security/no-select-all': 'error',
+      'postgresql-security/prefer-pool-query': 'error',
+      'postgresql-security/no-batch-insert-loop': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 };

@@ -52,26 +52,111 @@ const DEFAULT_SECRET_PATTERNS = [
 ];
 
 /**
- * Is this operand a sentinel rather than a value an attacker could supply?
+ * Is this operand a constant that is already sitting in the source file?
  *
- * `token !== undefined`, `hash === null`, `signature.length === 0` — all
- * existence or arity checks. A timing attack needs the comparison to leak how
- * much of a *secret* matched, which requires an attacker-controlled operand.
+ * `token !== undefined`, `hash === null`, `signature.length === 0`,
+ * `revokedToken === 'access'` — none of these can leak a secret, because there
+ * is no secret on the other side of the comparison to leak. A timing attack
+ * needs the comparison to leak how much of a *secret* matched byte by byte,
+ * which requires the value being compared against to be one the attacker is
+ * trying to discover.
  *
- * String literals are deliberately NOT suppressed here. `authType === 'oauth'`
- * is a type sentinel and reads as a false positive, but
- * `password === 'default_password'` has the same shape and is a real finding —
- * a hardcoded credential compared non-constant-time. Suppressing every string
- * would silence the second to quieten the first, so the distinction is left to
- * `secretPatterns`: it is the operand's NAME that decides, not its literal.
- * Before reaching for `typeof node.value === 'string'`, know that is the trade.
+ * String literals WERE deliberately allowed through here, on the argument that
+ * `password === 'default_password'` is a real finding. Measured against the
+ * 8-repo corpus, that trade did not hold: string-literal comparisons were the
+ * single largest false-positive source for this rule, and the archetype is
+ * `okta/okta-auth-js` `lib/oidc/dpop.ts:185`:
+ *
+ * ```ts
+ * function clearDPoPKeyPairAfterRevoke (revokedToken: 'access' | 'refresh', …) {
+ *   if (revokedToken === 'access' && …)
+ * ```
+ *
+ * `'access'` is a union-member tag, and `revokedToken` matched only because the
+ * name contains `token`. The `password === 'default_password'` case that
+ * motivated the old behaviour is a hardcoded credential — CWE-798, which
+ * `secure-coding/no-hardcoded-credentials` reports. It is not CWE-208: a
+ * constant-time comparison against a credential printed in the source protects
+ * nothing. Reporting it here duplicated the other rule and cost far more in
+ * noise than it bought.
  */
-function isExistenceCheck(node: TSESTree.Node): boolean {
+function isSourceConstant(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') return true;
-  if (node.type === AST_NODE_TYPES.Literal) {
-    return node.value === null || typeof node.value === 'number' || typeof node.value === 'boolean';
-  }
+  if (node.type === AST_NODE_TYPES.Literal) return true;
+  // A template literal with no interpolation is a string constant written out
+  // longhand — `token === \`access\`` is the same finding as the quoted form.
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) return node.expressions.length === 0;
   return false;
+}
+
+/**
+ * Names that JavaScript convention reserves for booleans.
+ *
+ * `prevState.isAuthenticated === state.isAuthenticated` (`okta/okta-auth-js`
+ * `lib/core/AuthStateManager.ts:44`) matched because `isAuthenticated` contains
+ * `auth`. Comparing two booleans leaks one bit that the caller already has;
+ * there is no secret to time. The `is`/`has`/`should`/… + capital form is the
+ * one naming convention universal enough to read as a type annotation, so it is
+ * the only one trusted here — no attempt is made to guess at other names.
+ */
+const BOOLEAN_PREDICATE_NAME = /^(?:is|has|should|can|did|was|will|does)[A-Z]/;
+
+/**
+ * SCREAMING_SNAKE_CASE — JavaScript's convention for a named constant.
+ *
+ * After the constant-operand and boolean-predicate guards landed, 73 of the 88
+ * findings still standing on the corpus were comparisons against an enum
+ * member: `name === IDX_STEP.SELECT_AUTHENTICATOR_AUTHENTICATE`,
+ * `authenticatorKey === AUTHENTICATOR_KEY.WEBAUTHN`,
+ * `err.name === Enums.AUTH_STOP_POLL_INITIATION_ERROR`. Every one matched only
+ * because a constant's NAME contained `auth`, `password` or `token`.
+ *
+ * A named constant is a source constant reached through an identifier, so it
+ * falls to the same argument as a string literal: the value is in the program,
+ * not in the attacker's head.
+ */
+const NAMED_CONSTANT = /^[A-Z][A-Z0-9_]*$/;
+
+/**
+ * Names that read as a namespace rather than a runtime value: `Enums`,
+ * `ErrorCodes`, `AuthenticatorKey`, `IDX_STEP`, `AUTHENTICATOR_KEY`.
+ *
+ * PascalCase or SCREAMING_SNAKE_CASE. A camelCase object — `credentials`,
+ * `secrets`, `config` — is an ordinary value that happens to be holding
+ * something, and its properties prove nothing about constness.
+ */
+const NAMESPACE_NAME = /^(?:[A-Z][A-Z0-9_]*|[A-Z][a-zA-Z0-9]*)$/;
+
+/**
+ * Is this operand a member of a constant object — `AUTHENTICATOR_KEY.WEBAUTHN`,
+ * `Enums.INVALID_TOKEN`, `ErrorCodes.INVALID_TOKEN_EXCEPTION`?
+ *
+ * BOTH halves must carry the convention: a namespace-cased object AND a
+ * constant-cased property. Every one of the 73 corpus findings this guard
+ * exists for satisfies both, and requiring both is what keeps it from
+ * swallowing real secrets:
+ *
+ * - `userToken === credentials.API_TOKEN` — `credentials` is a camelCase
+ *   runtime value, so `API_TOKEN` is a live secret, not an enum member.
+ * - `userToken === secrets[API_TOKEN]` — computed, so `API_TOKEN` is a
+ *   *variable holding* the key, and the property name is unknowable here.
+ * - `userToken === process.env.API_TOKEN` and its `process['env']` spelling —
+ *   the object is lowercase (or not an Identifier at all), so neither form is
+ *   a namespace. This replaces an explicit `process.env` special case that
+ *   only recognised dot notation and missed the bracket form.
+ *
+ * Deliberately MEMBER EXPRESSIONS ONLY. A bare SCREAMING_SNAKE identifier is
+ * ambiguous in exactly the wrong direction: `API_KEY === expected` is a module
+ * constant holding a real secret, and the existing fixture for it went green
+ * the moment bare identifiers were accepted here.
+ */
+function isNamedConstant(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
+  // An identifier key under `[]` is a variable, not a property name.
+  if (node.computed) return false;
+  if (node.object.type !== AST_NODE_TYPES.Identifier) return false;
+  if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
+  return NAMESPACE_NAME.test(node.object.name) && NAMED_CONSTANT.test(node.property.name);
 }
 
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
@@ -141,14 +226,19 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     // `secretPatterns` — two separate mechanisms, not one.
     const patterns = secretPatterns.map((p) => new RegExp(p, 'i'));
 
+    function nameLooksSecret(name: string): boolean {
+      if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
+      return patterns.some(p => p.test(name));
+    }
+
     function isSecretIdentifier(node: TSESTree.Node): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
-        return patterns.some(p => p.test(node.name));
+        return nameLooksSecret(node.name);
       }
       if (node.type === AST_NODE_TYPES.MemberExpression) {
         const prop = node.property;
         if (prop.type === AST_NODE_TYPES.Identifier) {
-          return patterns.some(p => p.test(prop.name));
+          return nameLooksSecret(prop.name);
         }
       }
       return false;
@@ -161,11 +251,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Comparing a secret to `undefined` / `null` / a number / a boolean is an
-      // existence or arity check, not a secret comparison — there is no
-      // attacker-supplied value on the other side, so there is nothing to time.
+      // Comparing against a constant that is already in the source — a string,
+      // a number, `null`, `undefined` — cannot leak a secret, because the value
+      // being compared against is not one an attacker is trying to discover.
 
-      if (isExistenceCheck(node.left) || isExistenceCheck(node.right)) {
+      if (isSourceConstant(node.left) || isSourceConstant(node.right)) {
+        return;
+      }
+
+      // …and neither can a constant reached through its name.
+      if (isNamedConstant(node.left) || isNamedConstant(node.right)) {
         return;
       }
 

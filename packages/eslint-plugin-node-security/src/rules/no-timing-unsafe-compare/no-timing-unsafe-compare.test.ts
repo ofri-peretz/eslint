@@ -57,6 +57,114 @@ describe('no-timing-unsafe-compare', () => {
     });
   });
 
+  // Every fixture below is a verbatim shape from the 8-repo corpus scan, kept
+  // as a lock so the two guards that suppress them cannot be removed silently.
+  // See the issue: "no-timing-unsafe-compare fires on string-literal and
+  // boolean comparisons".
+  describe('Valid Code - Comparisons Against Source Constants', () => {
+    ruleTester.run('valid - constant operand cannot leak a secret', noTimingUnsafeCompare, {
+      valid: [
+        // okta/okta-auth-js lib/oidc/dpop.ts:185. `revokedToken` is a
+        // `'access' | 'refresh'` union tag; it matched only because the name
+        // contains `token`. Nothing on the right an attacker wants to learn.
+        `if (revokedToken === 'access') { shouldClear = true; }`,
+        `if (revokedToken === 'refresh' && refreshToken && !accessToken) { shouldClear = true; }`,
+        // Same file, same line: a discriminant check on a member expression.
+        `if (accessToken.tokenType === 'DPoP') { use(accessToken); }`,
+        // A hardcoded credential compared to a literal is CWE-798, reported by
+        // secure-coding/no-hardcoded-credentials. It is not a timing attack —
+        // constant-time comparison against a secret printed in the source
+        // protects nothing.
+        `if (password === 'default_password') { warn(); }`,
+        // A template literal with no interpolation is the same string constant
+        // written longhand.
+        'if (token === `access`) { done(); }',
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Valid Code - Named Constants', () => {
+    ruleTester.run('valid - enum members are source constants', noTimingUnsafeCompare, {
+      valid: [
+        // 73 of the 88 findings still standing after the constant-operand and
+        // boolean-predicate guards were this one shape, all from
+        // okta/okta-signin-widget and okta/okta-auth-js.
+        `if (name === IDX_STEP.SELECT_AUTHENTICATOR_AUTHENTICATE) return;`,
+        `if (authenticatorKey === AUTHENTICATOR_KEY.WEBAUTHN) enroll();`,
+        `if (err.name === Enums.AUTH_STOP_POLL_INITIATION_ERROR) return;`,
+        `if (err.errorCode === ErrorCodes.INVALID_TOKEN_EXCEPTION) retry();`,
+        `if (relatesTo?.key === AuthenticatorKey.OKTA_PASSWORD) select();`,
+      ],
+      invalid: [
+        // BOTH halves must carry the convention: a namespace-cased object AND
+        // a constant-cased property. Everything below has the property and is
+        // still a finding, which is what stops the guard from swallowing live
+        // secrets that happen to sit behind an upper-case key.
+        //
+        // A camelCase object is an ordinary runtime value, not a namespace.
+        {
+          code: 'if (userToken === credentials.API_TOKEN) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // process.env in both spellings. The bracket form used to slip past an
+        // explicit `process.env` check that only understood dot notation.
+        {
+          code: 'if (userToken === process.env.API_TOKEN) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        {
+          code: "if (userToken === process['env'].API_TOKEN) grant();",
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // Computed: `API_TOKEN` is a variable HOLDING the key, so the property
+        // name is unknowable here and nothing has been proven constant.
+        {
+          code: 'if (userToken === secrets[API_TOKEN]) grant();',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+        // A BARE SCREAMING_SNAKE identifier stays a finding. `API_KEY` is both
+        // constant-cased and a real secret — the casing alone is not evidence,
+        // the namespace is. Locked so the guard is never widened to identifiers.
+        { code: 'if (API_KEY === expected) {}', errors: [{ messageId: 'timingUnsafeCompare' }] },
+        // `this.ANY` has no namespace-cased Identifier object, so it is no
+        // longer exempt — one corpus finding, traded for the three above.
+        { code: 'if (this.auth !== this.ANY) deny();', errors: [{ messageId: 'timingUnsafeCompare' }] },
+        // A private name is not an Identifier property, so there is no name to
+        // match even though the object is namespace-cased.
+        {
+          code: 'class Vault { static #TOKEN = 1; static check(V, userToken) { if (userToken === V.#TOKEN) return; } }',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+      ],
+    });
+  });
+
+  describe('Valid Code - Boolean Predicates', () => {
+    ruleTester.run('valid - boolean predicate names are not secrets', noTimingUnsafeCompare, {
+      valid: [
+        // okta/okta-auth-js lib/core/AuthStateManager.ts:44 — matched because
+        // `isAuthenticated` contains `auth`. Comparing two booleans leaks one
+        // bit the caller already holds.
+        `if (prevState.isAuthenticated === state.isAuthenticated) return true;`,
+        `if (hasToken === cached.hasToken) {}`,
+        `if (shouldRefreshToken === cached.shouldRefreshToken) {}`,
+        // Same function, two lines down. Neither operand is an identifier or a
+        // member expression, so this never reported — locked so it stays that
+        // way if isSecretIdentifier ever learns to look through calls.
+        `if (JSON.stringify(prevState.idToken) === JSON.stringify(state.idToken)) return true;`,
+      ],
+      invalid: [
+        // A boolean-predicate name on ONE side does not excuse the other. The
+        // guard drops name-based evidence for that operand only.
+        {
+          code: 'if (isAuthenticated === storedToken) {}',
+          errors: [{ messageId: 'timingUnsafeCompare' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - All Comparison Operators', () => {
     ruleTester.run('invalid - strict equality', noTimingUnsafeCompare, {
       valid: [],

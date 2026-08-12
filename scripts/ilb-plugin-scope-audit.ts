@@ -60,16 +60,16 @@ const PRINT = process.argv.includes('--print');
 // ── Plugin environment contracts ────────────────────────────────────────────
 
 /**
- * Rule namespace, where it differs from the package directory name.
+ * Deprecated plugin keys these packages still register alongside the canonical
+ * one (their own package name).
  *
- * The renamed packages deliberately kept their original short namespace so a
- * migration is a one-line package.json change — every `pg/no-unsafe-query`
- * reference and eslint-disable comment keeps working. Without this map the
- * audit derives the namespace from the directory, then (a) reads the
- * `'pg': plugin` config line as a rule named `pg` and (b) resolves every
- * severity to 'off' because it looks for a prefix the configs never use.
+ * This used to be `PLUGIN_NAMESPACE` — a record of the defect rather than of a
+ * deprecation: both packages emitted a namespace that was not their package
+ * name, so registering them the obvious way failed outright. Their presets now
+ * emit the canonical prefix and keep these keys registered for a deprecation
+ * window, so both names appear in a `plugins: {}` block and neither is a rule.
  */
-const PLUGIN_NAMESPACE: Record<string, string> = {
+const PLUGIN_DEPRECATED_ALIASES: Record<string, string> = {
   'eslint-plugin-postgresql-security': 'pg',
   'eslint-plugin-jwt-security': 'jwt',
 };
@@ -282,7 +282,15 @@ function getRulesFromIndex(pluginDir: string): string[] {
   const indexPath = path.join(PACKAGES_DIR, pluginDir, 'src', 'index.ts');
   if (!fs.existsSync(indexPath)) return [];
   const src = fs.readFileSync(indexPath, 'utf-8');
-  const pluginShortName = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
+  // Every key a `plugins: {}` block can register for this package — the
+  // canonical one and any deprecated alias. Each looks exactly like a rule
+  // registration to the line scan below, so all of them have to be skipped;
+  // skipping only one made the other get audited as a rule that does not exist.
+  const pluginKeys = new Set(
+    [pluginDir.replace('eslint-plugin-', ''), PLUGIN_DEPRECATED_ALIASES[pluginDir]].filter(
+      (k): k is string => Boolean(k),
+    ),
+  );
 
   // Strategy: scan lines that look like `'rule-name': <non-string>` (rule registration)
   // Exclude lines that assign string literals — those are flagship config ('rule': 'error').
@@ -298,7 +306,7 @@ function getRulesFromIndex(pluginDir: string): string[] {
     if (!m) continue;
     const name = m[1];
     if (name.includes('/')) continue;         // prefixed config entry
-    if (name === pluginShortName) continue;   // plugin name used as key in plugins: {}
+    if (pluginKeys.has(name)) continue;      // plugin key in a plugins: {} block
     if (/^(error|warn|off)$/.test(name)) continue; // severity string
     rules.push(name);
   }
@@ -329,8 +337,14 @@ function getFlagshipSeverity(pluginDir: string, ruleName: string): 'error' | 'wa
   const indexPath = path.join(PACKAGES_DIR, pluginDir, 'src', 'index.ts');
   if (!fs.existsSync(indexPath)) return 'off';
   const src = fs.readFileSync(indexPath, 'utf-8');
-  // Look for 'plugin-name/rule-name': 'error'|'warn'
-  const prefix = PLUGIN_NAMESPACE[pluginDir] ?? pluginDir.replace('eslint-plugin-', '');
+  // Look for 'plugin-name/rule-name': 'error'|'warn'.
+  //
+  // Presets emit the canonical prefix (the package name). A deprecated alias
+  // is only ever a key in a `plugins: {}` block, never a rule-id prefix, so it
+  // is not searched — matching on it would resolve every severity to 'off' the
+  // moment an alias is dropped, silently reclassifying the whole plugin as
+  // opt-in rather than failing.
+  const prefix = pluginDir.replace('eslint-plugin-', '');
   const re = new RegExp(`['"]${prefix}/${ruleName}['"]\\s*:\\s*['"]([^'"]+)['"]`);
   const m = src.match(re);
   if (!m) return 'off';

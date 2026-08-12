@@ -216,7 +216,7 @@ contains, so those still report.
   rules: {
     'secure-coding/no-hardcoded-credentials': ['error', {
       ignorePatterns: ['^test-'],           // Ignore test credentials
-      allowInTests: false,                  // Allow in test files
+      allowInTests: true,                   // Skip .test./.spec./__tests__ paths
       minLength: 8,                         // Minimum credential length
       detectApiKeys: true,                  // Detect API keys
       detectPasswords: true,                // Detect passwords
@@ -233,7 +233,7 @@ contains, so those still report.
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore |
-| `allowInTests` | `boolean` | `false` | Allow credentials in test files |
+| `allowInTests` | `boolean` | `true` | Skip credentials in test files |
 | `minLength` | `number` | `8` | Minimum length for credential detection |
 | `detectApiKeys` | `boolean` | `true` | Detect API keys |
 | `detectPasswords` | `boolean` | `true` | Detect passwords |
@@ -255,13 +255,20 @@ contains, so those still report.
 }
 ```
 
-### Allowing Credentials in Test Files
+### Reporting Credentials in Test Files
+
+Test-file credentials are skipped by default. A corpus scan found 17 of 18
+findings on a real repository were fixtures in `integration/auth.test.js`, and
+a credential in a fixture is not an exploitable finding for this rule —
+committed real secrets are a secret-scanning concern (gitleaks, trufflehog),
+which scan history and rotate keys. Set `allowInTests: false` to report them
+anyway.
 
 ```javascript
 {
   rules: {
     'secure-coding/no-hardcoded-credentials': ['error', {
-      allowInTests: true  // Allows credentials in .test.ts and .spec.ts files
+      allowInTests: false  // Report credentials in .test.ts and .spec.ts too
     }]
   }
 }

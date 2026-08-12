@@ -33,26 +33,29 @@ describe('eslint-plugin-postgresql-security plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs.recommended).toBeDefined();
+      expect(configs.recommended.plugins?.['postgresql-security']).toBeDefined();
+      // Deprecated alias, kept registered for a deprecation window.
       expect(configs.recommended.plugins?.['pg']).toBeDefined();
       
       const recommendedRules = configs.recommended.rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^pg\//);
+        expect(ruleName).toMatch(/^postgresql-security\//);
       });
       
-      expect(recommendedRules['pg/no-unsafe-query']).toBe('error');
+      expect(recommendedRules['postgresql-security/no-unsafe-query']).toBe('error');
     });
 
     it('should provide strict configuration', () => {
       expect(configs.strict).toBeDefined();
+      expect(configs.strict.plugins?.['postgresql-security']).toBeDefined();
       expect(configs.strict.plugins?.['pg']).toBeDefined();
       
       const strictRules = configs.strict.rules || {};
       Object.keys(strictRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^pg\//);
+        expect(ruleName).toMatch(/^postgresql-security\//);
       });
       
-      expect(strictRules['pg/no-unsafe-query']).toBe('error');
+      expect(strictRules['postgresql-security/no-unsafe-query']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
   });
