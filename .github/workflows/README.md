@@ -15,6 +15,7 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | [`release-hygiene.yml`](./release-hygiene.yml) | Pre-release sanity (changelog completeness, version alignment) |
 | [`changesets-pr.yml`](./changesets-pr.yml) | Changesets PR creation |
 | [`docs.yml`](./docs.yml) | Docs governance (link integrity, structure validation) |
+| [`quality.yml` → Detection Recall](./quality.yml) | Every CWE in `benchmarks/corpus/` must still detect what it used to (`scripts/recall-gate.ts`) — the counterpart to the precision scan in `scripts/corpus-scan.ts` |
 
 ## Benchmark / quality measurement
 
