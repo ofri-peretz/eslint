@@ -1,3 +1,44 @@
+## 2.0.1
+
+### Patch Changes
+
+- [#460](https://github.com/ofri-peretz/eslint/pull/460) [`561997f`](https://github.com/ofri-peretz/eslint/commit/561997f860f1641653258d522dbdb97b506a241f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-user-controlled-redirect` no longer flags the documented safe redirect
+
+  The rule reported `res.redirect(req.query.url)` on sight, with no analysis of
+  whether the value had been validated. That meant it fired on the exact pattern
+  Express publishes on its "Production Best Practices: Security" page, and that
+  the OWASP Unvalidated Redirects cheat sheet recommends:
+
+  ```js
+  app.use((req, res) => {
+    try {
+      if (new URL(req.query.url).host !== 'example.com') {
+        return res.status(400).end('Unsupported redirect');
+      }
+    } catch (e) {
+      return res.status(400).end('Invalid url');
+    }
+    res.redirect(req.query.url); // ← was reported as CWE-601
+  });
+  ```
+
+  Telling a reader that their documented mitigation is the vulnerability is worse
+  than saying nothing: the natural response is to delete the check.
+
+  The rule now recognises an origin allowlist applied to the same user source —
+  `new URL(<source>).host` / `.hostname` / `.origin` inside an `if` whose
+  consequent returns or throws — and stays quiet. Unguarded redirects still
+  report, a guard on a _different_ source still reports, and an origin check that
+  does not bail out is still not treated as a guard.
+
+  Guard detection is structural (node-by-node member-path comparison), not text
+  comparison of printed source.
+
+- [#529](https://github.com/ofri-peretz/eslint/pull/529) [`0c51db7`](https://github.com/ofri-peretz/eslint/commit/0c51db72a29ab9cf643ed82491db02842a6f9124) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-user-controlled-redirect`: a guard inside a nested function no longer counts as a guard.
+
+  The origin-guard search descended into nested functions, so a check whose `return` exits a
+  helper rather than the request handler silenced the rule while validating nothing.
+
 ## 2.0.0
 
 ### Major Changes

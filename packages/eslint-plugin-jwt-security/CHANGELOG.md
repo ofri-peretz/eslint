@@ -1,5 +1,66 @@
 ## [2.2.3] - 2026-02-08
 
+## 2.4.0
+
+### Minor Changes
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Presets now emit rule ids prefixed with the package's own name, so registering
+  the plugin under that name works.
+
+  Both packages were renamed (`eslint-plugin-jwt` → `eslint-plugin-jwt-security`,
+  `eslint-plugin-pg` → `eslint-plugin-postgresql-security`) but their presets kept
+  emitting the pre-rename `jwt/` and `pg/` prefixes. Registering under the package
+  name — the shape every README shows — failed outright:
+
+  ```
+  A configuration object specifies rule "jwt/no-algorithm-none",
+  but could not find plugin "jwt".
+  ```
+
+  `configs.recommended` / `flagship` / `strict` now emit `jwt-security/…` and
+  `postgresql-security/…`. The legacy keys (`jwt`, `pg`) stay registered in each
+  preset's `plugins` block for a deprecation window, so a config that already
+  writes the old rule ids alongside these presets keeps resolving. They are
+  removed in the next major.
+
+  If you spread `…configs.recommended.rules` and register the plugin yourself,
+  register it under the package name (`'jwt-security'` / `'postgresql-security'`).
+  Spreading the whole config object needs no change.
+
+### Patch Changes
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-decode-without-verify`: detect jose's `decodeJwt`, and apply the
+  foreign-import gate to chained receivers.
+
+  The reported false positive ("matches any method named `decode`") no longer
+  reproduces — the SDK-evidence gate landed since the report. Measured over the
+  8-repo corpus, the rule produces **1 finding**, and it is a true positive
+  (`twilio/twilio-node` `src/auth_strategy/TokenAuthStrategy.ts:49`, a genuine
+  `jsonwebtoken` decode). Both cited shapes are now locked as `valid` fixtures:
+
+  - `file.content = file.decode(raw)` — Shopify/cli's TOML parser, no JWT
+    library imported in the file.
+  - `sdk.token.decode(accessToken)` — okta/okta-auth-js
+    `lib/oidc/handleOAuthResponse.ts:109`; that file imports only relative paths.
+
+  Verifying those locks surfaced two real defects, both fixed here:
+
+  - **jose's decode went unreported.** The method set listed `decodeJWT`, an
+    all-caps spelling no JWT library ships. jose's actual export is `decodeJwt`
+    (`Object.keys(require('jose')).filter(k => /decode/i.test(k))` →
+    `['decodeJwt', 'decodeProtectedHeader']`), so every `decodeJwt(token)` call
+    was a false negative despite jose being a listed library.
+    `decodeProtectedHeader` is deliberately not added: reading the header to pick
+    a key before verifying is the documented jose flow, and `allowHeaderInspection`
+    already covers it.
+
+  - **The foreign-import gate skipped chained receivers.** It read
+    `callee.object` and required an `Identifier`, so `sdk.token.decode(t)` — whose
+    receiver is itself a MemberExpression — was never checked against the file's
+    imports at all. It now walks to the root of the chain. This is the same shape
+    the gate was built for (`argon.verify(...)` in a file that also imports
+    `jsonwebtoken`), one member deeper.
+
 ## 2.3.4
 
 ### Patch Changes

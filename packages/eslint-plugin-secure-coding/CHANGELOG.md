@@ -1,3 +1,136 @@
+## 3.7.0
+
+### Minor Changes
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-directive-injection`: stop reporting correct DOMPurify calls, start
+  reporting the ones that disable sanitization.
+
+  The reported false positive does not reproduce —
+  `DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })` is not reported, and
+  the rule produces 0 findings for it across the 8-repo corpus. It is now locked
+  as a `valid` fixture, along with the spelled-out form and seven adjacent
+  shapes, so the recommended safe pattern can never regress into a finding again.
+
+  The issue's _other_ acceptance criterion was failing, and that turned out to be
+  the real defect: a genuinely unsafe sanitizer config was silently accepted.
+
+  ```js
+  DOMPurify.sanitize(html, { ADD_TAGS: ['script'] }); // was: no finding
+  DOMPurify.sanitize(html, { ADD_ATTR: ['onerror'] }); // was: no finding
+  ```
+
+  Both hand back markup that executes, while still reading as sanitized at the
+  call site — the worst shape a security rule can miss, because the code looks
+  defended. `ADD_TAGS`/`ALLOWED_TAGS` naming `script`, `iframe`, `object`,
+  `embed` or `base`, and `ADD_ATTR`/`ALLOWED_ATTR` naming an `on*` handler,
+  `srcdoc`, `formaction` or `xlink:href`, now report under the new
+  `unsafeSanitizerConfig` message, which names the offending option and value.
+
+  The check is narrow by construction: the receiver's name must mention
+  "purify", the config must be an object literal, and the values must be literal
+  strings in an array. A `{ ALLOWED_TAGS }` shorthand referencing a constant
+  defined elsewhere is left alone — assuming the worst about an unreadable value
+  is what produced the original false positive.
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-hardcoded-credentials`: `allowInTests` now defaults to `true`.
+
+  The issue asked which of two things was broken — the option not being read, or
+  its filename patterns not matching `integration/*.test.js`. Measured: neither.
+  The option is read, and `filename.includes('.test.')` matches that path. It
+  simply defaulted to `false`, and `configs.recommended` registers this rule as
+  bare `'error'` with no options, so the exemption was never switched on for
+  anyone using the recommended preset.
+
+  The effect on a real repository was 17 of 18 findings being fixtures in
+  `integration/auth.test.js` — roughly 94% noise in the default configuration of
+  any project with tests.
+
+  A credential in a test fixture is not an exploitable finding for this rule.
+  Committed real secrets are a secret-scanning problem — gitleaks and trufflehog
+  scan history and drive key rotation, neither of which a linter can do.
+
+  Production paths are unchanged: `const password = "supersecret123"` in
+  `src/app.js` still reports. Set `allowInTests: false` for the previous
+  behaviour.
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-redos-vulnerable-regex`: an invalid regex is no longer reported as a ReDoS
+  vulnerability, and the heuristic layer that did so is removed.
+
+  `new RegExp("(a+")` is a real bug, but it is not _this_ bug: it throws at
+  construction and can never backtrack. The rule reported it as
+  `Nested Quantifier Pattern: exponential backtracking | CRITICAL`, because the
+  removed layer matched the pattern **text** against a table of quantifier
+  shapes and found `(a+` convincing. Parse failure is now terminal — no report.
+
+  With that separation made, the heuristic layer had nothing left to do: a
+  pattern either fails to parse (not a regex) or reaches the NFA analyser (which
+  returns a verdict). Its only remaining effect was overruling clean verdicts, so
+  it is gone, along with the `useAtomicGroups`, `usePossessiveQuantifiers`,
+  `restructureRegex` and `useSafeLibrary` suggestions it produced.
+
+  `allowCommonPatterns` is accepted and ignored rather than removed, so configs
+  that set it keep loading. It gated the deleted layer. Removed in the next major.
+
+  `maxPatternLength` is unaffected. Catastrophic patterns are unaffected:
+  `/(a+)+b/`, `/(a+)(a+)b/`, `/(a+)+$/` and `/(\w+\s?)*$/` all still report.
+
+### Patch Changes
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-redos-vulnerable-regex` no longer overrules its own NFA analysis with
+  character-counting heuristics.
+
+  Measured over the 8-repo corpus scan: **61 findings → 35**, with every survivor
+  NFA-confirmed. The reported false positive is gone —
+  `stripe/stripe-js` `src/shared.ts` goes from 3 findings to 0.
+
+  The rule runs `scslre` (the NFA analyser `eslint-plugin-regexp` uses) and then
+  falls back to a table of regexes-matching-regex-source. Those two layers
+  communicated through a boolean, so "scslre analysed this and it is safe" and
+  "scslre could not analyse this" were the same value — and every pattern the NFA
+  cleared was handed straight to the heuristics, which then reported it anyway.
+
+  That is how
+
+  ```js
+  const V3_URL_REGEX = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;
+  ```
+
+  was reported as `Nested Quantifier Pattern: exponential backtracking | CRITICAL`.
+  It is anchored at both ends, has two independent optional groups, no nesting,
+  and is linear. The heuristic `\([^)]*[+*?][^)]*\)[+*?]` matched only because
+  `(\?.*)?` contains a `?`, a `*`, and a trailing `?`: quantifier characters
+  counted, not quantifier nesting.
+
+  `checkWithScslre` now returns `reported` / `clean` / `unanalysable`, and the
+  heuristics run only on `unanalysable`. `new RegExp("…")` with a string literal
+  gets the same NFA analysis as a `/…/` literal — it previously skipped straight
+  to the heuristics, so the Stripe shape written as a constructor call produced
+  the identical false positive. Flags passed as the second argument now reach the
+  analyser, which matters because `i` changes what a quantifier can consume.
+
+  Catastrophic patterns are unaffected: `/(a+)+$/` and `/(\w+\s?)*$/` still
+  report, as do `/(a+)+b/` and `/(a+)(a+)b/`.
+
+  Three fixtures that asserted `/(a|b)+c/`, `/.*.*/` and `/(a+)?/` were _invalid_
+  existed to reach the heuristic layer for coverage, and in doing so pinned three
+  false positives. All three are linear; they are `valid` locks now.
+
+- [#531](https://github.com/ofri-peretz/eslint/pull/531) [`d63ce04`](https://github.com/ofri-peretz/eslint/commit/d63ce040c6b6d7ca87cac93c57f249b7a807f127) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-sensitive-data-exposure` now reads property accesses and template literals
+  in logging calls.
+
+  The logging path handled `Literal`, `+` concatenation and bare `Identifier`
+  arguments only, so the two most common ways a secret actually reaches a log
+  line were silent:
+
+  ```js
+  console.log(user.password); // was not reported
+  console.log(`token=${t}`); // was not reported
+  ```
+
+  Both report now. A template is read only when something is interpolated — a
+  template with no expressions is a constant string, and reporting it would be
+  the same prose false positive the literal guard already prevents.
+
 ## 3.6.1
 
 ### Patch Changes
