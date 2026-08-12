@@ -1,6 +1,6 @@
 ---
 title: no-unchecked-loop-condition
-description: Detects unchecked loop conditions that could cause DoS
+description: "Detects unchecked loop conditions that could cause DoS"
 tags: ['security', 'core']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -136,12 +134,15 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 ## Options
 
-| Option                    | Type       | Default              | Description                       |
-| ------------------------- | ---------- | -------------------- | --------------------------------- |
-| `maxStaticIterations`     | `number`   | `10000`              | Maximum allowed static iterations |
-| `userInputVariables`      | `string[]` | `['req', 'request']` | User input variable patterns      |
-| `allowWhileTrueWithBreak` | `boolean`  | `true`               | Allow while(true) with break      |
-| `maxRecursionDepth`       | `number`   | `100`                | Maximum recursion depth           |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `maxStaticIterations` | `number` | `10000` | Literal iteration count above which a loop is reported |
+| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input |
+| `allowWhileTrueWithBreak` | `boolean` | `true` | Allow `while (true)` when the body contains a `break` |
+| `maxRecursionDepth` | `number` | `10` | Recursion depth above which a call is reported |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as loop protectors |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

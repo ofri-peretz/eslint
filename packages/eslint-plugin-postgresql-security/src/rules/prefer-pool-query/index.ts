@@ -6,6 +6,7 @@
 
 import { TSESLint, AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { PreferPoolQueryOptions } from '../../types';
+import { fileUsesPostgres } from '../../utils';
 
 export const preferPoolQuery: TSESLint.RuleModule<
   'preferPoolQuery',
@@ -33,6 +34,12 @@ export const preferPoolQuery: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    // Every rule here is PostgreSQL-specific, and none of them knew it: over
+    // 108,838 files, 94% of this plugin's findings were in files with no
+    // PostgreSQL client at all. Registering no visitors is both the gate and
+    // the cheap path — a file with no database in it does no work.
+    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+
     return {
       VariableDeclarator(node) {
         // Look for: const client = await pool.connect()

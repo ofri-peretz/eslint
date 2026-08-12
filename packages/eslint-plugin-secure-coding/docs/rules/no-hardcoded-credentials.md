@@ -419,3 +419,6 @@ const cred = credentials[type];
 ## Version History
 
 - **1.3.0** - Initial release with comprehensive credential detection patterns
+---
+
+*If this rule caught a real vulnerability in your codebase, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it keeps the detection logic maintained.*

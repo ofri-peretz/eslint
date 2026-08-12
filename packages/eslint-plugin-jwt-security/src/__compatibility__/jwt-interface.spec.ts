@@ -157,7 +157,9 @@ describe('jwt-decode Interface Compatibility', () => {
   describe('Core Exports', () => {
     it('exports jwtDecode function', () => {
       // Can be either named export or default export depending on version
-      const jwtDecode = getProp(jwtDecodeModule, 'jwtDecode') ?? getProp(jwtDecodeModule, 'default');
+      const jwtDecode =
+        getProp(jwtDecodeModule, 'jwtDecode') ??
+        getProp(jwtDecodeModule, 'default');
       expect(jwtDecode).toBeDefined();
     });
 
@@ -175,7 +177,9 @@ describe('Package Metadata', () => {
   it('jsonwebtoken has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('jsonwebtoken/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 jsonwebtoken version: ${pkg.version}`);
     } catch {
@@ -186,7 +190,9 @@ describe('Package Metadata', () => {
   it('jose has discoverable version', async () => {
     try {
       const pkgPath = require.resolve('jose/package.json');
-      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(m => m.default);
+      const pkg = await import(pkgPath, { with: { type: 'json' } }).then(
+        (m) => m.default,
+      );
       expect(pkg.version).toBeDefined();
       console.log(`📦 jose version: ${pkg.version}`);
     } catch {

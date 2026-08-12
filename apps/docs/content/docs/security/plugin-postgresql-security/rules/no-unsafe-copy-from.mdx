@@ -1,6 +1,6 @@
 ---
 title: no-unsafe-copy-from
-description: Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
+description: "Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
 
 Prevents `COPY FROM` with file paths (should use STDIN for safe client-side data loading).
 
@@ -81,6 +79,11 @@ Readable.from(validatedCSV).pipe(stream);
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowHardcodedPaths` | `boolean` | — | Allow hardcoded file paths (for admin/migration scripts) |
+| `allowedPaths` | `string[]` | — | List of allowed file path patterns (regex strings) |
 
 ### `allowHardcodedPaths`
 

@@ -16,6 +16,7 @@
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -34,7 +35,15 @@ type RuleOptions = [Options?];
 /**
  * HTTP method names used for routing
  */
-const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all', 'use']);
+const HTTP_METHODS = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'all',
+  'use',
+]);
 
 /**
  * Patterns that indicate potential ReDoS vulnerability
@@ -133,6 +142,12 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: false }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
@@ -168,7 +183,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         }
 
         // Check regex literal routes (e.g., /pattern/)
-        if (routeArg.type === 'Literal' && 'regex' in routeArg && routeArg.regex) {
+        if (
+          routeArg.type === 'Literal' &&
+          'regex' in routeArg &&
+          routeArg.regex
+        ) {
           const regexNode = routeArg as TSESTree.RegExpLiteral;
           const pattern = regexNode.regex.pattern;
           if (isVulnerableRegex(pattern)) {
@@ -193,7 +212,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
           routeArg.callee.name === 'RegExp'
         ) {
           const patternArg = routeArg.arguments[0];
-          if (patternArg && patternArg.type === 'Literal' && typeof patternArg.value === 'string') {
+          if (
+            patternArg &&
+            patternArg.type === 'Literal' &&
+            typeof patternArg.value === 'string'
+          ) {
             if (isVulnerableRegex(patternArg.value)) {
               context.report({
                 node: routeArg,

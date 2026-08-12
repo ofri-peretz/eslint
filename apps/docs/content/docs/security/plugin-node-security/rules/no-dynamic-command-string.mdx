@@ -6,7 +6,6 @@ category: security
 severity: critical
 cwe: CWE-77
 autofix: false
-owasp: 'A03:2021'
 type_aware: false
 type_aware_status: unaware
 ---
@@ -14,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** command injection, CWE-77, argument injection, shell flag, bash -c, spawn, execFile, execa, execaCommand, zx, $.raw, ESLint rule, LLM-optimized
 
 **CWE:** [CWE-77](https://cwe.mitre.org/data/definitions/77.html) (Command Injection)
 **OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
@@ -113,9 +110,9 @@ execa('git', ['clone', url]);
 
 ## Options
 
-| Option                | Type       | Default | Description                                                     |
-| --------------------- | ---------- | ------- | --------------------------------------------------------------- |
-| `extraCommandRunners` | `string[]` | `[]`    | Extra functions that accept a full command line without escaping |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `extraCommandRunners` | `string[]` | — | Extra functions that accept a full command line without escaping |
 
 ```json
 {
@@ -131,6 +128,10 @@ execa('git', ['clone', url]);
 ## When Not To Use It
 
 Build scripts and local developer tooling that only ever run on a trusted machine with trusted input have no attacker in the loop. Prefer scoping the rule off for those directories (an ESLint config override) over disabling it repo-wide — `scripts/` grows into CI, and CI input is not always trusted.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

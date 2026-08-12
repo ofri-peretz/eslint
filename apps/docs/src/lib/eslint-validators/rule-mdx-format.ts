@@ -31,9 +31,14 @@
  *      followed by the same or near-same paragraph as the canonical intro.
  *
  * Each surface fires its own finding, so a regression test names the exact
- * file and the exact invariant that broke. Re-running the repair scripts
- * (`apps/docs/scripts/fix-orphan-frontmatter.mjs`,
- * `apps/docs/scripts/refresh-rule-descriptions.mjs`) clears them.
+ * file and the exact invariant that broke.
+ *
+ * As of 2026-08-09 these are all *generator* invariants: `sync-rules-docs.ts`
+ * emits final-form MDX in one pass, so a finding here means either the rule's
+ * `.md` source needs fixing or the generated MDX is stale. Either way the fix
+ * is to correct the `.md` and run `npm run sync:rules --workspace=docs` — the
+ * six one-shot repair scripts that used to patch this up after the fact are
+ * gone, and `rule-docs-sync-drift.test.ts` now fails if MDX and `.md` diverge.
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -99,7 +104,7 @@ function readScalar(frontmatterBody: string, key: string): string | null {
 // `body-boilerplate-lead`: metadata-as-prose. Each pattern fired in the
 // real-world regression we're locking out, so failure messages can name
 // exactly which template leaked.
-const BOILERPLATE_PATTERNS: { name: string; re: RegExp }[] = [
+export const BOILERPLATE_PATTERNS: { name: string; re: RegExp }[] = [
   { name: 'CWE-link-as-lead', re: /^CWE:\s*\[CWE-\d+\]/ },
   { name: 'OWASP-link-as-lead', re: /^OWASP[^:]*:\s*\[/ },
   {
@@ -108,7 +113,7 @@ const BOILERPLATE_PATTERNS: { name: string; re: RegExp }[] = [
   },
 ];
 
-function looksLikeOpaqueLine(line: string): boolean {
+export function looksLikeOpaqueLine(line: string): boolean {
   // Skip non-prose paragraph leads — headings, lists, tables, blockquotes,
   // JSX/HTML, imports, code fences. Only prose paragraphs are candidates for
   // boilerplate-lead detection.
@@ -124,7 +129,7 @@ function looksLikeOpaqueLine(line: string): boolean {
   );
 }
 
-function findFirstProseParagraphBeforeHeading(body: string): string | null {
+export function findFirstProseParagraphBeforeHeading(body: string): string | null {
   const lines = body.split(/\r?\n/);
   let i = 0;
   while (i < lines.length) {
@@ -154,10 +159,24 @@ function bodyHasOrphanFrontmatter(body: string): boolean {
   );
 }
 
-function bodyDuplicatesDescription(body: string, description: string): boolean {
-  if (!description) return false;
+/**
+ * Locate the body paragraph that repeats the frontmatter `description`, as a
+ * `[startLine, endLineExclusive)` range, or `null` when there isn't one.
+ *
+ * Exported because `apps/docs/scripts/sync-rules-docs.ts` has to *remove*
+ * exactly the paragraph this validator would *flag*. When the generator and
+ * the validator each carried their own notion of "duplicated lead", the two
+ * drifted and the repair lived in a separate one-shot script
+ * (`dedupe-body-description.mjs`) that nobody ran. One definition, two
+ * consumers: the detector returns the range, the generator splices it out.
+ */
+export function findDuplicatedDescriptionParagraph(
+  body: string,
+  description: string,
+): { start: number; end: number } | null {
+  if (!description) return null;
   const target = description.replace(/\s+/g, ' ').trim();
-  if (target.length < 20) return false; // too short for confident match
+  if (target.length < 20) return null; // too short for confident match
 
   // Only scan the first 30 non-empty lines — duplication happens at the
   // lead, not in the middle of the doc.
@@ -173,10 +192,14 @@ function bodyDuplicatesDescription(body: string, description: string): boolean {
     const start = i;
     while (i < lines.length && lines[i].trim() !== '') i++;
     const paragraph = lines.slice(start, i).join(' ').replace(/\s+/g, ' ').trim();
-    if (paragraph === target) return true;
+    if (paragraph === target) return { start, end: i };
     prose++;
   }
-  return false;
+  return null;
+}
+
+function bodyDuplicatesDescription(body: string, description: string): boolean {
+  return findDuplicatedDescriptionParagraph(body, description) !== null;
 }
 
 export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
@@ -229,7 +252,7 @@ export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
           surface: 'frontmatter-description-missing',
           severity: 'error',
           message:
-            'Frontmatter `description:` is missing or empty. Run `node apps/docs/scripts/refresh-rule-descriptions.mjs`.',
+            "Frontmatter `description:` is missing or empty. Fix `description:` in the rule's `.md` source, then run `npm run sync:rules --workspace=docs`.",
         });
       } else {
         // 2. not the canonical stub
@@ -240,7 +263,7 @@ export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
             file: rel,
             surface: 'frontmatter-description-stub',
             severity: 'error',
-            message: `Frontmatter \`description\` is the templating stub (\`${description}\`). Run \`node apps/docs/scripts/refresh-rule-descriptions.mjs\` to pull \`meta.docs.description\` from the rule source.`,
+            message: `Frontmatter \`description\` is the templating stub (\`${description}\`). Fix \`description:\` in the rule's \`.md\` frontmatter, then run \`npm run sync:rules --workspace=docs\`.`,
           });
         }
 
@@ -291,7 +314,7 @@ export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
           surface: 'body-orphan-frontmatter',
           severity: 'error',
           message:
-            'Body contains an orphan `---\\ntitle:…description:…\\n---` block (dual-frontmatter regression). Run `node apps/docs/scripts/fix-orphan-frontmatter.mjs` to collapse it.',
+            'Body contains an orphan `---\\ntitle:…description:…\\n---` block (dual-frontmatter regression). The generator emits a single frontmatter block — regenerate with `npm run sync:rules --workspace=docs`.',
         });
       }
 
@@ -306,7 +329,7 @@ export function validateRuleMdxFormat(opts: RuleMdxFormatOptions): Finding[] {
               file: rel,
               surface: 'body-boilerplate-lead',
               severity: 'error',
-              message: `Body opens with metadata-as-prose (${bp.name}): \`${firstProse.slice(0, 80)}\`. Boilerplate leads belong in tables, not paragraphs. Run \`node apps/docs/scripts/refresh-rule-descriptions.mjs\` to strip.`,
+              message: `Body opens with metadata-as-prose (${bp.name}): \`${firstProse.slice(0, 80)}\`. Boilerplate leads belong in tables, not paragraphs. Move it into a table in the \`.md\` source, then run \`npm run sync:rules --workspace=docs\`.`,
             });
             break;
           }

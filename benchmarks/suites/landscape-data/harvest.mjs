@@ -102,8 +102,8 @@ const TOOLS = [
     "eslint-plugin-mongodb-security",
     "eslint-plugin-nestjs-security",
     "eslint-plugin-vercel-ai-security",
-    "eslint-plugin-jwt",
-    "eslint-plugin-pg",
+    "eslint-plugin-jwt-security",
+    "eslint-plugin-postgresql-security",
   ].map((npm) => ({ id: npm, group: "interlace", class: "eslint-plugin", npm, repo: "ofri-peretz/eslint", repoLevel: true })),
 ];
 

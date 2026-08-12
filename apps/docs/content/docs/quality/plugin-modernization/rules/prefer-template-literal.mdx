@@ -1,6 +1,6 @@
 ---
 title: prefer-template-literal
-description: Prefer template literals over string concatenation with runtime values
+description: "Prefer template literals over string concatenation with runtime values"
 tags: ['architecture', 'modernization']
 category: modernization
 autofix: code
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** template literal, string concatenation, plus operator, interpolation, ESLint rule, ES2015, auto-fix, LLM-optimized
 
 Prefer template literals over string concatenation with `+` when at least one operand is a runtime value. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 
@@ -28,7 +26,7 @@ Prefer template literals over string concatenation with `+` when at least one op
 
 ## Rule Details
 
-Template literals with string interpolation are more readable and less error-prone than concatenating strings with `+`. This rule flags any `+` expression that mixes string literals with runtime values (variables, member expressions, function calls, etc.) and rewrites the entire chain as a single template literal.
+Template literals with `${}` interpolation are more readable and less error-prone than concatenating strings with `+`. This rule flags any `+` expression that mixes string literals with runtime values (variables, member expressions, function calls, etc.) and rewrites the entire chain as a single template literal.
 
 Pure string-literal concatenation (`"foo" + "bar"`) and numeric addition (`1 + 2`) are intentionally ignored.
 
@@ -36,7 +34,7 @@ Pure string-literal concatenation (`"foo" + "bar"`) and numeric addition (`1 + 2
 
 | Issue                    | Impact                                     | Solution                       |
 | ------------------------ | ------------------------------------------ | ------------------------------ |
-| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use template literals with interpolation  |
+| 📖 **Readability**       | Mixed `+` chains are hard to scan          | Use a `${expr}` placeholder    |
 | 🐛 **Implicit coercion** | `+` coerces operands unpredictably         | Interpolation is unambiguous   |
 | 🔄 **Consistency**       | Multiple string-building styles in codebase | Standardize on template literals |
 
@@ -61,26 +59,6 @@ const message = `Error: ${err.message}`;
 // Pure string concat is fine (no runtime values)
 const url = "https://" + "example.com";
 ```
-
-## Auto-fix
-
-ESLint can fix this automatically. Running `eslint --fix` rewrites the concatenation chain into a single template literal — no manual edits required.
-
-**Before**
-
-```js
-const msg = "Hello, " + name + "!";
-const path = "/api/v1/" + resource + "/" + id;
-```
-
-**After**
-
-```js
-const msg = `Hello, ${name}!`;
-const path = `/api/v1/${resource}/${id}`;
-```
-
-The fixer joins all operands into one template literal, promoting any plain string segments to static parts and wrapping runtime values in `${...}` expressions.
 
 ## Configuration Examples
 

@@ -1,6 +1,6 @@
 ---
 title: no-did-update-set-state
-description: no-did-update-set-state rule
+description: "no-did-update-set-state rule"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
@@ -11,8 +11,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** React, componentDidUpdate, setState, infinite loop, lifecycle, ESLint rule, LLM-optimized
 
 Prevent calling `setState` in `componentDidUpdate` without a conditional. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 

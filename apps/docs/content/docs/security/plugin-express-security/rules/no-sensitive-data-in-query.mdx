@@ -1,6 +1,6 @@
 ---
 title: no-sensitive-data-in-query
-description: "Disallow reading sensitive-named parameters (password, token, secret, ...) from req.query"
+description: "Disallow reading sensitive-named parameters (password, token, secret, apiKey, ...) from req.query."
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -14,10 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** sensitive query string, credentials in URL, CWE-598, GET request secrets, password in query, api key in url, access logs, Referer leak, browser history, express security
-
-Disallow reading sensitive-named parameters (password, token, secret, apiKey, ...) from req.query.
 
 **CWE:** [CWE-598](https://cwe.mitre.org/data/definitions/598.html)  
 **OWASP:** [A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
@@ -218,3 +214,11 @@ const password = incoming.query.password;
 - **[CWE-598: Use of GET Request Method With Sensitive Query Strings](https://cwe.mitre.org/data/definitions/598.html)**
 - **[OWASP: Information exposure through query strings in URL](https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url)**
 - **[OWASP: Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)**
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitiveParams` | `string[]` | — | Additional sensitive parameter names (extends the defaults) |
+| `extraPatterns` | `string[]` | — | Additional regex patterns (case-insensitive) matched against the raw parameter name |
+| `allowedParams` | `string[]` | — | Parameter names explicitly allowed in the query string (exact, case-insensitive) |

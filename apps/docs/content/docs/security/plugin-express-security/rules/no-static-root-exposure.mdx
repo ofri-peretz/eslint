@@ -5,7 +5,6 @@ tags: ['security', 'express']
 category: security
 severity: high
 cwe: CWE-548
-owasp: 'A05:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -14,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** static files, express.static, serve-index, directory listing, CWE-548, information exposure, __dirname, path traversal, .env exposure, ESLint rule, LLM-optimized
 
 Detects static-file middleware that serves the application root (`__dirname`, `'.'`, `process.cwd()`, `path.join(__dirname)` with no subdirectory or with `..` segments) and any use of `serve-index` directory listings. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 
@@ -213,9 +210,9 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Options
 
-| Option         | Type       | Default                                           | Description                                                                                                                              |
-| -------------- | ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowedRoots` | `string[]` | `['public', 'static', 'dist', 'build', 'assets']` | Directory names accepted as the first path segment of a static root (replaces the default set; the first entry seeds the fix suggestion) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowedRoots` | `string[]` | — | Directory names accepted as the first path segment of a static root |
 
 ## Best Practices
 

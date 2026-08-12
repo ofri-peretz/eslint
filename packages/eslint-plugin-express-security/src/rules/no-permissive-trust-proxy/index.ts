@@ -29,6 +29,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -99,7 +100,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
         fix: "Set the number of proxies you actually run behind — app.set('trust proxy', {{hops}}) — or a subnet/'loopback'/predicate that names them.",
         documentationLink: 'https://expressjs.com/en/guide/behind-proxies.html',
       }),
-      useHopCount: "Trust exactly {{hops}} proxy hop(s) instead",
+      useHopCount: 'Trust exactly {{hops}} proxy hop(s) instead',
     },
     schema: [
       {
@@ -117,6 +118,12 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { hopCount } = options as Options;
     const hops = hopCount ?? 1;
 

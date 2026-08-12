@@ -10,6 +10,22 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noFloatingQuery } from './index';
 
+/**
+ * Every fixture imports a PostgreSQL client, because the rule now abstains in
+ * files that use no PostgreSQL at all. Wrapping the arrays rather than editing
+ * each fixture means one cannot be left behind — a fixture missing the import
+ * would pass vacuously on the gate instead of exercising the detection it was
+ * written for.
+ */
+const withPg = (code: string): string => `import { Pool } from 'pg';\n${code}`;
+const pg = <T,>(cases: T[]): T[] =>
+  cases.map((c) =>
+    typeof c === 'string'
+      ? (withPg(c) as T)
+      : ({ ...c, code: withPg((c as { code: string }).code) } as T),
+  );
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -27,7 +43,7 @@ const ruleTester = new RuleTester({
 describe('no-floating-query', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe patterns', noFloatingQuery, {
-      valid: [
+      valid: pg([
         // Unrelated code should not trigger
         {
           code: `const x = 1;`,
@@ -48,7 +64,7 @@ describe('no-floating-query', () => {
         {
           code: `const safe4 = process.env.DB_HOST;`,
         },
-      ],
+      ]),
       invalid: [],
     });
   });
@@ -56,13 +72,13 @@ describe('no-floating-query', () => {
   describe('Invalid Code', () => {
     ruleTester.run('invalid - dangerous patterns', noFloatingQuery, {
       valid: [],
-      invalid: [
+      invalid: pg([
         // Triggers noFloatingQuery
         {
           code: `client.query('SELECT 1')`,
           errors: [{ messageId: 'noFloatingQuery' }],
         },
-      ],
+      ]),
     });
   });
 });

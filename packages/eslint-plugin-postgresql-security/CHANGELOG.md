@@ -1,5 +1,177 @@
 ## [1.4.3] - 2026-02-08
 
+## 2.0.0
+
+### Major Changes
+
+- [#479](https://github.com/ofri-peretz/eslint/pull/479) [`73807cb`](https://github.com/ofri-peretz/eslint/commit/73807cbfc9bab90f67a1328c680d69a0034fca64) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now abstains in files without local PostgreSQL evidence
+
+  The plugin had no notion of whether a file used PostgreSQL at all.
+  `no-missing-client-release` fired on any `.connect()` — mongoose, redis,
+  socket.io. `no-unsafe-query` fired on any `.query()`. `no-select-all` fired on
+  `SELECT *` in any string anywhere.
+
+  Measured over **108,838 files across 108 repositories**: 1,305 findings, of
+  which **1,222 (94%) were in files with no PostgreSQL client**. Two rules were
+  wrong 100% of the time — `no-missing-client-release` (49 findings, 0 in a
+  PostgreSQL file) and `prevent-double-release`.
+
+  All thirteen rules now require local evidence that the file uses PostgreSQL: an
+  import or `require` of a PostgreSQL client, or a `postgres://` / `postgresql://`
+  connection string in the file. Nothing is read from `package.json` and nothing
+  is resolved across files, so there is no project state to go stale.
+
+  After the change the same corpus yields 100 findings instead of 1,305.
+
+  This is a **major** bump: any rule may now stay silent where it previously
+  reported. A file that reaches PostgreSQL only through a wrapper module is a
+  deliberate miss — the trade against reporting on code with no database in it.
+
+### Patch Changes
+
+- [#494](https://github.com/ofri-peretz/eslint/pull/494) [`4c4af8d`](https://github.com/ofri-peretz/eslint/commit/4c4af8d62b64eabe5be1636345f7a56f63372b43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Close two false-negative classes across every SDK-evidence gate
+
+  A full false-negative audit ran every gated plugin twice over the 107-repository
+  corpus — once with the gates forced open, once as shipped — and compared the
+  **6,686 findings the gates silence across 5,235 files**. Of those files, 134 were
+  flagged as suspect (the SDK _is_ imported but the gate closed anyway), and two
+  real defect classes came out of verifying them one by one.
+
+  **1. TypeScript's import-equals form was invisible to four of the five gates.**
+  `import express = require('express')` is a `TSImportEqualsDeclaration` whose
+  module reference is a `TSExternalModuleReference` — not a `require`
+  `CallExpression` — so the dynamic-load arm never saw it. **82 corpus files
+  written this way for Express alone had every rule in the plugin silenced.** Only
+  `mongodb-security` handled it, and only because an earlier audit forced the
+  issue. Now handled by express, lambda, postgresql and vercel-ai too.
+
+  **2. Deno's module specifiers were unrecognisable to all five.**
+  `npm:@aws-sdk/client-bedrock-runtime` and
+  `https://deno.land/x/postgres@v0.17.0/mod.ts` are ordinary SDK imports in Deno
+  and Supabase Edge Functions; the prefix made the specifier unmatchable and the
+  whole plugin abstained on real SDK code. Both forms are now normalised before
+  the package test.
+
+  **`postgresql-security` also had no dynamic `import()` arm at all** — alone
+  among the five — so a file that lazily loads its driver was silenced entirely.
+  Every other gate has carried that arm since [#481](https://github.com/ofri-peretz/eslint/issues/481).
+
+  **Measured, not assumed.** Re-sweeping the same 119,271 files with the fixes:
+  **198 findings recovered across 88 files** (196 express, 1 postgres, 1 lambda)
+  and **zero regressions** — nothing that reported before is silenced now.
+
+  The two non-Express recoveries are the clearest illustration of what was broken:
+  `no-missing-authorization-check` on a Supabase Edge Function calling Bedrock, and
+  `no-missing-client-release` on a Deno postgres pool driver. Both are real
+  serverless code that the ecosystem was blind to.
+
+  Verification also **ruled out** four groups the generous probe flagged, rather
+  than widening the gates to swallow them: `@serverless/*` and
+  `@aws-lambda-powertools/*` hits were the frameworks' own source (one specifier
+  was inside a JSDoc `@example` block), and `@payloadcms/db-mongodb` /
+  `@medusajs/deps/pg` were type-only imports of adapter packages in files that
+  never touch the driver.
+
+  Each new arm ships a positive control in the plugin's `module-gate.lock.test.ts`
+  — import-equals, `npm:`, and `deno.land/x` for every gate, plus the dynamic
+  `import()` case for postgres — so none of them can regress silently. All four
+  packages remain at 100% statements / branches / functions / lines.
+
+- [#483](https://github.com/ofri-peretz/eslint/pull/483) [`de0c475`](https://github.com/ofri-peretz/eslint/commit/de0c475ddc76d0a27d5744be5fa0aafcf1333fb5) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix a false negative: `require` shadowing is now lexical, not file-wide
+
+  Both module gates raised a single "this file shadows `require`" flag for the
+  whole file. So `const client = require('pg'); function wrapper(require) {}` was
+  read as fully shadowed: the real module load at module scope was ignored and
+  every rule in the plugin abstained.
+
+  That trades a false positive for a false negative, which is the worse trade —
+  a security rule that silently stops reporting is the defect class that matters
+  most.
+
+  Shadowing now propagates down the walk and applies only inside the scope that
+  binds the name: a function whose parameters include `require`, or a
+  Program/BlockStatement whose direct body declares one. A `require()` outside
+  that scope is module loading again.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
+## 1.5.3
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#329](https://github.com/ofri-peretz/eslint/pull/329) [`75d3497`](https://github.com/ofri-peretz/eslint/commit/75d349787f8ec081ae961cc4984ea4973c8be730) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Test infrastructure only — no rule, config, or API behavior changes. These
+  packages ship `src/` in their npm tarball, so the moved SDK compatibility specs
+  technically alter the published files, hence the patch bump.
+
+  The `src/__compatibility__/` suites no longer run as part of each package's
+  default `vitest` run. They assert the export surface of the third-party SDK
+  (express, jose, @middy/core, mongodb, @nestjs/common, pg, ai), not our rules, and
+  `sdk-compatibility.yml` already exercises them against each SDK's `@latest` —
+  the only run that produces new signal. Loading those SDK graphs on a cold module
+  cache was measured at 82s (express) and 209s (`@nestjs/common`), which blew every
+  per-file hook timeout and blocked unrelated local commits via the lefthook
+  `tests-affected` pre-commit hook. The ceiling now lives once in
+  `vitest.compat.config.mts`, sized off those cold numbers.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#414](https://github.com/ofri-peretz/eslint/pull/414) [`d527f14`](https://github.com/ofri-peretz/eslint/commit/d527f1485512db5441aa269e207d1b7510bf29bb) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Remove the superseded `eslint-plugin-pg` and `eslint-plugin-jwt` sources from
+  the monorepo.
+
+  Both were renamed to their `-security` names and every published version on npm
+  is deprecated. The sources stayed in `packages/`, and because
+  `.changeset/config.json` has `ignore: []`, **every release versioned and
+  republished them** — `eslint-plugin-pg@1.4.13` and `eslint-plugin-jwt@2.2.13`
+  went out on 2026-08-05. A newly published version carries no deprecation flag,
+  so each release silently un-deprecated the packages until someone re-ran
+  `npm deprecate`.
+
+  Deleting the sources is what stops that loop; re-deprecating alone gets undone
+  by the next release.
+
+  No published rule is lost. The `-security` packages carry identical rule sets
+  (13 each, verified by comparing the rule directories) and keep the original
+  `pg/` and `jwt/` rule namespaces, so no consumer config changes. The published
+  catalogue is unchanged at 465 rules across 30 plugins — the removed entries were
+  already marked unpublished, which is why the totals only drop for the
+  including-unpublished count (491 → 465).
+
+  Also fixes a user-facing consequence the removal surfaced: the playground's
+  copy-config button derived package names as `eslint-plugin-<prefix>`, so `jwt/`
+  and `pg/` findings emitted install lines for the **deprecated** packages. Those
+  two prefixes are now mapped explicitly, with a lock.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 1.5.2
 
 ### Patch Changes

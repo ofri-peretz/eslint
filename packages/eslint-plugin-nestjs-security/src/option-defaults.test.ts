@@ -32,6 +32,11 @@ import { rules } from './index';
 const linter = new Linter({ configType: 'flat' });
 
 function findings(rule: string, code: string, options?: unknown): string[] {
+  // The rules abstain in files that use no NestJS, so every fixture here is
+  // linted as the NestJS file it stands for. A side-effect import: it adds no
+  // binding, and prefixing once in this helper means no fixture can be left
+  // behind and pass vacuously on the gate.
+  code = `import '@nestjs/common';\n${code}`;
   return linter
     .verify(
       code,

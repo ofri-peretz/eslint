@@ -36,6 +36,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -126,7 +127,10 @@ function clientContainerOf(node: TSESTree.MemberExpression): string | null {
   if (!container || !CLIENT_CONTAINERS.has(container)) return null;
 
   const root = object.object;
-  if (root.type === AST_NODE_TYPES.Identifier && REQUEST_RECEIVER.test(root.name)) {
+  if (
+    root.type === AST_NODE_TYPES.Identifier &&
+    REQUEST_RECEIVER.test(root.name)
+  ) {
     return container;
   }
   // ctx.req.body.role / this.request.query.role
@@ -240,6 +244,12 @@ export const noClientControlledAuthorization = createRule<
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { extraProperties } = options as Options;
     const extra = new Set(
       (extraProperties ?? []).map((name) => name.toLowerCase()),

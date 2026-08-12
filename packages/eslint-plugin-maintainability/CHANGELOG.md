@@ -1,5 +1,111 @@
 ## [3.0.3] - 2026-02-08
 
+## 3.0.16
+
+### Patch Changes
+
+- [#499](https://github.com/ofri-peretz/eslint/pull/499) [`47070de`](https://github.com/ofri-peretz/eslint/commit/47070de2ccb391252891c72633191709a9bdd03c) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Bound the TypeScript peer range and declare the React peer
+
+  `maintainability`, `react-features` and `import-next` shipped
+  `"typescript": ">=4.8.4"`, which claims support for every future major —
+  including ones the repo has already pinned Dependabot away from. The range is
+  now the majors actually tested: `^4.8.4 || ^5.0.0 || ^6.0.0`.
+
+  `react-a11y` and `react-features` lint `JSXElement`, `JSXAttribute` and
+  `JSXOpeningElement` and named no React peer, so nothing recorded which React
+  majors their rules were written against. Both now declare
+  `react: ^17 || ^18 || ^19`, optional, so no adopter is forced to install it.
+
+## 3.0.15
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#430](https://github.com/ofri-peretz/eslint/pull/430) [`7a18db3`](https://github.com/ofri-peretz/eslint/commit/7a18db32a82e63f92f49194c76aef41ad355ad84) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Make `identical-functions` ~35x faster without changing a single finding.
+
+  The rule compared every pair of functions in a file and built a full
+  |a|x|b| Levenshtein matrix for each pair. Measured with `TIMING` over 60 files
+  (~14.6k lines) with four plugins enabled, it accounted for **933 ms — 90.9% of
+  all rule time**, against 21.8 ms for the next-slowest rule. Cost grew
+  quadratically: 4.3x the source took 8.3x the time.
+
+  Two exact prunes now skip work that provably cannot produce a match:
+
+  - **Length bound** — edit distance is at least the length difference, so
+    similarity can never exceed `shorter.length / longer.length`. If that ceiling
+    is already under the threshold, no matrix is built.
+  - **Distance budget** — a match needs a distance no greater than
+    `longer.length * (1 - threshold)`; once an entire DP row exceeds it the walk
+    stops, and the matrix is two rows rather than |a|+1 of them.
+
+  Same corpus after: **26.2 ms**, and the rule falls from 90.9% to 21.2% of rule
+  time. Findings are byte-for-byte identical — 42 before, 42 after, including the
+  reported `{{similarity}}%`, which is computed only over pairs already above the
+  threshold and therefore never touched by a prune.
+
+  The distance budget is computed as `L - ceil(L * threshold)` rather than the
+  more obvious `floor(L * (1 - threshold))`. The latter is lossy: `1 - 0.9` is
+  `0.09999999999999998`, so at the default threshold every length that is a
+  multiple of 10 came out one unit short, and a pair sitting exactly on the
+  threshold — two 20-character bodies differing by exactly 2 — was pruned away
+  instead of reported. That is a false negative, the one failure mode a prune
+  must never have. Caught in review; it left the 600-file corpus above unchanged
+  at 215 findings, because the defect needs a pair to land precisely on the
+  boundary, but it is locked now by a sweep over five thresholds and lengths
+  10..200 in `identical-functions-perf.test.ts`.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#309](https://github.com/ofri-peretz/eslint/pull/309) [`237a6b0`](https://github.com/ofri-peretz/eslint/commit/237a6b03313e2ea935999ee84b2a6c8af33e50bc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `meta.hasSuggestions` now matches what each rule actually emits.
+
+  ILB-Remediation measured 27 rules where the declaration and the implementation
+  disagreed: 22 declared `hasSuggestions: true` without ever passing `suggest:`
+  to `context.report()` (IDE quick-fix menus advertising remediation that never
+  arrives), and 5 emitted `suggest:` without the declaration (latent — ESLint
+  throws on that combination as soon as one of those suggestions carries a real
+  fixer).
+
+  `eslint-plugin-mongodb-security` gains four real suggestions where the rewrite
+  is mechanical:
+
+  - `require-lean-queries` — appends `.lean()`
+  - `no-unbounded-find` — appends `.limit(100)`
+  - `no-debug-mode-production` — rewrites the flag to `process.env.NODE_ENV !== 'production'`
+  - `require-tls-connection` — adds (or flips) `tls: true` in the connection options
+
+  Every other dead declaration was removed rather than faked. A workspace lock
+  (`scripts/__tests__/suggestions-meta-lock.test.ts`) now fails CI on either
+  direction of the drift.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 3.0.14
 
 ### Patch Changes

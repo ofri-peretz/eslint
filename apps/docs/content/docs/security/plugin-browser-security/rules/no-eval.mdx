@@ -1,6 +1,6 @@
 ---
 title: no-eval
-description: Detects dangerous eval() and similar code execution patterns
+description: "Detects dangerous eval() and similar code execution patterns"
 tags: ['security', 'browser']
 category: security
 severity: critical
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
 
 **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -118,9 +116,10 @@ const result = parser.evaluate(expression);
 
 ## Options
 
-| Option         | Type      | Default | Description              |
-| -------------- | --------- | ------- | ------------------------ |
-| `allowInTests` | `boolean` | `false` | Allow eval in test files |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `allowFunctionConstructor` | `boolean` | `false` | Allow `new Function(...)` while still reporting `eval()` |
 
 ```json
 {

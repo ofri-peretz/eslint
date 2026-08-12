@@ -1,6 +1,6 @@
 ---
 title: no-hardcoded-connection-string
-description: Detects hardcoded MongoDB connection strings containing credentials in source code.
+description: "Detects hardcoded MongoDB connection strings containing credentials in source code."
 tags: ['security', 'mongodb']
 category: security
 severity: critical
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 
@@ -164,3 +162,9 @@ mongoose.connect('mongodb://localhost/db', {
 - [CWE-798: Use of Hardcoded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 - [MongoDB Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -3,6 +3,52 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUserControlledRedirect } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +60,7 @@ const ruleTester = new RuleTester({
 
 describe('no-user-controlled-redirect', () => {
   ruleTester.run('no-user-controlled-redirect', noUserControlledRedirect, {
-    valid: [
+    valid: xp([
       // Literal redirect — always safe
       { code: `res.redirect('/dashboard');` },
       { code: `res.redirect(301, '/login');` },
@@ -70,13 +116,25 @@ describe('no-user-controlled-redirect', () => {
           });
         `,
       },
+      // Guard and redirect reach the source through a computed *literal*
+      // property. `req.body['to']` is the same expression written both times,
+      // so the path comparison has to match on the literal key, not just on
+      // identifiers.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.body['to']).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.body['to']);
+          });
+        `,
+      },
       // Not a redirect call
       { code: `res.send(req.query.message);` },
       { code: `res.json({ url: req.body.url });` },
       // Numeric status code + literal target
       { code: `response.redirect(302, '/logout');` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // A guard on a DIFFERENT source must not launder this redirect.
       {
         code: `
@@ -99,7 +157,43 @@ describe('no-user-controlled-redirect', () => {
         `,
         errors: [{ messageId: 'openRedirect' }],
       },
-
+      // The origin check reads an unrelated variable, not the redirect target.
+      // Validating one value proves nothing about a different one.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(fallback).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // A computed key that is a *call* is not a stable path: the two
+      // `getKey()` calls can return different keys, so checking one says
+      // nothing about the value the other one reads.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query[getKey()]).host !== 'example.com') return res.sendStatus(400);
+            res.redirect(req.query[getKey()]);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // The only `return` sits inside a nested callback, so the handler never
+      // bails out — the request falls through to the redirect either way.
+      // Counting that return would let any origin check launder any redirect.
+      {
+        code: `
+          app.get('/go', (req, res) => {
+            if (new URL(req.query.url).host !== 'example.com') {
+              onFail(function () { return 1; });
+            }
+            res.redirect(req.query.url);
+          });
+        `,
+        errors: [{ messageId: 'openRedirect' }],
+      },
       // Direct req.query access
       {
         code: `res.redirect(req.query.returnUrl);`,
@@ -118,7 +212,9 @@ describe('no-user-controlled-redirect', () => {
       // Direct req.headers access
       {
         code: `res.redirect(req.headers['x-redirect-to']);`,
-        errors: [{ messageId: 'openRedirect', data: { source: 'req.headers' } }],
+        errors: [
+          { messageId: 'openRedirect', data: { source: 'req.headers' } },
+        ],
       },
       // response alias
       {
@@ -150,57 +246,76 @@ describe('no-user-controlled-redirect', () => {
         options: [{ responseObjects: ['reply'], requestObjects: ['ctx'] }],
         errors: [{ messageId: 'openRedirect', data: { source: 'req.query' } }],
       },
-    ],
+    ]),
   });
 });
 
 // ---------------------------------------------------------------------------
 // Coverage wave: previously untested branches (annotation-debt removal)
 // ---------------------------------------------------------------------------
-ruleTester.run('no-user-controlled-redirect (coverage wave)', noUserControlledRedirect, {
-  valid: [
-    // bare call — callee is not a member expression
-    { code: `redirect(req.query.url);` },
-    // computed member access on the response object
-    { code: `res['redirect'](req.query.url);` },
-    // response object is itself a member expression
-    { code: `a.res.redirect(req.query.url);` },
-    // unknown response object name
-    { code: `foo.redirect(req.query.url);` },
-    // no arguments
-    { code: `res.redirect();` },
-    // argument is a non-request member expression
-    { code: `res.redirect(config.url);` },
-    // root of the chain is not an identifier
-    { code: `res.redirect(a.req.query.url);` },
-    // computed source property — not an Identifier
-    { code: `res.redirect(req['query'].url);` },
-    // non user-source property
-    { code: `res.redirect(req.session.url);` },
-    // two-level access with a computed property
-    { code: `res.redirect(req['query']);` },
-    // safe literal
-    { code: `res.redirect('/home');` },
-  ],
-  invalid: [
-    { code: `reply.redirect(req.query.url);`, errors: [{ messageId: 'openRedirect' }] },
-    { code: `response.location(request.query.next);`, errors: [{ messageId: 'openRedirect' }] },
-    { code: `res.redirect(ctx.params.slug);`, errors: [{ messageId: 'openRedirect' }] },
-    // custom response object via options
-    {
-      code: `appRes.redirect(req.query.url);`,
-      options: [{ responseObjects: ['appRes'] }],
-      errors: [{ messageId: 'openRedirect' }],
-    },
-    // custom request object via options
-    {
-      code: `res.redirect(myReq.body.target);`,
-      options: [{ requestObjects: ['myReq'] }],
-      errors: [{ messageId: 'openRedirect' }],
-    },
-    // whole user-source object (two levels)
-    { code: `res.redirect(req.query);`, errors: [{ messageId: 'openRedirect' }] },
-    // computed leaf property on a user source
-    { code: `res.redirect(req.body['to']);`, errors: [{ messageId: 'openRedirect' }] },
-  ],
-});
+ruleTester.run(
+  'no-user-controlled-redirect (coverage wave)',
+  noUserControlledRedirect,
+  {
+    valid: xp([
+      // bare call — callee is not a member expression
+      { code: `redirect(req.query.url);` },
+      // computed member access on the response object
+      { code: `res['redirect'](req.query.url);` },
+      // response object is itself a member expression
+      { code: `a.res.redirect(req.query.url);` },
+      // unknown response object name
+      { code: `foo.redirect(req.query.url);` },
+      // no arguments
+      { code: `res.redirect();` },
+      // argument is a non-request member expression
+      { code: `res.redirect(config.url);` },
+      // root of the chain is not an identifier
+      { code: `res.redirect(a.req.query.url);` },
+      // computed source property — not an Identifier
+      { code: `res.redirect(req['query'].url);` },
+      // non user-source property
+      { code: `res.redirect(req.session.url);` },
+      // two-level access with a computed property
+      { code: `res.redirect(req['query']);` },
+      // safe literal
+      { code: `res.redirect('/home');` },
+    ]),
+    invalid: xp([
+      {
+        code: `reply.redirect(req.query.url);`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      {
+        code: `response.location(request.query.next);`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      {
+        code: `res.redirect(ctx.params.slug);`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // custom response object via options
+      {
+        code: `appRes.redirect(req.query.url);`,
+        options: [{ responseObjects: ['appRes'] }],
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // custom request object via options
+      {
+        code: `res.redirect(myReq.body.target);`,
+        options: [{ requestObjects: ['myReq'] }],
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // whole user-source object (two levels)
+      {
+        code: `res.redirect(req.query);`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+      // computed leaf property on a user source
+      {
+        code: `res.redirect(req.body['to']);`,
+        errors: [{ messageId: 'openRedirect' }],
+      },
+    ]),
+  },
+);

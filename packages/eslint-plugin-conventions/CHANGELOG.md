@@ -1,3 +1,82 @@
+## 4.2.9
+
+### Patch Changes
+
+- [#497](https://github.com/ofri-peretz/eslint/pull/497) [`461f8a8`](https://github.com/ofri-peretz/eslint/commit/461f8a8750b3e3025ca449e97a5f875e5458b45b) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Point `meta.docs.url` at the philosophies' new home
+
+  `utm-taxonomy`, `no-raw-cross-property-href`, and `analytics-event-naming`
+  shipped `meta.docs.url` values pointing at `UTM_PHILOSOPHY.md` and
+  `ANALYTICS_PHILOSOPHY.md` at the root of this repo. Those documents moved to
+  [ofri-peretz/interlace `docs/philosophies/`](https://github.com/ofri-peretz/interlace/tree/main/docs/philosophies),
+  so the published URLs now 404 — the "read more" link on every one of these
+  diagnostics is dead in `4.2.8`.
+
+  Nothing in CI caught it: `check-links.ts` only scans external URLs in MDX, so
+  a `meta.docs.url` string in a rule's `.ts` is invisible to it. Worth a
+  follow-up lock that resolves every rule's `meta.docs.url`.
+
+  No rule behaviour changes — five string literals.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
+## 4.2.8
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#309](https://github.com/ofri-peretz/eslint/pull/309) [`237a6b0`](https://github.com/ofri-peretz/eslint/commit/237a6b03313e2ea935999ee84b2a6c8af33e50bc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `meta.hasSuggestions` now matches what each rule actually emits.
+
+  ILB-Remediation measured 27 rules where the declaration and the implementation
+  disagreed: 22 declared `hasSuggestions: true` without ever passing `suggest:`
+  to `context.report()` (IDE quick-fix menus advertising remediation that never
+  arrives), and 5 emitted `suggest:` without the declaration (latent — ESLint
+  throws on that combination as soon as one of those suggestions carries a real
+  fixer).
+
+  `eslint-plugin-mongodb-security` gains four real suggestions where the rewrite
+  is mechanical:
+
+  - `require-lean-queries` — appends `.lean()`
+  - `no-unbounded-find` — appends `.limit(100)`
+  - `no-debug-mode-production` — rewrites the flag to `process.env.NODE_ENV !== 'production'`
+  - `require-tls-connection` — adds (or flips) `tls: true` in the connection options
+
+  Every other dead declaration was removed rather than faked. A workspace lock
+  (`scripts/__tests__/suggestions-meta-lock.test.ts`) now fails CI on either
+  direction of the drift.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 4.2.7
 
 ### Patch Changes

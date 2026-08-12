@@ -1,11 +1,11 @@
 ---
 title: no-hybrid-app-config-loss
-description: Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard from the microservice transport
+description: "Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard from the microservice transport"
 tags: ['security', 'nestjs']
 category: security
 severity: high
-cwe: CWE-284
-owasp: 'A01:2021'
+cwe: CWE-20
+owasp: 'A03:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -41,9 +41,9 @@ anywhere are inside NestJS's own framework and its tests.
 
 ## OWASP Mapping
 
-- **OWASP Top 10 2021**: A01:2021 - Broken Access Control
-- **CWE**: CWE-284 - Improper Access Control
-- **CVSS**: 7.5 (High)
+- **OWASP Top 10 2021**: A03:2021 - Injection
+- **CWE**: CWE-20 - Improper Input Validation
+- **CVSS**: 5.3 (Medium)
 
 ## ❌ Incorrect
 
@@ -79,6 +79,10 @@ async function bootstrap() {
 ```
 
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ```typescript
 {
@@ -134,6 +138,10 @@ app.connectMicroservice(options, { inheritAppConfig: false });
   validation and guards — for example a transport that is only reachable inside
   a trusted network and validates its own payloads. Disable it on that line
   rather than globally, so the decision stays visible.
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
 
 ## Known False Negatives
 

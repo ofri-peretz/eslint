@@ -1,3 +1,110 @@
+## 3.0.0
+
+### Major Changes
+
+- [#502](https://github.com/ofri-peretz/eslint/pull/502) [`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Share one SDK-evidence probe, and gate the last plugin that had none
+
+  `createModuleEvidence` moves the probe into the devkit. Five plugins each
+  carried their own copy, so the two false-negative classes the audit found —
+  TypeScript's `import =` form and Deno's `npm:` / `deno.land` specifiers — had to
+  be fixed five times. One implementation now carries package-root matching,
+  rejection of relative specifiers, both dynamic forms, lexically-scoped `require`
+  shadowing, an optional non-import evidence arm, and a per-`Program` cache.
+
+  `nestjs-security` is gated on it. Measured over 107,382 files across 107
+  repositories, **22% of everything it reported (219 of 999 findings) was in a
+  file importing no NestJS package** — its rules key on decorator and method names
+  that Angular, TypeORM and plain TypeScript classes share. This is a **major**:
+  any rule may now stay silent where it previously reported.
+
+  Every other SDK plugin already abstained, but eight of them proved it only
+  inside a devkit factory. They now ship a registry-wide lock as well, so the
+  guarantee survives a hand-written rule added tomorrow.
+
+### Patch Changes
+
+- Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:
+  - @interlace/eslint-devkit@1.13.0
+
+## 2.3.0
+
+### Minor Changes
+
+- [#435](https://github.com/ofri-peretz/eslint/pull/435) [`5d75183`](https://github.com/ofri-peretz/eslint/commit/5d75183a99493f7485b7bbd7500f39bd895822cc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Fix a false negative in `no-permissive-cors` and add `no-unsafe-multer-filename`.
+
+  **`no-permissive-cors` now reports the declaration, not just the call site.** A
+  CORS config exported from one file and consumed in another was invisible: the
+  rule resolved same-file bindings only, so `app.enableCors(corsOptions)` with an
+  imported `corsOptions` reported nothing. That is the exact shape of the one
+  genuinely exploitable configuration found across 49 NestJS repositories —
+  reflected origin, credentials enabled, cookie-based session — and the plugin was
+  silent on it.
+
+  A declaration is now reported when it is annotated with `CorsOptions` and that
+  annotation resolves to `@nestjs/common`, `@nestjs/platform-*` or `cors`. The
+  annotation is the evidence: an object literal with an `origin` key proves
+  nothing, and the name `CorsOptions` alone is not classification. Unannotated
+  objects behave exactly as before, so nothing is silenced on missing evidence.
+  A config that is both declared and used in one file is reported once, at the
+  declaration, which is where the fix goes.
+
+  **New rule `no-unsafe-multer-filename` (CWE-22, error in `recommended`).** Flags
+  a multer `diskStorage` `filename` callback that stores an upload under the name
+  the client chose. `file.originalname` arrives verbatim from the multipart body
+  and multer does not normalise it, so a timestamp prefix is not a mitigation —
+  the traversal is in the suffix. The rule abstains whenever the name passes
+  through any function call, because deciding whether a given sanitiser is
+  sufficient means reading code the rule cannot see. Measured over 52,363 files:
+  8 callbacks combine `diskStorage` with `originalname`, 5 pass it through raw.
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#329](https://github.com/ofri-peretz/eslint/pull/329) [`75d3497`](https://github.com/ofri-peretz/eslint/commit/75d349787f8ec081ae961cc4984ea4973c8be730) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Test infrastructure only — no rule, config, or API behavior changes. These
+  packages ship `src/` in their npm tarball, so the moved SDK compatibility specs
+  technically alter the published files, hence the patch bump.
+
+  The `src/__compatibility__/` suites no longer run as part of each package's
+  default `vitest` run. They assert the export surface of the third-party SDK
+  (express, jose, @middy/core, mongodb, @nestjs/common, pg, ai), not our rules, and
+  `sdk-compatibility.yml` already exercises them against each SDK's `@latest` —
+  the only run that produces new signal. Loading those SDK graphs on a cold module
+  cache was measured at 82s (express) and 209s (`@nestjs/common`), which blew every
+  per-file hook timeout and blocked unrelated local commits via the lefthook
+  `tests-affected` pre-commit hook. The ceiling now lives once in
+  `vitest.compat.config.mts`, sized off those cold numbers.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 2.2.0
 
 ### Minor Changes

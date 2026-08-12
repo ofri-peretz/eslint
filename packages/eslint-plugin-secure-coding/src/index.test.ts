@@ -87,16 +87,30 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
     });
 
     /**
-     * Regression lock — same contract for `detect-object-injection`.
+     * Regression lock — same contract for `no-unchecked-loop-condition`.
      *
      * Without this, re-adding the rule to `recommended` leaves every test
      * green, which is the failure mode CLAUDE.md's "a fix is not done until a
      * test would have caught it" rule exists to prevent.
      *
-     * The rule reports every computed member access it cannot prove safe, so on
-     * ordinary application code it fires on `obj[key]` throughout. That is a
-     * deliberate opt-in trade, not something a preset should make for you.
+     * Measured over express + axios + sequelize the rule fired 39 times, 38 of
+     * them on bounded loops (`for…of`, `for (i = 0; i < len; i++)`, `for…in`).
+     * Iterating a collection is not CWE-400, and the rule cannot tell a bounded
+     * loop from an unbounded one — which is the whole job it exists to do.
+     *
+     * All three assertions matter: the rule is removed from `recommendedRules`,
+     * and `recommended-strict` and `owasp-top-10` are *derived* from that same
+     * object, so a single removal changes all three presets at once.
      */
+    it('keeps no-unchecked-loop-condition out of recommended, recommended-strict and owasp-top-10', () => {
+      expect(configs.recommended.rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      expect(configs['recommended-strict'].rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      expect(configs['owasp-top-10'].rules?.['secure-coding/no-unchecked-loop-condition']).toBeUndefined();
+      // Still shipped, still opt-in-able.
+      expect(rules['no-unchecked-loop-condition']).toBeDefined();
+      expect(configs.strict.rules?.['secure-coding/no-unchecked-loop-condition']).toBe('error');
+    });
+
     it('keeps detect-object-injection out of recommended and owasp-top-10', () => {
       expect(configs.recommended.rules?.['secure-coding/detect-object-injection']).toBeUndefined();
       expect(configs['recommended-strict'].rules?.['secure-coding/detect-object-injection']).toBeUndefined();

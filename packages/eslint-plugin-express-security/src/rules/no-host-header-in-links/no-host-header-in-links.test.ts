@@ -3,6 +3,52 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noHostHeaderInLinks } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +60,7 @@ const ruleTester = new RuleTester({
 
 describe('no-host-header-in-links', () => {
   ruleTester.run('no-host-header-in-links', noHostHeaderInLinks, {
-    valid: [
+    valid: xp([
       // Benchmark corpus: CWE-640/safe/reset-link-config-origin.js (FP-lock)
       {
         code: `
@@ -83,8 +129,8 @@ module.exports = app;
       { code: `notify('host ' + req.headers.host);` },
       // Computed (non-Identifier) callee property, no URL marker
       { code: `obj['send']('host: ' + req.headers.host);` },
-    ],
-    invalid: [
+    ]),
+    invalid: xp([
       // Benchmark corpus: CWE-640/vulnerable/reset-link-host-header.js
       {
         code: `
@@ -231,7 +277,7 @@ module.exports = app;
         ].join('\n'),
         errors: [{ messageId: 'hostHeaderInLink' }],
       },
-    ],
+    ]),
   });
 });
 
@@ -239,7 +285,7 @@ module.exports = app;
 // Coverage wave: exhaustive branch coverage for helper predicates
 // ---------------------------------------------------------------------------
 ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
-  valid: [
+  valid: xp([
     // Non-'+' binary operator
     { code: `const n = 1 - 2;` },
     // '+' with numeric literals only (non-string Literal operand)
@@ -290,8 +336,8 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
       ].join('\n'),
       options: [{ allowedHosts: ['app.example.com'] }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xp([
     // Direct host read as a mail-call argument via member callee
     {
       code: 'mailer.send(`link: ${req.headers.host}/go`);',
@@ -321,5 +367,5 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
         },
       ],
     },
-  ],
+  ]),
 });

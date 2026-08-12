@@ -26,6 +26,9 @@ export const noUnsafeQuery = createSqlInjectionRule({
       confidence: 'high',
     },
   },
+  // Only files importing mysql/mysql2 Connection and Pool.
+  // Method names alone are shared across drivers; the import is the evidence.
+  modules: ['mysql', 'mysql2'],
   methods: ['query', 'execute'],
   requireSqlKeywords: true,
   fix: 'Pass values as a second-argument array with `?` placeholders instead of interpolating them into the SQL string.',

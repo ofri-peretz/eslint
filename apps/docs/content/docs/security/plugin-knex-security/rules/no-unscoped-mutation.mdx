@@ -1,6 +1,6 @@
 ---
 title: no-unscoped-mutation
-description: Require a chained `.where()` on Knex delete and update builders, so a bulk mutation cannot rewrite or delete every row in the table.
+description: "Require a chained `.where()` on Knex delete and update builders, so a bulk mutation cannot rewrite or delete every row in the table."
 tags: ['security', 'knex']
 category: security
 severity: high
@@ -13,6 +13,7 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
 **CWE:** [CWE-284](https://cwe.mitre.org/data/definitions/284.html)
 **OWASP:** [A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 

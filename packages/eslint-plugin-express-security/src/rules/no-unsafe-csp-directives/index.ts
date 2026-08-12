@@ -35,6 +35,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -62,9 +63,7 @@ type RuleOptions = [Options?];
 
 /** camelCase or header spelling → canonical header spelling. */
 function canonicalDirective(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase();
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 /** Directives whose sources can execute script. */
@@ -78,11 +77,22 @@ const SCRIPT_DIRECTIVES = new Set([
 ]);
 
 /** Directives whose sources can inject presentation-layer attacks. */
-const STYLE_DIRECTIVES = new Set(['style-src', 'style-src-elem', 'style-src-attr']);
+const STYLE_DIRECTIVES = new Set([
+  'style-src',
+  'style-src-elem',
+  'style-src-attr',
+]);
 
 /** Sources that defeat the directive they appear in. */
 const UNSAFE_KEYWORDS = new Set(["'unsafe-inline'", "'unsafe-eval'"]);
-const WILDCARD_SOURCES = new Set(['*', 'data:', 'http:', 'https:', 'http://*', 'https://*']);
+const WILDCARD_SOURCES = new Set([
+  '*',
+  'data:',
+  'http:',
+  'https:',
+  'http://*',
+  'https://*',
+]);
 
 function propertyKeyName(prop: TSESTree.Property): string | null {
   if (prop.computed) return null;
@@ -137,7 +147,7 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-79',
         cvss: 6.5,
         description:
-          "{{directive}} includes {{source}}, which re-enables exactly the script execution CSP is there to block — an injected <script> or eval() runs normally.",
+          '{{directive}} includes {{source}}, which re-enables exactly the script execution CSP is there to block — an injected <script> or eval() runs normally.',
         severity: 'HIGH',
         // oxlint-disable-next-line no-template-curly-in-string
         fix: "Remove {{source}} and use a per-response nonce or hash source instead: scriptSrc: [\"'self'\", (req, res) => `'nonce-${res.locals.nonce}'`].",
@@ -160,9 +170,9 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1021',
         cvss: 5.4,
         description:
-          "frame-ancestors is set to {{source}}, so any site can embed this app in an iframe and drive clicks through it (clickjacking).",
+          'frame-ancestors is set to {{source}}, so any site can embed this app in an iframe and drive clicks through it (clickjacking).',
         severity: 'MEDIUM',
-        fix: "Set frameAncestors: [\"'self'\"] — or name the exact origins allowed to frame the app.",
+        fix: 'Set frameAncestors: ["\'self\'"] — or name the exact origins allowed to frame the app.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/1021.html',
       }),
       missingFrameAncestors: formatLLMMessage({
@@ -205,6 +215,12 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { checkStyleSrc } = options as Options;
     const withStyle = checkStyleSrc ?? true;
 
@@ -309,7 +325,10 @@ export const noUnsafeCspDirectives = createRule<RuleOptions, MessageIds>({
       }
 
       if (useDefaultsDisabled && !sawFrameAncestors) {
-        context.report({ node: directives, messageId: 'missingFrameAncestors' });
+        context.report({
+          node: directives,
+          messageId: 'missingFrameAncestors',
+        });
       }
     }
 

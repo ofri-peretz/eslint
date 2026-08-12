@@ -25,23 +25,23 @@ describe('no-unsafe-query', () => {
       valid: [
         {
           name: 'safe idiom',
-          code: "await dataSource.query('SELECT * FROM users WHERE id = $1', [userId]);",
+          code: "import DataSource from 'typeorm';\nawait dataSource.query('SELECT * FROM users WHERE id = $1', [userId]);",
         },
         {
           name: 'static SQL, no interpolation',
-          code: "dataSource.query('SELECT * FROM users');",
+          code: "import DataSource from 'typeorm';\ndataSource.query('SELECT * FROM users');",
         },
         {
           name: 'no arguments',
-          code: 'dataSource.query();',
+          code: 'import DataSource from "typeorm";\ndataSource.query();',
         },
         {
           name: 'unrelated code',
-          code: 'const x = 1;',
+          code: 'import DataSource from "typeorm";\nconst x = 1;',
         },
         {
           name: 'safe variable passed through',
-          code: "const sql = 'SELECT * FROM users'; dataSource.query(sql);",
+          code: "import DataSource from 'typeorm';\nconst sql = 'SELECT * FROM users'; dataSource.query(sql);",
         },
       ],
       invalid: [],
@@ -54,17 +54,18 @@ describe('no-unsafe-query', () => {
       invalid: [
         {
           name: 'template interpolation',
-          code: 'dataSource.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          code: 'import DataSource from "typeorm";\ndataSource.query(`SELECT * FROM users WHERE id = ${userId}`);',
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
           name: 'string concatenation',
-          code: "dataSource.query('SELECT * FROM users WHERE id = ' + userId);",
+          code: "import DataSource from 'typeorm';\ndataSource.query('SELECT * FROM users WHERE id = ' + userId);",
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
         {
           name: 'tainted variable reaches the sink',
           code: [
+            "import DataSource from 'typeorm';",
             'const sql = `SELECT * FROM users WHERE id = ${id}`;',
             'dataSource.query(sql);',
           ].join('\n'),

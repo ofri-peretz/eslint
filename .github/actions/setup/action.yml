@@ -59,6 +59,21 @@ inputs:
 runs:
   using: composite
   steps:
+    # `npm ci` runs `prepare` → `lefthook install`, so every CI job that later
+    # commits or pushes silently fires the local pre-commit/commit-msg/pre-push
+    # battery on the bot's own commit. That is never what a workflow wants: the
+    # real gates run as their own jobs, and the hooks are scoped for a developer
+    # working tree, not a fresh checkout. docs-data.yml died exactly this way —
+    # its `git push` triggered pre-push, whose affected-scoped build produced
+    # dist for one package, and the chained `oxlint:shims:verify` then failed on
+    # the 9 packages it could not see (run 31341768906).
+    #
+    # Set once here rather than per-step in each workflow: CI has no use for git
+    # hooks in any job.
+    - name: Disable lefthook git hooks for this job
+      shell: bash
+      run: echo "LEFTHOOK=0" >> "$GITHUB_ENV"
+
     # No `cache: npm` here. ~/.npm is read by `npm ci` and nothing else, and
     # `npm ci` is skipped whenever the node_modules cache hits — which is the
     # common case, since its key is the lockfile hash. Every job was therefore

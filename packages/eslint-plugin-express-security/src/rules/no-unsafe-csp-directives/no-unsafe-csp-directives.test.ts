@@ -3,6 +3,52 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUnsafeCspDirectives } from './index';
 
+/**
+ * Every fixture imports express, because the rules now abstain in files with no
+ * Express in them. Wrapping the arrays rather than editing each fixture means
+ * one cannot be left behind — a fixture missing the import would pass vacuously
+ * on the gate instead of exercising the detection it was written for. `output`
+ * and errors[].suggestions[].output are prefixed too, since autofix fixtures
+ * assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
+// binding. Several fixtures already declare `const express = require('express')`
+// at module level, and a default import would redeclare it.
+const asExpress = (code: string): string => `import 'express';\n${code}`;
+type Suggestion = { output?: string | null };
+type Case = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
+};
+const xp = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asExpress(c) as T;
+    const test = c as Case;
+    return {
+      ...c,
+      code: asExpress(test.code),
+      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asExpress(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -14,7 +60,7 @@ const ruleTester = new RuleTester({
 
 describe('no-unsafe-csp-directives', () => {
   ruleTester.run('no-unsafe-csp-directives', noUnsafeCspDirectives, {
-    valid: [
+    valid: xp([
       // THE safe pattern — self-only sources, explicit frame-ancestors
       {
         code: `
@@ -36,7 +82,9 @@ describe('no-unsafe-csp-directives', () => {
       {
         code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: ["'self'"] } } }));`,
       },
-      { code: `app.use(helmet({ contentSecurityPolicy: { useDefaults: true, directives: { scriptSrc: ["'self'"] } } }));` },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { useDefaults: true, directives: { scriptSrc: ["'self'"] } } }));`,
+      },
       // Header spelling of the directive keys
       {
         code: `app.use(helmet.contentSecurityPolicy({ directives: { 'script-src': ["'self'"], 'frame-ancestors': ["'none'"] } }));`,
@@ -55,15 +103,31 @@ describe('no-unsafe-csp-directives', () => {
         code: `app.use(helmet({ contentSecurityPolicy: { directives: { upgradeInsecureRequests: [] } } }));`,
       },
       // Non-analysable shapes
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: allowedScriptSources } } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [nonceSource] } } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [, "'self'"] } } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [1] } } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: cspDirectives } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { ...base } } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { [key]: ['*'] } } }));` },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: allowedScriptSources } } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [nonceSource] } } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [, "'self'"] } } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: [1] } } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: cspDirectives } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { ...base } } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { [key]: ['*'] } } }));`,
+      },
       { code: `app.use(helmet({ contentSecurityPolicy: { ...cspConfig } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { useDefaults: flag, directives: { scriptSrc: ["'self'"] } } }));` },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { useDefaults: flag, directives: { scriptSrc: ["'self'"] } } }));`,
+      },
       { code: `app.use(helmet({ contentSecurityPolicy: cspConfig }));` },
       { code: `app.use(helmet({ contentSecurityPolicy: true }));` },
       { code: `app.use(helmet.contentSecurityPolicy());` },
@@ -72,15 +136,29 @@ describe('no-unsafe-csp-directives', () => {
       { code: `app.use(helmet(cspConfig));` },
       { code: `app.use(helmet());` },
       // Not helmet
-      { code: `app.use(csp({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(helmet.hsts({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(other.contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(helmet[dynamic]({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(helmet['contentSecurityPolicy']({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(getHelmet().contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-inline'"] } }));` },
-      { code: `app.use(helmet({ contentSecurityPolicy: { directives: { 1: ['*'] } } }));` },
-    ],
-    invalid: [
+      {
+        code: `app.use(csp({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(helmet.hsts({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(other.contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(helmet[dynamic]({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(helmet['contentSecurityPolicy']({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(getHelmet().contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-inline'"] } }));`,
+      },
+      {
+        code: `app.use(helmet({ contentSecurityPolicy: { directives: { 1: ['*'] } } }));`,
+      },
+    ]),
+    invalid: xp([
       // 'unsafe-inline' in script-src — the SonarJS S5728 case
       {
         code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: ["'self'", "'unsafe-inline'"] } } }));`,
@@ -226,6 +304,6 @@ describe('no-unsafe-csp-directives', () => {
           },
         ],
       },
-    ],
+    ]),
   });
 });

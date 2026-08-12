@@ -14,10 +14,10 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-> **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
-
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
@@ -183,3 +183,12 @@ obj[method](userInput);
 
 - **[OWASP Selective Data Exposure](https://owasp.org/www-community/vulnerabilities/Sensitive_Data_Exposure)** - Guidelines
 - **[CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)** - Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitivePatterns` | `string[]` | `["password","passwd","secret","token","access_token","auth_token","ssn","credit_card","creditcard","api_key","apikey","secret_key","private_key","encryption_key"]` | Sensitive data patterns |
+| `checkConsoleLog` | `boolean` | `true` | Check console.log statements |
+| `checkErrorMessages` | `boolean` | `true` | Check error messages |
+| `checkApiResponses` | `boolean` | `true` | Check API responses |

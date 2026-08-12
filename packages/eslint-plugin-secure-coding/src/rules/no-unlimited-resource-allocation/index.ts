@@ -329,7 +329,40 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       return null;
     };
 
+    /**
+     * Local names bound to a decompression module. Populated from imports and
+     * requires so an aliased binding (`const unzip = require('unzipper')`)
+     * resolves, while an unrelated identifier that merely reads like one does
+     * not.
+     */
+    const ARCHIVE_MODULES = /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
+    const archiveBindings = new Set<string>(['zlib']);
+
+    const noteArchiveBinding = (local: string, source: string): void => {
+      if (ARCHIVE_MODULES.test(source)) archiveBindings.add(local);
+    };
+
     return {
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        for (const spec of node.specifiers) {
+          if (spec.type === 'ImportDefaultSpecifier' || spec.type === 'ImportNamespaceSpecifier') {
+            noteArchiveBinding(spec.local.name, String(node.source.value));
+          }
+        }
+      },
+
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.id.type === 'Identifier' &&
+          node.init?.type === 'CallExpression' &&
+          node.init.callee.type === 'Identifier' &&
+          node.init.callee.name === 'require' &&
+          node.init.arguments[0]?.type === 'Literal'
+        ) {
+          noteArchiveBinding(node.id.name, String(node.init.arguments[0].value));
+        }
+      },
+
       // Check Buffer allocation
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
@@ -523,10 +556,38 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           }
         }
 
-        // Check for complex resource exhaustion patterns
-        // ZIP bomb detection - unlimited decompression
-        if (calleeText.includes('unzipper') || calleeText.includes('Extract')) {
-          // Check for unlimited ZIP extraction
+        // ZIP bomb detection — unlimited decompression.
+        //
+        // This was `calleeText.includes('unzipper') || calleeText.includes('Extract')`
+        // over the callee's printed text, reporting unconditionally. The bare
+        // substring 'Extract' matched passport-jwt's standard configuration —
+        //
+        //   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
+        //
+        // — so four separate repos in the wild corpus were told their bearer
+        // token extractor was an unbounded decompression. Nine findings, none
+        // of them touching an archive.
+        //
+        // Match the decompression APIs on the AST instead: the receiver must
+        // be a known archive library, or the callee a known stream factory.
+        const isDecompression = (): boolean => {
+          if (callee.type !== 'MemberExpression') return false;
+          const member = callee as TSESTree.MemberExpression;
+          const receiver =
+            member.object.type === 'Identifier' ? member.object.name : '';
+          // Resolve the receiver to what it was imported from, not to what it
+          // is called. `const unzip = require('unzipper')` is the ordinary
+          // spelling, and matching the variable name would miss it — the same
+          // names-are-not-evidence mistake this fix exists to correct.
+          if (!archiveBindings.has(receiver)) return false;
+          const method =
+            member.property.type === 'Identifier' ? member.property.name : '';
+          return /^(Extract|Parse|extract|createGunzip|createUnzip|createInflate|open)$/.test(
+            method,
+          );
+        };
+
+        if (isDecompression()) {
           context.report({
             node,
             messageId: 'unlimitedFileOperations',

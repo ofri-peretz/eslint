@@ -6,9 +6,9 @@
  */
 
 import secureCoding from 'eslint-plugin-secure-coding';
-import pg from 'eslint-plugin-pg';
+import pg from 'eslint-plugin-postgresql-security';
 import nodeSecurity from 'eslint-plugin-node-security';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 
 export default [
   {

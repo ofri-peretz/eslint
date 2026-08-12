@@ -15,14 +15,17 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_JSON_Web_Tokens
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, hasSafeAnnotation } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  hasSafeAnnotation,
+} from '@interlace/eslint-devkit';
 import { isDecodeOperation } from '../../utils';
 import type { NoDecodeWithoutVerifyOptions } from '../../types';
 
 type MessageIds =
-  | 'decodeWithoutVerify'
-  | 'jwtDecodeLibrary'
-  | 'useVerifyInstead';
+  'decodeWithoutVerify' | 'jwtDecodeLibrary' | 'useVerifyInstead';
 
 type RuleOptions = [NoDecodeWithoutVerifyOptions?];
 

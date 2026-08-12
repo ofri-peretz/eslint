@@ -13,6 +13,7 @@
  * @see https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -36,10 +37,10 @@ type RuleOptions = [Options?];
  */
 function hasIntrospectionEnabled(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
-  
+
   // Check for introspection: true
   if (/\bintrospection\s*:\s*true\b/.test(text)) {
     return true;
@@ -55,10 +56,10 @@ function hasIntrospectionEnabled(
  */
 function hasProductionGuard(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   const text = sourceCode.getText(node);
-  
+
   // Check for common production guards
   const productionGuards = [
     /introspection\s*:\s*process\.env\.NODE_ENV\s*[!=]==?\s*['"]production['"]/,
@@ -70,14 +71,16 @@ function hasProductionGuard(
   return productionGuards.some((guard) => guard.test(text));
 }
 
-export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageIds>({
+export const noGraphqlIntrospectionProduction = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-graphql-introspection-production',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-graphql-introspection-production.md',
-      description:
-        'Disallow GraphQL introspection in production environments',
+      description: 'Disallow GraphQL introspection in production environments',
       cwe: 'CWE-200',
       cvss: 5,
     },
@@ -114,7 +117,9 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
           },
           allowInDevelopment: {
             type: 'boolean',
-            default: true, description: 'Allow introspection when the code is guarded by a development check'
+            default: true,
+            description:
+              'Allow introspection when the code is guarded by a development check',
           },
         },
         additionalProperties: false,
@@ -128,6 +133,12 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    // Every rule here is Express-specific, and none of them knew it: over
+    // 107,382 files, 75% of this plugin's findings were in files with no
+    // Express import. Registering no visitors is both the gate and the cheap
+    // path — a file with no Express in it does no work.
+    if (!fileUsesExpress(context.sourceCode.ast)) return {};
+
     const { allowInTests = true } = options as Options;
 
     const filename = context.filename;
@@ -148,7 +159,7 @@ export const noGraphqlIntrospectionProduction = createRule<RuleOptions, MessageI
         const isGraphQLServer =
           (callee.type === 'Identifier' &&
             ['ApolloServer', 'GraphQLServer', 'createServer'].includes(
-              callee.name
+              callee.name,
             )) ||
           (callee.type === 'NewExpression' &&
             callee.callee.type === 'Identifier' &&

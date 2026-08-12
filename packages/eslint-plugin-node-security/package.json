@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-node-security",
-  "version": "4.8.1",
+  "version": "4.9.1",
   "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -81,7 +81,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.10.0"
+    "@interlace/eslint-devkit": "^1.13.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",

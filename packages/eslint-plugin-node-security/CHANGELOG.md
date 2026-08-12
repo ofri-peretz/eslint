@@ -1,3 +1,139 @@
+## 4.9.1
+
+### Patch Changes
+
+- [#500](https://github.com/ofri-peretz/eslint/pull/500) [`40be6ea`](https://github.com/ofri-peretz/eslint/commit/40be6ea87b958a597b870fb006701cf4fd00f7ff) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - lock-file: report once per project, not once per file
+
+  The rule carried `let checked = false` inside `create()`, which reads as a
+  once-only guard but is not one — ESLint calls `create()` per file, so the flag
+  reset every time. Linting auth0/express-openid-connect produced 135 identical
+  findings, at arbitrary lines such as `end-to-end/fixture/jwk.js:34`, for a
+  single fact about the repository.
+
+  The report is now keyed on the nearest `package.json`, at module scope so it
+  survives across files. A directory with no manifest anywhere above it is not a
+  JS project and is no longer reported at all.
+
+- [#496](https://github.com/ofri-peretz/eslint/pull/496) [`4fc9b6a`](https://github.com/ofri-peretz/eslint/commit/4fc9b6abd3d5dbb1f6b21141bbb50a1eb488ddd7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - detect-suspicious-dependencies: stop reporting real packages as typosquats
+
+  Edit distance alone cannot separate a typosquat from a package that merely has
+  a similar name. At distance ≤ 2 the rule reported `preact` (one edit from
+  `react`, and a deliberate dependency of okta/okta-signin-widget) and `recast`
+  (two edits, the AST library jscodeshift is built on).
+
+  Two changes. The threshold drops to a single edit, and the distance function
+  now counts a transposition as one edit (Damerau) rather than two — so `raect`
+  and `exprses`, the most common squat shape, are caught rather than lost to the
+  tighter threshold. A short allow-list covers real packages that sit one edit
+  from a popular name.
+
+  Accusing a legitimate dependency of being an attack costs a great deal more
+  than missing one squat, so a name now has to clear both gates before it is
+  reported.
+
+- Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:
+  - @interlace/eslint-devkit@1.13.0
+
+## 4.9.0
+
+### Minor Changes
+
+- [#461](https://github.com/ofri-peretz/eslint/pull/461) [`3dceb7f`](https://github.com/ofri-peretz/eslint/commit/3dceb7f1f090ecc003ce9bac68fc1f2cffcf5ff8) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-self-signed-certs` is now part of the `recommended` preset.
+
+  `rejectUnauthorized: false` accepts any certificate, including a MITM's
+  self-signed one, and is the most-cited Node TLS mistake there is. The rule
+  already detected it correctly — it simply was not in any preset, so nobody
+  running `recommended` had it enabled. ILB-CWE-Corpus scored CWE-295 as a miss
+  for that reason alone.
+
+  Measured over the 13-repo wild corpus (~1,900 files of real Express and NestJS
+  code) before promoting: **0 findings**. Pure recall, no false-positive cost.
+  Ecosystem corpus score moves TP 51 → 52, FN 18 → 17, FP unchanged at 11.
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- [#309](https://github.com/ofri-peretz/eslint/pull/309) [`237a6b0`](https://github.com/ofri-peretz/eslint/commit/237a6b03313e2ea935999ee84b2a6c8af33e50bc) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `meta.hasSuggestions` now matches what each rule actually emits.
+
+  ILB-Remediation measured 27 rules where the declaration and the implementation
+  disagreed: 22 declared `hasSuggestions: true` without ever passing `suggest:`
+  to `context.report()` (IDE quick-fix menus advertising remediation that never
+  arrives), and 5 emitted `suggest:` without the declaration (latent — ESLint
+  throws on that combination as soon as one of those suggestions carries a real
+  fixer).
+
+  `eslint-plugin-mongodb-security` gains four real suggestions where the rewrite
+  is mechanical:
+
+  - `require-lean-queries` — appends `.lean()`
+  - `no-unbounded-find` — appends `.limit(100)`
+  - `no-debug-mode-production` — rewrites the flag to `process.env.NODE_ENV !== 'production'`
+  - `require-tls-connection` — adds (or flips) `tls: true` in the connection options
+
+  Every other dead declaration was removed rather than faked. A workspace lock
+  (`scripts/__tests__/suggestions-meta-lock.test.ts`) now fails CI on either
+  direction of the drift.
+
+- [#417](https://github.com/ofri-peretz/eslint/pull/417) [`658368a`](https://github.com/ofri-peretz/eslint/commit/658368a967cb4daf7c8c4f96fa6a263d9cdc1d8d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Two more false-positive classes from the whole-ruleset sweep.
+
+  **`no-timing-unsafe-compare`: 108 → 12 findings.** Two causes.
+
+  An _existence check_ is not a secret comparison — `if (token !== undefined)`,
+  `hash === null`, `signature.length === 0`. A timing attack needs an
+  attacker-supplied operand on the other side; a sentinel leaks nothing.
+
+  And `key` was in the default secret patterns, substring-matched. It hit `key`,
+  `firstKey`, `keys`, and every AST walker's `key === 'text'` — 88 findings on this
+  repo, none of them secrets. The names that actually denote a secret (`apiKey`,
+  `privateKey`, `encryptionKey`, `accessToken`, …) are listed in full and still
+  fire; a project that really does compare a bare `key` can add it back via
+  `secretPatterns`.
+
+  Word-boundary matching was tried first and dropped: it fixed `firstKey` but
+  stopped matching `req.headers.authorization`, trading one false positive for a
+  worse false negative.
+
+  **`no-xxe-injection`: 76 → 1 finding.** `parse` was treated as an XML method
+  name, so `JSON.parse(fs.readFileSync(file, 'utf-8'))` reported CWE-611. The
+  XML-specific names (`parseFromString`, `parseXmlString`, `parseXML`,
+  `parseString`) still match on the name alone; a bare `parse` now has to be
+  positively identified as XML by its receiver, which drops `JSON.parse`,
+  `Date.parse`, `path.parse` and `url.parse`. Allowlist rather than denylist, so a
+  future `csv.parse` is silent by default.
+
+  Every class is locked as `valid` cases and verified by reverting the guard.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 4.8.1
 
 ### Patch Changes

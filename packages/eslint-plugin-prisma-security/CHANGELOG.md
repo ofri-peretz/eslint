@@ -1,5 +1,72 @@
 # eslint-plugin-prisma-security
 
+## 0.3.3
+
+### Patch Changes
+
+- [#478](https://github.com/ofri-peretz/eslint/pull/478) [`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Each SQL plugin now reports only in files that import its own driver
+
+  `createSqlInjectionRule` discriminated on **method name alone**. That is not an
+  SDK: `.query()` is TypeORM _and_ mysql2 _and_ pg; `.raw()` is knex _and_ drizzle
+  with byte-identical config; and sqlite claimed `get`, `all`, `run` and `exec`,
+  which belong to Express routers and `Promise.all` as much as to a database.
+
+  Measured over 73,364 files, that produced **1,142 lines where two or more
+  plugins reported the same CWE** — 616 postgres×typeorm, 503 mysql×typeorm, 503
+  mysql×postgres, 347 drizzle×knex. One defect, billed up to three times.
+
+  The factory now takes a `modules` list and stays silent in files importing none
+  of them, compared on the package root so `mysql2/promise` and
+  `@prisma/client/edge` still match. Relative specifiers never count — otherwise
+  `'./knex'` would satisfy the knex rule in a repo with no knex.
+
+  This makes the collision impossible by construction rather than deduplicated
+  after the fact, and it is local evidence: no project scan, nothing to go stale,
+  and a file that does not import the driver is one the rule has nothing to say
+  about.
+
+  Every fixture across the seven suites now carries its driver's import, so the
+  suites still exercise the detection logic instead of passing on the new gate.
+
+- Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:
+  - @interlace/eslint-devkit@1.12.0
+
+## 0.3.2
+
+### Patch Changes
+
+- [#407](https://github.com/ofri-peretz/eslint/pull/407) [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the declared ESLint floor: `^8.0.0` → `^8.40.0`.
+
+  `context.sourceCode` landed in ESLint 8.40. The shared devkit reads it without a
+  fallback and 20 plugins read it directly, so on ESLint 8.0–8.39 the install
+  resolved cleanly and then every rule threw
+  `Cannot read properties of undefined (reading 'ast')` at lint time — npm reported
+  nothing, because the manifest claimed the version was supported.
+
+  Measured on 8.0.0 / 8.39.0 (throw on load) versus 8.40.0 / 8.57.1 / 9.0.0 /
+  9.39.2 / 10.8.0 (all produce the expected finding). No runtime behaviour
+  changes; this only makes the manifest match what the code can actually run.
+
+- [#423](https://github.com/ofri-peretz/eslint/pull/423) [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Correct the ESLint peer range shown in the README Compatibility table.
+
+  The manifest floor moved to 8.40.0, but every package README still advertised
+  `^8.0.0 || ^9.0.0 || ^10.0.0`. The README is what npm renders on the package
+  page, so the requirement consumers actually read disagreed with the one npm
+  enforced: an install on 8.39.x warns about a peer conflict while the README
+  says that version is supported.
+
+  The range was missed by the original sweep because a markdown table escapes
+  the union as `\|\|`, so a grep for the plain shape matched none of the 29
+  files.
+
+  Also updates `.agent/rules/readme-structure.md` and
+  `.agent/compatibility-matrix.md`, which template this table for new packages,
+  and adds a README-vs-manifest assertion to
+  `scripts/__tests__/eslint-peer-floor.test.ts` so the two cannot drift again.
+
+- Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:
+  - @interlace/eslint-devkit@1.11.0
+
 ## 0.3.1
 
 ### Patch Changes

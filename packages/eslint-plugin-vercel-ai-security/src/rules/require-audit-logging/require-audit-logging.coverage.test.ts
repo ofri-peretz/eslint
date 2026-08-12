@@ -11,6 +11,71 @@ import { describe, it, expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { requireAuditLogging } from './index';
 
+/**
+ * The module gate reads `sourceCode.ast`, so a synthetic context needs a
+ * Program that actually contains the SDK — otherwise the rule correctly
+ * abstains and registers no listeners, and these branch tests would be
+ * asserting against a handler that no longer exists.
+ */
+const AI_PROGRAM = {
+  type: 'Program',
+  body: [
+    {
+      type: 'ImportDeclaration',
+      specifiers: [],
+      source: { type: 'Literal', value: 'ai' },
+    },
+  ],
+  tokens: [],
+  comments: [],
+};
+
+
+/**
+ * Every fixture imports the AI SDK, because the rules now abstain in files with
+ * no `ai` / `@ai-sdk` in them. Wrapping the arrays rather than editing each
+ * fixture means one cannot be left behind — a fixture missing the import would
+ * pass vacuously on the gate instead of exercising the detection it was written
+ * for. `output` and errors[].suggestions[].output are prefixed too, since
+ * autofix fixtures assert the whole file back.
+ */
+// A SIDE-EFFECT import: it satisfies the gate without reserving any binding,
+// so fixtures that already declare `generateText`/`openai` do not redeclare.
+const asAi = (code: string): string => `import 'ai';\n${code}`;
+type AiSuggestion = { output?: string | null };
+type AiCase = {
+  code: string;
+  output?: string | null;
+  errors?: ReadonlyArray<{ suggestions?: readonly AiSuggestion[] } | string>;
+};
+const xai = <T,>(cases: T[]): T[] =>
+  cases.map((c) => {
+    if (typeof c === 'string') return asAi(c) as T;
+    const test = c as AiCase;
+    return {
+      ...c,
+      code: asAi(test.code),
+      ...(typeof test.output === 'string' ? { output: asAi(test.output) } : {}),
+      ...(test.errors
+        ? {
+            errors: test.errors.map((e) =>
+              typeof e === 'string' || !e.suggestions
+                ? e
+                : {
+                    ...e,
+                    suggestions: e.suggestions.map((s) =>
+                      typeof s.output === 'string'
+                        ? { ...s, output: asAi(s.output) }
+                        : s,
+                    ),
+                  },
+            ),
+          }
+        : {}),
+    } as T;
+  });
+
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -19,7 +84,7 @@ const ruleTester = new RuleTester({
 });
 
 ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
-  valid: [
+  valid: xai([
     // Logging two statements before the AI call (within the 3-statement window).
     {
       code: `
@@ -31,8 +96,8 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
       `,
       options: [{ allowInTests: false }],
     },
-  ],
-  invalid: [
+  ]),
+  invalid: xai([
     // AI call as an if-test: the parent walk exhausts at Program (statement
     // resolves to null) — still reported.
     {
@@ -76,7 +141,7 @@ ruleTester.run('require-audit-logging (branch coverage)', requireAuditLogging, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'missingAuditLogging', data: { function: 'generateText' } }],
     },
-  ],
+  ]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,6 +154,7 @@ type Listener = (node: unknown) => void;
 
 function runCallListener(node: unknown) {
   const { listeners, reports } = createWithMockContext(requireAuditLogging, {
+      ast: AI_PROGRAM,
     options: [{ allowInTests: false }],
     sourceText: 'generateText',
   });

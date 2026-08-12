@@ -1,6 +1,6 @@
 ---
 title: require-auth-mechanism
-description: Requires explicit authentication mechanism specification for MongoDB connections.
+description: "Requires explicit authentication mechanism specification for MongoDB connections."
 tags: ['security', 'mongodb']
 category: security
 severity: high
@@ -14,8 +14,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
 
 ⚠️ This rule **warns** by default in the `recommended` config.
 
@@ -88,6 +86,29 @@ mongoose.connect(uri, {
 });
 ```
 
+## Receiver Requirement
+
+A `.connect()` is not evidence of MongoDB. Redis clients, TypeORM query
+runners and pino transports all have one, and naming another database's
+connection "MongoDB" is worse than staying silent. This rule only fires when
+the receiver is bound to a `mongodb`/`mongoose` import, is a
+`new MongoClient(...)`, or is named `mongo*`.
+
+```typescript
+// ✅ Not reported — Redis
+const client = createClient({ url: REDIS_URL });
+await client.connect();
+
+// ✅ Not reported — TypeORM
+const queryRunner = this.repository.manager.connection.createQueryRunner();
+await queryRunner.connect();
+```
+
+`allowInTests` (on by default) also covers files under `test/`, `tests/`,
+`__tests__/`, `__mocks__/`, `e2e/` and `fixtures/` directories, not just
+`*.test.ts` / `*.spec.ts` — testcontainers helpers are not production
+connections.
+
 ## When Not To Use It
 
 - Development environments with passwordless local MongoDB
@@ -113,6 +134,10 @@ mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1'); // Weak mechani
 **Mitigation**: Use options object for auth mechanism. Validate URIs at startup.
 
 ### Options from Variable
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 **Why**: Variable contents are not analyzed.
 

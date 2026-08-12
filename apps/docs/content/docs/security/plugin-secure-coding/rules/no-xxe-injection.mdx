@@ -1,6 +1,6 @@
 ---
 title: no-xxe-injection
-description: Detects XML External Entity (XXE) injection vulnerabilities
+description: "Detects XML External Entity (XXE) injection vulnerabilities"
 tags: ['security', 'core']
 category: security
 severity: critical
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
 
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
@@ -97,10 +95,10 @@ const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString,
 
 ## Options
 
-| Option                   | Type       | Default                          | Description                              |
-| ------------------------ | ---------- | -------------------------------- | ---------------------------------------- |
-| `safeParserOptions`      | `string[]` | `['noent', 'resolveExternals']`  | Options that indicate safe configuration |
-| `xmlValidationFunctions` | `string[]` | `['validateXml', 'sanitizeXml']` | Functions that validate XML input        |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `safeParserOptions` | `string[]` | `["noent","resolveExternals","expandEntityReferences","entityResolver"]` | Options that indicate safe configuration |
+| `xmlValidationFunctions` | `string[]` | `["validateXml","sanitizeXml","cleanXml","parseXmlSafe"]` | Functions that validate XML input |
 
 ## Error Message Format
 

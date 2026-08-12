@@ -1,6 +1,6 @@
 ---
 title: detect-mixed-content
-description: Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+description: "Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities."
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -13,8 +13,6 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
-
-> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 

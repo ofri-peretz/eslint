@@ -1,11 +1,10 @@
 ---
 title: require-case-insensitive-path-guard
-description: "Require case-insensitive comparison when guarding protected paths via req.path / req.url / req.originalUrl"
+description: "This rule detects path-based authorization guards that compare req.path case-sensitively, which case-insensitive Express routing bypasses"
 tags: ['security', 'express']
 category: security
 severity: high
 cwe: CWE-178
-owasp: 'A01:2021'
 autofix: false
 type_aware: false
 type_aware_status: unaware
@@ -16,8 +15,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require case-insensitive comparison when guarding protected paths via req.path / req.url / req.originalUrl
-
-This rule detects path-based authorization guards that compare req.path case-sensitively, which case-insensitive Express routing bypasses
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-178](https://cwe.mitre.org/data/definitions/178.html)
@@ -85,10 +82,10 @@ The rule offers editor suggestions (no auto-fix):
 
 ## Options
 
-| Option           | Type       | Default                                                | Description                                                                          |
-| ---------------- | ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `protectedPaths` | `string[]` | `['admin', 'api', 'dashboard', 'internal', 'private']` | Substrings that mark a compared value as a protected path (replaces the default set) |
-| `checkAllPaths`  | `boolean`  | `false`                                                | Flag every case-sensitive path guard regardless of the compared value                |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `protectedPaths` | `string[]` | — | Substrings that mark a compared value as a protected path |
+| `checkAllPaths` | `boolean` | — | Flag every case-sensitive path guard regardless of the compared value |
 
 ```json
 {
