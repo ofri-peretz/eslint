@@ -1610,6 +1610,11 @@ const amplitudeApiKey = 'Rt7YbQm3LzXv9NcKa2PwHdFj5GeUsXoM';`,
       // THE SECRET SIDE IS UNTOUCHED. A vendor whose publishable key is
       // `apiKey` does not make its secret one publishable.
       {
+        // The prefix is what the rule keys on, so the body does not need to
+        // look real — and must not. A fixture spelling a plausible `sk_live_`
+        // key in full is itself a scannable secret: GitHub push protection
+        // rejected this file until the body stopped matching Stripe's
+        // `[0-9a-zA-Z]{24,}` shape. Underscores break the run.
         code: `import Stripe from 'stripe';
 const stripeSecretKey = 'sk_live_EXAMPLE_NOT_A_REAL_KEY';`,
         errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
