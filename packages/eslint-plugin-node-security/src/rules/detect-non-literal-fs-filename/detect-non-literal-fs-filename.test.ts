@@ -521,3 +521,25 @@ describe('detect-non-literal-fs-filename', () => {
   });
 });
 
+
+describe('module-binding fallback', () => {
+  ruleTester.run('binding shapes', detectNonLiteralFsFilename, {
+    valid: [
+      // Resolves to fs but the path is a namespace, not a method — nothing to check.
+      `const p = require('fs').promises; use(p);`,
+      // Resolves to a different module entirely.
+      `const os = require('node:os'); os.hostname(userInput);`,
+      // Deeper than fs.promises.<method> — not a recognised sink shape.
+      `const x = require('fs').promises.constants.COPYFILE_EXCL; use(x);`,
+    ],
+    invalid: [
+      // Method plucked onto a variable.
+      { code: `var one = require('fs').readFile; one(filename);`, errors: 1 },
+      { code: `var one = require('node:fs').readFile; one(filename);`, errors: 1 },
+      // promises namespace bound through a variable.
+      { code: `var p = require('fs').promises; p.readFile(filename);`, errors: 1 },
+      // Drop-in module.
+      { code: `var fse = require('fs-extra'); fse.readFile(filename);`, errors: 1 },
+    ],
+  });
+});

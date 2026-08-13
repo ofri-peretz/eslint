@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -169,10 +169,22 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
  * under a different import path — `readFile(userPath)` there is exactly as
  * exploitable as `fs.readFile(userPath)`.
  */
-// `fs-extra` and `graceful-fs` re-export the entire fs surface under the same
-// method names, so a file using them was invisible to this rule while using
-// identical code. okta-signin-widget reaches fs through `fs-extra` in at least
-// five non-test files.
+/**
+ * Drop-in replacements that expose the same filesystem surface as `fs`.
+ * `node:` prefixes are stripped by the resolver before this map is consulted.
+ */
+const FS_MODULE_EQUIVALENTS = {
+  'fs-extra': 'fs',
+  'graceful-fs': 'fs',
+  'fs/promises': 'fs',
+} as const;
+
+// The equivalents map above is consulted by `resolveModuleBinding`, which only
+// runs on a call's receiver. `isFsModule` guards two paths the resolver never
+// sees — a bare `require('fs-extra')` argument and an `ImportDeclaration`
+// source — so the drop-ins have to be listed here as well or a file reaching
+// fs through `fs-extra` stays invisible while using identical code.
+// okta-signin-widget does exactly that in at least five non-test files.
 const FS_MODULES = new Set([
   'fs', 'node:fs', 'fs/promises', 'node:fs/promises',
   'fs-extra', 'graceful-fs',
@@ -430,21 +442,30 @@ allowLiterals = false,
       'rmdir', 'rmdirSync',
       'access', 'accessSync',
       'createReadStream', 'createWriteStream',
+      // Every remaining fs entry point that takes a path as its first argument. The list
+      // previously covered 11 of the ~30, so traversal through rename/copyFile/symlink/chmod
+      // was silently unguarded. Deliberately NOT included: realpath (canonicalisation is the
+      // MITIGATION — `realpathSync(p)` then `startsWith(allowedDir)` is the documented safe
+      // pattern) and exists/watch (probes that neither read content nor mutate).
+      //
       // Destructive methods that were missing entirely. `update-bugsnag.js:36`
       // does `fs.cpSync(sourceDirectory, …)` with `sourceDirectory` built from
       // `process.argv[2]` — a recursive copy driven by argv, unreported, while
       // the harmless `mkdir` of a temp dir two lines above WAS reported. The
       // rule flagged the safe thing and missed the dangerous one.
-      'cp', 'cpSync',
+      'open', 'openSync',
       'rm', 'rmSync',
-      'copyFile', 'copyFileSync',
       'rename', 'renameSync',
+      'copyFile', 'copyFileSync',
+      'cp', 'cpSync',
       'truncate', 'truncateSync',
+      'chmod', 'chmodSync',
+      'chown', 'chownSync',
+      'lchown', 'lchownSync',
+      'utimes', 'utimesSync',
+      'readlink', 'readlinkSync',
       'symlink', 'symlinkSync',
       'link', 'linkSync',
-      'utimes', 'utimesSync',
-      'chmod', 'chmodSync',
-      'open', 'openSync',
       'opendir', 'opendirSync',
       ...additionalMethods
     ]);
@@ -603,9 +624,35 @@ allowLiterals = false,
       // same: provably not steerable.
       if (isBuildTimeConstant(pathNode)) return false;
 
+      // A name that is declared nowhere in the file. This is the one shape
+      // where "unresolved" means genuinely unknown rather than "resolved, and
+      // not provably constant" — and the two must not share a verdict.
+      //
+      // The 105 false positives PR #546 removed were all the second kind: a
+      // rollup config's `const`, a glob over the repo's own files, a thin
+      // facade forwarding its own parameter. Every one of them RESOLVES, so
+      // every one of them stays quiet here.
+      //
+      // `fs.readFile(filename)` with `filename` bound nowhere cannot be shown
+      // safe by any reasoning available in this file. That is why
+      // eslint-plugin-security reports it, and on this shape they are right.
+      if (isFreeVariable(pathNode)) return true;
+
       // Provenance unresolved. Off by default — see the note above.
       return reportUnresolvedPaths;
     };
+
+    /**
+     * Is this identifier a free variable — referenced but declared nowhere?
+     *
+     * `ref.resolved === null` is the scope analyser's own verdict, so this
+     * cannot drift from what ESLint believes about the binding.
+     */
+    function isFreeVariable(node: TSESTree.Node): boolean {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const through = context.sourceCode.getScope(node).through;
+      return through.some((ref) => ref.identifier === node && ref.resolved === null);
+    }
 
     /**
      * Is every part of this expression fixed at build time?
@@ -843,9 +890,26 @@ allowLiterals = false,
      * Check fs method calls for path traversal vulnerabilities
      */
     const checkFsCall = (node: TSESTree.CallExpression) => {
-      const methodName = fsMethodName(node.callee, fsNamespaces, fsNamedMethods);
+      let methodName = fsMethodName(node.callee, fsNamespaces, fsNamedMethods);
+
       if (methodName === undefined) {
-        return;
+        // Fallback: resolve the callee back to its source module. The namespace tracking
+        // above follows `fs.readFile` and `const { readFile } = require('fs')`, but not a
+        // method plucked onto a variable (`var one = require('fs').readFile; one(p)`), a
+        // `promises` namespace bound through a variable, or a drop-in module such as
+        // `fs-extra` — 8 of the competitor-corpus cases were exactly those shapes.
+        const binding = resolveModuleBinding(node.callee, context.sourceCode.getScope(node), {
+          equivalents: FS_MODULE_EQUIVALENTS,
+        });
+        if (binding?.module !== 'fs') return;
+        const [first, second] = binding.path;
+        methodName =
+          binding.path.length === 1
+            ? first
+            : binding.path.length === 2 && first === 'promises'
+              ? second
+              : undefined;
+        if (methodName === undefined) return;
       }
 
       // Skip if not a dangerous method

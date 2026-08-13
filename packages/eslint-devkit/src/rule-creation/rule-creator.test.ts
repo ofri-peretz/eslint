@@ -3,7 +3,7 @@
  * Tests the rule creator factory functions
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createRuleCreator, createRule } from './rule-creator';
+import { createRuleCreator, createRule, docsUrlFor, withCanonicalDocsUrls } from './rule-creator';
 
 describe('createRuleCreator', () => {
   it('should return a function', () => {
@@ -63,5 +63,37 @@ describe('createRule', () => {
     expect(testRule.meta.docs?.url).toContain(
       'github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin/docs/rules/test-rule.md',
     );
+  });
+});
+
+describe('canonical documentation URLs', () => {
+  it('builds the documented site URL for a plugin slug', () => {
+    expect(docsUrlFor('plugin-node-security', 'detect-child-process')).toBe(
+      'https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-child-process',
+    );
+  });
+
+  it('rewrites every rule in a plugin export map', () => {
+    const rules = {
+      'no-thing': { meta: { docs: { url: 'https://example.invalid/placeholder.md' } }, create: () => ({}) },
+      'no-other': { meta: { docs: { url: undefined } }, create: () => ({}) },
+    } as never;
+
+    const result = withCanonicalDocsUrls('plugin-secure-coding', rules) as unknown as Record<
+      string,
+      { meta: { docs: { url: string } } }
+    >;
+
+    expect(result['no-thing'].meta.docs.url).toBe(
+      'https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-thing',
+    );
+    expect(result['no-other'].meta.docs.url).toBe(
+      'https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-other',
+    );
+  });
+
+  it('leaves a rule without a docs block untouched rather than throwing', () => {
+    const rules = { 'no-docs': { meta: {}, create: () => ({}) } } as never;
+    expect(() => withCanonicalDocsUrls('plugin-browser-security', rules)).not.toThrow();
   });
 });

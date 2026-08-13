@@ -14,7 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { makeReadsTaintSource } from '../../utils/provenance';
 
 type MessageIds =
@@ -73,6 +73,19 @@ const DEFAULT_TAINT_SOURCES = ['req', 'request', 'ctx', 'event', 'process'];
  * qualify for the "literal command, no shell" exemption. Matched on the
  * basename, so `/bin/sh` and `sh` are the same binary.
  */
+/**
+ * The one taint root that is the operator rather than a remote party.
+ *
+ * `process.argv` and `process.env` are supplied by whoever launched the
+ * program, from a shell they already control. That still matters where the
+ * value is spliced into a shell string — `execSync('rm -rf ' + process.argv[2])`
+ * turns an argument into code — so `process` stays a root for the shell path.
+ * It is not a lever for the two questions the no-shell path asks, both of which
+ * are about someone reaching a binary they could not otherwise reach. See
+ * `remoteRoots` below.
+ */
+const LOCAL_TAINT_ROOT = 'process';
+
 const SHELL_BINARIES: ReadonlySet<string> = new Set([
   'sh', 'bash', 'zsh', 'dash', 'ksh', 'csh', 'tcsh', 'fish', 'ash', 'busybox',
   'cmd', 'cmd.exe', 'powershell', 'powershell.exe', 'pwsh', 'pwsh.exe', 'env',
@@ -469,9 +482,47 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       allowLiteralSpawn = false,
       additionalMethods = [],
     }: Options = options;
-    const readsTaintSource = makeReadsTaintSource(
+    const taintRoots = new Set(
+      (options.taintSources ?? DEFAULT_TAINT_SOURCES).map((source) => source.toLowerCase()),
+    );
+    const readsTaintSource = makeReadsTaintSource(context.sourceCode, taintRoots);
+
+    /**
+     * The same reader minus `process` — "can a party who is NOT already at this
+     * program's command line steer this value?"
+     *
+     * The no-shell path asks two questions and both are privilege-boundary
+     * questions, not shape questions:
+     *
+     *   - argv[0]: can someone else choose which binary runs?
+     *   - argv[1..]: can someone else smuggle in a flag (CWE-88)?
+     *
+     * An answer of "yes, via `process.argv` or `process.env`" is not an answer,
+     * because whoever supplies those is standing at a shell and can invoke the
+     * binary directly with any flags they like. Both labelled CWE-88 fixtures
+     * (`benchmarks/corpus/CWE-088/vulnerable/{git-ls-remote-arg-injection,
+     * tar-user-args}.js`) are `req`-rooted, and both keep reporting.
+     *
+     * Measured: this is the whole of the remaining corpus-scan gap. With
+     * `process` counted, Shopify/cli reported twice —
+     * `bin/changeset.js:17` `spawn(process.execPath, [changesetBinPath, ...args])`
+     * where `args` is `process.argv.slice(2)`, i.e. a wrapper forwarding its own
+     * command line, flagged as argument injection; and
+     * `packages/plugin-cloudflare/src/install-cloudflared.ts:85`
+     * `execFileSync(binTarget, ['--version'])` where `binTarget` traces back
+     * through `getBinPathTarget(env, …)` to `install(env = process.env)` and the
+     * documented `SHOPIFY_CLI_CLOUDFLARED_PATH` override. Neither crosses a
+     * boundary; both were CWE-78 reports on a call with no shell and a literal
+     * argv. Nothing else in the 8-repo corpus changes.
+     *
+     * NOT a name matcher: `env` there is an ordinary parameter, and renaming it
+     * changes nothing. The taint was real resolution — a default-value write of
+     * `process.env` picked up by the last-write-wins reader. The fix has to be
+     * about what `process` MEANS, because the binding analysis was already right.
+     */
+    const readsRemoteTaintSource = makeReadsTaintSource(
       context.sourceCode,
-      new Set((options.taintSources ?? DEFAULT_TAINT_SOURCES).map((source) => source.toLowerCase())),
+      new Set([...taintRoots].filter((root) => root !== LOCAL_TAINT_ROOT)),
     );
     const reportUnresolvedCommands = options.reportUnresolvedCommands ?? false;
 
@@ -494,6 +545,13 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * Track imported child_process identifiers so we can flag calls like
      * `exec()` or `cp.exec()` in addition to `child_process.exec()`.
      */
+    /**
+     * `node:child_process` and `child_process` are the same module. The trackers below
+     * compared the specifier literally, so every `node:`-prefixed import was invisible.
+     */
+    const isChildProcessSpecifier = (value: unknown): boolean =>
+      value === 'child_process' || value === 'node:child_process';
+
     const moduleAliases = new Set<string>(['child_process']);
     const importedMethods = new Set<string>();
 
@@ -501,21 +559,41 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * Check if a node contains string interpolation or concatenation
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const containsDynamicStrings = (node: TSESTree.Node): boolean => {
-      if (node.type === 'TemplateLiteral') {
-        return node.expressions.length > 0;
-      }
+    /**
+     * "Dynamic" is precisely "not provably constant" — the negation of devkit's
+     * static-expression analysis, not a node-type allowlist.
+     *
+     * The previous type-list version was wrong in BOTH directions:
+     *   - `MemberExpression` and `CallExpression` fell through to `false`, so
+     *     `exec(req.query.cmd)` was classified NOT dynamic. Combined with
+     *     `allowLiteralStrings: true` that silently skipped the report — a false
+     *     negative on the single most important input shape this rule exists to catch.
+     *   - every `Identifier` and every `+` was classified dynamic, so
+     *     `const CMD = 'ls'; exec(CMD)` reported — a false positive on a constant.
+     */
+    const containsDynamicStrings = (node: TSESTree.Node): boolean =>
+      !isStaticExpression({ node, scope: context.sourceCode.getScope(node) });
 
-      if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return true;
-      }
-
-      // Check for variable references
-      if (node.type === 'Identifier') {
-        return true;
-      }
-
-      return false;
+    /**
+     * A name — or the callee of a call — that is declared nowhere in the file.
+     *
+     * `exec(str)` and `exec(getCommand())` cannot be shown safe by anything
+     * this file contains, which is the one case where an unresolved verdict is
+     * genuinely unknown rather than merely unproven. `ref.resolved === null` is
+     * the scope analyser's own answer, so it cannot drift from ESLint's.
+     */
+    const isFreeReference = (node: TSESTree.Node): boolean => {
+      const name =
+        node.type === AST_NODE_TYPES.Identifier
+          ? node
+          : node.type === AST_NODE_TYPES.CallExpression &&
+              node.callee.type === AST_NODE_TYPES.Identifier
+            ? node.callee
+            : null;
+      if (!name) return false;
+      return context.sourceCode
+        .getScope(name)
+        .through.some((ref) => ref.identifier === name && ref.resolved === null);
     };
 
     /**
@@ -523,12 +601,17 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * We only care about the command (arg 0) and args array (arg 1).
      * The options object (arg 2) is irrelevant for command injection.
      */
+    /** Provably-constant argument, resolving const bindings and static compositions. */
+    const isStaticArg = (argument: TSESTree.Node): boolean =>
+      isStaticExpression({ node: argument, scope: context.sourceCode.getScope(argument) });
+
     const hasOnlyLiteralArgs = (args: TSESTree.Node[]): boolean => {
       if (args.length === 0) return false;
       
-      // First argument must be a literal string (the command)
-      const command = args[0];
-      if (command.type !== 'Literal' || typeof (command as TSESTree.Literal).value !== 'string') {
+      // Provably constant, not merely a string literal. A bare `type === 'Literal'` check
+      // false-positives on `const CMD = 'ls'; exec(CMD)` — an identifier that can never
+      // carry attacker input.
+      if (!isStaticArg(args[0])) {
         return false;
       }
       
@@ -536,13 +619,13 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       if (args.length >= 2) {
         const argsArray = args[1];
         if (argsArray.type === 'ArrayExpression') {
-          const allLiteralElements = argsArray.elements.every((el: TSESTree.Node | null) => 
-            el?.type === 'Literal' && typeof (el as TSESTree.Literal).value === 'string'
+          const allLiteralElements = argsArray.elements.every(
+            (el: TSESTree.Node | null) => el !== null && isStaticArg(el),
           );
           if (!allLiteralElements) {
             return false;
           }
-        } else if (argsArray.type !== 'Literal') {
+        } else if (!isStaticArg(argsArray)) {
           // If second arg is not array or literal, it's dynamic
           return false;
         }
@@ -552,13 +635,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // It may contain callbacks, cwd, env, etc. which are not injection vectors
       return true;
     };
-
-    /** Is this argument a plain string literal? */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isLiteralStringNode = (argument: TSESTree.Node | undefined): boolean =>
-      argument !== undefined &&
-      argument.type === AST_NODE_TYPES.Literal &&
-      typeof argument.value === 'string';
 
     /**
      * Does this call actually put a shell between the command and the OS?
@@ -682,7 +758,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         ) {
           return null;
         }
-        if (!readsTaintSource(element)) continue;
+        if (!readsRemoteTaintSource(element)) continue;
         // A spread cannot be proven flag-proof: nothing here knows what is in
         // the array, and `[...userWords]` is precisely the tar fixture.
         const target =
@@ -850,7 +926,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const pattern = COMMAND_PATTERNS.find(p => p.method === method) || null;
 
       // Check if arguments contain dynamic content
-      const isDynamic = node.arguments.some((arg: TSESTree.Node) => containsDynamicStrings(arg));
+      // Only the command (arg 0) and an explicit argv array (arg 1) can carry injected
+      // input. Arg 1+ is otherwise an options object or a callback — a FunctionExpression
+      // is never "static", so including it here would mark every `exec(cmd, cb)` dynamic.
+      const injectableArgs: TSESTree.Node[] = node.arguments.slice(0, 1);
+      const argvArray = node.arguments[1];
+      if (argvArray?.type === AST_NODE_TYPES.ArrayExpression) {
+        injectableArgs.push(...argvArray.elements.filter((el): el is TSESTree.Expression => el !== null));
+      }
+      const isDynamic = injectableArgs.some((arg: TSESTree.Node) => containsDynamicStrings(arg));
 
       return { args, pattern, isDynamic };
     };
@@ -872,6 +956,14 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Determine whether the callee refers to a child_process API.
      */
+    /** Is this node a `require('child_process')` / `require('node:child_process')` call? */
+    const isChildProcessRequire = (node: TSESTree.Node): boolean =>
+      node.type === AST_NODE_TYPES.CallExpression &&
+      node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'require' &&
+      node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+      isChildProcessSpecifier(node.arguments[0].value);
+
     const getChildProcessCall = (
       node: TSESTree.CallExpression
     ): { method: string; calleeNode: TSESTree.Node } | null => {
@@ -890,6 +982,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           node.callee.object.type === 'Identifier' &&
           moduleAliases.has(node.callee.object.name)
         ) {
+          return { method: methodName, calleeNode: node.callee };
+        }
+
+        // require('child_process').exec(...) — chained straight off the require, so the
+        // module never gets a name for `moduleAliases` to hold.
+        if (isChildProcessRequire(node.callee.object)) {
           return { method: methodName, calleeNode: node.callee };
         }
       }
@@ -977,7 +1075,32 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // `-o ProxyCommand=…`) is real, but it is CWE-88 and depends on the
       // callee, not CWE-78 through a shell. A rule that cannot name the binary
       // cannot judge it, and it must not keep reporting CWE-78 as a proxy.
-      if (isLiteralStringNode(node.arguments[0]) && !usesShell(node, method)) {
+      // No shell, and a command the attacker cannot choose.
+      //
+      // Both halves are load-bearing and they guard different things. No shell
+      // means no metacharacter is parsed, so a tainted *argument* cannot become
+      // a second command. But argv[0] is the program itself: `spawn(userCmd,
+      // args)` runs whatever binary the attacker names, shell or not, and that
+      // stays a finding.
+      //
+      // This used to demand a string *literal* for the command, which is
+      // stricter than the reasoning requires and produced two corpus false
+      // positives — `spawn(process.execPath, [binPath, ...args])` in
+      // Shopify/cli and `execFileSync(binTarget, ['--version'])` in its
+      // cloudflare plugin. Neither command is attacker-steerable and both were
+      // reported as command injection while being the documented fix for it.
+      // They surfaced only once `node:child_process` specifiers began
+      // resolving, so a false negative had been hiding a false positive.
+      //
+      // `readsRemoteTaintSource`, not `readsTaintSource`: a command the
+      // operator points somewhere else through `process.env` is configuration,
+      // not injection. See the reader's own comment for the measurement.
+      const command = node.arguments[0];
+      const commandIsSteerable =
+        command === undefined ||
+        isFreeReference(command) ||
+        readsRemoteTaintSource(command);
+      if (!usesShell(node, method) && !commandIsSteerable) {
         // …but the paragraph above says argument injection is real and that a
         // rule which cannot name the binary cannot judge it. Here the binary IS
         // named — it is the literal we just matched — so the judgement is
@@ -1011,7 +1134,18 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // The trade: `exec(cmd)` where `cmd` is a bare parameter is now silent —
       // a caller-side decision this rule cannot see.
       // `reportUnresolvedCommands` restores the old sweep.
-      if (!reportUnresolvedCommands && !node.arguments.some((argument) => readsTaintSource(argument))) {
+      // …except for a name bound nowhere in the file. "Resolved but not
+      // provably constant" and "declared nowhere" are different verdicts and
+      // must not share a branch: the corpus findings above all RESOLVE, while
+      // `exec(str)` with `str` bound nowhere admits no local reasoning at all.
+      // Same distinction as `detect-non-literal-fs-filename`.
+      const unknowable = node.arguments.some((argument) => isFreeReference(argument));
+
+      if (
+        !reportUnresolvedCommands &&
+        !unknowable &&
+        !node.arguments.some((argument) => readsTaintSource(argument))
+      ) {
         return;
       }
 
@@ -1061,7 +1195,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * Track imports/requires of child_process to catch alias usage.
      */
     const trackChildProcessImport = (node: TSESTree.ImportDeclaration) => {
-      if (node.source.value !== 'child_process') {
+      if (!isChildProcessSpecifier(node.source.value)) {
         return;
       }
 
@@ -1092,7 +1226,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         node.init.callee.name === 'require' &&
         node.init.arguments[0] &&
         node.init.arguments[0].type === 'Literal' &&
-        node.init.arguments[0].value === 'child_process'
+        isChildProcessSpecifier(node.init.arguments[0].value)
       ) {
         moduleAliases.add(node.id.name);
         return;
@@ -1106,7 +1240,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         node.init.callee.name === 'require' &&
         node.init.arguments[0] &&
         node.init.arguments[0].type === 'Literal' &&
-        node.init.arguments[0].value === 'child_process'
+        isChildProcessSpecifier(node.init.arguments[0].value)
       ) {
         for (const prop of node.id.properties) {
           if (prop.type === 'Property' && prop.key.type === 'Identifier') {
@@ -1116,8 +1250,46 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
     };
 
+    /**
+     * Report a `require('child_process')` that never becomes a named binding.
+     *
+     * Importing the module IS the risk signal — `sinon.stub(require('child_process'))` and a
+     * bare `require('child_process')` both bring command execution into the module without
+     * ever producing an `alias.exec(...)` call for the visitor above to see.
+     *
+     * Skipped when the require is:
+     *   - a VariableDeclarator init  -> `trackChildProcessRequire` registers the alias and any
+     *                                   real call site reports instead; reporting here too
+     *                                   would emit two findings for one issue
+     *   - the object of a member expression -> `require('cp').exec(x)` already reports as a call
+     */
+    const checkBareChildProcessRequire = (node: TSESTree.CallExpression) => {
+      if (!isChildProcessRequire(node)) return;
+      const parent = node.parent;
+      if (parent?.type === AST_NODE_TYPES.VariableDeclarator && parent.init === node) return;
+      if (parent?.type === AST_NODE_TYPES.MemberExpression && parent.object === node) return;
+
+      context.report({
+        node,
+        messageId: 'childProcessCommandInjection',
+        data: {
+          method: 'require',
+          riskLevel: 'MEDIUM',
+          vulnerability: 'command-injection',
+          safeAlternatives: 'execFile, spawn',
+          refactoringSteps: '   1. Avoid importing child_process where it is not needed\n   2. If required, prefer execFile()/spawn() with {shell: false}\n   3. Validate any command or argument that is not a literal',
+          effort: '10-15 minutes',
+          badExample: 'require(\'child_process\')',
+          goodExample: 'const { execFile } = require(\'node:child_process\')',
+        },
+      });
+    };
+
     return {
-      CallExpression: checkChildProcessCall,
+      CallExpression(node: TSESTree.CallExpression) {
+        checkChildProcessCall(node);
+        checkBareChildProcessRequire(node);
+      },
       ImportDeclaration: trackChildProcessImport,
       VariableDeclarator: trackChildProcessRequire
     };

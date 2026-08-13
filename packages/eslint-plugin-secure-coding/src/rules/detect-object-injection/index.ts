@@ -272,6 +272,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+    /**
+     * Assignments already reported as a prototype-polluting copy loop.
+     *
+     * ForInStatement is visited before its body, so the copy-loop check claims the
+     * assignment first and the generic handler steps aside. Without this the same
+     * `target[key] = source[key]` reports twice — one defect, two findings, which is
+     * precisely the over-reporting we criticise in competitors.
+     */
+    const reportedAsCopyLoop = new WeakSet<TSESTree.AssignmentExpression>();
 
     // ── AST-walker / codemod context detection (closes the audit FP
     // surfaced by `npm run ilb:stress-test`). When the file imports any
@@ -1177,10 +1186,103 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         },
       });
     };
+    /**
+     * Recursive/shallow copy loops: `for (const k in src) { dst[k] = src[k] }`.
+     *
+     * This is THE canonical prototype-pollution primitive — it is how every real
+     * `merge`/`extend`/`deepAssign` helper is written, and when `src` is attacker-supplied
+     * a `__proto__` key walks straight onto Object.prototype. It was our only pollution
+     * shape `eslint-plugin-security` caught and we did not: their `detect-object-injection`
+     * flags it incidentally (it flags every `obj[key]`), ours did not because a `for...in`
+     * binding does not look tainted to the identifier heuristic.
+     *
+     * Scoped deliberately to the copy-loop shape rather than all computed writes, so it adds
+     * detection without adding their noise. Quiet when the body guards the key —
+     * `hasOwnProperty`, a `__proto__`/`constructor` check, or an allowlist test.
+     */
+    const checkPrototypePollutingCopyLoop = (node: TSESTree.ForInStatement) => {
+      if (isInCodemodContext || isTestFile) return;
+
+      // The binding introduced by `for (const k in ...)`.
+      const keyName =
+        node.left.type === AST_NODE_TYPES.VariableDeclaration
+          ? node.left.declarations[0]?.id.type === AST_NODE_TYPES.Identifier
+            ? node.left.declarations[0].id.name
+            : undefined
+          : node.left.type === AST_NODE_TYPES.Identifier
+            ? node.left.name
+            : undefined;
+      if (!keyName) return;
+
+      const bodyText = context.sourceCode.getText(node.body);
+      // A guarded loop is the documented fix; do not report the fix.
+      if (/hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)) {
+        return;
+      }
+
+      // Only report when the SOURCE is a function parameter — the reusable
+      // `merge(target, source)` helper shape behind every real npm prototype-pollution CVE
+      // (lodash.merge, deep-extend, …), where an attacker-supplied object reaches the loop.
+      //
+      // Copying an object the module itself owns (`for (const k in localConfig)`) is the
+      // overwhelmingly common benign case, and an existing FP-regression test pins it as
+      // safe. Requiring a parameter keeps the vulnerable shape and drops the benign one
+      // instead of trading one team's false positives for another's.
+      if (node.right.type !== AST_NODE_TYPES.Identifier) return;
+      const sourceName = node.right.name;
+      let isParameter = false;
+      for (let scope: typeof node extends never ? never : ReturnType<typeof context.sourceCode.getScope> | null = context.sourceCode.getScope(node); scope; scope = scope.upper) {
+        const variable = scope.variables.find((v) => v.name === sourceName);
+        if (!variable) continue;
+        isParameter = variable.defs.some((def) => def.type === 'Parameter');
+        break;
+      }
+      if (!isParameter) return;
+
+      let reported = false;
+      const walk = (current: TSESTree.Node | null | undefined): void => {
+        if (!current || reported) return;
+        if (
+          current.type === AST_NODE_TYPES.AssignmentExpression &&
+          current.left.type === AST_NODE_TYPES.MemberExpression &&
+          current.left.computed &&
+          current.left.property.type === AST_NODE_TYPES.Identifier &&
+          current.left.property.name === keyName
+        ) {
+          reported = true;
+          reportedAsCopyLoop.add(current);
+          context.report({
+            node: current,
+            messageId: 'objectInjection',
+            data: {
+              riskLevel: 'HIGH',
+              safeAlternative:
+                'Guard the key before assigning: `if (k === "__proto__" || k === "constructor" || k === "prototype") continue;` — or copy with Object.create(null) / structuredClone.',
+            },
+          });
+          return;
+        }
+        for (const key of Object.keys(current)) {
+          if (key === 'parent') continue;
+          const value = (current as unknown as Record<string, unknown>)[key];
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              if (item && typeof item === 'object' && 'type' in item) walk(item as TSESTree.Node);
+            }
+          } else if (value && typeof value === 'object' && 'type' in value) {
+            walk(value as TSESTree.Node);
+          }
+        }
+      };
+      walk(node.body);
+    };
+
 
     return {
+      ForInStatement: checkPrototypePollutingCopyLoop,
       AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
         if (isInCodemodContext || isTestFile) return;
+        if (reportedAsCopyLoop.has(node)) return;
         return checkAssignmentExpression(node);
       },
       MemberExpression: (node: TSESTree.MemberExpression) => {

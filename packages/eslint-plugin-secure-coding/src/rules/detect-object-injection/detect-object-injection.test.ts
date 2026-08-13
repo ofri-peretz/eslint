@@ -1238,3 +1238,33 @@ describe('detect-object-injection', () => {
   });
 });
 
+
+describe('prototype-polluting copy loop', () => {
+  ruleTester.run('copy-loop', detectObjectInjection, {
+    valid: [
+      // Source is a module-local object, not a parameter — the benign majority case.
+      `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
+      // Guarded with hasOwnProperty — that guard IS the documented fix.
+      `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
+      // Iterating a call result: not an Identifier, so the source cannot be proven — abstain.
+      `function m(t, s) { for (const k in getSource()) { t.x = k; } }`,
+      // Loop that never assigns through the key.
+      `function total(s) { let n = 0; for (const k in s) { n += 1; } return n; }`,
+      // Loop head is a member expression, not a fresh binding — no key name to track.
+      `function m(t, s) { for (t.k in s) { t.x = 1; } }`,
+      // Destructuring loop head — likewise no single key name.
+      `function m(t, s) { for (const [a] in s) { t.x = a; } }`,
+      // Test files are exempt: fixtures legitimately build polluted objects on purpose.
+      {
+        code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`,
+        filename: 'merge.test.ts',
+      },
+    ],
+    invalid: [
+      // The canonical merge helper.
+      { code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`, errors: 1 },
+      // Nested inside a conditional still reports exactly once.
+      { code: `function m(t, s) { for (const k in s) { if (s[k]) { t[k] = s[k]; } } }`, errors: 1 },
+    ],
+  });
+});

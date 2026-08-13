@@ -204,7 +204,9 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     }
 
     const sourceCode = context.sourceCode;
-    const dangerousProperties = new Set(['innerHTML', 'outerHTML']);
+    // `srcdoc` sets an iframe's whole document from a string — the same parse-as-HTML sink
+    // as innerHTML, and one eslint-plugin-no-unsanitized flags that we previously missed.
+    const dangerousProperties = new Set(['innerHTML', 'outerHTML', 'srcdoc']);
     // Sibling DOM sinks that share the same XSS class — surfaced as
     // FN by the hand-curated stress test. See benchmarks/AUDIT_PATTERNS.md
     // §3.1 ("DOM XSS sink list"). Each takes user-controlled HTML and

@@ -2213,6 +2213,11 @@
       "detection": "naming-heuristic",
       "confidence": "review-prompt"
     },
+    "no-bidi-characters": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "enforcement"
+    },
     "no-directive-injection": {
       "environment": "universal",
       "detection": "structural-api",

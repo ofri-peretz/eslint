@@ -22,6 +22,7 @@
 
 // Security rules - Injection
 import { noGraphqlInjection } from './rules/no-graphql-injection';
+import { noBidiCharacters } from './rules/no-bidi-characters';
 import { noXxeInjection } from './rules/no-xxe-injection';
 import { noXpathInjection } from './rules/no-xpath-injection';
 import { noLdapInjection } from './rules/no-ldap-injection';
@@ -75,7 +76,7 @@ import { noHardcodedSessionTokens } from './rules/no-hardcoded-session-tokens';
 import { requireSecureDefaults } from './rules/require-secure-defaults';
 
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 /**
  * Collection of all core security ESLint rules
@@ -140,7 +141,18 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-electron-security-issues': noElectronSecurityIssues,
   'no-hardcoded-session-tokens': noHardcodedSessionTokens,
   'require-secure-defaults': requireSecureDefaults,
+  'no-bidi-characters': noBidiCharacters,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-secure-coding', rules);
 
 /**
  * ESLint Plugin object

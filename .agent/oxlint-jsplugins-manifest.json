@@ -2,8 +2,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-08-13",
   "totalPlugins": 30,
-  "totalRules": 476,
-  "oxlintCompatible": 476,
+  "totalRules": 477,
+  "oxlintCompatible": 477,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2733,7 +2733,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 32,
+      "ruleCount": 33,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -2749,6 +2749,12 @@
         },
         {
           "name": "detect-weak-password-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-bidi-characters",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3694,6 +3700,7 @@
       "detect-non-literal-regexp",
       "detect-object-injection",
       "detect-weak-password-validation",
+      "no-bidi-characters",
       "no-directive-injection",
       "no-electron-security-issues",
       "no-fail-open-auth",

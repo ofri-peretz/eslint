@@ -135,7 +135,29 @@ export function makeReadsTaintSource(
       case AST_NODE_TYPES.Identifier: {
         if (roots.has(node.name.toLowerCase())) return true;
         const init = bindingInit(sourceCode, node);
-        return init !== undefined && reads(init, depth + 1);
+        if (init !== undefined && reads(init, depth + 1)) return true;
+
+        // A binding is not only what it was declared as. `let c = 'ls'; c =
+        // req.query.c; exec(c)` reaches the sink carrying the request, and
+        // reading the declarator alone answers `'ls'` — a false negative that
+        // looks exactly like a safe literal.
+        //
+        // Judge the LAST write before the use, not any write. Taking "any"
+        // inverts the other direction: `var mod = req.body.a; var mod = "fs";
+        // require(mod)` loads `fs`, and reporting it is a false positive whose
+        // fix is already applied. Straight-line last-write-wins is what both
+        // shapes have in common.
+        //
+        // `c = c + x` recurses back into this branch; the shared `depth` guard
+        // is what terminates it.
+        const variable = findVariable(sourceCode, node);
+        const priorWrites = (variable?.references ?? [])
+          .map((ref) => ref.writeExpr)
+          .filter((write): write is TSESTree.Node => write != null)
+          .filter((write) => write.range[1] <= node.range[0])
+          .toSorted((a, b) => a.range[1] - b.range[1]);
+        const lastWrite = priorWrites.at(-1);
+        return lastWrite !== undefined && reads(lastWrite, depth + 1);
       }
       case AST_NODE_TYPES.MemberExpression: {
         if (

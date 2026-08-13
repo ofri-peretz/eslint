@@ -18,7 +18,7 @@
     },
     {
       "name": "eslint-plugin-secure-coding",
-      "rules": 32,
+      "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
       "version": "4.0.0",
@@ -241,7 +241,7 @@
       "published": true
     }
   ],
-  "totalRules": 476,
+  "totalRules": 477,
   "totalPlugins": 30,
   "allPluginsCount": 30,
   "generatedAt": "2026-08-13"

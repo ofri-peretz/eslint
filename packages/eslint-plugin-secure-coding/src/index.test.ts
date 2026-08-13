@@ -49,8 +49,10 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-electron-security-issues',
       'no-hardcoded-session-tokens',
       'require-secure-defaults',
+      'no-bidi-characters', // CWE-1007 Trojan Source
     ]);
-    expect(ruleKeys.length).toBe(32);
+    // 32 on main + `no-bidi-characters`, added here for CWE-1007 parity.
+    expect(ruleKeys.length).toBe(33);
   });
 
   describe('configurations', () => {
