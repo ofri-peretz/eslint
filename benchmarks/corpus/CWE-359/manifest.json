@@ -1,0 +1,46 @@
+{
+  "cwe": "CWE-359",
+  "name": "Exposure of Private Personal Information to an Unauthorized Actor",
+  "owasp": "A02:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-browser-security",
+    "eslint-plugin-secure-coding"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "pii-console-log.js",
+        "description": "console.log of a user email property",
+        "rule": "secure-coding/no-pii-in-logs"
+      },
+      {
+        "file": "analytics-email-property.js",
+        "description": "analytics.track payload carrying an email address",
+        "rule": "browser-security/no-sensitive-data-in-analytics"
+      },
+      {
+        "file": "track-without-consent.js",
+        "description": "analytics.track fired with no consent check",
+        "rule": "browser-security/no-tracking-without-consent"
+      }
+    ],
+    "safe": [
+      {
+        "file": "pii-redacted-log.js",
+        "description": "logs a redacted identifier, never the address",
+        "rule": "secure-coding/no-pii-in-logs"
+      },
+      {
+        "file": "analytics-opaque-id.js",
+        "description": "analytics.track with an opaque account id only",
+        "rule": "browser-security/no-sensitive-data-in-analytics"
+      },
+      {
+        "file": "track-behind-consent.js",
+        "description": "tracking gated on a stored consent decision",
+        "rule": "browser-security/no-tracking-without-consent"
+      }
+    ]
+  }
+}

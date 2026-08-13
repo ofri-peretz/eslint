@@ -1,0 +1,25 @@
+{
+  "cwe": "CWE-294",
+  "name": "Authentication Bypass by Capture-replay",
+  "owasp": "A07:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": [
+    "eslint-plugin-jwt-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "jwt-no-timestamp.js",
+        "description": "jwt.sign with noTimestamp:true — no iat, so replay is undetectable",
+        "rule": "jwt-security/require-issued-at"
+      }
+    ],
+    "safe": [
+      {
+        "file": "jwt-default-iat.js",
+        "description": "jwt.sign leaving the default iat in place",
+        "rule": "jwt-security/require-issued-at"
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "cwe": "CWE-312",
+  "name": "Cleartext Storage of Sensitive Information",
+  "owasp": "A02:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-node-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "asyncstorage-api-key.js",
+        "description": "API key written to AsyncStorage in cleartext",
+        "rule": "node-security/require-secure-credential-storage"
+      },
+      {
+        "file": "asyncstorage-password.js",
+        "description": "password written to AsyncStorage in cleartext",
+        "rule": "node-security/require-storage-encryption"
+      }
+    ],
+    "safe": [
+      {
+        "file": "keychain-api-key.js",
+        "description": "API key written to the encrypted keychain",
+        "rule": "node-security/require-secure-credential-storage"
+      },
+      {
+        "file": "encrypted-storage-password.js",
+        "description": "password written through an encrypted store",
+        "rule": "node-security/require-storage-encryption"
+      }
+    ]
+  }
+}
