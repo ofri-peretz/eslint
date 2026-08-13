@@ -1,3 +1,28 @@
+## 3.1.0
+
+### Minor Changes
+
+- [#549](https://github.com/ofri-peretz/eslint/pull/549) [`0e9a929`](https://github.com/ofri-peretz/eslint/commit/0e9a929f68a214d37e2b7b27f2044195fb228109) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `require-rate-limiting` moves from `warn` to `error` in `recommended`.
+
+  Its findings concentrate in single-purpose demo apps — `express/examples/*` —
+  where rate limiting genuinely is not wanted. Those are correct detections, not
+  false positives, and the reporting posture is now written down: we report, and
+  the consumer scopes. Someone who does not want this in a demo directory disables
+  it there, explicitly, where the decision is visible in their config. A path
+  exclusion shipped in the preset would be a decision made silently on behalf of
+  every consumer, including the ones whose `examples/` directory is production
+  code.
+
+  This resolves an inconsistency `.agent/wild-ground-truth.json` had already
+  flagged as "the actionable part": `require-helmet`, the same shape with the same
+  finding profile, has always been `error` while this sat at `warn`.
+
+  If you were relying on this being a warning, set it back in your config:
+
+  ```js
+  rules: { 'express-security/require-rate-limiting': 'warn' }
+  ```
+
 ## 3.0.0
 
 ### Major Changes
@@ -11,7 +36,7 @@
   > text is fixed here and ships with the next release.
 
   **Breaking:** `require-express-body-parser-limits` no longer emits
-  `missingLimit` or `addLimit`. It no longer reports a *missing* limit at all.
+  `missingLimit` or `addLimit`. It no longer reports a _missing_ limit at all.
 
   `express.json()` with no options is **not** unbounded. All four parsers —
   `json`, `urlencoded`, `raw`, `text` — ship `limit: '100kb'` by default, in
@@ -22,7 +47,7 @@
   findings on the 8-repo corpus were that shape, including
   `app.use(express.urlencoded({ extended: true }))`.
 
-  What remains is `excessiveLimit` — an *explicit* limit above `maxLimit`, which
+  What remains is `excessiveLimit` — an _explicit_ limit above `maxLimit`, which
   is also the only form an attacker can steer. It now also catches the numeric
   spelling (`limit: 52428800`) that the string-only comparison missed entirely.
 
