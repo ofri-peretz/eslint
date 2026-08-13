@@ -2,12 +2,31 @@
 
 ### Major Changes
 
-- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - All eight rules now require an Express app in the file, and one messageId is gone.
+- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - All eight rules now require an Express app in the file, and one rule stops reporting a non-issue.
 
-  **Breaking:** `require-express-body-parser-limits` no longer emits `addLimit`.
-  It was a second, LOW-severity report on the _same_ site that the HIGH-severity
-  `missingLimit` already covered — one missing option, told twice. Suppressions
-  naming `addLimit` are now unused; delete them.
+  > **Correction (2026-08-13).** The entry published with 3.0.0 said only
+  > `addLimit` was removed, and that `missingLimit` still covered the site. That
+  > was wrong — **both** messageIds are gone, and the reason is the one below.
+  > The package itself is correct; only this description was. No republish: the
+  > text is fixed here and ships with the next release.
+
+  **Breaking:** `require-express-body-parser-limits` no longer emits
+  `missingLimit` or `addLimit`. It no longer reports a *missing* limit at all.
+
+  `express.json()` with no options is **not** unbounded. All four parsers —
+  `json`, `urlencoded`, `raw`, `text` — ship `limit: '100kb'` by default, in
+  Express 4 and 5 alike. The old message ("Missing Body Parser Limit … attackers
+  can exhaust server memory") was a claim about a default that does not exist:
+  100kb is far below every threshold this rule enforces, so it reported a
+  configuration it would have accepted had it been written out. All seven
+  findings on the 8-repo corpus were that shape, including
+  `app.use(express.urlencoded({ extended: true }))`.
+
+  What remains is `excessiveLimit` — an *explicit* limit above `maxLimit`, which
+  is also the only form an attacker can steer. It now also catches the numeric
+  spelling (`limit: 52428800`) that the string-only comparison missed entirely.
+
+  Suppressions naming `missingLimit` or `addLimit` are now unused; delete them.
 
   Two new internal probes carry the change. `app-composition` answers _"is this
   receiver an Express app, and where is its middleware stack assembled?"_, so
