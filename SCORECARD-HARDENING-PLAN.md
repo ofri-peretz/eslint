@@ -207,14 +207,41 @@ higher-weighted check. The exposure is identical either way — the global insta
 runs the same code — so pinning moves vulnerabilities into view without removing
 any.
 
-The one route that would close it without that cost is replacing the global
-install with a SHA-pinned `treosh/lighthouse-ci-action`: Scorecard counts a
-hash-pinned action as pinned, and the action's transitive tree never enters our
-lockfiles. Not done here because it is an unverifiable-in-review rewrite of a
-working job — the report step reads `apps/docs/.lighthouseci` and the
-issue-filing step depends on `lhci`'s outcome, and neither can be exercised
-without a built docs site and Chrome. Worth doing deliberately, with a run to
-prove it, rather than as a drive-by.
+Two routes were evaluated and measured on 2026-08-13. Both are recorded here so
+the question does not get re-litigated from scratch.
+
+**`overrides` — helps, cannot close it.** The obvious idea is to pin the
+lockfile *and* force the vulnerable transitives to patched versions, satisfying
+Pinned-Dependencies and Vulnerabilities at once. It gets most of the way:
+
+| tree | advisories |
+| --- | ---: |
+| `@lhci/cli@0.15.1` | 10 |
+| `+ overrides: { tmp: 0.2.7, uuid: 11.1.1 }` | **6** |
+
+Only three of the ten are real roots — `tmp`, `uuid`, `extract-zip` — and the
+rest are ancestors npm flags for depending on them. `tmp` and `uuid` have fixed
+releases. **`extract-zip` does not: the advisory is `<=2.0.1` and 2.0.1 IS the
+latest published version.** An override can only redirect to a version that
+exists, so the remaining 6 (extract-zip plus five ancestors) are unreachable by
+any override. Six high findings is still a worse trade than one medium alert.
+
+Note `npm audit`'s own suggestion here is `@lhci/cli@0.1.0 [MAJOR]` — a
+downgrade to a 2019 release. That is npm failing to resolve in-range, not
+evidence that no fix exists, and it is why "no version avoids them" needed
+checking properly rather than being taken at face value.
+
+**SHA-pinned `treosh/lighthouse-ci-action` — closes the alert, changes nothing
+real.** Scorecard counts a hash-pinned action as pinned and the action's tree
+never enters our lockfiles, so the alert would go green. But the action ships
+`@lhci/cli: ^0.15.1` — the same version, carrying the same unfixable
+`extract-zip` advisory, just somewhere the scanner does not look. That is
+moving a finding out of view rather than fixing it, which is the practice
+`CLAIMS.md` exists to prevent. Rejected on those grounds, not on effort.
+
+**Conclusion: genuinely blocked upstream.** Revisit when `extract-zip` ships a
+release above 2.0.1, or when lighthouse-ci drops it. At that point `overrides`
+plus a hash-pinned local install closes this cleanly and honestly.
 
 ### 7. SAST: 9 → 10 · **+0.06** · a judgement call
 
