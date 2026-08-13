@@ -1,3 +1,118 @@
+## 4.11.0
+
+### Minor Changes
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-non-literal-fs-filename` now reports on reachable taint instead of on
+  unproven constancy.
+
+  Adjudicated against an 8-repo corpus, reading the real source at every site:
+  **113 findings, 8 of them true — 7% precision.** The other 105 were rollup
+  configs, gulpfiles, glob enumerations of a repo's own files, and thin fs
+  facades forwarding their own parameter.
+
+  The cause was one line:
+
+  ```js
+  // Any non-literal is dangerous
+  return !pathNode || !isLiteralString(pathNode);
+  ```
+
+  That asks _"can I prove this is constant?"_ and reports whenever it cannot.
+  Adding further constant-recognition was measured to reach only ~32% precision,
+  because the question is backwards. A path is dangerous when an attacker can
+  **steer** it, so that is what is asked now.
+
+  Measured after: **113 → 9**, and the survivors are genuine — `process.env.TWILIO_CA_BUNDLE`,
+  `process.argv[2]`, `env.processEnv.XDG_*`.
+
+  **False negatives fixed at the same time**, all found during adjudication:
+
+  - **Destructive methods were missing entirely.** `cp`, `cpSync`, `rm`, `rmSync`,
+    `copyFile(Sync)`, `rename(Sync)`, `truncate(Sync)`, `symlink`, `link`,
+    `utimes`, `chmod`, `open`, `opendir`. `Shopify/cli` `bin/update-bugsnag.js:36`
+    does `fs.cpSync(sourceDirectory, …)` with `sourceDirectory` built from
+    `process.argv[2]` — a recursive copy driven by argv, **silent**, while the
+    harmless `mkdir` of a temp dir two lines above **reported**. The rule flagged
+    the safe thing and missed the dangerous one.
+  - **Only `arguments[0]` was ever examined.** `copyFile`, `cp`, `rename`, `link`
+    and `symlink` all take a destination too. Now checked via a per-method index
+    map.
+  - **`fs-extra` and `graceful-fs` were invisible** despite re-exporting the whole
+    fs surface under the same names. A test asserting `isFsModule('fs-extra')`
+    was `false` had pinned this.
+
+  Two new options: `taintSources` (default `['process']`) and
+  `reportUnresolvedPaths` (default `false`, restores the previous contract).
+
+  Request-sourced paths and function parameters are deliberately **not** taint
+  roots here — `no-arbitrary-file-access` owns those at `error` and names user
+  input as the cause. Listing them in both rebuilds the 25-site double-report the
+  two rules were just separated to avoid.
+
+### Patch Changes
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-non-literal-fs-filename` no longer reports paths that are fixed at
+  build time.
+
+  ```js
+  const BUILD_DIR = path.resolve(__dirname, 'build');
+  fs.readFileSync(`${BUILD_DIR}/package.json`); // was reported
+  ```
+
+  The safe-construction check already understood `path.join(__dirname, 'x')` —
+  but only when it was the _direct_ argument. One hop through a `const` lost the
+  verdict, which is why every rollup config, gulpfile and build script in the
+  corpus reported.
+
+  The check now resolves through `const` bindings, template literals, string
+  concatenation, `__dirname`/`__filename` and `process.cwd()`, to a depth of 4
+  so mutually-referential bindings terminate. `let` is deliberately excluded: it
+  can be reassigned between the binding and the call, so proving its initializer
+  constant proves nothing about the value actually read.
+
+  Constant does **not** mean harmless — `path.join(__dirname, '../etc/passwd')`
+  is fixed at build time and still traversal, and still reports.
+
+  Measured on the 8-repo corpus: **122 findings → 113**. The remainder are paths
+  genuinely assembled at runtime (`path.dirname(x)` over a config array, opaque
+  helper calls), which this rule cannot clear without real taint analysis.
+
+  The old `isSafePathConstruction` is deleted rather than left alongside: the new
+  check subsumes it exactly, and two duplicate implementations of "is this path
+  safe" would drift.
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-arbitrary-file-access` now reports only paths it can attribute to a request,
+  instead of duplicating `detect-non-literal-fs-filename`.
+
+  The rule's message is _"File path from user input — path traversal
+  vulnerability"_. Its implementation flagged **any** unsanitized identifier, so
+  it said that about build scripts and config loaders where no request exists.
+  Two problems from one cause:
+
+  - **The message was untrue.** `fs.readFileSync(configPath)` in a rollup config
+    has no user input to point at.
+  - **It duplicated `detect-non-literal-fs-filename` on 25 corpus sites** — the
+    same line reported twice, at `error` and `warn`, for the same reason. A
+    reader fixes it once and is told twice.
+
+  The two rules now partition, the same way `no-innerhtml` and its source-specific
+  sibling already do: this one reports what it can attribute, the generic one
+  reports the rest. Exactly one rule owns a site.
+
+  Attribution means a **function parameter** (untrusted by definition — the callee
+  cannot see what a caller passes) or a local traced to `req` / `request` /
+  `params` / `query` / `body`.
+
+  Measured on the 8-repo corpus: **32 findings → 3**. Nothing goes undetected —
+  `detect-non-literal-fs-filename` still reports every removed case at `warn`.
+
+  Also fixes a false negative found on the way: the direct-member check read only
+  the immediate object, so `fs.readFile(req.body.upload.path)` was missed. It now
+  walks the whole chain.
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 4.10.0
 
 ### Minor Changes

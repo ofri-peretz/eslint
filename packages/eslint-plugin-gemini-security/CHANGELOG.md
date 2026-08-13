@@ -1,5 +1,25 @@
 # Changelog — eslint-plugin-gemini-security
 
+## 0.3.2
+
+### Patch Changes
+
+- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-disabled-safety-settings` now runs on files that load the Gemini SDK by
+  `require`, `import =` or `await import`.
+
+  ```js
+  const { GoogleGenerativeAI } = require('@google/generative-ai'); // rule did not run
+  ```
+
+  The gate read `ImportDeclaration` and a bare `require()` callee and nothing
+  else, so a `BLOCK_NONE` safety setting in a CommonJS file was never reported.
+  It now goes through the shared devkit module probe, and a
+  `module-gate.lock.test.ts` pins that the verdict does not depend on the
+  spelling.
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 0.3.1
 
 ### Patch Changes

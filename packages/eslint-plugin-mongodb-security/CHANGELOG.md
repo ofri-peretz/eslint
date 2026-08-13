@@ -1,5 +1,31 @@
 ## [8.3.0] - 2026-02-08
 
+## 9.0.1
+
+### Patch Changes
+
+- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `require-lean-queries` no longer asks the native driver for `.lean()`.
+
+  ```js
+  const user = await db.collection('users').findOne({ _id: id }); // was reported
+  ```
+
+  `.lean()` is a **Mongoose** query modifier. The native driver returns a plain
+  object already and has no `.lean()` at all, so this was a false positive whose
+  suggestion produces code that throws at runtime. The receiver analysis could
+  not make the call on its own — it matches `db` and `collection` precisely
+  because they _are_ Mongo handles; it just could not tell which driver's.
+
+  The new `mongo-evidence` probe also widens what counts as a Mongo file. A
+  module that imports `mongoose-paginate`, `mongoose-delete` or
+  `passport-local-mongoose` without importing `mongoose` itself is still
+  unambiguously a Mongoose file: of the twelve corpus files containing
+  `new Schema(` that the four-package list placed outside Mongo, eleven were
+  exactly these plugin consumers.
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 9.0.0
 
 ### Major Changes
