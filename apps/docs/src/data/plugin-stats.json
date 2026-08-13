@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 42,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "4.10.0",
+      "version": "4.11.0",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 32,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "3.7.1",
+      "version": "4.0.0",
       "published": true
     },
     {
@@ -37,7 +37,7 @@
       "rules": 16,
       "description": "ESLint plugin for MongoDB and Mongoose security — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "9.0.0",
+      "version": "9.0.1",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "2.4.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -77,7 +77,7 @@
       "rules": 4,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell",
       "category": "security",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 3,
       "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input",
       "category": "security",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 28,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "2.0.1",
+      "version": "3.0.0",
       "published": true
     },
     {
