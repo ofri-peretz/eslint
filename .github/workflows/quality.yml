@@ -19,8 +19,11 @@ run-name: >-
 #   - Workflow + script locks   ~30s
 #   - Plugin Taxonomy           ~5s
 #   - Lockfile Sync             ~10s
+#   - Supply-chain floor        ~90s  (OSV + Scorecard offline checks)
 #
-# Total wall ~30s. Compared to the pre-split ~3m, ~80% GHA-minute reduction.
+# All of the above run in PARALLEL, so wall-clock is the slowest single job,
+# not the sum. Supply-chain floor is the slowest at ~90s (image pull + scan);
+# everything else still finishes in ~30s.
 #
 # Caching: `./.github/actions/setup` hydrates node_modules and (where used)
 # the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
@@ -163,13 +166,61 @@ jobs:
           fi
           echo "✅ Lockfile is in sync."
 
+  # ───────────────────────────────────────────────────────────────────────────
+  # Supply-chain floor. Runs as a sibling of the other fast gates, so it costs
+  # wall-clock only if it is the slowest one.
+  #
+  # Two assertions, both regressions this repo has actually suffered:
+  #   1. OSV over every committed lockfile. Two stale workspace-member
+  #      lockfiles carried 29 findings for ~8 months while `npm audit` showed
+  #      one low, because npm never reads those files and OSV-Scanner reads all
+  #      of them. Nothing in CI disagreed.
+  #   2. Scorecard per-check floors, for the offline-evaluable checks. The work
+  #      that moved the aggregate 6.8 -> 8.5 is otherwise unguarded.
+  # ───────────────────────────────────────────────────────────────────────────
+  supply-chain:
+    name: Supply-chain floor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Scans the checked-out tree only — no `npm ci`, so this sees committed
+      # lockfiles and nothing from node_modules. Exits non-zero on any finding.
+      - name: OSV — no known vulnerabilities in any committed lockfile
+        uses: google/osv-scanner-action/osv-scanner-action@8deb546fdb875b9996d27d4950be7312dac076a1 # v2.5.0
+        with:
+          scan-args: |-
+            --recursive
+            ./
+
+      # Pinned by digest, not tag: this job enforces Pinned-Dependencies, so it
+      # has no business pulling a mutable image itself.
+      - name: Scorecard — offline checks
+        env:
+          SCORECARD_IMAGE: gcr.io/openssf/scorecard@sha256:b9a535801cb5fc8e7b2bea4cf45dd2db9a342cab8cc32bb5be2ac1355a95356f
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$GITHUB_WORKSPACE":/repo "$SCORECARD_IMAGE" \
+            --local=/repo --format=json \
+            --checks=Dangerous-Workflow,Token-Permissions,Binary-Artifacts,Security-Policy,Pinned-Dependencies \
+            > scorecard.json
+
+      - name: Scorecard — enforce per-check floors
+        run: |
+          set -euo pipefail
+          node scripts/check-scorecard-floor.mjs scorecard.json | tee -a "$GITHUB_STEP_SUMMARY"
+
   # Aggregate gate so branch protection has a single required check to gate on.
   # Heavy gates (test/build/typecheck/portability) live in quality-full.yml.
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile]
+    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile, supply-chain]
     if: always()
     steps:
       - name: Render gate report
@@ -181,6 +232,7 @@ jobs:
           R_TAXONOMY: ${{ needs.taxonomy.result }}
           R_PUBLISH: ${{ needs.publish-metadata.result }}
           R_LOCKFILE: ${{ needs.lockfile.result }}
+          R_SUPPLY: ${{ needs.supply-chain.result }}
         run: |
           set -euo pipefail
           icon() {
@@ -194,7 +246,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -215,6 +267,7 @@ jobs:
             echo "| Plugin taxonomy     | $(icon "$R_TAXONOMY") $R_TAXONOMY       | code-agnostic plugins carry no SDK gates |"
             echo "| Publish metadata    | $(icon "$R_PUBLISH") $R_PUBLISH         | no package publishes with an npm warning |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
+            echo "| Supply-chain floor  | $(icon "$R_SUPPLY") $R_SUPPLY          | OSV clean + Scorecard checks above floor |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
             if ! $all_pass; then

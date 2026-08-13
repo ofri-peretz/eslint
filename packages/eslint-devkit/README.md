@@ -549,6 +549,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for a list of changes and version history.
 
 <p align="center">
   <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit"><img src="https://eslint.interlace.tools/images/og-devkit.png" alt="ESLint Interlace" width="100%" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
 <p align="center">
