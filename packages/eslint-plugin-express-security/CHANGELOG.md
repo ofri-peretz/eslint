@@ -1,3 +1,31 @@
+## 3.0.0
+
+### Major Changes
+
+- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - All eight rules now require an Express app in the file, and one messageId is gone.
+
+  **Breaking:** `require-express-body-parser-limits` no longer emits `addLimit`.
+  It was a second, LOW-severity report on the _same_ site that the HIGH-severity
+  `missingLimit` already covered — one missing option, told twice. Suppressions
+  naming `addLimit` are now unused; delete them.
+
+  Two new internal probes carry the change. `app-composition` answers _"is this
+  receiver an Express app, and where is its middleware stack assembled?"_, so
+  `no-insecure-cookie-options`, `no-static-root-exposure`, `require-csrf-protection`,
+  `require-helmet` and `require-rate-limiting` stop firing on any object that
+  happens to own a matching method name. `auth-evidence` does the same for
+  `require-route-authentication`, which was reporting routes that are
+  authenticated by a router-level or app-level guard it could not see.
+
+  `no-permissive-cors` gained a detection rather than losing one: it now reads an
+  exported `CorsOptions` declaration, which is how a real application configures
+  CORS, and was a false **negative** before.
+
+### Patch Changes
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 2.0.1
 
 ### Patch Changes

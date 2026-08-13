@@ -1,5 +1,31 @@
 # Changelog — eslint-plugin-mcp-sdk-security
 
+## 0.3.0
+
+### Minor Changes
+
+- [#548](https://github.com/ofri-peretz/eslint/pull/548) [`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Every rule now runs on files that load the MCP SDK by `require`, `import =` or
+  `await import`.
+
+  ```js
+  const { Server } = require('@modelcontextprotocol/sdk/server/index.js'); // no rule ran
+  ```
+
+  The four rules — `no-command-injection-in-tool`,
+  `no-tool-description-injection`, `no-unvalidated-tool-args` and
+  `require-tool-input-schema` — each opened their gate from `ImportDeclaration`
+  plus a bare `require()` callee, which covers ESM and plain CommonJS and nothing
+  else. They now share one `mcp-evidence` probe built on the devkit module gate,
+  so every spelling is recognised in one place rather than four.
+
+  A `module-gate.lock.test.ts` pins it: the same tool definition must report
+  identically however the SDK was brought in.
+
+### Patch Changes
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 0.2.2
 
 ### Patch Changes

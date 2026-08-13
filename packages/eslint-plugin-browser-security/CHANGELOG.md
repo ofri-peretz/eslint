@@ -1,5 +1,122 @@
 ## [1.2.3] - 2026-02-08
 
+## 1.3.1
+
+### Patch Changes
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-credentials-in-query-params` no longer reports templates that merely contain
+  the text `token=`.
+
+  ```js
+  outputDebug(
+    `Loaded session for ${store}: token=${maskToken(session.accessToken)}`,
+  );
+  ```
+
+  That is a debug log, not a URL, and the value is explicitly **masked** — wrong
+  on both counts. Two causes:
+
+  - The `TemplateLiteral` branch read `sourceCode.getText(node)`, which returns
+    the template's own **source**, interpolations included. The characters of
+    `${maskToken(session.accessToken)}` were part of the text being matched. The
+    repo's standing rule is to match the AST, never printed source.
+  - It required no `?` or `&` prefix, while the `Literal` branch did. That
+    asymmetry was the bug: a literal needed `?token=`, a template matched a bare
+    `token=` anywhere — including the `: token=` of a log line.
+
+  Both branches now use the same test, over the static quasi text only, with each
+  interpolation replaced by a placeholder so `?` and `token=` cannot be joined
+  across a boundary.
+
+  Measured on the 8-repo corpus: **11 findings → 1**, and that one is a genuine
+  true positive (`okta/okta-signin-widget` `RouterUtil.js:34` puts a real token in
+  a query string).
+
+  `?stateToken=` is no longer matched by `?token=` — a longer parameter that ends
+  in a sensitive name is a different parameter.
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-innerhtml` no longer treats every `.write()` call as a DOM XSS sink.
+
+  ```js
+  process.stdout.write(`Preview URL: ${previewUrl}`); // was reported as XSS
+  socket.write(payload); // likewise
+  res.write(chunk); // likewise
+  ```
+
+  `write` and `writeln` are DOM sinks only on a **document**. The method name
+  alone is one of the most overloaded in JavaScript — `process.stdout`, `stderr`,
+  sockets, HTTP responses, streams and buffers all have it — and matching on the
+  name turned every CLI progress message into a cross-site-scripting finding.
+
+  The rule's own comment said it was covering `document.write(...)`; the
+  implementation never checked the receiver.
+
+  Measured on the 8-repo corpus: **73 findings → 11**, and all 11 survivors are
+  genuine DOM sinks (`el.innerHTML = …`, `outerHTML`, `insertAdjacentHTML`). 23
+  of the removed findings were `Shopify/cli` writing to stdout.
+
+  `document.write`, `window.document.write`, `iframe.contentDocument.write`,
+  `el.ownerDocument.write` and the conventional `doc.write` all still report.
+  `insertAdjacentHTML` keeps no receiver gate — nothing outside the DOM is
+  called that.
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-http-urls` and `detect-mixed-content` no longer report XML namespace URIs
+  or loopback origins.
+
+  ```jsx
+  <svg xmlns="http://www.w3.org/2000/svg" />; // was reported by BOTH rules
+  const base = 'http://localhost:3000'; // was reported as mixed content
+  ```
+
+  **Namespace URIs are identifiers, not requests.** `http://www.w3.org/2000/svg`
+  is compared byte-for-byte by the XML parser and never dereferenced, so it
+  carries no transport risk — and "fixing" it to `https://` **breaks the
+  document**, because the string no longer matches the namespace. That makes this
+  worse than noise: the advice was actively harmful.
+
+  It was also the single largest false-positive shape in the corpus — 29
+  occurrences in `okta/okta-signin-widget` alone, reported by _both_ rules, so 58
+  findings from one misunderstanding. Recognised two ways, either sufficient: a
+  registered namespace-authority host, or an `xmlns` / `xmlns:*` attribute or
+  property name whatever the host.
+
+  **Loopback is a secure context.** Per the Secure Contexts spec a loopback
+  origin is _potentially trustworthy_, so no browser blocks or flags
+  `http://localhost:3000` from an HTTPS page. Calling it mixed content described
+  behaviour that does not happen; every corpus hit was webpack dev-server or
+  end-to-end fixture config. `no-http-urls` already had `allowedHosts` defaulting
+  to localhost — `detect-mixed-content` had no options at all and now shares the
+  same understanding.
+
+  Measured on the 8-repo corpus:
+
+  | Rule                   | Before | After |
+  | ---------------------- | -----: | ----: |
+  | `no-http-urls`         |     45 | **8** |
+  | `detect-mixed-content` |     49 | **2** |
+
+  The allowlist is by **host**, not substring: `http://cdn.example.com/w3.org/x.js`
+  is still a real request and still reports, as does `http://localhost.evil.com`.
+
+- [#537](https://github.com/ofri-peretz/eslint/pull/537) [`5979bf8`](https://github.com/ofri-peretz/eslint/commit/5979bf86d5985df0f2d45bc3f4519c56cb6d5bef) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Remove two vestigial package-level lockfiles that carried vulnerable transitive dependencies.
+
+  These sat inside an npm-workspaces package where the root lockfile governs. They pinned
+  `ajv@6.12.6` and `brace-expansion@1.1.12/2.0.2`, which carry a ReDoS and three DoS advisories.
+
+  They were not reachable by any install path. `npm ci` from inside the package directory resolves
+  against the root lockfile and installs the fixed `ajv@6.15.0` / `brace-expansion@2.1.4`; with
+  `--workspaces=false`, or from a copy outside the workspace, `npm ci` fails outright because the
+  files are stale enough to be internally inconsistent (they pin `@interlace/eslint-devkit@1.2.1`
+  against a current `1.13.0`). `package-lock.json` is also excluded from published tarballs, so
+  consumers never saw them either.
+
+  The impact was on scanners, not installs: OSV reads lockfiles off disk regardless of npm's
+  resolution rules, so these two files alone produced all 29 vulnerabilities in the OpenSSF
+  Scorecard report while `npm audit` at the root stayed clean.
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 1.3.0
 
 ### Minor Changes

@@ -1,3 +1,108 @@
+## 4.0.0
+
+### Major Changes
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unsafe-deserialization` no longer reports `JSON.parse` as CWE-502.
+
+  ```js
+  function parseJSON(jsonString) {
+    return JSON.parse(jsonString);
+  } // was CVSS 9.8
+  app.post('/x', (req, res) => {
+    JSON.parse(req.body);
+  }); // was CVSS 9.8
+  ```
+
+  `JSON.parse` cannot instantiate objects, invoke constructors, or execute code.
+  It is the **remediation** for CWE-502 — and this rule's own message text says
+  so: _"Use JSON.parse() or safe deserialization libraries"_. It was telling
+  people to replace the fix with itself, at CRITICAL severity.
+
+  The branch responsible reported any `safeLibraries` member (`JSON.parse`,
+  `yaml.safeLoad`, protobuf, msgpack) whenever its argument looked untrusted,
+  justified by a comment that even `JSON.parse` "can be unsafe if used on complex
+  objects that get eval'd later". That is speculation about a _different_ sink; if
+  something later evals the result, `dangerousEvalUsage` reports the eval.
+
+  Adjudicated against an 8-repo corpus: **33 findings, 0 true positives.** 31 were
+  this branch, most on plain `parseJSON(jsonString)` utilities. Now **33 → 2**,
+  and both survivors are `new Function(...)` in minified vendor bundles.
+
+  **A false negative is fixed in the same pass.** `isUntrustedInput` never
+  unwrapped `AwaitExpression` or `CallExpression`, so the _more_ dangerous form
+  was the one being missed:
+
+  ```js
+  function run(code) {
+    eval(code);
+  } // reported
+  async function f(res) {
+    eval(await res.text());
+  } // SILENT — now reports
+  ```
+
+  Reading a response body (`.text()`, `.json()`, `.arrayBuffer()`, `.formData()`,
+  `.blob()`) or a file now counts as untrusted at any depth.
+
+  **Breaking:** the `untrustedDeserializationInput` message id is removed —
+  nothing can emit it. Suppressions referencing it by id should be deleted.
+
+### Patch Changes
+
+- [#546](https://github.com/ofri-peretz/eslint/pull/546) [`bbc9845`](https://github.com/ofri-peretz/eslint/commit/bbc9845f2244732c4163835b87fd62d75557b879) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-unlimited-resource-allocation` now judges **what** is allocated instead of
+  whether the printed callee text contains `Buffer`.
+
+  The old check asked: is this call inside any loop, and does
+  `sourceCode.getText(callee)` contain `alloc`, `Array`, `Buffer`, `Map`, `Set`,
+  `readFile` or `writeFile`? No provenance, no size, no bound. Adjudicated against
+  an 8-repo corpus that was **37 of the rule's 43 findings, every one false**:
+
+  | Reported                           | Why it was wrong                                                                                       |
+  | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+  | `Buffer.byteLength(arg)`           | A read-only size **probe**. Allocates nothing.                                                         |
+  | `this.#decodeArrayItems.bind(…)`   | Matched via `.bind` containing `Array`.                                                                |
+  | `new Set()`                        | Zero args, so the numeric-literal escape could never apply — _every_ `new Set()` in any loop reported. |
+  | `stringArray.push(x)`              | Matched on the **variable** name.                                                                      |
+  | `for (var e = Array(t), u = 0; …)` | The allocation is in the for-**init** and runs once.                                                   |
+
+  The sharpest one: `Shopify/cli` `system.ts:437` was flagged on the size cap
+  itself — the next lines throw `Stdin input exceeded the maximum allowed size`.
+  The rule reported the mitigation for its own finding.
+
+  Three requirements now, each of which the substring heuristic lacked:
+
+  1. The callee is an allocator, matched **exactly** — `Buffer.alloc`,
+     `Buffer.allocUnsafe`, `Array`, `Map`, `Set`, `WeakMap`, `WeakSet` and their
+     `new` forms. `Buffer.byteLength` and `Array.isArray` are not allocations.
+  2. There is a size argument and it is not a numeric literal.
+  3. It is in the loop's **body**, not its init.
+
+  Genuine unbounded allocation in a loop still reports —
+  `while (c) { new Array(dynamicCount); }` — as does the `new` spelling, which
+  previously needed its own duplicate heuristic. Filling a pre-sized container
+  (`buffers[i] = Buffer.alloc(n)`) stays exempt.
+
+  Measured: **43 findings → 6.**
+
+- [#537](https://github.com/ofri-peretz/eslint/pull/537) [`5979bf8`](https://github.com/ofri-peretz/eslint/commit/5979bf86d5985df0f2d45bc3f4519c56cb6d5bef) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Remove two vestigial package-level lockfiles that carried vulnerable transitive dependencies.
+
+  These sat inside an npm-workspaces package where the root lockfile governs. They pinned
+  `ajv@6.12.6` and `brace-expansion@1.1.12/2.0.2`, which carry a ReDoS and three DoS advisories.
+
+  They were not reachable by any install path. `npm ci` from inside the package directory resolves
+  against the root lockfile and installs the fixed `ajv@6.15.0` / `brace-expansion@2.1.4`; with
+  `--workspaces=false`, or from a copy outside the workspace, `npm ci` fails outright because the
+  files are stale enough to be internally inconsistent (they pin `@interlace/eslint-devkit@1.2.1`
+  against a current `1.13.0`). `package-lock.json` is also excluded from published tarballs, so
+  consumers never saw them either.
+
+  The impact was on scanners, not installs: OSV reads lockfiles off disk regardless of npm's
+  resolution rules, so these two files alone produced all 29 vulnerabilities in the OpenSSF
+  Scorecard report while `npm audit` at the root stayed clean.
+
+- Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:
+  - @interlace/eslint-devkit@1.14.0
+
 ## 3.7.1
 
 ### Patch Changes
