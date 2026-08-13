@@ -36,18 +36,20 @@ type MessageIds = 'sqlInjection';
  * sqlite-security, typeorm-security, sequelize-security, knex-security,
  * drizzle-security and prisma-security `modules`.
  *
- * **Known hole, and it is not this rule's to close.** `createSqlInjectionRule`
- * in the devkit decides `ownsFile` from `Program.body` `ImportDeclaration`s
- * only — it never looks at `require()`. So a CommonJS file doing
- * `const mysql = require('mysql2')` is invisible to the mysql/typeorm/knex/
- * drizzle/sqlite/prisma/sequelize rules, and this rule abstains there too
- * because the `require` arm below *does* see it. The result is a file nobody
- * reports. `postgresql-security` is unaffected: its `fileUsesPostgres` gate
- * handles `require`, dynamic `import()` and `import =` as well as ESM.
+ * The complement only holds because both sides recognise the *same* set of
+ * load forms. It once did not: `createSqlInjectionRule` decided `ownsFile`
+ * from `Program.body` `ImportDeclaration`s alone, so a CommonJS
+ * `const mysql = require('mysql2')` was invisible to the mysql/typeorm/knex/
+ * drizzle/sqlite/prisma/sequelize rules while this rule abstained there too —
+ * because the `require` arm below always saw it. Nobody reported that file.
+ * The factory now runs the shared `createModuleEvidence` probe, the same one
+ * behind `postgresql-security`'s `fileUsesPostgres`, so `require`, dynamic
+ * `import()` and `import =` open both gates or neither.
  *
- * Widening this rule to cover the hole is the wrong fix — it would make every
- * CommonJS `require('pg')` file report twice. The fix belongs in the devkit
- * factory, alongside a re-measurement of the seven driver plugins.
+ * Widening *this* rule was the wrong fix and stays wrong: it would make every
+ * CommonJS `require('pg')` file report twice, since the pg gate already
+ * handles `require`. Any future load form belongs in the shared probe, where
+ * both sides pick it up at once.
  */
 const SQL_DRIVER_MODULES: ReadonlySet<string> = new Set([
   // PostgreSQL — postgresql-security/PG_MODULES

@@ -163,6 +163,75 @@ const JWT_LIBRARY_ROOTS: ReadonlySet<string> = new Set(
 );
 
 /**
+ * The package a top-level statement loads, in any of the three spellings.
+ *
+ * The gate used to read `ImportDeclaration` only, which meant every CommonJS
+ * file was exempt from every rule in this plugin — `const jwt =
+ * require('jsonwebtoken'); jwt.sign(p, '', { algorithm: 'none' })` reported
+ * nothing at all. `require` is not a legacy edge case in Node code, and
+ * `import jwt = require('jsonwebtoken')` is TypeScript's own interop form; the
+ * devkit's `module-evidence` has covered all three since an audit found 82
+ * corpus files written the import-equals way with every rule silenced.
+ */
+function moduleSpecifierOf(stmt: TSESTree.Node): string | null {
+  // import jwt from 'jsonwebtoken'
+  if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
+    return typeof stmt.source.value === 'string' ? stmt.source.value : null;
+  }
+  // import jwt = require('jsonwebtoken')
+  if (stmt.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
+    const ref = stmt.moduleReference;
+    return ref.type === AST_NODE_TYPES.TSExternalModuleReference &&
+      ref.expression.type === AST_NODE_TYPES.Literal &&
+      typeof ref.expression.value === 'string'
+      ? ref.expression.value
+      : null;
+  }
+  // const jwt = require('jsonwebtoken')  /  const { sign } = require('jose')
+  if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
+    for (const declarator of stmt.declarations) {
+      const source = requireSpecifierOf(declarator.init);
+      if (source !== null) return source;
+    }
+  }
+  // require('jsonwebtoken') as a bare statement, for its side effects
+  if (stmt.type === AST_NODE_TYPES.ExpressionStatement) {
+    return requireSpecifierOf(stmt.expression);
+  }
+  return null;
+}
+
+/** `require('x')` -> `'x'`, including when awaited or member-accessed. */
+function requireSpecifierOf(node: TSESTree.Node | null | undefined): string | null {
+  if (node == null) return null;
+  // `require('jose').jwtVerify` — the call is the receiver.
+  const call =
+    node.type === AST_NODE_TYPES.MemberExpression ? node.object : node;
+  if (
+    call.type !== AST_NODE_TYPES.CallExpression ||
+    call.callee.type !== AST_NODE_TYPES.Identifier ||
+    call.callee.name !== 'require'
+  ) {
+    return null;
+  }
+  const [arg] = call.arguments;
+  return arg?.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string'
+    ? arg.value
+    : null;
+}
+
+/**
+ * `jose/jwt/verify` -> `jose`; `@nestjs/jwt/dist/x` -> `@nestjs/jwt`.
+ *
+ * `String.split` always returns at least one element, so index 0 needs no
+ * fallback — a `?? ''` there is a branch no test could ever reach.
+ */
+function packageRootOf(source: string): string {
+  const parts = source.split('/');
+  return source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
+}
+
+/**
  * Whether this file imports a JWT library at all.
  *
  * Cached per Program: the answer is a property of the file, and recomputing it
@@ -177,16 +246,12 @@ function fileImportsJwtLibrary(node: TSESTree.Node): boolean {
   const cached = importsJwtLibrary.get(root);
   if (cached !== undefined) return cached;
 
-  const found = root.body.some((stmt) => {
-    if (stmt.type !== 'ImportDeclaration') return false;
-    const source = stmt.source.value;
-    if (typeof source !== 'string') return false;
-    // Compare on the package root so subpaths count: `jose/jwt/verify` -> `jose`,
-    // `@nestjs/jwt/dist/...` -> `@nestjs/jwt`.
-    const parts = source.split('/');
-    const pkg = source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
-    return JWT_LIBRARY_ROOTS.has(pkg);
-  });
+  const found = root.body.some(
+    (stmt) => {
+      const source = moduleSpecifierOf(stmt);
+      return source !== null && JWT_LIBRARY_ROOTS.has(packageRootOf(source));
+    },
+  );
   importsJwtLibrary.set(root, found);
   return found;
 }
@@ -228,10 +293,8 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
     if (!bindsReceiver) continue;
     const source = stmt.source.value;
     if (typeof source !== 'string') return false;
-    const parts = source.split('/');
-    const pkg = source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
     // Found where this receiver came from: foreign package -> not a JWT call.
-    return !JWT_LIBRARY_ROOTS.has(pkg);
+    return !JWT_LIBRARY_ROOTS.has(packageRootOf(source));
   }
   return false;
 }
@@ -262,6 +325,34 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
  * rather than constructed from one. Requiring that would trade this
  * false-positive class for a false-negative one.
  */
+/**
+ * Built-ins whose instances answer to a JWT method name by coincidence.
+ *
+ * `decode` is the obvious collision — every `TextDecoder` has one — but the
+ * general rule is that a receiver built from a platform constructor was never
+ * a JWT client, whatever the file imports elsewhere.
+ */
+const NON_JWT_CONSTRUCTORS: ReadonlySet<string> = new Set([
+  'TextDecoder',
+  'TextEncoder',
+  'URL',
+  'URLSearchParams',
+  'Buffer',
+  'Uint8Array',
+  'Response',
+  'Request',
+  'Headers',
+]);
+
+/** `new TextDecoder()` as the receiver of a call. */
+function receiverIsForeignConstruction(receiver: TSESTree.Node): boolean {
+  return (
+    receiver.type === AST_NODE_TYPES.NewExpression &&
+    receiver.callee.type === AST_NODE_TYPES.Identifier &&
+    NON_JWT_CONSTRUCTORS.has(receiver.callee.name)
+  );
+}
+
 export function isJwtLibraryCall(
   node: TSESTree.CallExpression,
   targetMethods: Set<string>,
@@ -275,6 +366,13 @@ export function isJwtLibraryCall(
 
   // Check member expression: jwt.verify(), jose.jwtVerify()
   if (node.callee.type === 'MemberExpression') {
+    // `new TextDecoder().decode(bytes)` shares a method name with JWT decoding
+    // and nothing else. A receiver constructed from a global built-in is not a
+    // JWT client, and auth0's express-openid-connect has exactly this line in
+    // `lib/appSession.js` — reported as decoding a token without verifying it.
+    if (receiverIsForeignConstruction(node.callee.object)) {
+      return false;
+    }
     const property = node.callee.property;
     if (property.type === 'Identifier') {
       return targetMethods.has(property.name);

@@ -316,6 +316,20 @@ function main(): number {
 
   const budget: Budget = JSON.parse(readFileSync(BUDGET_FILE, 'utf-8')) as Budget;
 
+  // A PARTIAL scan must never rewrite the budget. Running `--update` while the
+  // rig was busy once reduced 27 entries to 4: the targets that failed simply
+  // contributed no rules, and every budget they owned was silently dropped —
+  // which reads as "these rules now find nothing" rather than "these rules were
+  // never measured". A budget is only meaningful if it came from a full run.
+  if (update && failed.length > 0) {
+    console.error(
+      `::error::refusing to rewrite the budget from a partial scan — ` +
+        `${failed.length} of ${failed.length + scanned} target(s) failed:`,
+    );
+    for (const line of failed) console.error(`::error::  ${line}`);
+    return 1;
+  }
+
   if (update) {
     const next: Budget = {
       $comment: budget.$comment,

@@ -1,7 +1,7 @@
 {
   "bench": "ILB-CWE-Corpus",
   "version": "1.0",
-  "timestamp": "2026-08-13T00:58:36.246Z",
+  "timestamp": "2026-08-13T02:19:52.176Z",
   "environment": {
     "nodeVersion": "v24.12.0",
     "eslintVersion": "10.8.1",
@@ -1175,14 +1175,14 @@
         "CWE-327": {
           "name": "Use of a Broken or Risky Cryptographic Algorithm",
           "owasp": "A02:2021",
-          "TP": 2,
+          "TP": 4,
           "FP": 0,
-          "FN": 2,
+          "FN": 0,
           "TN": 4,
           "precision": 100,
-          "recall": 50,
-          "f1": 66.7,
-          "bas": 50,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
           "fixtures": [
             {
               "file": "gcm-decipher-no-final.js",
@@ -1203,14 +1203,21 @@
             {
               "file": "sign-alg-none.js",
               "expectedVulnerable": true,
-              "findings": 0,
-              "ruleHits": {}
+              "findings": 4,
+              "ruleHits": {
+                "jwt-security/require-expiration": 1,
+                "jwt-security/no-weak-secret": 1,
+                "jwt-security/no-hardcoded-secret": 1,
+                "jwt-security/no-algorithm-none": 1
+              }
             },
             {
               "file": "verify-allows-none.js",
               "expectedVulnerable": true,
-              "findings": 0,
-              "ruleHits": {}
+              "findings": 1,
+              "ruleHits": {
+                "jwt-security/no-algorithm-none": 1
+              }
             },
             {
               "file": "gcm-decrypt-verified.js",
@@ -1506,13 +1513,13 @@
           "name": "Weak Password Recovery Mechanism (host-header poisoning in reset links)",
           "owasp": "A07:2021",
           "TP": 2,
-          "FP": 1,
+          "FP": 0,
           "FN": 0,
-          "TN": 0,
-          "precision": 66.7,
+          "TN": 1,
+          "precision": 100,
           "recall": 100,
-          "f1": 80,
-          "bas": 0,
+          "f1": 100,
+          "bas": 100,
           "fixtures": [
             {
               "file": "reset-link-forwarded-host.js",
@@ -1525,19 +1532,16 @@
             {
               "file": "reset-link-host-header.js",
               "expectedVulnerable": true,
-              "findings": 2,
+              "findings": 1,
               "ruleHits": {
-                "express-security/no-host-header-in-links": 1,
-                "browser-security/no-credentials-in-query-params": 1
+                "express-security/no-host-header-in-links": 1
               }
             },
             {
               "file": "reset-link-config-origin.js",
               "expectedVulnerable": false,
-              "findings": 1,
-              "ruleHits": {
-                "browser-security/no-credentials-in-query-params": 1
-              }
+              "findings": 0,
+              "ruleHits": {}
             }
           ]
         },
@@ -1780,14 +1784,14 @@
         }
       },
       "aggregate": {
-        "TP": 67,
-        "FP": 1,
-        "FN": 2,
-        "TN": 59,
-        "precision": 98.5,
-        "recall": 97.1,
-        "f1": 97.8,
-        "bas": 95.4
+        "TP": 69,
+        "FP": 0,
+        "FN": 0,
+        "TN": 60,
+        "precision": 100,
+        "recall": 100,
+        "f1": 100,
+        "bas": 100
       }
     },
     "eslint-plugin-security": {

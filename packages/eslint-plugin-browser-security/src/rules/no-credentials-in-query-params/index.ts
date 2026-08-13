@@ -46,6 +46,39 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   create(context) {
     const sensitiveParams = ['password=', 'token=', 'apikey=', 'secret=', 'auth='];
+
+    /**
+     * Path segments of the out-of-band verification flows.
+     *
+     * A password-reset link carries its token in the query because there is no
+     * other channel — the recipient is not authenticated yet, so a header or a
+     * cookie is not available, and the link has to survive being pasted from an
+     * email client. The token is single-use and short-lived, which is what makes
+     * the design acceptable; every mainstream framework ships it this way.
+     *
+     * Reporting it says "use the Authorization header instead", which cannot be
+     * done. This is deliberately narrow: it exempts `token=` only, and only when
+     * the path names one of these flows, so `?apikey=`, `?password=` and a bare
+     * `?token=` on an API endpoint all still report.
+     */
+    const OUT_OF_BAND_FLOWS =
+      /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
+
+    /**
+     * Does this URL carry a credential we should report?
+     *
+     * Every present parameter is considered, not just the first: a reset link
+     * that ALSO carries `&apikey=` is still a finding, and short-circuiting on
+     * the exempt `token=` would have hidden it.
+     */
+    function hasReportableCredential(url: string): boolean {
+      const present = sensitiveParams.filter(
+        (param) => url.includes('?' + param) || url.includes('&' + param),
+      );
+      return present.some(
+        (param) => !(param === 'token=' && OUT_OF_BAND_FLOWS.test(url)),
+      );
+    }
     
     function report(node: TSESTree.Node) {
       context.report({
@@ -59,7 +92,7 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         if (typeof node.value === 'string') {
           const url = node.value.toLowerCase();
           
-          if (sensitiveParams.some(param => url.includes('?' + param) || url.includes('&' + param))) {
+          if (hasReportableCredential(url)) {
             report(node);
           }
         }
@@ -92,11 +125,7 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         // Same test the Literal branch uses. The asymmetry was the bug: a
         // literal needed `?token=` or `&token=`, a template matched a bare
         // `token=` anywhere — including the `: token=` of a log line.
-        if (
-          sensitiveParams.some(
-            (param) => text.includes(`?${param}`) || text.includes(`&${param}`),
-          )
-        ) {
+        if (hasReportableCredential(text)) {
           report(node);
         }
       },

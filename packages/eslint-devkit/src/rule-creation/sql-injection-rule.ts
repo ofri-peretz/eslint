@@ -31,6 +31,7 @@
 import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
+import { createModuleEvidence } from './module-evidence';
 
 /** Message ids every rule built by this factory reports. */
 export type SqlInjectionMessageIds = 'noUnsafeQuery' | 'unsafeTemplateLiteral';
@@ -59,7 +60,8 @@ export interface SqlInjectionRuleConfig {
   readonly methods: readonly string[];
   /**
    * Modules whose API these sinks belong to. **The rule stays silent in a file
-   * that imports none of them.**
+   * that loads none of them** — by `import`, `require`, `await import()` or
+   * `import x = require()`.
    *
    * Method names are not evidence of an SDK. `['raw']` is knex *and* drizzle;
    * `['query']` is typeorm *and* pg *and* mysql2; `['get','all','run']` is
@@ -73,7 +75,7 @@ export interface SqlInjectionRuleConfig {
    * scan, nothing to go stale, and a file that does not import the driver is
    * one this rule genuinely has nothing to say about.
    *
-   * Matched against the import specifier's package root, so `'mysql2/promise'`
+   * Matched against the specifier's package root, so `'mysql2/promise'`
    * matches `'mysql2'` and `'@prisma/client/edge'` matches `'@prisma/client'`.
    */
   readonly modules: readonly string[];
@@ -194,24 +196,21 @@ export function createSqlInjectionRule(
   config: SqlInjectionRuleConfig,
 ): TSESLint.RuleModule<SqlInjectionMessageIds, []> {
   const sinks = new Set(config.methods);
-  const owned = new Set(config.modules);
 
   /**
-   * Whether an import specifier is one of this rule's own modules.
+   * Whether the file loads one of this rule's own modules, in any of the forms
+   * a driver is actually loaded in.
    *
-   * Compared on the package root so subpath and deep imports count:
-   * `mysql2/promise` → `mysql2`, `@prisma/client/edge` → `@prisma/client`.
-   * A relative import is never a package and is rejected outright — otherwise
-   * `'./knex'` would satisfy the knex rule in a repo that has no knex.
+   * This was once a `.some()` over `program.body` matching `ImportDeclaration`
+   * alone, which recognised exactly one of them. `const mysql =
+   * require('mysql2')` — the dominant form in Node server code — opened the
+   * gate for nobody, so every CommonJS file in every one of the seven driver
+   * plugins was silently unchecked. The shared probe handles `require`,
+   * `await import()`, `import x = require()` and Deno specifiers, anywhere in
+   * the file rather than only as a direct child of Program, and ignores a
+   * `require` that a local binding has shadowed.
    */
-  const owns = (specifier: string): boolean => {
-    if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
-    const parts = specifier.split('/');
-    const root = specifier.startsWith('@')
-      ? parts.slice(0, 2).join('/')
-      : parts[0];
-    return owned.has(root);
-  };
+  const usesModule = createModuleEvidence({ packages: config.modules });
 
   return {
     meta: {
@@ -313,11 +312,7 @@ export function createSqlInjectionRule(
 
       return {
         Program(program: TSESTree.Program) {
-          ownsFile = program.body.some(
-            (stmt) =>
-              stmt.type === AST_NODE_TYPES.ImportDeclaration &&
-              owns(stmt.source.value),
-          );
+          ownsFile = usesModule(program);
         },
 
         // Count every named callable so Program:exit can tell a name with one

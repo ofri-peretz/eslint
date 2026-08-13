@@ -101,6 +101,17 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
     /**
      * Check if payload contains exp claim
      */
+    /**
+     * jose builds a JWT fluently: `new SignJWT(claims).setExpirationTime('2h')
+     * .setProtectedHeader({alg}).sign(key)`. The finding lands on the trailing
+     * `.sign(key)`, which has no options object and no payload — the expiry was
+     * set several links earlier in the chain. auth0's express-openid-connect
+     * writes it exactly this way in `lib/client.js`.
+     *
+     * `FlattenedSign` / `CompactSign` / `GeneralSign` are JWS signers. They sign
+     * arbitrary bytes and have no claim set at all, so "missing exp" is not a
+     * statement that can be true of them.
+     */
     const payloadHasExp = (payloadNode: TSESTree.Node): boolean => {
       // `jwt.sign(payload, secret)` where the payload was built a few lines
       // up is the ordinary way to write this — twilio's ClientCapability does
@@ -148,6 +159,44 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         : null;
     };
 
+    const JWS_ONLY_BUILDERS = new Set(['FlattenedSign', 'CompactSign', 'GeneralSign']);
+
+    const chainSetsExpiration = (node: TSESTree.CallExpression): boolean => {
+      let current: TSESTree.Node = node;
+      while (current.type === 'CallExpression' || current.type === 'MemberExpression') {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'MemberExpression' &&
+          current.callee.property.type === 'Identifier' &&
+          current.callee.property.name === 'setExpirationTime'
+        ) {
+          return true;
+        }
+        current =
+          current.type === 'CallExpression' ? current.callee : current.object;
+      }
+      // Reached the root of the chain.
+      if (current.type !== 'NewExpression') {
+        return false;
+      }
+      const ctor =
+        current.callee.type === 'Identifier'
+          ? current.callee.name
+          : current.callee.type === 'MemberExpression' &&
+              current.callee.property.type === 'Identifier'
+            ? current.callee.property.name
+            : null;
+      // A JWS builder signs arbitrary bytes and carries no claim set, so
+      // "missing exp" cannot be true of it.
+      if (ctor !== null && JWS_ONLY_BUILDERS.has(ctor)) {
+        return true;
+      }
+      // `new SignJWT(payload)` holds the claims the trailing `.sign(key)` does
+      // not — auth0 declares `exp: now + 60` on that object two lines above.
+      const claims = current.arguments[0];
+      return claims !== undefined && payloadHasExp(claims);
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check sign operations
@@ -165,6 +214,11 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
 
         // Check if payload has exp claim
         if (payloadHasExp(payloadArg)) {
+          return;
+        }
+
+        // jose's fluent builder sets expiry earlier in the chain.
+        if (chainSetsExpiration(node)) {
           return;
         }
 

@@ -209,3 +209,58 @@ ruleTester.run('require-expiration (corpus)', requireExpiration, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// jose's fluent builder
+// ---------------------------------------------------------------------------
+// `new SignJWT(claims).setProtectedHeader(...).sign(key)` puts the expiry
+// several links away from the call the rule sees. auth0's
+// express-openid-connect writes it both ways: `lib/client.js:385` sets
+// `exp: now + 60` on the claims object passed to the constructor, and
+// `end-to-end/fixture/helpers.js:116` sets neither — which is a real finding.
+ruleTester.run('require-expiration — jose builder', requireExpiration, {
+  valid: [
+    // Expiry set fluently, mid-chain.
+    `import { SignJWT } from 'jose';\nnew SignJWT({ sub: id }).setExpirationTime('2h').sign(key);`,
+    // Expiry declared on the claims object at the chain root.
+    `import { SignJWT } from 'jose';\nconst payload = { sub: id, exp: now + 60 };\nnew SignJWT(payload).setProtectedHeader({ alg }).sign(key);`,
+    // Namespaced constructor.
+    `import * as jose from 'jose';\nnew jose.SignJWT({ sub: id }).setExpirationTime('2h').sign(key);`,
+    // JWS signers carry no claim set, so "missing exp" cannot be true of them.
+    `import { FlattenedSign } from 'jose';\nnew FlattenedSign(bytes).setProtectedHeader({ alg }).sign(key);`,
+    `import { CompactSign } from 'jose';\nnew CompactSign(bytes).sign(key);`,
+    `import { GeneralSign } from 'jose';\nnew GeneralSign(bytes).sign(key);`,
+  ],
+  invalid: [
+    // The corpus finding: issued-at set, expiry never.
+    {
+      code: `import * as jose from 'jose';\nconst claims = { sub: id };\nnew jose.SignJWT(claims).setIssuedAt().sign(privateKey);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // Claims object present at the root but carrying no exp.
+    {
+      code: `import { SignJWT } from 'jose';\nnew SignJWT({ sub: id }).setProtectedHeader({ alg }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // A chain rooted in something that is not a constructor at all.
+    {
+      code: `import { SignJWT } from 'jose';\nbuilder().setProtectedHeader({ alg }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // Computed constructor name — nothing to compare against.
+    {
+      code: `import * as jose from 'jose';\nnew jose[name]({ sub: id }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // A string-literal member, which is not an Identifier property.
+    {
+      code: `import * as jose from 'jose';\nnew jose['SignJWT']({ sub: id }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    // Constructor called with no arguments: no claims to inspect.
+    {
+      code: `import { SignJWT } from 'jose';\nnew SignJWT().sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+  ],
+});

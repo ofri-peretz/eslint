@@ -196,3 +196,21 @@ ruleTester.run('no-decode-without-verify (corpus)', noDecodeWithoutVerify, {
     },
   ],
 });
+
+// A receiver built from a platform constructor was never a JWT client.
+// `new TextDecoder().decode(bytes)` shares a method name with JWT decoding and
+// nothing else — auth0's express-openid-connect has exactly this line in
+// lib/appSession.js:92, reported as decoding a token without verifying it.
+ruleTester.run('no-decode-without-verify — built-in receivers', noDecodeWithoutVerify, {
+  valid: [
+    `import jwt from 'jsonwebtoken';\nconst cleartext = new TextDecoder().decode(plaintext);`,
+    `import jwt from 'jsonwebtoken';\nconst p = new URLSearchParams(q).toString();`,
+  ],
+  invalid: [
+    // The real thing still reports, in the same file shape.
+    {
+      code: `import jwt from 'jsonwebtoken';\nconst claims = jwt.decode(token);\nuse(claims.sub);`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+  ],
+});

@@ -487,11 +487,69 @@ describe('createSqlInjectionRule', () => {
           name: 'module name as a prefix of a different package',
           code: `import db from 'test-sdkx';\n${unsafe}`,
         },
+        // The non-ESM forms must reject a non-package specifier for the same
+        // reason the ESM one does: a local file named after the driver is not
+        // the driver. Pinned per form, because each takes a different arm.
+        {
+          name: 'relative require does not open the gate',
+          code: `const db = require('./test-sdk');\n${unsafe}`,
+        },
+        {
+          name: 'absolute require does not open the gate',
+          code: `const db = require('/test-sdk');\n${unsafe}`,
+        },
+        {
+          name: 'relative dynamic import does not open the gate',
+          code: `const db = await import('./test-sdk');\n${unsafe}`,
+        },
+        // `require` rebound by a parameter is a local function, not module
+        // loading — taking it as evidence would be this gate treating a *name*
+        // as proof of an *interface*.
+        {
+          name: 'shadowed require is not module loading',
+          code: `function load(require) { return require('test-sdk'); }\n${unsafe}`,
+        },
       ],
       invalid: [
         {
           name: 'subpath import still counts (mysql2/promise)',
           code: `import db from 'test-sdk/promise';\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        // The four forms below all reported *nothing* before this gate stopped
+        // matching only top-level `ImportDeclaration`. CommonJS `require` is
+        // the dominant form in Node server code, so the blind spot silenced
+        // whole codebases across all seven driver plugins.
+        {
+          name: 'CommonJS require',
+          code: `const db = require('test-sdk');\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          name: 'require of a subpath',
+          code: `const db = require('test-sdk/promise');\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          name: 'dynamic import',
+          code: `const db = await import('test-sdk');\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          name: 'TypeScript import-equals',
+          code: `import db = require('test-sdk');\n${unsafe}`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        // Not a direct child of Program: lazy loading inside a function, a
+        // branch or an IIFE is still this file loading the driver.
+        {
+          name: 'require nested inside a function body',
+          code: [
+            'function connect() {',
+            "  const db = require('test-sdk');",
+            `  ${unsafe}`,
+            '}',
+          ].join('\n'),
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
       ],
