@@ -118,6 +118,11 @@ jobs:
         with:
           turbo-cache: "false"
       - run: npm run lint:taxonomy
+      # Same job rather than its own: both gates answer "is this rule allowed
+      # to claim what it claims", both are pure static reads of the same rule
+      # sources, and each runs in well under a second. A separate job would
+      # spend more time on checkout and setup than on the check.
+      - run: npm run lint:name-inference
 
   recall:
     name: Detection Recall (CWE corpus)

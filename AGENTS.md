@@ -223,6 +223,44 @@ Enforced by `npm run lint:taxonomy` (`scripts/lint-plugin-taxonomy.ts`, gated in
 the fast quality job). Violations predating the guard are listed in its
 `GRANDFATHERED` array with the reason and the migration target.
 
+### A name is not a type
+
+The sibling of the AST-not-printed-source doctrine, and the systemic cause
+behind #504, #505, #506 and four already-fixed rules:
+
+| rule                             | inferred from            | reality                |
+| -------------------------------- | ------------------------ | ---------------------- |
+| `no-timing-unsafe-compare`       | a variable named `token` | compared to a literal  |
+| `jwt/no-decode-without-verify`   | a method named `decode`  | a TOML parser          |
+| `no-sensitive-data-exposure`     | the word `password`      | English prose          |
+| `detect-suspicious-dependencies` | a name near `react`      | preact, a real package |
+| `no-xpath-injection`             | `//` in printed text     | a PEM certificate      |
+
+**Do not report — or suppress — based on a SUBSTRING of an identifier's
+spelling.** `propName.includes('phone')` matches `phoneBookLength`;
+`objectName.includes('app')` matches `appleCount`; `name.includes('react')`
+matches `preact`. Resolve the identifier to an import, a call target, or a
+value first.
+
+Two things that are explicitly *not* this, because the distinction is the
+whole point:
+
+- **Exact membership.** `REQUEST_ROOTS.has(node.name)` matching `req`/`request`
+  is a naming convention, not an inference. It stays.
+- **Whole-word matching after tokenising.** Split the name on camelCase and
+  separators, then match words — `login`, `dialog`, `catalog` and `blog` all
+  contain "log" and none is a logger. This is the *fix*, not the defect.
+
+Suppression counts too, and is the quieter half: withholding a finding because
+a callee name contains `encrypt` means `decrypt` reads as safe, and a wrong
+guess there is a false negative nobody sees.
+
+Enforced by `npm run lint:name-inference` (`scripts/lint-name-inference.ts`,
+same quality job). The 25 existing sites are listed in its `REGISTERED` array
+with the direction (`report` / `suppress`) and the reason — as debt, not as an
+exemption. A rule that leaves the list must be deleted from it; a stale entry
+fails the gate.
+
 | If the rule...                                                  | It belongs in...                   |
 | --------------------------------------------------------------- | ---------------------------------- |
 | Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`      |
