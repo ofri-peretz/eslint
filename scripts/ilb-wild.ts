@@ -124,6 +124,26 @@ const BENCHMARK_REPOS = [
 
   // ── Tier 2: Backend-heavy (10–50K) — direct audience ──────────────
   {
+    // #398: express-security was attached to four repos that use Express and
+    // to zero runs of Express itself, while we were proposing the plugin in
+    // expressjs.com's own Production Best Practices page. The audit that
+    // caught it (188 findings on 50 files of maintainer-reviewed reference
+    // code) was a one-off script run by hand, so nothing stopped it
+    // regressing. It is corpus membership that makes that impossible.
+    //
+    // `examples/` is included deliberately, not by accident of the glob: it
+    // is the code a reader copies, and it is where require-helmet and
+    // require-rate-limiting fire on single-purpose demo apps (#517).
+    name: 'express',
+    repo: 'https://github.com/expressjs/express.git',
+    commit: 'a3714473feb3d2908add734d340e7755fd85e0a3',
+    stars: 69_000,
+    srcGlob: '{index.js,lib/**/*.js,examples/**/*.js}',
+    plugins: ['express-security', 'node-security', 'secure-coding'],
+    category: 'Backend Framework',
+    why: 'The framework express-security is named for — every finding here is on maintainer-reviewed reference code (#398)',
+  },
+  {
     name: 'nestjs',
     repo: 'https://github.com/nestjs/nest.git',
     commit: 'd69b14a85e100a689499e03190459b3d59ecd87b',

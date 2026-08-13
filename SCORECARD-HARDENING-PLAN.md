@@ -164,7 +164,7 @@ Ship the badge into the README trust row once earned.
 (105 first-party + 16 third-party) and both container images are already pinned by
 hash, so this is the last mile: pin the loose `npm install <pkg>` calls in
 `eslint-version-matrix.yml`, `deploy.yml`, `release.yml`, `quality.yml`,
-`sdk-compatibility.yml`, `daily-impact-ingest.yml`, `supply-chain-attestation.yml`
+`sdk-compatibility.yml`, `supply-chain-attestation.yml`
 and the `Dockerfile`, and pin the `pip` install in `codecov.yml`.
 
 **Status — done except one, which is deliberately left open.**
