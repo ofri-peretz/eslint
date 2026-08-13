@@ -101,6 +101,26 @@ interface Grandfathered {
 
 const GRANDFATHERED: Grandfathered[] = [
   {
+    file: 'eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts',
+    tokens: ['better-sqlite3', 'knex', 'mssql', 'mysql', 'mysql2', 'objection', 'oracledb', 'pg', 'postgres', 'prisma', 'sequelize', 'sqlite3', 'typeorm'],
+    reason:
+      'Inverted: the driver list is what this rule ABSTAINS on, not what activates it. ' +
+      'It owns driver-less `db.query("SELECT … " + req.params.id)` — the exact complement ' +
+      'of the driver-scoped rules gate — so a file importing any of these belongs to ' +
+      'postgresql-security / mysql-security / sqlite-security instead, and exactly one ' +
+      'rule reports any query site. Moving it into a driver plugin would recreate the gap ' +
+      'it was written to close (benchmarks/corpus/CWE-089, 3 fixtures, all driver-less).',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
+    tokens: ['ioredis'],
+    reason:
+      'Comment-only. Both mentions cite the corpus site the CWE-789 arm was written ' +
+      'against (redis/ioredis lib/resp/decoder.ts:669) as provenance for the measurement ' +
+      'in the rule docs. No predicate reads it: the rule gates on a wire-derived length ' +
+      'reaching a sized allocator, which is protocol-agnostic.',
+  },
+  {
     file: 'eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts',
     tokens: ['handlebars', 'ejs', 'pug', 'jade', 'mustache', 'nunjucks', 'swig'],
     reason: 'Detection is fully gated on template-engine identifiers. Moves to a template-engine plugin at the next major.',

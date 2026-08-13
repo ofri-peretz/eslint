@@ -135,6 +135,13 @@ jobs:
       # Fixtures are local and small, so unlike the network-heavy ILB-Wild run
       # this is cheap enough to block a PR. The 8-repo precision scan
       # (scripts/corpus-scan.ts) stays out of CI for that reason.
+      # The corpus config imports each plugin's `dist/`, so an unbuilt tree makes
+      # it unresolvable. The benchmark refuses to score in that state rather than
+      # reporting zero findings — which is why this job failed in 18s on its first
+      # run instead of silently passing with a perfect record.
+      - name: Build the plugins the corpus config imports
+        run: npx turbo build --filter='./packages/*'
+
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
 
