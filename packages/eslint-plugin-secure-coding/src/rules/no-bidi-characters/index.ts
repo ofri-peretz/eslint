@@ -13,7 +13,7 @@
  * compiler reads another — the canonical form hides an early `return` inside what looks
  * like a comment:
  *
- *   if (accessLevel != "user⁦ // Check if admin⁩ ⁦") {
+ *   if (accessLevel != "user\u2066 // Check if admin\u2069 \u2066") {
  *
  * Because the payload lives in the raw bytes, this scans source text rather than the AST:
  * the characters survive in string literals, comments, and identifiers alike, and an
@@ -50,21 +50,21 @@ type RuleOptions = [Options?];
  * make Trojan Source work; the two marks are weaker but still able to reorder rendering.
  */
 const BIDI_CHARACTERS = new Map<string, string>([
-  ['‪', 'U+202A LEFT-TO-RIGHT EMBEDDING'],
-  ['‫', 'U+202B RIGHT-TO-LEFT EMBEDDING'],
-  ['‬', 'U+202C POP DIRECTIONAL FORMATTING'],
-  ['‭', 'U+202D LEFT-TO-RIGHT OVERRIDE'],
-  ['‮', 'U+202E RIGHT-TO-LEFT OVERRIDE'],
-  ['⁦', 'U+2066 LEFT-TO-RIGHT ISOLATE'],
-  ['⁧', 'U+2067 RIGHT-TO-LEFT ISOLATE'],
-  ['⁨', 'U+2068 FIRST STRONG ISOLATE'],
-  ['⁩', 'U+2069 POP DIRECTIONAL ISOLATE'],
+  ['\u202A', 'U+202A LEFT-TO-RIGHT EMBEDDING'],
+  ['\u202B', 'U+202B RIGHT-TO-LEFT EMBEDDING'],
+  ['\u202C', 'U+202C POP DIRECTIONAL FORMATTING'],
+  ['\u202D', 'U+202D LEFT-TO-RIGHT OVERRIDE'],
+  ['\u202E', 'U+202E RIGHT-TO-LEFT OVERRIDE'],
+  ['\u2066', 'U+2066 LEFT-TO-RIGHT ISOLATE'],
+  ['\u2067', 'U+2067 RIGHT-TO-LEFT ISOLATE'],
+  ['\u2068', 'U+2068 FIRST STRONG ISOLATE'],
+  ['\u2069', 'U+2069 POP DIRECTIONAL ISOLATE'],
 ]);
 
 /** Weaker marks — real bidirectional text uses these, so they are separately gated. */
 const DIRECTIONAL_MARKS = new Map<string, string>([
-  ['‎', 'U+200E LEFT-TO-RIGHT MARK'],
-  ['‏', 'U+200F RIGHT-TO-LEFT MARK'],
+  ['\u200E', 'U+200E LEFT-TO-RIGHT MARK'],
+  ['\u200F', 'U+200F RIGHT-TO-LEFT MARK'],
 ]);
 
 /** `U+202E` -> the character itself. Returns undefined for anything unparseable. */
