@@ -16,7 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { parse } from '@typescript-eslint/parser';
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import type { TSESTree } from '@typescript-eslint/utils';
-import { createModuleEvidence } from './module-evidence';
+import { createModuleEvidence, matchesModule } from './module-evidence';
 
 const ast = (code: string): TSESTree.Program =>
   parse(code, { sourceType: 'module', range: true });
@@ -292,5 +292,14 @@ describe('createModuleEvidence', () => {
   it('a probe configured with nothing matches nothing', () => {
     const none = createModuleEvidence({});
     expect(none(ast("import x from 'pg';"))).toBe(false);
+  });
+
+  describe('matchesModule (deprecated, kept for the public surface)', () => {
+    it('matches the package itself and its subpaths, and nothing that merely shares a prefix', () => {
+      expect(matchesModule('openai', ['openai'])).toBe(true);
+      expect(matchesModule('openai/resources', ['openai'])).toBe(true);
+      expect(matchesModule('openai-mock', ['openai'])).toBe(false);
+      expect(matchesModule('pg', ['openai'])).toBe(false);
+    });
   });
 });
