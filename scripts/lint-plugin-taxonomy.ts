@@ -104,12 +104,15 @@ const GRANDFATHERED: Grandfathered[] = [
     file: 'eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts',
     tokens: ['better-sqlite3', 'knex', 'mssql', 'mysql', 'mysql2', 'objection', 'oracledb', 'pg', 'postgres', 'prisma', 'sequelize', 'sqlite3', 'typeorm'],
     reason:
-      'Inverted: the driver list is what this rule ABSTAINS on, not what activates it. ' +
-      'It owns driver-less `db.query("SELECT … " + req.params.id)` — the exact complement ' +
-      'of the driver-scoped rules gate — so a file importing any of these belongs to ' +
-      'postgresql-security / mysql-security / sqlite-security instead, and exactly one ' +
-      'rule reports any query site. Moving it into a driver plugin would recreate the gap ' +
-      'it was written to close (benchmarks/corpus/CWE-089, 3 fixtures, all driver-less).',
+      'DEBT, not an exemption. The list is inverted — it is what this rule ABSTAINS ' +
+      'on, so it and the driver-scoped rules are exact complements and one rule owns ' +
+      'each query site. But a code-agnostic plugin still cannot carry a hand-maintained ' +
+      'driver registry: a new driver plugin can land without this list learning to ' +
+      'stand down, and every file importing it then reports twice. It cannot move INTO ' +
+      'a driver plugin — it exists for driver-LESS files, which is the dominant Node ' +
+      'layout and where all three CWE-089 corpus fixtures live — so it moves to a ' +
+      'sql-scoped plugin at the next major, alongside the graphql and template rules ' +
+      'above.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
