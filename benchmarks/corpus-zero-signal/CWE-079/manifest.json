@@ -1,0 +1,25 @@
+{
+  "cwe": "CWE-079",
+  "name": "Cross-Site Scripting (XSS)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-browser-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "url-param-unescaped.js",
+        "description": "request value interpolated into a URL without encoding",
+        "rule": "browser-security/no-unescaped-url-parameter"
+      }
+    ],
+    "safe": [
+      {
+        "file": "url-param-encoded.js",
+        "description": "same value passed through encodeURIComponent",
+        "rule": "browser-security/no-unescaped-url-parameter"
+      }
+    ]
+  }
+}

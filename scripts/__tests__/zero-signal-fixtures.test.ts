@@ -20,6 +20,23 @@
  * that rule, and only that rule, enabled. The result is a real answer to "does
  * this rule work", independent of preset membership — which is the question the
  * membership decision needs answered first.
+ *
+ * WHY A SEPARATE CORPUS DIRECTORY. These fixtures first went into
+ * `benchmarks/corpus/`, and that was wrong in a way worth recording. That
+ * corpus is a CALIBRATED benchmark: `scripts/recall-gate.ts` holds a per-CWE
+ * detection budget against it, the six-tool suite scores competitors on it, and
+ * the numbers it produces are published. Dropping in vulnerable files that the
+ * recommended presets are not configured to detect moved CWE-327 from 2/4 to
+ * 2/7 — a recall figure that fell because the denominator grew, not because
+ * anything regressed — and two safe fixtures drew reports from OTHER rules,
+ * failing the gate with "2 gained a false positive".
+ *
+ * Neither was a real regression, and that is exactly the problem: it would have
+ * quietly restated a published benchmark as worse. A corpus with a budget
+ * attached is an instrument, and adding fixtures aimed at rules the instrument
+ * does not enable is miscalibrating it. `benchmarks/corpus/` is untouched;
+ * `CORPUS_DIR` there is an exact path, so nothing in the suite or the recall
+ * gate can see this directory.
  */
 import { describe, expect, it } from 'vitest';
 import { Linter } from 'eslint';
@@ -28,7 +45,7 @@ import path from 'node:path';
 import url from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
-const CORPUS = path.join(REPO_ROOT, 'benchmarks', 'corpus');
+const CORPUS = path.join(REPO_ROOT, 'benchmarks', 'corpus-zero-signal');
 
 interface Case {
   cwe: string;

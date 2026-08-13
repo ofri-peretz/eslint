@@ -1,0 +1,45 @@
+{
+  "cwe": "CWE-327",
+  "name": "Use of a Broken or Risky Cryptographic Algorithm",
+  "owasp": "A02:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": [
+    "eslint-plugin-node-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "create-cipher-deprecated.js",
+        "description": "crypto.createCipher — no IV, key derived by MD5",
+        "rule": "node-security/no-deprecated-cipher-method"
+      },
+      {
+        "file": "rsa-pkcs1-padding.js",
+        "description": "RSA decryption with PKCS#1 v1.5 padding (Bleichenbacher)",
+        "rule": "node-security/no-insecure-rsa-padding"
+      },
+      {
+        "file": "crypto-hash-sha1.js",
+        "description": "sha1() imported from the crypto-hash package",
+        "rule": "node-security/no-sha1-hash"
+      }
+    ],
+    "safe": [
+      {
+        "file": "create-cipheriv-explicit.js",
+        "description": "crypto.createCipheriv with an explicit key and IV",
+        "rule": "node-security/no-deprecated-cipher-method"
+      },
+      {
+        "file": "rsa-oaep-padding.js",
+        "description": "RSA decryption with OAEP padding",
+        "rule": "node-security/no-insecure-rsa-padding"
+      },
+      {
+        "file": "crypto-hash-sha256.js",
+        "description": "sha256() from the same package",
+        "rule": "node-security/no-sha1-hash"
+      }
+    ]
+  }
+}

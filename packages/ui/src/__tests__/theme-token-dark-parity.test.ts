@@ -43,20 +43,35 @@ const INTENTIONALLY_THEME_INVARIANT = new Map([
   ],
 ]);
 
-/** Extract the body of a top-level `<selector> { ... }` block. */
-function blockBody(selector: string): string {
-  // Brace-counting rather than a lazy regex: the blocks contain nested
-  // comments with braces in prose, and `[^}]*` stops at the first one.
-  const start = css.indexOf(`${selector} {`);
+/** Strip CSS block comments. Shared so every reader sees the same text. */
+const stripComments = (source: string): string => source.replace(/\/\*[\s\S]*?\*\//g, '');
+
+/**
+ * Extract the body of a top-level `<selector> { ... }` block.
+ *
+ * Comments are stripped BEFORE counting, which is the whole reason this is not
+ * a regex. Brace-counting over the raw text is wrong in a file whose blocks are
+ * mostly prose: an unbalanced brace inside a comment moves the boundary. A `}`
+ * in prose ends the block early — the reader then sees a truncated token set —
+ * and a `{` in prose runs the counter off the end and throws "unterminated".
+ * Both are reachable by writing an ordinary sentence about CSS syntax in a file
+ * that exists to be commented.
+ *
+ * `literalColorTokens` already stripped comments before tokenising; this makes
+ * the two agree instead of leaving one of them a step behind.
+ */
+function blockBody(selector: string, source: string = css): string {
+  const stripped = stripComments(source);
+  const start = stripped.indexOf(`${selector} {`);
   expect(start, `${selector} block is missing from theme.css`).toBeGreaterThan(-1);
   let depth = 0;
-  let i = css.indexOf('{', start);
+  let i = stripped.indexOf('{', start);
   const open = i;
-  for (; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}') {
+  for (; i < stripped.length; i++) {
+    if (stripped[i] === '{') depth++;
+    else if (stripped[i] === '}') {
       depth--;
-      if (depth === 0) return css.slice(open + 1, i);
+      if (depth === 0) return stripped.slice(open + 1, i);
     }
   }
   throw new Error(`${selector} block is unterminated`);
@@ -66,7 +81,7 @@ function blockBody(selector: string): string {
 function literalColorTokens(body: string): Map<string, string> {
   const found = new Map<string, string>();
   // Strip comments first — the rationale prose quotes token values.
-  const code = body.replace(/\/\*[\s\S]*?\*\//g, '');
+  const code = stripComments(body);
   for (const line of code.split('\n')) {
     const m = line.match(/^\s*(--[\w-]+)\s*:\s*([^;]+);/);
     if (!m) continue;
@@ -78,6 +93,26 @@ function literalColorTokens(body: string): Map<string, string> {
 
 const rootLiterals = literalColorTokens(blockBody(':root'));
 const darkLiterals = literalColorTokens(blockBody('.dark'));
+
+describe('blockBody survives braces in comment prose', () => {
+  // Both cases were confirmed to break the pre-fix implementation before this
+  // test was kept: the `}` case returned a truncated body, the `{` case threw.
+  const withComment = (prose: string) =>
+    `:root {\n  /* ${prose} */\n  --destructive: hsl(0, 72%, 38%);\n}\n\n.dark {\n  --destructive: hsl(0, 91%, 71%);\n}\n`;
+
+  it.each([
+    ['a closing } brace in prose', 'the } character ends a block'],
+    ['an opening { brace in prose', 'an { character opens a block'],
+    ['a balanced { } pair in prose', 'written as { } in full'],
+  ])('reads the whole :root block despite %s', (_label, prose) => {
+    expect(literalColorTokens(blockBody(':root', withComment(prose))).has('--destructive')).toBe(true);
+  });
+
+  it('still finds the .dark block after a comment brace', () => {
+    const tokens = literalColorTokens(blockBody('.dark', withComment('ends with }')));
+    expect(tokens.get('--destructive')).toBe('hsl(0, 91%, 71%)');
+  });
+});
 
 describe('literal color tokens are reconsidered for dark mode', () => {
   it('finds literal color tokens to check (the parse itself is not silently empty)', () => {
