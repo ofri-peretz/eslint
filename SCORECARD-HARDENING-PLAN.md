@@ -214,10 +214,30 @@ the question does not get re-litigated from scratch.
 lockfile *and* force the vulnerable transitives to patched versions, satisfying
 Pinned-Dependencies and Vulnerabilities at once. It gets most of the way:
 
-| tree | advisories |
-| --- | ---: |
-| `@lhci/cli@0.15.1` | 10 |
-| `+ overrides: { tmp: 0.2.7, uuid: 11.1.1 }` | **6** |
+| tree | total | high | moderate | low |
+| --- | ---: | ---: | ---: | ---: |
+| `@lhci/cli@0.15.1` | 10 | 7 | 1 | 2 |
+| `+ overrides: { tmp: 0.2.7, uuid: 11.1.1 }` | **6** | **6** | 0 | 0 |
+
+Reproduce it in a throwaway directory — **these overrides are deliberately not
+in this repo's `package.json`**, because `@lhci/cli` is a global CI install and
+is not in our dependency graph at all. The probe exists only to answer whether
+pinning *could* be made clean:
+
+```bash
+mkdir /tmp/lhci-probe && cd /tmp/lhci-probe
+cat > package.json <<'JSON'
+{ "name": "lhci-override-probe", "version": "0.0.0", "private": true,
+  "dependencies": { "@lhci/cli": "0.15.1" },
+  "overrides": { "tmp": "0.2.7", "uuid": "11.1.1" } }
+JSON
+npm install --package-lock-only --no-audit --no-fund
+npm audit --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(JSON.parse(s).metadata.vulnerabilities)))"
+# => {"info":0,"low":0,"moderate":0,"high":6,"critical":0,"total":6}
+```
+
+Measured 2026-08-13 on Node v24.12.0 / npm 11.16.0. Drop the `overrides` key to
+reproduce the 10-advisory baseline.
 
 Only three of the ten are real roots — `tmp`, `uuid`, `extract-zip` — and the
 rest are ancestors npm flags for depending on them. `tmp` and `uuid` have fixed
@@ -239,9 +259,16 @@ never enters our lockfiles, so the alert would go green. But the action ships
 moving a finding out of view rather than fixing it, which is the practice
 `CLAIMS.md` exists to prevent. Rejected on those grounds, not on effort.
 
-**Conclusion: genuinely blocked upstream.** Revisit when `extract-zip` ships a
-release above 2.0.1, or when lighthouse-ci drops it. At that point `overrides`
-plus a hash-pinned local install closes this cleanly and honestly.
+**Conclusion: genuinely blocked upstream.** Recheck with
+`npm view extract-zip version` — while that returns `2.0.1`, nothing here has
+changed. When it goes above 2.0.1 (or lighthouse-ci drops the dependency), the
+close is: add `.github/deps/lhci/{package.json,package-lock.json}` carrying
+`@lhci/cli` plus the `overrides` above, install it with
+`npm ci --prefix .github/deps/lhci`, and call
+`.github/deps/lhci/node_modules/.bin/lhci` — the same shape
+`.github/deps/cyclonedx/` already uses. Verify with
+`gh workflow run lighthouse.yml --ref <branch>` before merging; the job is
+`workflow_dispatch`-triggered, so it can be exercised on a branch.
 
 ### 7. SAST: 9 → 10 · **+0.06** · a judgement call
 
