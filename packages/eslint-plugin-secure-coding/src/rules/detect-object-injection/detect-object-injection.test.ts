@@ -1265,6 +1265,21 @@ describe('prototype-polluting copy loop', () => {
       { code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`, errors: 1 },
       // Nested inside a conditional still reports exactly once.
       { code: `function m(t, s) { for (const k in s) { if (s[k]) { t[k] = s[k]; } } }`, errors: 1 },
+      // A COMMENT is not a guard. The guard scan reads raw source text, so any of its
+      // keywords appearing in prose silenced the rule — documenting the loop was enough
+      // to disable it. Tokens carry no comments; this case reports on the token scan and
+      // is silent on the text scan.
+      {
+        code: `function m(t, s) { for (const k in s) { /* copy each prototype key across */ t[k] = s[k]; } }`,
+        errors: 1,
+      },
+      // Nested loops: the write goes through the OUTER key. The detector no longer walks
+      // each loop's subtree itself, so this is the case that pins "check every open loop,
+      // not just the innermost" — a top-of-stack-only check reports nothing here.
+      {
+        code: `function m(t, s, o) { for (const k in s) { for (const j in o) { t[k] = o[j]; } } }`,
+        errors: 1,
+      },
     ],
   });
 });

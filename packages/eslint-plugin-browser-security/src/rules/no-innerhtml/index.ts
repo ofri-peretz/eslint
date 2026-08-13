@@ -137,14 +137,21 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     },
     hasSuggestions: true,
     messages: {
+      // Named by the sink that actually fired, not by `innerHTML`. This rule covers
+      // `outerHTML`, `srcdoc`, `insertAdjacentHTML`, `document.write` and `writeln`
+      // too, and `iframe.srcdoc = userHtml` reporting "XSS via innerHTML" — with a
+      // remediation that names a property the code does not use — sends the reader
+      // looking for an assignment that is not there. `{{property}}` is always
+      // supplied at the single report site, so `innerHTML` findings read exactly as
+      // they did before.
       dangerousInnerHTML: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Cross-Site Scripting (XSS) via innerHTML',
+        issueName: 'Cross-Site Scripting (XSS) via {{property}}',
         cwe: 'CWE-79',
         description:
           'Assigning to {{property}} with {{source}} can execute malicious scripts. This is a critical XSS vulnerability.',
         severity: 'CRITICAL',
-        fix: 'Use textContent for text, or sanitize with DOMPurify.sanitize() before assignment.',
+        fix: 'Sanitize with DOMPurify.sanitize() before it reaches {{property}}; where the value is plain text, set textContent instead.',
         documentationLink: 'https://owasp.org/www-community/attacks/xss/',
       }),
       useSanitizer: formatLLMMessage({
@@ -152,7 +159,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         issueName: 'Use HTML Sanitizer',
         description: 'Sanitize HTML before assignment',
         severity: 'LOW',
-        fix: 'element.innerHTML = DOMPurify.sanitize(userInput);',
+        fix: 'Wrap the value: DOMPurify.sanitize(userInput).',
         documentationLink: 'https://www.npmjs.com/package/dompurify',
       }),
     },

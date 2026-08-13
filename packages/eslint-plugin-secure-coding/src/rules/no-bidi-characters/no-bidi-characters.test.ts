@@ -11,10 +11,14 @@ const ruleTester = new RuleTester();
 
 // Built from escapes so the payload is visible in review — writing the raw characters into
 // a test file would make the test itself unreviewable, which is the whole point of CWE-1007.
-const RLO = '‮';
-const LRI = '⁦';
-const PDI = '⁩';
-const RLM = '‏';
+const RLO = '\u202E';
+const LRI = '\u2066';
+const PDI = '\u2069';
+const RLM = '\u200F';
+const ZWSP = '\u200B';
+// Outside the BMP: two UTF-16 units, so a code-unit scan can only ever see its high
+// surrogate. U+1D173 MUSICAL SYMBOL BEGIN BEAM is a real format character (category Cf).
+const BEAM = '\u{1D173}';
 
 describe('no-bidi-characters', () => {
   ruleTester.run('no-bidi-characters', noBidiCharacters, {
@@ -30,6 +34,12 @@ describe('no-bidi-characters', () => {
       { code: `const s = 'ok';`, options: [{ additionalCharacters: ['not-a-codepoint', 'U+ZZZZ', ''] }] },
       // A well-formed entry that is simply absent from the source stays quiet.
       { code: `const s = 'ok';`, options: [{ additionalCharacters: ['U+200B'] }] },
+      // Above the U+10FFFF Unicode ceiling. The 4-6 hex-digit pattern accepts it, but
+      // `String.fromCodePoint` throws a RangeError on it — this used to crash the rule
+      // and take the whole lint run with it.
+      { code: `const s = 'ok';`, options: [{ additionalCharacters: ['U+110000', 'U+FFFFFF'] }] },
+      // A supplementary character that is NOT configured is walked over, not matched.
+      { code: `const s = '${BEAM}';` },
     ],
     invalid: [
       // The Trojan Source comment-hiding shape from the original paper.
@@ -46,8 +56,15 @@ describe('no-bidi-characters', () => {
       { code: `const s = '${RLM}';`, errors: 1 },
       // Opt-in additional confusables.
       {
-        code: `const s = '​';`,
+        code: `const s = '${ZWSP}';`,
         options: [{ additionalCharacters: ['U+200B'] }],
+        errors: 1,
+      },
+      // A configured SUPPLEMENTARY character matches only because the scan advances by
+      // code point; the previous code-unit scan compared its high surrogate and never hit.
+      {
+        code: `const s = '${BEAM}';`,
+        options: [{ additionalCharacters: ['U+1D173'] }],
         errors: 1,
       },
       // The suggestion removes exactly the offending character and nothing else.

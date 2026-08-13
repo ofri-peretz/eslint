@@ -273,14 +273,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
     /**
-     * Assignments already reported as a prototype-polluting copy loop.
+     * `for...in` loops whose source and shape qualify as a prototype-polluting copy loop,
+     * currently open in the traversal — innermost last.
      *
-     * ForInStatement is visited before its body, so the copy-loop check claims the
-     * assignment first and the generic handler steps aside. Without this the same
-     * `target[key] = source[key]` reports twice — one defect, two findings, which is
-     * precisely the over-reporting we criticise in competitors.
+     * ForInStatement is visited before its body, so the loop is armed by the time the
+     * body's assignments arrive and the copy-loop check claims each one first; the generic
+     * handler then steps aside. Without that hand-off the same `target[key] = source[key]`
+     * reports twice — one defect, two findings, precisely the over-reporting we criticise
+     * in competitors.
      */
-    const reportedAsCopyLoop = new WeakSet<TSESTree.AssignmentExpression>();
+    const openCopyLoops: { keyName: string; reported: boolean }[] = [];
+    /** The `for...in` nodes that actually armed, so `:exit` pops exactly what it pushed. */
+    const armedLoops = new WeakSet<TSESTree.ForInStatement>();
 
     // ── AST-walker / codemod context detection (closes the audit FP
     // surfaced by `npm run ilb:stress-test`). When the file imports any
@@ -1214,7 +1218,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             : undefined;
       if (!keyName) return;
 
-      const bodyText = context.sourceCode.getText(node.body);
+      // TOKENS, not `getText`. Raw source text carries the comments with it, so an
+      // ordinary `/* copy each prototype key */` inside the loop silenced the finding
+      // entirely — a false negative anyone could trip by documenting their own code.
+      // Joined without separators so multi-token guards still read as one string
+      // (`Object` `.` `keys` -> `Object.keys`). String literals deliberately stay in:
+      // `if (k === '__proto__') continue` is the documented guard and it IS a string.
+      const bodyText = context.sourceCode
+        .getTokens(node.body)
+        .map((token) => token.value)
+        .join('');
       // A guarded loop is the documented fix; do not report the fix.
       if (/hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)) {
         return;
@@ -1239,50 +1252,59 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       if (!isParameter) return;
 
-      let reported = false;
-      const walk = (current: TSESTree.Node | null | undefined): void => {
-        if (!current || reported) return;
-        if (
-          current.type === AST_NODE_TYPES.AssignmentExpression &&
-          current.left.type === AST_NODE_TYPES.MemberExpression &&
-          current.left.computed &&
-          current.left.property.type === AST_NODE_TYPES.Identifier &&
-          current.left.property.name === keyName
-        ) {
-          reported = true;
-          reportedAsCopyLoop.add(current);
-          context.report({
-            node: current,
-            messageId: 'objectInjection',
-            data: {
-              riskLevel: 'HIGH',
-              safeAlternative:
-                'Guard the key before assigning: `if (k === "__proto__" || k === "constructor" || k === "prototype") continue;` — or copy with Object.create(null) / structuredClone.',
-            },
-          });
-          return;
-        }
-        for (const key of Object.keys(current)) {
-          if (key === 'parent') continue;
-          const value = (current as unknown as Record<string, unknown>)[key];
-          if (Array.isArray(value)) {
-            for (const item of value) {
-              if (item && typeof item === 'object' && 'type' in item) walk(item as TSESTree.Node);
-            }
-          } else if (value && typeof value === 'object' && 'type' in value) {
-            walk(value as TSESTree.Node);
-          }
-        }
-      };
-      walk(node.body);
+      // Arm the loop and let ESLint's own traversal find the assignment. The previous
+      // version recursively walked the whole body here, and ESLint then walked it AGAIN
+      // — two passes per loop, and O(n²) once such loops nest. Nothing about the search
+      // needed its own traversal: the assignment is an ordinary AssignmentExpression that
+      // the visitor below already receives in source order.
+      armedLoops.add(node);
+      openCopyLoops.push({ keyName, reported: false });
     };
 
+    /**
+     * Reports the first key-write in each armed loop; returns true when it handled the node.
+     *
+     * Checked against EVERY open loop, not just the innermost, because
+     * `for (a in x) { for (b in y) { t[a] = … } }` pollutes through the OUTER key — which
+     * is what the old whole-subtree walk saw from the outer loop, and what a
+     * top-of-stack-only check would miss.
+     */
+    const reportCopyLoopWrite = (node: TSESTree.AssignmentExpression): boolean => {
+      if (
+        node.left.type !== AST_NODE_TYPES.MemberExpression ||
+        !node.left.computed ||
+        node.left.property.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const propertyName = node.left.property.name;
+      const loop = openCopyLoops.find((open) => open.keyName === propertyName && !open.reported);
+      if (!loop) return false;
+      loop.reported = true;
+      context.report({
+        node,
+        messageId: 'objectInjection',
+        data: {
+          riskLevel: 'HIGH',
+          safeAlternative:
+            'Guard the key before assigning: `if (k === "__proto__" || k === "constructor" || k === "prototype") continue;` — or copy with Object.create(null) / structuredClone.',
+        },
+      });
+      return true;
+    };
 
     return {
       ForInStatement: checkPrototypePollutingCopyLoop,
+      'ForInStatement:exit': (node: TSESTree.ForInStatement) => {
+        // Only loops that armed above pushed a frame, and they nest, so the frame to drop
+        // is always the last one — but only when this loop is the one that pushed it.
+        if (armedLoops.has(node)) openCopyLoops.pop();
+      },
       AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
         if (isInCodemodContext || isTestFile) return;
-        if (reportedAsCopyLoop.has(node)) return;
+        // A copy-loop key-write is reported as prototype pollution and must not also be
+        // reported by the generic computed-assignment check.
+        if (reportCopyLoopWrite(node)) return;
         return checkAssignmentExpression(node);
       },
       MemberExpression: (node: TSESTree.MemberExpression) => {

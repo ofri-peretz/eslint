@@ -71,9 +71,13 @@ const DIRECTIONAL_MARKS = new Map<string, string>([
 const codePointFromLabel = (label: string): string | undefined => {
   const match = /^U\+([0-9a-fA-F]{4,6})$/.exec(label.trim());
   if (!match) return undefined;
-  // The pattern guarantees 4-6 hex digits, so parseInt always yields a finite code point
-  // in range — no reachable failure arm to guard.
-  return String.fromCodePoint(Number.parseInt(match[1], 16));
+  const codePoint = Number.parseInt(match[1], 16);
+  // 6 hex digits reach U+FFFFFF, far past the U+10FFFF Unicode ceiling, and
+  // `String.fromCodePoint` throws a RangeError above it. `U+110000` in a user's
+  // `additionalCharacters` therefore crashed the rule — and with it the lint run
+  // — for every file. The pattern is not a range check; this is.
+  if (codePoint > 0x10ffff) return undefined;
+  return String.fromCodePoint(codePoint);
 };
 
 export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
@@ -130,18 +134,28 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
         const { sourceCode } = context;
         const text = sourceCode.getText();
 
-        for (let index = 0; index < text.length; index++) {
-          const characterName = dangerous.get(text[index]);
-          if (!characterName) continue;
+        // Walk by CODE POINT, not by code unit. `text[index]` yields one UTF-16 unit,
+        // so a configured supplementary character (`additionalCharacters: ['U+1D173']`)
+        // could never match its own key — the lookup only ever saw the high surrogate.
+        // BMP characters, which is every built-in bidi control, keep width 1 and the
+        // exact ranges they had before.
+        for (let index = 0; index < text.length; ) {
+          const codePoint = text.codePointAt(index) as number;
+          const width = codePoint > 0xffff ? 2 : 1;
+          const characterName = dangerous.get(text.slice(index, index + width));
+          if (!characterName) {
+            index += width;
+            continue;
+          }
 
           // Report the single character so the location points at the payload itself,
           // not at the whole file.
-          const range: TSESTree.Range = [index, index + 1];
+          const range: TSESTree.Range = [index, index + width];
           context.report({
             node,
             loc: {
               start: sourceCode.getLocFromIndex(index),
-              end: sourceCode.getLocFromIndex(index + 1),
+              end: sourceCode.getLocFromIndex(index + width),
             },
             messageId: 'bidiCharacter',
             data: { characterName },
@@ -153,6 +167,7 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
               },
             ],
           });
+          index += width;
         }
       },
     };

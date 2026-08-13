@@ -1139,7 +1139,24 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // must not share a branch: the corpus findings above all RESOLVE, while
       // `exec(str)` with `str` bound nowhere admits no local reasoning at all.
       // Same distinction as `detect-non-literal-fs-filename`.
-      const unknowable = node.arguments.some((argument) => isFreeReference(argument));
+      //
+      // Scanned over the INJECTABLE positions only — argument 0 and the elements of
+      // an explicit argv array — the same restriction `extractCommandInfo` applies,
+      // for the same reason. Scanning every argument made `exec('ls', handleResult)`
+      // report `childProcessCommandInjection` on a literal command whenever the
+      // callback resolved nowhere: `hasOnlyLiteralArgs` rejects the Identifier at
+      // position 1, `usesShell('exec')` skips the no-shell branch, and `unknowable`
+      // then carried the call past this gate. A callback or an options value that
+      // resolves to nothing says nothing about the command. Locked by the
+      // `exec('ls', handleResult)` valid fixture below.
+      const injectablePositions: TSESTree.Node[] = node.arguments.slice(0, 1);
+      const argvVector = node.arguments[1];
+      if (argvVector?.type === AST_NODE_TYPES.ArrayExpression) {
+        injectablePositions.push(
+          ...argvVector.elements.filter((el): el is TSESTree.Expression => el !== null),
+        );
+      }
+      const unknowable = injectablePositions.some((argument) => isFreeReference(argument));
 
       if (
         !reportUnresolvedCommands &&

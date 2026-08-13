@@ -155,7 +155,11 @@ export function makeReadsTaintSource(
           .map((ref) => ref.writeExpr)
           .filter((write): write is TSESTree.Node => write != null)
           .filter((write) => write.range[1] <= node.range[0])
-          .toSorted((a, b) => a.range[1] - b.range[1]);
+          // `.sort`, not `.toSorted`: this package ships `engines.node: >=18.0.0`
+          // and `Array.prototype.toSorted` first shipped in Node 20, so a Node 18
+          // consumer would get a TypeError at lint time. Sorting in place is safe
+          // — `.filter` above already returned a fresh array.
+          .sort((a, b) => a.range[1] - b.range[1]);
         const lastWrite = priorWrites.at(-1);
         return lastWrite !== undefined && reads(lastWrite, depth + 1);
       }

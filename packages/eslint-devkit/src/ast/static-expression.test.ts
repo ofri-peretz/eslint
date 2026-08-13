@@ -67,6 +67,12 @@ describe('isStaticExpression', () => {
       // UnaryExpression over a static operand is itself static.
       { code: `sink(-1);` },
       { code: `const N = 5; sink(-N);` },
+      // Repeated constants. The cycle guard used to be a visited-set, so the SECOND
+      // reference to one initializer answered "dynamic" and the whole expression with
+      // it. All three report on the pre-fix implementation.
+      { code: `const A = 'a'; sink(A + A);` },
+      { code: `const N = 'x'; sink(\`\${N}-\${N}\`);` },
+      { code: `const path = require('path'); const DIR = 'd'; sink(path.join(DIR, DIR));` },
     ],
     invalid: [
       // The whole point: anything an attacker can reach must still be reported.

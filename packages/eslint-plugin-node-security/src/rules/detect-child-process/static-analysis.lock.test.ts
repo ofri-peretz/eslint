@@ -36,8 +36,20 @@ describe('detect-child-process static-analysis lock', () => {
         code: `const cp = require('child_process'); cp.exec('ls -l', function (e, o) {});`,
         options: LENIENT,
       },
+      // …including a callback that resolves NOWHERE. `unknowable` used to scan every
+      // argument, so an unresolved callback carried a literal command past the
+      // evidence gate and reported command injection on `exec('ls', cb)`. Only the
+      // injectable positions — argument 0 and an explicit argv array — may answer
+      // "unknowable"; a callback says nothing about the command.
+      {
+        code: `const cp = require('child_process'); cp.exec('ls', handleResult);`,
+        options: LENIENT,
+      },
       // The false positive: a const binding is not attacker-reachable.
       { code: `const cp = require('child_process'); const CMD = 'ls'; cp.exec(CMD);`, options: LENIENT },
+      // A constant used TWICE is still a constant. The devkit cycle guard used to be a
+      // visited-set, so the second reference resolved as dynamic and the call reported.
+      { code: `const cp = require('child_process'); const A = 'ls'; cp.exec(A + A);`, options: LENIENT },
       { code: `const cp = require('child_process'); const A = 'l', B = A + 's'; cp.exec(B);`, options: LENIENT },
       { code: `const cp = require('child_process'); const C = 'git'; cp.spawn(C, ['status']);`, options: LENIENT },
     ],

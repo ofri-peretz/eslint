@@ -167,7 +167,28 @@ function evaluate(
   // Cyclic initializers (`const a = b, b = a`) would otherwise recurse forever.
   if (seen.has(node)) return false;
   seen.add(node);
+  try {
+    return evaluateNode(node, scope, treatConstAsStatic, seen);
+  } finally {
+    // Only the ACTIVE chain may block a re-visit. `seen` is a cycle guard, not a
+    // visited-set: leaving the node in it after the branch finishes makes the
+    // SECOND reference to one constant answer "dynamic". `const A = 'a';
+    // sink(A + A)` proved it — both operands resolve to the same initializer
+    // node, so the right operand hit the guard and the whole `+` came back
+    // dynamic. Same for `` `${N}-${N}` `` and `path.join(DIR, DIR)`, all three
+    // false positives in every rule that consumes this (detect-child-process,
+    // detect-non-literal-fs-filename). Locked by the repeated-constant cases in
+    // static-expression.test.ts, which fail on the pre-fix implementation.
+    seen.delete(node);
+  }
+}
 
+function evaluateNode(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  treatConstAsStatic: boolean,
+  seen: Set<TSESTree.Node>,
+): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
       return true;

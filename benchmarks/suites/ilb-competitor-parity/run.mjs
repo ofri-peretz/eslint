@@ -108,13 +108,24 @@ for (const [k, v] of Object.entries(summary).sort((a, b) => b[1].invalid - a[1].
 // gap. Both numbers are always printed — the raw one keeps us honest, the weighted one is the
 // target. Never quote the weighted number without naming the exclusions.
 const wontFix = JSON.parse(fs.readFileSync(path.join(HERE, 'wont-fix.json'), 'utf8')).classes;
-const live = Object.entries(summary).filter(([k]) => !wontFix[k]);
-const liveTotals = live.reduce(
-  (a, [, v]) => ({ detected: a.detected + v.detected, invalid: a.invalid + v.invalid }),
+
+// `partial: true` excludes CASES, not the class — and the runner used to ignore the flag
+// entirely, dropping the whole class on a key match. detect-unsafe-regex is the shape it
+// was written for: we detect the ReDoS case and decline only the syntactically-invalid
+// one, so a class-level drop threw away a case we DO cover (1 detected, 2 invalid → both
+// gone). `cases` is how many are declined; a declined case is undetected by definition, so
+// it leaves the denominator and the numerator is untouched.
+const declined = (k) => (wontFix[k] ? (wontFix[k].partial ? wontFix[k].cases : summary[k].invalid) : 0);
+const isWholeClass = (k) => Boolean(wontFix[k]) && !wontFix[k].partial;
+const liveTotals = Object.entries(summary).reduce(
+  (a, [k, v]) =>
+    isWholeClass(k)
+      ? a
+      : { detected: a.detected + v.detected, invalid: a.invalid + v.invalid - declined(k) },
   { detected: 0, invalid: 0 },
 );
 const excluded = Object.entries(summary).filter(([k]) => wontFix[k]);
-const excludedCases = excluded.reduce((a, [, v]) => a + v.invalid, 0);
+const excludedCases = excluded.reduce((a, [k]) => a + declined(k), 0);
 
 console.log(
   `\nRAW parity      ${totals.detected}/${totals.invalid} (${((totals.detected / totals.invalid) * 100).toFixed(1)}%)` +
@@ -124,7 +135,10 @@ console.log(
   `WEIGHTED parity ${liveTotals.detected}/${liveTotals.invalid} (${((liveTotals.detected / liveTotals.invalid) * 100).toFixed(1)}%)` +
     ` — excludes ${excludedCases} cases in ${excluded.length} declared won't-fix classes:`,
 );
-for (const [k] of excluded) console.log(`    ${k} (${summary[k].invalid}) — ${wontFix[k].reason.split('.')[0]}.`);
+for (const [k] of excluded) {
+  const scope = wontFix[k].partial ? ` of ${summary[k].invalid}, partial` : '';
+  console.log(`    ${k} (${declined(k)}${scope}) — ${wontFix[k].reason.split('.')[0]}.`);
+}
 
 // A won't-fix entry that no longer matches a real class is a stale claim; fail loudly.
 const stale = Object.keys(wontFix).filter((k) => !summary[k]);
@@ -133,18 +147,52 @@ if (stale.length) {
   process.exit(1);
 }
 
-// Ratchet: never regress against the committed baseline.
+// …and a `partial` entry that declines more cases than the class actually leaves
+// undetected is the same stale claim wearing a number. Left unchecked it would subtract
+// covered cases from the denominator and inflate weighted parity — the one direction this
+// file exists to prevent.
+const overdeclared = Object.keys(wontFix).filter(
+  (k) => wontFix[k].partial && summary[k] && wontFix[k].cases > summary[k].invalid - summary[k].detected,
+);
+if (overdeclared.length) {
+  console.error(
+    `\nwon't-fix entries declining more cases than remain undetected: ${overdeclared
+      .map((k) => `${k} (declines ${wontFix[k].cases}, undetected ${summary[k].invalid - summary[k].detected})`)
+      .join(', ')}`,
+  );
+  process.exit(1);
+}
+
+// Ratchet: never regress against the committed baseline — in EITHER direction.
+//
+// Recall alone is half a ratchet. `firedOnValid` has always been recorded in the
+// baseline and never checked, so a change could fire on every one of their 105 valid
+// cases and still exit 0 as long as detection held. That is the precise failure this
+// project has already paid for once: a precision sweep that traded recall away went
+// green because only one side was gated. Both sides move here or neither does.
 if (fs.existsSync(BASELINE)) {
   const prev = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
   const regressed = Object.entries(summary).filter(
     ([k, v]) => prev.summary[k] && v.detected < prev.summary[k].detected,
   );
-  if (regressed.length) {
+  const noisier = Object.entries(summary).filter(
+    ([k, v]) => prev.summary[k] && v.firedOnValid > prev.summary[k].firedOnValid,
+  );
+  const totalNoisier = prev.totals && totals.firedOnValid > prev.totals.firedOnValid;
+  if (regressed.length || noisier.length || totalNoisier) {
     console.error('\nREGRESSION vs baseline:');
-    regressed.forEach(([k, v]) => console.error(`  ${k}: ${prev.summary[k].detected} -> ${v.detected}`));
+    regressed.forEach(([k, v]) =>
+      console.error(`  recall  ${k}: ${prev.summary[k].detected} -> ${v.detected}`),
+    );
+    noisier.forEach(([k, v]) =>
+      console.error(`  FP      ${k}: fires on ${prev.summary[k].firedOnValid} -> ${v.firedOnValid} valid cases`),
+    );
+    if (totalNoisier) {
+      console.error(`  FP      TOTAL: fires on ${prev.totals.firedOnValid} -> ${totals.firedOnValid} valid cases`);
+    }
     process.exit(1);
   }
-  console.log('\nno regression vs baseline.');
+  console.log('\nno regression vs baseline (recall held, false positives did not grow).');
 }
 
 if (process.argv.includes('--update-baseline')) {

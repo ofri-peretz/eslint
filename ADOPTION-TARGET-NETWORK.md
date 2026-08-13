@@ -66,6 +66,10 @@ have the most to say), then browser libraries.
 
 ## Full qualified list (131)
 
+Rows struck through and marked ⛔ are **excluded outreach targets** under the `lirantal/*`
+hard rule above. They stay listed because the qualified set is a measurement — deleting
+them would misstate the 131 — but they are not selectable as targets.
+
 | Repo | ★ | Last push | Language | License |
 |---|---|---|---|---|
 | [add2cal/add-to-calendar-button](https://github.com/add2cal/add-to-calendar-button) | 1480 | 2026-08-07 | JavaScript | NOASSERTION |
@@ -76,7 +80,7 @@ have the most to say), then browser libraries.
 | [unxsist/jet-pilot](https://github.com/unxsist/jet-pilot) | 625 | 2026-03-09 | Vue | MIT |
 | [ahaenggli/AzureAD-LDAP-wrapper](https://github.com/ahaenggli/AzureAD-LDAP-wrapper) | 176 | 2026-07-11 | JavaScript | MIT |
 | [microsoft/vscode-powerquery](https://github.com/microsoft/vscode-powerquery) | 108 | 2026-08-05 | TypeScript | MIT |
-| [lirantal/anti-trojan-source](https://github.com/lirantal/anti-trojan-source) | 86 | 2026-07-23 | JavaScript | Apache-2.0 |
+| ⛔ ~~[lirantal/anti-trojan-source](https://github.com/lirantal/anti-trojan-source)~~ **DO NOT CONTACT** | 86 | 2026-07-23 | JavaScript | Apache-2.0 |
 | [lifion/lifion-kinesis](https://github.com/lifion/lifion-kinesis) | 86 | 2026-08-11 | JavaScript | MIT |
 | [lyestarzalt/x-dispatch](https://github.com/lyestarzalt/x-dispatch) | 76 | 2026-08-10 | TypeScript | GPL-3.0 |
 | [OWASP/cwe-tool](https://github.com/OWASP/cwe-tool) | 64 | 2026-04-30 | JavaScript | Apache-2.0 |
@@ -92,7 +96,7 @@ have the most to say), then browser libraries.
 | [n11techhub/mcp-bitbucket](https://github.com/n11techhub/mcp-bitbucket) | 23 | 2026-07-23 | TypeScript | Apache-2.0 |
 | [ably/ably-chat-js](https://github.com/ably/ably-chat-js) | 22 | 2026-06-05 | TypeScript | Apache-2.0 |
 | [pustovitDmytro/logger-decorator](https://github.com/pustovitDmytro/logger-decorator) | 19 | 2026-08-10 | JavaScript | MIT |
-| [lirantal/express-security-txt](https://github.com/lirantal/express-security-txt) | 18 | 2026-07-23 | JavaScript | MIT |
+| ⛔ ~~[lirantal/express-security-txt](https://github.com/lirantal/express-security-txt)~~ **DO NOT CONTACT** | 18 | 2026-07-23 | JavaScript | MIT |
 | [hzi-braunschweig/pia-system](https://github.com/hzi-braunschweig/pia-system) | 16 | 2026-07-10 | TypeScript | NOASSERTION |
 | [SynBioHub/synbiohub3](https://github.com/SynBioHub/synbiohub3) | 16 | 2026-08-11 | JavaScript | BSD-2-Clause |
 | [eclass/semantic-release-docker](https://github.com/eclass/semantic-release-docker) | 15 | 2026-08-05 | JavaScript | MIT |
