@@ -53,8 +53,57 @@ jobs:
         with:
           turbo-cache: "false"
 
+      # `changesets/action` opens the Version PR unconditionally. With nothing
+      # pending, `changeset version` produces no diff, the action pushes an
+      # identical `changeset-release/main`, and GitHub rejects the PR:
+      #
+      #   Validation Failed: No commits between main and changeset-release/main
+      #
+      # The job then fails on EVERY push to main for as long as the changeset
+      # queue is empty — which is the normal state right after a release. Two
+      # of today's four failures were this, including one on the previous
+      # release merge (#538) before any related change, so it is the steady
+      # state and not a regression.
+      #
+      # Nothing is wrong when this happens: there is simply nothing to release.
+      # A job that goes red for the expected case trains you to ignore it, and
+      # this one shares a name with the gate that actually matters.
+      # Counting `.changeset/*.md` is NOT the test, which is the subtlety that
+      # makes this worth a step of its own. A changeset naming only private
+      # packages is ignored by changesets and bumps nothing — `.changeset/` is
+      # non-empty, the release plan is empty, and the action still tries to
+      # open the PR. That is the live state right now:
+      # `fix-plugin-stats-rule-count.md` names `docs`, which is `private: true`,
+      # so `changeset status` reports 0 releases from 1 changeset.
+      #
+      # The release plan is the only thing that predicts whether `version`
+      # produces a diff, so gate on that. `--output` writes the plan as JSON;
+      # `releases` is what would actually be bumped.
+      - name: Will the Version PR have anything in it?
+        id: pending
+        run: |
+          set -euo pipefail
+          npx changeset status --output=/tmp/release-plan.json > /dev/null
+          releases=$(node -p "require('/tmp/release-plan.json').releases.length")
+          changesets=$(node -p "require('/tmp/release-plan.json').changesets.length")
+          echo "releases=${releases}" >> "$GITHUB_OUTPUT"
+          # Both counts are exported: `releases` decides whether the action
+          # runs, `changesets` is what separates "queue is empty" from "queue
+          # holds only changesets that bump nothing". Exporting just the first
+          # collapses the two and makes the summary below claim a distinction
+          # it cannot see.
+          echo "changesets=${changesets}" >> "$GITHUB_OUTPUT"
+          if [ "$releases" -eq 0 ] && [ "$changesets" -gt 0 ]; then
+            echo "::notice::${changesets} changeset(s) present but 0 package(s) to release — they name only private packages, so nothing can be versioned."
+          elif [ "$releases" -eq 0 ]; then
+            echo "No changesets pending — nothing to open a Version PR for."
+          else
+            echo "${releases} package(s) to release from ${changesets} changeset(s)."
+          fi
+
       - name: Open / refresh Version PR
         id: changesets
+        if: steps.pending.outputs.releases != '0'
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
         with:
           # `version` runs `npm run changeset:version`, which bumps versions
@@ -107,6 +156,8 @@ jobs:
           HAS_CHANGESETS: ${{ steps.changesets.outputs.hasChangesets }}
           PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
           PUBLISHED: ${{ steps.changesets.outputs.published }}
+          RELEASES: ${{ steps.pending.outputs.releases }}
+          CHANGESETS: ${{ steps.pending.outputs.changesets }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
@@ -121,6 +172,16 @@ jobs:
               else
                 echo "📦 Changesets detected but Version PR not opened (likely first run after CI was set up). Re-running may help; otherwise check the action logs."
               fi
+            elif [ "${RELEASES:-0}" = "0" ] && [ "${CHANGESETS:-0}" != "0" ]; then
+              # Both counts are needed to tell these apart. `releases == 0`
+              # alone is also true for an empty queue — the normal state right
+              # after a release — so branching on it would print this message
+              # almost every run and bury the case it is meant to flag.
+              echo "✅ Nothing to release — the ${CHANGESETS} pending changeset(s) name only private packages."
+              echo ""
+              echo "Changesets ignores \`private: true\` packages, so these bump nothing"
+              echo "and will sit in \`.changeset/\` indefinitely. Remove them, or point"
+              echo "them at a published package."
             else
               echo "✅ No pending changesets — nothing queued for release."
               echo ""
