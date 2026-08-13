@@ -1,0 +1,10 @@
+{
+  "name": "@interlace/ci-dep-cyclonedx",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hash-pinned install of the CycloneDX SBOM generator for supply-chain-attestation.yml. Isolated from the workspace so `npm ci` here cannot touch the root lockfile.",
+  "license": "MIT",
+  "dependencies": {
+    "@cyclonedx/cyclonedx-npm": "6.0.1"
+  }
+}
