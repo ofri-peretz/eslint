@@ -29,7 +29,10 @@
  * ```
  */
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+// The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
+// so a runtime import of it makes devkit unloadable wherever the consumer
+// did not install it. Only the type import above may name the package.
+import { AST_NODE_TYPES } from '../ast-node-types';
 
 export interface ModuleBinding {
   /** Module specifier, `node:` stripped and equivalents applied (e.g. `fs`). */

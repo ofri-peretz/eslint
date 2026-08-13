@@ -24,7 +24,10 @@
  * gap here costs a false positive, never a missed vulnerability.
  */
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+// The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
+// so a runtime import of it makes devkit unloadable wherever the consumer
+// did not install it. Only the type import above may name the package.
+import { AST_NODE_TYPES } from '../ast-node-types';
 
 /** Node builtins whose path-construction helpers return a static value for static input. */
 const PATH_MODULES = new Set(['path', 'node:path', 'path/posix', 'path/win32', 'node:path/posix', 'node:path/win32']);
