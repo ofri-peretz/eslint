@@ -54,6 +54,15 @@ fs.writeFileSync('/tmp/credentials.json', JSON.stringify(creds));
 // ❌ Using temp path in variable assignment for persistence
 const tempTokenPath = '/var/tmp/session.token';
 fs.writeFile(tempTokenPath, token, (err) => { ... });
+
+// ❌ CWE-377: the portable spelling of the same exposure — os.tmpdir() with a
+// constant name resolves to the same path on every run, in a directory every
+// local user can write. An attacker pre-creates or symlinks that name and
+// wins the race before the write happens.
+const file = path.join(os.tmpdir(), 'report-cache.tmp');
+fs.writeFileSync(file, buffer);
+
+fs.writeFileSync(path.join(os.tmpdir(), 'report-cache.tmp'), buffer);
 ```
 
 ## ✅ Correct
@@ -69,6 +78,13 @@ fs.writeFileSync(path.join(secureDir, 'session.json'), encryptedData);
 // ✅ Using in-memory storage for ephemeral data
 const sessionCache = new Map();
 sessionCache.set('token', token);
+
+// ✅ A fresh 0700 directory with a random suffix — the path is not guessable
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'app-export-'));
+fs.writeFileSync(path.join(dir, 'export.json'), JSON.stringify(records));
+
+// ✅ A randomised segment is the mitigation
+const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');
 ```
 
 ## ⚙️ Configuration
@@ -102,9 +118,17 @@ sessionCache.set('token', token);
 
 ## Known False Negatives
 
-- Paths constructed dynamically via `os.tmpdir()`.
+- `os.tmpdir()` bound to a variable first (`const tmp = os.tmpdir(); path.join(tmp, 'x.tmp')`) — the rule matches `os.tmpdir()` written out in full.
+- `path.join()` reached through a renamed import (`const { join } = require('path')`).
 - Stream-based writes using `createWriteStream`.
 - Paths stored in environment variables.
+
+> **Not a false negative:** `path.join(os.tmpdir(), 'constant-name')` reports as
+> `predictableTempPath` (CWE-377). A segment that is not a string literal —
+> `crypto.randomUUID()`, `Date.now()`, an interpolated template — makes the path
+> unpredictable, which *is* the mitigation, so those stay silent by design.
+> `fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-'))` likewise: the join names a
+> prefix, not the file that gets written.
 
 ## 🔗 Related Rules
 

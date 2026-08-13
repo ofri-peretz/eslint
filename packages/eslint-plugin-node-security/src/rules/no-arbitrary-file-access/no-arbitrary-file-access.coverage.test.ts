@@ -24,6 +24,11 @@ const ruleTester = new RuleTester({
 
 describe('no-arbitrary-file-access coverage gaps', () => {
   ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
+    // Every case below carries a call site feeding the parameter from `req`,
+    // so the ONLY difference between the valid and invalid halves is the
+    // startsWith guard under test. Without that call site the valid cases
+    // would pass for the wrong reason — provenance unresolved — and the guard
+    // they exist to exercise would never run.
     valid: [
       // Declarator without initializer → tracking guard returns early
       { code: "let pending;\nfs.readFileSync('/etc/hosts');" },
@@ -35,6 +40,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '  fs.readFile(userPath);',
           '  fs.writeFile(userPath, data);',
           '}',
+          'readTwice(req.query.p, base, data);',
         ].join('\n'),
       },
       // Direct ReturnStatement consequent guard
@@ -44,6 +50,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '  if (!userPath.startsWith(base)) return null;',
           '  return fs.readFile(userPath);',
           '}',
+          'readOnce(req.query.p, base);',
         ].join('\n'),
       },
       // fs call INSIDE an if whose test validates the variable via startsWith
@@ -54,6 +61,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '    fs.readFile(userPath);',
           '  }',
           '}',
+          'readIf(req.query.p, base);',
         ].join('\n'),
       },
       // Path argument is a call expression → no identifier/member analysis
@@ -69,6 +77,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '  if (flag) { doThing(); }',
           '  fs.readFile(userPath);',
           '}',
+          'f(req.query.p);',
         ].join('\n'),
         errors: [{ messageId: 'violationDetected' }],
       },
@@ -79,6 +88,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '  if (!userPath.startsWith(base)) { log(); }',
           '  fs.readFile(userPath);',
           '}',
+          'f(req.query.p, base);',
         ].join('\n'),
         errors: [{ messageId: 'violationDetected' }],
       },
@@ -89,6 +99,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '  if (!userPath.startsWith(base)) {}',
           '  fs.readFile(userPath);',
           '}',
+          'f(req.query.p, base);',
         ].join('\n'),
         errors: [{ messageId: 'violationDetected' }],
       },
@@ -98,6 +109,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           'function f(userPath) {',
           '  if (flag) { fs.readFile(userPath); }',
           '}',
+          'f(req.query.p);',
         ].join('\n'),
         errors: [{ messageId: 'violationDetected' }],
       },
@@ -107,6 +119,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           'function f(userPath, other, base) {',
           '  if (other.startsWith(base)) { fs.readFile(userPath); }',
           '}',
+          'f(req.query.p, other, base);',
         ].join('\n'),
         errors: [{ messageId: 'violationDetected' }],
       },

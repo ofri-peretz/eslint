@@ -19,6 +19,8 @@ import { makeReadsTaintSource } from '../../utils/provenance';
 
 type MessageIds =
   | 'childProcessCommandInjection'
+  | 'argumentInjection'
+  | 'useEndOfOptions'
   | 'useExecFile'
   | 'useSpawn'
   | 'useSaferLibrary'
@@ -325,6 +327,24 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         fix: 'Use execFile/spawn with {shell: false} and array args',
         documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
       }),
+      argumentInjection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Argument injection',
+        cwe: 'CWE-88',
+        description:
+          'An attacker-steered value sits in the argv vector with no `--` before it. There is no shell here, but the callee still parses a leading `-` as an option — `--upload-pack=` (git), `--to-command=` (tar), `-o ProxyCommand=` (ssh) all execute arbitrary programs.',
+        severity: 'HIGH',
+        fix: "Insert a literal '--' before the first attacker-controlled element, or reject values beginning with '-'.",
+        documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
+      }),
+      useEndOfOptions: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use end-of-options',
+        description: "Add a literal '--' before user-controlled arguments",
+        severity: 'LOW',
+        fix: "execFile('git', ['ls-remote', '--', remote])",
+        documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
+      }),
       useExecFile: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use execFile',
@@ -599,6 +619,78 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         }
       }
       return false;
+    };
+
+    /**
+     * Is this value's first character fixed by the code, and not a dash?
+     *
+     * `` `--file=${name}` `` and `'/tmp/' + name` cannot become an option
+     * however the interpolation is steered, because the option position is
+     * already spoken for. That is the same reasoning `--` relies on, applied
+     * one element at a time.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const cannotStartWithDash = (node: TSESTree.Node): boolean => {
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `cooked` is null only for an invalid escape in a TAGGED template,
+        // which an argv element never is; `raw` carries the same first byte.
+        const first = node.quasis[0].value.raw;
+        return first.length > 0 && !first.startsWith('-');
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+        const left = node.left;
+        return (
+          left.type === AST_NODE_TYPES.Literal &&
+          typeof left.value === 'string' &&
+          left.value.length > 0 &&
+          !left.value.startsWith('-')
+        );
+      }
+      return false;
+    };
+
+    /**
+     * CWE-88 — the argv element an attacker can turn into an OPTION.
+     *
+     * With `shell: false` the vector reaches `execve` untouched, so there is no
+     * CWE-78 shell to inject into. There is still the callee's own option
+     * parser: every POSIX-conventional program reads a leading `-` as a flag,
+     * so an attacker-steered positional becomes `--upload-pack=…` (git),
+     * `--to-command=sh` (tar), `-o ProxyCommand=…` (ssh) — arbitrary execution
+     * without a shell anywhere in the picture.
+     *
+     * Binary-independent on purpose. The alternative is a hand-maintained list
+     * of dangerous flags per program, which is a list of the exploits somebody
+     * already published, not of the ones that exist.
+     *
+     * Two things end the hazard, and both are recognised: a literal `--`
+     * earlier in the vector (POSIX end-of-options — everything after it is
+     * positional), and an element whose leading character the code already
+     * fixed to something other than `-`.
+     *
+     * Returns the offending element so the report lands on it rather than on
+     * the whole call.
+     */
+    const argumentInjectionSite = (node: TSESTree.CallExpression): TSESTree.Node | null => {
+      const argv = node.arguments[1];
+      if (argv?.type !== AST_NODE_TYPES.ArrayExpression) return null;
+      for (const element of argv.elements) {
+        if (element === null) continue;
+        if (
+          element.type === AST_NODE_TYPES.Literal &&
+          element.value === '--'
+        ) {
+          return null;
+        }
+        if (!readsTaintSource(element)) continue;
+        // A spread cannot be proven flag-proof: nothing here knows what is in
+        // the array, and `[...userWords]` is precisely the tar fixture.
+        const target =
+          element.type === AST_NODE_TYPES.SpreadElement ? element.argument : element;
+        if (cannotStartWithDash(target)) continue;
+        return element;
+      }
+      return null;
     };
 
     /**
@@ -886,6 +978,23 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // callee, not CWE-78 through a shell. A rule that cannot name the binary
       // cannot judge it, and it must not keep reporting CWE-78 as a proxy.
       if (isLiteralStringNode(node.arguments[0]) && !usesShell(node, method)) {
+        // …but the paragraph above says argument injection is real and that a
+        // rule which cannot name the binary cannot judge it. Here the binary IS
+        // named — it is the literal we just matched — so the judgement is
+        // available, and declining to make it was a false negative on the
+        // ecosystem's own labelled corpus:
+        // benchmarks/corpus/CWE-088/vulnerable/git-ls-remote-arg-injection.js
+        // and tar-user-args.js were both silent.
+        const injected = argumentInjectionSite(node);
+        if (injected === null) return;
+        context.report({
+          node: injected,
+          messageId: 'argumentInjection',
+          suggest: [
+            { messageId: 'useEndOfOptions', fix: () => null },
+            { messageId: 'validateInput', fix: () => null },
+          ],
+        });
         return;
       }
 

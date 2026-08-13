@@ -335,3 +335,324 @@ describe('no-insecure-redirects', () => {
     });
   });
 });
+
+// ── Anchored-regexp guards (utils/regexp-anchoring.ts) ────────────────────
+//
+// The two CWE-020 corpus fixtures below differ ONLY in the regular expression
+// their guard resolves to. `/^https:\/\/example\.com(\/[^\s]*)?$/` pins the
+// whole origin; `/https?:\/\/example.com/` matches anywhere and its unescaped
+// dot matches any character. A rule that reads the text around the sink cannot
+// tell them apart, and reported both.
+describe('no-insecure-redirects — anchored guards', () => {
+  ruleTester.run('anchored regexp guards', noInsecureRedirects, {
+    valid: [
+      // benchmarks/corpus/CWE-020/safe/escaped-anchored-hostname.js
+      {
+        code: `
+          const TRUSTED_HOST = /^https:\\/\\/example\\.com(\\/[^\\s]*)?$/;
+          function isTrustedRedirect(target) {
+            return TRUSTED_HOST.test(target);
+          }
+          function handleRedirect(req, res) {
+            const target = req.query.next;
+            res.redirect(isTrustedRedirect(target) ? target : '/');
+          }
+        `,
+      },
+      // The guard written inline, via a named binding.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK.test(t) ? t : '/');
+          }
+        `,
+      },
+      // The guard written inline, as a literal.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/^https:\\/\\/a\\.example$/.test(t) ? t : '/');
+          }
+        `,
+      },
+      // Predicate held in an arrow with an expression body.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          const isOk = (t) => OK.test(t);
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+      },
+      // Predicate held in a function expression.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          const isOk = function (t) { return OK.test(t); };
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+      },
+      // Same guard as an if-condition rather than a ternary.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          function isOk(t) { return OK.test(t); }
+          function h(req, res) {
+            const t = req.query.next;
+            if (isOk(t)) { res.redirect(t); }
+          }
+        `,
+      },
+      // Statements other than the return must not confuse the body scan.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          function isOk(t) { log(t); if (!t) { deny(); } return OK.test(t); }
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+      },
+      // A dot inside a character class is already a literal dot.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/^https:\\/\\/[a.]x\\.example$/.test(t) ? t : '/');
+          }
+        `,
+      },
+    ],
+    invalid: [
+      // benchmarks/corpus/CWE-020/vulnerable/incomplete-hostname-regexp.js
+      {
+        code: `
+          const TRUSTED_HOST = /https?:\\/\\/example.com/;
+          function isTrustedRedirect(target) {
+            return TRUSTED_HOST.test(target);
+          }
+          function handleRedirect(req, res) {
+            const target = req.query.next;
+            if (isTrustedRedirect(target)) {
+              res.redirect(target);
+              return;
+            }
+            res.redirect('/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Unanchored at the start.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/https:\\/\\/a\\.example$/.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Unanchored at the end.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/^https:\\/\\/a\\.example/.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // A trailing escaped dollar is a literal `$`, not an end anchor.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/^https:\\/\\/a\\.example\\$/.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Unescaped dot matches any character.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(/^https:\\/\\/a.example$/.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // `.exec` is not `.test`.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK.exec(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // A computed member read is not provably `.test`.
+      {
+        code: `
+          const OK = /^https:\\/\\/a\\.example$/;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK['test'](t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // An unresolvable name proves nothing.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(unknownGuard(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // The binding is a string, not a RegExp.
+      {
+        code: `
+          const OK = 'x';
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Re-assigned, so the binding no longer holds what it was declared with.
+      {
+        code: `
+          let OK = /^https:\\/\\/a\\.example$/;
+          OK = /anything/;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Built at run time — unknowable.
+      {
+        code: `
+          const OK = buildPattern();
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(OK.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // The receiver is neither a literal nor a name.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(patterns.host.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // A string literal receiver has no pattern.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect('abc'.test(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // The name resolves to something that is not a function.
+      {
+        code: `
+          const isOk = 5;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // Two declarations — no single knowable value.
+      {
+        code: `
+          var isOk = 1;
+          var isOk = 2;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // A declaration with no body cannot be inspected.
+      {
+        code: `
+          declare function isOk(t: string): boolean;
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // An import is opaque.
+      {
+        code: `
+          import { isOk } from './guards';
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // The predicate returns nothing.
+      {
+        code: `
+          function isOk(t) { return; }
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // The guard is not a call at all.
+      {
+        code: `
+          function h(req, res, flag) {
+            const t = req.query.next;
+            res.redirect(flag ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+      // A method call is not a resolvable predicate name.
+      {
+        code: `
+          function h(req, res) {
+            const t = req.query.next;
+            res.redirect(guards.isOk(t) ? t : '/');
+          }
+        `,
+        errors: [{ messageId: 'insecureRedirect' }],
+      },
+    ],
+  });
+});

@@ -199,6 +199,10 @@ describe('no-unsafe-buffer-alloc', () => {
          function decodeArray(chunk) { return decodeArrayWithLength(readLen(chunk), chunk); }`,
         // A local array whose size comes from the program, not the connection.
         'function build(items) { return new Array(items.length); }',
+        // Mutually-recursive bindings terminate at the depth limit instead of
+        // blowing the stack. Following a size through locals is what makes the
+        // HTTP fixtures reachable, and it is what makes a cycle possible.
+        'const a = b; const b = a; Buffer.alloc(a);',
         // looksNumeric: every shape that is NOT a count.
         'function d(chunk) { return new Array(chunk); }',
         'function d(chunk) { return new Array("8"); }',
@@ -280,6 +284,31 @@ describe('no-unsafe-buffer-alloc', () => {
         // Directly, with no hop — a length read off the chunk in place.
         {
           code: `function decode(chunk) { return new Array(chunk.readUInt32BE(0)); }`,
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
+        // --- The peer is an HTTP client, not a protocol decoder -------------
+        // benchmarks/corpus/CWE-770/vulnerable/array-length-user.js. The wire
+        // names were all decoder vocabulary (`chunk`, `payload`, `frame`), so
+        // a length the peer sent over HTTP — the commonest spelling of this
+        // bug — was invisible. `req` is as much "off the wire" as `chunk`.
+        {
+          code: `function buildSlots(req, res) {
+                   const n = Number(req.body.count);
+                   const slots = new Array(n).fill(null);
+                   res.json({ length: slots.length });
+                 }`,
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
+        // benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js. Two hops
+        // this time: the size is bound to a local, and the request has been
+        // through `new URL(req.url, base)` before the size is read off it.
+        {
+          code: `const server = http.createServer((req, res) => {
+                   const url = new URL(req.url, 'http://localhost');
+                   const size = Number(url.searchParams.get('size'));
+                   const buf = Buffer.alloc(size);
+                   res.end(\`allocated \${buf.length} bytes\`);
+                 });`,
           errors: [{ messageId: 'unboundedAllocation' }],
         },
         // The same hazard through Buffer.alloc and a typed array.

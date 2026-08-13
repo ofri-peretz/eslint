@@ -250,6 +250,43 @@ eval(mathExpr) → Safe math functions
 | **ESLint MCP**               | ✅ Optimized                | ❌ No                  | ❌ No                 |
 | **Fix Suggestions**          | ✅ Detailed                 | ⚠️ Basic               | ⚠️ Basic              |
 
+## The `vm` and `vm2` sinks (CWE-94)
+
+`eval` is not the only way a string becomes running code. The same rule covers the module sinks that do it — they are grouped here rather than split into their own rule because the defect, the question you have to answer, and the fix are identical.
+
+### `vm` is not a sandbox
+
+```javascript
+const vm = require('vm');
+const value = vm.runInNewContext(req.query.expr, { Math }); // ❌ vmCodeExecution
+```
+
+The context object makes this *look* contained, and Node's own documentation says plainly that the module is not a security mechanism. Every object handed into the context carries its own constructor chain, and `this.constructor.constructor('return process')()` is the one-liner that walks back out to the host.
+
+All four entry points take the source at argument 0 and are covered: `runInNewContext`, `runInThisContext`, `runInContext`, `compileFunction` — plus `new vm.Script(...)` and `new vm.SourceTextModule(...)`, which compile now and run later.
+
+### `vm2` is abandoned
+
+```javascript
+const { NodeVM } = require('vm2');
+const sandbox = new NodeVM({ console: 'inherit' });
+const result = sandbox.run(req.body.code, 'plugin.js'); // ❌ vm2CodeExecution
+```
+
+vm2 was retired by its maintainer after sandbox escapes it could not fix (CVE-2023-37903, CVE-2023-37466). Running caller-supplied source in it is arbitrary code execution on the host. `VM`/`NodeVM` instances (`.run()`) and `new VMScript(...)` are covered; the classes are only recognised when they are actually bound to the `vm2` module, so an unrelated local class named `VM` is not a finding.
+
+### What stays silent
+
+A program the author wrote out is not a finding, including one hop of constant resolution:
+
+```javascript
+const vm = require('vm');
+const SCRIPT = 'total = price * quantity * (1 - discount)'; // ✅ not reported
+vm.runInNewContext(SCRIPT, { price, quantity, discount, total: 0 }, { timeout: 50 });
+```
+
+The single-write requirement is load-bearing. A binding assigned more than once could hold anything by the time the call runs, so proving its initializer constant proves nothing — those report.
+
 ## Related Rules
 
 - [`detect-child-process`](./detect-child-process.md) - Prevents command injection
@@ -298,6 +335,18 @@ myEval(userInput); // Uses eval internally
 ```
 
 **Mitigation**: Apply rule to wrapper implementations.
+
+### The vm Module Bound Through A Wrapper
+
+**Why**: the `vm` / `vm2` sinks are resolved through the file's own import and require bindings. A sink reached through a re-export or a helper module is a different file's problem.
+
+```typescript
+// ❌ NOT DETECTED — the binding is not traced across files
+const { runScript } = require('./sandbox-helper');
+runScript(req.body.code);
+```
+
+**Mitigation**: apply the rule to the helper implementation too.
 
 ## Further Reading
 

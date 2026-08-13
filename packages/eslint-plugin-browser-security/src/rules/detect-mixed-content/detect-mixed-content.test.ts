@@ -88,3 +88,27 @@ jsxRuleTester.run('detect-mixed-content (jsx)', detectMixedContent, {
     },
   ],
 });
+
+// ── The parsing base whose origin is thrown away ─────────────────────────────
+// Shared with `no-http-urls` via `isDiscardedUrlBase`. This was the single
+// corpus site both rules reported — the duplicate that prompted the partition.
+ruleTester.run('detect-mixed-content (URL parsing base)', detectMixedContent, {
+  valid: [
+    // Shopify/cli packages/theme/src/cli/utilities/theme-environment/
+    // server-utils.ts:4. Nothing is ever fetched from `e.c`, so it cannot be
+    // mixed content.
+    "const {pathname, search, searchParams} = new URL(event.path, 'http://e.c');",
+  ],
+  invalid: [
+    // A base whose origin survives is a real cleartext endpoint.
+    {
+      code: "const {origin} = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // FN GUARD: the URL object is kept and can be fetched.
+    {
+      code: "fetch(new URL('/api', 'http://prod.example.com'));",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

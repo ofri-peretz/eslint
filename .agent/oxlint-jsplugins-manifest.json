@@ -1,9 +1,9 @@
 {
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-07",
+  "generatedAt": "2026-08-13",
   "totalPlugins": 30,
-  "totalRules": 466,
-  "oxlintCompatible": 466,
+  "totalRules": 476,
+  "oxlintCompatible": 476,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -39,7 +39,7 @@
       "short": "browser-security",
       "shim": "tools/oxlint-plugins/interlace-browser-security.cjs",
       "subpath": "eslint-plugin-browser-security/oxlint",
-      "ruleCount": 45,
+      "ruleCount": 46,
       "rules": [
         {
           "name": "detect-mixed-content",
@@ -103,6 +103,12 @@
         },
         {
           "name": "no-http-urls",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-incomplete-url-sanitization",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1605,7 +1611,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 37,
+      "ruleCount": 42,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1710,6 +1716,18 @@
           "isTypeAware": false
         },
         {
+          "name": "no-env-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-http-parser",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-insecure-key-derivation",
           "portability": "compatible",
           "blockers": [],
@@ -1770,6 +1788,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-unbounded-decompression",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-unsafe-buffer-alloc",
           "portability": "compatible",
           "blockers": [],
@@ -1806,6 +1830,12 @@
           "isTypeAware": false
         },
         {
+          "name": "require-aead-tag-verification",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "require-dependency-integrity",
           "portability": "compatible",
           "blockers": [],
@@ -1825,6 +1855,12 @@
         },
         {
           "name": "require-storage-encryption",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-stream-error-handler",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2697,7 +2733,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 28,
+      "ruleCount": 32,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -2730,6 +2766,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-fail-open-auth",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-format-string-injection",
           "portability": "compatible",
           "blockers": [],
@@ -2754,6 +2796,12 @@
           "isTypeAware": false
         },
         {
+          "name": "no-homoglyph-identifiers",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-improper-sanitization",
           "portability": "compatible",
           "blockers": [],
@@ -2773,6 +2821,12 @@
         },
         {
           "name": "no-ldap-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-log-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2803,6 +2857,12 @@
         },
         {
           "name": "no-sensitive-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sql-injection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

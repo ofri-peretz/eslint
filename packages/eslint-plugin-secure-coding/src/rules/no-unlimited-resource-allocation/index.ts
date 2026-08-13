@@ -342,6 +342,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       if (ARCHIVE_MODULES.test(source)) archiveBindings.add(local);
     };
 
+    /**
+     * Local names bound to an XML parser, tracked for the same reason as
+     * {@link archiveBindings}: the entity-expansion check used to fire on any
+     * callee whose printed text contained 'parseString'.
+     */
+    const XML_MODULES = /^(xml2js|fast-xml-parser|xmldom|@xmldom\/xmldom|libxmljs|libxmljs2)$/;
+    const XML_PARSE_METHODS: ReadonlySet<string> = new Set([
+      'parseString', 'parseStringPromise',
+    ]);
+    const xmlBindings = new Set<string>();
+
+    const noteXmlBinding = (local: string, source: string): void => {
+      if (XML_MODULES.test(source)) xmlBindings.add(local);
+    };
+
 
     /**
      * A call that actually allocates, sized by something non-constant, inside a
@@ -414,6 +429,8 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (spec.type === 'ImportDefaultSpecifier' || spec.type === 'ImportNamespaceSpecifier') {
             noteArchiveBinding(spec.local.name, String(node.source.value));
           }
+          // `import { parseString } from 'xml2js'` binds the parser directly.
+          noteXmlBinding(spec.local.name, String(node.source.value));
         }
       },
 
@@ -426,6 +443,23 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           node.init.arguments[0]?.type === 'Literal'
         ) {
           noteArchiveBinding(node.id.name, String(node.init.arguments[0].value));
+          noteXmlBinding(node.id.name, String(node.init.arguments[0].value));
+        }
+
+        // `const parser = new xml2js.Parser()` — the instance carries the
+        // parser, and `parser.parseString(xml)` is the billion-laughs sink.
+        // Without this the binding chain stops at the module.
+        if (
+          node.id.type === 'Identifier' &&
+          node.init?.type === 'NewExpression'
+        ) {
+          const constructor = node.init.callee;
+          const fromXmlModule =
+            (constructor.type === 'Identifier' && xmlBindings.has(constructor.name)) ||
+            (constructor.type === 'MemberExpression' &&
+              constructor.object.type === 'Identifier' &&
+              xmlBindings.has(constructor.object.name));
+          if (fromXmlModule) xmlBindings.add(node.id.name);
         }
       },
 
@@ -653,7 +687,25 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           );
         };
 
-        if (isDecompression()) {
+        /**
+         * `zlib.createGunzip({ maxOutputLength: 50 * 1024 * 1024 })` is the
+         * fix this report asks for, so a call that already carries it must
+         * stop reporting — otherwise the only remedy on offer is the one the
+         * author already applied.
+         */
+        const hasDecompressionLimit = (): boolean =>
+          node.arguments.some(
+            (argument) =>
+              argument.type === 'ObjectExpression' &&
+              argument.properties.some(
+                (property) =>
+                  property.type === 'Property' &&
+                  property.key.type === 'Identifier' &&
+                  ['maxOutputLength', 'maxSize', 'limit'].includes(property.key.name),
+              ),
+          );
+
+        if (isDecompression() && !hasDecompressionLimit()) {
           context.report({
             node,
             messageId: 'unlimitedFileOperations',
@@ -664,8 +716,35 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           });
         }
 
-        // XML expansion attack detection
-        if (calleeText.includes('xml2js') || calleeText.includes('parseString')) {
+        // XML expansion attack detection (billion laughs).
+        //
+        // `calleeText.includes('parseString')` matched ioredis's
+        //
+        //   const token = parseStringArgument(args[i])
+        //       redis/ioredis lib/utils/argumentParsers.ts:77
+        //
+        // — a helper that reads one Redis command token and touches no XML at
+        // all. Match the API on the AST instead: `xml2js.parseString(…)`,
+        // `parser.parseString(…)` where `parser` came from an XML module, or a
+        // bare `parseString` imported from one.
+        const isXmlExpansion = (): boolean => {
+          if (callee.type === 'Identifier') {
+            return xmlBindings.has(callee.name) && XML_PARSE_METHODS.has(callee.name);
+          }
+          if (
+            callee.type === 'MemberExpression' &&
+            callee.object.type === 'Identifier' &&
+            callee.property.type === 'Identifier'
+          ) {
+            return (
+              xmlBindings.has(callee.object.name) &&
+              XML_PARSE_METHODS.has(callee.property.name)
+            );
+          }
+          return false;
+        };
+
+        if (isXmlExpansion()) {
           context.report({
             node,
             messageId: 'unlimitedMemoryAllocation',
@@ -698,25 +777,33 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           }
         }
 
-        // Check for recursive data structure processing
-        if (calleeText.includes('map') || calleeText.includes('forEach')) {
-          const args = node.arguments;
-          if (args.length > 0) {
-            const callbackArg = args[0];
-            const callbackText = sourceCode.getText(callbackArg);
-            // Detect patterns that create arrays from nested object properties
-            if (callbackText.includes('Object.keys') && callbackText.includes('map')) {
-              context.report({
-                node,
-                messageId: 'unlimitedMemoryAllocation',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc.start.line),
-                },
-              });
-            }
-          }
-        }
+        // A "recursive data structure processing" check used to live here. It
+        // reported any call whose printed callee text contained 'map' or
+        // 'forEach' when the printed text of its first argument contained both
+        // 'Object.keys' and 'map':
+        //
+        //   inputsFromRemediation.forEach(inputFromRemediation => { … })
+        //       okta-auth-js lib/idx/remediators/Base/Remediator.ts:170
+        //   return errors.map((error) => { … })
+        //       Shopify CLI packages/cli-kit/src/public/node/json-schema.ts:136
+        //
+        // Two of this rule's four wild-corpus findings, both on ordinary array
+        // iteration over a value the program itself produced.
+        //
+        // It was substring matching over printed source twice over — the
+        // callee text of `remediationMap.forEach` contains 'map' before
+        // 'forEach' is even considered, and the callback text is scanned
+        // through comments and string literals. Worse, it asserted an impact
+        // it never established: iterating an array is not an unbounded
+        // allocation unless something unbounded is being iterated, and the
+        // check never looked at where the array came from.
+        //
+        // Removed rather than narrowed. `arr.map(cb)` is the single most
+        // common expression in JavaScript; there is no version of "your map
+        // callback looks recursive" that is actionable. Unbounded allocation
+        // driven by user input is already covered by the
+        // `userControlledResourceSize` and `resourceAllocationInLoop` paths,
+        // which do establish both the size and the source.
 
         // Allocation in a loop, judged by WHAT is allocated rather than by
         // whether the printed callee text happens to contain 'Buffer'.

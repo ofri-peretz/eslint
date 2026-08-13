@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -84,19 +85,107 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const UNSAFE_INLINE_PATTERN = /'unsafe-inline'/gi;
+    // NOT global. `/…/g.test()` advances `lastIndex` on every match and
+    // resumes from there on the next call, so in a file with two CSP strings
+    // the second one was searched from an offset past its own match and came
+    // back false — then reset, so the third reported again. Every second
+    // finding in a file was silently dropped by the flag alone.
+    const UNSAFE_INLINE_PATTERN = /'unsafe-inline'/i;
+
+    /**
+     * Directive names that only appear in a Content-Security-Policy.
+     *
+     * Presence of one is what makes a string a POLICY rather than a string
+     * that happens to contain the token — `["'unsafe-inline'"]` in a table of
+     * CSP keywords, a docs example, a test name. Shape is not meaning: the
+     * rule asserts that inline scripts will execute, which is only true of a
+     * policy that is actually served.
+     */
+    const CSP_DIRECTIVES =
+      /\b(?:default|script|style|img|connect|font|frame|media|object|worker|child|manifest|prefetch|base|form)-(?:src|uri|action)(?:-elem|-attr)?\b/i;
+
+    /** Header and property names that name a Content-Security-Policy. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isCspName = (name: string): boolean =>
+      /^content-security-policy(-report-only)?$/i.test(name) ||
+      /^contentsecuritypolicy(reportonly)?$/i.test(name) ||
+      name.toLowerCase() === 'csp';
+
+    /**
+     * Is this string written where a CSP is delivered?
+     *
+     * `res.setHeader('Content-Security-Policy', value)`, `{ 'Content-Security-Policy': value }`,
+     * `<meta httpEquiv="Content-Security-Policy" content={value} />`.
+     */
+    function atCspSink(node: TSESTree.Node): boolean {
+      // Every node the visitors hand us is reached from Program, so it always
+      // has a parent — only Program itself does not, and Program is never a
+      // Literal or TemplateLiteral. Asserting beats an unreachable branch;
+      // same reasoning as `declarationName` in `no-http-urls`.
+      const parent = node.parent as TSESTree.Node;
+      // Second argument of a two-argument header setter.
+      if (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        parent.arguments[1] === node
+      ) {
+        const first = parent.arguments[0];
+        return (
+          first.type === AST_NODE_TYPES.Literal &&
+          typeof first.value === 'string' &&
+          isCspName(first.value)
+        );
+      }
+      // Object property whose key names the header.
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node && !parent.computed) {
+        if (parent.key.type === AST_NODE_TYPES.Identifier) return isCspName(parent.key.name);
+        if (parent.key.type === AST_NODE_TYPES.Literal && typeof parent.key.value === 'string') {
+          return isCspName(parent.key.value);
+        }
+        return false;
+      }
+      // `content="…"` on a meta tag that declares the policy.
+      if (
+        parent.type === AST_NODE_TYPES.JSXExpressionContainer ||
+        parent.type === AST_NODE_TYPES.JSXAttribute
+      ) {
+        const attribute =
+          parent.type === AST_NODE_TYPES.JSXAttribute ? parent : parent.parent;
+        if (
+          attribute?.type !== AST_NODE_TYPES.JSXAttribute ||
+          attribute.name.type !== AST_NODE_TYPES.JSXIdentifier ||
+          attribute.name.name !== 'content'
+        ) {
+          return false;
+        }
+        // A JSXAttribute's parent is a JSXOpeningElement by grammar, so this
+        // is an assertion rather than a branch nothing can take.
+        const element = attribute.parent as TSESTree.JSXOpeningElement;
+        return element.attributes.some(
+          (other) =>
+            other.type === AST_NODE_TYPES.JSXAttribute &&
+            other.name.type === AST_NODE_TYPES.JSXIdentifier &&
+            /^http-?equiv$/i.test(other.name.name) &&
+            other.value?.type === AST_NODE_TYPES.Literal &&
+            typeof other.value.value === 'string' &&
+            isCspName(other.value.value),
+        );
+      }
+      return false;
+    }
 
     /**
      * Check a string value for unsafe-inline
      */
     function checkForUnsafeInline(node: TSESTree.Node, value: string): void {
-      if (UNSAFE_INLINE_PATTERN.test(value)) {
-        context.report({
-          node,
-          messageId: 'unsafeInline',
-          suggest: [{ messageId: 'useNonceOrHash', fix: () => null }],
-        });
-      }
+      if (!UNSAFE_INLINE_PATTERN.test(value)) return;
+      // A policy names at least one directive, or is delivered somewhere this
+      // rule can see. Otherwise the token is just a string.
+      if (!CSP_DIRECTIVES.test(value) && !atCspSink(node)) return;
+      context.report({
+        node,
+        messageId: 'unsafeInline',
+        suggest: [{ messageId: 'useNonceOrHash', fix: () => null }],
+      });
     }
 
     return {

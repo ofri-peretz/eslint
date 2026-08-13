@@ -21,6 +21,10 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-directive-injection',
       'no-format-string-injection',
       'no-template-injection', // added in #185
+      'no-sql-injection', // driver-agnostic CWE-89 (corpus FN sweep)
+      'no-log-injection', // CWE-117 (corpus FN sweep)
+      'no-fail-open-auth', // CWE-636 (corpus FN sweep)
+      'no-homoglyph-identifiers', // CWE-1007 (corpus FN sweep)
       'detect-non-literal-regexp',
       'no-redos-vulnerable-regex',
       'no-unsafe-regex-construction',
@@ -46,7 +50,7 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-hardcoded-session-tokens',
       'require-secure-defaults',
     ]);
-    expect(ruleKeys.length).toBe(28);
+    expect(ruleKeys.length).toBe(32);
   });
 
   describe('configurations', () => {
@@ -66,6 +70,26 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       // the `strict` config — see the test below.
       expect(recommendedRules['secure-coding/no-unsafe-deserialization']).toBe('warn');
     });
+
+    /**
+     * Regression lock — `no-sql-injection` ships ON in `recommended`.
+     *
+     * It exists to close the CWE-089 corpus false negatives that #478 opened:
+     * requiring the driver's own import made `db.query('SELECT … ' + userId)`
+     * correctly silent in every driver-scoped rule, and nothing owned it.
+     * This rule is the complement of that gate — it reports only in files
+     * importing NO SQL driver — so exactly one rule owns any query site.
+     *
+     * Promotion was measured first, on the 8-repo published-code corpus that
+     * demoted `detect-object-injection`: 0 findings against 23 candidate
+     * `.query(` / `.execute(` sites. Dropping it from the preset would
+     * silently reopen the false negatives, and every test would stay green.
+     */
+    it('ships no-sql-injection at error in recommended', () => {
+      expect(configs.recommended.rules?.['secure-coding/no-sql-injection']).toBe('error');
+      expect(rules['no-sql-injection']).toBeDefined();
+    });
+
 
     /**
      * Regression lock — `no-insecure-comparison` must stay OUT of the presets

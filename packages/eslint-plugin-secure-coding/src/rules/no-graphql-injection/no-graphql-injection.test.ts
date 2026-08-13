@@ -659,13 +659,24 @@ describe('no-graphql-injection', () => {
     });
 
     ruleTester.run('invalid - schema keyword template (type) with a following name', noGraphqlInjection, {
-      valid: [],
+      valid: [
+        // `type Name {` is TypeScript as often as it is GraphQL SDL, so the
+        // schema-keyword path now asks for corroboration. Bound to `t`, with
+        // no tag and no GraphQL caller, there is nothing saying this is
+        // GraphQL. See hasGraphqlAttribution.
+        'const t = `type User { id: "${userId}" }`;',
+      ],
       invalid: [
         // "type User" with unsafe interpolation elsewhere in the same template -
         // exercises the true side of isGraphqlTemplate's schema-keyword check
         // using the `type` keyword specifically (interface was already covered).
         {
-          code: 'const t = `type User { id: "${userId}" }`;',
+          code: 'const typeDefs = `type User { id: "${userId}" }`;',
+          errors: [{ messageId: 'unsafeVariableInterpolation' }],
+        },
+        // …and the tagged form, which is how SDL is normally written.
+        {
+          code: 'const t = gql`type User { id: "${userId}" }`;',
           errors: [{ messageId: 'unsafeVariableInterpolation' }],
         },
       ],
@@ -1215,5 +1226,152 @@ describe('no-graphql-injection — corpus regression', () => {
         errors: [{ messageId: 'graphqlInjection' }, { messageId: 'graphqlInjection' }],
       },
     ],
+  });
+});
+
+/**
+ * Wild-corpus sweep (8 repos of published SDK/CLI code): 7 findings, 1 real.
+ *
+ * Three defects, all "shape is not meaning":
+ *
+ *  - `'query { __typename }'.includes('__type')` is true. `__typename` is the
+ *    meta-field every GraphQL document may use; `__type` and `__schema` are
+ *    the introspection roots. A substring match cannot tell them apart.
+ *  - `{ … { … } }` was read as a selection set whatever was inside it, so
+ *    JSON-with-Liquid (`{ "type": "display", "value": {{ … }} }`) qualified.
+ *  - `interface Name {` was read as GraphQL SDL, which it is — and also as
+ *    TypeScript, which it also is.
+ */
+describe('corpus regression — introspection, selection sets and SDL keywords', () => {
+  ruleTester.run('wild corpus', noGraphqlInjection, {
+    valid: [
+      // Shopify CLI bin/update-observe.js:475 and :100 — `__typename` is not
+      // introspection.
+      {
+        name: '__typename is not an introspection root',
+        code: `await graphql('query { __typename }', {})`,
+      },
+      {
+        name: '__typename inside a template query',
+        code: 'const SLO_QUERY = `query($id: ID!) {\\n  sloDefinition(id: $id) {\\n    sli { __typename }\\n  }\\n}`;',
+      },
+      // Shopify CLI theme/.../repl/evaluator.ts:32, 42, 66 — Liquid and JSON.
+      {
+        name: 'JSON with a Liquid output tag is not a selection set',
+        code: 'function f(config) { return `{ "type": "display", "value": {{ ${config.snippet} | json }} }`; }',
+      },
+      {
+        name: 'JSON with a Liquid statement tag is not a selection set',
+        code: 'function f(config) { return `{ "type": "context", "value": "{% ${config.snippet} %}" }`; }',
+      },
+      {
+        name: 'a bare Liquid output tag is not a selection set',
+        code: 'function f(config) { return `{{ ${config.snippet} }}`; }',
+      },
+      // Shopify CLI .../specifications/type-generation.ts:680 — a .d.ts
+      // generator reported as CVSS 9.8 GraphQL injection.
+      {
+        name: 'a TypeScript interface template is not SDL',
+        code: 'function f(types, toolRegistrations) { return `${types}\\ninterface ShopifyTools {\\n${toolRegistrations}\\n}\\n`; }',
+      },
+      {
+        name: 'an unattributed enum template is not SDL',
+        code: 'const t = `enum Color { ${values} }`;',
+      },
+    ],
+    invalid: [
+      // The one REAL finding: Shopify CLI app-management-client/graphql/
+      // organization_beta_flags.ts:4 interpolates flag handles into a query
+      // instead of passing them as variables.
+      {
+        name: 'organization_beta_flags.ts:4 — interpolation into a gql query',
+        code: [
+          'function organizationBetaFlagsQuery(flags) {',
+          '  return gql`',
+          '    query OrganizationBetaFlags($organizationId: OrganizationID!) {',
+          '      organization(organizationId: $organizationId) {',
+          '        id',
+          '        ${flags.map((flag) => `flag_${flag}`).join("")}',
+          '      }',
+          '    }`',
+          '}',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // Genuine introspection must still report.
+      {
+        name: '__type is still an introspection root',
+        code: `const q = 'query { __type(name: "User") { name } }';`,
+        errors: [{ messageId: 'introspectionQuery' }],
+      },
+      {
+        name: '__schema is still an introspection root',
+        code: 'const q = `{ __schema { types { name } } }`;',
+        errors: [{ messageId: 'introspectionQuery' }],
+      },
+      // A real selection set must still report.
+      {
+        name: 'a real selection set with interpolation',
+        code: 'function f(userId) { return `{ user(id: "${userId}") { name email } }`; }',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // SDL with corroboration must still report — one case per attribution.
+      {
+        name: 'attributed by a typeDefs binding',
+        code: 'const typeDefs = `interface Node { ${extraField} }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'attributed by a typeDefs property',
+        code: 'makeSchema({ typeDefs: `interface Node { ${extraField} }` });',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'attributed by a member gql tag',
+        code: 'const t = apollo.gql`interface Node { ${extraField} }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'attributed by a GraphQL library call',
+        code: 'graphqlClient(`interface Node { ${extraField} }`);',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        // Nested `+` nodes each report, as they already did — the point here
+        // is that the INNER one is attributed by climbing to the outermost
+        // concatenation and finding the `typeDefs` binding.
+        name: 'attributed concatenation climbs the + chain',
+        code: 'const typeDefs = "type User {" + fields + "}";',
+        errors: [{ messageId: 'graphqlInjection' }, { messageId: 'graphqlInjection' }],
+      },
+    ],
+  });
+});
+
+/** Branch coverage for the attribution gate and the schema-keyword scanners. */
+describe('coverage — attribution and schema-keyword scanning', () => {
+  ruleTester.run('schema keyword shapes that do not qualify', noGraphqlInjection, {
+    valid: [
+      // Tagged, but the tag is not a name at all (a call result).
+      { name: 'call-expression tag', code: 'const t = getTag()`interface Node { ${x} }`;' },
+      // Tagged with a member whose property is not `gql`.
+      { name: 'non-gql member tag', code: 'const t = lib.sql`interface Node { ${x} }`;' },
+      // Attributed, but the keyword is mid-line — not a definition.
+      { name: 'template: keyword mid-line', code: 'const typeDefs = `a type User { ${x} }`;' },
+      { name: 'literal: keyword mid-line', code: 'const typeDefs = "a type User { x }" + y;' },
+      // Attributed, keyword at line start, but no whitespace after it.
+      { name: 'template: keyword then colon', code: 'const typeDefs = `type: { ${x} }`;' },
+      { name: 'literal: keyword then colon', code: 'const typeDefs = "type: { x }" + y;' },
+      // Attributed, keyword at line start and at end of text.
+      { name: 'template: keyword at end', code: 'const typeDefs = `{ a }\ntype`;' },
+      { name: 'literal: keyword at end', code: 'const typeDefs = "{ a }\\ntype" + y;' },
+      // Attributed, keyword at line start with whitespace after it, but no
+      // type name follows — a brace is not a name.
+      { name: 'template: keyword then brace', code: 'const typeDefs = `type { ${x} }`;' },
+      { name: 'literal: keyword then brace', code: 'const typeDefs = "type {" + x;' },
+      // Unattributed literal concatenation carrying a schema keyword.
+      { name: 'literal: unattributed', code: 'const t = "type User {" + fields + "}";' },
+    ],
+    invalid: [],
   });
 });

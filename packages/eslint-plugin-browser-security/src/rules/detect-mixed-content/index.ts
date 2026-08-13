@@ -11,7 +11,11 @@
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isXmlNamespaceUri, isTrustworthyLocalUrl } from '../../utils/namespace-uris';
+import {
+  isXmlNamespaceUri,
+  isTrustworthyLocalUrl,
+  isDiscardedUrlBase,
+} from '../../utils/namespace-uris';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -67,6 +71,12 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
         // spec, so no browser blocks or flags it from an HTTPS page. Calling it
         // mixed content describes behaviour that does not happen.
         if (isTrustworthyLocalUrl(node.value)) {
+          return;
+        }
+        // A parsing base whose origin is destructured away is never fetched,
+        // so it cannot be mixed content. Shared with `no-http-urls` so the two
+        // rules cannot disagree about it.
+        if (isDiscardedUrlBase(node)) {
           return;
         }
         context.report({ node, messageId: 'violationDetected' });

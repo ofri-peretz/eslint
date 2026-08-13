@@ -11,7 +11,11 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isXmlNamespaceUri, isTrustworthyLocalUrl } from '../../utils/namespace-uris';
+import {
+  isXmlNamespaceUri,
+  isTrustworthyLocalUrl,
+  isDiscardedUrlBase,
+} from '../../utils/namespace-uris';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -179,6 +183,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // two rules cannot disagree about what "local" means; it covers `::1`,
       // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
       if (isTrustworthyLocalUrl(value)) {
+        return;
+      }
+
+      // A parsing base whose origin is destructured away transmits nothing —
+      // there is no URL object left to fetch. Shared with `detect-mixed-content`
+      // so the two rules cannot disagree about it.
+      if (isDiscardedUrlBase(node)) {
         return;
       }
 

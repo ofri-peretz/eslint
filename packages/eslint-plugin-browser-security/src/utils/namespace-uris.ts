@@ -4,6 +4,9 @@
  * MIT license that can be found in the LICENSE file.
  */
 
+import type { TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+
 /**
  * Is this `http://` string an XML namespace / schema IDENTIFIER rather than a
  * URL anything will ever fetch?
@@ -77,6 +80,59 @@ export function isXmlNamespaceUri(value: string, declaredAs?: string): boolean {
     return false;
   }
   return NAMESPACE_AUTHORITY_HOSTS.has(host);
+}
+
+/** Parts of a URL that carry nothing from its origin. */
+const ORIGIN_INDEPENDENT_URL_PARTS: ReadonlySet<string> = new Set([
+  'pathname', 'search', 'searchParams', 'hash',
+]);
+
+/**
+ * Is this `http://` literal a parsing base whose origin is provably thrown away?
+ *
+ * `new URL(relative, base)` is the standard way to parse a relative path, and
+ * the base is a required frame rather than a destination. When the result is
+ * destructured on the spot into origin-independent parts, the scheme cannot
+ * reach any network call — there is no URL object left to fetch.
+ *
+ * Shopify/cli
+ * `packages/theme/src/cli/utilities/theme-environment/server-utils.ts:4` is the
+ * shape: `const {pathname, search, searchParams} = new URL(event.path, 'http://e.c')`.
+ * `e.c` is not a host anything resolves; it exists to satisfy the constructor.
+ *
+ * Deliberately narrow. It is NOT enough that the literal sits in the base
+ * position: `fetch(new URL('/api', 'http://prod.example.com'))` transmits in
+ * cleartext and must keep reporting. The destructuring is what proves the
+ * origin is discarded, and you cannot fetch a value you destructured into path
+ * components.
+ */
+export function isDiscardedUrlBase(node: TSESTree.Node): boolean {
+  const parent = node.parent;
+  if (
+    parent?.type !== AST_NODE_TYPES.NewExpression ||
+    parent.callee.type !== AST_NODE_TYPES.Identifier ||
+    parent.callee.name !== 'URL' ||
+    parent.arguments[1] !== node
+  ) {
+    return false;
+  }
+  const declarator = parent.parent;
+  if (
+    declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+    declarator.init !== parent ||
+    declarator.id.type !== AST_NODE_TYPES.ObjectPattern
+  ) {
+    return false;
+  }
+  // Every destructured part must be origin-independent. A rest element, a
+  // computed key, or a read of `origin`/`href`/`host` keeps the scheme alive.
+  return declarator.id.properties.every(
+    (property) =>
+      property.type === AST_NODE_TYPES.Property &&
+      !property.computed &&
+      property.key.type === AST_NODE_TYPES.Identifier &&
+      ORIGIN_INDEPENDENT_URL_PARTS.has(property.key.name),
+  );
 }
 
 /**

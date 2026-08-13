@@ -18,6 +18,7 @@ import {
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
+import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
 
 type MessageIds = 'missingOriginCheck' | 'addOriginCheck';
 
@@ -132,9 +133,42 @@ export const requirePostmessageOriginCheck = createRule<
 
     const sourceCode = context.sourceCode;
 
+    /**
+     * Handlers the text patterns above found no origin check in, held back
+     * until `Program:exit`.
+     *
+     * `ALLOWED_ORIGIN.test(event.origin)` is an origin check that spells the
+     * word `origin` only as a property read, so none of the `origin ===` text
+     * patterns match it and every regexp-guarded listener was reported. The
+     * check may also be written after the point ESLint visits the listener, so
+     * the verdict has to wait until the whole program has been walked.
+     */
+    const unverified: TSESTree.Node[] = [];
+
+    /** Ranges of `ALLOWED.test(x.origin)` calls with a fully anchored pattern. */
+    const anchoredOriginTests: Array<readonly [number, number]> = [];
+
+    /** Is this argument an `.origin` read — `event.origin`, `e.origin`? */
+    function isOriginRead(node: TSESTree.Node): boolean {
+      return (
+        node.type === 'MemberExpression' &&
+        !node.computed &&
+        node.property.type === 'Identifier' &&
+        node.property.name === 'origin'
+      );
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+
+        if (
+          node.arguments.length === 1 &&
+          isOriginRead(node.arguments[0]) &&
+          isAnchoredRegexpTest(node, sourceCode)
+        ) {
+          anchoredOriginTests.push([node.range[0], node.range[1]]);
+        }
 
         // Check for addEventListener('message', handler) or window.addEventListener('message', handler)
         let isMessageListener = false;
@@ -186,16 +220,7 @@ export const requirePostmessageOriginCheck = createRule<
           handlerArg.type === 'ArrowFunctionExpression'
         ) {
           if (!hasOriginCheck(handlerArg, sourceCode)) {
-            context.report({
-              node: handlerArg,
-              messageId: 'missingOriginCheck',
-              suggest: [
-                {
-                  messageId: 'addOriginCheck',
-                  fix: () => null,
-                },
-              ],
-            });
+            unverified.push(handlerArg);
           }
         }
 
@@ -203,6 +228,26 @@ export const requirePostmessageOriginCheck = createRule<
         if (handlerArg.type === 'Identifier') {
           // Could add more sophisticated analysis here
           // For now, we skip variable references as they may be validated elsewhere
+        }
+      },
+
+      'Program:exit'() {
+        for (const handler of unverified) {
+          const guarded = anchoredOriginTests.some(
+            ([start, end]) =>
+              start >= handler.range[0] && end <= handler.range[1],
+          );
+          if (guarded) continue;
+          context.report({
+            node: handler,
+            messageId: 'missingOriginCheck',
+            suggest: [
+              {
+                messageId: 'addOriginCheck',
+                fix: () => null,
+              },
+            ],
+          });
         }
       },
     };

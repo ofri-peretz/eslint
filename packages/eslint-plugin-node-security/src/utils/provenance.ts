@@ -168,7 +168,30 @@ export function makeReadsTaintSource(
       case AST_NODE_TYPES.NewExpression:
         // `path.join(base, req.query.f)`, `String(req.body.x)`, `new URL(u)` —
         // a wrapper does not launder its arguments.
-        return node.arguments.some((argument) => reads(argument, depth + 1));
+        //
+        // Nor does it launder its RECEIVER: `req.body.options.split(' ')` is
+        // the request, split. Only the receiver is followed, never the method
+        // name — running the property test over a callee would read `db.query(sql)`
+        // as a request because the method happens to be spelled `query`.
+        //
+        // `process` is excluded as a receiver. It is a taint ROOT because of
+        // its data properties (`process.argv`, `process.env`), but none of its
+        // METHODS return external input: `process.cwd()` is the directory the
+        // build was launched from, `process.uptime()` a number. Following the
+        // receiver there made `execSync(\`… --packageName ${process.cwd()}\`)`
+        // read as attacker-steerable — okta-signin-widget
+        // `packages/@okta/pseudo-loc/pseudo-loc.js:12`, a build script.
+        // `req.get('host')` is the opposite case and must keep flowing, so this
+        // is specific to `process` rather than to receivers in general.
+        return (
+          node.arguments.some((argument) => reads(argument, depth + 1)) ||
+          (node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            !(
+              node.callee.object.type === AST_NODE_TYPES.Identifier &&
+              node.callee.object.name === 'process'
+            ) &&
+            reads(node.callee.object, depth + 1))
+        );
       default:
         return false;
     }

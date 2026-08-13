@@ -375,3 +375,5 @@ fileManager.read(userPath);
 | `allowLiterals` | `boolean` | `false` | Allow literal string paths |
 | `additionalMethods` | `string[]` | `[]` | Additional fs methods to check |
 | `allowedExtensions` | `string[]` | `[]` | Allowed file extensions (e.g., [".txt", ".json"]) |
+| `taintSources` | `string[]` | — | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
+| `reportUnresolvedPaths` | `boolean` | `false` | Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code. |

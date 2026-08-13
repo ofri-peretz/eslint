@@ -124,3 +124,100 @@ ruleTester.run(
     ],
   },
 );
+
+// ── Regexp origin checks (utils/regexp-anchoring.ts) ──────────────────────
+//
+// `ALLOWED_ORIGIN.test(event.origin)` spells "origin" only as a property read,
+// so none of the `origin ===` text patterns above match it — every listener
+// guarded by a regexp was reported, anchored or not. The two CWE-020 corpus
+// fixtures below differ only in whether that regexp is anchored.
+ruleTester.run(
+  'require-postmessage-origin-check — regexp guards',
+  requirePostmessageOriginCheck,
+  {
+    valid: [
+      // benchmarks/corpus/CWE-020/safe/anchored-origin-regexp.js
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(event.origin)) {
+              return;
+            }
+            applySettings(event.data);
+          });
+        `,
+      },
+    ],
+    invalid: [
+      // benchmarks/corpus/CWE-020/vulnerable/missing-regexp-anchor.js
+      {
+        code: `
+          const ALLOWED = /https:\\/\\/app\\.example\\.com/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(event.origin)) {
+              return;
+            }
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      // Anchored, but testing something that is not the origin.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(event.data)) { return; }
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      // A computed read is not provably `.origin`.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(event['origin'])) { return; }
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      // Not a member read at all.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(someValue)) { return; }
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      // Wrong arity.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test()) { return; }
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+      // The anchored check exists, but not inside this handler.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          ALLOWED.test(window.origin);
+          window.addEventListener('message', (event) => {
+            applySettings(event.data);
+          });
+        `,
+        errors: [{ messageId: 'missingOriginCheck' }],
+      },
+    ],
+  },
+);

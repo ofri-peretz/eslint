@@ -1,0 +1,137 @@
+---
+title: no-insecure-http-parser
+description: Disallow insecureHTTPParser true on Node HTTP servers and clients
+tags: ['security', 'http', 'cwe-444', 'nodejs', 'request-smuggling']
+category: security
+severity: high
+cwe: CWE-444
+owasp: "A03:2021"
+autofix: false
+---
+
+> **Keywords:** insecureHTTPParser, request smuggling, desync, llhttp, Transfer-Encoding, Content-Length, CWE-444, security, ESLint rule, LLM-optimized
+> **CWE:** [CWE-444](https://cwe.mitre.org/data/definitions/444.html)  
+> **OWASP:** [A03:2021-Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+
+<!-- @rule-summary -->
+Disallow insecureHTTPParser true on Node HTTP servers and clients
+<!-- @/rule-summary -->
+
+Detects `insecureHTTPParser: true` on Node HTTP servers, clients and agents. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
+
+**🚨 Security rule** | **💡 Provides suggestions** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-444](https://cwe.mitre.org/data/definitions/444.html) (Request Smuggling) |
+| **Severity**      | High (security vulnerability)                                                  |
+| **Auto-Fix**      | 💡 Suggests the strict parser                                                  |
+| **Category**      | Security                                                                       |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                        |
+| **Best For**      | Node services behind a proxy, CDN or load balancer                             |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Node's default llhttp parser rejects ambiguous message framing — a message carrying both `Content-Length` and `Transfer-Encoding`, an invalid chunk size, a bare `LF` line terminator. `insecureHTTPParser: true` swaps in the lenient parser, which accepts all of it.
+
+**Risk:** Request smuggling needs exactly one thing: two hops that disagree about where one request ends and the next begins. A lenient parser behind a strict proxy (or the reverse) is that disagreement. An attacker prepends a request to somebody else's connection — stealing their session, poisoning the response queue, or reaching internal endpoints the proxy was supposed to gate.
+
+## Rule Details
+
+The option name is Node-specific and has exactly one meaning, so the **property itself** is the finding. Anchoring there rather than on `http.createServer(...)` also catches the options object that is built once and passed somewhere else:
+
+```typescript
+const serverOptions = { insecureHTTPParser: true }; // reported here
+http.createServer(serverOptions, handler);          // …not here
+```
+
+Only a literal `true` reports. `insecureHTTPParser: allowLegacy` may well be `false` at runtime, and reporting it would be a guess.
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+import http from 'http';
+import https from 'https';
+
+// Server accepts malformed framing from anything in front of it
+const server = http.createServer({ insecureHTTPParser: true }, handler);
+
+// Client trusts sloppy upstream framing — desyncs a shared proxy
+https.request({ host, path, method: 'GET', insecureHTTPParser: true }, onResponse);
+
+// Same switch, thrown later
+serverOptions.insecureHTTPParser = true;
+```
+
+### ✅ Correct
+
+```typescript
+import http from 'http';
+import https from 'https';
+
+// Default strict llhttp parser rejects ambiguous framing
+const server = http.createServer(handler);
+
+https.request({ host, path, method: 'GET' }, onResponse);
+
+// Explicitly strict is fine too
+http.createServer({ insecureHTTPParser: false }, handler);
+```
+
+## Configuration
+
+| Option         | Type      | Default | Description                             |
+| -------------- | --------- | ------- | --------------------------------------- |
+| `allowInTests` | `boolean` | `false` | Allow the lenient parser in test files  |
+
+```javascript
+{
+  rules: {
+    'node-security/no-insecure-http-parser': ['error', {
+      allowInTests: false
+    }]
+  }
+}
+```
+
+## Security Impact
+
+| Vulnerability          | CWE | OWASP    | CVSS     | Impact                                  |
+| ---------------------- | --- | -------- | -------- | --------------------------------------- |
+| Request Smuggling      | 444 | A03:2021 | 7.5 High | Session hijack, proxy cache poisoning   |
+| Access Control Bypass  | 284 | A01:2021 | 7.5 High | Front-end authorization rules skipped   |
+
+## Related Rules
+
+- [`no-ssrf`](./no-ssrf.md) — Detect user-controlled outbound request URLs
+- [`no-self-signed-certs`](./no-self-signed-certs.md) — Detect disabled TLS certificate validation
+
+## Known False Negatives
+
+### Non-literal values
+
+**Why**: A value this rule cannot read may be `false` at runtime, and reporting it would be a guess rather than a finding.
+
+```typescript
+// ❌ NOT DETECTED
+http.createServer({ insecureHTTPParser: process.env.LEGACY === '1' }, handler);
+```
+
+**Mitigation**: Do not make parser strictness configurable — there is no deployment where the lenient parser is the right answer.
+
+## Further Reading
+
+- **[http.createServer options](https://nodejs.org/api/http.html#httpcreateserveroptions-requestlistener)** — `insecureHTTPParser` semantics
+- **[HTTP request smuggling](https://portswigger.net/web-security/request-smuggling)** — PortSwigger's reference on desync attacks
+- **[CWE-444: Inconsistent Interpretation of HTTP Requests](https://cwe.mitre.org/data/definitions/444.html)** — Official CWE entry
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow the lenient parser in test files |

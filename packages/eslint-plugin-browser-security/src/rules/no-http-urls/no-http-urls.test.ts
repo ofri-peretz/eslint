@@ -169,3 +169,72 @@ jsxRuleTester.run('no-http-urls (jsx)', noHttpUrls, {
     },
   ],
 });
+
+// ── The parsing base whose origin is thrown away ─────────────────────────────
+// Shared with `detect-mixed-content` via `isDiscardedUrlBase`, so the two rules
+// cannot disagree about this site.
+ruleTester.run('no-http-urls (URL parsing base)', noHttpUrls, {
+  valid: [
+    // Shopify/cli packages/theme/src/cli/utilities/theme-environment/
+    // server-utils.ts:4 — the one site both this rule and detect-mixed-content
+    // reported. `e.c` is not a host anything resolves; it exists to satisfy the
+    // URL constructor, and the origin is destructured away on the same line.
+    "const {pathname, search, searchParams} = new URL(event.path, 'http://e.c');",
+    // Every origin-independent part, in any combination.
+    "const {hash} = new URL(p, 'http://e.c');",
+    "const {pathname} = new URL(p, 'http://e.c');",
+  ],
+  invalid: [
+    // A base whose origin SURVIVES is a real cleartext endpoint. Reading
+    // `origin` keeps the scheme, so the exemption must not apply.
+    {
+      code: "const {origin, pathname} = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    {
+      code: "const {href} = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A rest element captures whatever is left, including the origin.
+    {
+      code: "const {pathname, ...rest} = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A computed key cannot be read, so nothing is proven.
+    {
+      code: "const {[k]: v} = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // FN GUARD: the whole URL object is kept and can be fetched. This is the
+    // case a position-only exemption would have silenced.
+    {
+      code: "const u = new URL('/api', 'http://prod.example.com'); fetch(u);",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // FN GUARD: passed straight to fetch, never bound at all.
+    {
+      code: "fetch(new URL('/api', 'http://prod.example.com'));",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // The literal is the URL itself (argument 0), not the base.
+    {
+      code: "const {pathname} = new URL('http://prod.example.com/a');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A different constructor confers nothing.
+    {
+      code: "const {pathname} = new Request(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A member-expression callee is not the bare `URL` identifier.
+    {
+      code: "const {pathname} = new global.URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // Destructured into an array pattern, not an object pattern.
+    {
+      code: "const [a] = new URL(p, 'http://prod.example.com');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+  ],
+});

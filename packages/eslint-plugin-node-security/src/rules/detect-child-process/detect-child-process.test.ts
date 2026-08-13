@@ -596,13 +596,36 @@ describe('detect-child-process — coverage completion', () => {
          const copyCmd = \`mv \${fromDir}/** \${toDir} && rm -rf \${fromDir}\`;
          execSync(copyCmd, { cwd: pkg });`,
         // The guard's actual claim, isolated: a LITERAL command with no shell
-        // is safe even when the argv entry IS attacker-controlled. With
-        // `shell: false` the vector reaches execve verbatim, so `req.body.url`
-        // is one argv entry to `git` and can never start a second process.
-        // The `{ shell: true }` counterpart in `invalid` below is the same code
-        // with the shell put back, and it reports.
+        // cannot start a SECOND process. With `shell: false` the vector reaches
+        // execve verbatim, so no metacharacter in `req.body.url` is
+        // interpreted. The `{ shell: true }` counterpart in `invalid` below is
+        // the same code with the shell put back, and it reports CWE-78.
+        //
+        // The tainted argv entry is still reported — as CWE-88, below — because
+        // `git` parses its own options. The two claims are different and both
+        // true; what makes this case `valid` here is the `--`, which ends
+        // option parsing and closes the CWE-88 half.
         `const { spawn } = require('child_process');
-         app.post('/clone', (req) => spawn('git', ['clone', req.body.url]));`,
+         app.post('/clone', (req) => spawn('git', ['clone', '--', req.body.url]));`,
+        // okta-signin-widget packages/@okta/pseudo-loc/pseudo-loc.js:12 — a
+        // build script interpolating `process.cwd()` into a command. `process`
+        // is a taint root for its DATA properties (`argv`, `env`), but its
+        // METHODS return process metadata, not external input. Following the
+        // receiver of `process.cwd()` reported the launch directory as
+        // attacker-steerable.
+        `const { execSync } = require('child_process');
+         const pkg = process.cwd();
+         const cmd = \`pseudo-loc generate --packageName \${pkg}\`;
+         execSync(cmd, { cwd: pkg, stdio: 'inherit' });`,
+        // A hole in the argv array is not an element to judge.
+        `const { execFile } = require('child_process');
+         execFile('git', ['clone', , 'origin'], cb);`,
+        // Flag-proof by construction: the leading character is fixed by the
+        // code, so no steering of the interpolation can produce an option.
+        `const { execFile } = require('child_process');
+         app.post('/c', (req) => execFile('git', ['clone', \`/srv/\${req.body.name}\`], cb));`,
+        `const { execFile } = require('child_process');
+         app.post('/c', (req) => execFile('git', ['clone', '/srv/' + req.body.name], cb));`,
         // Shopify/cli bin/run-command.js:10 — a wrapper forwarding its own
         // parameters. Whether that is safe is the caller's fact, not this
         // file's.
@@ -633,6 +656,26 @@ describe('detect-child-process — coverage completion', () => {
           code: `const { spawn } = require('child_process');
                  app.post('/run', (req) => spawn('bash', ['-c', req.body.script]));`,
           errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // ── CWE-88: argument injection, no shell required ──────────────────
+        // benchmarks/corpus/CWE-088/vulnerable/git-ls-remote-arg-injection.js.
+        // `shell: false` closes CWE-78 and leaves the callee's own option
+        // parser wide open: `--upload-pack=touch /tmp/pwned` is read by git as
+        // an option, not a repo URL, and runs a program. The rule declined to
+        // judge this on the grounds that it could not name the binary — but the
+        // binary is the literal it just matched.
+        {
+          code: `const { execFile } = require('child_process');
+                 app.get('/refs', (req) => execFile('git', ['ls-remote', req.query.remote], cb));`,
+          errors: [{ messageId: 'argumentInjection' }],
+        },
+        // benchmarks/corpus/CWE-088/vulnerable/tar-user-args.js — a spread of
+        // request text straight into argv. Nothing here can prove what is in
+        // the array, so it cannot be flag-proof.
+        {
+          code: `const { execFile } = require('child_process');
+                 app.post('/x', (req) => execFile('tar', [...req.body.options.split(' '), req.body.file], cb));`,
+          errors: [{ messageId: 'argumentInjection' }],
         },
         // FN GUARD: same for an eval flag under a non-shell binary.
         {

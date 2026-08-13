@@ -115,4 +115,129 @@ describe('no-unsafe-query', () => {
       ]),
     });
   });
+
+  /**
+   * Labelled-corpus regression. These fixtures are **deliberately not** run
+   * through `xmo()`: they carry no `mongodb` import, which is the entire point.
+   * The native-driver arm in `mongo-evidence.ts` is what opens the gate for
+   * them, and prefixing an import would make them pass on the unfixed code.
+   */
+  describe('CWE-943 corpus — native driver, no import', () => {
+    ruleTester.run('native-driver collection handles', noUnsafeQuery, {
+      valid: [
+        {
+          // benchmarks/corpus/CWE-943/safe/explicit-eq.js
+          name: 'user input wrapped in $eq is not reported',
+          code: [
+            `async function login(req, res) {`,
+            `  const user = await db.collection('users').findOne({`,
+            `    username: { $eq: String(req.body.username) },`,
+            `    password: { $eq: String(req.body.password) },`,
+            `  }, { projection: { _id: 1, username: 1, role: 1 } });`,
+            `  return user;`,
+            `}`,
+          ].join('\n'),
+        },
+        {
+          // benchmarks/corpus/CWE-943/safe/static-filter.js
+          name: 'a fully static filter is not reported',
+          code: [
+            `async function fetchActiveAdmins() {`,
+            `  return db.collection('users').find({`,
+            `    role: 'superuser',`,
+            `    status: 'active',`,
+            `  }, { limit: 100, projection: { _id: 1, username: 1, role: 1 } }).toArray();`,
+            `}`,
+          ].join('\n'),
+        },
+        {
+          // Firestore spells the handle the same way and must stay closed: the
+          // gate never opens, so the rule registers no visitors at all.
+          name: 'a Firestore collection reference does not open the gate',
+          code: `const snap = await db.collection('users').doc(id).get();\ndb.collection('users').where('name', '==', req.query.name).get();`,
+        },
+      ],
+      invalid: [
+        {
+          // benchmarks/corpus/CWE-943/vulnerable/user-input-in-find.js
+          name: 'user input reaches a native-driver findOne',
+          code: [
+            `async function login(req, res) {`,
+            `  const user = await db.collection('users').findOne({`,
+            `    username: req.body.username,`,
+            `    password: req.body.password,`,
+            `  });`,
+            `  return user;`,
+            `}`,
+          ].join('\n'),
+          errors: [
+            {
+              messageId: 'unsafeQuery' as const,
+              suggestions: [
+                {
+                  messageId: 'suggestionUseEq' as const,
+                  output: [
+                    `async function login(req, res) {`,
+                    `  const user = await db.collection('users').findOne({`,
+                    `    username: { $eq: req.body.username },`,
+                    `    password: req.body.password,`,
+                    `  });`,
+                    `  return user;`,
+                    `}`,
+                  ].join('\n'),
+                },
+              ],
+            },
+            {
+              messageId: 'unsafeQuery' as const,
+              suggestions: [
+                {
+                  messageId: 'suggestionUseEq' as const,
+                  output: [
+                    `async function login(req, res) {`,
+                    `  const user = await db.collection('users').findOne({`,
+                    `    username: req.body.username,`,
+                    `    password: { $eq: req.body.password },`,
+                    `  });`,
+                    `  return user;`,
+                    `}`,
+                  ].join('\n'),
+                },
+              ],
+            },
+          ],
+        },
+        {
+          // benchmarks/corpus/CWE-943/vulnerable/where-string.js — reached
+          // through `.toArray()`, not `.find()`: `find` is deliberately not in
+          // the native-driver method set.
+          name: 'a template-literal $where reaches a native-driver cursor',
+          code: [
+            `async function searchByName(req) {`,
+            `  return db.collection('items').find({`,
+            "    $where: `this.name == '${req.query.name}'`,",
+            `  }).toArray();`,
+            `}`,
+          ].join('\n'),
+          errors: [
+            {
+              messageId: 'unsafeQuery' as const,
+              suggestions: [
+                {
+                  messageId: 'suggestionUseEq' as const,
+                  output: [
+                    `async function searchByName(req) {`,
+                    `  return db.collection('items').find({`,
+                    "    $where: { $eq: `this.name == '${req.query.name}'` },",
+                    `  }).toArray();`,
+                    `}`,
+                  ].join('\n'),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });

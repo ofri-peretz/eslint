@@ -116,4 +116,56 @@ describe('no-unsafe-where', () => {
       ]),
     });
   });
+
+  /**
+   * Labelled-corpus regression. Deliberately **not** wrapped in `xmo()` — the
+   * fixture has no `mongodb` import, and the native-driver arm in
+   * `mongo-evidence.ts` is the only thing that opens the gate for it. Adding an
+   * import would make the case pass on the unfixed code.
+   */
+  describe('CWE-943 corpus — native driver, no import', () => {
+    ruleTester.run('native-driver collection handles', noUnsafeWhere, {
+      valid: [
+        {
+          // benchmarks/corpus/CWE-943/safe/static-filter.js
+          name: 'a static filter with no $where is not reported',
+          code: [
+            `async function fetchActiveAdmins() {`,
+            `  return db.collection('users').find({`,
+            `    role: 'superuser',`,
+            `    status: 'active',`,
+            `  }, { limit: 100, projection: { _id: 1, username: 1, role: 1 } }).toArray();`,
+            `}`,
+          ].join('\n'),
+        },
+        {
+          // benchmarks/corpus/CWE-943/safe/explicit-eq.js
+          name: 'an $eq-guarded findOne is not reported',
+          code: [
+            `async function login(req, res) {`,
+            `  const user = await db.collection('users').findOne({`,
+            `    username: { $eq: String(req.body.username) },`,
+            `    password: { $eq: String(req.body.password) },`,
+            `  }, { projection: { _id: 1, username: 1, role: 1 } });`,
+            `  return user;`,
+            `}`,
+          ].join('\n'),
+        },
+      ],
+      invalid: [
+        {
+          // benchmarks/corpus/CWE-943/vulnerable/where-string.js
+          name: '$where built from a template literal on a native cursor',
+          code: [
+            `async function searchByName(req) {`,
+            `  return db.collection('items').find({`,
+            "    $where: `this.name == '${req.query.name}'`,",
+            `  }).toArray();`,
+            `}`,
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeWhere' as const }],
+        },
+      ],
+    });
+  });
 });

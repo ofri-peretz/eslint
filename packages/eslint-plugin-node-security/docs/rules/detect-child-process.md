@@ -75,6 +75,31 @@ flowchart TD
     K --> L
 ```
 
+### Two different findings
+
+The rule reports **two distinct defects**, and it is worth knowing which one you are looking at because the fixes differ.
+
+**CWE-78 — command injection (`childProcessCommandInjection`).** A shell sits between your command and the OS, so an attacker-steered value can start a *second* process with `;`, `|`, backticks or `$()`. This needs `exec`/`execSync`, an explicit `shell: true`, a shell binary (`sh`, `bash`, `cmd`, …), or an eval flag (`-c`, `-e`, `/c`). The fix is to remove the shell.
+
+**CWE-88 — argument injection (`argumentInjection`).** No shell is involved and no second process can start, but the callee still parses its *own* options. An attacker-steered argv entry that begins with `-` becomes a flag:
+
+```typescript
+execFile('git', ['ls-remote', req.query.remote], cb);
+// remote = "--upload-pack=touch /tmp/pwned"  → git runs it
+```
+
+`--to-command=` (tar), `-o ProxyCommand=` (ssh) and `--upload-file` (curl) are the same class. The rule is deliberately **binary-independent**: a per-program list of dangerous flags is a list of the exploits somebody already published, not of the ones that exist.
+
+Two things end it, and both are recognised:
+
+```typescript
+// 1. POSIX end-of-options — everything after `--` is positional
+execFile('git', ['ls-remote', '--', req.query.remote], cb);
+
+// 2. The leading character is already fixed by the code
+execFile('git', ['clone', `/srv/${req.body.name}`], cb);
+```
+
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
@@ -370,3 +395,5 @@ execFile('cmd', [], { env: { PATH: userInput } });
 | `allowLiteralSpawn` | `boolean` | `false` | Allow spawn() with literal arguments |
 | `additionalMethods` | `string[]` | `[]` | Additional child_process methods to check |
 | `strategy` | `"validate"` \| `"sanitize"` \| `"restrict"` \| `"auto"` | `"auto"` | Strategy for fixing command injection (auto = smart detection) |
+| `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
+| `reportUnresolvedCommands` | `boolean` | `false` | Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour. |

@@ -445,3 +445,13 @@ typeorm-security	no-mass-assignment	unaware
 typeorm-security	no-hardcoded-credentials	unaware	
 typeorm-security	no-unsafe-query	unaware	
 typeorm-security	require-tls	unaware	
+secure-coding	no-sql-injection	unaware	
+secure-coding	no-log-injection	unaware	
+secure-coding	no-homoglyph-identifiers	unaware	
+secure-coding	no-fail-open-auth	unaware	
+node-security	require-stream-error-handler	unaware	
+node-security	no-env-injection	unaware	
+node-security	no-insecure-http-parser	unaware	
+node-security	no-unbounded-decompression	unaware	
+node-security	require-aead-tag-verification	unaware	
+browser-security	no-incomplete-url-sanitization	unaware	

@@ -90,25 +90,32 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
       : 'package-lock.json | yarn.lock | pnpm-lock.yaml';
     const reportedManager = userPackageManager ?? 'any';
 
+    /**
+     * The nearest ancestor directory containing any of `names`.
+     *
+     * Walks to the filesystem root. The previous version stopped after ten
+     * levels, which silently manufactured findings in monorepos: Shopify/cli
+     * `packages/app/src/cli/services/app-logs/logs-command/ui/components/hooks/
+     * usePollAppLogs.ts` sits eleven directories below the repo root, so the
+     * walk ran out before reaching the `pnpm-lock.yaml` that is right there.
+     * The rule reported "lock file missing" about a repo that commits one.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const findUpward = (from: string, names: readonly string[]): string | undefined => {
+      let dir = from;
+      for (;;) {
+        for (const name of names) {
+          if (fs.existsSync(path.join(dir, name))) return dir;
+        }
+        const parent = path.dirname(dir);
+        if (parent === dir) return undefined;
+        dir = parent;
+      }
+    };
+
     return {
       Program(node: TSESTree.Program) {
-        // Find project root (simplified)
-        let dir = path.dirname(context.filename);
-        let found = false;
-
-        // Search up to 10 levels for any acceptable lock file
-        for (let i = 0; i < 10; i++) {
-          for (const lf of targetLockFiles) {
-            if (fs.existsSync(path.join(dir, lf))) {
-              found = true;
-              break;
-            }
-          }
-          if (found) break;
-          const parentDir = path.dirname(dir);
-          if (parentDir === dir) break;
-          dir = parentDir;
-        }
+        const found = findUpward(path.dirname(context.filename), targetLockFiles) !== undefined;
 
         if (!found) {
           // A missing lock file is one fact about the project. The guard that
@@ -117,23 +124,14 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
           // time and reported once per source file. auth0/express-openid-connect
           // produced 135 identical findings, at arbitrary lines.
           //
-          // The project is where package.json lives. `dir` cannot serve as the
-          // key: when the search fails it has walked to the filesystem root,
-          // collapsing every project onto one entry.
-          let root = path.dirname(context.filename);
-          let manifest = false;
-          for (let i = 0; i < 10; i++) {
-            if (fs.existsSync(path.join(root, 'package.json'))) {
-              manifest = true;
-              break;
-            }
-            const parent = path.dirname(root);
-            if (parent === root) break;
-            root = parent;
-          }
+          // The project is where package.json lives. The lock-file search
+          // result cannot serve as the key: when it fails it has walked to the
+          // filesystem root, collapsing every project onto one entry.
+          //
           // No manifest anywhere above the file: not a JS project, so there is
           // no lock file to be missing.
-          if (!manifest) return;
+          const root = findUpward(path.dirname(context.filename), ['package.json']);
+          if (root === undefined) return;
           if (reportedRoots.has(root)) return;
           reportedRoots.add(root);
 

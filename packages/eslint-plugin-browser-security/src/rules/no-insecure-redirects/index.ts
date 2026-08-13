@@ -16,6 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { isAttackerSteerableUrl, isLocationObject } from '../../utils/url-taint';
+import { isAnchoredHostGuard } from '../../utils/regexp-anchoring';
 
 type MessageIds =
   | 'insecureRedirect'
@@ -83,6 +84,18 @@ function isRedirectValidated(
     return true;
   }
 
+  // `res.redirect(isTrustedRedirect(target) ? target : '/')` — the guard is the
+  // ternary's test, which the sibling-statement text scan below never looks at.
+  // Only a guard we can *prove* anchors the whole origin counts; the same shape
+  // over `/https?:\/\/example\.com/` (no `^…$`, unescaped dot) stays reported,
+  // which is the entire difference between the two corpus fixtures.
+  if (
+    target.type === 'ConditionalExpression' &&
+    isAnchoredHostGuard(target.test, sourceCode)
+  ) {
+    return true;
+  }
+
   // Look for validation patterns in the surrounding code
   // This is a simplified static analysis - in practice, would need data flow analysis
 
@@ -134,6 +147,9 @@ function isRedirectValidated(
     // Check if inside an if-block with validation in the condition
     // e.g., if (isValidUrl(redirect)) { res.redirect(redirect); }
     if (parent.type === 'IfStatement' && parent.test) {
+      if (isAnchoredHostGuard(parent.test, sourceCode)) {
+        return true; // The guard provably pins the whole origin
+      }
       const testText = sourceCode.getText(parent.test);
       if (validationPatterns.some(pattern => pattern.test(testText))) {
         return true; // Validation is the if-condition

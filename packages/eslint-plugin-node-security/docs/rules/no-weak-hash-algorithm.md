@@ -215,3 +215,5 @@ Set `nonCryptographicNames: []` to switch the exemption off.
 | `additionalWeakAlgorithms` | `string[]` | `[]` | Additional weak algorithms to detect |
 | `allowInTests` | `boolean` | `false` | Allow weak hashes in test files |
 | `nonCryptographicNames` | `string[]` | `['sha', 'etag', 'cachekey', 'cachebuster']` | Assignment-target names that mark a hash as an identifier, not a security control |
+| `securityUseNames` | `string[]` | `["password","passwd","secret","secrets","token","tokens","signature","signing","signed","sign","hmac","credential","credentials","certificate","cert","certs","apikey","privatekey","secretkey","signingkey","encryptionkey","session","csrf","salt","jwt","nonce","integrity","auth","authorization","authenticate"]` | Names that mark a hash as a security control (whole-word matched) |
+| `reportUnclassifiedHashes` | `boolean` | `false` | Report weak hashes whose purpose cannot be determined. Restores the pre-inversion behaviour. |

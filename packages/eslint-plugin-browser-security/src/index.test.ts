@@ -39,6 +39,7 @@ describe('eslint-plugin-browser-security plugin interface', () => {
       'no-clickjacking',
       'no-credentials-in-query-params',
       'no-http-urls',
+      'no-incomplete-url-sanitization',
       'no-insecure-redirects',
       'no-insecure-websocket',
       'no-missing-cors-check',
@@ -59,7 +60,7 @@ describe('eslint-plugin-browser-security plugin interface', () => {
       'no-disabled-certificate-validation',
       'no-client-side-auth-logic', // Migrated from secure-coding
     ]);
-    expect(ruleKeys.length).toBe(45);
+    expect(ruleKeys.length).toBe(46);
   });
 
   describe('configurations', () => {

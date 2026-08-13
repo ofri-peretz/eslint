@@ -27,6 +27,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-ssrf',
       'no-shell-injection',
       'no-dynamic-command-string',
+      'no-env-injection',
       'no-dynamic-algorithm-selection',
       'detect-suspicious-dependencies',
       'lock-file',
@@ -51,6 +52,11 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-weak-cipher-algorithm',
       'no-weak-hash-algorithm',
       'prefer-native-crypto',
+      'require-aead-tag-verification',
+      // Protocol-level rules
+      'no-unbounded-decompression',
+      'no-insecure-http-parser',
+      'require-stream-error-handler',
     ]);
   });
 

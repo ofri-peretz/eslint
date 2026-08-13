@@ -57,18 +57,119 @@ describe('no-template-injection', () => {
       },
       // String concatenation
       {
-        code: 'pug.compile("<h1>" + title + "</h1>")',
+        code: 'pug.compile("<h1>" + req.query.title + "</h1>")',
         errors: [{ messageId: 'templateInjection', data: { engine: 'pug', method: 'compile' } }],
       },
       // mustache render
       {
-        code: 'Mustache.render(templateVar, view)',
+        code: 'Mustache.render(payload.template, view)',
         errors: [{ messageId: 'templateInjection', data: { engine: 'Mustache', method: 'render' } }],
       },
       // nunjucks
       {
         code: 'nunjucks.renderString(userString, ctx)',
         errors: [{ messageId: 'templateInjection', data: { engine: 'nunjucks', method: 'renderString' } }],
+      },
+    ],
+  });
+});
+
+/**
+ * Wild-corpus sweep (8 repos of published SDK/CLI code): 3 findings, 0 real.
+ *
+ * The rule reported every first argument that was not a string literal, which
+ * is the shape of a dynamic template rather than the meaning of an injectable
+ * one. All three findings were build tooling compiling its own source files.
+ */
+describe('corpus regression — dynamic is not attacker-controlled', () => {
+  ruleTester.run('wild corpus', noTemplateInjection, {
+    valid: [
+      // okta-signin-widget Gruntfile.js:135 and :202 — `content` is the grunt
+      // copy-task file-processing callback's parameter.
+      { name: 'grunt file content', code: 'var tpl = Handlebars.compile(content);' },
+      // …/babel-plugin-handlebars-inline-precompile/hbs.js:29 — `template` is
+      // the babel plugin's own argument.
+      { name: 'babel plugin template', code: 'var precompiled = Handlebars.precompile(template);' },
+      // Nothing in these names or shapes says where the value came from.
+      { name: 'a local variable', code: 'Handlebars.compile(tpl)' },
+      { name: 'a member read', code: 'Handlebars.compile(config.template)' },
+      { name: 'a plain call result', code: 'Handlebars.compile(loadTemplate())' },
+      { name: 'a call argument that is also neutral', code: 'Handlebars.compile(wrap(tpl))' },
+      { name: 'a spread argument', code: 'Handlebars.compile(wrap(...parts))' },
+      { name: 'an await of a neutral call', code: 'async function f() { Handlebars.compile(await loadTemplate()); }' },
+      { name: 'a neutral concatenation', code: 'pug.compile("<h1>" + title + "</h1>")' },
+      { name: 'a neutral interpolation', code: 'Handlebars.compile(`Hello ${name}`)' },
+      { name: 'a computed member root', code: 'Handlebars.compile(all[0].template)' },
+      { name: 'a member whose root is not an identifier', code: 'Handlebars.compile(getAll().template)' },
+      // The walk stops at depth 6 rather than following an arbitrarily nested
+      // expression — a bounded walk is the point, so the bound is pinned.
+      {
+        name: 'nested past the depth bound',
+        code: 'Handlebars.compile("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + userTpl)))))))',
+      },
+      { name: 'a request root without a request property', code: 'Handlebars.compile(req.template)' },
+      { name: 'process without argv', code: 'Handlebars.compile(process.env.TPL)' },
+      { name: 'a non-string literal', code: 'Handlebars.compile(0)' },
+    ],
+    invalid: [
+      // Request data — the shape the rule exists for.
+      {
+        name: 'request body',
+        code: 'Handlebars.compile(req.body.template)',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'request data nested in a template literal',
+        code: 'Handlebars.compile(`<div>${req.query.tpl}</div>`)',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'request data on the right of a concatenation',
+        code: 'Handlebars.compile("<div>" + req.body.tpl)',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'awaited request body',
+        code: 'async function f() { Handlebars.compile(await request.body.tpl); }',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      // Command-line input.
+      {
+        name: 'process.argv',
+        code: 'Handlebars.compile(process.argv[2])',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      // Bytes read from outside the program.
+      {
+        name: 'a file read',
+        code: 'Handlebars.compile(fs.readFileSync(p, "utf8"))',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'a bare reader function',
+        code: 'Handlebars.compile(readFileSync(p, "utf8"))',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'a reader reached through a call argument',
+        code: 'Handlebars.compile(decode(readFile(p)))',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      // A name that states provenance.
+      {
+        name: 'userTemplate names its origin',
+        code: 'Handlebars.compile(userTemplate)',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'a provenance-named property',
+        code: 'Handlebars.compile(form.userInput)',
+        errors: [{ messageId: 'templateInjection' }],
+      },
+      {
+        name: 'snake_case provenance',
+        code: 'Handlebars.compile(remote_template)',
+        errors: [{ messageId: 'templateInjection' }],
       },
     ],
   });

@@ -138,6 +138,20 @@ const WIRE_NAMES: ReadonlySet<string> = new Set([
   'bytes', 'raw', 'message', 'msg',
 ]);
 
+/**
+ * Roots that carry an inbound HTTP request.
+ *
+ * The wire names above were derived from protocol decoders, so the rule could
+ * see a RESP length prefix but not `Number(req.body.count)` — and an HTTP
+ * handler is the commonest place a remote peer names an allocation size. Both
+ * CWE-770 fixtures in `benchmarks/corpus/CWE-770/vulnerable/` were silent for
+ * exactly this reason: the length is off the wire either way, and "off the
+ * wire" is the whole predicate.
+ */
+const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+  'req', 'request', 'ctx', 'event',
+]);
+
 /** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
 function calleeName(callee: TSESTree.Node): string | null {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
@@ -253,24 +267,53 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     const wireParams = new Map<string, Set<number>>();
     /** Allocations to judge at Program:exit, once every call site is known. */
     const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] = [];
+    /** Call sites to record at Program:exit, once every binding is known. */
+    const pendingCallSites: (TSESTree.CallExpression | TSESTree.NewExpression)[] = [];
+    /**
+     * `name = <expr>` bindings.
+     *
+     * A size is almost never used where it is produced: it is parsed into a
+     * local and allocated from the local one line later. Without this hop
+     * `const size = Number(url.searchParams.get('size')); Buffer.alloc(size)`
+     * reads as an unremarkable identifier.
+     */
+    const bindings = new Map<string, TSESTree.Node>();
 
     /** Does this expression read bytes off the wire? */
     function readsWire(node: TSESTree.Node, depth = 0): boolean {
-      if (depth > 5) return false;
+      // Raised from 5: following a size back through a local binding costs
+      // hops the decoder-only version never spent. `Buffer.alloc(size)` where
+      // `size` is `Number(url.searchParams.get('size'))` and `url` is
+      // `new URL(req.url, base)` is eight links from the request, and it is
+      // ordinary handler code — see
+      // benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js.
+      if (depth > 10) return false;
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
-          if (WIRE_NAMES.has(node.name.toLowerCase())) return true;
+          const lower = node.name.toLowerCase();
+          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) return true;
           const owner = enclosingFunction(node);
-          if (owner === null) return false;
-          const name = declaredName(owner);
-          if (name === null) return false;
-          const indices = wireParams.get(name);
-          if (!indices) return false;
-          const index = paramIndexOf(node, owner);
-          return index !== null && indices.has(index);
+          if (owner !== null) {
+            const name = declaredName(owner);
+            const indices = name === null ? undefined : wireParams.get(name);
+            if (indices !== undefined) {
+              const index = paramIndexOf(node, owner);
+              if (index !== null && indices.has(index)) return true;
+            }
+          }
+          const bound = bindings.get(node.name);
+          return bound !== undefined && readsWire(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
           return readsWire(node.object, depth + 1);
+        // `new URL(req.url, base)` is a request that has been through a
+        // constructor; the searchParams read off it are still the peer's.
+        case AST_NODE_TYPES.NewExpression:
+          return node.arguments.some(
+            (argument) =>
+              argument.type !== AST_NODE_TYPES.SpreadElement &&
+              readsWire(argument, depth + 1),
+          );
         case AST_NODE_TYPES.CallExpression:
           // `this.#decodeUnsignedNumber(0, chunk)` — a decode helper handed the
           // wire buffer returns a number the peer chose. `chunk.readUInt32BE(0)`
@@ -459,18 +502,28 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     }
 
     return {
+      // Bindings first: a size parsed on one line and allocated on the next is
+      // the normal spelling, and `readsWire` cannot follow it until the whole
+      // file has been seen.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (node.init !== null && node.id.type === AST_NODE_TYPES.Identifier) {
+          bindings.set(node.id.name, node.init);
+        }
+      },
+
       NewExpression(node: TSESTree.NewExpression) {
-        recordCallSite(node);
+        pendingCallSites.push(node);
         const size = allocationSize(node);
         if (size !== null) pendingAllocations.push({ node, size });
       },
 
       'Program:exit'() {
+        for (const call of pendingCallSites) recordCallSite(call);
         for (const { node, size } of pendingAllocations) judgeAllocation(node, size);
       },
 
       CallExpression(node) {
-        recordCallSite(node);
+        pendingCallSites.push(node);
         const size = allocationSize(node);
         if (size !== null) pendingAllocations.push({ node, size });
 
